@@ -85,6 +85,9 @@ for _, accent in ipairs(accents) do
     accented[utf8.char(c)] = {letters[i], accent[1]}
   end
 end
+local plain_accents = {}
+for _, accent in ipairs(accents) do plain_accents[accent[1]] = true end
+for _, accent in ipairs{"ˆ", "˜", "⃗", "˚"} do plain_accents[accent] = true end
 -- cmsy draws \succeq and \preceq with a straight bar (⪰, ⪯), but tex4ht
 -- writes the curly ≽ and ≼
 local chars = {["≽"] = "⪰", ["≼"] = "⪯"}
@@ -142,6 +145,16 @@ local function is_empty_row(mtr)
   return true
 end
 
+local function is_space_row(mtr)
+  for _, mtd in ipairs(element_children(mtr)) do
+    for _, child in ipairs(element_children(mtd)) do
+      if child:get_element_name() ~= "mspace" then return false end
+    end
+    if mtd:get_text():match("%S") then return false end
+  end
+  return true
+end
+
 -- MathML elements whose children must be elements, not bare text
 local needs_tokens = {
   math = true, mrow = true, mstyle = true, mtd = true, mfrac = true,
@@ -150,10 +163,52 @@ local needs_tokens = {
 }
 
 local fix_mathml = domfilter({function(dom)
+  -- values web.cfg passes from TeX
+  local tex = {}
+  for _, meta in ipairs(dom:query_selector("meta")) do
+    local name = meta:get_attribute("name") or ""
+    if name:match("^tex%-") then
+      tex[name:sub(5)] = meta:get_attribute("content")
+      meta:remove_node()
+    end
+  end
+  -- theorem spacing (left in the heading by web.cfg)
+  for _, mark in ipairs(dom:query_selector("span.thmskip")) do
+    local div = mark:get_parent()
+    while div:is_element() and not (div:get_element_name() == "div"
+        and div:get_attribute("class") == "newtheorem") do
+      div = div:get_parent()
+    end
+    if div:is_element() then
+      div:set_attribute("style", "margin-top: " .. mark:get_attribute("data-before")
+        .. "; margin-bottom: " .. mark:get_attribute("data-after"))
+    end
+    mark:remove_node()
+  end
+  -- \textstyle (marked by web.cfg) applies to the rest of its row
+  for _, mark in ipairs(dom:query_selector("mi.textstyle")) do
+    local parent, before, after, seen = mark:get_parent(), {}, {}, false
+    for _, child in ipairs(parent:get_children()) do
+      if child == mark then
+        seen = true
+      elseif seen then
+        after[#after + 1] = child
+      else
+        before[#before + 1] = child
+      end
+    end
+    local mstyle = parent:create_element("mstyle", {displaystyle = "false"}, parent)
+    for _, child in ipairs(after) do mstyle:add_child_node(child) end
+    before[#before + 1] = mstyle
+    parent._children = before
+  end
   -- \bm (marked by web.cfg); upright bold Greek capitals keep their mathvariant
   for _, bm in ipairs(dom:query_selector("mstyle.bm")) do
     bm:traverse_elements(function(el)
-      if el:get_element_name() == "mi" and not el:get_attribute("mathvariant") then
+      if el:get_element_name() == "mi" and is_opname(el) then
+        -- operator names (\bm\diag) stay upright
+        el:set_attribute("mathvariant", "bold")
+      elseif el:get_element_name() == "mi" and not el:get_attribute("mathvariant") then
         for _, child in ipairs(el:get_children()) do
           if child:is_text() then child._text = bold_italic(child._text) end
         end
@@ -222,6 +277,19 @@ local fix_mathml = domfilter({function(dom)
       end
     end
   end)
+  -- \bigm| and co. (marked by web.cfg): a sized delimiter, spaced as a
+  -- relation (tex4ht leaves the delimiter bare; the loop above made it an <mo>)
+  for _, mrow in ipairs(dom:query_selector("mrow.bigm")) do
+    local mo = mrow:query_selector("mo")[1]
+    local size = mrow:get_attribute("data-size")
+    mrow._attr["data-size"] = nil
+    if mo then
+      for name, value in pairs{fence = "false", stretchy = "true", symmetric = "true",
+                               minsize = size, maxsize = size} do
+        mo:set_attribute(name, value)
+      end
+    end
+  end
   local tokens = {}
   dom:traverse_elements(function(el)
     local name = el:get_element_name()
@@ -239,11 +307,17 @@ local fix_mathml = domfilter({function(dom)
       local mo = el:create_element("mo", {accent = "true", stretchy = "false"})
       mo:add_child_node(mo:create_text_node(accent))
       el._name, el._attr, el._children = "mover", {accent = "true"}, {mi, mo}
+    elseif name == "mo" and text == "∅" then
+      -- \varnothing (\emptyset comes out as <mi>); MathJax's TeX input
+      -- draws it like this
+      el._name, el._attr = "mi", {["data-mjx-alternate"] = "1"}
     elseif primes[text] then
       -- TeX's prime is a big glyph raised as a superscript; MathJax's TeX
-      -- input asks for that glyph like this (the plain one is pre-raised)
+      -- input asks for that glyph like this (the plain one is pre-raised).
+      -- (stretchy stops make4ht turning a lone <mo> into <mtext>)
       el._name = "mo"
       el:set_attribute("data-mjx-alternate", "1")
+      el:set_attribute("stretchy", "false")
     elseif dots[text] then
       el._name = "mo"
       el._attr = {["data-mjx-texclass"] = dots[text]}
@@ -296,31 +370,146 @@ local fix_mathml = domfilter({function(dom)
       end
     end
   end)
+  -- after an operator with limits, tex4ht writes the scripts of the symbols
+  -- that follow (\det\Sigma_t^{1/2}, \min(\frac{t^2}{s_n^2}X_j^2)) as limits,
+  -- under and over them
+  local as_scripts = {munder = "msub", mover = "msup", munderover = "msubsup"}
+  local function is_operator(el)
+    while el:get_element_name() == "mrow" or el:get_element_name() == "mstyle" do
+      local children = element_children(el)
+      if el:get_attribute("class") == "qopname" or #children ~= 1 then break end
+      el = children[1]
+    end
+    return el:get_element_name() == "mo" or is_opname(el)
+      or el:get_attribute("data-mjx-texclass") == "OP"
+  end
+  dom:traverse_elements(function(el)
+    local name = as_scripts[el:get_element_name()]
+    if not name then return end
+    local base = element_children(el)[1]
+    if el:get_attribute("accent") == "false" and el:get_attribute("accentunder") ~= "true"
+        and base and not is_operator(base) then
+      el._name, el._attr = name, {}
+    end
+  end)
+  -- tex4ht makes a parenthesized group the base of the script after it
+  -- ((1-\gamma)^2, \Bigl(..\Bigr)^2); in TeX the script belongs to the closing
+  -- delimiter alone, which sets it lower. (\left..\right is a group in TeX too,
+  -- and comes out as fences)
+  dom:traverse_elements(function(el)
+    local name = el:get_element_name()
+    if name ~= "msub" and name ~= "msup" and name ~= "msubsup" then return end
+    local base = element_children(el)[1]
+    if not (base and base:get_element_name() == "mrow") then return end
+    local inner = element_children(base)
+    local first, last = inner[1], inner[#inner]
+    if #inner >= 2 and first:get_element_name() == "mo" and last:get_element_name() == "mo"
+        and first:get_attribute("class") == "MathClass-open"
+        and last:get_attribute("class") == "MathClass-close"
+        and first:get_attribute("fence") ~= "true" and last:get_attribute("fence") ~= "true" then
+      local parent, children = el:get_parent(), {}
+      for _, child in ipairs(parent:get_children()) do
+        if child == el then
+          for k = 1, #inner - 1 do
+            inner[k]._parent = parent
+            children[#children + 1] = inner[k]
+          end
+        end
+        children[#children + 1] = child
+      end
+      parent._children = children
+      base:replace_node(last)
+      last._parent = el
+    end
+  end)
   -- TeX draws big delimiters and large operators (\bigl(, \sum) from the
   -- math extension font at its design size, 10pt, also in an 11pt document;
   -- web.cfg passes the ratio to the body font
-  for _, meta in ipairs(dom:query_selector("meta")) do
-    if meta:get_attribute("name") == "tex-exscale" then
-      local exscale = meta:get_attribute("content") .. "%"
-      meta:remove_node()
-      for _, mo in ipairs(dom:query_selector("mo")) do
-        if mo:get_attribute("minsize") then
-          mo:set_attribute("mathsize", exscale)
-        elseif large_ops[token_text(mo) or ""] then
-          -- MathJax misplaces the limits of \int (they belong tucked into
-          -- its slant) when the <mo> itself is scaled, so scale around it
-          local mstyle = mo:create_element("mstyle", {mathsize = exscale}, mo:get_parent())
-          mo:replace_node(mstyle)
-          mstyle:add_child_node(mo)
-        end
+  if tex.exscale then
+    local exscale = tex.exscale .. "%"
+    for _, mo in ipairs(dom:query_selector("mo")) do
+      if mo:get_attribute("minsize") then
+        mo:set_attribute("mathsize", exscale)
+      elseif large_ops[token_text(mo) or ""] then
+        -- MathJax misplaces the limits of \int (they belong tucked into
+        -- its slant) when the <mo> itself is scaled, so scale around it
+        local mstyle = mo:create_element("mstyle", {mathsize = exscale}, mo:get_parent())
+        mo:replace_node(mstyle)
+        mstyle:add_child_node(mo)
       end
     end
+  end
+  -- the function application after an operator name takes no part in
+  -- spacing (MathJax's TeX input marks it so too); otherwise MathJax spaces it
+  -- as an ordinary symbol, which puts a gap in \log(x), \E[X], \Var(X).
+  -- MathJax still puts a thin space after it unless a matching pair of
+  -- delimiters follows, as for \E[X]^2, where TeX puts none before an
+  -- opening delimiter, or at the end of a formula; drop it there
+  for _, mo in ipairs(dom:query_selector("mo")) do
+    if is_apply(mo) then
+      local after = next_element(mo)
+      if not after or after:get_attribute("data-mjx-texclass") == "OPEN" then
+        mo:remove_node()
+      else
+        mo:set_attribute("data-mjx-texclass", "NONE")
+      end
+    end
+  end
+  -- \text is a box, an ordinary symbol to TeX, whatever math it holds
+  for _, mstyle in ipairs(dom:query_selector("mstyle.text")) do
+    mstyle:set_attribute("data-mjx-texclass", "ORD")
   end
   -- each part of arg\,max is an operator name of its own to MathJax, which
   -- puts space between them
   for _, mrow in ipairs(dom:query_selector("mrow.qopname")) do
-    for _, child in ipairs(element_children(mrow)) do
+    mrow:set_attribute("data-mjx-texclass", "OP")
+    local children = element_children(mrow)
+    for _, child in ipairs(children) do
       child:set_attribute("data-mjx-auto-op", "false")
+    end
+    -- (\limsup comes out as lim\,sup\,, with a space before its limits)
+    local last = children[#children]
+    if #children > 1 and last:get_element_name() == "mspace" then last:remove_node() end
+    -- MathJax sets s. in \op{s.\!e.} wider than TeX does, so the \! pulls
+    -- the e. over its period
+    for i = 2, #children do
+      local width = children[i]:get_attribute("width") or ""
+      if children[i]:get_element_name() == "mspace" and width:match("^%-")
+          and (token_text(children[i - 1]) or ""):match("%.$") then
+        children[i]:remove_node()
+      end
+    end
+  end
+  -- other multi-letter identifiers (\mr{SSE}) aren't function names to space
+  -- like \log, as MathJax would. (tex4ht writes \mr{Jeff} with an ff
+  -- ligature, which MathJax's fonts lack)
+  local ligatures = {["ﬀ"] = "ff", ["ﬁ"] = "fi", ["ﬂ"] = "fl", ["ﬃ"] = "ffi", ["ﬄ"] = "ffl"}
+  for _, mi in ipairs(dom:query_selector("mi")) do
+    for _, child in ipairs(mi:get_children()) do
+      if child:is_text() then child._text = child._text:gsub("\xEF\xAC[\x80-\x84]", ligatures) end
+    end
+    -- (make4ht later joins upright letters in a row into one <mi>, so mark
+    -- single upright letters too)
+    local text, variant, el = token_text(mi), nil, mi
+    while el:is_element() and not variant do
+      variant = el:get_attribute("mathvariant")
+      el = el:get_parent()
+    end
+    if text and not is_opname(mi)
+        and (utf8.len(text) > 1 or variant == "normal" or variant == "bold") then
+      mi:set_attribute("data-mjx-auto-op", "false")
+    end
+  end
+  -- an operator name with scripts (\E_x) is still an operator
+  for _, name in ipairs{"msub", "msup", "msubsup"} do
+    for _, el in ipairs(dom:query_selector(name)) do
+      local base = element_children(el)[1]
+      if base and base:get_element_name() == "mrow" and #element_children(base) == 1 then
+        base = element_children(base)[1]
+      end
+      if base and base:get_attribute("data-mjx-texclass") == "OP" then
+        el:set_attribute("data-mjx-texclass", "OP")
+      end
     end
   end
   -- \overline comes out as a stretched macron (¯) set as a script, which
@@ -332,25 +521,40 @@ local fix_mathml = domfilter({function(dom)
       mover:set_attribute("accent", "true")
     end
   end
-  -- accents over a single letter (\bar x, \tilde x) keep their own width, as
-  -- in TeX, instead of stretching across the letter (\overline is
-  -- <mover class="mml-overline">)
+  -- accents (\bar x, \hat{\bm\beta}, \tilde{xy}) keep their own width, as in
+  -- TeX, instead of stretching across their base; \widehat and \widetilde
+  -- (marked "wide" by web.cfg) and \overline (<mover class="mml-overline">)
+  -- do stretch
   for _, mover in ipairs(dom:query_selector("mover")) do
     local children = element_children(mover)
-    local base = children[1]
-    if base and base:get_element_name() == "mrow" then
-      local inner = element_children(base)
-      base = #inner == 1 and inner[1]
+    local class = mover:get_attribute("class")
+    if class == "wide" and #children == 2 then
+      -- TeX's smallest \widehat (0.556em) is wider than \hat (0.5em); MathJax
+      -- would use \hat's over a narrow letter. (it takes a glyph within 10% of
+      -- minsize, so ask for a little more)
+      children[2]:set_attribute("minsize", "0.6em")
     end
-    local text = base and token_text(base)
     if mover:get_attribute("accent") == "true" and #children == 2
+        and class ~= "wide" and class ~= "mml-overline"
         and children[2]:get_element_name() == "mo"
-        and text and utf8.len(text) == 1 then
+        and plain_accents[token_text(children[2]) or ""] then
       children[2]:set_attribute("stretchy", "false")
     end
   end
-  -- arrays and amsmath environments, with the spacing MathJax's TeX input
-  -- gives them
+  -- a strut (0.7 and 0.3 of the baselineskip, times stretch) in each row
+  local function strut_rows(mtable, stretch)
+    local skip = tonumber(tex.baselineskip)
+    if not skip then return end
+    for _, mtr in ipairs(element_children(mtable)) do
+      local mtd = element_children(mtr)[1]
+      if mtd and mtd:get_element_name() == "mtd" and mtr:get_attribute("class") ~= "array-hline" then
+        mtd:add_child_node(mtd:create_element("mspace", {width = "0em",
+          height = string.format("%.3fem", 0.7 * skip * stretch),
+          depth = string.format("%.3fem", 0.3 * skip * stretch)}), 1)
+      end
+    end
+  end
+  -- arrays and amsmath environments, spaced as TeX spaces them
   for _, mtable in ipairs(dom:query_selector("mtable")) do
     local class = mtable:get_attribute("class")
     if class == "array" or class == "dcases" then
@@ -373,10 +577,26 @@ local fix_mathml = domfilter({function(dom)
         ancestor = ancestor:get_parent()
       end
       mtable:set_attribute("columnspacing", cases and "0em" or "1em")
-      mtable:set_attribute("rowspacing", cases and ".2em" or "4pt")
+      -- TeX sets array rows (cases, matrices) on struts as tall as a line,
+      -- \arraystretch times (1.2 in cases), with nothing in between
+      strut_rows(mtable, cases and 1.2 or 1)
+      mtable:set_attribute("rowspacing", "0em")
+      -- array cells are in text style, dcases' in display style (tex4ht
+      -- writes both the other way round)
+      mtable:set_attribute("displaystyle", class == "dcases" and "true" or "false")
+      -- tex4ht lists a rule under the first row only (rowlines="solid"),
+      -- which MathML repeats for every row after it
+      local rowlines, n = {}, #element_children(mtable)
+      for line in (mtable:get_attribute("rowlines") or ""):gmatch("%S+") do rowlines[#rowlines + 1] = line end
+      if #rowlines > 0 and #rowlines < n - 1 then
+        for i = #rowlines + 1, n - 1 do rowlines[i] = "none" end
+        mtable:set_attribute("rowlines", table.concat(rowlines, " "))
+      end
     elseif class == "align" or class == "align-star" or class == "gather-star" then
-      mtable:set_attribute("columnspacing", "0em")
+      -- rows a line apart, on struts, plus \jot
+      strut_rows(mtable, 1)
       mtable:set_attribute("rowspacing", "3pt")
+      local columns = 0
       for _, mtr in ipairs(element_children(mtable)) do
         local label
         for _, mtd in ipairs(element_children(mtr)) do
@@ -393,18 +613,78 @@ local fix_mathml = domfilter({function(dom)
             -- the gap tex4ht leaves before the number columns
             local last = children[#children]
             if last and last:get_element_name() == "mspace" then last:remove_node() end
-            -- amsmath starts the column with {}, so a relation there gets its
-            -- space on the left
+            -- amsmath starts the column with {}, so a relation or binary
+            -- operator there (after any \quad) gets its space on the left
             local first = children[1]
-            if first and first:get_attribute("data-mjx-texclass") == "REL" then
+            local k = 1
+            while children[k] and children[k]:get_element_name() == "mspace" do k = k + 1 end
+            local class = children[k] and children[k]:get_attribute("data-mjx-texclass")
+            if class == "REL" or class == "BIN" then
               mtd:add_child_node(mtd:create_element("mi"), first:find_element_pos())
             end
           end
         end
+        columns = math.max(columns, #element_children(mtr))
         if label then
           mtr._name = "mlabeledtr"
           mtr:add_child_node(label, 1)
         end
+      end
+      -- each pair of columns sits snug, and pairs (a &= b && c &= d) 2em apart
+      local spacing = {}
+      for i = 1, columns - 1 do spacing[i] = i % 2 == 1 and "0em" or "2em" end
+      mtable:set_attribute("columnspacing", #spacing > 0 and table.concat(spacing, " ") or "0em")
+      -- \intertext comes out as a row spanning the table, whose text MathJax
+      -- doesn't wrap: the table gets as wide as the text, and the equations
+      -- end up scrolled out of view. split the table there, with the text as
+      -- a paragraph between the parts (which lose their common alignment)
+      local math = mtable:get_parent()
+      if math:get_element_name() == "math" and #mtable:query_selector("mtd.intertext") > 0 then
+        local parts, rows, skip = {}, {}, false
+        local function add_table()
+          if #rows == 0 then return end
+          local part = math:create_element("math", math._attr)
+          local table = part:create_element("mtable", mtable._attr, part)
+          part:add_child_node(table)
+          for _, row in ipairs(rows) do table:add_child_node(row) end
+          parts[#parts + 1], rows = part, {}
+        end
+        for _, mtr in ipairs(element_children(mtable)) do
+          local intertext = mtr:query_selector("mstyle.intertext")[1]
+          if intertext then
+            add_table()
+            local text = math:create_element("span", {class = "intertext"})
+            for _, child in ipairs(intertext:get_children()) do
+              if child:is_element() and child:get_element_name() == "mtext" then
+                -- (with ordinary spaces: tex4ht writes no-break ones in <mtext>)
+                text:add_child_node(text:create_text_node((child:get_text():gsub("\u{A0}", " "))))
+              elseif child:is_element() then
+                local inline = text:create_element("math", {display = "inline"})
+                for _, token in ipairs(child:get_children()) do inline:add_child_node(token) end
+                text:add_child_node(inline)
+              end
+            end
+            parts[#parts + 1] = text
+            -- and the row of space tex4ht puts after it
+            skip = true
+          elseif not (skip and is_space_row(mtr)) then
+            rows[#rows + 1] = mtr
+            skip = false
+          end
+        end
+        add_table()
+        local parent, children = math:get_parent(), {}
+        for _, child in ipairs(parent:get_children()) do
+          if child == math then
+            for _, part in ipairs(parts) do
+              part._parent = parent
+              children[#children + 1] = part
+            end
+          else
+            children[#children + 1] = child
+          end
+        end
+        parent._children = children
       end
     end
   end
