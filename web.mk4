@@ -45,12 +45,19 @@ local function exists(path)
   return lfs.attributes(path) ~= nil
 end
 
+-- copies a file into the output, and lists it with tex4ht's output files,
+-- so make4ht -d copies it too
+local function add(source, path)
+  copy(source, path)
+  Make:add_file(path)
+end
+
 Make:match("html$", function(filename, par)
   local dir = filename:match("^(.*)/") or "."
   for _, font in ipairs(fonts) do
-    copy(root .. "/fonts/" .. font, dir .. "/fonts/" .. font)
+    add(root .. "/fonts/" .. font, dir .. "/fonts/" .. font)
   end
-  copy(root .. "/js/web.js", dir .. "/web.js")
+  add(root .. "/js/web.js", dir .. "/web.js")
   -- images from \includegraphics, which the HTML references relative to the
   -- source
   local f = io.open(filename)
@@ -58,7 +65,7 @@ Make:match("html$", function(filename, par)
   f:close()
   for src in html:gmatch("<img [^>]-src=['\"]([^'\"]+)['\"]") do
     if not src:match("^%a+:") and not exists(dir .. "/" .. src) and exists(src) then
-      copy(src, dir .. "/" .. src)
+      add(src, dir .. "/" .. src)
     end
   end
   return fix_html(filename, par)
