@@ -3,8 +3,8 @@
 -- of your own that \input's web-core.tex):
 --   make4ht -c path/to/web.cfg -e path/to/web.mk4 document.tex
 -- It puts this directory on TeX's and Lua's search paths, copies the Latin
--- Modern fonts, web.js and the document's images next to the HTML, and
--- gives MathJax the document's macros.
+-- Modern fonts (fonts/), web.js and the document's images next to the HTML,
+-- and gives MathJax the document's macros.
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
 -- (texlua's require doesn't look at package.path; add a searcher that does
@@ -34,11 +34,11 @@ local fix_html = domfilter({function(document, par)
 end}, "web")
 
 local fonts = {
-  "lmroman10-regular.otf",
-  "lmroman10-bold.otf",
-  "lmroman10-italic.otf",
-  "lmroman10-bolditalic.otf",
-  "lmmono10-regular.otf",
+  "lmroman10-regular.woff2",
+  "lmroman10-bold.woff2",
+  "lmroman10-italic.woff2",
+  "lmroman10-bolditalic.woff2",
+  "lmmono10-regular.woff2",
 }
 
 local function exists(path)
@@ -48,7 +48,7 @@ end
 Make:match("html$", function(filename, par)
   local dir = filename:match("^(.*)/") or "."
   for _, font in ipairs(fonts) do
-    copy(kpse.find_file(font, "opentype fonts"), dir .. "/fonts/" .. font)
+    copy(root .. "/fonts/" .. font, dir .. "/fonts/" .. font)
   end
   copy(root .. "/js/web.js", dir .. "/web.js")
   -- images from \includegraphics, which the HTML references relative to the
