@@ -14,7 +14,7 @@ Build three renderings from this directory. Everything goes into `build/`, which
 
 1. Build the PDF and the HTML as above. To check a conversion of your own, build the HTML with your config instead (`-c your.cfg`).
 2. Expect the plain build to stop with errors in its log; it still writes the page.
-3. Check your build first. The log should have no `!` errors, and the build should end without a warning about macros left undefined for MathJax. The page should have no red macro names and no error boxes: that is MathJax rejecting a formula, or meeting a macro it doesn't know.
+3. Check your build first. The log should have no `!` errors, and the build should end without a warning about macros left undefined for MathJax, or about MathJax errors when it prerenders. The page should have no red macro names and no error boxes: that is MathJax rejecting a formula, or meeting a macro it doesn't know.
 4. Open the PDF and the HTML side by side, at about the same text size, with the browser in light mode. Go through them section by section with the checklist below. The checklist's sections have the same numbers as the sections of the PDF. Each row says what to look at, what the PDF shows, and how a broken conversion usually shows it. The failures listed are what plain tex4ht does, so `build/vanilla/test.html` has an example of each.
 5. Switch the browser to dark mode and skim the page once more (see the last section).
 
@@ -94,6 +94,15 @@ Build three renderings from this directory. Everything goes into `build/`, which
 ### Dark mode
 
 Background dark and text light. Links in lighter link colors. The TikZ figure inverted (white lines on dark). Math in the text color.
+
+### Prerendering
+
+With `node_modules/` installed (`npm ci`), the page is typeset at build time. Check it once more:
+
+- With JavaScript turned off in the browser, the math is all there, and looks as it does with JavaScript on in a build without `node_modules/`.
+- With the network off, the page still shows its math in MathJax's fonts (from `fonts/mathjax/`), and the browser's developer tools list no request to another site.
+- A screen reader reads each formula (MathJax's hidden MathML), and Tab doesn't stop at every formula.
+- Without `node_modules/` (move it aside), the build says it leaves the math to the browser, and the page works as before, with `web.js` next to it.
 
 ## test-generic.tex
 

@@ -1,8 +1,8 @@
 # web
 
-A tex4ht configuration that turns a LaTeX document into HTML that looks like its PDF. MathJax typesets the math in the browser from its LaTeX source, so it reads the formulas as written. The page follows the reader's light or dark setting.
+A tex4ht configuration that turns a LaTeX document into HTML that looks like its PDF. MathJax typesets the math from its LaTeX source, so it reads the formulas as written. It does so at build time when Node.js is set up, and otherwise in the reader's browser. The page follows the reader's light or dark setting.
 
-The conversion has three parts:
+The conversion has four parts:
 
 1. **tex4ht** (`web.cfg`, `tex/`). tex4ht's `mathjax` option writes the text as HTML and leaves each formula's LaTeX in the page. The configuration does three more things:
    - It numbers equations with TeX's own numbers, so they agree with `\eqref`.
@@ -16,28 +16,43 @@ The conversion has three parts:
    - the 10pt delimiters and large operators in an 11pt or 12pt document;
    - rows of arrays and alignments;
    - line breaks after relations.
+4. **Prerendering** (`prerender.mjs`, optional). MathJax typesets the page in Node, with the page's own configuration and `web.js`, and the page keeps the result. Such a page has no JavaScript: it shows its math at once, also with JavaScript off, saved, or offline. Screen readers get each formula as MathML.
 
 `test.tex` and `test-generic.tex` exercise it. See [TESTING.md](TESTING.md).
 
 ## Use
 
-Requires a recent TeX Live with make4ht (tested with TeX Live 2026). MathJax 4 is loaded from jsDelivr.
+Requires a recent TeX Live with make4ht (tested with TeX Live 2026). For prerendering, also Node.js (tested with Node 26); once, in this directory, run
 
 ```sh
-make4ht -c path/to/web/web.cfg -e path/to/web/web.mk4 document.tex
+npm ci
 ```
 
-The output is:
+which installs MathJax 4.1.3 and its fonts into `node_modules/`. Then:
+
+```sh
+make4ht -c path/to/web/web.cfg -e path/to/web/web.mk4 -B build -d out document.tex
+```
+
+Everything is built in `build/`, and `out/` gets the page and the files it uses:
 - `document.html` and `document.css`;
-- `web.js`;
 - any pictures;
-- `fonts/` (Latin Modern, copied from the TeX installation).
+- with prerendering, `document-mathjax.css`, MathJax's styles;
+- `fonts/`: Latin Modern (in `fonts/` here), and with prerendering MathJax's fonts in `fonts/mathjax/`;
+- without prerendering, `web.js`;
+- with `\WebPDF` (below), `document.pdf`.
 
-To keep tex4ht's auxiliary files apart and collect just the page, add `-B build -d out`: everything is built in `build/` and the page is copied to `out/`. Pass both files every time: `web.mk4` puts `tex/` on TeX's search path for `web.cfg`.
+Pass both files every time: `web.mk4` puts `tex/` on TeX's search path for `web.cfg`. Keep `-` out of the `-B` directory's name: make4ht reads it as a Lua pattern when it copies to `-d`, and a `-` there sends the files to the wrong place. The pages use relative paths, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can also serve one copy of them.
 
-MathJax typesets the math as it scrolls into view, so a long document is ready in under a second. Its speech and braille output are off by default (they took most of the time); screen readers still get MathML, and a reader can turn speech on in MathJax's menu.
+Without `node_modules/`, the build says so and the page loads MathJax 4.1.3 from jsDelivr. MathJax then typesets the math as it scrolls into view, so a long document is ready in under a second. Its speech and braille output are off (they took most of the time); screen readers get MathML, and a reader can turn speech on in MathJax's menu. Such a page needs JavaScript and the network, and a saved copy loses the math that wasn't typeset yet.
 
 MathJax loads the extensions for the packages the document uses that it has: physics, braket, cancel, mhchem and so on. Others load when a macro needs them.
+
+## On the page
+
+- Each heading and each theorem has a `#` link to it in the margin, shown on hover.
+- `\WebPDF{path}` in your config links the document's PDF after the title. `path` is relative to the document's directory, as in `\WebPDF{build/pdf/document.pdf}`; build the PDF first.
+- Link previews get the title, and the abstract as the description, if the document has one.
 
 ## Your own config
 
@@ -78,11 +93,14 @@ Pass it with `-c` instead of `web.cfg`. `\WebMathMacros` definitions take preced
 | `tex/web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ pictures in display math |
 | `tex/web-text.tex` | links, cross-references, theorems, table of contents, lists, figures |
 | `tex/web-page.tex` | `<head>`, colors, fonts, layout |
-| `web.mk4` | build file: search paths, fonts, `web.js` and images, the HTML passes |
+| `web.mk4` | build file: search paths, fonts, images and the PDF, the HTML passes, prerendering |
 | `lua/web/macros.lua` | the macro bridge |
 | `lua/web/source.lua`, `text.lua` | HTML passes: formula sources, theorem spacing, no-break spaces |
+| `lua/web/page.lua` | HTML pass: links to headings and theorems, the PDF link, meta tags |
 | `lua/web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/web.js` | MathJax's sizes set as TeX's |
+| `prerender.mjs`, `package.json` | MathJax in Node, at the version the browser loads |
+| `fonts/` | Latin Modern, as WOFF2 |
 | `test.tex`, `test-generic.tex`, `TESTING.md` | the diagnostic documents and how to use them |
 
 Known limitations are listed at the end of TESTING.md.

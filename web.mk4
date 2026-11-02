@@ -3,7 +3,8 @@
 -- of your own that \input's web-core.tex):
 --   make4ht -c path/to/web.cfg -e path/to/web.mk4 document.tex
 -- It puts this directory on TeX's and Lua's search paths, copies the Latin
--- Modern fonts (fonts/) and the document's images next to the HTML, and
+-- Modern fonts (fonts/), the document's images and its PDF (\WebPDF) next
+-- to the HTML, and
 -- gives MathJax the document's macros. With node_modules installed (npm ci
 -- here), prerender.mjs then typesets the math; otherwise the page loads
 -- MathJax, with web.js next to it.
@@ -23,12 +24,16 @@ local log = logging.new("web")
 local macros = require "web.macros"
 local source = require "web.source"
 local text = require "web.text"
+local page = require "web.page"
 
 local passes = {
   source.spaces,
   macros.define,
   text.theorem_spacing,
   text.no_break_spaces,
+  page.permalinks,
+  page.pdf_link,
+  page.meta_tags,
 }
 
 local fix_html = domfilter({function(document, par)
@@ -92,6 +97,15 @@ Make:match("html$", function(filename, par)
   for src in html:gmatch("<img [^>]-src=['\"]([^'\"]+)['\"]") do
     if not src:match("^%a+:") and not exists(dir .. "/" .. src) and exists(src) then
       add(src, dir .. "/" .. src)
+    end
+  end
+  -- the PDF, from \WebPDF (web-page.tex)
+  local pdf = html:match('<meta name="web%-pdf" content="([^"]+)"')
+  if pdf then
+    if exists(pdf) then
+      add(pdf, dir .. "/" .. par.input .. ".pdf")
+    else
+      log:warning("\\WebPDF: no " .. pdf .. "; build the PDF first")
     end
   end
   local status = fix_html(filename, par)
