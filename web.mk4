@@ -1,9 +1,10 @@
--- make4ht build file for HTML that looks like the PDF. Use with web.cfg (or
--- a config of your own that \input's web-core.tex):
+-- make4ht build file for HTML that looks like the PDF, with MathJax
+-- typesetting the math from its LaTeX source. Use with web.cfg (or a config
+-- of your own that \input's web-core.tex):
 --   make4ht -c path/to/web.cfg -e path/to/web.mk4 document.tex
 -- It puts this directory on TeX's and Lua's search paths, copies the Latin
--- Modern fonts and the document's images next to the HTML, and fixes up the
--- MathML tex4ht writes so that MathJax draws it as TeX would.
+-- Modern fonts, web.js and the document's images next to the HTML, and
+-- gives MathJax the document's macros.
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
 -- (texlua's require doesn't look at package.path; add a searcher that does
@@ -11,81 +12,24 @@ local root = settings.build_file:match("^(.*)[/\\]") or "."
 table.insert(package.searchers, 2, function(name)
   local path, message = package.searchpath(name, root .. "/lua/?.lua")
   if not path then return message end
-  return assert(loadfile(path)), path
+  return loadfile(path), path
 end)
--- (the path separator is ; on Windows)
-local separator = package.config:sub(1, 1) == "\\" and ";" or ":"
-os.setenv("TEXINPUTS", root .. "/tex" .. separator .. (os.getenv("TEXINPUTS") or ""))
+os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 
 local domfilter = require "make4ht-domfilter"
-local accents = require "web.accents"
-local classes = require "web.classes"
-local delimiters = require "web.delimiters"
-local scripts = require "web.scripts"
-local structure = require "web.structure"
-local style = require "web.style"
-local tables = require "web.tables"
+local macros = require "web.macros"
+local source = require "web.source"
 local text = require "web.text"
 
--- The passes, in order. Each takes the document and the values the cfg
--- passes from TeX. Later passes rely on earlier ones:
--- - delimiters.middle and classes.tokens need the tokens that
---   structure.well_formed makes of bare text;
--- - accents.braces and accents.rules mark braces and rules as accents, and
---   scripts.operator_limits marks \lim's limits, before
---   scripts.limits_as_scripts would make them scripts;
--- - scripts.*, delimiters.extension_scale, classes.function_application and
---   tables.tables (which looks for relations) need classes.tokens' classes
---   and its <mo> large operators;
--- - accents.widths adds minsize to wide accents after
---   delimiters.extension_scale, which scales whatever has one.
--- (make4ht's own filters run after these, joining letters into words and
--- turning a lone <mo> without a stretchy attribute into <mtext>.)
 local passes = {
+  source.spaces,
+  macros.define,
   text.theorem_spacing,
-  style.textstyle,
-  style.bold_symbols,
-  style.upright_operator_names,
-  structure.unwrap_pictures,
-  accents.braces,
-  structure.well_formed,
-  delimiters.middle,
-  accents.decompose,
-  classes.tokens,
-  accents.rules,
-  scripts.operator_limits,
-  scripts.limits_as_scripts,
-  scripts.script_on_delimiter,
-  scripts.extensible_arrows,
-  delimiters.extension_scale,
-  classes.function_application,
-  classes.text_boxes,
-  classes.operator_names,
-  classes.ligatures,
-  classes.identifiers,
-  classes.operator_scripts,
-  accents.widths,
-  tables.tables,
   text.no_break_spaces,
 }
 
--- the values the cfg passes from TeX, as <meta name="tex-..">, which this
--- removes
-local function tex_values(document)
-  local values = {}
-  for _, meta in ipairs(document:query_selector("meta")) do
-    local name = meta:get_attribute("name") or ""
-    if name:match("^tex%-") then
-      values[name:sub(5)] = meta:get_attribute("content")
-      meta:remove_node()
-    end
-  end
-  return values
-end
-
-local fix_html = domfilter({function(document)
-  local tex = tex_values(document)
-  for _, pass in ipairs(passes) do pass(document, tex) end
+local fix_html = domfilter({function(document, par)
+  for _, pass in ipairs(passes) do pass(document, par) end
   return document
 end}, "web")
 
@@ -101,26 +45,12 @@ local function exists(path)
   return lfs.attributes(path) ~= nil
 end
 
--- copy the fonts next to the HTML (once, for the first HTML file), and tell
--- make4ht about them, for -d
-local fonts_copied = false
-local function copy_fonts(dir)
-  if fonts_copied then return end
-  fonts_copied = true
-  for _, font in ipairs(fonts) do
-    local path = kpse.find_file(font, "opentype fonts")
-    if path then
-      copy(path, dir .. "/fonts/" .. font)
-      Make:add_file(dir .. "/fonts/" .. font)
-    else
-      print("web.mk4: can't find " .. font .. "; the page will use a fallback font")
-    end
-  end
-end
-
 Make:match("html$", function(filename, par)
   local dir = filename:match("^(.*)/") or "."
-  copy_fonts(dir)
+  for _, font in ipairs(fonts) do
+    copy(kpse.find_file(font, "opentype fonts"), dir .. "/fonts/" .. font)
+  end
+  copy(root .. "/js/web.js", dir .. "/web.js")
   -- images from \includegraphics, which the HTML references relative to the
   -- source
   local f = io.open(filename)

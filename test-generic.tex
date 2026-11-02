@@ -1,0 +1,33 @@
+% A second test for web: a document unlike the notes, to check what web
+% handles without a config of its own. No xcolor, packages that MathJax has
+% as extensions, xparse macros, and equation numbers by section.
+\documentclass{article}
+\usepackage{amsmath,amssymb,physics,braket,cancel}
+\usepackage{hyperref}
+\numberwithin{equation}{section}
+\NewDocumentCommand{\prob}{m}{\mathbb{P}\left(#1\right)}
+\NewDocumentCommand{\dist}{O{2} m m}{\lVert #2 - #3 \rVert_{#1}}
+\newcommand{\cond}[2]{#1 \,\middle|\, #2}
+\begin{document}
+\section{One}
+Unnumbered.
+\section{Two}
+Text with $\prob{\cond{A}{B}}$, $\dist{x}{y}$ and $\dist[\infty]{x}{y}$, and
+from physics $\dv{f}{x}$, $\abs{x}$, $\qty(\frac{a}{b})$, from braket
+$\braket{\phi|\psi}$, and from cancel $\cancel{x}$.
+\begin{equation}\label{eq:a}
+    \prob{X > t} \le \frac{\mathbb{E}X}{t}
+\end{equation}
+\begin{align}
+    a &= b + c \label{eq:b}\\
+      &= d \nonumber\\
+    e &= -f \label{eq:c}\\
+    g &= h \tag{$*$}
+\end{align}
+\begin{gather}
+    x = y \\
+    z = w \notag
+\end{gather}
+See \eqref{eq:a}, \eqref{eq:b} and \eqref{eq:c}, which should read (2.1),
+(2.2) and (2.3), followed by (2.4) for $x = y$.
+\end{document}

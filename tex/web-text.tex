@@ -30,20 +30,6 @@
     \HLet\@@@setcref\web@setcref
 }{}
 
-% --- macros -----------------------------------------------------------------
-
-% \WebRescan\cs: tex4ht makes _ and ^ active only at \begin{document}, so in
-% a macro defined in the preamble (\newcommand\KL{D_\mathrm{KL}}) they never
-% become <msub>/<msup>; have the macro re-read its body, with the document's
-% catcodes, when used. For macros without parameters
-\ExplSyntaxOn
-\NewDocumentCommand \WebRescan { m }
-  {
-    \cs_if_exist:NT #1
-      { \cs_set:Npx #1 { \exp_not:N \tl_rescan:nn { } { \exp_not:o {#1} } } }
-  }
-\ExplSyntaxOff
-
 % --- theorems ---------------------------------------------------------------
 
 % spaced as in the PDF rather than tex4ht's 2em: amsthm's theorem style's

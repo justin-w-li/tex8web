@@ -1,4 +1,4 @@
-# Checking a LaTeX-to-HTML conversion with test.tex
+# Checking a LaTeX-to-HTML conversion with test.tex and test-generic.tex
 
 `test.tex` is an ordinary LaTeX article that uses only standard packages (amsmath, amssymb, amsthm, mathtools, bm, hyperref, cleveref, booktabs, TikZ). It touches, in one short document, most of what a tex4ht + MathJax conversion tends to get wrong. Its PDF is the reference. A conversion works when the HTML looks like the PDF, apart from the deliberate differences listed below.
 
@@ -14,7 +14,7 @@ Build three renderings from this directory. Everything goes into `build/`, which
 
 1. Build the PDF and the HTML as above. To check a conversion of your own, build the HTML with your config instead (`-c your.cfg`).
 2. Expect the plain build to stop with errors in its log; it still writes the page.
-3. Check your build first. The log should have no `!` errors, and the page should have no yellow "Math input error" boxes (that is MathJax rejecting the MathML).
+3. Check your build first. The log should have no `!` errors, and the build should end without a warning about macros left undefined for MathJax. The page should have no red macro names and no error boxes: that is MathJax rejecting a formula, or meeting a macro it doesn't know.
 4. Open the PDF and the HTML side by side, at about the same text size, with the browser in light mode. Go through them section by section with the checklist below. The checklist's sections have the same numbers as the sections of the PDF. Each row says what to look at, what the PDF shows, and how a broken conversion usually shows it. The failures listed are what plain tex4ht does, so `build/vanilla/test.html` has an example of each.
 5. Switch the browser to dark mode and skim the page once more (see the last section).
 
@@ -53,7 +53,7 @@ Build three renderings from this directory. Everything goes into `build/`, which
 | --- | --- | --- |
 | 2.1 Alphabets | `\mathbf` bold upright, but `\bm` bold *italic* (𝒙, 𝜷); `\mathcal` (round 𝓛) clearly different from `\mathscr` (script); `\mathbb`, `\mathfrak`, `\mathsf`, `\mathtt` | `\bm` upright; `\mathcal` drawn in the script face; "Math input error" on `\text{... ff/fi}` |
 | 2.2 Operators | sin, log, Var, tr upright; no gap in sin(x), log(n), Var(X); inline limits beside the operator (max with *i* as a subscript, lim with *n*→∞ as a subscript); lim sup as one operator; (mod *n*) upright | Limits under max and lim in running text; a gap before the parenthesis; "mod" italic; an error for `\argmax` |
-| 2.3 Relations and spacing | *f*: *A*→*B* (the colon close to *f*); spacing of `\,` `\:` `\;` `\!` `\quad` `\qquad`; unary minus in −1 snug, binary minus spaced; slanted ⩽ in `\leqslant`; straight-bar ⪰; `\|v\|` with no space inside the bars, ∥ spaced as a relation | *f* : *A* (colon spaced as a relation); ≤ for ⩽; "Math input error" on `\{x : x > 0\}` |
+| 2.3 Relations and spacing | *f*: *A*→*B* (the colon close to *f*); spacing of `\,` `\:` `\;` `\!` `\quad` `\qquad`; unary minus in −1 snug, binary minus spaced; slanted ⩽ in `\leqslant`; curly ≽ for `\succcurlyeq`; `\|v\|` with no space inside the bars, ∥ spaced as a relation | *f* : *A* (colon spaced as a relation); ≤ for ⩽; "Math input error" on `\{x : x > 0\}` |
 | 2.4 Scripts and primes | Primes raised and large (*f*′); *x*<sub>op</sub> for `x_\mathrm{op}` and `x_\mr{op}`; *D*<sub>KL</sub> | Small primes at the baseline; "x op" or "x_op" as text; "DKL" with no subscript |
 | 2.5 Accents | `\hat` and `\tilde` the width of a letter, `\widehat` and `\widetilde` across *xyz*; a short `\vec` arrow; `\overline` across *x*+*y*; `\underline` just under *x* | A wide hat over 𝜷; a long arrow over *v*; the underline far below |
 | 2.6 Fractions and roots | `\tfrac` small, `\dfrac` large; binomials; `smallmatrix` in small type | A full-size smallmatrix |
@@ -95,18 +95,27 @@ Build three renderings from this directory. Everything goes into `build/`, which
 
 Background dark and text light. Links in lighter link colors. The TikZ figure inverted (white lines on dark). Math in the text color.
 
+## test-generic.tex
+
+A second, short document unlike the first: no xcolor, packages that MathJax has as extensions (physics, braket, cancel), macros defined with `\NewDocumentCommand`, and equations numbered by section. Build it like test.tex:
+
+```sh
+make4ht -c web.cfg -e web.mk4 -B build/generic test-generic.tex
+```
+
+| Look at | As in the PDF |
+| --- | --- |
+| Build | No `!` errors, although xcolor isn't loaded |
+| Text | `\prob`, `\dist` (with and without its optional argument), `\dv`, `\abs`, `\qty`, `\braket` and `\cancel` drawn, none in red |
+| Numbers | The displays numbered (2.1) to (2.4) and (∗); the line after `\nonumber` and the one with `\notag` unnumbered; the references in the last paragraph reading (2.1), (2.2) and (2.3) |
+
 ## Known limitations of this tool
 
 These differ from the PDF even with `web.cfg`. They show in `build/html/test.html`.
 
-- **Subscripts in preamble macros** (2.4, `\KL`). A subscript or superscript inside a macro defined in the preamble never becomes one: tex4ht makes `_` and `^` active only at `\begin{document}`. List such macros in your own config with `\WebRescan\KL` (see README.md).
-- **`\abs[\big]{x}` and other paired delimiters with a size** (2.7) come out unsized. List the commands in your config with `\WebPairedDelimiters{abs,norm}`.
-- **Custom item labels.** `\item[★]` loses its label. enumitem's lists keep theirs.
-- **`\displaystyle` inside inline math** (2.8) and **`\cfrac`** (3.4). Both come out in text style.
-- **A TikZ picture beside other math** in a display. A picture that is the whole display (`\[ \begin{tikzcd} … \end{tikzcd} \]`) works; next to other math, MathJax leaves it out.
+- **`\intertext`** (3.7). The alignment is split at the text, so its columns no longer line up across it.
 - **`\qedhere`.** The QED box follows the display instead of sitting at the right margin.
-- **`\hfill`.** It is ignored.
-- **`\\[6pt]`.** Extra space between alignment rows is ignored.
-- **multline** (3.7). The first and last lines reach the edges of the widest line, not the margins.
-- **Small differences** in the sizes of radicals and the largest delimiters, which MathJax picks from its own font.
-- **Unary + at the start of a line** (multline) and a lone `\ast` in `\tag` are spaced as binary operators.
+- **`\widehat` over a single letter** (2.5) is as narrow as `\hat`.
+- **A TikZ picture in display math** (`\[ \begin{tikzcd} … \end{tikzcd} \]`) is drawn by TeX as a picture, together with any other math in the same display.
+- **Macros MathJax can't read**, such as those built with `\mathpalette`, `\scalebox` or internal `@` macros, and `\NewDocumentCommand` macros with star or other optional arguments. The build names them in a warning at its end, and they show in red; give MathJax a version of each with `\WebMathMacros` (see README.md).
+- **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.

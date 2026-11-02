@@ -1,220 +1,206 @@
-% web: math. Most fixes mark something tex4ht would lose, for the Lua
-% passes (lua/web/) to finish in the HTML. Redefined commands are
-% \protected, so that they survive moving arguments (section titles in the
-% table of contents, captions).
+% web: math. tex4ht's mathjax option leaves each formula's LaTeX source in
+% the page, for MathJax to typeset in the browser.
 \makeatletter
 
-% --- delimiters -------------------------------------------------------------
-
-% tex4ht wraps \bigl( .. \bigr) in an <mrow>, which breaks when the pair spans
-% a line break in align; emit just the sized <mo>, with min/maxsize (mathsize
-% would stretch the normal glyph, thickening its stroke). TeX's \big and co.
-% pick delimiters 1.2em, 1.8em, 2.4em and 3em tall, in ems of the extension
-% font (delimiters.extension_scale scales them to it); ask for a hair under,
-% since MathJax's 1.2em glyphs fall just short of 1.2em and it would skip to
-% the next size (as its own \big does). Not fences: MathJax treats a row
-% between stretchy fences as \left..\right, which gets space around it
-\newcommand\web@sizeddelim[5]{% big; l or r; mathopen or mathclose; open or close; height
-    \Configure{#1#2}
-        {\bgroup\Configure{#1}{}{}{}{}%
-         \Configure{#3}{*}
-            {<mo class="MathClass-#4" fence="false" stretchy="true" symmetric="true" minsize="#5" maxsize="#5">}{</mo>}
-            {\Configure{#3}{}{}{}{}}}
-        {\egroup}%
+% MathJax's configuration:
+% - the extensions for the packages the document loads that MathJax has
+%   (others load when a macro needs them), and always mathtools, for
+%   \DeclarePairedDelimiter in macros.lua's definitions
+% - no automatic equation numbers (see \__web_part:nn below)
+% - \colon as amsmath has it (MathJax's is a plain punctuation colon)
+% - MathJax's Computer Modern font (its default, New Computer Modern, is
+%   heavier than the PDF, and its Latin Modern misplaces accents on Greek
+%   letters); display math that doesn't fit scrolls; math at the size of
+%   the text, as TeX does (rather than matching x-heights, which comes out a
+%   bit small)
+\def\web@extensions{'mathtools'}
+\def\web@load{'[tex]/mathtools'}
+\@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
+        colortbl,dsfont,empheq,gensymb,mhchem,physics,textcomp,units,upgreek\do{%
+    \@ifpackageloaded\web@package
+        {\edef\web@extensions{\web@extensions, '\web@package'}%
+         \edef\web@load{\web@load, '[tex]/\web@package'}}{}%
 }
-\newcommand\web@bigdelim[2]{% big, Big, ..; height
-    \web@sizeddelim{#1}{l}{mathopen}{open}{#2}%
-    \web@sizeddelim{#1}{r}{mathclose}{close}{#2}%
-    % \bigm| and co. are relations, as in TeX. tex4ht's own (a configured
-    % \mathrel) loses its size inside another \mathrel (\mathrel{\Bigm|}),
-    % so mark the delimiter for delimiters.middle to size
-    \protected\expandafter\def\csname #1m\endcsname##1{%
-        \HCode{<mrow class="bigm" data-mjx-texclass="REL" data-size="#2">}##1\HCode{</mrow>}}%
-}
-\web@bigdelim{big}{1.19em}
-\web@bigdelim{Big}{1.79em}
-\web@bigdelim{bigg}{2.39em}
-\web@bigdelim{Bigg}{2.99em}
-
-% \WebPairedDelimiters{abs,norm}: mathtools' \DeclarePairedDelimiter wraps
-% \abs[\big]{x}'s delimiters in \mathopen{..} and \mathclose{..}, inside
-% which tex4ht drops their size, and \abs*{x}'s in \mathopen{}\mathclose
-% \bgroup .. \aftergroup\egroup, which it can't follow with mleftright; leave
-% the delimiters of the commands listed bare. (TeX can't list the commands
-% a document declared, so a project config names them)
+\edef\web@config{\noexpand\Configure{MathJaxConfig}{{
+    loader: { load: [\web@load] },
+    tex: { tags: 'none', packages: { '[+]': [\web@extensions] },
+        macros: { colon: '\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}' } },
+    output: { font: 'mathjax-tex', displayOverflow: 'scroll',
+        matchFontHeight: false } };
+}}
+\web@config
+% \WebMathMacros{definitions}: macros for MathJax, in place of the
+% document's own (which macros.lua reads from its preamble and styles), for
+% macros MathJax can't read as they are. \WebMacrosHTML writes them in a
+% <script> in <head> (web-page.tex), for macros.lua, which removes it
 \ExplSyntaxOn
-\NewDocumentCommand \WebPairedDelimiters { m }
-  {
-    \cs_if_exist:NTF \reDeclarePairedDelimiterInnerWrapper
-      {
-        \clist_map_inline:nn {#1}
-          {
-            \exp_args:Nc \reDeclarePairedDelimiterInnerWrapper {##1} { nostarscaled } { ####1 ####2 ####3 }
-            \exp_args:Nc \reDeclarePairedDelimiterInnerWrapper {##1} { star } { ####1 ####2 ####3 }
-          }
-      }
-      { \PackageWarning { web } { \token_to_str:N \WebPairedDelimiters \c_space_tl needs~mathtools } }
-  }
-\ExplSyntaxOff
-
-% mleftright makes \left/\right \mathopen{}\mathclose\bgroup\left ..
-% \right\aftergroup\egroup, which tex4ht can't follow; it drops the MathML
-% for everything inside \left..\right, bmatrix and cases. tex4ht's own
-% \left/\right call the definitions from before \begin{document}, so point
-% them back at the originals
-\@ifpackageloaded{mleftright}{%
-    \expandafter\let\csname o:left:\endcsname\mleftright@OrgLeft
-    \expandafter\let\csname o:right:\endcsname\mleftright@OrgRight
-}{}
-
-% --- spaces -----------------------------------------------------------------
-
-% tex4ht writes \  (an ordinary, breakable space in TeX) as a no-break space,
-% like ~; write a space (in math, tex4ht's own space)
-\Configure{ }
-    {\ifmathml \ifmtext \space \else
-        \HCode{<mspace width="0.33em" class="nbsp"></mspace>}\fi
-     \else \HCode{ }\fi}
-% tex4ht finds spaces from the gaps between glyphs, and misses the one after
-% inline math that ends in a symbol (\}, \infty, \mathcal{H}); write out the
-% space that follows inline math (the browser collapses a doubled one)
-\Configure{$}
-    {\Configure{@math}{display="inline"}\DviMath}
-    {\EndDviMath\aftergroup\web@mathspace}
-    {}
-\def\web@mathspace{\futurelet\web@next\web@mathspace@check}
-\def\web@mathspace@check{\ifx\web@next\@sptoken\HCode{ }\fi}
-
-\@ifpackageloaded{amsmath}{%
-    % amsmath's \colon: a little space, an ordinary colon, then more space
-    % (tex4ht writes a plain colon, which TeX spaces as a relation)
-    \protected\def\colon{\HCode{<mspace width="0.111em"></mspace><mo class="MathClass-ord" data-mjx-texclass="ORD" stretchy="false">:</mo><mspace width="0.333em"></mspace>}}%
-    % \pmod sets "mod" in the operator font, which tex4ht doesn't see, so it
-    % comes out italic, and drops the \mkern after it
-    \protected\def\pmod#1{\pod{\mathrm{mod}\HCode{<mspace width="0.333em"></mspace>}#1}}%
-}{}
-
-% relations tex4ht writes as a look-alike: \parallel as \| (which is
-% ordinary in TeX; classes.tokens tells them apart by this mark), and
-% amssymb's slanted \leqslant and \geqslant as ≤ and ≥
-\newcommand\web@relation[2]{% command, code point
-    \protected\def#1{\mathrel{\HCode{<mo class="MathClass-rel" data-mjx-texclass="REL">\string&\#x#2;</mo>}}}%
+\tl_new:N \g__web_macros_tl
+\NewDocumentCommand\WebMathMacros{+m}{\tl_gput_right:Nn \g__web_macros_tl {#1}}
+\NewDocumentCommand\WebMacrosHTML{}{
+    \tl_set:Ne \l_tmpa_tl {\exp_args:NV \detokenize \g__web_macros_tl}
+    \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } \l_tmpa_tl
+    \regex_replace_all:nnN { \x{26} } { &amp; } \l_tmpa_tl
+    \regex_replace_all:nnN { \x{3C} } { &lt; } \l_tmpa_tl
+    \regex_replace_all:nnN { \x{3E} } { &gt; } \l_tmpa_tl
+    \HCode{<script~type="text/x-web-macros">\l_tmpa_tl</script>\Hnewline}
 }
-\web@relation\parallel{2225}
-\@ifpackageloaded{amssymb}{%
-    \web@relation\leqslant{2A7D}%
-    \web@relation\geqslant{2A7E}%
-}{}
 
-% --- alphabets and styles ---------------------------------------------------
-
-% tex4ht maps \mathcal to mathvariant="script", which MathJax draws in a
-% rounder script face; ask for the TeX calligraphic face instead. (For
-% letters only)
-\protected\def\mathcal#1{{\HCode{<mi mathvariant="-tex-calligraphic">#1</mi>}}}
-
-% \bm comes out like \mathbf (bold upright); mark it for style.bold_symbols
-\@ifpackageloaded{bm}{%
-    \let\web@bm\bm
-    \protected\def\bm#1{{\HCode{<mstyle class="bm">}\web@bm{#1}\HCode{</mstyle>}}}%
-}{}
-
-% tex4ht drops \textstyle (\textstyle\sum_i in a display); mark where it
-% starts, and style.textstyle sets the rest of its row in text style.
-% (\protected also because amsmath's \genfrac expands its style argument.
-% Not \displaystyle, which tex4ht's own alignments and \genfrac use)
-\let\web@textstyle\textstyle
-\protected\def\textstyle{\web@textstyle\HCode{<mi class="textstyle"></mi>}}
-
-% cases' table: tex4ht marks it only when mathtools is loaded (tables.array
-% sets its spacing)
-\@ifpackageloaded{amsmath}{%
-    \ConfigureEnv{cases}{\HCode{<mrow class="cases">}}{\HCode{</mrow>}}{}{}%
-}{}
-
-% --- scripts ----------------------------------------------------------------
-
-% tex4ht's _ and ^ take a single token, so x_\mathrm{op} and
-% \underbrace{..}_\text{..} lose the argument. Make each font command a
-% brace group, and have _ and ^ expand a font command (or an alias of one,
-% such as \newcommand\mr{\mathrm}) before taking their token. (These stay
-% expandable, for that)
-\newcommand\web@bracefont[1]{%
-    \ifdefined#1%
-        \expandafter\let\csname web@orig\string#1\endcsname#1%
-        \edef#1##1{{\expandafter\noexpand\csname web@orig\string#1\endcsname{##1}}}%
-    \fi
+% a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math
+% for MathJax: typeset it, re-reading the source, which tex4ht read with &
+% as a letter
+\cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
+\cs_set:Npn \AltlDisplay #1 \] {
+    \str_if_in:nnTF {#1} {\begin{tikzcd}}
+        { \char_set_catcode_alignment:N \& \tex_scantokens:D {#1\]} }
+        { \__web_AltlDisplay:w #1 \] }
 }
-\web@bracefont\mathrm
-\web@bracefont\mathbf
-\web@bracefont\mathsf
-\web@bracefont\mathit
-\web@bracefont\mathtt
-\web@bracefont\mathbb
-\web@bracefont\mathfrak
-\web@bracefont\text
-\ExplSyntaxOn
-\clist_const:Nn \c__web_script_fonts_clist
-    { \mathrm, \mathbf, \mathcal, \mathfrak, \mathsf, \mathbb, \mathit, \mathtt, \text, \bm }
-\tl_new:N \l__web_script_target_tl
-\bool_new:N \l__web_script_font_bool
-% the command an alias stands for: while #1 is a macro without parameters
-% whose replacement is a single token, that token
-\cs_new_protected:Npn \__web_resolve_alias:N #1
-  {
-    \tl_set:Nn \l__web_script_target_tl {#1}
-    \bool_lazy_and:nnT
-      { \token_if_macro_p:N #1 }
-      { \str_if_eq_p:ee { \cs_parameter_spec:N #1 } { } }
-      {
-        \exp_args:No \tl_if_single_token:nT {#1}
-          { \exp_last_unbraced:No \__web_resolve_alias:N {#1} }
-      }
-  }
-\cs_new_protected:Npn \__web_if_script_font:N #1
-  {
-    \bool_set_false:N \l__web_script_font_bool
-    \clist_map_inline:Nn \c__web_script_fonts_clist
-      {
-        \token_if_eq_meaning:NNT #1 ##1
-          { \bool_set_true:N \l__web_script_font_bool \clist_map_break: }
-      }
-  }
-% #1: what _ or ^ does next, with the token
-\cs_new_protected:Npn \__web_script_fix:n #1
-  {
-    \cs_set:Npn \__web_script:w {#1}
-    \peek_after:Nw \__web_script_check:
-  }
-% only a macro can be a font command or an alias of one, and then it's safe
-% to take it as an argument
-\cs_new_protected:Npn \__web_script_check:
-  { \token_if_macro:NTF \l_peek_token { \__web_script_check:N } { \__web_script:w } }
-\cs_new_protected:Npn \__web_script_check:N #1
-  {
-    \__web_resolve_alias:N #1
-    \exp_last_unbraced:NV \__web_if_script_font:N \l__web_script_target_tl
-    \bool_if:NTF \l__web_script_font_bool
-      { \exp_after:wN \__web_script:w \tex_romannumeral:D - `0 #1 }
-      { \__web_script:w #1 }
-  }
-% x_.. goes through tex4ht's \S:b; x^.._.. through \SUP:SUB
-\cs_set_eq:Nc \__web_tex_sub: { S:b }
-\cs_set:cpn { S:b } { \__web_script_fix:n \__web_tex_sub: }
-\cs_set_eq:Nc \__web_tex_supsub:n { SUP:SUB }
-\cs_set:cpn { SUP:SUB } #1 { \__web_script_fix:n { \__web_tex_supsub:n #1 } }
+
+% amsmath's displays, which tex4ht passes to MathJax as they are, except:
+% - MathJax has no \intertext: split the alignment there, giving MathJax
+%   the parts, and typeset the text between them here, as text. (Columns no
+%   longer line up across the text)
+% - equation numbers: MathJax would number the equations itself, from 1,
+%   while \eqref and \ref print TeX's numbers (and tex4ht steps the counter
+%   once per environment). Number each row here, and give MathJax the
+%   number as a \tag
+% - amsmath starts each right-hand column (&= b, &-c) with {}, so a
+%   relation or binary operator there is spaced as one; MathJax doesn't
+\cs_new_protected:Npn \__web_alignment:nn #1#2 {
+    \tl_if_in:nnTF {#2} {\intertext}
+        { \__web_intertext:nw {#1} #2 \q_stop }
+        { \__web_part:nn {#1} {#2} }
+}
+\cs_new_protected:Npn \__web_intertext:nw #1#2 \intertext #3#4 \q_stop {
+    \tl_set:Nn \l_tmpa_tl {#2}
+    \regex_replace_once:nnN { \c{\\} \s* \Z } {} \l_tmpa_tl
+    \tl_if_blank:VF \l_tmpa_tl { \exp_args:Nno \__web_part:nn {#1} {\l_tmpa_tl} }
+    \HCode{<span~class="intertext">} #3 \HCode{</span>}
+    \__web_alignment:nn {#1} {#4}
+}
+
+% a part of a display: walk its tokens, numbering rows, and hand it to
+% MathJax as tex4ht's mathjax option does
+\tl_new:N \l__web_body_tl
+\tl_new:N \l__web_label_tl
+\tl_new:N \l__web_tag_tl
+\bool_new:N \l__web_numbered_bool
+\bool_new:N \l__web_rows_bool
+\bool_new:N \l__web_number_row_bool
+\seq_new:N \l__web_envs_seq
+\seq_new:N \l__web_columns_seq
+\tl_new:N \l__web_next_tl
+\clist_const:Nn \c__web_numbered_clist { equation, multline, align, gather, alignat, flalign }
+\clist_const:Nn \c__web_rows_clist { align, gather, alignat, flalign }
+\clist_const:Nn \c__web_alignments_clist
+    { align, align*, alignat, alignat*, flalign, flalign*, split, aligned, alignedat }
+\cs_new_protected:Npn \__web_part:nn #1#2 {
+    \tl_clear:N \l__web_body_tl
+    \seq_clear:N \l__web_envs_seq
+    \seq_clear:N \l__web_columns_seq
+    \seq_push:Nn \l__web_envs_seq {#1}
+    \seq_push:Nn \l__web_columns_seq {0}
+    \clist_if_in:NnTF \c__web_numbered_clist {#1}
+        { \bool_set_true:N \l__web_numbered_bool }
+        { \bool_set_false:N \l__web_numbered_bool }
+    \clist_if_in:NnTF \c__web_rows_clist {#1}
+        { \bool_set_true:N \l__web_rows_bool }
+        { \bool_set_false:N \l__web_rows_bool }
+    \__web_row_start:
+    \tl_clear:N \l__web_next_tl
+    \__web_walk:w #2 \q_nil
+    \__web_row_end:
+    \exp_args:No \__web_mathjax:nn {\l__web_body_tl} {#1}
+}
+\cs_new_protected:Npn \__web_mathjax:nn #1#2 {
+    \NoFonts\expandafter\VerbMathToks\expandafter{\detokenize{#1}}{#2}\EndNoFonts
+}
+\cs_new_protected:Npn \__web_row_start: {
+    \bool_set_true:N \l__web_number_row_bool
+    \tl_clear:N \l__web_label_tl
+    \tl_clear:N \l__web_tag_tl
+}
+% at the end of a row (or of a display numbered as a whole): its number
+\cs_new_protected:Npn \__web_row_end: {
+    \tl_if_empty:NF \l__web_tag_tl
+        { \protected@edef\@currentlabel{\l__web_tag_tl} }
+    \bool_lazy_and:nnT \l__web_numbered_bool \l__web_number_row_bool
+        {
+            \refstepcounter{equation}
+            \tl_put_right:Ne \l__web_body_tl { \exp_not:N \tag {\theequation} }
+        }
+    \tl_if_empty:NF \l__web_label_tl { \exp_args:No \label {\l__web_label_tl} }
+    \__web_row_start:
+}
+\cs_new_protected:Npn \__web_walk:w {
+    \peek_remove_spaces:n {
+        \peek_catcode:NTF \c_group_begin_token
+            { \__web_group:n } { \__web_token:N }
+    }
+}
+\cs_new_protected:Npn \__web_group:n #1 {
+    \str_case:Vn \l__web_next_tl {
+        {begin} {
+            \seq_push:Nn \l__web_envs_seq {#1}
+            \seq_push:Nn \l__web_columns_seq {0}
+        }
+        {label} { \tl_set:Nn \l__web_label_tl {#1} }
+        {tag} { \tl_set:Nn \l__web_tag_tl {#1} }
+    }
+    \tl_clear:N \l__web_next_tl
+    \tl_put_right:Nn \l__web_body_tl { {#1} }
+    \__web_walk:w
+}
+\cs_new_protected:Npn \__web_token:N #1 {
+    \token_if_eq_meaning:NNF #1 \q_nil {
+        \tl_clear:N \l__web_next_tl
+        \str_if_eq:eeF { \token_to_str:N #1 } { \token_to_str:N \\ }
+            { \tl_put_right:Nn \l__web_body_tl {#1} }
+        \token_if_eq_meaning:NNTF #1 & { \__web_column: } {
+            \str_case_e:nn { \token_to_str:N #1 } {
+                { \token_to_str:N \begin } { \tl_set:Nn \l__web_next_tl {begin} }
+                { \token_to_str:N \end } {
+                    \seq_pop:NN \l__web_envs_seq \l_tmpa_tl
+                    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
+                }
+                { \token_to_str:N \label } { \tl_set:Nn \l__web_next_tl {label} }
+                { \token_to_str:N \tag } {
+                    \bool_set_false:N \l__web_number_row_bool
+                    \tl_set:Nn \l__web_next_tl {tag}
+                }
+                { \token_to_str:N \notag } { \bool_set_false:N \l__web_number_row_bool }
+                { \token_to_str:N \nonumber } { \bool_set_false:N \l__web_number_row_bool }
+                { \token_to_str:N \\ } { \__web_newline: }
+            }
+        }
+        \__web_walk:w
+    }
+}
+% \\: a new row, which in amsmath's alignments numbered by row has its own
+% number
+\cs_new_protected:Npn \__web_newline: {
+    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
+    \seq_push:Nn \l__web_columns_seq {0}
+    \bool_lazy_and:nnT \l__web_rows_bool
+        { \int_compare_p:nNn { \seq_count:N \l__web_envs_seq } = 1 }
+        { \__web_row_end: }
+    \tl_put_right:Nn \l__web_body_tl { \\ }
+}
+% &: in an alignment, {} at the start of each right-hand column
+\cs_new_protected:Npn \__web_column: {
+    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
+    \seq_push:Ne \l__web_columns_seq { \int_eval:n { \l_tmpa_tl + 1 } }
+    \seq_get:NN \l__web_envs_seq \l_tmpb_tl
+    \int_if_odd:nT { \l_tmpa_tl + 1 } {
+        \clist_if_in:NVT \c__web_alignments_clist \l_tmpb_tl
+            { \tl_put_right:Nn \l__web_body_tl { {} } }
+    }
+}
+\clist_map_inline:nn { equation, align, align*, gather, gather*, alignat, alignat*,
+        flalign, flalign*, multline } {
+    \cs_if_exist:cT {#1} {
+        \RenewDocumentEnvironment{#1}{+!b}{ \__web_alignment:nn {#1} {##1} }{}
+    }
+}
 \ExplSyntaxOff
-
-% --- accents ----------------------------------------------------------------
-
-% tex4ht writes \widehat and \hat alike; mark the wide accents, which stretch
-% across their base (accents.widths keeps the others at their own width, as
-% in TeX)
-\Configure{accent}\widehat\widehat{{}{}}
-    {}
-    {\HCode{<mover accent="true" class="wide"><mrow>}#2\HCode{</mrow><mo accent="true">\string^</mo></mover>}}
-\Configure{accent}\widetilde\widetilde{{}{}}
-    {}
-    {\HCode{<mover accent="true" class="wide"><mrow>}#2\HCode{</mrow><mo accent="true">\string~</mo></mover>}}
 
 \makeatother
