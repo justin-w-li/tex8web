@@ -1,5 +1,5 @@
-// web2: MathJax's TeX input, adjusted to draw math at the sizes TeX does.
-// web2-page.tex sets window.web2 to lengths from the document, in ems of
+// web: MathJax's TeX input, adjusted to draw math at the sizes TeX does.
+// web-page.tex sets window.web to lengths from the document, in ems of
 // its body font, before this file and MathJax load:
 //   exscale: the math extension font's size (TeX draws \big delimiters and
 //     large operators from it at its design size, 10pt, also in an 11pt
@@ -7,7 +7,7 @@
 //   baselineskip, jot: rows of arrays and alignments
 //   pt: 1pt (MathJax reads pt as a tenth of an em)
 (function () {
-  const tex = window.web2;
+  const tex = window.web;
   const config = window.MathJax = window.MathJax || {};
   const startup = config.startup = config.startup || {};
 
@@ -52,7 +52,7 @@
         const make = token._func;
         token._func = function (parser, begin, ...args) {
           const result = make.call(this, parser, begin, ...args);
-          if (result && result.arraydef) result.arraydef['data-web2-env'] = name;
+          if (result && result.arraydef) result.arraydef['data-web-env'] = name;
           return result;
         };
       }
@@ -60,7 +60,7 @@
   }
 
   function environment(mtable) {
-    return environments[mtable.attributes.get('data-web2-env')];
+    return environments[mtable.attributes.get('data-web-env')];
   }
 
   function ems(length) {

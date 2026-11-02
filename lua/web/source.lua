@@ -1,5 +1,5 @@
 -- The math's LaTeX source, as tex4ht leaves it for MathJax.
-local dom = require "web2.dom"
+local dom = require "web.dom"
 
 local M = {}
 

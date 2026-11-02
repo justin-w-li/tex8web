@@ -2,9 +2,9 @@
 -- it doesn't know the document's own macros. Give it the definitions of
 -- those the math uses, read from the document and the local packages it
 -- loads, and nothing else of the source.
-local dom = require "web2.dom"
+local dom = require "web.dom"
 
-local log = logging.new("web2")
+local log = logging.new("web")
 
 local M = {}
 

@@ -1,5 +1,5 @@
 -- The text around the math.
-local dom = require "web2.dom"
+local dom = require "web.dom"
 
 local M = {}
 

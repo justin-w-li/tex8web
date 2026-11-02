@@ -1,4 +1,4 @@
-% web2: math. tex4ht's mathjax option leaves each formula's LaTeX source in
+% web: math. tex4ht's mathjax option leaves each formula's LaTeX source in
 % the page, for MathJax to typeset in the browser.
 \makeatletter
 
@@ -32,7 +32,7 @@
 % \WebMathMacros{definitions}: macros for MathJax, in place of the
 % document's own (which macros.lua reads from its preamble and styles), for
 % macros MathJax can't read as they are. \WebMacrosHTML writes them in a
-% <script> in <head> (web2-page.tex), for macros.lua, which removes it
+% <script> in <head> (web-page.tex), for macros.lua, which removes it
 \ExplSyntaxOn
 \tl_new:N \g__web_macros_tl
 \NewDocumentCommand\WebMathMacros{+m}{\tl_gput_right:Nn \g__web_macros_tl {#1}}

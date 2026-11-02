@@ -7,7 +7,7 @@ Build three renderings from this directory. Everything goes into `build/`, which
 | Command | Output | What it is |
 | --- | --- | --- |
 | `latexmk test.tex` | `build/pdf/test.pdf` | pdfLaTeX's rendering: the reference |
-| `make4ht -c web2.cfg -e web2.mk4 -B build/html test.tex` | `build/html/test.html` | the same source through this tool |
+| `make4ht -c web.cfg -e web.mk4 -B build/html test.tex` | `build/html/test.html` | the same source through this tool |
 | `make4ht -B build/vanilla test.tex "mathml,mathjax"` | `build/vanilla/test.html` | the same source through plain make4ht, for comparison |
 
 ## How to use it
@@ -100,7 +100,7 @@ Background dark and text light. Links in lighter link colors. The TikZ figure in
 A second, short document unlike the first: no xcolor, packages that MathJax has as extensions (physics, braket, cancel), macros defined with `\NewDocumentCommand`, and equations numbered by section. Build it like test.tex:
 
 ```sh
-make4ht -c web2.cfg -e web2.mk4 -B build/generic test-generic.tex
+make4ht -c web.cfg -e web.mk4 -B build/generic test-generic.tex
 ```
 
 | Look at | As in the PDF |
@@ -111,7 +111,7 @@ make4ht -c web2.cfg -e web2.mk4 -B build/generic test-generic.tex
 
 ## Known limitations of this tool
 
-These differ from the PDF even with `web2.cfg`. They show in `build/html/test.html`.
+These differ from the PDF even with `web.cfg`. They show in `build/html/test.html`.
 
 - **`\intertext`** (3.7). The alignment is split at the text, so its columns no longer line up across it.
 - **`\qedhere`.** The QED box follows the display instead of sitting at the right margin.
