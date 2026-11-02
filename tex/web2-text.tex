@@ -1,10 +1,12 @@
-% web2: text, cross-references, theorems, the table of contents and figures.
+% web2: text, cross-references, theorems, the table of contents, lists and
+% figures.
 \makeatletter
 
 % --- links ------------------------------------------------------------------
 
 \@ifpackageloaded{hyperref}{%
-    % tex4ht's \nolinkurl chokes on "_" inside \author
+    % tex4ht's \nolinkurl chokes on "_" inside \author. (A # comes out
+    % doubled)
     \renewcommand\nolinkurl[1]{\texttt{\detokenize{#1}}}%
     % tex4ht writes the table of contents with \texorpdfstring's plain-text
     % argument, meant for PDF bookmarks; use the TeX one, as the PDF's table
@@ -66,22 +68,18 @@
     {}
     {\HCode{</span><br />}}
 \ifdefined\cftsecnumwidth
-    \edef\web@toc{\web@em\cftsecnumwidth,\web@em\cftsubsecindent,\web@em\cftsubsecnumwidth}
+    \web@Css{.sectionToc .tocnumber { min-width: \web@em\cftsecnumwidth; }}
+    \web@Css{.subsectionToc { margin-left: \web@em\cftsubsecindent; }}
+    \web@Css{.subsectionToc .tocnumber { min-width: \web@em\cftsubsecnumwidth; }}
 \else
-    \edef\web@toc{\web@em{1.5em},\web@em{1.5em},\web@em{2.3em}}
-\fi
-\def\web@tocwidths#1,#2,#3\@nil{%
-    \Css{.sectionToc .tocnumber { min-width: #1; }}%
-    \Css{.subsectionToc { margin-left: #2; }}%
-    \Css{.subsectionToc .tocnumber { min-width: #3; }}%
-}
-\expandafter\web@tocwidths\web@toc\@nil
-\Css{.tocnumber { display: inline-block; }}
-% the standard classes set section entries in bold (tocloft's own font
-% commands aren't followed)
-\ifdefined\cftsecfont\else
+    \web@Css{.sectionToc .tocnumber { min-width: \web@em{1.5em}; }}
+    \web@Css{.subsectionToc { margin-left: \web@em{1.5em}; }}
+    \web@Css{.subsectionToc .tocnumber { min-width: \web@em{2.3em}; }}
+    % and section entries in bold. (tocloft's own font commands aren't
+    % followed)
     \Css{.sectionToc, .likesectionToc { font-weight: bold; }}
 \fi
+\Css{.tocnumber { display: inline-block; }}
 
 % --- lists ------------------------------------------------------------------
 
@@ -105,12 +103,15 @@
 % --- figures ----------------------------------------------------------------
 
 % \includegraphics[width=..] becomes a percentage of the column, as in the
-% PDF
+% PDF; other sizes as tex4ht writes them
 \ExplSyntaxOn
 \cs_if_exist:NT \Gin@req@width
   {
+    \cs_set_eq:Nc \__web_gin_dim: { a:Gin-dim }
     \Configure{Gin-dim}{%
-        \expandafter\ifx\csname Gin:ewidth\endcsname\Gin@exclamation\else
+        \expandafter\ifx\csname Gin:ewidth\endcsname\Gin@exclamation
+            \__web_gin_dim:
+        \else
             style="width:\fp_eval:n{round(\Gin@req@width/\linewidth*100,2)}\char_generate:nn{`\%}{12}"
         \fi
     }

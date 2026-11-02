@@ -49,6 +49,13 @@ local function mark_nbsp(el)
   return children
 end
 
+local function has_nbsp(el)
+  for _, child in ipairs(el:get_children()) do
+    if child:is_text() and child:get_text():find("\u{A0}", 1, true) then return true end
+  end
+  return false
+end
+
 local function is_nbsp(node)
   return node:is_element() and node:get_attribute("class") == "nbsp"
 end
@@ -60,11 +67,17 @@ end
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)
     local class = el:get_attribute("class")
-    if class == "nbsp" or class == "nowrap" or dom.closest(el, is_math) then return end
+    if class == "nbsp" or class == "nowrap" or not has_nbsp(el)
+        or dom.closest(el, is_math) then
+      return
+    end
     local children, wrapped, i = mark_nbsp(el), {}, 1
     while i <= #children do
       local j = i + 1
-      while children[j] and children[j]:get_node_type() == "COMMENT" do j = j + 1 end
+      -- (the math may follow after a comment)
+      while children[j] and not children[j]:is_element() and not children[j]:is_text() do
+        j = j + 1
+      end
       if is_nbsp(children[i]) and children[j] and dom.has_class(children[j], "^mathjax%-inline") then
         local nowrap = el:create_element("span", {class = "nowrap"})
         for k = i, j do nowrap:add_child_node(children[k]) end

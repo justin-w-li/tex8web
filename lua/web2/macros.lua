@@ -126,11 +126,15 @@ readers.RenewDocumentCommand = readers.NewDocumentCommand
 readers.DeclareDocumentCommand = readers.NewDocumentCommand
 readers.ProvideDocumentCommand = readers.NewDocumentCommand
 
+-- (as \mathop rather than MathJax's \operatorname, which leaves out the
+-- space between a number and the operator: 2\Var X. The starred form's
+-- limits go under it in display math only)
 function readers.DeclareMathOperator(s, i, star)
   local name, body
   name, i = argument(s, i)
   body, i = argument(s, i)
-  local def = "\\newcommand{" .. trim(name) .. "}{\\operatorname" .. star .. "{" .. body .. "}}"
+  local def = "\\newcommand{" .. trim(name) .. "}{\\mathop{\\mathrm{" .. body .. "}}"
+    .. (star == "*" and "" or "\\nolimits") .. "}"
   return trim(name), def, body, i
 end
 

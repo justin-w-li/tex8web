@@ -3,8 +3,8 @@
 -- of your own that \input's web2-core.tex):
 --   make4ht -c path/to/web2.cfg -e path/to/web2.mk4 document.tex
 -- It puts this directory on TeX's and Lua's search paths, copies the Latin
--- Modern fonts and the document's images next to the HTML, and gives
--- MathJax the document's macros.
+-- Modern fonts, web2.js and the document's images next to the HTML, and
+-- gives MathJax the document's macros.
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
 -- (texlua's require doesn't look at package.path; add a searcher that does
@@ -50,6 +50,7 @@ Make:match("html$", function(filename, par)
   for _, font in ipairs(fonts) do
     copy(kpse.find_file(font, "opentype fonts"), dir .. "/fonts/" .. font)
   end
+  copy(root .. "/js/web2.js", dir .. "/web2.js")
   -- images from \includegraphics, which the HTML references relative to the
   -- source
   local f = io.open(filename)

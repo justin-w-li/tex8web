@@ -3,14 +3,21 @@
 
 % --- <head> -----------------------------------------------------------------
 
-% rebuilt so MathJax's config (web2-math.tex) comes before MathJax. The
-% \WebMathMacros definitions are for macros.lua, which removes them
+% rebuilt so MathJax's config (web2-math.tex) and web2.js come before
+% MathJax. The \WebMathMacros definitions are for macros.lua, which removes
+% them. web2.js gets lengths from the document, in ems of its body font
+% (see there)
+\setbox\z@\hbox{\everymath{}$\xdef\web@exscale{\web@ratio{\fontdimen6\textfont3}}$}
 \Configure{@HEAD}{}
 \Configure{@HEAD}{\HCode{<meta charset="utf-8" />\Hnewline}}
 \Configure{@HEAD}{\HCode{<meta name="viewport" content="width=device-width,initial-scale=1" />\Hnewline}}
 \Configure{@HEAD}{\HCode{<link rel="stylesheet" type="text/css" href="\jobname.css" />\Hnewline}}
 \Configure{@HEAD}{\WebMacrosHTML}
 \Configure{@HEAD}{\HCode{<script>window.MathJax = \csname a:MathJaxConfig\endcsname</script>\Hnewline}}
+\Configure{@HEAD}{\HCode{<script>window.web2 = { exscale: \web@exscale,
+    baselineskip: \web@ratio\baselineskip, jot: \web@ratio\jot,
+    pt: \web@ratio{1pt} };</script>\Hnewline}}
+\Configure{@HEAD}{\HCode{<script src="web2.js"></script>\Hnewline}}
 \Configure{@HEAD}{\HCode{<script async="async" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-chtml.js"></script>\Hnewline}}
 
 % --- colors -----------------------------------------------------------------
@@ -57,11 +64,12 @@
 \Css{a { color: var(--web-link, inherit); text-decoration: none; }}
 \Css{a[href\string^="\#X"] { color: var(--web-cite, inherit); }}
 \Css{a.url, a[href\string^="mailto:"] { color: var(--web-url, inherit); }}
-% generated pictures (TikZ) are black line art; invert them in dark mode
+% pictures tex4ht generates (TikZ; \jobname0x.svg and so on) are black line
+% art; invert them in dark mode
 \Css{@media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) { --web-picture-filter: invert(1); } }}
 \Css{:root[data-theme="dark"] { --web-picture-filter: invert(1); }}
-\Css{img[src\string^="\jobname"] { filter: var(--web-picture-filter, none); }}
+\Css{img[src\string^="\jobname"][src\string$="x.svg"] { filter: var(--web-picture-filter, none); }}
 
 % --- fonts ------------------------------------------------------------------
 
@@ -77,7 +85,9 @@
 \Css{@font-face { font-family: "Latin Modern Mono";
     src: url("fonts/lmmono10-regular.otf"); }}
 \Css{html body { font-family: "Latin Modern Roman", serif; }}
-\Css{[class*="-lmtt"] { font-family: "Latin Modern Mono", monospace; }}
+% typewriter text, in tex4ht's class names for Latin Modern and for
+% Computer Modern (without lmodern)
+\Css{[class*="-lmtt"], [class\string^="cmtt-"], [class\string^="ectt-"] { font-family: "Latin Modern Mono", monospace; }}
 % Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em;
 % text.no_break_spaces marks no-break spaces, and keeps one together with
 % the math after it
@@ -93,18 +103,17 @@
 \Css{html body { font-size: 12pt; }}
 \newcommand\web@headsize[2]{% selector, size command
     \begingroup#2\xdef\web@size{\f@size pt}\endgroup
-    \edef\web@css{\noexpand\Css{#1 { font-size: \web@em\web@size; }}}%
-    \web@css
+    \web@Css{#1 { font-size: \web@em\web@size; }}%
 }
 \web@headsize{h1.titleHead}{\LARGE}
+\Css{h1.titleHead { font-weight: normal; }}
 \web@headsize{.sectionHead, .likesectionHead}{\Large}
 \web@headsize{.subsectionHead, .likesubsectionHead}{\large}
 \web@headsize{.subsubsectionHead, .likesubsubsectionHead}{\normalsize}
 % a column as wide as the PDF's, in ems of the text, so lines hold about as
 % much; narrower screens get the screen's width
-\edef\web@css{\noexpand\Css{html body { max-width: \web@em\textwidth;
-    margin-block-start: 2.5em; margin-block-end: 4em; }}}
-\web@css
+\web@Css{html body { max-width: \web@em\textwidth;
+    margin-block-start: 2.5em; margin-block-end: 4em; }}
 % the text of an \intertext (web2-math.tex)
 \Css{.intertext { display: block; margin-block: 0.5em; }}
 % pictures: nothing wider than the column; a picture in display math
