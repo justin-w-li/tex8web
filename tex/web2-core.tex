@@ -3,9 +3,32 @@
 % \begin{document} (see web2.cfg); web2.mk4 puts this directory on TeX's
 % search path.
 \makeatletter
-% a length in ems of the body font
-\newcommand\web@em[1]{\strip@pt\dimexpr#1*65536/\dimexpr\f@size pt\relax\relax em}
+
+% babel may have made some punctuation active by now (" in German, : ; ! ?
+% in French); read the modules with these characters ordinary, and restore
+% them after. (This file avoids them, and = in particular)
+\def\web@restorecatcodes{}
+\def\web@othercatcodes#1,{%
+    \ifx\relax#1\else
+        \edef\web@restorecatcodes{\web@restorecatcodes
+            \catcode#1 \the\catcode#1\relax}%
+        \catcode#1 12
+        \expandafter\web@othercatcodes
+    \fi
+}
+\web@othercatcodes 33,34,39,58,59,60,61,62,63,96,\relax,
+
+% a length as a multiple of the body font size, and in ems of it
+\newcommand\web@ratio[1]{\strip@pt\dimexpr#1*65536/\dimexpr\f@size pt\relax\relax}
+\newcommand\web@em[1]{\web@ratio{#1}em}
+% \Css, with its argument expanded now rather than when tex4ht writes it
+\newcommand\web@Css[1]{\edef\web@css{\noexpand\Css{#1}}\web@css}
 \makeatother
+
 \input{web2-math.tex}
 \input{web2-text.tex}
 \input{web2-page.tex}
+
+\makeatletter
+\web@restorecatcodes
+\makeatother

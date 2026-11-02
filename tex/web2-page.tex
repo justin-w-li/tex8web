@@ -11,42 +11,49 @@
 \Configure{@HEAD}{\HCode{<link rel="stylesheet" type="text/css" href="\jobname.css" />\Hnewline}}
 \Configure{@HEAD}{\WebMacrosHTML}
 \Configure{@HEAD}{\HCode{<script>window.MathJax = \csname a:MathJaxConfig\endcsname</script>\Hnewline}}
-\Configure{@HEAD}{\HCode{<script async="async" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"></script>\Hnewline}}
+\Configure{@HEAD}{\HCode{<script async="async" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-chtml.js"></script>\Hnewline}}
 
 % --- colors -----------------------------------------------------------------
 
 % The page follows the reader's light or dark setting, unless the root
 % element has data-theme="light" or "dark". Light mode uses the PDF's colors.
-% \WebColor{name}{light color}{dark color} makes the CSS variable --name,
-% which is one or the other
+% \WebColor{name}{light color}{dark color} (xcolor colors) makes the CSS
+% variable --name, which is one or the other
 \newcommand\WebColor[3]{%
-    \extractcolorspecs{#2}\web@model\web@spec
-    \convertcolorspec\web@model\web@spec{HTML}\web@light
-    \extractcolorspecs{#3}\web@model\web@spec
-    \convertcolorspec\web@model\web@spec{HTML}\web@dark
-    \edef\web@css{\noexpand\Css{:root { --#1: light-dark(\#\web@light, \#\web@dark); }}}%
-    \web@css
+    \ifdefined\convertcolorspec
+        \web@hex{#2}\web@light
+        \web@hex{#3}\web@dark
+        \web@Css{:root { --#1: light-dark(\#\web@light, \#\web@dark); }}%
+    \else
+        \PackageWarning{web2}{\string\WebColor\space needs xcolor}%
+    \fi
+}
+\newcommand\web@hex[2]{% color, macro for its hex code
+    \extractcolorspecs{#1}\web@model\web@spec
+    \convertcolorspec\web@model\web@spec{HTML}#2%
 }
 \Css{:root { color-scheme: light dark; }}
 \Css{:root[data-theme="light"] { color-scheme: light; }}
 \Css{:root[data-theme="dark"] { color-scheme: dark; }}
-\definecolor{web-bg-dark}{RGB}{30, 30, 30}
-\definecolor{web-text-dark}{RGB}{227, 227, 227}
-\WebColor{web-bg}{white}{web-bg-dark}
-\WebColor{web-text}{black}{web-text-dark}
+\Css{:root { --web-bg: light-dark(\#FFFFFF, \#1E1E1E); --web-text: light-dark(\#000000, \#E3E3E3); }}
+% (html body: to win over tex4ht's own body rules)
 \Css{html body { background-color: var(--web-bg); color: var(--web-text); }}
 % links: hyperref's colors with colorlinks (otherwise the PDF draws boxes,
-% and the links here keep the color of the text)
-\definecolor{web-link-dark}{RGB}{108, 180, 255}
-\definecolor{web-cite-dark}{RGB}{95, 211, 160}
-\definecolor{web-url-dark}{RGB}{242, 127, 176}
-\@ifpackageloaded{hyperref}{%
+% and the links here keep the color of the text). In a macro, so TeX doesn't
+% meet \ifHy@colorlinks when hyperref isn't loaded
+\newcommand\web@linkcolors{%
     \ifHy@colorlinks
+        \ifdefined\convertcolorspec
+            \definecolor{web-link-dark}{RGB}{108, 180, 255}%
+            \definecolor{web-cite-dark}{RGB}{95, 211, 160}%
+            \definecolor{web-url-dark}{RGB}{242, 127, 176}%
+        \fi
         \WebColor{web-link}{\@linkcolor}{web-link-dark}%
         \WebColor{web-cite}{\@citecolor}{web-cite-dark}%
         \WebColor{web-url}{\@urlcolor}{web-url-dark}%
     \fi
-}{}
+}
+\@ifpackageloaded{hyperref}{\web@linkcolors}{}
 \Css{a { color: var(--web-link, inherit); text-decoration: none; }}
 \Css{a[href\string^="\#X"] { color: var(--web-cite, inherit); }}
 \Css{a.url, a[href\string^="mailto:"] { color: var(--web-url, inherit); }}

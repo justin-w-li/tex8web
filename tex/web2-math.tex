@@ -2,18 +2,33 @@
 % the page, for MathJax to typeset in the browser.
 \makeatletter
 
-% MathJax's Computer Modern font (its default, New Computer Modern, is
-% heavier than the PDF, and its Latin Modern misplaces accents on Greek
-% letters); display math that doesn't fit scrolls; math at the size of the
-% text, as TeX does (rather than matching x-heights, which comes out a bit
-% small). mathtools for \DeclarePairedDelimiter in macros.lua's definitions
-\Configure{MathJaxConfig}{{
-    loader: { load: ['[tex]/mathtools'] },
-    tex: { tags: 'ams', packages: { '[+]': ['mathtools'] } },
+% MathJax's configuration:
+% - the extensions for the packages the document loads that MathJax has
+%   (others load when a macro needs them), and always mathtools, for
+%   \DeclarePairedDelimiter in macros.lua's definitions
+% - no automatic equation numbers (see \__web_part:nn below)
+% - \colon as amsmath has it (MathJax's is a plain punctuation colon)
+% - MathJax's Computer Modern font (its default, New Computer Modern, is
+%   heavier than the PDF, and its Latin Modern misplaces accents on Greek
+%   letters); display math that doesn't fit scrolls; math at the size of
+%   the text, as TeX does (rather than matching x-heights, which comes out a
+%   bit small)
+\def\web@extensions{'mathtools'}
+\def\web@load{'[tex]/mathtools'}
+\@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
+        colortbl,dsfont,empheq,gensymb,mhchem,physics,textcomp,units,upgreek\do{%
+    \@ifpackageloaded\web@package
+        {\edef\web@extensions{\web@extensions, '\web@package'}%
+         \edef\web@load{\web@load, '[tex]/\web@package'}}{}%
+}
+\edef\web@config{\noexpand\Configure{MathJaxConfig}{{
+    loader: { load: [\web@load] },
+    tex: { tags: 'none', packages: { '[+]': [\web@extensions] },
+        macros: { colon: '\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}' } },
     output: { font: 'mathjax-tex', displayOverflow: 'scroll',
         matchFontHeight: false } };
-}
-
+}}
+\web@config
 % \WebMathMacros{definitions}: macros for MathJax, in place of the
 % document's own (which macros.lua reads from its preamble and styles), for
 % macros MathJax can't read as they are. \WebMacrosHTML writes them in a
@@ -40,25 +55,149 @@
         { \__web_AltlDisplay:w #1 \] }
 }
 
-% MathJax has no \intertext: split the alignment there, giving MathJax the
-% parts, and typeset the text between them here, as text. (Columns no longer
-% line up across the text)
+% amsmath's displays, which tex4ht passes to MathJax as they are, except:
+% - MathJax has no \intertext: split the alignment there, giving MathJax
+%   the parts, and typeset the text between them here, as text. (Columns no
+%   longer line up across the text)
+% - equation numbers: MathJax would number the equations itself, from 1,
+%   while \eqref and \ref print TeX's numbers (and tex4ht steps the counter
+%   once per environment). Number each row here, and give MathJax the
+%   number as a \tag
+% - amsmath starts each right-hand column (&= b, &-c) with {}, so a
+%   relation or binary operator there is spaced as one; MathJax doesn't
 \cs_new_protected:Npn \__web_alignment:nn #1#2 {
     \tl_if_in:nnTF {#2} {\intertext}
         { \__web_intertext:nw {#1} #2 \q_stop }
-        { \begin{web-#1} #2 \end{web-#1} }
+        { \__web_part:nn {#1} {#2} }
 }
 \cs_new_protected:Npn \__web_intertext:nw #1#2 \intertext #3#4 \q_stop {
     \tl_set:Nn \l_tmpa_tl {#2}
     \regex_replace_once:nnN { \c{\\} \s* \Z } {} \l_tmpa_tl
-    \tl_if_blank:VF \l_tmpa_tl { \exp_args:Nnx \__web_part:nn {#1} {\exp_not:V \l_tmpa_tl} }
+    \tl_if_blank:VF \l_tmpa_tl { \exp_args:Nno \__web_part:nn {#1} {\l_tmpa_tl} }
     \HCode{<span~class="intertext">} #3 \HCode{</span>}
     \__web_alignment:nn {#1} {#4}
 }
-\cs_new_protected:Npn \__web_part:nn #1#2 { \begin{web-#1} #2 \end{web-#1} }
-\clist_map_inline:nn { align, align*, gather, gather*, flalign, flalign* } {
+
+% a part of a display: walk its tokens, numbering rows, and hand it to
+% MathJax as tex4ht's mathjax option does
+\tl_new:N \l__web_body_tl
+\tl_new:N \l__web_label_tl
+\tl_new:N \l__web_tag_tl
+\bool_new:N \l__web_numbered_bool
+\bool_new:N \l__web_rows_bool
+\bool_new:N \l__web_number_row_bool
+\seq_new:N \l__web_envs_seq
+\seq_new:N \l__web_columns_seq
+\tl_new:N \l__web_next_tl
+\clist_const:Nn \c__web_numbered_clist { equation, multline, align, gather, alignat, flalign }
+\clist_const:Nn \c__web_rows_clist { align, gather, alignat, flalign }
+\clist_const:Nn \c__web_alignments_clist
+    { align, align*, alignat, alignat*, flalign, flalign*, split, aligned, alignedat }
+\cs_new_protected:Npn \__web_part:nn #1#2 {
+    \tl_clear:N \l__web_body_tl
+    \seq_clear:N \l__web_envs_seq
+    \seq_clear:N \l__web_columns_seq
+    \seq_push:Nn \l__web_envs_seq {#1}
+    \seq_push:Nn \l__web_columns_seq {0}
+    \clist_if_in:NnTF \c__web_numbered_clist {#1}
+        { \bool_set_true:N \l__web_numbered_bool }
+        { \bool_set_false:N \l__web_numbered_bool }
+    \clist_if_in:NnTF \c__web_rows_clist {#1}
+        { \bool_set_true:N \l__web_rows_bool }
+        { \bool_set_false:N \l__web_rows_bool }
+    \__web_row_start:
+    \tl_clear:N \l__web_next_tl
+    \__web_walk:w #2 \q_nil
+    \__web_row_end:
+    \exp_args:No \__web_mathjax:nn {\l__web_body_tl} {#1}
+}
+\cs_new_protected:Npn \__web_mathjax:nn #1#2 {
+    \NoFonts\expandafter\VerbMathToks\expandafter{\detokenize{#1}}{#2}\EndNoFonts
+}
+\cs_new_protected:Npn \__web_row_start: {
+    \bool_set_true:N \l__web_number_row_bool
+    \tl_clear:N \l__web_label_tl
+    \tl_clear:N \l__web_tag_tl
+}
+% at the end of a row (or of a display numbered as a whole): its number
+\cs_new_protected:Npn \__web_row_end: {
+    \tl_if_empty:NF \l__web_tag_tl
+        { \protected@edef\@currentlabel{\l__web_tag_tl} }
+    \bool_lazy_and:nnT \l__web_numbered_bool \l__web_number_row_bool
+        {
+            \refstepcounter{equation}
+            \tl_put_right:Ne \l__web_body_tl { \exp_not:N \tag {\theequation} }
+        }
+    \tl_if_empty:NF \l__web_label_tl { \exp_args:No \label {\l__web_label_tl} }
+    \__web_row_start:
+}
+\cs_new_protected:Npn \__web_walk:w {
+    \peek_remove_spaces:n {
+        \peek_catcode:NTF \c_group_begin_token
+            { \__web_group:n } { \__web_token:N }
+    }
+}
+\cs_new_protected:Npn \__web_group:n #1 {
+    \str_case:Vn \l__web_next_tl {
+        {begin} {
+            \seq_push:Nn \l__web_envs_seq {#1}
+            \seq_push:Nn \l__web_columns_seq {0}
+        }
+        {label} { \tl_set:Nn \l__web_label_tl {#1} }
+        {tag} { \tl_set:Nn \l__web_tag_tl {#1} }
+    }
+    \tl_clear:N \l__web_next_tl
+    \tl_put_right:Nn \l__web_body_tl { {#1} }
+    \__web_walk:w
+}
+\cs_new_protected:Npn \__web_token:N #1 {
+    \token_if_eq_meaning:NNF #1 \q_nil {
+        \tl_clear:N \l__web_next_tl
+        \str_if_eq:eeF { \token_to_str:N #1 } { \token_to_str:N \\ }
+            { \tl_put_right:Nn \l__web_body_tl {#1} }
+        \token_if_eq_meaning:NNTF #1 & { \__web_column: } {
+            \str_case_e:nn { \token_to_str:N #1 } {
+                { \token_to_str:N \begin } { \tl_set:Nn \l__web_next_tl {begin} }
+                { \token_to_str:N \end } {
+                    \seq_pop:NN \l__web_envs_seq \l_tmpa_tl
+                    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
+                }
+                { \token_to_str:N \label } { \tl_set:Nn \l__web_next_tl {label} }
+                { \token_to_str:N \tag } {
+                    \bool_set_false:N \l__web_number_row_bool
+                    \tl_set:Nn \l__web_next_tl {tag}
+                }
+                { \token_to_str:N \notag } { \bool_set_false:N \l__web_number_row_bool }
+                { \token_to_str:N \nonumber } { \bool_set_false:N \l__web_number_row_bool }
+                { \token_to_str:N \\ } { \__web_newline: }
+            }
+        }
+        \__web_walk:w
+    }
+}
+% \\: a new row, which in amsmath's alignments numbered by row has its own
+% number
+\cs_new_protected:Npn \__web_newline: {
+    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
+    \seq_push:Nn \l__web_columns_seq {0}
+    \bool_lazy_and:nnT \l__web_rows_bool
+        { \int_compare_p:nNn { \seq_count:N \l__web_envs_seq } = 1 }
+        { \__web_row_end: }
+    \tl_put_right:Nn \l__web_body_tl { \\ }
+}
+% &: in an alignment, {} at the start of each right-hand column
+\cs_new_protected:Npn \__web_column: {
+    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
+    \seq_push:Ne \l__web_columns_seq { \int_eval:n { \l_tmpa_tl + 1 } }
+    \seq_get:NN \l__web_envs_seq \l_tmpb_tl
+    \int_if_odd:nT { \l_tmpa_tl + 1 } {
+        \clist_if_in:NVT \c__web_alignments_clist \l_tmpb_tl
+            { \tl_put_right:Nn \l__web_body_tl { {} } }
+    }
+}
+\clist_map_inline:nn { equation, align, align*, gather, gather*, alignat, alignat*,
+        flalign, flalign*, multline } {
     \cs_if_exist:cT {#1} {
-        \NewEnvironmentCopy{web-#1}{#1}
         \RenewDocumentEnvironment{#1}{+!b}{ \__web_alignment:nn {#1} {##1} }{}
     }
 }

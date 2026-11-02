@@ -94,6 +94,38 @@ end
 readers.renewcommand = readers.newcommand
 readers.providecommand = readers.newcommand
 
+-- xparse's commands, for argument specs \newcommand can express: mandatory
+-- arguments, after at most one optional argument with a default (O{..}).
+-- Others are kept with the reason MathJax can't have them, for define to
+-- report if the math uses them
+function readers.NewDocumentCommand(s, i)
+  local name, spec, body
+  name, i = argument(s, i)
+  spec, i = argument(s, i)
+  body, i = argument(s, i)
+  name = trim(name)
+  local rest = spec:gsub("%+", "")
+  local default
+  if rest:match("^%s*O") then
+    default, rest = rest:match("^%s*O(%b{})(.*)$")
+    default = default and default:sub(2, -2)
+  end
+  local n = 0
+  for c in rest:gmatch("%S") do
+    if c ~= "m" then
+      return name, nil, body, i, "has the argument spec {" .. spec .. "}"
+    end
+    n = n + 1
+  end
+  if default then n = n + 1 end
+  local def = "\\newcommand{" .. name .. "}" .. (n > 0 and "[" .. n .. "]" or "")
+    .. (default and "[" .. default .. "]" or "") .. "{" .. body .. "}"
+  return name, def, body, i
+end
+readers.RenewDocumentCommand = readers.NewDocumentCommand
+readers.DeclareDocumentCommand = readers.NewDocumentCommand
+readers.ProvideDocumentCommand = readers.NewDocumentCommand
+
 function readers.DeclareMathOperator(s, i, star)
   local name, body
   name, i = argument(s, i)
@@ -150,9 +182,9 @@ local function read_definitions(s, definitions)
     i = stop + 1
     local reader = readers[command]
     if reader then
-      local ok, name, def, body, after = pcall(reader, s, i, star)
-      if ok and name and def then
-        definitions[name] = {def = def, body = body}
+      local ok, name, def, body, after, why = pcall(reader, s, i, star)
+      if ok and name and (def or why) then
+        definitions[name] = {def = def, body = body, problem = why}
         i = after
       end
     end
@@ -203,10 +235,10 @@ end
 
 -- why MathJax can't use a definition, if it can't
 local function problem(body)
-  if body:find("\\[%a]*@") then return "an internal (@) macro" end
+  if body:find("\\[%a]*@") then return "uses an internal (@) macro" end
   for _, name in ipairs(uses(body)) do
     for _, bad in ipairs(unsupported) do
-      if name == "\\" .. bad then return name end
+      if name == "\\" .. bad then return "uses " .. name end
     end
   end
 end
@@ -244,15 +276,19 @@ function M.define(document, parameters)
   local names = {}
   for name in pairs(used) do names[#names + 1] = name end
   table.sort(names)
-  local defs = {}
+  local defs, skipped = {}, {}
   for _, name in ipairs(names) do
     local definition = used[name]
-    local why = not definition.override and problem(definition.body)
+    local why = not definition.override and (definition.problem or problem(definition.body))
     if why then
-      log:warning(name .. " uses " .. why .. ", which MathJax lacks; give MathJax a version with \\WebMathMacros")
+      skipped[#skipped + 1] = name .. " (" .. why .. ")"
     else
       defs[#defs + 1] = definition.def
     end
+  end
+  if #skipped > 0 then
+    log:warning(#skipped .. " macro(s) left undefined for MathJax, which can't read their definitions: "
+      .. table.concat(skipped, ", ") .. ". Define them for MathJax with \\WebMathMacros in your config")
   end
   if #defs == 0 then return end
   local body = document:query_selector("body")[1]
