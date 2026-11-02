@@ -42,6 +42,9 @@
 \Css{:root { color-scheme: light dark; }}
 \Css{:root[data-theme="light"] { color-scheme: light; }}
 \Css{:root[data-theme="dark"] { color-scheme: dark; }}
+% (tex4ht gives body a color-scheme of its own, which would keep the page
+% in the system's setting)
+\Css{html body { color-scheme: inherit; }}
 \Css{:root { --web-bg: light-dark(\#FFFFFF, \#1E1E1E); --web-text: light-dark(\#000000, \#E3E3E3); }}
 % (html body: to win over tex4ht's own body rules)
 \Css{html body { background-color: var(--web-bg); color: var(--web-text); }}
@@ -69,6 +72,9 @@
 \Css{@media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) { --web-picture-filter: invert(1); } }}
 \Css{:root[data-theme="dark"] { --web-picture-filter: invert(1); }}
+% (tex4ht inverts every picture named after the job in dark mode, also
+% when the page is set to light)
+\Css{img[src\string^="\jobname"] { filter: none; }}
 \Css{img[src\string^="\jobname"][src\string$="x.svg"] { filter: var(--web-picture-filter, none); }}
 
 % --- fonts ------------------------------------------------------------------
