@@ -1,0 +1,142 @@
+% web: the page: <head>, MathJax, fonts, colors and layout.
+\makeatletter
+
+% --- <head> -----------------------------------------------------------------
+
+% values from TeX for the Lua passes, as <meta name="tex-.."> (web.mk4 reads
+% and removes them): the size of the math extension font as a percentage of
+% the body font (see delimiters.extension_scale), and the baselineskip in
+% ems (see tables.lua)
+\setbox\z@\hbox{\everymath{}$\xdef\web@exscale{\web@ratio{100\fontdimen6\textfont3}}$}
+\xdef\web@baselineskip{\web@ratio\baselineskip}
+% MathJax rejects -tex-calligraphic (\mathcal) unless told not to check, and
+% its config has to load before MathJax, so rebuild <head> with the config
+% first. The config also picks MathJax's Computer Modern font (its default,
+% New Computer Modern, is heavier than the PDF, and its Latin Modern
+% misplaces accents on Greek letters), scrolls display math that doesn't
+% fit, and sets math at the size of the text, as TeX does (rather than
+% matching x-heights, which comes out a bit small)
+\Configure{@HEAD}{}
+\Configure{@HEAD}{\HCode{<meta charset="utf-8" />\Hnewline}}
+\Configure{@HEAD}{\HCode{<meta name="viewport" content="width=device-width,initial-scale=1" />\Hnewline}}
+\Configure{@HEAD}{\HCode{<link rel="stylesheet" type="text/css" href="\jobname.css" />\Hnewline}}
+\Configure{@HEAD}{\HCode{<meta name="tex-exscale" content="\web@exscale" />\Hnewline}}
+\Configure{@HEAD}{\HCode{<meta name="tex-baselineskip" content="\web@baselineskip" />\Hnewline}}
+\Configure{@HEAD}{\HCode{<script>window.MathJax = {
+    mml: { verify: { checkMathvariants: false } },
+    output: { font: 'mathjax-tex', displayOverflow: 'scroll',
+        matchFontHeight: false } };</script>\Hnewline}}
+\Configure{@HEAD}{\HCode{<script async="async" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@4/mml-chtml.js"></script>\Hnewline}}
+
+% --- colors -----------------------------------------------------------------
+
+% The page follows the reader's light or dark setting, unless the root
+% element has data-theme="light" or "dark". Light mode uses the PDF's colors.
+% \WebColor{name}{light color}{dark color} (xcolor colors) makes the CSS
+% variable --name, which is one or the other
+\newcommand\WebColor[3]{%
+    \ifdefined\convertcolorspec
+        \web@hex{#2}\web@light
+        \web@hex{#3}\web@dark
+        \web@Css{:root { --#1: light-dark(\#\web@light, \#\web@dark); }}%
+    \else
+        \PackageWarning{web}{\string\WebColor\space needs xcolor}%
+    \fi
+}
+\newcommand\web@hex[2]{% color, macro for its hex code
+    \extractcolorspecs{#1}\web@model\web@spec
+    \convertcolorspec\web@model\web@spec{HTML}#2%
+}
+\Css{:root { color-scheme: light dark; }}
+\Css{:root[data-theme="light"] { color-scheme: light; }}
+\Css{:root[data-theme="dark"] { color-scheme: dark; }}
+\Css{:root { --web-bg: light-dark(\#FFFFFF, \#1E1E1E); --web-text: light-dark(\#000000, \#E3E3E3); }}
+% (html body: to win over tex4ht's own body rules)
+\Css{html body { background-color: var(--web-bg); color: var(--web-text); }}
+% links: hyperref's colors with colorlinks (otherwise the PDF draws boxes,
+% and the links here keep the color of the text). In a macro, so TeX doesn't
+% meet \ifHy@colorlinks when hyperref isn't loaded
+\newcommand\web@linkcolors{%
+    \ifHy@colorlinks
+        \definecolor{web-link-dark}{RGB}{108, 180, 255}%
+        \definecolor{web-cite-dark}{RGB}{95, 211, 160}%
+        \definecolor{web-url-dark}{RGB}{242, 127, 176}%
+        \WebColor{web-link}{\@linkcolor}{web-link-dark}%
+        \WebColor{web-cite}{\@citecolor}{web-cite-dark}%
+        \WebColor{web-url}{\@urlcolor}{web-url-dark}%
+    \fi
+}
+\@ifpackageloaded{hyperref}{\web@linkcolors}{}
+\Css{a { color: var(--web-link, inherit); text-decoration: none; }}
+% (tex4ht names bibliography anchors X..)
+\Css{a[href\string^="\#X"] { color: var(--web-cite, inherit); }}
+\Css{a.url, a[href\string^="mailto:"] { color: var(--web-url, inherit); }}
+% pictures tex4ht generates (TikZ; \jobname0x.svg and so on) are black line
+% art; invert them in dark mode
+\Css{@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --web-picture-filter: invert(1); } }}
+\Css{:root[data-theme="dark"] { --web-picture-filter: invert(1); }}
+\Css{img[src\string^="\jobname"][src\string$="x.svg"] { filter: var(--web-picture-filter, none); }}
+
+% --- fonts ------------------------------------------------------------------
+
+% Latin Modern, which web.mk4 copies into fonts/
+\Css{@font-face { font-family: "Latin Modern Roman";
+    src: url("fonts/lmroman10-regular.otf"); }}
+\Css{@font-face { font-family: "Latin Modern Roman"; font-weight: bold;
+    src: url("fonts/lmroman10-bold.otf"); }}
+\Css{@font-face { font-family: "Latin Modern Roman"; font-style: italic;
+    src: url("fonts/lmroman10-italic.otf"); }}
+\Css{@font-face { font-family: "Latin Modern Roman"; font-weight: bold; font-style: italic;
+    src: url("fonts/lmroman10-bolditalic.otf"); }}
+\Css{@font-face { font-family: "Latin Modern Mono";
+    src: url("fonts/lmmono10-regular.otf"); }}
+\Css{html body { font-family: "Latin Modern Roman", serif; }}
+% typewriter text, in tex4ht's class names for Latin Modern and for
+% Computer Modern (without lmodern)
+\Css{[class*="-lmtt"], [class\string^="cmtt-"], [class\string^="ectt-"] { font-family: "Latin Modern Mono", monospace; }}
+% Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em;
+% text.no_break_spaces marks no-break spaces, and keeps one together with
+% the math after it
+\Css{.nbsp { letter-spacing: -0.167em; }}
+\Css{.nowrap { white-space: nowrap; }}
+
+% --- layout -----------------------------------------------------------------
+
+% Text at 12pt, larger than most PDFs, for reading on a screen, and
+% everything else in proportion: headings as much larger than the text as
+% in the PDF (in the standard classes' sizes); MathJax sets math as large as
+% the text around it, and tex4ht sizes other fonts relative to the text
+\Css{html body { font-size: 12pt; }}
+\newcommand\web@headsize[2]{% selector, size command
+    \begingroup#2\xdef\web@size{\f@size pt}\endgroup
+    \web@Css{#1 { font-size: \web@em\web@size; }}%
+}
+\web@headsize{h1.titleHead}{\LARGE}
+\Css{h1.titleHead { font-weight: normal; }}
+\web@headsize{.sectionHead, .likesectionHead}{\Large}
+\web@headsize{.subsectionHead, .likesubsectionHead}{\large}
+\web@headsize{.subsubsectionHead, .likesubsubsectionHead}{\normalsize}
+% a column as wide as the PDF's, in ems of the text, so lines hold about as
+% much; narrower screens get the screen's width
+\web@Css{html body { max-width: \web@em\textwidth;
+    margin-block-start: 2.5em; margin-block-end: 4em; }}
+% display math sits in a <table>, whose cell spacing (2px) MathJax's own
+% tables inherit; that pulls apart fractions, limits and matrices
+\Css{mjx-container { border-spacing: 0; }}
+% \intertext, which tables.lua takes out of the alignment
+\Css{.intertext { display: block; margin-block: 0.5em; }}
+% numbered equations: tex4ht puts the number in a cell of its own, which
+% pushes the equation left of center; center it on the line, as TeX does,
+% with the number at the right edge
+\Css{table.equation, table.equation > tbody { display: block; }}
+\Css{table.equation tr { display: grid; grid-template-columns: 1fr minmax(0, auto) 1fr; align-items: center; }}
+\Css{table.equation td { grid-column: 2; min-width: 0; padding: 0; }}
+\Css{table.equation td.eq-no { grid-column: 3; justify-self: end; }}
+% pictures: nothing wider than the column; a picture in display math
+% (\[ \begin{tikzcd} .. \]) gets the margin MathJax gives display math
+\Css{img { max-width: 100\%; height: auto; }}
+\Css{figure.figure { margin-block: 1.75em; }}
+\Css{table.equation img, table.equation-star img { display: block; margin: 0.7em auto; }}
+
+\makeatother

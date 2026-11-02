@@ -1,0 +1,33 @@
+% web: tex4ht configuration for HTML that looks like the PDF. A tex4ht config
+% \input's this after \begin{document} (see web.cfg); web.mk4 puts this
+% directory on TeX's search path.
+\makeatletter
+
+% babel may have made some punctuation active by now (" in German, : ; ! ?
+% in French); read the modules with these characters ordinary, and restore
+% them after. (This file avoids them, and = in particular)
+\def\web@restorecatcodes{}
+\def\web@othercatcodes#1,{%
+    \ifx\relax#1\else
+        \edef\web@restorecatcodes{\web@restorecatcodes
+            \catcode#1 \the\catcode#1\relax}%
+        \catcode#1 12
+        \expandafter\web@othercatcodes
+    \fi
+}
+\web@othercatcodes 33,34,39,58,59,60,61,62,63,96,\relax,
+
+% a length as a multiple of the body font size, and in ems of it
+\newcommand\web@ratio[1]{\strip@pt\dimexpr#1*65536/\dimexpr\f@size pt\relax\relax}
+\newcommand\web@em[1]{\web@ratio{#1}em}
+% \Css, with its argument expanded now rather than when tex4ht writes it
+\newcommand\web@Css[1]{\edef\web@css{\noexpand\Css{#1}}\web@css}
+\makeatother
+
+\input{web-math.tex}
+\input{web-text.tex}
+\input{web-page.tex}
+
+\makeatletter
+\web@restorecatcodes
+\makeatother

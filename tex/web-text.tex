@@ -1,0 +1,135 @@
+% web: text, cross-references, theorems, the table of contents, lists and
+% figures.
+\makeatletter
+
+% --- links ------------------------------------------------------------------
+
+\@ifpackageloaded{hyperref}{%
+    % tex4ht's \nolinkurl chokes on "_" inside \author. (A # comes out
+    % doubled)
+    \renewcommand\nolinkurl[1]{\texttt{\detokenize{#1}}}%
+    % tex4ht writes the table of contents with \texorpdfstring's plain-text
+    % argument, meant for PDF bookmarks; use the TeX one, as the PDF's table
+    % of contents does
+    \Configure{writetoc}{\let\texorpdfstring\@firstoftwo}%
+}{}
+
+% tex4ht's cleveref links only the number of \cref; hand cleveref the link
+% start and end instead, so that with nameinlink all of "Lemma 1" is the
+% link, as in the PDF
+\@ifpackageloaded{cleveref}{%
+    \def\web@setcref#1#2{\bgroup
+        \def\rEfLiNK##1##2{\Link{##1}{}}%
+        \def\XRrEfLiNK[##1]##2##3{\Link[##1]{##2}{}}%
+        \cref@getlabel{#2}{\@templabel}%
+        #1{\@templabel}%
+          {\expandafter\expandafter\expandafter\@firstoffive\csname r@#2\endcsname{}{}{}{}{}}%
+          {\EndLink}%
+        \egroup
+    }%
+    \HLet\@@@setcref\web@setcref
+}{}
+
+% --- macros -----------------------------------------------------------------
+
+% \WebRescan\cs: tex4ht makes _ and ^ active only at \begin{document}, so in
+% a macro defined in the preamble (\newcommand\KL{D_\mathrm{KL}}) they never
+% become <msub>/<msup>; have the macro re-read its body, with the document's
+% catcodes, when used. For macros without parameters
+\ExplSyntaxOn
+\NewDocumentCommand \WebRescan { m }
+  {
+    \cs_if_exist:NT #1
+      { \cs_set:Npx #1 { \exp_not:N \tl_rescan:nn { } { \exp_not:o {#1} } } }
+  }
+\ExplSyntaxOff
+
+% --- theorems ---------------------------------------------------------------
+
+% spaced as in the PDF rather than tex4ht's 2em: amsthm's theorem style's
+% space above and below, or LaTeX's \topsep. The style sets the space only
+% once the theorem has started, so leave it in the heading, for
+% text.theorem_spacing to move onto the theorem (\HCode would expand it at
+% shipout, too late)
+\ifdefined\thm@preskip
+    \def\web@thmskip{\web@em\thm@preskip}%
+    \def\web@thmpostskip{\web@em\thm@postskip}%
+\else
+    \def\web@thmskip{\web@em\topsep}%
+    \let\web@thmpostskip\web@thmskip
+\fi
+\Configure{newtheorem}
+    {\ifvmode\IgnorePar\fi\EndP
+     \HCode{<div class="newtheorem">}\par\noindent\HCode{<span class="head">}}
+    {\edef\web@mark{\noexpand\HCode{<span class="thmskip"
+         data-before="\web@thmskip" data-after="\web@thmpostskip"></span>}}%
+     \web@mark\HCode{</span>}}
+    {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\par\indent\ShowPar}
+
+% --- table of contents ------------------------------------------------------
+
+% section numbers in a box as wide as in the PDF (tocloft's widths, or the
+% standard classes'), so titles line up whether a number has one digit or
+% two (the third argument would add page numbers)
+\ConfigureToc{section}
+    {\HCode{<span class="sectionToc"><span class="tocnumber">}}
+    {\HCode{</span>}}
+    {}
+    {\HCode{</span><br />}}
+\ConfigureToc{subsection}
+    {\HCode{<span class="subsectionToc"><span class="tocnumber">}}
+    {\HCode{</span>}}
+    {}
+    {\HCode{</span><br />}}
+\ifdefined\cftsecnumwidth
+    \web@Css{.sectionToc .tocnumber { min-width: \web@em\cftsecnumwidth; }}
+    \web@Css{.subsectionToc { margin-left: \web@em\cftsubsecindent; }}
+    \web@Css{.subsectionToc .tocnumber { min-width: \web@em\cftsubsecnumwidth; }}
+\else
+    \web@Css{.sectionToc .tocnumber { min-width: \web@em{1.5em}; }}
+    \web@Css{.subsectionToc { margin-left: \web@em{1.5em}; }}
+    \web@Css{.subsectionToc .tocnumber { min-width: \web@em{2.3em}; }}
+    % and section entries in bold. (tocloft's own font commands aren't
+    % followed)
+    \Css{.sectionToc, .likesectionToc { font-weight: bold; }}
+\fi
+\Css{.tocnumber { display: inline-block; }}
+
+% --- lists ------------------------------------------------------------------
+
+% spaced as LaTeX spaces a list: \topsep around it, \itemsep and \parsep
+% between items. tex4ht numbers enumerate with the browser's counters; give
+% the inner levels LaTeX's labels, (a), i. and A. (enumitem's lists come out
+% differently, with their own labels.) A description's term runs into its
+% text
+\begingroup\@listi
+    \xdef\web@listsep{\web@em\topsep}%
+    \xdef\web@itemsep{\web@em{\dimexpr\itemsep+\parsep\relax}}%
+\endgroup
+\Css{ol.enumerate1, ul.itemize1, dl.description { margin-block: \web@listsep; }}
+\Css{li.enumerate + li.enumerate, li.itemize + li.itemize { margin-top: \web@itemsep; }}
+\Css{ol.enumerate2 > li::marker { content: "(" counter(list-item, lower-alpha) ") "; }}
+\Css{ol.enumerate3 > li::marker { content: counter(list-item, lower-roman) ". "; }}
+\Css{ol.enumerate4 > li::marker { content: counter(list-item, upper-alpha) ". "; }}
+\Css{dl.description > dt { float: left; clear: left; margin-right: 0.5em; }}
+\Css{dl.description > dd { margin-left: 0; margin-bottom: \web@itemsep; }}
+
+% --- figures ----------------------------------------------------------------
+
+% \includegraphics[width=..] becomes a percentage of the column, as in the
+% PDF; other sizes as tex4ht writes them
+\ExplSyntaxOn
+\cs_if_exist:NT \Gin@req@width
+  {
+    \cs_set_eq:Nc \__web_gin_dim: { a:Gin-dim }
+    \Configure{Gin-dim}{%
+        \expandafter\ifx\csname Gin:ewidth\endcsname\Gin@exclamation
+            \__web_gin_dim:
+        \else
+            style="width:\fp_eval:n{round(\Gin@req@width/\linewidth*100,2)}\char_generate:nn{`\%}{12}"
+        \fi
+    }
+  }
+\ExplSyntaxOff
+
+\makeatother
