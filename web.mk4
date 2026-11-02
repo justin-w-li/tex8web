@@ -3,8 +3,10 @@
 -- of your own that \input's web-core.tex):
 --   make4ht -c path/to/web.cfg -e path/to/web.mk4 document.tex
 -- It puts this directory on TeX's and Lua's search paths, copies the Latin
--- Modern fonts (fonts/), web.js and the document's images next to the HTML,
--- and gives MathJax the document's macros.
+-- Modern fonts (fonts/) and the document's images next to the HTML, and
+-- gives MathJax the document's macros. With node_modules installed (npm ci
+-- here), prerender.mjs then typesets the math; otherwise the page loads
+-- MathJax, with web.js next to it.
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
 -- (texlua's require doesn't look at package.path; add a searcher that does
@@ -17,6 +19,7 @@ end)
 os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 
 local domfilter = require "make4ht-domfilter"
+local log = logging.new("web")
 local macros = require "web.macros"
 local source = require "web.source"
 local text = require "web.text"
@@ -52,12 +55,35 @@ local function add(source, path)
   Make:add_file(path)
 end
 
+local function quote(s)
+  return "'" .. s:gsub("'", "'\\''") .. "'"
+end
+
+-- typesets the page's math with MathJax in Node (prerender.mjs), when its
+-- node_modules is installed; otherwise MathJax does it in the browser
+local function prerender(filename)
+  if not exists(root .. "/node_modules/mathjax") then
+    log:info("math left for MathJax in the browser; run npm ci in " .. root
+      .. " to typeset it here")
+    return false
+  end
+  local node = io.popen("node " .. quote(root .. "/prerender.mjs") .. " " .. quote(filename))
+  -- (it prints the files it made: MathJax's styles and fonts)
+  local files = {}
+  for path in node:lines() do files[#files + 1] = path end
+  if not node:close() then
+    log:warning("prerender.mjs failed; math left for MathJax in the browser")
+    return false
+  end
+  for _, path in ipairs(files) do Make:add_file(path) end
+  return true
+end
+
 Make:match("html$", function(filename, par)
   local dir = filename:match("^(.*)/") or "."
   for _, font in ipairs(fonts) do
     add(root .. "/fonts/" .. font, dir .. "/fonts/" .. font)
   end
-  add(root .. "/js/web.js", dir .. "/web.js")
   -- images from \includegraphics, which the HTML references relative to the
   -- source
   local f = io.open(filename)
@@ -68,5 +94,9 @@ Make:match("html$", function(filename, par)
       add(src, dir .. "/" .. src)
     end
   end
-  return fix_html(filename, par)
+  local status = fix_html(filename, par)
+  if not prerender(filename) then
+    add(root .. "/js/web.js", dir .. "/web.js")
+  end
+  return status
 end)
