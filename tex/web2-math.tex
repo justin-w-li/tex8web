@@ -1,0 +1,67 @@
+% web2: math. tex4ht's mathjax option leaves each formula's LaTeX source in
+% the page, for MathJax to typeset in the browser.
+\makeatletter
+
+% MathJax's Computer Modern font (its default, New Computer Modern, is
+% heavier than the PDF, and its Latin Modern misplaces accents on Greek
+% letters); display math that doesn't fit scrolls; math at the size of the
+% text, as TeX does (rather than matching x-heights, which comes out a bit
+% small). mathtools for \DeclarePairedDelimiter in macros.lua's definitions
+\Configure{MathJaxConfig}{{
+    loader: { load: ['[tex]/mathtools'] },
+    tex: { tags: 'ams', packages: { '[+]': ['mathtools'] } },
+    output: { font: 'mathjax-tex', displayOverflow: 'scroll',
+        matchFontHeight: false } };
+}
+
+% \WebMathMacros{definitions}: macros for MathJax, in place of the
+% document's own (which macros.lua reads from its preamble and styles), for
+% macros MathJax can't read as they are. \WebMacrosHTML writes them in a
+% <script> in <head> (web2-page.tex), for macros.lua, which removes it
+\ExplSyntaxOn
+\tl_new:N \g__web_macros_tl
+\NewDocumentCommand\WebMathMacros{+m}{\tl_gput_right:Nn \g__web_macros_tl {#1}}
+\NewDocumentCommand\WebMacrosHTML{}{
+    \tl_set:Ne \l_tmpa_tl {\exp_args:NV \detokenize \g__web_macros_tl}
+    \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } \l_tmpa_tl
+    \regex_replace_all:nnN { \x{26} } { &amp; } \l_tmpa_tl
+    \regex_replace_all:nnN { \x{3C} } { &lt; } \l_tmpa_tl
+    \regex_replace_all:nnN { \x{3E} } { &gt; } \l_tmpa_tl
+    \HCode{<script~type="text/x-web-macros">\l_tmpa_tl</script>\Hnewline}
+}
+
+% a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math
+% for MathJax: typeset it, re-reading the source, which tex4ht read with &
+% as a letter
+\cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
+\cs_set:Npn \AltlDisplay #1 \] {
+    \str_if_in:nnTF {#1} {\begin{tikzcd}}
+        { \char_set_catcode_alignment:N \& \tex_scantokens:D {#1\]} }
+        { \__web_AltlDisplay:w #1 \] }
+}
+
+% MathJax has no \intertext: split the alignment there, giving MathJax the
+% parts, and typeset the text between them here, as text. (Columns no longer
+% line up across the text)
+\cs_new_protected:Npn \__web_alignment:nn #1#2 {
+    \tl_if_in:nnTF {#2} {\intertext}
+        { \__web_intertext:nw {#1} #2 \q_stop }
+        { \begin{web-#1} #2 \end{web-#1} }
+}
+\cs_new_protected:Npn \__web_intertext:nw #1#2 \intertext #3#4 \q_stop {
+    \tl_set:Nn \l_tmpa_tl {#2}
+    \regex_replace_once:nnN { \c{\\} \s* \Z } {} \l_tmpa_tl
+    \tl_if_blank:VF \l_tmpa_tl { \exp_args:Nnx \__web_part:nn {#1} {\exp_not:V \l_tmpa_tl} }
+    \HCode{<span~class="intertext">} #3 \HCode{</span>}
+    \__web_alignment:nn {#1} {#4}
+}
+\cs_new_protected:Npn \__web_part:nn #1#2 { \begin{web-#1} #2 \end{web-#1} }
+\clist_map_inline:nn { align, align*, gather, gather*, flalign, flalign* } {
+    \cs_if_exist:cT {#1} {
+        \NewEnvironmentCopy{web-#1}{#1}
+        \RenewDocumentEnvironment{#1}{+!b}{ \__web_alignment:nn {#1} {##1} }{}
+    }
+}
+\ExplSyntaxOff
+
+\makeatother

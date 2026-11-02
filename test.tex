@@ -1,0 +1,288 @@
+\documentclass[11pt,letterpaper]{article}
+% A diagnostic for the HTML build: an ordinary article using only standard
+% packages, touching the constructs a tex4ht + MathJax conversion tends to get
+% wrong. Each (sub)section is one group of TESTING.md's checklist; compare
+% test.pdf with the HTML section by section.
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsthm, mathtools, bm, mathrsfs}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage[colorlinks]{hyperref}
+\usepackage[nameinlink]{cleveref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\mr}{\mathrm}
+\newcommand{\KL}{D_\mathrm{KL}}
+
+\title{Lorem ipsum dolor sit amet}
+\author{consectetur adipiscing elit}
+\date{sed do eiusmod}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+\end{abstract}
+\tableofcontents
+
+
+\section{Text}
+
+\subsection{Type}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ligatures: fi, fl, ff, ffi, ffl; dashes: 1--2, a---b; quotes: ``double'' and `single'; accents: na\"ive, caf\'e, \v{C}ech; ellipsis\ldots{} and a tie in Fig.~\ref{fig:tikz}.
+Styles: \emph{emphasis with \emph{nested} emphasis}, \textbf{bold}, \textit{\textbf{bold italic}}, \textsc{Small Caps}, \texttt{typewriter}, \textsf{sans serif}, \underline{underline}, and a footnote.\footnote{A footnote with math, $\sum_{i=1}^n x_i$, and a \href{https://example.com}{link}.}
+A URL: \url{https://example.com/some_path?q=1&r=2}; inline verbatim: \verb|\frac{a}{b} % not a comment|.
+
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+This paragraph is indented in the PDF.
+
+\noindent This one is not.
+\hfill Right-aligned text.
+
+\subsection{Lists}
+
+\begin{enumerate}
+    \item First item, with inline math $a^2 + b^2 = c^2$.
+    \item Second item, with a nested list:
+    \begin{enumerate}
+        \item nested (a);
+        \item nested (b), with a display
+        \[ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}. \]
+    \end{enumerate}
+    \item[$\star$] A custom label.
+\end{enumerate}
+\begin{itemize}
+    \item Bullet.
+    \item Bullet with a second paragraph.
+
+    The second paragraph.
+\end{itemize}
+\begin{description}
+    \item[Term] Its description.
+    \item[Another term] Another description.
+\end{description}
+
+\subsection{Quotations and verbatim}
+
+\begin{quote}
+    A quotation. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+\end{quote}
+\begin{verbatim}
+def f(x):
+    return x ** 2   # verbatim block
+\end{verbatim}
+
+
+\section{Inline math}
+
+\subsection{Alphabets}
+
+Italic $x, y, \alpha, \beta, \Gamma, \varGamma, \ell, \imath, \hbar, \aleph$;
+upright $\mathrm{d}x$, $\mathrm{e}^{i\pi}$, $\Gamma(z)$;
+bold $\mathbf{x}, \mathbf{A}, \bm{x}, \bm{\beta}, \bm{\Sigma}, \bm{\ell}, \boldsymbol{\mu}$;
+blackboard $\mathbb{R}^n, \E[X], \mathbb{1}$;
+calligraphic $\mathcal{L}, \mathcal{F}$ vs script $\mathscr{L}, \mathscr{F}$;
+fraktur $\mathfrak{g}$; sans $\mathsf{T}$; typewriter $\mathtt{x}$; italic $\mathit{diff}$;
+text in math $\text{if } x > 0 \text{ and ff/fi}$ and $\operatorname{diff}(x)$, $\mathrm{ff}$.
+
+\subsection{Operators}
+
+$\sin x$, $\sin(x)$, $\sin^2 x$, $\log n$, $\log(n)$, $\exp\{x\}$, $\det A$, $\tr(A)$, $\Var(X)$, $\Var(X)^2$, $\E[X]^2$, $\Pr(A \mid B)$,
+$\max_{i} a_i$, $\min\{a, b\}$, $\sup_{x \in A} f(x)$, $\lim_{n\to\infty} a_n$, $\limsup_{n} a_n$, $\liminf a_n$, $\argmax_\theta \ell(\theta)$,
+$\sum_{k=1}^n k$, $\prod_i p_i$, $\int_0^1 f(x)\,dx$, $\oint_C$, $\iint_D$, $\bigcup_i A_i$, $\bigcap_{i} A_i$,
+$a \bmod b$, $a \equiv b \pmod{n}$, $\gcd(a, b)$.
+
+\subsection{Relations, binary operators and spacing}
+
+$f\colon A \to B$, $x \mapsto x^2$, $\{x : x > 0\}$, $\{x \mid x > 0\}$, $\{x \in \R \;\big|\; x > 0\}$,
+$a\,b\:c\;d\!e\quad f\qquad g$,
+$-1$, $+x$, $(-x)$, $a - b$, $a \cdot b$, $a \times b$, $a \circ b$, $a \cup b$, $\neg p$, $p \wedge q$, $\forall x \exists y$,
+$1, 2, \dots, n$, $a_1 + \dots + a_n$, $a_1 + \cdots + a_n$, $x \in \varnothing$, $x \notin \emptyset$,
+$x \neq y$, $x \not= y$, $x \not\in A$, $a \leq b$, $a \leqslant b$, $a \nleq b$, $A \subseteq B$, $A \subsetneq B$, $P \preceq Q$, $P \succcurlyeq Q$, $f \propto g$, $X \sim N(0, 1)$, $x \approx y$, $a \coloneqq b$, $u \parallel v$, $\|v\|$, $X \perp\!\!\!\perp Y$.
+
+\subsection{Scripts and primes}
+
+$x^2$, $x_i^2$, ${x_i}^2$, $x^{y^z}$, $x_{i_j}$, $e^{-x^2/2}$, $e^{-\frac{x^2}{2}}$, ${}^n C_k$, $f'(x)$, $f''(x)$, $f^{(n)}$, $x'_i$, $(x')^2$, $A^\top$, $A^{-1}$, $A^\dagger$, $x^*$, $\bar{x}^2$,
+$x_\mathrm{op}$, $x_\mr{op}$, $\KL(p \parallel q)$.
+
+\subsection{Accents}
+
+$\hat{\theta}$, $\hat{\bm\beta}$, $\widehat{\theta}$, $\widehat{xyz}$, $\tilde{x}$, $\widetilde{xyz}$, $\bar{x}$, $\overline{x + y}$, $\underline{x}$, $\vec{v}$, $\overrightarrow{AB}$, $\dot{x}$, $\ddot{x}$, $\acute{a}$, $\breve{a}$, $\check{a}$, $\mathring{A}$, $\hat{\imath}$.
+
+\subsection{Fractions, binomials and roots}
+
+$\frac{a}{b}$, $\tfrac{1}{2}$, $\dfrac{1}{2}$, $\frac{1}{1 + \frac{1}{x}}$, $\binom{n}{k}$, $\tbinom{n}{k}$, $\sqrt{x}$, $\sqrt[3]{x}$, $\sqrt{\frac{a}{b}}$, $\left(\begin{smallmatrix} a & b \\ c & d \end{smallmatrix}\right)$.
+
+\subsection{Delimiters}
+
+$(\frac{a}{b})$, $\left(\frac{a}{b}\right)$, $\bigl(x\bigr)$, $\Bigl[x\Bigr]$, $\biggl\{x\biggr\}$, $\Biggl\langle x\Biggr\rangle$, $\Bigl(\bigl(x\bigr)\Bigr)$, $\abs{x}$, $\abs*{\frac{x}{2}}$, $\abs[\big]{x}$, $\norm{x}_2$, $\lvert x \rvert$, $|x|$, $\lfloor x \rfloor$, $\lceil x \rceil$, $\langle u, v \rangle$, $\left. \frac{df}{dx} \right|_{x=0}$, $\left\{ x \;\middle|\; x > 0 \right\}$, $P(A \bigm| B)$.
+
+\subsection{Math styles}
+
+$\textstyle\sum_{i=1}^n$ vs $\displaystyle\sum_{i=1}^n$, and $x^{\scriptstyle a} x^{\scriptscriptstyle a}$.
+
+
+\section{Display math}
+
+\subsection{Large operators and limits}
+
+\[ \sum_{k=1}^{\infty} \frac{1}{k^2} = \frac{\pi^2}{6}, \qquad \prod_{p \text{ prime}} \frac{1}{1 - p^{-s}} = \zeta(s), \qquad \int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}. \]
+\[ \lim_{n \to \infty} \Bigl(1 + \frac{x}{n}\Bigr)^n = e^x, \quad \limsup_{n \to \infty} a_n, \quad \max_{\substack{1 \leq i \leq n \\ i \text{ odd}}} a_i, \quad \argmax_{\theta \in \Theta} \ell(\theta), \quad \textstyle\sum_{i=1}^n a_i, \quad \int\limits_0^1, \quad \sum\nolimits_k. \]
+
+\subsection{Braces, arrows and boxes}
+
+\[ \underbrace{a + \cdots + a}_{n \text{ times}} = \overbrace{n \cdot a}^{\text{product}}, \quad A \overset{\text{def}}{=} B, \quad X_n \xrightarrow[n \to \infty]{\text{d}} X, \quad x \xleftarrow{f} y, \quad \boxed{E = mc^2}. \]
+
+\subsection{Big delimiters}
+
+\[ \left( \sum_{i=1}^n \frac{x_i}{\sqrt{1 + x_i^2}} \right)^2 \leq \left\lVert \frac{\bm x}{\norm{\bm x}} \right\rVert \cdot \Biggl[ \int_0^1 \biggl( f(t) - \frac{1}{2} \biggr)^2 dt \Biggr], \qquad \left. \frac{\partial^2 f}{\partial x\, \partial y} \right|_{(0,0)}. \]
+
+\subsection{Fractions and text}
+
+\[ x = a_0 + \cfrac{1}{a_1 + \cfrac{1}{a_2 + \cfrac{1}{a_3 + \dotsb}}}, \qquad \genfrac{[}{]}{0pt}{}{n}{k}. \]
+\[ f(x) = x^2 \quad \text{for all } x \in \R, \text{ with $x$ in text}, \qquad \phantom{xx} y, \qquad a \mathbin{\#} b \mathrel{\#} c. \]
+
+\subsection{Numbered equations}
+
+Referenced as \eqref{eq:numbered}, \cref{eq:split} and Equation~\ref{eq:split}:
+\begin{equation}\label{eq:numbered}
+    \Var(X) = \E\bigl[(X - \E[X])^2\bigr] = \E[X^2] - \E[X]^2.
+\end{equation}
+\begin{equation}\label{eq:split}
+\begin{split}
+    (a + b)^2 &= (a + b)(a + b) \\
+              &= a^2 + 2ab + b^2.
+\end{split}
+\end{equation}
+
+\subsection{Cases}
+
+\[ \abs{x} = \begin{cases} x & \text{if } x \geq 0, \\ -x & \text{otherwise}, \end{cases} \qquad f(x) = \begin{dcases} \frac{1}{x} & x > 0 \\ 0 & x \leq 0. \end{dcases} \]
+
+\subsection{Alignments}
+
+An align with a note in the middle, a tag and a gap:
+\begin{align}
+    \norm{x + y}^2 &= \norm{x}^2 + 2\langle x, y \rangle + \norm{y}^2 \notag \\
+                   &\leq \norm{x}^2 + 2\norm{x}\norm{y} + \norm{y}^2 \label{eq:cs} \\
+    \intertext{by Cauchy--Schwarz, and so}
+                   &= (\norm{x} + \norm{y})^2 \tag{$\ast$} \\[6pt]
+    a &= b & c &= d
+\end{align}
+An align* whose lines start with a relation:
+\begin{align*}
+    \E[X] &= \int x\,dP \\
+          &= \sum_{k} k \, P(X = k) \\
+          &\quad + \text{a long continuation term}.
+\end{align*}
+Gather*, multline and alignat:
+\begin{gather*}
+    a = b + c \\
+    \frac{a}{b} = \frac{c}{d}
+\end{gather*}
+\begin{multline}
+    p(x) = a_0 + a_1 x + a_2 x^2 + a_3 x^3 + a_4 x^4 + a_5 x^5 + a_6 x^6 \\
+    + a_7 x^7 + a_8 x^8 + a_9 x^9 + a_{10} x^{10}.
+\end{multline}
+\begin{alignat}{2}
+    x &= y + z \qquad && \text{by definition} \\
+    y &= 2z         && \text{by assumption}
+\end{alignat}
+
+\subsection{Matrices and arrays}
+
+\[ \begin{pmatrix} a_{11} & \cdots & a_{1n} \\ \vdots & \ddots & \vdots \\ a_{m1} & \cdots & a_{mn} \end{pmatrix}, \quad \begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}, \quad \det \begin{vmatrix} a & b \\ c & d \end{vmatrix}, \quad \left[ \begin{array}{cc|c} 1 & 2 & 3 \\ \hline 4 & 5 & 6 \end{array} \right], \quad \begin{pmatrix*}[r] -1 & 2 \\ 3 & -4 \end{pmatrix*}. \]
+
+\subsection{Wide displays}
+
+\[ \Pr\Bigl( \Bigl\lvert \frac{1}{n} \sum_{i=1}^n X_i - \mu \Bigr\rvert > \varepsilon \Bigr) \leq 2 \exp\Bigl( -\frac{2 n^2 \varepsilon^2}{\sum_{i=1}^n (b_i - a_i)^2} \Bigr) \quad \text{for all } \varepsilon > 0 \text{ and } n \geq 1, \text{ by Hoeffding's inequality}. \]
+
+
+\section{Theorems and \texorpdfstring{$L^2$}{L2} in a heading}
+
+\begin{definition}[Inner product]
+    An \emph{inner product} on a real vector space $V$ is a map $\langle \cdot, \cdot \rangle \colon V \times V \to \R$ that is bilinear, symmetric and positive definite.
+\end{definition}
+\begin{theorem}[Cauchy--Schwarz]\label{thm:cs}
+    For all $x, y \in V$, $\abs{\langle x, y \rangle} \leq \norm{x}\norm{y}$.
+\end{theorem}
+\begin{proof}
+    If $y = 0$ there is nothing to show. Otherwise, for all $t \in \R$,
+    \[ 0 \leq \norm{x - ty}^2 = \norm{x}^2 - 2t\langle x, y \rangle + t^2 \norm{y}^2, \]
+    and taking $t = \langle x, y \rangle / \norm{y}^2$ gives the claim. \qedhere
+\end{proof}
+\begin{lemma}
+    A lemma right after a proof.
+\end{lemma}
+\begin{corollary}
+    A corollary that ends in a display:
+    \[ \norm{x + y} \leq \norm{x} + \norm{y}. \]
+\end{corollary}
+\begin{proof}
+    A proof that ends in a display:
+    \[ \norm{x + y}^2 \leq (\norm{x} + \norm{y})^2. \qedhere \]
+\end{proof}
+\begin{example}
+    See Theorem~\ref{thm:cs}, \cref{thm:cs} and \eqref{eq:cs}.
+\end{example}
+\begin{remark}
+    An unnumbered remark.
+\end{remark}
+
+
+\section{Floats and citations}
+
+\Cref{tab:booktabs} and \cref{fig:tikz} float; the inequality is due to Cauchy~\cite{cauchy} and Schwarz~\cite{schwarz}.
+
+\begin{table}[h]
+    \centering
+    \caption{A table with math in it.}
+    \label{tab:booktabs}
+    \begin{tabular}{lcr}
+        \toprule
+        Distribution & Mean & Variance \\
+        \midrule
+        $N(\mu, \sigma^2)$ & $\mu$ & $\sigma^2$ \\
+        $\mathrm{Exp}(\lambda)$ & $1/\lambda$ & $1/\lambda^2$ \\
+        $\mathrm{Bin}(n, p)$ & $np$ & $np(1 - p)$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}
+        \draw[->] (-0.5, 0) -- (3, 0) node[right] {$x$};
+        \draw[->] (0, -0.5) -- (0, 2) node[above] {$y$};
+        \draw[domain=0:2.5, smooth, thick] plot (\x, {0.25 * \x * \x});
+        \node at (2, 1.6) {$y = x^2/4$};
+    \end{tikzpicture}
+    \caption{A TikZ picture.}
+    \label{fig:tikz}
+\end{figure}
+
+\begin{thebibliography}{9}
+    \bibitem{cauchy} A.-L. Cauchy, \emph{Cours d'analyse de l'\'Ecole royale polytechnique}, 1821.
+    \bibitem{schwarz} H. A. Schwarz, \emph{\"Uber ein die Fl\"achen kleinsten Fl\"acheninhalts betreffendes Problem der Variationsrechnung}, 1888.
+\end{thebibliography}
+
+\end{document}

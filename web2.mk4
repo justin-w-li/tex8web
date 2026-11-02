@@ -1,0 +1,64 @@
+-- make4ht build file for HTML that looks like the PDF, with MathJax
+-- typesetting the math from its LaTeX source. Use with web2.cfg (or a config
+-- of your own that \input's web2-core.tex):
+--   make4ht -c path/to/web2.cfg -e path/to/web2.mk4 document.tex
+-- It puts this directory on TeX's and Lua's search paths, copies the Latin
+-- Modern fonts and the document's images next to the HTML, and gives
+-- MathJax the document's macros.
+-- (make4ht runs this file from a string; settings.build_file is its path)
+local root = settings.build_file:match("^(.*)[/\\]") or "."
+-- (texlua's require doesn't look at package.path; add a searcher that does
+-- the same for lua/)
+table.insert(package.searchers, 2, function(name)
+  local path, message = package.searchpath(name, root .. "/lua/?.lua")
+  if not path then return message end
+  return loadfile(path), path
+end)
+os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
+
+local domfilter = require "make4ht-domfilter"
+local macros = require "web2.macros"
+local source = require "web2.source"
+local text = require "web2.text"
+
+local passes = {
+  source.spaces,
+  macros.define,
+  text.theorem_spacing,
+  text.no_break_spaces,
+}
+
+local fix_html = domfilter({function(document, par)
+  for _, pass in ipairs(passes) do pass(document, par) end
+  return document
+end}, "web2")
+
+local fonts = {
+  "lmroman10-regular.otf",
+  "lmroman10-bold.otf",
+  "lmroman10-italic.otf",
+  "lmroman10-bolditalic.otf",
+  "lmmono10-regular.otf",
+}
+
+local function exists(path)
+  return lfs.attributes(path) ~= nil
+end
+
+Make:match("html$", function(filename, par)
+  local dir = filename:match("^(.*)/") or "."
+  for _, font in ipairs(fonts) do
+    copy(kpse.find_file(font, "opentype fonts"), dir .. "/fonts/" .. font)
+  end
+  -- images from \includegraphics, which the HTML references relative to the
+  -- source
+  local f = io.open(filename)
+  local html = f:read("*a")
+  f:close()
+  for src in html:gmatch("<img [^>]-src=['\"]([^'\"]+)['\"]") do
+    if not src:match("^%a+:") and not exists(dir .. "/" .. src) and exists(src) then
+      copy(src, dir .. "/" .. src)
+    end
+  end
+  return fix_html(filename, par)
+end)

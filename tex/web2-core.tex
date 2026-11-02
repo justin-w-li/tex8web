@@ -1,0 +1,11 @@
+% web2: tex4ht configuration for HTML that looks like the PDF, with MathJax
+% reading the math's LaTeX source. A tex4ht config \input's this after
+% \begin{document} (see web2.cfg); web2.mk4 puts this directory on TeX's
+% search path.
+\makeatletter
+% a length in ems of the body font
+\newcommand\web@em[1]{\strip@pt\dimexpr#1*65536/\dimexpr\f@size pt\relax\relax em}
+\makeatother
+\input{web2-math.tex}
+\input{web2-text.tex}
+\input{web2-page.tex}

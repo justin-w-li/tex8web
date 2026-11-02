@@ -1,0 +1,109 @@
+% web2: the page: <head>, MathJax, fonts, colors and layout.
+\makeatletter
+
+% --- <head> -----------------------------------------------------------------
+
+% rebuilt so MathJax's config (web2-math.tex) comes before MathJax. The
+% \WebMathMacros definitions are for macros.lua, which removes them
+\Configure{@HEAD}{}
+\Configure{@HEAD}{\HCode{<meta charset="utf-8" />\Hnewline}}
+\Configure{@HEAD}{\HCode{<meta name="viewport" content="width=device-width,initial-scale=1" />\Hnewline}}
+\Configure{@HEAD}{\HCode{<link rel="stylesheet" type="text/css" href="\jobname.css" />\Hnewline}}
+\Configure{@HEAD}{\WebMacrosHTML}
+\Configure{@HEAD}{\HCode{<script>window.MathJax = \csname a:MathJaxConfig\endcsname</script>\Hnewline}}
+\Configure{@HEAD}{\HCode{<script async="async" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"></script>\Hnewline}}
+
+% --- colors -----------------------------------------------------------------
+
+% The page follows the reader's light or dark setting, unless the root
+% element has data-theme="light" or "dark". Light mode uses the PDF's colors.
+% \WebColor{name}{light color}{dark color} makes the CSS variable --name,
+% which is one or the other
+\newcommand\WebColor[3]{%
+    \extractcolorspecs{#2}\web@model\web@spec
+    \convertcolorspec\web@model\web@spec{HTML}\web@light
+    \extractcolorspecs{#3}\web@model\web@spec
+    \convertcolorspec\web@model\web@spec{HTML}\web@dark
+    \edef\web@css{\noexpand\Css{:root { --#1: light-dark(\#\web@light, \#\web@dark); }}}%
+    \web@css
+}
+\Css{:root { color-scheme: light dark; }}
+\Css{:root[data-theme="light"] { color-scheme: light; }}
+\Css{:root[data-theme="dark"] { color-scheme: dark; }}
+\definecolor{web-bg-dark}{RGB}{30, 30, 30}
+\definecolor{web-text-dark}{RGB}{227, 227, 227}
+\WebColor{web-bg}{white}{web-bg-dark}
+\WebColor{web-text}{black}{web-text-dark}
+\Css{html body { background-color: var(--web-bg); color: var(--web-text); }}
+% links: hyperref's colors with colorlinks (otherwise the PDF draws boxes,
+% and the links here keep the color of the text)
+\definecolor{web-link-dark}{RGB}{108, 180, 255}
+\definecolor{web-cite-dark}{RGB}{95, 211, 160}
+\definecolor{web-url-dark}{RGB}{242, 127, 176}
+\@ifpackageloaded{hyperref}{%
+    \ifHy@colorlinks
+        \WebColor{web-link}{\@linkcolor}{web-link-dark}%
+        \WebColor{web-cite}{\@citecolor}{web-cite-dark}%
+        \WebColor{web-url}{\@urlcolor}{web-url-dark}%
+    \fi
+}{}
+\Css{a { color: var(--web-link, inherit); text-decoration: none; }}
+\Css{a[href\string^="\#X"] { color: var(--web-cite, inherit); }}
+\Css{a.url, a[href\string^="mailto:"] { color: var(--web-url, inherit); }}
+% generated pictures (TikZ) are black line art; invert them in dark mode
+\Css{@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --web-picture-filter: invert(1); } }}
+\Css{:root[data-theme="dark"] { --web-picture-filter: invert(1); }}
+\Css{img[src\string^="\jobname"] { filter: var(--web-picture-filter, none); }}
+
+% --- fonts ------------------------------------------------------------------
+
+% Latin Modern, which web2.mk4 copies into fonts/
+\Css{@font-face { font-family: "Latin Modern Roman";
+    src: url("fonts/lmroman10-regular.otf"); }}
+\Css{@font-face { font-family: "Latin Modern Roman"; font-weight: bold;
+    src: url("fonts/lmroman10-bold.otf"); }}
+\Css{@font-face { font-family: "Latin Modern Roman"; font-style: italic;
+    src: url("fonts/lmroman10-italic.otf"); }}
+\Css{@font-face { font-family: "Latin Modern Roman"; font-weight: bold; font-style: italic;
+    src: url("fonts/lmroman10-bolditalic.otf"); }}
+\Css{@font-face { font-family: "Latin Modern Mono";
+    src: url("fonts/lmmono10-regular.otf"); }}
+\Css{html body { font-family: "Latin Modern Roman", serif; }}
+\Css{[class*="-lmtt"] { font-family: "Latin Modern Mono", monospace; }}
+% Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em;
+% text.no_break_spaces marks no-break spaces, and keeps one together with
+% the math after it
+\Css{.nbsp { letter-spacing: -0.167em; }}
+\Css{.nowrap { white-space: nowrap; }}
+
+% --- layout -----------------------------------------------------------------
+
+% Text at 12pt, larger than most PDFs, for reading on a screen, and
+% everything else in proportion: headings as much larger than the text as
+% in the PDF (in the standard classes' sizes); MathJax sets math as large as
+% the text around it, and tex4ht sizes other fonts relative to the text
+\Css{html body { font-size: 12pt; }}
+\newcommand\web@headsize[2]{% selector, size command
+    \begingroup#2\xdef\web@size{\f@size pt}\endgroup
+    \edef\web@css{\noexpand\Css{#1 { font-size: \web@em\web@size; }}}%
+    \web@css
+}
+\web@headsize{h1.titleHead}{\LARGE}
+\web@headsize{.sectionHead, .likesectionHead}{\Large}
+\web@headsize{.subsectionHead, .likesubsectionHead}{\large}
+\web@headsize{.subsubsectionHead, .likesubsubsectionHead}{\normalsize}
+% a column as wide as the PDF's, in ems of the text, so lines hold about as
+% much; narrower screens get the screen's width
+\edef\web@css{\noexpand\Css{html body { max-width: \web@em\textwidth;
+    margin-block-start: 2.5em; margin-block-end: 4em; }}}
+\web@css
+% the text of an \intertext (web2-math.tex)
+\Css{.intertext { display: block; margin-block: 0.5em; }}
+% pictures: nothing wider than the column; a picture in display math
+% (\[ \begin{tikzcd} .. \]) gets the margin MathJax gives display math
+\Css{img { max-width: 100\%; height: auto; }}
+\Css{figure.figure { margin-block: 1.75em; }}
+\Css{.mathjax-block img { display: block; margin: 0.7em auto; }}
+
+\makeatother
