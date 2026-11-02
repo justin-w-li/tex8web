@@ -13,6 +13,10 @@
 %   letters); display math that doesn't fit scrolls; math at the size of
 %   the text, as TeX does (rather than matching x-heights, which comes out a
 %   bit small)
+% - for speed: math typeset as it scrolls into view (ui/lazy), and no
+%   speech or braille (MathJax's semantic enrichment for them took 90% of
+%   the time, 20s for a long document; screen readers still get MathML, and
+%   readers can turn speech on in MathJax's menu)
 \def\web@extensions{'mathtools'}
 \def\web@load{'[tex]/mathtools'}
 \@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
@@ -22,7 +26,8 @@
          \edef\web@load{\web@load, '[tex]/\web@package'}}{}%
 }
 \edef\web@config{\noexpand\Configure{MathJaxConfig}{{
-    loader: { load: [\web@load] },
+    loader: { load: ['ui/lazy', \web@load] },
+    options: { menuOptions: { settings: { enrich: false, speech: false, braille: false } } },
     tex: { tags: 'none', packages: { '[+]': [\web@extensions] },
         macros: { colon: '\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}' } },
     output: { font: 'mathjax-tex', displayOverflow: 'scroll',

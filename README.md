@@ -35,6 +35,8 @@ The output is:
 
 To keep tex4ht's auxiliary files apart and collect just the page, add `-B build -d out`: everything is built in `build/` and the page is copied to `out/`. Pass both files every time: `web.mk4` puts `tex/` on TeX's search path for `web.cfg`.
 
+MathJax typesets the math as it scrolls into view, so a long document is ready in under a second. Its speech and braille output are off by default (they took most of the time); screen readers still get MathML, and a reader can turn speech on in MathJax's menu.
+
 MathJax loads the extensions for the packages the document uses that it has: physics, braket, cancel, mhchem and so on. Others load when a macro needs them.
 
 ## Your own config
