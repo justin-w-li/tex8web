@@ -1,0 +1,477 @@
+-- make4ht build file for the HTML build (see web.cfg)
+-- copies the latin modern fonts from the TeX installation into fonts/, and
+-- images from \includegraphics (referenced relative to the source) next to
+-- the HTML; then fixes up some MathML that tex4ht gets wrong
+local domfilter = require "make4ht-domfilter"
+
+local fonts = {
+  "lmroman10-regular.otf",
+  "lmroman10-bold.otf",
+  "lmroman10-italic.otf",
+  "lmroman10-bolditalic.otf",
+  "lmmono10-regular.otf",
+}
+
+local function exists(path)
+  return lfs.attributes(path) ~= nil
+end
+
+-- \bm comes out bold upright (make4ht later turns <mi>Q</mi> under
+-- mathvariant="bold" into 𝐐); write its letters as bold italic characters
+-- instead. Latin letters are plain ASCII at this point, and lowercase Greek
+-- is either plain (β) or math italic (𝜃)
+local greek_variants = {
+  [0x3F5] = 0x1D750, [0x3D1] = 0x1D751, [0x3F0] = 0x1D752, -- ϵ ϑ ϰ
+  [0x3D5] = 0x1D753, [0x3F1] = 0x1D754, [0x3D6] = 0x1D755, -- ϕ ϱ ϖ
+}
+local function bold_italic(text)
+  return (text:gsub(utf8.charpattern, function(ch)
+    local c = utf8.codepoint(ch)
+    if c >= 0x41 and c <= 0x5A then return utf8.char(c - 0x41 + 0x1D468) end
+    if c >= 0x61 and c <= 0x7A then return utf8.char(c - 0x61 + 0x1D482) end
+    if c >= 0x3B1 and c <= 0x3C9 then return utf8.char(c - 0x3B1 + 0x1D736) end
+    if greek_variants[c] then return utf8.char(greek_variants[c]) end
+    if c >= 0x1D6E2 and c <= 0x1D71B then return utf8.char(c + 0x3A) end
+    return ch
+  end))
+end
+
+-- MathJax spaces math by TeX's rules when it knows each atom's TeX class
+-- (data-mjx-texclass, as its own TeX input sets), and by its MathML operator
+-- dictionary, which disagrees with TeX in places, when it doesn't. tex4ht
+-- marks operators with classes, but takes them from a table of glyphs, which
+-- gets these wrong; these are TeX's (web.cfg marks \parallel, which shares
+-- its glyph with \|). Delimiters (\lvert, \rVert) keep their class
+local texclass = {
+  ["MathClass-ord"] = "ORD", ["MathClass-op"] = "OP", ["MathClass-bin"] = "BIN",
+  ["MathClass-rel"] = "REL", ["MathClass-open"] = "OPEN",
+  ["MathClass-close"] = "CLOSE", ["MathClass-punc"] = "PUNCT",
+}
+local texclass_fix = {
+  ["|"] = "ORD", ["∥"] = "ORD", ["∕"] = "ORD", ["."] = "ORD",
+  [":"] = "REL", ["!"] = "CLOSE",
+}
+-- \dots and friends, which tex4ht writes as letters or relations
+local dots = {["…"] = "INNER", ["⋯"] = "INNER", ["⋱"] = "INNER", ["⋮"] = "ORD"}
+-- large operators, which tex4ht sometimes writes as <mi> or <mtext>
+local large_ops = {}
+for _, op in ipairs{"∑", "∏", "∐", "⋃", "⋂", "⋁", "⋀", "⨁", "⨂", "⨀", "⨄",
+                    "∫", "∬", "∭", "∮"} do
+  large_ops[op] = true
+end
+local primes = {["′"] = true, ["″"] = true, ["‴"] = true}
+-- tex4ht writes an accent over a letter as the precomposed letter when
+-- Unicode has one (\bar y as ȳ), which MathJax's fonts lack; these are the
+-- accents, as tex4ht writes them otherwise, the precomposed letters, and the
+-- letters underneath
+local accents = {
+  {"¯", "āēḡīōūȳĀĒḠĪŌŪȲ", "aegiouyAEGIOUY"},
+  {"^", "âĉêĝĥîĵôŝûŵŷẑÂĈÊĜĤÎĴÔŜÛŴŶẐ", "aceghijosuwyzACEGHIJOSUWYZ"},
+  {"~", "ãẽĩñõũṽỹÃẼĨÑÕŨṼỸ", "aeinouvyAEINOUVY"},
+  {"¨", "äëḧïöẗüẅẍÿÄËḦÏÖÜẄẌŸ", "aehiotuwxyAEHIOUWXY"},
+  {"˙", "ȧḃċḋėḟġḣṁṅȯṗṙṡṫẇẋẏżȦḂĊḊĖḞĠḢİṀṄȮṖṘṠṪẆẊẎŻ", "abcdefghmnoprstwxyzABCDEFGHIMNOPRSTWXYZ"},
+  {"´", "áćéǵíḱĺḿńóṕŕśúẃýźÁĆÉǴÍḰĹḾŃÓṔŔŚÚẂÝŹ", "acegiklmnoprsuwyzACEGIKLMNOPRSUWYZ"},
+  {"`", "àèìǹòùẁỳÀÈÌǸÒÙẀỲ", "aeinouwyAEINOUWY"},
+  {"ˇ", "ǎčďěǧȟǐǰǩľňǒřšťǔžǍČĎĚǦȞǏǨĽŇǑŘŠŤǓŽ", "acdeghijklnorstuzACDEGHIKLNORSTUZ"},
+  {"˘", "ăĕğĭŏŭĂĔĞĬŎŬ", "aegiouAEGIOU"},
+}
+local accented = {}
+for _, accent in ipairs(accents) do
+  local letters = {}
+  for _, c in utf8.codes(accent[3]) do letters[#letters + 1] = utf8.char(c) end
+  local i = 0
+  for _, c in utf8.codes(accent[2]) do
+    i = i + 1
+    accented[utf8.char(c)] = {letters[i], accent[1]}
+  end
+end
+-- cmsy draws \succeq and \preceq with a straight bar (⪰, ⪯), but tex4ht
+-- writes the curly ≽ and ≼
+local chars = {["≽"] = "⪰", ["≼"] = "⪯"}
+
+-- letters are italic in an <mi>; other symbols (∞, ∅, ⊤) are upright in TeX
+local function is_letter(c)
+  return (c >= 0x41 and c <= 0x5A) or (c >= 0x61 and c <= 0x7A)
+    or (c >= 0x391 and c <= 0x3F6) or (c >= 0x1D400 and c <= 0x1D7FF)
+    or c == 0x2113 or c == 0x2202 or c == 0x210F or c == 0x131 or c == 0x237
+end
+
+-- text of a token element without surrounding space, nil if it holds elements
+local function token_text(el)
+  for _, child in ipairs(el:get_children()) do
+    if child:is_element() then return nil end
+  end
+  return el:get_text():match("^%s*(.-)%s*$")
+end
+
+local function element_children(el)
+  local children = {}
+  for _, child in ipairs(el:get_children()) do
+    if child:is_element() then children[#children + 1] = child end
+  end
+  return children
+end
+
+local function next_element(el)
+  local siblings = el:get_siblings()
+  for i = el:find_element_pos() + 1, #siblings do
+    if siblings[i]:is_element() then return siblings[i] end
+    if siblings[i]:is_text() and siblings[i]._text:match("%S") then return nil end
+  end
+end
+
+-- the function application tex4ht puts after operator names
+local function is_apply(el)
+  return el and el:get_element_name() == "mo" and token_text(el) == "\u{2061}"
+end
+
+local function remove_apply_after(el)
+  local after = next_element(el)
+  if is_apply(after) then after:remove_node() end
+end
+
+local function is_opname(el)
+  local class = el:get_attribute("class")
+  return class == "qopname" or class == "loglike"
+end
+
+local function is_empty_row(mtr)
+  for _, mtd in ipairs(element_children(mtr)) do
+    if #element_children(mtd) > 0 or mtd:get_text():match("%S") then return false end
+  end
+  return true
+end
+
+-- MathML elements whose children must be elements, not bare text
+local needs_tokens = {
+  math = true, mrow = true, mstyle = true, mtd = true, mfrac = true,
+  msqrt = true, mroot = true, msub = true, msup = true, msubsup = true,
+  mover = true, munder = true, munderover = true,
+}
+
+local fix_mathml = domfilter({function(dom)
+  -- \bm (marked by web.cfg); upright bold Greek capitals keep their mathvariant
+  for _, bm in ipairs(dom:query_selector("mstyle.bm")) do
+    bm:traverse_elements(function(el)
+      if el:get_element_name() == "mi" and not el:get_attribute("mathvariant") then
+        for _, child in ipairs(el:get_children()) do
+          if child:is_text() then child._text = bold_italic(child._text) end
+        end
+      end
+    end)
+  end
+  -- single-letter operator names (\DeclareMathOperator{\E}{E}) default to italic
+  for _, mi in ipairs(dom:query_selector("mi.qopname")) do
+    mi:set_attribute("mathvariant", "normal")
+  end
+  -- a picture in display math (\[ \begin{tikzcd} .. \]) comes out as an
+  -- <img> inside <annotation-xml>, which MathJax drops; use the bare <img>
+  for _, annotation in ipairs(dom:query_selector("annotation-xml")) do
+    local img = annotation:query_selector("img")[1]
+    local math = annotation:get_parent()
+    while math and math:get_element_name() ~= "math" do math = math:get_parent() end
+    if img and math then
+      img._parent = math:get_parent()
+      math:replace_node(img)
+    end
+  end
+  local function wrap_text(el, child, name, attributes)
+    local text = child._text:match("^%s*(.-)%s*$")
+    name = name or (text:match("%w") and "mi" or "mo")
+    -- (stretchy stops make4ht turning a lone <mo> into <mtext>)
+    if name == "mo" then attributes = {stretchy = "false"} end
+    local token = el:create_element(name, attributes)
+    token:add_child_node(token:create_text_node(text))
+    child:replace_node(token)
+  end
+  dom:traverse_elements(function(el)
+    local name = el:get_element_name()
+    -- \underbrace and \overbrace come out unstretched, and sit too far from
+    -- their base unless marked as accents
+    if name == "mo" then
+      local text = el:get_text()
+      if text == "⏟" or text == "⏞" then
+        el:set_attribute("stretchy", "true")
+        el:get_parent():set_attribute(text == "⏟" and "accentunder" or "accent", "true")
+      end
+    end
+    -- operator names with spacing inside (arg\,max, s.\!e.) come out as
+    -- <mi>arg<mspace/>max</mi>, and \dot\sim or \hlyellow{\leq} as
+    -- <mo><mover>..</mover></mo>; tokens can't hold elements, so make them
+    -- <mrow>s of tokens, of the operator's class
+    if name == "mi" or name == "mo" then
+      local has_elements = false
+      for _, child in ipairs(el:get_children()) do
+        if child:is_element() then has_elements = true end
+      end
+      if has_elements then
+        el._name = "mrow"
+        local class = texclass[el:get_attribute("class")]
+        if class then el:set_attribute("data-mjx-texclass", class) end
+        for _, child in ipairs(el:get_children()) do
+          if child:is_text() and child._text:match("%S") then
+            wrap_text(el, child, name, name == "mi" and {mathvariant = "normal"} or nil)
+          end
+        end
+      end
+    end
+    -- MathJax rejects bare text in these (e.g. the ∼ under \dot)
+    if needs_tokens[el:get_element_name()] then
+      for _, child in ipairs(el:get_children()) do
+        if child:is_text() and child._text:match("%S") then wrap_text(el, child) end
+      end
+    end
+  end)
+  local tokens = {}
+  dom:traverse_elements(function(el)
+    local name = el:get_element_name()
+    if name == "mi" or name == "mo" or name == "mtext" then tokens[#tokens + 1] = el end
+  end)
+  for _, el in ipairs(tokens) do
+    local name, text = el:get_element_name(), token_text(el)
+    local class = el:get_attribute("class")
+    if not text then
+      -- holds elements; leave it
+    elseif name == "mi" and accented[text] then
+      local letter, accent = table.unpack(accented[text])
+      local mi = el:create_element("mi", el._attr)
+      mi:add_child_node(mi:create_text_node(letter))
+      local mo = el:create_element("mo", {accent = "true", stretchy = "false"})
+      mo:add_child_node(mo:create_text_node(accent))
+      el._name, el._attr, el._children = "mover", {accent = "true"}, {mi, mo}
+    elseif primes[text] then
+      -- TeX's prime is a big glyph raised as a superscript; MathJax's TeX
+      -- input asks for that glyph like this (the plain one is pre-raised)
+      el._name = "mo"
+      el:set_attribute("data-mjx-alternate", "1")
+    elseif dots[text] then
+      el._name = "mo"
+      el._attr = {["data-mjx-texclass"] = dots[text]}
+      remove_apply_after(el)
+    elseif large_ops[text] then
+      -- (stretchy stops make4ht turning a lone <mo> into <mtext>)
+      el._name = "mo"
+      el._attr = {stretchy = "false"}
+      remove_apply_after(el)
+    elseif class == "MathClass-op" then
+      -- ⊤, ∇, ∃: ordinary symbols, which tex4ht makes operator names
+      el:set_attribute("mathvariant", "normal")
+      el:set_attribute("data-mjx-texclass", "ORD")
+      remove_apply_after(el)
+    elseif is_opname(el) then
+      el:set_attribute("data-mjx-texclass", "OP")
+    elseif name == "mo" and texclass[class] then
+      if not el:get_attribute("data-mjx-texclass") then
+        local fixed = class ~= "MathClass-open" and class ~= "MathClass-close"
+          and texclass_fix[text]
+        el:set_attribute("data-mjx-texclass", fixed or texclass[class])
+      end
+      if chars[text] then el._children = {el:create_text_node(chars[text])} end
+    elseif name == "mi" and not el:get_attribute("mathvariant")
+        and utf8.len(text) == 1 and not is_letter(utf8.codepoint(text)) then
+      el:set_attribute("mathvariant", "normal")
+    end
+  end
+  -- operator names with scripts come out as <msub><mrow>[name]&#x2061;</mrow>..;
+  -- the &#x2061; belongs after the scripts, or the whole thing isn't an
+  -- operator for spacing. \lim and co. also need movablelimits to put their
+  -- limits beside them in inline math, as TeX does
+  local scripts = {msub = true, msup = true, msubsup = true,
+                   munder = true, mover = true, munderover = true}
+  dom:traverse_elements(function(el)
+    local name = el:get_element_name()
+    local base = scripts[name] and element_children(el)[1]
+    if not (base and base:get_element_name() == "mrow") then return end
+    local children = element_children(base)
+    local op, apply = children[1], children[2]
+    if #children == 2 and is_opname(op) and is_apply(apply) then
+      apply:remove_node()
+      el:get_parent():add_child_node(apply, el:find_element_pos() + 1)
+      base:replace_node(op)
+      op._parent = el
+      op:set_attribute("data-mjx-texclass", "OP")
+      if (name == "munder" or name == "munderover") and op:get_element_name() == "mi" then
+        op._name = "mo"
+        op:set_attribute("movablelimits", "true")
+      end
+    end
+  end)
+  -- TeX draws big delimiters and large operators (\bigl(, \sum) from the
+  -- math extension font at its design size, 10pt, also in an 11pt document;
+  -- web.cfg passes the ratio to the body font
+  for _, meta in ipairs(dom:query_selector("meta")) do
+    if meta:get_attribute("name") == "tex-exscale" then
+      local exscale = meta:get_attribute("content") .. "%"
+      meta:remove_node()
+      for _, mo in ipairs(dom:query_selector("mo")) do
+        if mo:get_attribute("minsize") then
+          mo:set_attribute("mathsize", exscale)
+        elseif large_ops[token_text(mo) or ""] then
+          -- MathJax misplaces the limits of \int (they belong tucked into
+          -- its slant) when the <mo> itself is scaled, so scale around it
+          local mstyle = mo:create_element("mstyle", {mathsize = exscale}, mo:get_parent())
+          mo:replace_node(mstyle)
+          mstyle:add_child_node(mo)
+        end
+      end
+    end
+  end
+  -- each part of arg\,max is an operator name of its own to MathJax, which
+  -- puts space between them
+  for _, mrow in ipairs(dom:query_selector("mrow.qopname")) do
+    for _, child in ipairs(element_children(mrow)) do
+      child:set_attribute("data-mjx-auto-op", "false")
+    end
+  end
+  -- \overline comes out as a stretched macron (¯) set as a script, which
+  -- MathJax draws thin, dashed and high; its TeX input uses an accent rule (―)
+  for _, mover in ipairs(dom:query_selector("mover.mml-overline")) do
+    local line = element_children(mover)[2]
+    if line and line:get_element_name() == "mo" then
+      line._children = {line:create_text_node("―")}
+      mover:set_attribute("accent", "true")
+    end
+  end
+  -- accents over a single letter (\bar x, \tilde x) keep their own width, as
+  -- in TeX, instead of stretching across the letter (\overline is
+  -- <mover class="mml-overline">)
+  for _, mover in ipairs(dom:query_selector("mover")) do
+    local children = element_children(mover)
+    local base = children[1]
+    if base and base:get_element_name() == "mrow" then
+      local inner = element_children(base)
+      base = #inner == 1 and inner[1]
+    end
+    local text = base and token_text(base)
+    if mover:get_attribute("accent") == "true" and #children == 2
+        and children[2]:get_element_name() == "mo"
+        and text and utf8.len(text) == 1 then
+      children[2]:set_attribute("stretchy", "false")
+    end
+  end
+  -- arrays and amsmath environments, with the spacing MathJax's TeX input
+  -- gives them
+  for _, mtable in ipairs(dom:query_selector("mtable")) do
+    local class = mtable:get_attribute("class")
+    if class == "array" or class == "dcases" then
+      -- \hline comes out as its own row with an empty row on each side
+      local rows = element_children(mtable)
+      for i, row in ipairs(rows) do
+        local function hline(other)
+          return other and other:get_attribute("class") == "array-hline"
+        end
+        if row:get_attribute("class") == "array-row" and is_empty_row(row)
+            and (hline(rows[i - 1]) or hline(rows[i + 1])) then
+          row:remove_node()
+        end
+      end
+      -- cases' cells already hold the \quad between columns
+      local cases = class == "dcases"
+      local ancestor = mtable:get_parent()
+      while ancestor and ancestor:is_element() and ancestor:get_element_name() ~= "math" do
+        cases = cases or ancestor:get_attribute("class") == "cases"
+        ancestor = ancestor:get_parent()
+      end
+      mtable:set_attribute("columnspacing", cases and "0em" or "1em")
+      mtable:set_attribute("rowspacing", cases and ".2em" or "4pt")
+    elseif class == "align" or class == "align-star" or class == "gather-star" then
+      mtable:set_attribute("columnspacing", "0em")
+      mtable:set_attribute("rowspacing", "3pt")
+      for _, mtr in ipairs(element_children(mtable)) do
+        local label
+        for _, mtd in ipairs(element_children(mtr)) do
+          local class = mtd:get_attribute("class")
+          local children = element_children(mtd)
+          if class == "align-label" then
+            -- tex4ht puts equation numbers in columns of their own, right
+            -- after the equations (and leaves them empty in align*, which
+            -- pushes the equations off center); a labelled row puts the
+            -- number at the right edge, as in the PDF
+            mtd:remove_node()
+            if not label and #mtd:query_selector("mstyle.maketag") > 0 then label = mtd end
+          elseif class == "align-even" then
+            -- the gap tex4ht leaves before the number columns
+            local last = children[#children]
+            if last and last:get_element_name() == "mspace" then last:remove_node() end
+            -- amsmath starts the column with {}, so a relation there gets its
+            -- space on the left
+            local first = children[1]
+            if first and first:get_attribute("data-mjx-texclass") == "REL" then
+              mtd:add_child_node(mtd:create_element("mi"), first:find_element_pos())
+            end
+          end
+        end
+        if label then
+          mtr._name = "mlabeledtr"
+          mtr:add_child_node(label, 1)
+        end
+      end
+    end
+  end
+  -- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
+  -- as wide as a space; mark them so web.cfg can narrow them. a browser
+  -- still breaks the line between one and the math after it (Lemma~$1$), so
+  -- wrap the two together
+  dom:traverse_elements(function(el)
+    local class = el:get_attribute("class")
+    if class == "nbsp" or class == "nowrap" then return end
+    local ancestor = el
+    while ancestor:is_element() do
+      if ancestor:get_element_name() == "math" then return end
+      ancestor = ancestor:get_parent()
+    end
+    local children = {}
+    for _, child in ipairs(el:get_children()) do
+      if child:is_text() and child._text:find("\u{A0}", 1, true) then
+        local start = 1
+        repeat
+          local i, j = child._text:find("\u{A0}", start, true)
+          local text = child._text:sub(start, (i or 0) - 1)
+          if text ~= "" then children[#children + 1] = el:create_text_node(text) end
+          if i then
+            local nbsp = el:create_element("span", {class = "nbsp"})
+            nbsp:add_child_node(nbsp:create_text_node("\u{A0}"))
+            children[#children + 1] = nbsp
+            start = j + 1
+          end
+        until not i
+      else
+        children[#children + 1] = child
+      end
+    end
+    local wrapped, i = {}, 1
+    while i <= #children do
+      local child, j = children[i], i + 1
+      while children[j] and children[j]._type == "COMMENT" do j = j + 1 end
+      local math = children[j]
+      if child:is_element() and child:get_attribute("class") == "nbsp"
+          and math and math:is_element() and math:get_element_name() == "math" then
+        local nowrap = el:create_element("span", {class = "nowrap"})
+        for k = i, j do nowrap:add_child_node(children[k]) end
+        wrapped[#wrapped + 1] = nowrap
+        i = j + 1
+      else
+        wrapped[#wrapped + 1] = child
+        i = i + 1
+      end
+    end
+    el._children = wrapped
+  end)
+  return dom
+end}, "webfix")
+
+Make:match("html$", function(filename, par)
+  local dir = filename:match("^(.*)/") or "."
+  for _, font in ipairs(fonts) do
+    copy(kpse.find_file(font, "opentype fonts"), dir .. "/fonts/" .. font)
+  end
+  local f = io.open(filename)
+  local html = f:read("*a")
+  f:close()
+  for src in html:gmatch("<img [^>]-src=['\"]([^'\"]+)['\"]") do
+    if not src:match("^%a+:") and not exists(dir .. "/" .. src) and exists(src) then
+      copy(src, dir .. "/" .. src)
+    end
+  end
+  return fix_mathml(filename, par)
+end)
