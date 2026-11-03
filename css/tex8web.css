@@ -243,5 +243,15 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
         padding: 0; border: 0; }
 }
 
+/* a preview of what a link on the page leads to (tex8web-page.js) */
+.tex8web-preview { inset: auto; margin: 0;
+    max-width: min(36rem, 100vw - 1rem); max-height: 50vh; overflow: auto;
+    padding: 0.75rem 1rem; font-size: 0.9em; color: var(--tex8web-text);
+    background-color: var(--tex8web-bg); border-radius: 0.5rem;
+    border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+    box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.2); }
+.tex8web-preview > :first-child { margin-top: 0; }
+.tex8web-preview > :last-child { margin-bottom: 0; }
+
 /* following a link scrolls there, unless the reader would rather not */
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }

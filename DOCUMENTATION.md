@@ -101,6 +101,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 - **Theme:** the page follows the reader's light or dark setting until they choose with the button. The choice is kept in the browser (`localStorage`, key `tex8web-theme`), for every tex8web page of the site, and applied before the page is drawn. `data-theme="light"` or `"dark"` on the root element sets it. Light mode uses the PDF's colors; TikZ pictures are inverted in dark mode.
 - **Table of contents:** `\tableofcontents` (or a box holding only the table of contents) moves out of the text, beside it on a wide screen and into a drawer behind the contents button on a narrow one. It marks the section being read and shows that section's subsections.
 - **Footnotes** follow the paragraph, list or theorem that holds their mark: beside it on a wide screen, lined up with the mark, and below it on a narrow one. A footnote in a table, figure, box or formula stays at the end of the page. (`tex8web.mk4` gives tex4ht the `fn-in` option, which keeps footnotes on the page; `\thanks` stays under the title.)
+- **Previews:** pointing at a link to something on the page (`\ref`, `\eqref`, `\cite`, a footnote mark, a section) shows a copy of it in a card: the theorem, box or table, the equation, the reference, the figure, the footnote, or the heading and what follows it. Reaching the link with the keyboard shows it too; on a touch screen, the first tap shows it and the second follows the link.
 - **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), and the theme follows the system.
 - **Links:** each heading and numbered theorem has a `#` link to it in the margin, shown on hover.
 - **Link previews** get the title, and the abstract as the description, if the document has one.
@@ -260,7 +261,7 @@ A second, short document unlike the first:
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `prerender.lua` | the files next to the page, bibtex and biber, prerendering |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/tex8web.js` | MathJax's sizes set as TeX's |
-| `js/tex8web-page.js` | the theme button, footnotes lined up with their marks, the table of contents' tracking |
+| `js/tex8web-page.js` | the theme button, footnotes lined up with their marks, the table of contents' tracking, previews |
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |
 | `examples/` | the examples |
