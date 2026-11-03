@@ -1,14 +1,17 @@
 // tex8web's page in the browser: the theme button, the contents button on
-// a wide screen, the controls' bar on a narrow screen, smooth scrolling to links, footnotes lined up with their
-// marks, the table of contents following the section being read, and
-// previews of what a link on the page leads to. page.lua and text.lua
-// build what this works on (and page.lua marks <html> tex8web-js before
-// the page is drawn), and the page reads fine without it
-// (css/tex8web.css).
+// a wide screen, the controls' bar on a narrow screen, smooth scrolling to
+// links, footnotes lined up with their marks, the table of contents
+// following the section being read, and previews of what a link on the
+// page leads to. page.lua and text.lua build what this works on (and
+// tex8web-head.js marks <html> tex8web-js before the page is drawn), and
+// the page reads fine without it (css/tex8web.css).
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
   const layout = () => getComputedStyle(root).getPropertyValue('--tex8web-layout').trim();
+  // twice css/tex8web.css's --tex8web-fade (in seconds), in ms: a little
+  // after the fades end
+  const faded = () => 2000 * parseFloat(getComputedStyle(root).getPropertyValue('--tex8web-fade'));
 
   // the theme: light or dark as the reader last chose, on any tex8web page
   // (a script in <head> applies it before the page is drawn), or else as
@@ -64,7 +67,7 @@
       event.preventDefault();
       clearTimeout(timer);
       root.classList.add('tex8web-toggling');
-      timer = setTimeout(() => root.classList.remove('tex8web-toggling'), 400);
+      timer = setTimeout(() => root.classList.remove('tex8web-toggling'), faded());
       const hidden = root.classList.toggle('tex8web-toc-hidden');
       try {
         if (hidden) localStorage.setItem('tex8web-contents', 'hidden');
@@ -110,12 +113,12 @@
         root.classList.add('tex8web-narrowing');
         controls.classList.add('tex8web-away');
         clearTimeout(timer);
-        // (a little after the 0.2s fades: until they end, the drawer's and
-        // bar's own styles would show them)
+        // (until the fades end, the drawer's and the bar's own styles would
+        // show them)
         timer = setTimeout(() => {
           root.classList.remove('tex8web-narrowing');
           controls.classList.toggle('tex8web-away', !top());
-        }, 400);
+        }, faded());
       }
       was = now;
     });

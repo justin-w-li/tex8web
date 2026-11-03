@@ -104,8 +104,10 @@
 % numbers in a box as wide as in the PDF (tocloft's widths, or the standard
 % classes'), so titles line up whether a number has one digit or two;
 % entries indented as in the PDF, from the sections' indent; and the space
-% above each entry as in the PDF: tocloft's, or article's (the third
-% argument would add page numbers; see css/tex8web.css)
+% above each entry as in the PDF: tocloft's, or article's. Without tocloft,
+% section entries are bold, as in article (tocloft's font commands aren't
+% followed). (The third argument would add page numbers; see
+% css/tex8web.css)
 \def\web@toc#1{%
     \ConfigureToc{#1}
         {\HCode{<span class="#1Toc"><span class="tocnumber">}}
@@ -141,16 +143,13 @@
         --tex8web-toc-subparagraph-indent: \web@em{10em};
         --tex8web-toc-subparagraph-number: \web@em{5em};
         --tex8web-toc-section-skip: \web@em{1em};
-        --tex8web-toc-subsection-skip: 0em; }}
-    % and section entries in bold. (tocloft's own font commands aren't
-    % followed)
-    \Css{.sectionToc, .likesectionToc { font-weight: bold; }}
+        --tex8web-toc-subsection-skip: 0em;
+        --tex8web-toc-section-weight: bold; }}
 \fi
 
 % a table of contents a document makes with \@starttoc{toc} itself (in a box,
 % say) is tex4ht's, as \tableofcontents makes without its heading. (tex4ht
 % writes the entries in its own form, which only it reads)
-\web@needs{:tableofcontents}
 \let\web@starttoc\@starttoc
 \def\@starttoc#1{%
     \def\web@a{#1}\def\web@b{toc}%
@@ -159,7 +158,7 @@
     \else
         \expandafter\@secondoftwo
     \fi
-    {\csname :tableofcontents\endcsname}{\web@starttoc{#1}}}
+    {\web@needs{:tableofcontents}\csname :tableofcontents\endcsname}{\web@starttoc{#1}}}
 
 % --- lists ------------------------------------------------------------------
 

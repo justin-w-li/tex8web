@@ -62,7 +62,8 @@ function M.define(document, context)
   end
   if #defs == 0 then return end
   local body = document:query_selector("body")[1]
-  local div = body:create_element("div", {class = "tex8web-macros", hidden = "hidden"})
+  local div = body:create_element("div", {class = "tex8web-macros", hidden = "hidden",
+    ["data-tex8web-browser"] = ""})
   div:add_child_node(div:create_text_node("\\(" .. table.concat(defs, "\n") .. "\\)"))
   dom.set_children(body, {div, table.unpack(body:get_children())})
 end

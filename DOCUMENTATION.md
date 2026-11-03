@@ -47,7 +47,7 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
   - `fonts/` (Latin Modern; the sans-serif only if the page uses it);
   - the pictures;
   - the PDF (with `\WebPDF`);
-  - `tex8web-page.js` (the theme and contents buttons and the table of contents' tracking);
+  - `tex8web-head.js` (the reader's theme, applied before the page is drawn) and `tex8web-page.js` (the theme and contents buttons and the table of contents' tracking);
   - `tex8web.js` (when not prerendered).
 
   The paths are relative, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can serve one copy of them.
@@ -88,7 +88,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
   - `--tex8web-textwidth`;
   - `--tex8web-title-size`, `--tex8web-section-size` and so on down to `--tex8web-subparagraph-size`; each numbered heading's `-labelsep` (the space after its number), and with titlesec each heading's `-family`, `-weight`, `-style`, `-variant`, `-align`, `-before` and `-after` (and `-display` for `\paragraph` and `\subparagraph`);
   - `--tex8web-list-sep`, `--tex8web-item-sep` (enumitem's lists carry their own, as `--tex8web-enumitem-*`);
-  - `--tex8web-toc-section-number`, then `--tex8web-toc-<level>-indent` and `--tex8web-toc-<level>-number` for each level from `subsection` to `subparagraph`, and `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`;
+  - `--tex8web-toc-section-number`, then `--tex8web-toc-<level>-indent` and `--tex8web-toc-<level>-number` for each level from `subsection` to `subparagraph`, and `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`, `--tex8web-toc-section-weight`;
   - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`;
   - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (listed in `css/tex8web.css`).
 
@@ -147,8 +147,8 @@ Each `main.tex` names its source, license and changes at the top.
 ## Testing
 
 - **`npm test`** runs the Lua unit tests (`test/unit/`), then builds every test document (`test/fixtures/`) and example into `build/test/`, and checks each:
-  - no TeX errors, and no build warnings;
-  - no scripts in a prerendered page but tex8web's (tex8web-page.js, and a line that applies the reader's theme), no MathJax errors, no macros MathJax doesn't know, no `\widehat` or `\widetilde` as narrow as `\hat` or `\tilde`;
+  - no TeX errors, no build warnings, and no warning from tex8web that tex4ht or a package no longer has a command tex8web patches or calls;
+  - no scripts in a prerendered page but tex8web's (tex8web-head.js and tex8web-page.js), no MathJax errors, no macros MathJax doesn't know, no `\widehat` or `\widetilde` as narrow as `\hat` or `\tilde`;
   - the table of contents beside the text, not in it, each entry's number in its box, and each heading's label holding its entry's number, with one space after it, which the stylesheet sizes; and test-generic's measured spacing, label space and title size;
   - each enumitem list with its own lengths;
   - MathML for every formula;
@@ -262,13 +262,14 @@ A second, short document unlike the first:
 | `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, figures |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, colors (`\WebColor`), the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
-| `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats) |
+| `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats, tcolorbox's options), and `\web@needs`, which warns when tex4ht or a package no longer has what tex8web patches |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, heading numbers, no-break spaces, footnotes, links, controls and the table of contents, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `prerender.lua` | the files next to the page, bibtex and biber, prerendering |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/tex8web.js` | MathJax's sizes set as TeX's, and the columns of an alignment split at `\intertext` |
+| `js/tex8web-head.js` | the reader's theme, and whether they hid the table of contents, applied before the page is drawn |
 | `js/tex8web-page.js` | the theme button, the narrow screen's bar, footnotes lined up with their marks, the table of contents' tracking, previews |
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |

@@ -2,6 +2,8 @@
 -- PDF, tex8web.js, and the static styles in the stylesheet, where tex4ht's
 -- rules are also drawn in the text's color. Each file is listed with
 -- tex4ht's output files, so make4ht -d copies it too.
+local log = logging.new("tex8web")
+
 local M = {}
 
 local fonts = {
@@ -76,16 +78,32 @@ function M.rules_in_text_color(css)
   end))
 end
 
--- css/tex8web.css's @media (--tex8web-wide), a screen with room beside the
+-- the last value the stylesheet gives --tex8web-<name>, in ems or rems
+-- (the same here; see wide_screens), or nil with a warning
+local function ems(css, name)
+  local value
+  local declarations = css:gsub("/%*.-%*/", "")
+  for v in declarations:gmatch("%-%-tex8web%-" .. name .. "%s*:%s*([^;}]-)%s*[;}]") do value = v end
+  local n = tonumber((value or ""):match("^([%d.]+)r?em%f[^%w]"))
+  if not n then
+    log:warning("--tex8web-" .. name .. " is " .. (value or "not set") .. ", not a length in em "
+      .. "or rem: every screen gets the narrow layout")
+  end
+  return n
+end
+
+-- css/tex8web.css's @media (--tex8web-wide): a screen with room for the
 -- text (--tex8web-textwidth, which tex8web-page.tex sets and a config may
--- set again) for the table of contents and footnotes, 17em on each side
--- (css/tex8web.css's --tex8web-margin, 14rem, and 3rem of space).
--- (Media queries can't read custom properties; the em of one is the
--- browser's default font size, 16px, as large as the page's 12pt)
+-- set again) and on each side a column (--tex8web-margin) with a gap on
+-- either side of it (--tex8web-gap). (Media queries can't read custom
+-- properties; the em of one is the browser's default font size, 16px, as
+-- large as the page's 12pt and as a rem.) Without the lengths, no screen is
+-- wide (none is 10000em): the narrow layout reads at any width
 function M.wide_screens(css)
-  local width = 40
-  for w in css:gmatch("%-%-tex8web%-textwidth: ([%d.]+)em") do width = tonumber(w) end
-  return (css:gsub("%(%-%-tex8web%-wide%)", string.format("(min-width: %.2fem)", width + 34)))
+  local width, margin, gap = ems(css, "textwidth"), ems(css, "margin"), ems(css, "gap")
+  local query = string.format("(min-width: %.2fem)",
+    width and margin and gap and width + 2 * (margin + 2 * gap) or 10000)
+  return (css:gsub("%(%-%-tex8web%-wide%)", query))
 end
 
 -- css/tex8web.css, where tex8web-core.tex marks its place in the document's

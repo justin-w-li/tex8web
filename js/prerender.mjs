@@ -40,16 +40,10 @@ await MathJax.startup.promise;
 const adaptor = MathJax.startup.adaptor;
 const document = MathJax.startup.document.document;
 const root = adaptor.root(document);
-// what was there for MathJax: its configuration and scripts, and
-// macros.lua's definitions, which it has read
-for (const script of adaptor.tags(root, 'script')) {
-  if (adaptor.getAttribute(script, 'id') === 'tex8web-config'
-      || /(^|\/)(tex8web\.js|tex-chtml\.js)$/.test(adaptor.getAttribute(script, 'src') || '')) {
-    adaptor.remove(script);
-  }
-}
-for (const div of adaptor.tags(root, 'div')) {
-  if (adaptor.hasClass(div, 'tex8web-macros')) adaptor.remove(div);
+// what was there for MathJax in the browser (data-tex8web-browser): its
+// configuration and scripts, and macros.lua's definitions, which it has read
+for (const node of [...adaptor.tags(root, 'script'), ...adaptor.tags(root, 'div')]) {
+  if (adaptor.hasAttribute(node, 'data-tex8web-browser')) adaptor.remove(node);
 }
 // MathJax's styles, in a file of their own (make4ht's later passes over
 // the page would escape the > in them), with its fonts, from node_modules

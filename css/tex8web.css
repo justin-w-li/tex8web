@@ -196,7 +196,8 @@ figure.figure { margin-block: 1.75em; }
    one digit or two */
 .tableofcontents > span { display: flex; }
 .tableofcontents > br { display: none; }
-.sectionToc, .likesectionToc { margin-top: calc(var(--tex8web-toc-section-skip) / 2); }
+.sectionToc, .likesectionToc { margin-top: calc(var(--tex8web-toc-section-skip) / 2);
+    font-weight: var(--tex8web-toc-section-weight, normal); }
 .subsectionToc, .likesubsectionToc { margin-top: calc(var(--tex8web-toc-subsection-skip) / 2); }
 .sectionToc .tocnumber { min-width: var(--tex8web-toc-section-number); }
 .subsectionToc { margin-left: var(--tex8web-toc-subsection-indent); }
@@ -250,9 +251,17 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* --- controls and the table of contents (page.lua) -------------------- */
 
 /* @media (--tex8web-wide) is a screen with room beside the text for the
-   table of contents and footnotes; assets.lua puts in the width
-   (--tex8web-layout tells tex8web-page.js which it is) */
-:root { --tex8web-layout: narrow; }
+   table of contents and footnotes: on each side, a column --tex8web-margin
+   wide and twice --tex8web-gap. assets.lua works out the width from these
+   and the text's (--tex8web-layout tells tex8web-page.js which it is).
+   --tex8web-icons-inset and --tex8web-column-inset place the icons and the
+   column of contents on a wide screen, and where they fade out going from
+   wide to narrow. Motion takes --tex8web-fade, in seconds, which
+   tex8web-page.js waits for */
+:root { --tex8web-margin: 14rem; --tex8web-gap: 1.5rem; --tex8web-fade: 0.2s;
+    --tex8web-icons-inset: calc(env(safe-area-inset-top, 0px) + 0.5rem) auto auto 0.75rem;
+    --tex8web-column-inset: 4rem auto 1rem 0.75rem;
+    --tex8web-layout: narrow; }
 @media (--tex8web-wide) { :root { --tex8web-layout: wide; } }
 
 /* the controls: line icons at the top left, faint until pointed at; on a
@@ -287,22 +296,21 @@ dd.enumerate-enumitem { margin-left: 0; }
 }
 @media (prefers-reduced-motion: no-preference) {
     @media not (--tex8web-wide) {
-        .tex8web-controls { transition: transform 0.2s, opacity 0.2s; }
+        .tex8web-controls { transition: transform var(--tex8web-fade), opacity var(--tex8web-fade); }
         .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
-            transition: transform 0.2s, opacity 0s 0.2s; }
+            transition: transform var(--tex8web-fade), opacity 0s var(--tex8web-fade); }
         /* from a wide screen to a narrow one (tex8web-page.js): the column
            of contents and the icons fade where they are on a wide screen
            (as in the @media (--tex8web-wide) rules below, which these
            follow), rather than slide away as the drawer and the bar
            would */
         .tex8web-narrowing .tex8web-toc:not(:popover-open) {
-            inset: 4rem auto 1rem 0.75rem; width: var(--tex8web-margin); height: auto;
-            padding: 0 0.5rem; border: 0; background: none;
-            translate: none; opacity: 0; transition: opacity 0.2s, display 0.2s allow-discrete; }
+            inset: var(--tex8web-column-inset); width: var(--tex8web-margin); height: auto;
+            padding: 0 0.5rem; border: 0; background: none; translate: none; opacity: 0;
+            transition: opacity var(--tex8web-fade), display var(--tex8web-fade) allow-discrete; }
         .tex8web-narrowing .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
-            inset: calc(env(safe-area-inset-top, 0px) + 0.5rem) auto auto 0.75rem;
-            padding: 0.125rem; border: 0; border-radius: 0.5rem;
-            transform: none; transition: opacity 0.2s; }
+            inset: var(--tex8web-icons-inset); padding: 0.125rem; border: 0;
+            border-radius: 0.5rem; transform: none; transition: opacity var(--tex8web-fade); }
     }
 }
 
@@ -312,7 +320,6 @@ dd.enumerate-enumitem { margin-left: 0; }
    the button hides and shows with tex8web-page.js (fading). Its
    lines close together, and entries a little apart. tex8web-page.js marks
    the section being read, and shows only its section's subsections */
-:root { --tex8web-margin: 14rem; }
 /* (85vw in all, with the padding) */
 .tex8web-toc { inset: 0 auto 0 0; width: min(var(--tex8web-margin), 85vw - 2.5rem); height: 100%;
     max-height: none; margin: 0; padding: 4rem 1.25rem 2rem; border: 0;
@@ -324,11 +331,11 @@ dd.enumerate-enumitem { margin-left: 0; }
 .tex8web-toc::-webkit-scrollbar { display: none; }
 .tex8web-toc::backdrop { background-color: rgb(0 0 0 / 0.3); }
 @media (prefers-reduced-motion: no-preference) {
-    .tex8web-toc { translate: -100% 0; transition: translate 0.2s, display 0.2s allow-discrete,
-        overlay 0.2s allow-discrete; }
+    .tex8web-toc { translate: -100% 0; transition: translate var(--tex8web-fade),
+        display var(--tex8web-fade) allow-discrete, overlay var(--tex8web-fade) allow-discrete; }
     .tex8web-toc:popover-open { translate: 0; }
     @starting-style { .tex8web-toc:popover-open { translate: -100% 0; } }
-    .tex8web-toc::backdrop { opacity: 0; transition: opacity 0.2s; }
+    .tex8web-toc::backdrop { opacity: 0; transition: opacity var(--tex8web-fade); }
     .tex8web-toc:popover-open::backdrop { opacity: 1; }
     @starting-style { .tex8web-toc:popover-open::backdrop { opacity: 0; } }
 }
@@ -344,20 +351,21 @@ dd.enumerate-enumitem { margin-left: 0; }
     .subparagraphToc, .likesubparagraphToc):not(.tex8web-open) { display: none; }
 @media (--tex8web-wide) {
     /* (the icons where they are in the narrow screen's bar) */
-    .tex8web-controls { inset: calc(env(safe-area-inset-top, 0px) + 0.5rem) auto auto 0.75rem;
-        padding: 0.125rem; border: 0; border-radius: 0.5rem; }
+    .tex8web-controls { inset: var(--tex8web-icons-inset); padding: 0.125rem; border: 0;
+        border-radius: 0.5rem; }
     /* (the button needs tex8web-page.js here) */
     :root:not(.tex8web-js) .tex8web-contents { display: none; }
     /* (its text where the drawer's is, and the icons, 1.25rem in) */
     .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
-        inset: 4rem auto 1rem 0.75rem; width: var(--tex8web-margin); height: auto; padding: 0 0.5rem; border: 0;
-        background: none; translate: none; transition: none; }
+        inset: var(--tex8web-column-inset); width: var(--tex8web-margin); height: auto;
+        padding: 0 0.5rem; border: 0; background: none; translate: none; transition: none; }
     .tex8web-toc-hidden .tex8web-toc { display: none; opacity: 0; }
     .tex8web-toc::backdrop { display: none; }
     /* (only as the button is pressed: not as the page loads, or as the
        window widens) */
     @media (prefers-reduced-motion: no-preference) {
-        .tex8web-toggling .tex8web-toc { transition: opacity 0.2s, display 0.2s allow-discrete; }
+        .tex8web-toggling .tex8web-toc { transition: opacity var(--tex8web-fade),
+            display var(--tex8web-fade) allow-discrete; }
         @starting-style { .tex8web-toggling .tex8web-toc { opacity: 0; } }
     }
 }
@@ -374,13 +382,14 @@ dd.enumerate-enumitem { margin-left: 0; }
     margin-top: 1em; }
 @media (--tex8web-wide) {
     .tex8web-sidenote { float: right; clear: right; position: relative;
-        width: var(--tex8web-margin); margin: 0 calc(-1.5rem - var(--tex8web-margin)) 0.75em 0;
+        width: var(--tex8web-margin); margin: 0 calc(-1 * var(--tex8web-gap) - var(--tex8web-margin)) 0.75em 0;
         padding: 0; border: 0; }
 }
 
 /* a preview of what a link on the page leads to (tex8web-page.js), about
-   as wide as the text at most, and without the space above and below it that it has
-   on the page (which tex4ht puts in style attributes, hence !important) */
+   as wide as the text at most, and without the space above and below it
+   that it has on the page (which tex4ht puts in style attributes, hence
+   !important) */
 .tex8web-preview { inset: auto; margin: 0;
     max-width: min(var(--tex8web-textwidth), 100vw - 1rem); max-height: 50vh; overflow: auto;
     padding: 0.5rem 0.75rem; font-size: 0.9em; color: var(--tex8web-text);

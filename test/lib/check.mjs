@@ -47,11 +47,9 @@ export function checkOutput(out) {
 function checkPage(page, name) {
   const problems = [];
   const html = readFileSync(page, 'utf8');
-  // (only tex8web-page.js, and the line before it that applies the
-  // reader's theme)
+  // (only tex8web-head.js and tex8web-page.js)
   const scripts = [...html.matchAll(/<script([^>]*)>/g)].map(m => m[1]);
-  if (scripts.some(s => /src=/.test(s) && !/src=['"]tex8web-page\.js['"]/.test(s))
-      || scripts.filter(s => !/src=/.test(s)).length > 1) {
+  if (scripts.some(s => !/src=['"]tex8web-(head|page)\.js['"]/.test(s))) {
     problems.push(`${name}: has a <script> besides tex8web's`);
   }
   const toc = html.match(/<nav[^>]*id=['"]tex8web-toc['"][^]*?<\/nav>/)?.[0] ?? '';

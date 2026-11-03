@@ -156,28 +156,24 @@ function M.meta_tags(document)
   end
 end
 
--- tex8web-page.js (the theme button, the table of contents' tracking),
--- with the reader's theme, and whether they hid the table of contents,
--- applied first; and for MathJax in the browser,
--- MathJax and tex8web.js, which configures it from tex8web-config
--- (prerender.mjs removes those two again)
+-- tex8web-head.js (the reader's theme, before the page is drawn) and
+-- tex8web-page.js (the theme button, the table of contents' tracking);
+-- and for MathJax in the browser, MathJax and tex8web.js, which configures
+-- it from tex8web-config (marked for prerender.mjs, which removes them)
 function M.scripts(document, context)
   local head = document:query_selector("head")[1]
-  local function script(attributes, text)
+  local function script(attributes)
     local el = head:create_element("script", attributes)
-    el:add_child_node(el:create_text_node(text or ""))
+    el:add_child_node(el:create_text_node(""))
     head:add_child_node(el)
   end
-  -- (LuaXML escapes <, > and & in a script; this has none)
-  script({}, "document.documentElement.classList.add('tex8web-js'); "
-    .. "try { const theme = localStorage.getItem('tex8web-theme'); "
-    .. "if (theme) document.documentElement.dataset.theme = theme; "
-    .. "if (localStorage.getItem('tex8web-contents') === 'hidden') "
-    .. "document.documentElement.classList.add('tex8web-toc-hidden') } catch (e) {}")
-  assets.add(context.root .. "/js/tex8web-page.js", context.dir .. "/tex8web-page.js")
+  for _, name in ipairs({"tex8web-head.js", "tex8web-page.js"}) do
+    assets.add(context.root .. "/js/" .. name, context.dir .. "/" .. name)
+  end
+  script({src = "tex8web-head.js"})
   script({src = "tex8web-page.js", defer = "defer"})
-  script({src = "tex8web.js"})
-  script({async = "async", id = "MathJax-script",
+  script({src = "tex8web.js", ["data-tex8web-browser"] = ""})
+  script({async = "async", id = "MathJax-script", ["data-tex8web-browser"] = "",
     src = "https://cdn.jsdelivr.net/npm/mathjax@" .. context.mathjax .. "/tex-chtml.js"})
 end
 
