@@ -54,7 +54,8 @@ Never restate the code, narrate, describe removed code or past versions (unless 
 
 - **Work toward checks that can pass or fail.** "Fix the bug" means writing a test that reproduces it and making it pass. Split multi-step work into milestones, each with its check, and commit each milestone once it's verified.
 - **Before committing:**
-  - `npm test` and `npm run test:visual` pass.
+  - `npm test` passes.
+  - `npm run test:visual` passes when the change touches the math path, where MathJax in Node and in the browser can diverge: `js/tex8web.js`, `js/prerender.mjs`, `tex/tex8web-math.tex`, the MathJax configuration in `tex/tex8web-page.tex`, `lua/tex8web/macros.lua`, `preamble.lua` and `source.lua`, the scripts in `page.lua`, and MathJax's version in `package.json`. Otherwise, at the end of a batch and before merging.
   - A bug fix gets a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
   - Visual changes are checked in headless Chrome screenshots, wide and narrow, light and dark, next to the PDF. Use `test/lib/chrome.mjs`, which deletes its profile.
 - **Review at milestones.** At each milestone, or more often for risky changes, a fresh senior-engineer subagent with no context reviews the diff for correctness and cleanliness. Give it the diff and the files, not your conclusions. Fix what's warranted, and report what you didn't fix and why.
