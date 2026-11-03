@@ -1,7 +1,7 @@
 % A second test for tex8web: a document unlike the notes, to check what
 % it handles without a config of its own. No xcolor, packages that MathJax has
-% as extensions, xparse macros, equation numbers by section, and titling's
-% title with a \thanks.
+% as extensions, xparse macros, equation numbers by section, titling's
+% title with a \thanks, and a table of contents with a macro of its own.
 \documentclass{article}
 \usepackage{amsmath,amssymb,physics,braket,cancel}
 \usepackage{titling}
@@ -15,9 +15,10 @@
 \date{A day\thanks{A note on the date.}}
 \begin{document}
 \maketitle
+\tableofcontents
 \section{One}
 Unnumbered.
-\section{Two}
+\section{Two, \texorpdfstring{$\prob{A}$}{P(A)}}
 Text with $\prob{\cond{A}{B}}$, $\dist{x}{y}$ and $\dist[\infty]{x}{y}$, and
 from physics $\dv{f}{x}$, $\abs{x}$, $\qty(\frac{a}{b})$, from braket
 $\braket{\phi|\psi}$, and from cancel $\cancel{x}$.
