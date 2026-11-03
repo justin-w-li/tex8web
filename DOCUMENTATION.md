@@ -155,6 +155,8 @@ Each `main.tex` names its source, license and changes at the top.
   - nothing but published files in the output.
 
   It also builds one document for MathJax in the browser. `test/expected.json` lists the known problems a document is allowed, with the reason. `node test/run.mjs <name>` checks one document.
+- **`node test/check.mjs <html directory> [make4ht log]`** makes the same checks of any build's pages (and of make4ht's log), and fails if one fails.
+- **`node test/diff.mjs <old> <new>`** says what changed between two builds of a page: the sections that differ, with how many of their formulas and their first difference (sections with the same one together), the stylesheets' changed lines, and the files added or removed. A rebuild of a document's page that shouldn't change it should print `unchanged`.
 - **`npm run test:visual`** (needs Chrome and the network) builds each document twice, prerendered and for the browser. It compares the two in headless Chrome, screen by screen, with JavaScript off; differing screens are saved in `build/test/<document>/visual/`.
 - **The visual checklist:** `test/fixtures/test.tex` is an ordinary article that touches what a tex4ht + MathJax conversion tends to get wrong. Its PDF is the reference:
 
@@ -268,4 +270,4 @@ A second, short document unlike the first:
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |
 | `examples/` | the examples |
-| `test/` | the tests: `run.mjs`, `visual.mjs`, `unit/`, `fixtures/`, `expected.json` |
+| `test/` | the tests: `run.mjs`, `visual.mjs`, `unit/`, `fixtures/`, `expected.json`; `check.mjs` and `diff.mjs`, for other builds; `lib/` |

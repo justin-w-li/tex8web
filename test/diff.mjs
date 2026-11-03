@@ -1,0 +1,104 @@
+// What changed between two builds of a page: the sections of each page
+// that differ (with how many of their formulas, and where the first
+// difference is), the lines of its stylesheets, and the files added,
+// removed or changed. Sections with the same first difference are listed
+// together. Left out: fonts/, which tex8web copies unchanged, and the PDF,
+// whose dates differ in every build.
+//   node test/diff.mjs <old html directory> <new html directory>
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { extname, join } from 'node:path';
+
+const [before, after] = process.argv.slice(2);
+
+function files(dir) {
+  return readdirSync(dir, { recursive: true })
+    .filter(f => !/^fonts(\/|$)/.test(f) && extname(f) !== '.pdf' && statSync(join(dir, f)).isFile()).sort();
+}
+
+// a page's sections, each from a heading with an id (and the start of the
+// page, up to the first), by their headings' text
+function sections(html) {
+  const seen = {};
+  return new Map(html.split(/(?=<h[1-6][^>]*\sid=)/).map((section, i) => {
+    let name = i ? section.slice(0, section.indexOf('</h'))
+      .replace(/<a[^>]*tex8web-permalink[^>]*>.*?<\/a>/, '').replace(/<[^>]+>/g, '')
+      .replace(/\s+/g, ' ').trim() : '(before the first heading)';
+    seen[name] = (seen[name] || 0) + 1;
+    if (seen[name] > 1) name += ` (${seen[name]})`;
+    return [name, section];
+  }));
+}
+
+const formulas = html => html.match(/<mjx-container[^]*?<\/mjx-container>/g) || [];
+const excerpt = (text, at) => JSON.stringify(text.slice(Math.max(0, at - 50), at + 50).replace(/\s+/g, ' '));
+
+function diffPage(a, b) {
+  const lines = [];
+  const groups = new Map();
+  const [old, now] = [sections(a), sections(b)];
+  for (const name of new Set([...old.keys(), ...now.keys()])) {
+    const [x, y] = [old.get(name), now.get(name)];
+    if (x === y) continue;
+    if (x === undefined || y === undefined) {
+      lines.push(`  ${x === undefined ? 'added' : 'removed'}: ${name}`);
+      continue;
+    }
+    // (formulas in one and not the other, counted as a multiset, so one
+    // inserted formula isn't every later one)
+    const left = formulas(x);
+    let changed = 0;
+    for (const f of formulas(y)) {
+      const i = left.indexOf(f);
+      if (i < 0) changed++; else left.splice(i, 1);
+    }
+    changed = Math.max(changed, left.length);
+    let at = 0;
+    while (x[at] === y[at]) at++;
+    // (the same change in several sections: the same text from where they
+    // first differ)
+    const key = x.slice(at, at + 50) + '\0' + y.slice(at, at + 50);
+    if (!groups.has(key)) groups.set(key, { names: [], shown: [excerpt(x, at), excerpt(y, at)] });
+    groups.get(key).names.push(changed ? `${name} (${changed} formula(s))` : name);
+  }
+  for (const { names, shown: [x, y] } of groups.values()) lines.push(`  ${names.join('; ')}`, `    - ${x}`, `    + ${y}`);
+  return cap(lines, 30);
+}
+
+// the lines only in a or only in b, in order (a longest common subsequence)
+function diffLines(a, b) {
+  const [x, y] = [a.split('\n'), b.split('\n')];
+  const lcs = Array.from({ length: x.length + 1 }, () => new Uint16Array(y.length + 1));
+  for (let i = x.length - 1; i >= 0; i--) {
+    for (let j = y.length - 1; j >= 0; j--) {
+      lcs[i][j] = x[i] === y[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+    }
+  }
+  const lines = [];
+  let i = 0, j = 0;
+  while (i < x.length || j < y.length) {
+    if (i < x.length && j < y.length && x[i] === y[j]) { i++; j++; }
+    else if (i < x.length && (j === y.length || lcs[i + 1][j] >= lcs[i][j + 1])) lines.push(`  - ${x[i++]}`);
+    else lines.push(`  + ${y[j++]}`);
+  }
+  return cap(lines, 20);
+}
+
+function cap(lines, n) {
+  return lines.length > n ? [...lines.slice(0, n), `  ... and ${lines.length - n} more lines`] : lines;
+}
+
+const out = [];
+const [old, now] = [files(before), files(after)];
+for (const file of new Set([...old, ...now])) {
+  if (!old.includes(file) || !now.includes(file)) {
+    out.push(`${old.includes(file) ? 'removed' : 'added'} ${file}`);
+    continue;
+  }
+  const [a, b] = [readFileSync(join(before, file)), readFileSync(join(after, file))];
+  if (a.equals(b)) continue;
+  const ext = extname(file);
+  out.push(`changed ${file}`);
+  if (ext === '.html') out.push(...diffPage(a.toString(), b.toString()));
+  else if (ext === '.css') out.push(...diffLines(a.toString(), b.toString()));
+}
+console.log(out.length ? out.join('\n') : 'unchanged');
