@@ -2,6 +2,18 @@
 % figures. (tcolorbox's boxes are in tex8web-boxes.tex)
 \makeatletter
 
+% --- title ------------------------------------------------------------------
+
+% a \thanks's mark where it is, as in the PDF: tex4ht (latex.4ht) puts it
+% there only where \footnote is \thanks, which LaTeX's \maketitle makes it
+% but titling's doesn't; and the marks not links, as in the PDF
+\let\web@thanks\thanks
+\def\thanks#1{{\let\footnote\thanks\web@thanks{#1}}}
+\Configure{thank}
+    {\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
+    {\HCode{<p>}\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
+    {\HCode{</p>}}
+
 % --- links ------------------------------------------------------------------
 
 \@ifpackageloaded{hyperref}{%

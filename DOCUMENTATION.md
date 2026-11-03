@@ -97,7 +97,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 
 ## On the page
 
-- **Controls:** quiet icons at the top left: the table of contents (on a narrow screen), the PDF (with `\WebPDF`, in a new tab), and light or dark. On a narrow screen they're in a bar across the top, which slides away while the reader scrolls down and comes back as they scroll up.
+- **Controls:** quiet icons at the top left: the table of contents (on a narrow screen), the PDF (with `\WebPDF`, in a new tab), and light or dark. On a narrow screen they're in a bar across the top, which slides away while the reader scrolls down and comes back as they scroll up. From a wide screen to a narrow one, the icons and the table of contents fade out (unless the reader's system asks for reduced motion), and the bar comes back as the reader scrolls up, or at once at the top of the page.
 - **Theme:** the page follows the reader's light or dark setting until they choose with the button. The choice is kept in the browser (`localStorage`, key `tex8web-theme`), for every tex8web page of the site, and applied before the page is drawn. Switching fades the page from one theme to the other (a view transition), unless the reader's system asks for reduced motion. `data-theme="light"` or `"dark"` on the root element sets it. Light mode uses the PDF's colors; TikZ pictures are inverted in dark mode.
 - **Table of contents:** `\tableofcontents` (or a box holding only the table of contents) moves out of the text, beside it on a wide screen and into a drawer behind the contents button on a narrow one (sliding in, unless the reader's system asks for reduced motion), as wide in both. It marks the section being read and shows that section's subsections. The space before each entry is half the document's (tocloft's `\cftbeforesecskip` and `\cftbeforesubsecskip`, or LaTeX's), since the column or drawer is narrow.
 - **Footnotes** follow the paragraph, list or theorem that holds their mark: beside it on a wide screen, lined up with the mark, and below it on a narrow one. A footnote in a table, figure, box or formula stays at the end of the page. (`tex8web.mk4` gives tex4ht the `fn-in` option, which keeps footnotes on the page; `\thanks` stays under the title.)
@@ -122,7 +122,6 @@ These are deliberate:
 
 - **`\intertext`:** the alignment is split at the text, so its columns no longer line up across it.
 - **`\qedhere`:** the QED box follows the display instead of sitting at the right margin.
-- **`\widehat` over a single letter** is as narrow as `\hat`.
 - **A TikZ picture in display math** (`\[ \begin{tikzcd} … \end{tikzcd} \]`) is drawn by TeX as a picture, together with any other math in the same display.
 - **Macros MathJax can't read** (see `\WebMathMacros` above), and macros that parse their arguments themselves, such as comma-separated lists. MathJax shows these in red.
 - **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.
@@ -146,7 +145,7 @@ Each `main.tex` names its source, license and changes at the top.
 
 - **`npm test`** runs the Lua unit tests (`test/unit/`), then builds every test document (`test/fixtures/`) and example into `build/test/`, and checks each:
   - no TeX errors, and no build warnings;
-  - no scripts in a prerendered page but tex8web's (tex8web-page.js, and a line that applies the reader's theme), no MathJax errors, no macros MathJax doesn't know;
+  - no scripts in a prerendered page but tex8web's (tex8web-page.js, and a line that applies the reader's theme), no MathJax errors, no macros MathJax doesn't know, no `\widehat` or `\widetilde` as narrow as `\hat` or `\tilde`;
   - the table of contents beside the text, not in it;
   - MathML for every formula;
   - every link and file in place;

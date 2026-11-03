@@ -79,6 +79,17 @@ function check(doc, result, out, aux) {
     const unknown = [...html.matchAll(/<mjx-mtext style=['"]color: red;['"]>(.*?)<\/mjx-mtext>/g)]
       .map(m => m[1].replace(/<[^>]+>/g, ''));
     if (unknown.length) problems.push(`${name}: macros MathJax doesn't know: ${[...new Set(unknown)].join(', ')}`);
+    // (in a formula's MathML, \hat and \tilde aren't stretchy; their
+    // glyph is the one without a size, and TeX's wide ones are the next
+    // three)
+    for (const [formula] of html.matchAll(/<mjx-container[^]*?<\/mjx-container>/g)) {
+      const wide = formula.match(/<mo(?![^>]*stretchy=['"]false)[^>]*>[\^~]<\/mo>/g) || [];
+      const sized = formula.match(/mjx-c(?:2C6|2DC) TEX-(?:SO|LO|S3)\b/g) || [];
+      if (sized.length < wide.length) {
+        problems.push(`${name}: a \\widehat or \\widetilde narrower or wider than TeX's`);
+        break;
+      }
+    }
     const math = (html.match(/<mjx-container/g) || []).length;
     const mathml = (html.match(/<mjx-assistive-mml/g) || []).length;
     if (math !== mathml) problems.push(`${name}: ${math} formulas, ${mathml} with MathML for screen readers`);
@@ -89,6 +100,10 @@ function check(doc, result, out, aux) {
       if (path && !existsSync(join(dirname(page), decodeURI(path)))) problems.push(`${name}: missing ${path}`);
       if (!path && anchor && !ids.has(anchor)) problems.push(`${name}: no target for #${anchor}`);
     }
+    // (a \thanks's mark in the title, and again before its note)
+    const [title, notes = ''] = html.split(/class=['"]thanks['"]/);
+    const marks = text => (text.match(/class=['"]thank-mark['"]/g) || []).length;
+    if (marks(title) < marks(notes)) problems.push(`${name}: a \\thanks without its mark`);
   }
   return problems;
 }

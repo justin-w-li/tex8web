@@ -101,6 +101,7 @@ function tex8web(config, tex) {
   }
 
   const bars = ['|', '‖', '∥'];
+  const wideAccents = ['^', '~'];
   let TEXCLASS;
 
   function adjust({data}) {
@@ -117,7 +118,18 @@ function tex8web(config, tex) {
           node.attributes.set('linebreakstyle', 'after');
         }
         const minsize = node.attributes.getExplicit('minsize');
-        if (minsize) {
+        if (node.getProperty('mathaccent') && wideAccents.includes(node.getText())
+            && node.attributes.getExplicit('stretchy') !== false) {
+          // \widehat and \widetilde: the widest of TeX's sizes (0.556,
+          // 1 and 1.444em) that isn't wider than what's under it, or the
+          // narrowest (internal, getStretchedVariant: an accent gets the
+          // size before the first one at least as wide as its base, that
+          // width clamped to minsize and maxsize, so just above 0.556 and
+          // 1.444em; without them it aims wider than the base, among sizes
+          // from \hat's 0.5em to 1.889em)
+          node.attributes.set('minsize', '0.557em');
+          node.attributes.set('maxsize', '1.445em');
+        } else if (minsize) {
           node.attributes.set('mathsize', scale);
           // TeX builds a big bar from pieces, a little (0.04em) taller
           // than the glyphs of the other delimiters

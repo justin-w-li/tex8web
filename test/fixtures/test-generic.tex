@@ -1,14 +1,20 @@
 % A second test for tex8web: a document unlike the notes, to check what
 % it handles without a config of its own. No xcolor, packages that MathJax has
-% as extensions, xparse macros, and equation numbers by section.
+% as extensions, xparse macros, equation numbers by section, and titling's
+% title with a \thanks.
 \documentclass{article}
 \usepackage{amsmath,amssymb,physics,braket,cancel}
+\usepackage{titling}
 \usepackage{hyperref}
 \numberwithin{equation}{section}
 \NewDocumentCommand{\prob}{m}{\mathbb{P}\left(#1\right)}
 \NewDocumentCommand{\dist}{O{2} m m}{\lVert #2 - #3 \rVert_{#1}}
 \newcommand{\cond}[2]{#1 \,\middle|\, #2}
+\title{Generic}
+\author{Someone}
+\date{A day\thanks{A note on the date.}}
 \begin{document}
+\maketitle
 \section{One}
 Unnumbered.
 \section{Two}

@@ -40,24 +40,47 @@
 
   // the controls, in a bar across the top on a narrow screen
   // (css/tex8web.css): out of the way while the reader scrolls down, back as
-  // soon as they scroll up; and while the window is made wider or narrower,
-  // nothing slides, and the bar is away unless the page is at its top
+  // soon as they scroll up; and as the window goes from wide to narrow,
+  // away (fading, as does the column of contents, css/tex8web.css), then
+  // back only at the page's top
   function bar() {
     const controls = document.querySelector('.tex8web-controls');
     if (!controls) return;
-    let last = scrollY;
+    const layout = () => getComputedStyle(root).getPropertyValue('--tex8web-layout').trim();
+    const motion = matchMedia('(prefers-reduced-motion: no-preference)');
+    const top = () => scrollY <= controls.offsetHeight;
+    let was = layout(), width = innerWidth, last = scrollY, timer;
+    // (only on a narrow screen: the browser may restyle the page for a
+    // narrow one before the resize event, and a bar already away would
+    // then vanish there rather than fade; and not for the scrolling that
+    // keeps the reader's place as the width changes)
     addEventListener('scroll', () => {
-      controls.classList.toggle('tex8web-away', scrollY > last && scrollY > controls.offsetHeight);
+      if (innerWidth === width) {
+        controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > last && !top());
+      }
+      width = innerWidth;
       last = scrollY;
     }, { passive: true });
-    let width = innerWidth, timer;
     addEventListener('resize', () => {
-      if (innerWidth === width) return;  // (a phone's address bar coming and going)
-      width = innerWidth;
-      root.classList.add('tex8web-resizing');
-      controls.classList.toggle('tex8web-away', scrollY > controls.offsetHeight);
-      clearTimeout(timer);
-      timer = setTimeout(() => root.classList.remove('tex8web-resizing'), 100);
+      const now = layout();
+      if (now === 'wide') {
+        clearTimeout(timer);
+        root.classList.remove('tex8web-narrowing');
+        controls.classList.remove('tex8web-away');
+      } else if (was === 'wide' && !motion.matches) {
+        controls.classList.toggle('tex8web-away', !top());
+      } else if (was === 'wide') {
+        root.classList.add('tex8web-narrowing');
+        controls.classList.add('tex8web-away');
+        clearTimeout(timer);
+        // (a little after the 0.2s fades: until they end, the drawer's and
+        // bar's own styles would show them)
+        timer = setTimeout(() => {
+          root.classList.remove('tex8web-narrowing');
+          controls.classList.toggle('tex8web-away', !top());
+        }, 400);
+      }
+      was = now;
     });
   }
 

@@ -58,6 +58,11 @@ Never restate the code, narrate, describe removed code or past versions (unless 
   - A bug fix gets a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
   - Visual changes are checked in headless Chrome screenshots, wide and narrow, light and dark, next to the PDF. Use `test/lib/chrome.mjs`, which deletes its profile.
 - **Review at milestones.** At each milestone, or more often for risky changes, a fresh senior-engineer subagent with no context reviews the diff for correctness and cleanliness. Give it the diff and the files, not your conclusions. Fix what's warranted, and report what you didn't fix and why.
+- **Match the process to the change.** The full cycle above (milestones, review, every check) is for features and for changes to TeX, Lua or MathJax internals. A small UI tweak (a CSS value, a timing, a comment, a few lines of JS) gets a light loop instead:
+  - no reviewer, and no rebuild of every document per iteration;
+  - verify the tweak itself: one targeted headless-Chrome measurement or screenshot, rebuilding only the page that shows it;
+  - `npm test`, then commit; batch several tweaks per commit;
+  - run `npm run test:visual` and the full rebuild once, at the end of a batch.
 - **Keep the docs true.**
   - `DOCUMENTATION.md` changes when behavior, files or limitations do.
   - Known gaps go in `test/expected.json`.

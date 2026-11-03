@@ -12,8 +12,8 @@ return {
       .. ".border:hover{color:black}")
   end,
 
-  ["assets.wide_screens: the text's width and 18em each side"] = function()
+  ["assets.wide_screens: the text's width and 17em each side"] = function()
     equal(assets.wide_screens(":root { --tex8web-textwidth: 42.9em; }\n@media not (--tex8web-wide) { x }"),
-      ":root { --tex8web-textwidth: 42.9em; }\n@media not (min-width: 78.90em) { x }")
+      ":root { --tex8web-textwidth: 42.9em; }\n@media not (min-width: 76.90em) { x }")
   end,
 }
