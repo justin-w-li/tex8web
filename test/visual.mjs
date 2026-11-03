@@ -3,10 +3,11 @@
 // screen with JavaScript off (needs Chrome, and the network for MathJax).
 // The two should be identical; differing screens are saved, as
 // <screen>-browser.png and <screen>-prerendered.png, in
-// build/test/<document>/visual/.
+// build/test/<document>/visual/. In both, the columns of an alignment
+// should line up across its \intertext.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build, documents, root } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
@@ -19,6 +20,8 @@ const screen = 900;
 // MathJax's styles (which it adds through the CSSOM) written out; and
 // without what tex8web-page.js changed, which isn't MathJax's
 const typesetPage = `(async () => {
+  // (MathJax's script, from the network, may not have run yet)
+  while (!MathJax.startup.promise) await new Promise(resolve => setTimeout(resolve, 100));
   await MathJax.startup.promise;
   await MathJax.startup.document.lazyTypesetAll?.();
   const css = [...document.styleSheets].filter(s => s.ownerNode?.id?.startsWith('MJX'))
@@ -34,6 +37,25 @@ const typesetPage = `(async () => {
   style.textContent = css;
   html.querySelector('head').append(style);
   return '<!DOCTYPE html>' + html.outerHTML;
+})()`;
+
+// the alignments split at an \intertext whose columns don't line up across
+// it: for each, the left edges of the columns before and after (the row
+// with the most cells, in px)
+const misaligned = `(() => {
+  const edges = c => {
+    const table = c.querySelector('mjx-mtable');
+    const rows = [...table.querySelectorAll('mjx-mtr, mjx-mlabeledtr')]
+      .filter(r => r.closest('mjx-mtable') === table && !r.closest('mjx-labels'));
+    const row = rows.sort((a, b) => b.children.length - a.children.length)[0];
+    return [...row.querySelectorAll(':scope > mjx-mtd')].map(td => Math.round(td.getBoundingClientRect().left * 2) / 2);
+  };
+  const all = [...document.querySelectorAll('mjx-container[display]')];
+  return [...document.querySelectorAll('.tex8web-intertext')].map(text => {
+    const before = all.filter(c => c.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).pop();
+    const after = all.find(c => c.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_PRECEDING);
+    return before && after && [text.textContent.trim().slice(0, 30), edges(before), edges(after)];
+  }).filter(found => found && found[1].join() !== found[2].join());
 })()`;
 
 async function screens(chrome, file) {
@@ -60,12 +82,19 @@ for (const doc of documents().filter(d => !only.length || only.includes(d.name))
     failures++;
     continue;
   }
-  const problems = [];
+  const problems = [], layout = [];
   for (const html of readdirSync(pre).filter(f => f.endsWith('.html'))) {
     const page = await chrome.open(pathToFileURL(join(browser, html)).href);
     const typeset = join(browser, html.replace(/\.html$/, '.typeset.html'));
     writeFileSync(typeset, await page.evaluate(typesetPage));
     await page.close();
+    for (const file of [typeset, join(pre, html)]) {
+      const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
+      for (const [text, a, b] of await page.evaluate(misaligned)) {
+        layout.push(`${relative(dir, file)}: columns at ${a.join(', ')} before "${text}", ${b.join(', ')} after`);
+      }
+      await page.close();
+    }
     const [a, b] = [await screens(chrome, typeset), await screens(chrome, join(pre, html))];
     if (a.length !== b.length) problems.push(`${html}: ${a.length} screens in the browser, ${b.length} prerendered`);
     const differing = [];
@@ -80,10 +109,11 @@ for (const doc of documents().filter(d => !only.length || only.includes(d.name))
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
   }
   const known = expected[doc.name]?.visual;
-  if (problems.length && known) {
+  if (problems.length && known && !layout.length) {
     console.log(`ok - ${doc.name} # known: ${known}`);
     for (const problem of problems) console.log(`    ${problem}`);
   } else {
+    problems.unshift(...layout);
     console.log(`${problems.length ? 'not ok' : 'ok'} - ${doc.name}`);
     for (const problem of problems) console.log(`    ${problem}`);
     failures += problems.length ? 1 : 0;

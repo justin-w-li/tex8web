@@ -17,7 +17,7 @@ A page goes through four stages:
 1. **tex4ht** (`tex8web.cfg`, `tex/`).
    - tex4ht's `mathjax` option writes the text as HTML and leaves each formula's LaTeX in the page.
    - The configuration numbers equations with TeX's own numbers, so they agree with `\eqref`.
-   - It splits alignments at `\intertext`.
+   - It splits alignments at `\intertext`, and tex8web.js gives the parts the same columns, so they line up as one alignment.
    - It measures the document (text width, heading sizes, theorem and list spacing, link colors) for the stylesheet `css/tex8web.css`.
 2. **HTML passes** (`lua/tex8web/`, run by `tex8web.mk4`).
    - **The macro bridge** (`macros.lua`, `preamble.lua`). MathJax doesn't see the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document and from the local packages it loads, and translates them for MathJax. The page gets only the macros its math uses; templates and the rest of the source are never published.
@@ -26,7 +26,8 @@ A page goes through four stages:
    - `\big` and its relatives;
    - the 10pt delimiters and large operators of an 11pt or 12pt document;
    - the rows of arrays and alignments;
-   - line breaks after relations.
+   - line breaks after relations;
+   - the columns of an alignment split at `\intertext`, each as wide as in the widest part. These parts, and the macros' definitions, aren't left for MathJax to typeset as they scroll into view.
 4. **Prerendering** (`js/prerender.mjs`). MathJax typesets the page in Node, configured as it would be in the browser, and the page keeps the result.
    - Without `node_modules/` (or with `TEX8WEB_NO_PRERENDER=1`), this step is skipped. The page then loads MathJax from jsDelivr, typesets the math as it scrolls into view, and gives screen readers MathML.
    - tex8web.js relies on MathJax's internals. That is why MathJax's version is pinned in `package.json`, which both the prerendering and the page's script use.
@@ -121,7 +122,6 @@ These are deliberate:
 
 ## Known limitations
 
-- **`\intertext`:** the alignment is split at the text, so its columns no longer line up across it.
 - **`\qedhere`:** the QED box follows the display instead of sitting at the right margin.
 - **enumitem's label alignment:** a label is right-aligned before its item, hanging into the margin; `align=left`, `wide` and `itemindent` aren't followed.
 - **A TikZ picture in display math** (`\[ \begin{tikzcd} … \end{tikzcd} \]`) is drawn by TeX as a picture, together with any other math in the same display.
@@ -158,7 +158,7 @@ Each `main.tex` names its source, license and changes at the top.
   It also builds one document for MathJax in the browser. `test/expected.json` lists the known problems a document is allowed, with the reason. `node test/run.mjs <name>` checks one document.
 - **`node test/check.mjs <html directory> [make4ht log]`** makes the same checks of any build's pages (and of make4ht's log), and fails if one fails.
 - **`node test/diff.mjs <old> <new>`** says what changed between two builds of a page: the sections that differ, with how many of their formulas and their first difference (sections with the same one together), the stylesheets' changed lines, and the files added or removed. A rebuild of a document's page that shouldn't change it should print `unchanged`.
-- **`npm run test:visual`** (needs Chrome and the network) builds each document twice, prerendered and for the browser. It compares the two in headless Chrome, screen by screen, with JavaScript off; differing screens are saved in `build/test/<document>/visual/`.
+- **`npm run test:visual`** (needs Chrome and the network) builds each document twice, prerendered and for the browser. It compares the two in headless Chrome, screen by screen, with JavaScript off; differing screens are saved in `build/test/<document>/visual/`. In both, an alignment's columns must line up across its `\intertext`.
 - **The visual checklist:** `test/fixtures/test.tex` is an ordinary article that touches what a tex4ht + MathJax conversion tends to get wrong. Its PDF is the reference:
 
   ```sh
@@ -210,7 +210,7 @@ Each `main.tex` names its source, license and changes at the top.
 | 3.4 Fractions and text | Text inside the display upright with normal word spaces; `\phantom` leaves a gap | |
 | 3.5 Numbered equations | Each equation centered on the line, its number at the right margin; the split's `=` signs aligned; the references (1), eq. (2) and 2 link to them | Equation pushed left of center by its number |
 | 3.6 Cases | Brace with two aligned columns; `dcases` fraction full size | The displays missing entirely |
-| 3.7 Alignments | `=` aligned with no extra space around them; numbers (3), (∗), (4) beside their lines; the note "by Cauchy–Schwarz, and so" as an ordinary line of text; *a* = *b* and *c* = *d* in two column pairs; lines starting with ≤ or = spaced as relations; gather centered; multline's first line left, last line right; alignat's two column pairs | Extra space around `=` and inside ‖ ‖; the note pushing the table wider than the page |
+| 3.7 Alignments | `=` aligned with no extra space around them; numbers (3), (∗), (4) beside their lines; the notes ("by Cauchy–Schwarz, and so" and the four after) as ordinary lines of text, with the columns lined up across each; *a* = *b* and *c* = *d* in two column pairs; lines starting with ≤ or = spaced as relations; gather centered; multline's first line left, last line right; alignat's two column pairs | Extra space around `=` and inside ‖ ‖; the note pushing the table wider than the page |
 | 3.8 Matrices and arrays | Delimiters just taller than the rows; `pmatrix*[r]` right-aligned; the vertical rule and `\hline` in the array | Very large delimiters; rules missing |
 | 3.9 Wide displays | Scrolls sideways within the column, the page doesn't | Text running off the page |
 
@@ -266,7 +266,7 @@ A second, short document unlike the first:
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, no-break spaces, footnotes, links, controls and the table of contents, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `prerender.lua` | the files next to the page, bibtex and biber, prerendering |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
-| `js/tex8web.js` | MathJax's sizes set as TeX's |
+| `js/tex8web.js` | MathJax's sizes set as TeX's, and the columns of an alignment split at `\intertext` |
 | `js/tex8web-page.js` | the theme button, the narrow screen's bar, footnotes lined up with their marks, the table of contents' tracking, previews |
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |

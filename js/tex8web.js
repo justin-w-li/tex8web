@@ -153,6 +153,104 @@ function tex8web(config, tex) {
     }
   }
 
+  // the parts of an alignment split at \intertext (tex8web-math.tex), each
+  // a formula with \webalignment{n} at its start: the same columns in each,
+  // each column as wide as in its widest part, so the parts line up as TeX's
+  // one alignment does
+  function markAlignment(math) {
+    math.math = math.math.replace(/\\webalignment\s*\{(\d+)\}/, (_, n) => {
+      math.tex8webAlignment = n;
+      // (internal: ui/lazy's flags, which would leave the formula
+      // uncompiled until it's in view)
+      math.lazyCompile = math.lazyTypeset = false;
+      return '';
+    });
+  }
+  // (and macros.lua's definitions, which a part may use, compiled at once
+  // too: ui/lazy's lazyAlwaysTypeset fails on some pages)
+  function markAlignments(doc) {
+    let marked = false;
+    for (const math of doc.math) {
+      markAlignment(math);
+      marked ||= Boolean(math.tex8webAlignment);
+    }
+    if (!marked) return;
+    const adaptor = doc.adaptor;
+    for (const math of doc.math) {
+      let node = math.start.node;
+      while (node && !(adaptor.kind(node) === 'div' && adaptor.hasClass(node, 'tex8web-macros'))) {
+        node = adaptor.parent(node);
+      }
+      if (node) math.lazyCompile = false;
+    }
+  }
+  // the top table of a part (none if MathJax couldn't parse it), and its
+  // columns' widths (internal: its wrapper, made as getBBox makes it, with
+  // the TeX classes that space operators, and a container for measuring
+  // text)
+  function measure(math, doc) {
+    const jax = doc.outputJax;
+    jax.setDocument(doc);
+    jax.math = math;
+    jax.container = jax.createNode();
+    math.root.setTeXclass(null);
+    jax.nodeMap = new Map();
+    const wrappers = [jax.factory.wrap(math.root)];
+    let table;
+    while (!table && wrappers.length) {
+      const wrapper = wrappers.shift();
+      if (wrapper.node.isKind('mtable')) table = wrapper;
+      else wrappers.push(...wrapper.childNodes);
+    }
+    jax.nodeMap = null;
+    return table && {node: table.node, widths: table.getComputedWidths()};
+  }
+  function alignColumns(doc) {
+    const alignments = {};
+    for (const math of doc.math) {
+      if (math.tex8webAlignment) (alignments[math.tex8webAlignment] ||= []).push(math);
+    }
+    for (const parts of Object.values(alignments)) {
+      // (once per compiled formula: ui/lazy and the menu render the page
+      // again, and the widths would then be the ones set here)
+      if (parts.every(math => math.root.getProperty('tex8web-columns'))) continue;
+      parts.forEach(math => math.root.setProperty('tex8web-columns', true));
+      const tables = parts.map(math => measure(math, doc)).filter(Boolean);
+      if (!tables.length) continue;
+      const widths = [];
+      for (const table of tables) {
+        table.widths.forEach((width, i) => { widths[i] = Math.max(widths[i] || 0, width); });
+      }
+      // (a part with fewer columns gets those of the one with the most, with
+      // their spacing and alignment, which MathJax sets per table; and
+      // flalign's spacers stay as wide as the room left)
+      const most = tables.find(table => table.widths.length === widths.length).node.attributes;
+      const given = String(most.get('columnwidth')).split(' ');
+      for (const {node, widths: own} of tables) {
+        const row = node.childNodes[0];
+        if (own.length < widths.length) {
+          const cells = row.childNodes.length - (row.isKind('mlabeledtr') ? 1 : 0);
+          for (let i = cells; i < widths.length; i++) row.appendChild(doc.mmlFactory.create('mtd'));
+          for (const name of ['columnalign', 'columnspacing', 'data-break-align']) {
+            node.attributes.set(name, most.getExplicit(name));
+          }
+        }
+        // (rounded up, so that a cell's content fits)
+        node.attributes.set('columnwidth', widths.map((w, i) =>
+          given[i] === 'fit' ? 'fit' : Math.ceil(w * 1000) / 1000 + 'em').join(' '));
+      }
+    }
+  }
+
+  // (in the options, as the menu may make the document anew: before
+  // compile (20), and after the metrics (110), which the widths need)
+  const options = config.options = config.options || {};
+  options.renderActions = {
+    ...options.renderActions,
+    tex8webAlignment: [15, markAlignments, markAlignment],
+    tex8webColumns: [115, alignColumns, () => {}],
+  };
+
   const ready = startup.ready;
   startup.ready = function () {
     sizeBigDelimiters();

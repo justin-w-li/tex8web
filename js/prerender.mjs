@@ -30,8 +30,8 @@ config.loader.ready = () => {
   delete MathJax.config.options.menuOptions;
   MathJax.loader.defaultReady();
 };
-config.options = { enableEnrichment: false, enableSpeech: false, enableBraille: false,
-  enableAssistiveMml: true };
+Object.assign(config.options, { enableEnrichment: false, enableSpeech: false, enableBraille: false,
+  enableAssistiveMml: true });
 config.startup.document = html;
 globalThis.MathJax = config;
 require('mathjax/tex-chtml.js');
