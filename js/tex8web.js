@@ -33,8 +33,8 @@ function tex8web(config, tex) {
   // MathJax's default space between rows (in its ems, in which 1pt is
   // 0.1em), and TeX's struts and space, for each environment (the
   // environments tex8web-math.tex numbers are listed there)
-  const alignment = {rowspacing: 0.3, stretch: 1, space: () => tex.jot};
-  const array = {rowspacing: 0.4, stretch: 1, space: () => 0};
+  const alignment = {rowspacing: 0.3, stretch: 1, space: tex.jot};
+  const array = {rowspacing: 0.4, stretch: 1, space: 0};
   const environments = {
     align: alignment, 'align*': alignment, alignat: alignment, 'alignat*': alignment,
     flalign: alignment, 'flalign*': alignment, gather: alignment, 'gather*': alignment,
@@ -44,9 +44,9 @@ function tex8web(config, tex) {
     vmatrix: array, Vmatrix: array,
     // (amsmath's cases sets \arraystretch to 1.2, and has two columns
     // a \quad apart, also when the second is empty)
-    cases: {rowspacing: 0.2, stretch: 1.2, space: () => 0, columns: 2},
-    dcases: {rowspacing: 0.2, stretch: 1.2, space: () => 0, columns: 2},
-    rcases: {rowspacing: 0.2, stretch: 1.2, space: () => 0},
+    cases: {rowspacing: 0.2, stretch: 1.2, space: 0, columns: 2},
+    dcases: {rowspacing: 0.2, stretch: 1.2, space: 0, columns: 2},
+    rcases: {rowspacing: 0.2, stretch: 1.2, space: 0},
   };
 
   // the environment of each table, which MathJax doesn't record (an
@@ -96,7 +96,7 @@ function tex8web(config, tex) {
       row.appendChild(factory.create('node', 'mtd'));
     }
     const spacing = String(mtable.attributes.get('rowspacing')).split(/\s+/).map(space =>
-      em(Math.max(0, (ems(space) - env.rowspacing) * 10 * tex.pt + env.space())));
+      em(Math.max(0, (ems(space) - env.rowspacing) * 10 * tex.pt + env.space)));
     mtable.attributes.set('rowspacing', spacing.join(' '));
   }
 

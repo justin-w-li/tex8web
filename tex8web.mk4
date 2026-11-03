@@ -33,10 +33,8 @@ local text = require "tex8web.text"
 -- settle. (The parameters build on settings: Make.params is still empty)
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
-if mode == "draft" then
-  Make:htlatex(latex)
-else
-  Make:htlatex(latex)
+Make:htlatex(latex)
+if mode ~= "draft" then
   Make:add("bibliography", bibliography.run)
   Make:bibliography {}
   Make:autohtlatex(latex)

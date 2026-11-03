@@ -2,6 +2,8 @@
 -- PDF, tex8web.js, and the static styles in the stylesheet, where tex4ht's
 -- rules are also drawn in the text's color. Each file is listed with
 -- tex4ht's output files, so make4ht -d copies it too.
+local files = require "tex8web.files"
+
 local log = logging.new("tex8web")
 
 local M = {}
@@ -26,13 +28,6 @@ local function exists(path)
   return lfs.attributes(path) ~= nil
 end
 
-local function read(path)
-  local f = assert(io.open(path))
-  local s = f:read("*a")
-  f:close()
-  return s
-end
-
 -- copies source to path, a file of the page
 function M.add(source, path)
   copy(source, path)
@@ -42,7 +37,7 @@ end
 -- text in tex4ht's classes for sans-serif fonts (css/tex8web.css), or
 -- headings in sans-serif (tex8web-page.tex, in the document's stylesheet)
 local function uses_sans(document, context)
-  local css = read(context.dir .. "/" .. context.input .. ".css")
+  local css = assert(files.read(context.dir .. "/" .. context.input .. ".css"))
   local found = css:find("%-%-tex8web%-%a+%-family: var%(%-%-tex8web%-sans%)") ~= nil
   document:traverse_elements(function(el)
     local class = el:get_attribute("class") or ""
@@ -111,10 +106,10 @@ end
 -- then has it already)
 function M.stylesheet(context)
   local path = context.dir .. "/" .. context.input .. ".css"
-  local css = read(path)
+  local css = assert(files.read(path))
   local i, j = css:find("/* tex8web.css */", 1, true)
   if not i then return end
-  css = css:sub(1, i - 1) .. read(context.root .. "/css/tex8web.css") .. css:sub(j + 1)
+  css = css:sub(1, i - 1) .. assert(files.read(context.root .. "/css/tex8web.css")) .. css:sub(j + 1)
   local f = assert(io.open(path, "w"))
   f:write(M.wide_screens(M.rules_in_text_color(css)))
   f:close()

@@ -9,6 +9,10 @@ local log = logging.new("tex8web")
 
 local M = {}
 
+local function trim(s)
+  return s:match("^%s*(.-)%s*$")
+end
+
 -- tex8web-page.tex's build element, for the later passes: the PDF
 -- (context.pdf) and the \WebMathMacros definitions (context.macros)
 function M.build_data(document, context)
@@ -76,14 +80,14 @@ local function contents(document, body)
   local title = "Contents"
   local heading = dom.previous_element(list)
   if heading and dom.has_class(heading, "^like%a*Head$") then
-    title = heading:get_text():match("^%s*(.-)%s*$")
+    title = trim(heading:get_text())
     heading:remove_node()
   end
   local content = list:get_parent()
   local box = dom.has_class(content, "^tcolorbox%-content$") and content:get_parent()
   if box and #dom.elements(content) == 1 then
     local box_title = box:query_selector(".tcolorbox-title")[1]
-    if box_title then title = box_title:get_text():match("^%s*(.-)%s*$") end
+    if box_title then title = trim(box_title:get_text()) end
     box:remove_node()
   else
     list:remove_node()
@@ -98,8 +102,9 @@ local function contents(document, body)
 end
 
 -- the controls at the top left: the table of contents (as a drawer, on a
--- narrow screen; hidden or shown, on a wide one), the PDF (\WebPDF), copied next to the page, and the
--- theme, which needs tex8web-page.js; then the table of contents
+-- narrow screen; hidden or shown, on a wide one), the PDF (\WebPDF),
+-- copied next to the page, and the theme, which needs tex8web-page.js; then
+-- the table of contents
 function M.controls(document, context)
   local body = document:query_selector("body")[1]
   local controls = body:create_element("div", {class = "tex8web-controls"})
@@ -131,7 +136,7 @@ local function abstract_text(document)
   if not abstract then return end
   local parts = {}
   for _, p in ipairs(abstract:query_selector("p")) do parts[#parts + 1] = p:get_text() end
-  local text = table.concat(parts, " "):gsub("\\[()]", ""):gsub("%s+", " "):match("^%s*(.-)%s*$")
+  local text = trim(table.concat(parts, " "):gsub("\\[()]", ""):gsub("%s+", " "))
   if utf8.len(text) > 200 then
     local cut = text:sub(1, utf8.offset(text, 198) - 1)
     text = (cut:match("^(.*)%s") or cut) .. "…"
@@ -147,7 +152,7 @@ function M.meta_tags(document)
   local function add(attribute, name, content)
     head:add_child_node(head:create_element("meta", {[attribute] = name, content = content}))
   end
-  if title then add("property", "og:title", title:get_text():match("^%s*(.-)%s*$")) end
+  if title then add("property", "og:title", trim(title:get_text())) end
   add("property", "og:type", "article")
   local description = abstract_text(document)
   if description and description ~= "" then

@@ -1,6 +1,8 @@
 -- Reading macro definitions from LaTeX source: the document's own and
 -- those of the local packages it loads. Plain string work, without the
 -- page, so it can be tested on its own (test/unit/).
+local files = require "tex8web.files"
+
 local log = logging and logging.new("tex8web")
 
 local M = {}
@@ -191,19 +193,11 @@ function M.read(s, definitions)
     for list in s:gmatch("\\" .. command .. "%s*(%b{})") do packages[#packages + 1] = list end
     for list in s:gmatch("\\" .. command .. "%s*%b[]%s*(%b{})") do packages[#packages + 1] = list end
   end
-  local files = {}
+  local styles = {}
   for _, list in ipairs(packages) do
-    for name in list:sub(2, -2):gmatch("[^,%s]+") do files[#files + 1] = name .. ".sty" end
+    for name in list:sub(2, -2):gmatch("[^,%s]+") do styles[#styles + 1] = name .. ".sty" end
   end
-  return files
-end
-
-local function read_file(path)
-  local f = io.open(path)
-  if not f then return end
-  local s = f:read("*a")
-  f:close()
-  return s
+  return styles
 end
 
 -- the definitions in the document and the local packages it loads
@@ -211,7 +205,7 @@ function M.document(tex_file)
   local definitions, seen, queue = {}, {}, {tex_file}
   while #queue > 0 do
     local path = table.remove(queue, 1)
-    local s = not seen[path] and read_file(path)
+    local s = not seen[path] and files.read(path)
     seen[path] = true
     if s then
       for _, file in ipairs(M.read(s, definitions)) do

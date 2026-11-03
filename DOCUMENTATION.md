@@ -81,7 +81,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 
 - **`\WebMathMacros{definitions}`** gives MathJax its own definitions, in MathJax's TeX, which take precedence over the document's.
   - Use it for any macro the build names in its warning at the end ("macro(s) left undefined for MathJax"): those built with `\mathpalette`, `\scalebox` or internal `@` macros, and xparse commands with arguments other than `m` and a leading `O{}`.
-  - Use it also for macros the bridge can't see: those defined in loops, or by commands of the document's own.
+  - Use it also for macros the bridge can't see: those defined in loops, by commands of the document's own, or in files it `\input`s (the bridge reads only the document and the local packages it loads).
 - **`\WebColor{name}{light}{dark}`** makes the CSS variable `--name` from two xcolor (or color package) colors.
 - **`\WebPDF{path}`** copies the PDF next to the page and links it from an icon at the top left. The path is relative to the document's directory.
 - **`\Css{...}`** after `\input{tex8web-core.tex}` overrides tex8web's styles. tex8web's styles are in `css/tex8web.css`, and the document's measurements are custom properties you can override:
@@ -151,6 +151,7 @@ Each `main.tex` names its source, license and changes at the top.
   - no scripts in a prerendered page but tex8web's (tex8web-head.js and tex8web-page.js), no MathJax errors, no macros MathJax doesn't know, no `\widehat` or `\widetilde` as narrow as `\hat` or `\tilde`;
   - the table of contents beside the text, not in it, each entry's number in its box, and each heading's label holding its entry's number, with one space after it, which the stylesheet sizes; and test-generic's measured spacing, label space and title size;
   - each enumitem list with its own lengths;
+  - in `test.tex`, what tex8web.js makes of the math through MathJax's internals (delimiter sizes, an align's rows);
   - MathML for every formula;
   - every link and file in place;
   - no image with tex4ht's made-up alt text (PIC, [Picture]);
@@ -267,6 +268,7 @@ A second, short document unlike the first:
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, heading numbers, no-break spaces, footnotes, links, controls and the table of contents, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `prerender.lua` | the files next to the page, bibtex and biber, prerendering |
+| `lua/tex8web/files.lua` | reading files, and quoting their names for the shell |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/tex8web.js` | MathJax's sizes set as TeX's, and the columns of an alignment split at `\intertext` |
 | `js/tex8web-head.js` | the reader's theme, and whether they hid the table of contents, applied before the page is drawn |
