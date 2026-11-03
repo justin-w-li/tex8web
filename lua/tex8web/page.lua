@@ -125,7 +125,7 @@ function M.controls(document, context)
 end
 
 -- the abstract's text, with the math's source, in at most about 200
--- characters
+-- characters, cut at a word if it has spaces
 local function abstract_text(document)
   local abstract = document:query_selector(".abstract")[1]
   if not abstract then return end
@@ -133,7 +133,8 @@ local function abstract_text(document)
   for _, p in ipairs(abstract:query_selector("p")) do parts[#parts + 1] = p:get_text() end
   local text = table.concat(parts, " "):gsub("\\[()]", ""):gsub("%s+", " "):match("^%s*(.-)%s*$")
   if utf8.len(text) > 200 then
-    text = text:sub(1, utf8.offset(text, 198) - 1):match("^(.*)%s") .. "…"
+    local cut = text:sub(1, utf8.offset(text, 198) - 1)
+    text = (cut:match("^(.*)%s") or cut) .. "…"
   end
   return text
 end

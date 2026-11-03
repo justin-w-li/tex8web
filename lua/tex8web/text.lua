@@ -8,7 +8,7 @@ local M = {}
 function M.theorem_spacing(document)
   for _, mark in ipairs(document:query_selector("span.tex8web-thmskip")) do
     local div = dom.closest(mark, function(el)
-      return el:get_element_name() == "div" and el:get_attribute("class") == "newtheorem"
+      return el:get_element_name() == "div" and dom.has_class(el, "%f[%w-]newtheorem%f[^%w-]")
     end)
     if div then
       div:set_attribute("style", "margin-top: " .. mark:get_attribute("data-before")

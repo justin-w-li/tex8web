@@ -183,4 +183,17 @@ return {
     check(not definitions:find("\\bad", 1, true), definitions)
     check(logged[1]:find("\\bad (uses \\mathpalette)", 1, true), logged[1])
   end,
+
+  ["page.meta_tags: an abstract without spaces cut at 197 characters"] = function()
+    local d = parse([[<div class="abstract"><p>]] .. string.rep("字", 250) .. [[</p></div>]])
+    page.meta_tags(d)
+    local description = d:query_selector("meta[name='description']")[1]:get_attribute("content")
+    equal(description, string.rep("字", 197) .. "…")
+  end,
+
+  ["text.theorem_spacing: a theorem with another class too"] = function()
+    local d = parse([[<div class="newtheorem lemma"><p><span class="head">Lemma 1.<span class="tex8web-thmskip" data-before="1em" data-after="2em"></span></span></p></div>]])
+    text.theorem_spacing(d)
+    equal(d:query_selector("div")[1]:get_attribute("style"), "margin-top: 1em; margin-bottom: 2em")
+  end,
 }
