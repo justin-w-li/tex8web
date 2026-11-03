@@ -5,7 +5,7 @@
 // <screen>-browser.png and <screen>-prerendered.png, in
 // build/test/<document>/visual/.
 //   node test/visual.mjs [document names...]
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build, documents, root } from './lib/build.mjs';
@@ -48,7 +48,8 @@ for (const doc of documents().filter(d => !only.length || only.includes(d.name))
   rmSync(visual, { recursive: true, force: true });
   const results = [await build(doc, pre, join(dir, 'aux')),
     await build(doc, browser, join(dir, 'fallbackaux'), { TEX8WEB_NO_PRERENDER: '1' })];
-  if (results.some(r => r.code !== 0)) {
+  // (the build's own problems are npm test's; this needs only the pages)
+  if (results.some(r => r.code !== 0) && !existsSync(join(pre, `${doc.tex.replace(/\.tex$/, '')}.html`))) {
     console.log(`not ok - ${doc.name}\n    build failed`);
     failures++;
     continue;
