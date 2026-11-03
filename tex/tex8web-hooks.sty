@@ -1,0 +1,73 @@
+% tex8web: what tex8web needs to know of a document's preamble that tex4ht
+% throws away. tex8web.mk4 has LaTeX load this with tex4ht, before the
+% preamble; the rest of tex8web comes after it (tex8web-core.tex).
+\ProvidesPackage{tex8web-hooks}
+
+% titlesec: tex4ht makes \titleformat do nothing, and draws headings its
+% own way; keep the format (the font) of each, as \web@titlefont@<name>, for
+% tex8web-page.tex
+\AddToHook{package/titlesec/after}{%
+    \let\web@titleformat\titleformat
+    \def\titleformat{\@ifstar\web@titleformat@s\web@titleformat@i}%
+}
+\def\web@titleformat@s#1#2{%
+    \web@titlefont{#1}{#2}%
+    \web@titleformat*{#1}{#2}%
+}
+\def\web@titleformat@i#1{%
+    \@ifnextchar[{\web@titleformat@ii{#1}}{\web@titleformat@ii{#1}[hang]}%
+}
+\def\web@titleformat@ii#1[#2]#3{%
+    \web@titlefont{#1}{#3}%
+    \web@titleformat{#1}[#2]{#3}%
+}
+% (a heading named by a command, \section; titlesec's keys, name=\section,
+% aren't followed)
+\def\web@titlefont#1#2{%
+    \if\relax\detokenize\expandafter{\@gobble#1}\relax
+        \expandafter\gdef\csname web@titlefont@\expandafter\@gobble\string#1\endcsname{#2}%
+    \fi
+}
+
+% tcolorbox: the options of a box that leave nothing to read when tex4ht
+% draws it (tex8web-boxes.tex), noted as they're set, from the preamble on:
+% a hidden frame or interior, the space before and after, and where the
+% title goes. A box inside another starts again from tcolorbox's defaults
+% (reset), and so do these. (Once set, frame hidden and interior hidden
+% stay for the box: an option after them can't clear them)
+\def\web@tcb@reset{%
+    \let\web@tcb@framehidden\relax
+    \let\web@tcb@interiorhidden\relax
+    \let\web@tcb@before\relax
+    \let\web@tcb@after\relax
+    \let\web@tcb@boxed\relax % a boxed title's place: left, center or right
+    \let\web@tcb@inline\relax % the title starts the text
+}
+% #2 when option #1 is set, once tcolorbox (or a library it loads) has it
+\def\web@tcb@note#1#2{%
+    \pgfkeysifdefined{/tcb/#1/.@cmd}{\pgfkeysifdefined{/tcb/#1/web@noted}{}{%
+        \pgfkeyssetvalue{/tcb/#1/web@noted}{}%
+        \tcbset{#1/.append code={#2}}}}{}%
+}
+\def\web@tcb@notes{%
+    \web@tcb@note{frame hidden}{\let\web@tcb@framehidden\@empty}%
+    \web@tcb@note{interior hidden}{\let\web@tcb@interiorhidden\@empty}%
+    \web@tcb@note{before skip}{\def\web@tcb@before{##1}}%
+    \web@tcb@note{after skip}{\def\web@tcb@after{##1}}%
+    \web@tcb@note{before skip balanced}{\def\web@tcb@before{##1}}%
+    \web@tcb@note{after skip balanced}{\def\web@tcb@after{##1}}%
+    \web@tcb@note{attach title to upper}{\let\web@tcb@inline\@empty}%
+    \web@tcb@note{attach boxed title to top left}{\def\web@tcb@boxed{left}}%
+    \web@tcb@note{attach boxed title to top text left}{\def\web@tcb@boxed{left}}%
+    \web@tcb@note{attach boxed title to top center}{\def\web@tcb@boxed{center}}%
+    \web@tcb@note{attach boxed title to top text right}{\def\web@tcb@boxed{right}}%
+    \web@tcb@note{attach boxed title to top right}{\def\web@tcb@boxed{right}}%
+}
+\def\web@tcb@install{%
+    \web@tcb@reset
+    \preto\tcb@reset{\web@tcb@reset}%
+    \web@tcb@notes
+    \let\web@tcb@load@library\tcb@load@library
+    \def\tcb@load@library##1##2{\web@tcb@load@library{##1}{##2}\web@tcb@notes}%
+}
+\AddToHook{package/tcolorbox/after}{\web@tcb@install}

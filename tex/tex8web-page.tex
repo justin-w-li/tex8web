@@ -129,11 +129,35 @@
 % --- layout -----------------------------------------------------------------
 
 % headings as much larger than the text as in the PDF (in the standard
-% classes' sizes), and a column as wide as the PDF's, in ems of the text
+% classes' sizes), and a column as wide as the PDF's, in ems of the text.
+% With titlesec, a heading's size, family, weight and shape are those of its
+% \titleformat (tex8web-hooks.sty), tried out in a box that's thrown away
 \newcommand\web@headsize[2]{% name, size command
-    \begingroup#2\xdef\web@size{\f@size pt}\endgroup
+    \begingroup
+        \def\web@font{#2}%
+        \ifcsname web@titlefont@#1\endcsname
+            \expandafter\let\expandafter\web@font\csname web@titlefont@#1\endcsname
+        \fi
+        \setbox0\vbox{\web@font
+            \xdef\web@size{\f@size pt}%
+            \gdef\web@family{inherit}%
+            \web@iffont\f@family\sfdefault{\gdef\web@family{var(--tex8web-sans)}}%
+            \web@iffont\f@family\ttdefault{\gdef\web@family{var(--tex8web-mono)}}%
+            \xdef\web@weight{\if b\expandafter\@car\f@series\@nil bold\else normal\fi}%
+            \gdef\web@style{normal}%
+            \web@iffont\f@shape\itdefault{\gdef\web@style{italic}}%
+            \web@iffont\f@shape\sldefault{\gdef\web@style{italic}}}%
+    \endgroup
     \web@Css{:root { --tex8web-#1-size: \web@em\web@size; }}%
+    \ifcsname web@titlefont@#1\endcsname
+        \web@Css{:root { --tex8web-#1-family: \web@family;
+            --tex8web-#1-weight: \web@weight; --tex8web-#1-style: \web@style; }}%
+    \fi
 }
+% #3 if font macros #1 and #2 name the same font (\ifx alone would also
+% compare whether they're \long)
+\newcommand\web@iffont[3]{%
+    \edef\web@a{#1}\edef\web@b{#2}\ifx\web@a\web@b#3\fi}
 \web@headsize{title}{\LARGE}
 \web@headsize{section}{\Large}
 \web@headsize{subsection}{\large}

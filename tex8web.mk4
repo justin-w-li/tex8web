@@ -26,15 +26,17 @@ local prerender = require "tex8web.prerender"
 local source = require "tex8web.source"
 local text = require "tex8web.text"
 
--- LaTeX; then the bibliography, if the document has one, which make4ht
--- doesn't run itself; and LaTeX until the cross-references settle
+-- LaTeX, with tex/tex8web-hooks.sty loaded before the preamble; then the
+-- bibliography, if the document has one, which make4ht doesn't run itself;
+-- and LaTeX until the cross-references settle
+local latex = {packages = (Make.params.packages or "") .. "\\RequirePackage{tex8web-hooks}"}
 if mode == "draft" then
-  Make:htlatex {}
+  Make:htlatex(latex)
 else
-  Make:htlatex {}
+  Make:htlatex(latex)
   Make:add("bibliography", bibliography.run)
   Make:bibliography {}
-  Make:autohtlatex {}
+  Make:autohtlatex(latex)
 end
 
 -- each pass is function(document, context), in this order

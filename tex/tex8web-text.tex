@@ -1,5 +1,5 @@
 % tex8web: text, cross-references, theorems, the table of contents, lists and
-% figures.
+% figures. (tcolorbox's boxes are in tex8web-boxes.tex)
 \makeatletter
 
 % --- links ------------------------------------------------------------------
@@ -52,46 +52,6 @@
      \web@mark\HCode{</span>}}
     {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\par\indent\ShowPar}
 
-% --- boxes ------------------------------------------------------------------
-
-% #1, with what follows its first \hfill in a span that css/tex8web.css puts
-% at the right
-\let\web@endhfill\relax
-\newcommand\web@hfillright[1]{%
-    \begingroup
-        \def\hfill{\ifx\web@endhfill\relax
-            \HCode{<span class="tex8web-hfill">}%
-            \gdef\web@endhfill{\HCode{</span>}}%
-        \fi}%
-        #1%
-        \web@endhfill
-        \global\let\web@endhfill\relax
-    \endgroup
-}
-
-% tcolorbox: tex4ht draws boxes as HTML, without tcolorbox's skins, so the
-% measures of a boxed title, which styles often use (yshift=-\tcboxedtitleheight),
-% are never set
-\@ifpackageloaded{tcolorbox}{%
-    \providecommand\tcboxedtitleheight{0pt}%
-    \providecommand\tcboxedtitlewidth{0pt}%
-    % and tex4ht closes a box before tcolorbox adds its after upper (a
-    % proof's \hfill$\square$), which then follows the box: add it first
-    \let\web@tcb@endboxanddraw\tcb@endboxanddraw
-    \def\tcb@endboxanddraw{%
-        \tcb@insert@after@part
-        \let\tcb@insert@after@part\relax
-        \web@tcb@endboxanddraw}%
-    % what follows an \hfill in an after upper or lower goes at the right
-    % (css/tex8web.css)
-    \def\tcb@insert@after@upper@unskip{\ifvmode\else\unskip\fi
-        \web@hfillright\kvtcb@after@upper}%
-    \def\tcb@insert@after@upper@nounskip{\web@hfillright\kvtcb@after@upper}%
-    \def\tcb@insert@after@lower@unskip{\ifvmode\else\unskip\fi
-        \web@hfillright\kvtcb@after@lower}%
-    \def\tcb@insert@after@lower@nounskip{\web@hfillright\kvtcb@after@lower}%
-}{}
-
 % --- table of contents ------------------------------------------------------
 
 % section numbers in a box as wide as in the PDF (tocloft's widths, or the
@@ -125,6 +85,19 @@
     % followed)
     \Css{.sectionToc, .likesectionToc { font-weight: bold; }}
 \fi
+
+% a table of contents a document makes with \@starttoc{toc} itself (in a box,
+% say) is tex4ht's, as \tableofcontents makes without its heading. (tex4ht
+% writes the entries in its own form, which only it reads)
+\let\web@starttoc\@starttoc
+\def\@starttoc#1{%
+    \def\web@a{#1}\def\web@b{toc}%
+    \ifx\web@a\web@b
+        \expandafter\@firstoftwo
+    \else
+        \expandafter\@secondoftwo
+    \fi
+    {\csname :tableofcontents\endcsname}{\web@starttoc{#1}}}
 
 % --- lists ------------------------------------------------------------------
 

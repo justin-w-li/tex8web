@@ -41,10 +41,21 @@ a.url, a[href^="mailto:"] { color: var(--tex8web-url, inherit); }
     src: url("fonts/lmroman10-bolditalic.woff2") format("woff2"); }
 @font-face { font-family: "Latin Modern Mono";
     src: url("fonts/lmmono10-regular.woff2") format("woff2"); }
+@font-face { font-family: "Latin Modern Sans";
+    src: url("fonts/lmsans10-regular.woff2") format("woff2"); }
+@font-face { font-family: "Latin Modern Sans"; font-weight: bold;
+    src: url("fonts/lmsans10-bold.woff2") format("woff2"); }
+@font-face { font-family: "Latin Modern Sans"; font-style: italic;
+    src: url("fonts/lmsans10-oblique.woff2") format("woff2"); }
+@font-face { font-family: "Latin Modern Sans"; font-weight: bold; font-style: italic;
+    src: url("fonts/lmsans10-boldoblique.woff2") format("woff2"); }
+:root { --tex8web-sans: "Latin Modern Sans", sans-serif;
+    --tex8web-mono: "Latin Modern Mono", monospace; }
 html body { font-family: "Latin Modern Roman", serif; }
-/* typewriter text, in tex4ht's class names for Latin Modern and for
-   Computer Modern (without lmodern) */
-[class*="-lmtt"], [class^="cmtt-"], [class^="ectt-"] { font-family: "Latin Modern Mono", monospace; }
+/* typewriter and sans-serif text, in tex4ht's class names for Latin Modern
+   and for Computer Modern (without lmodern) */
+[class*="-lmtt"], [class^="cmtt-"], [class^="ectt-"] { font-family: var(--tex8web-mono); }
+[class*="-lmss"], [class^="cmss"], [class^="ecss"] { font-family: var(--tex8web-sans); }
 /* Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em;
    text.lua marks no-break spaces, and keeps one together with the math
    after it */
@@ -59,9 +70,18 @@ html body { font-family: "Latin Modern Roman", serif; }
    sizes other fonts relative to the text */
 html body { font-size: 12pt; }
 h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
-.sectionHead, .likesectionHead { font-size: var(--tex8web-section-size); }
-.subsectionHead, .likesubsectionHead { font-size: var(--tex8web-subsection-size); }
-.subsubsectionHead, .likesubsubsectionHead { font-size: var(--tex8web-subsubsection-size); }
+.sectionHead, .likesectionHead { font-size: var(--tex8web-section-size);
+    font-family: var(--tex8web-section-family, inherit);
+    font-weight: var(--tex8web-section-weight, bold);
+    font-style: var(--tex8web-section-style, normal); }
+.subsectionHead, .likesubsectionHead { font-size: var(--tex8web-subsection-size);
+    font-family: var(--tex8web-subsection-family, inherit);
+    font-weight: var(--tex8web-subsection-weight, bold);
+    font-style: var(--tex8web-subsection-style, normal); }
+.subsubsectionHead, .likesubsubsectionHead { font-size: var(--tex8web-subsubsection-size);
+    font-family: var(--tex8web-subsubsection-family, inherit);
+    font-weight: var(--tex8web-subsubsection-weight, bold);
+    font-style: var(--tex8web-subsubsection-style, normal); }
 /* a column as wide as the PDF's, in ems of the text, so lines hold about as
    much; narrower screens get the screen's width */
 html body { max-width: var(--tex8web-textwidth);
@@ -76,10 +96,47 @@ figure.figure { margin-block: 1.75em; }
 
 /* --- boxes ------------------------------------------------------------- */
 
-/* what follows an \hfill at the end of a tcolorbox (tex8web-text.tex),
-   kept inside the box */
+/* tcolorbox's boxes: a frame of rules, or a borderline in a rule's place,
+   and the title on a background of its own; a boxed title is a tab at the
+   top, and the title of attach title to upper starts the text.
+   tex8web-boxes.tex sets these on each box (by its id):
+   - colors: --tcb-frame, --tcb-back, --tcb-text, --tcb-title-text,
+     --tcb-title-back, and for a boxed title --tcb-title-frame;
+   - lengths: --tcb-rule-top (-right, -bottom, -left), --tcb-padding,
+     --tcb-radius, --tcb-title-padding, and for a boxed title
+     --tcb-title-rule-top (...) and --tcb-title-radius;
+   - only where the box has them: --tcb-line-top (...: a borderline),
+     --tcb-before and --tcb-after, --tcb-shadow, --tcb-title-shadow,
+     which a box inside another doesn't inherit */
+.tcolorbox { --tcb-line-top: initial; --tcb-line-right: initial; --tcb-line-bottom: initial;
+    --tcb-line-left: initial; --tcb-before: initial; --tcb-after: initial;
+    --tcb-shadow: none; --tcb-title-shadow: none;
+    margin-block: var(--tcb-before, 0.5em) var(--tcb-after, 0.5em);
+    color: var(--tcb-text); background-color: var(--tcb-back);
+    border-top: var(--tcb-line-top, var(--tcb-rule-top) solid var(--tcb-frame));
+    border-right: var(--tcb-line-right, var(--tcb-rule-right) solid var(--tcb-frame));
+    border-bottom: var(--tcb-line-bottom, var(--tcb-rule-bottom) solid var(--tcb-frame));
+    border-left: var(--tcb-line-left, var(--tcb-rule-left) solid var(--tcb-frame));
+    border-radius: var(--tcb-radius); box-shadow: var(--tcb-shadow); overflow: clip; }
+.tcolorbox-title { color: var(--tcb-title-text); background-color: var(--tcb-title-back);
+    padding: var(--tcb-title-padding); }
+.tcolorbox-title p { margin: 0; text-indent: 0; }
+.tcolorbox-content { padding: var(--tcb-padding); display: flow-root; }
+.tcolorbox .lowerbox { display: flow-root; margin-top: 0.5em; padding-top: 0.5em;
+    border-top: 1px dashed var(--tcb-frame); }
+[class*="tex8web-tcb-boxed-"] > .tcolorbox-title { width: fit-content;
+    border-style: solid; border-color: var(--tcb-title-frame);
+    border-width: var(--tcb-title-rule-top) var(--tcb-title-rule-right)
+        var(--tcb-title-rule-bottom) var(--tcb-title-rule-left);
+    border-radius: var(--tcb-title-radius); box-shadow: var(--tcb-title-shadow); }
+.tex8web-tcb-boxed-center > .tcolorbox-title { margin-inline: auto; }
+.tex8web-tcb-boxed-right > .tcolorbox-title { margin-inline-start: auto; }
+.tex8web-tcb-inline > .tcolorbox-title { float: left; background-color: transparent;
+    padding: var(--tcb-padding); padding-inline-end: 0; }
+/* (the text wraps around the title, rather than beside it) */
+.tex8web-tcb-inline > .tcolorbox-content { display: block; }
+/* what follows an \hfill in an after upper (a proof's square) */
 .tex8web-hfill { float: right; }
-.tcolorbox-content, .tcolorbox .lowerbox { display: flow-root; }
 
 /* --- table of contents ------------------------------------------------- */
 

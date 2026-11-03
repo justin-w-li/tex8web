@@ -43,7 +43,7 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
 - **`-d out`** collects the page and everything it uses:
   - `document.html`, `document.css`;
   - `document-mathjax.css` and `fonts/mathjax/` (MathJax's styles and fonts, when prerendered);
-  - `fonts/` (Latin Modern);
+  - `fonts/` (Latin Modern; the sans-serif only if the page uses it);
   - the pictures;
   - the PDF (with `\WebPDF`);
   - `tex8web.js` (when not prerendered).
@@ -84,12 +84,13 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 - **`\WebPDF{path}`** copies the PDF next to the page and links it after the title. The path is relative to the document's directory.
 - **`\Css{...}`** after `\input{tex8web-core.tex}` overrides tex8web's styles. tex8web's styles are in `css/tex8web.css`, and the document's measurements are custom properties you can override:
   - `--tex8web-textwidth`;
-  - `--tex8web-title-size`, `--tex8web-section-size`, `--tex8web-subsection-size`, `--tex8web-subsubsection-size`;
+  - `--tex8web-title-size`, `--tex8web-section-size`, `--tex8web-subsection-size`, `--tex8web-subsubsection-size`, and with titlesec each heading's `-family`, `-weight` and `-style`;
   - `--tex8web-list-sep`, `--tex8web-item-sep`;
-  - `--tex8web-toc-number`, `--tex8web-toc-indent`, `--tex8web-toc-subnumber`;
-  - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`.
+  - `--tex8web-toc-number`, `--tex8web-toc-indent`, `--tex8web-toc-subnumber`, `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`;
+  - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`;
+  - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (`tex/tex8web-boxes.tex` lists them).
 
-`examples/custom/custom.cfg` and `examples/complex/complex.cfg` are worked examples: styles for a document's boxes, and macros for MathJax.
+`examples/custom/custom.cfg` and `examples/complex/complex.cfg` are worked examples: a layout for a document's header box, and macros for MathJax.
 
 ## On the page
 
@@ -116,7 +117,7 @@ These are deliberate:
 - **A TikZ picture in display math** (`\[ \begin{tikzcd} … \end{tikzcd} \]`) is drawn by TeX as a picture, together with any other math in the same display.
 - **Macros MathJax can't read** (see `\WebMathMacros` above), and macros that parse their arguments themselves, such as comma-separated lists. MathJax shows these in red.
 - **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.
-- **tcolorbox:** tex4ht draws boxes in plain HTML, with their colors but without skins (shadows, boxed titles, overlays). Pictures inside listing boxes (`tcblisting` side by side) aren't converted. A fragile command in a box's title can break the build; `\robustify` it in your config.
+- **tcolorbox:** a box gets its colors (with darker ones in dark mode), rules, corners, borderlines, shadow, spacing and title font; a boxed title is a tab at the top of the box, and `attach title to upper` starts the text. What a skin draws freehand with TikZ (`interior code`, `frame code`, overlays, shadings) comes out as a plain frame and background. Pictures inside listing boxes (`tcblisting` side by side) aren't converted. A fragile command in a box's title can break the build; `\robustify` it in your config.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX (sidenotes, margin figures, letterspacing), need a config of their own.
 
 ## Examples
@@ -127,7 +128,7 @@ These are deliberate:
 | --- | --- | --- |
 | `basic` | Overleaf's "Example Project", by Overleaf, CC BY 4.0 | a figure, a table, lists, math, a bibliography, hyperref's colors |
 | `blog` | "Should Self-Driving Cars be bound by Isaac Asimov's Three Laws of Robotics?", by Pradhyumnaa Ganapathi Subramanian, CC BY 4.0 | an essay: prose, lists, a table |
-| `custom` | "Class Notes Template", by Siladittya Manna, CC BY 4.0, with its placeholder text replaced by a short lecture | colored tcolorbox environments, styled for the web and dark mode by `custom.cfg`; a PDF link |
+| `custom` | "Class Notes Template", by Siladittya Manna, CC BY 4.0, with its placeholder text replaced by a short lecture | colored tcolorbox environments; a header laid out for the web by `custom.cfg`; a PDF link |
 | `complex` | "Fun Template 2", by Senan Sekhon, CC BY 4.0, with its bibliography rebuilt and its QED picture redrawn | a long document with many packages; `complex.cfg` gives MathJax the macros it can't read. Its known gaps are in `test/expected.json` |
 
 Each `main.tex` names its source, license and changes at the top.
@@ -165,7 +166,7 @@ Each `main.tex` names its source, license and changes at the top.
 
 | Look at | As in the PDF | Typical failure |
 | --- | --- | --- |
-| 1.1 Font | Latin Modern (Computer Modern) throughout, including the typewriter text | A browser serif such as Times |
+| 1.1 Font | Latin Modern (Computer Modern) throughout, including the typewriter and sans-serif text | A browser serif such as Times |
 | 1.1 Ligatures, dashes, quotes, accents | fi fl ff ffi ffl joined; en and em dashes; curly quotes; ï é Č | Missing ligature glyphs, straight quotes |
 | 1.1 Styles | *emphasis* with upright nested emphasis, bold, bold italic, Small Caps, typewriter, sans | Small caps as full capitals |
 | 1.1 Footnote, links | Footnote with math; link and URL in their link colors | |
@@ -239,10 +240,12 @@ A second, short document unlike the first:
 | --- | --- |
 | `tex8web.cfg` | the config for documents without one of their own |
 | `tex8web.mk4` | the build file: search paths, the build steps, the HTML passes, prerendering |
-| `tex/tex8web-core.tex` | loads the three modules below |
+| `tex/tex8web-core.tex` | loads the four modules below |
 | `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ pictures in display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, boxes, the table of contents, lists, figures |
-| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, colors (`\WebColor`), the document's measurements |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, figures |
+| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, colors (`\WebColor`), the document's measurements and heading fonts |
+| `tex/tex8web-boxes.tex` | tcolorbox's boxes |
+| `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats) |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, no-break spaces, links, meta tags, scripts |
@@ -250,6 +253,6 @@ A second, short document unlike the first:
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/tex8web.js` | MathJax's sizes set as TeX's |
 | `js/prerender.mjs` | MathJax in Node |
-| `fonts/` | Latin Modern, as WOFF2 |
+| `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |
 | `examples/` | the examples |
 | `test/` | the tests: `run.mjs`, `visual.mjs`, `unit/`, `fixtures/`, `expected.json` |

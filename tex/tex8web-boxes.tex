@@ -1,0 +1,208 @@
+% tex8web: tcolorbox's boxes, as near the PDF as CSS draws them: the frame
+% (rules, round or sharp corners, borderlines, shadow), the colors, with
+% darker ones for dark mode, the space around and inside, and the title (its
+% font, a boxed title, a title that starts the text). tex4ht's own boxes keep
+% only the colors and padding. What a skin draws freehand with TikZ
+% (interior code, frame code, shadings) comes out as a plain frame. The
+% static styles are in css/tex8web.css.
+\makeatletter
+\@ifpackageloaded{tcolorbox}{}{\makeatother\endinput}
+
+% --- what tex4ht leaves out -------------------------------------------------
+
+% the measures of a boxed title, which tex4ht never sets (styles use them:
+% yshift=-\tcboxedtitleheight)
+\providecommand\tcboxedtitleheight{0pt}
+\providecommand\tcboxedtitlewidth{0pt}
+
+% tex4ht closes a box before tcolorbox adds its after upper (a proof's
+% \hfill$\square$), which then follows the box: add it first
+\let\web@tcb@endboxanddraw\tcb@endboxanddraw
+\def\tcb@endboxanddraw{%
+    \tcb@insert@after@part
+    \let\tcb@insert@after@part\relax
+    \web@tcb@endboxanddraw}
+% and what follows an \hfill in an after upper or lower goes at the right
+\def\tcb@insert@after@upper@unskip{\ifvmode\else\unskip\fi
+    \web@hfillright\kvtcb@after@upper}
+\def\tcb@insert@after@upper@nounskip{\web@hfillright\kvtcb@after@upper}
+\def\tcb@insert@after@lower@unskip{\ifvmode\else\unskip\fi
+    \web@hfillright\kvtcb@after@lower}
+\def\tcb@insert@after@lower@nounskip{\web@hfillright\kvtcb@after@lower}
+% #1, with what follows its first \hfill in a span css/tex8web.css puts at
+% the right
+\let\web@endhfill\relax
+\newcommand\web@hfillright[1]{%
+    \begingroup
+        \def\hfill{\ifx\web@endhfill\relax
+            \HCode{<span class="tex8web-hfill">}%
+            \gdef\web@endhfill{\HCode{</span>}}%
+        \fi}%
+        #1%
+        \web@endhfill
+        \global\let\web@endhfill\relax
+    \endgroup
+}
+
+% --- a box's style ----------------------------------------------------------
+
+% (the options that leave nothing to read now, such as frame hidden, are
+% noted as they're set, by tex8web-hooks.sty; a frame or interior is also
+% hidden when the skin doesn't draw it, as with blanker)
+
+% custom properties on the box's element, collected in \web@tcb@css (each
+% helper appends one or more):
+% - colors: a color in light mode, and in dark mode the same color at
+%   another lightness (l, of oklch): frames and lines at least 0.62, so they
+%   show; backgrounds dark as much as they were light; text light as much
+%   as it was dark, or the page's text color for black
+\def\web@tcb@add#1{\xdef\web@tcb@css{\web@tcb@css#1}}
+\def\web@tcb@lightdark#1#2{light-dark(\##1, oklch(from \##1 #2 c h))}
+\def\web@tcb@color#1#2#3{% name, color, dark lightness
+    \web@hex{#2}\web@tcb@hex
+    \web@tcb@add{--tcb-#1: \web@tcb@lightdark\web@tcb@hex{#3};}}
+\def\web@tcb@frame#1#2{\web@tcb@color{#1}{#2}{max(l, 0.62)}}
+\def\web@tcb@back#1#2{\web@tcb@color{#1}{#2}{min(l, 1.24 - l)}}
+\def\web@tcb@black{000000}
+\def\web@tcb@text#1#2{%
+    \web@hex{#2}\web@tcb@hex
+    \ifx\web@tcb@hex\web@tcb@black
+        \web@tcb@add{--tcb-#1: var(--tex8web-text);}%
+    \else
+        \web@tcb@color{#1}{#2}{max(l, 1 - l)}%
+    \fi}
+\def\web@tcb@transparent#1{\web@tcb@add{--tcb-#1: transparent;}}
+% - lengths, in ems (of a glue, its natural length): four of them, for the
+%   sides (top, right, bottom, left) or the corners (from the top left)
+\def\web@tcb@em#1{\web@em{\dimexpr\glueexpr#1\relax\relax}}
+\def\web@tcb@sides#1#2#3#4#5{%
+    \web@tcb@add{--tcb-#1: \web@tcb@em{#2} \web@tcb@em{#3} \web@tcb@em{#4} \web@tcb@em{#5};}}
+\def\web@tcb@length#1#2{\web@tcb@add{--tcb-#1: \web@tcb@em{#2};}}
+\def\web@tcb@sharp{sharp}
+\def\web@tcb@corner#1{\ifx#1\web@tcb@sharp 0em\else\web@tcb@em\kvtcb@arc\fi}
+% - the frame, the corners and the shadow of the box being drawn, under
+%   names that start with #1
+\def\web@tcb@frameof#1{%
+    \ifx\tcb@frame@code\@empty\let\web@tcb@framehidden\@empty\fi
+    \ifx\web@tcb@framehidden\relax
+        \web@tcb@frame{#1frame}{tcbcolframe}%
+    \else
+        \web@tcb@transparent{#1frame}%
+    \fi
+    \web@tcb@length{#1rule-top}\kvtcb@top@rule@stand
+    \web@tcb@length{#1rule-right}\kvtcb@right@rule
+    \web@tcb@length{#1rule-bottom}\kvtcb@bottom@rule@stand
+    \web@tcb@length{#1rule-left}\kvtcb@left@rule
+    \web@tcb@add{--tcb-#1radius: \web@tcb@corner\tcb@corner@mode@NW\space
+        \web@tcb@corner\tcb@corner@mode@NE\space
+        \web@tcb@corner\tcb@corner@mode@SE\space
+        \web@tcb@corner\tcb@corner@mode@SW;}%
+    \ifcsname kvtcb@shadow\endcsname\ifx\kvtcb@shadow\@empty\else
+        \web@tcb@add{--tcb-#1shadow: 0.2em 0.25em 0.4em rgb(0 0 0 / 0.3);}%
+    \fi\fi
+}
+% - borderlines, which take the place of the frame on their side (the last
+%   one there, if there are several)
+\def\web@tcb@borderlines{%
+    \ifcsname kvtcb@borderline\endcsname
+        \begingroup
+            \def\tcb@border##1##2##3{%
+                \web@tcb@line{top}{##1}{##3}\web@tcb@line{right}{##1}{##3}%
+                \web@tcb@line{bottom}{##1}{##3}\web@tcb@line{left}{##1}{##3}}%
+            \def\tcb@bordernorth##1##2##3{\web@tcb@line{top}{##1}{##3}}%
+            \def\tcb@bordereast##1##2##3{\web@tcb@line{right}{##1}{##3}}%
+            \def\tcb@bordersouth##1##2##3{\web@tcb@line{bottom}{##1}{##3}}%
+            \def\tcb@borderwest##1##2##3{\web@tcb@line{left}{##1}{##3}}%
+            \kvtcb@borderline
+        \endgroup
+    \fi
+}
+% (a borderline's last argument is TikZ options, which are often just a
+% color; other options get the frame's color)
+\def\web@tcb@line#1#2#3{%
+    \def\web@tcb@linecolor{tcbcolframe}%
+    \in@{=}{#3}\ifin@\else\in@{,}{#3}\ifin@\else
+        \in@{!}{#3}%
+        \ifin@\def\web@tcb@linecolor{#3}\else\@ifundefinedcolor{#3}{}{\def\web@tcb@linecolor{#3}}\fi
+    \fi\fi
+    \expandafter\web@hex\expandafter{\web@tcb@linecolor}\web@tcb@hex
+    \web@tcb@add{--tcb-line-#1: \web@tcb@em{#2} solid
+        \web@tcb@lightdark\web@tcb@hex{max(l, 0.62)};}%
+}
+
+% the box's whole style, and its classes
+\def\web@tcb@style{%
+    \gdef\web@tcb@css{}%
+    \web@tcb@frameof{}%
+    \web@tcb@borderlines
+    \ifx\tcb@interior@code\@empty\let\web@tcb@interiorhidden\@empty\fi
+    \ifx\web@tcb@interiorhidden\relax
+        \web@tcb@back{back}{tcbcolback}%
+    \else
+        \web@tcb@transparent{back}%
+    \fi
+    \web@tcb@text{text}{tcbcolupper}%
+    \web@tcb@sides{padding}{\kvtcb@boxsep+\kvtcb@top}{\kvtcb@boxsep+\kvtcb@rightupper}%
+        {\kvtcb@boxsep+\kvtcb@bottom}{\kvtcb@boxsep+\kvtcb@leftupper}%
+    \ifx\web@tcb@before\relax\else\web@tcb@length{before}\web@tcb@before\fi
+    \ifx\web@tcb@after\relax\else\web@tcb@length{after}\web@tcb@after\fi
+    % the title: its text's color, and its background, the frame's color
+    % unless it has its own; a boxed title is a box of its own, which
+    % tcolorbox draws with the frame's color, the title's background and
+    % the boxed title style
+    \web@tcb@text{title-text}{tcbcoltitle}%
+    \iftcb@titlefilled
+        \web@tcb@back{title-back}{tcbcolbacktitle}%
+    \else
+        \web@tcb@back{title-back}{tcbcolframe}%
+    \fi
+    \web@tcb@sides{title-padding}{\kvtcb@boxsep+\kvtcb@toptitle}%
+        {\kvtcb@boxsep+\kvtcb@righttitle}{\kvtcb@boxsep+\kvtcb@bottomtitle}%
+        {\kvtcb@boxsep+\kvtcb@lefttitle}%
+    \ifx\web@tcb@boxed\relax\else
+        \begingroup
+            \colorlet{web@tcb@frame}{tcbcolframe}%
+            \colorlet{web@tcb@back}{tcbcolbacktitle}%
+            \let\web@tcb@boxedstyle\kvtcb@style@boxedtitle
+            \tcbset{reset,size=title,colframe=web@tcb@frame,colback=web@tcb@back}%
+            \expandafter\tcbset\expandafter{\web@tcb@boxedstyle}%
+            \web@tcb@frameof{title-}%
+            \ifx\tcb@interior@code\@empty\let\web@tcb@interiorhidden\@empty\fi
+            % (a boxed title that doesn't draw its interior has most likely
+            % a frame code of its own that fills it)
+            \ifx\web@tcb@interiorhidden\relax
+                \web@tcb@back{title-back}{tcbcolback}%
+            \else\ifx\web@tcb@framehidden\relax
+                \web@tcb@back{title-back}{tcbcolframe}%
+            \else
+                \web@tcb@transparent{title-back}%
+            \fi\fi
+            \web@tcb@sides{title-padding}{\kvtcb@boxsep+\kvtcb@top}%
+                {\kvtcb@boxsep+\kvtcb@rightupper}{\kvtcb@boxsep+\kvtcb@bottom}%
+                {\kvtcb@boxsep+\kvtcb@leftupper}%
+        \endgroup
+    \fi
+    \edef\web@tcb@classes{%
+        \ifx\web@tcb@boxed\relax\else\space tex8web-tcb-boxed-\web@tcb@boxed\fi
+        \ifx\web@tcb@inline\relax\else\space tex8web-tcb-inline\fi}%
+    \web@Css{\#\csname :tcbcolid\endcsname\space{\web@tcb@css}}%
+}
+
+% tex4ht's box, with that style; the title in its font (fonttitle), which
+% tex4ht leaves out
+\Configure{tcolorbox}
+    {\ifvmode\IgnorePar\fi\EndP
+     \web@tcb@style
+     \edef\kvtcb@before@title{\unexpanded\expandafter{\kvtcb@fonttitle}%
+         \unexpanded\expandafter{\kvtcb@before@title}}%
+     \HCode{<div class="tcolorbox \@currenvir\web@tcb@classes"
+         id="\csname :tcbcolid\endcsname">}}
+    {\ifx\kvtcb@title\@empty\else\HCode{\Hnewline<div class="tcolorbox-title">}\par\fi}
+    {\ifx\kvtcb@title\@empty\else\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\fi
+     \HCode{\Hnewline<div class="tcolorbox-content">}}
+    {\ifvmode\IgnorePar\fi\EndP\HCode{\Hnewline</div>\Hnewline</div>}\par\ShowPar}
+\Configure{tcolorlowerbox}
+    {\ifvmode\IgnorePar\fi\EndP\HCode{\Hnewline<div class="lowerbox">}}
+    {\ifvmode\IgnorePar\fi\EndP\HCode{\Hnewline</div>}}
+
+\makeatother

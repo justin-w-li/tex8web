@@ -12,6 +12,14 @@ local fonts = {
   "lmmono10-regular.woff2",
 }
 
+-- Latin Modern Sans, copied only for a page with sans-serif text
+local sans_fonts = {
+  "lmsans10-regular.woff2",
+  "lmsans10-bold.woff2",
+  "lmsans10-oblique.woff2",
+  "lmsans10-boldoblique.woff2",
+}
+
 local function exists(path)
   return lfs.attributes(path) ~= nil
 end
@@ -29,11 +37,27 @@ function M.add(source, path)
   Make:add_file(path)
 end
 
+-- text in tex4ht's classes for sans-serif fonts (css/tex8web.css), or
+-- headings in sans-serif (tex8web-page.tex, in the document's stylesheet)
+local function uses_sans(document, context)
+  local css = read(context.dir .. "/" .. context.input .. ".css")
+  local found = css:find("%-%-tex8web%-%a+%-family: var%(%-%-tex8web%-sans%)") ~= nil
+  document:traverse_elements(function(el)
+    local class = el:get_attribute("class") or ""
+    found = found or class:find("%-lmss") or class:find("^cmss") or class:find("^ecss")
+  end)
+  return found
+end
+
 -- the fonts, and the pictures, which the page references relative to the
 -- document (\includegraphics), unless tex4ht made them
 function M.copy(document, context)
-  for _, font in ipairs(fonts) do
+  local function add_font(font)
     M.add(context.root .. "/fonts/" .. font, context.dir .. "/fonts/" .. font)
+  end
+  for _, font in ipairs(fonts) do add_font(font) end
+  if uses_sans(document, context) then
+    for _, font in ipairs(sans_fonts) do add_font(font) end
   end
   for _, img in ipairs(document:query_selector("img")) do
     local src = img:get_attribute("src") or ""
