@@ -7,9 +7,10 @@
 // should line up across its \intertext.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { availableParallelism } from 'node:os';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build, documents, expected, testDir } from './lib/build.mjs';
+import { build, documents, expected, pool, testDir } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
 
 const only = process.argv.slice(2);
@@ -66,20 +67,23 @@ async function screens(chrome, file) {
   return shots;
 }
 
-const chrome = await launch();
-let failures = 0;
-for (const doc of documents().filter(d => !only.length || only.includes(d.name))) {
+const docs = documents().filter(d => !only.length || only.includes(d.name));
+// each document built twice, prerendered (html) and for the browser
+// (fallback), a few builds at a time (a build runs mostly on one core)
+const variants = [['html', 'aux', {}], ['fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
+const codes = await pool(docs.flatMap(doc => variants.map(variant => [doc, ...variant])),
+  Math.max(2, availableParallelism() >> 1),
+  async ([doc, out, aux, env]) => (await build(doc, join(testDir(doc), out), join(testDir(doc), aux), env)).code);
+
+// a document's two pages compared: its report's lines, and whether it failed
+async function compare(chrome, doc, built) {
   const dir = testDir(doc);
   const [pre, browser] = [join(dir, 'html'), join(dir, 'fallback')];
   const visual = join(dir, 'visual');
   rmSync(visual, { recursive: true, force: true });
-  const results = [await build(doc, pre, join(dir, 'aux')),
-    await build(doc, browser, join(dir, 'fallbackaux'), { TEX8WEB_NO_PRERENDER: '1' })];
   // (the build's own problems are npm test's; this needs only the pages)
-  if (results.some(r => r.code !== 0) && !existsSync(join(pre, `${doc.tex.replace(/\.tex$/, '')}.html`))) {
-    console.log(`not ok - ${doc.name}\n    build failed`);
-    failures++;
-    continue;
+  if (!built && !existsSync(join(pre, `${doc.tex.replace(/\.tex$/, '')}.html`))) {
+    return { lines: [`not ok - ${doc.name}`, '    build failed'], failed: true };
   }
   const problems = [], layout = [];
   for (const html of readdirSync(pre).filter(f => f.endsWith('.html'))) {
@@ -109,14 +113,21 @@ for (const doc of documents().filter(d => !only.length || only.includes(d.name))
   }
   const known = expected[doc.name]?.visual;
   if (problems.length && known && !layout.length) {
-    console.log(`ok - ${doc.name} # known: ${known}`);
-    for (const problem of problems) console.log(`    ${problem}`);
-  } else {
-    problems.unshift(...layout);
-    console.log(`${problems.length ? 'not ok' : 'ok'} - ${doc.name}`);
-    for (const problem of problems) console.log(`    ${problem}`);
-    failures += problems.length ? 1 : 0;
+    return { lines: [`ok - ${doc.name} # known: ${known}`, ...problems.map(p => `    ${p}`)], failed: false };
   }
+  problems.unshift(...layout);
+  return { lines: [`${problems.length ? 'not ok' : 'ok'} - ${doc.name}`, ...problems.map(p => `    ${p}`)],
+    failed: problems.length > 0 };
+}
+
+// then the documents in Chrome, one at a time: with several tabs at once,
+// headless Chrome sometimes draws a screen garbled
+const chrome = await launch();
+let failures = 0;
+for (const [i, doc] of docs.entries()) {
+  const { lines, failed } = await compare(chrome, doc, codes[2 * i] === 0 && codes[2 * i + 1] === 0);
+  console.log(lines.join('\n'));
+  failures += failed ? 1 : 0;
 }
 chrome.close();
 console.log(failures ? `\n${failures} failed` : '\nall passed');
