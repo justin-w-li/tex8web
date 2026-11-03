@@ -30,7 +30,7 @@ A page goes through four stages:
    - the columns of an alignment split at `\intertext`, each as wide as in the widest part. These parts aren't left for MathJax to typeset as they scroll into view.
 4. **Prerendering** (`js/prerender.mjs`). MathJax typesets the page in Node, configured as it would be in the browser, and the page keeps the result.
    - Without `node_modules/` (or with `TEX8WEB_NO_PRERENDER=1`), this step is skipped. The page then loads MathJax from jsDelivr, typesets the math as it scrolls into view, and gives screen readers MathML.
-   - tex8web.js relies on MathJax's internals. That is why MathJax's version is pinned in `package.json`, which both the prerendering and the page's script use.
+   - tex8web.js relies on MathJax's internals. That is why MathJax's version is pinned in `package.json`, which both the prerendering and the page's script use. `npm test` checks what it makes of `test.tex`'s math (`typeset` in `test/run.mjs`): run it when updating MathJax.
 
 ## Building a page
 

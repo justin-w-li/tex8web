@@ -40,6 +40,25 @@ const measured = {
     '--tex8web-section-labelsep': '1.125em', '--tex8web-title-size': '1.44em' },
 };
 
+// what tex8web.js makes of some of test.tex's math through MathJax's
+// internals, which a new MathJax must keep: \bigl( to \Biggl\langle in
+// TeX's four sizes, scaled to the 10pt extension font in an 11pt document;
+// a big bar a little taller; a large operator scaled around it; an align's
+// rows on TeX's struts, \jot apart; inline math broken after a relation
+const typeset = {
+  'test': [
+    /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 TEX-SO'>\(/,
+    /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c5B TEX-LO'>\[/,
+    /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c7B TEX-S3'>\{/,
+    /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c27E8 TEX-S4'>⟨/,
+    /<mo [^>]*maxsize='1.234em' minsize='1.234em'[^>]*>\|<\/mo>/,
+    /<mstyle mathsize='91.3%'><mtext>∑<\/mtext><\/mstyle>/,
+    /<mtable [^>]*data-tex8web-env='align'[^>]*rowspacing='0.274em'/,
+    /<mspace depth='0.373em' height='0.869em' width='0em'>/,
+    /<mo linebreakstyle='after'>=<\/mo>/,
+  ],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -48,6 +67,11 @@ function check(doc, result, out, aux) {
   const styles = existsSync(css) ? readFileSync(css, 'utf8') : '';
   for (const [property, value] of Object.entries(measured[doc.name] ?? {})) {
     if (!styles.includes(`${property}: ${value};`)) problems.push(`${property} isn't ${value}`);
+  }
+  const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
+  const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  for (const pattern of typeset[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the typeset math`);
   }
   return [...problems, ...checkTexLog(join(aux, doc.tex.replace(/\.tex$/, '.log'))), ...checkLog(result.log),
     ...checkOutput(out)];
