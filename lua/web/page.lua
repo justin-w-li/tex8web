@@ -43,7 +43,7 @@ function M.pdf_link(document, parameters)
   local body = document:query_selector("body")[1]
   local p = body:create_element("p", {class = "web-pdf"})
   local a = p:create_element("a", {href = parameters.input .. ".pdf"})
-  a:add_child_node(a:create_text_node("PDF"))
+  a:add_child_node(a:create_text_node("View as PDF"))
   p:add_child_node(a)
   local title = document:query_selector("div.maketitle")[1]
   if title then
