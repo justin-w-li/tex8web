@@ -1,4 +1,4 @@
-% web: tex4ht configuration for HTML that looks like the PDF, with MathJax
+% tex8web: tex4ht configuration for HTML that looks like the PDF, with MathJax
 % reading the math's LaTeX source. A tex4ht config \input's this after
 % \begin{document} (see tex8web.cfg); tex8web.mk4 puts this directory on TeX's
 % search path.
@@ -23,6 +23,9 @@
 \newcommand\web@em[1]{\web@ratio{#1}em}
 % \Css, with its argument expanded now rather than when tex4ht writes it
 \newcommand\web@Css[1]{\edef\web@css{\noexpand\Css{#1}}\web@css}
+% the place of the static styles: tex8web.mk4 puts css/tex8web.css here,
+% after tex4ht's own rules and before a config's
+\Css{/* tex8web.css */}
 \makeatother
 
 \input{tex8web-math.tex}

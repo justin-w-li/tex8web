@@ -1,0 +1,113 @@
+/* tex8web: the page's styles. tex8web.mk4 puts them into the document's
+   stylesheet where tex8web-core.tex marks their place: after tex4ht's own
+   rules, which they override, and before a config's own \Css, which
+   override them. The custom properties --tex8web-* without a default here
+   are lengths and colors of the document, which the tex/ files set */
+
+/* --- colors ------------------------------------------------------------ */
+
+/* The page follows the reader's light or dark setting, unless the root
+   element has data-theme="light" or "dark". Light mode uses the PDF's
+   colors */
+:root { color-scheme: light dark; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+/* (tex4ht gives body a color-scheme of its own, which would keep the page
+   in the system's setting; html body: to win over tex4ht's body rules) */
+html body { color-scheme: inherit; }
+:root { --tex8web-bg: light-dark(#FFFFFF, #1E1E1E); --tex8web-text: light-dark(#000000, #E3E3E3); }
+html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
+/* links: hyperref's colors with colorlinks (tex8web-page.tex); otherwise
+   the color of the text, as the PDF draws boxes */
+a { color: var(--tex8web-link, inherit); text-decoration: none; }
+a[href^="#X"] { color: var(--tex8web-cite, inherit); }
+a.url, a[href^="mailto:"] { color: var(--tex8web-url, inherit); }
+/* pictures tex4ht generates (TikZ) are black line art; inverted in dark
+   mode (tex8web-page.tex picks them out by the document's name) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --tex8web-picture-filter: invert(1); } }
+:root[data-theme="dark"] { --tex8web-picture-filter: invert(1); }
+
+/* --- fonts ------------------------------------------------------------- */
+
+/* Latin Modern, which tex8web.mk4 copies into fonts/ */
+@font-face { font-family: "Latin Modern Roman";
+    src: url("fonts/lmroman10-regular.woff2") format("woff2"); }
+@font-face { font-family: "Latin Modern Roman"; font-weight: bold;
+    src: url("fonts/lmroman10-bold.woff2") format("woff2"); }
+@font-face { font-family: "Latin Modern Roman"; font-style: italic;
+    src: url("fonts/lmroman10-italic.woff2") format("woff2"); }
+@font-face { font-family: "Latin Modern Roman"; font-weight: bold; font-style: italic;
+    src: url("fonts/lmroman10-bolditalic.woff2") format("woff2"); }
+@font-face { font-family: "Latin Modern Mono";
+    src: url("fonts/lmmono10-regular.woff2") format("woff2"); }
+html body { font-family: "Latin Modern Roman", serif; }
+/* typewriter text, in tex4ht's class names for Latin Modern and for
+   Computer Modern (without lmodern) */
+[class*="-lmtt"], [class^="cmtt-"], [class^="ectt-"] { font-family: "Latin Modern Mono", monospace; }
+/* Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em;
+   text.lua marks no-break spaces, and keeps one together with the math
+   after it */
+.tex8web-nbsp { letter-spacing: -0.167em; }
+.tex8web-nowrap { white-space: nowrap; }
+
+/* --- layout ------------------------------------------------------------ */
+
+/* Text at 12pt, larger than most PDFs, for reading on a screen, and
+   everything else in proportion: headings as much larger than the text as
+   in the PDF; MathJax sets math as large as the text around it, and tex4ht
+   sizes other fonts relative to the text */
+html body { font-size: 12pt; }
+h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
+.sectionHead, .likesectionHead { font-size: var(--tex8web-section-size); }
+.subsectionHead, .likesubsectionHead { font-size: var(--tex8web-subsection-size); }
+.subsubsectionHead, .likesubsubsectionHead { font-size: var(--tex8web-subsubsection-size); }
+/* a column as wide as the PDF's, in ems of the text, so lines hold about as
+   much; narrower screens get the screen's width */
+html body { max-width: var(--tex8web-textwidth);
+    margin-block-start: 2.5em; margin-block-end: 4em; }
+/* the text of an \intertext (tex8web-math.tex) */
+.tex8web-intertext { display: block; margin-block: 0.5em; }
+/* pictures: nothing wider than the column; a picture in display math
+   (\[ \begin{tikzcd} .. \]) gets the margin MathJax gives display math */
+img { max-width: 100%; height: auto; }
+figure.figure { margin-block: 1.75em; }
+.mathjax-block img { display: block; margin: 0.7em auto; }
+
+/* --- table of contents ------------------------------------------------- */
+
+/* section numbers in a box as wide as in the PDF, so titles line up
+   whether a number has one digit or two */
+.sectionToc .tocnumber { min-width: var(--tex8web-toc-number); }
+.subsectionToc { margin-left: var(--tex8web-toc-indent); }
+.subsectionToc .tocnumber { min-width: var(--tex8web-toc-subnumber); }
+.tocnumber { display: inline-block; }
+
+/* --- lists ------------------------------------------------------------- */
+
+/* spaced as LaTeX spaces a list: \topsep around it, \itemsep and \parsep
+   between items. tex4ht numbers enumerate with the browser's counters; the
+   inner levels get LaTeX's labels, (a), i. and A. A description's term
+   runs into its text */
+ol.enumerate1, ul.itemize1, dl.description { margin-block: var(--tex8web-list-sep); }
+li.enumerate + li.enumerate, li.itemize + li.itemize { margin-top: var(--tex8web-item-sep); }
+ol.enumerate2 > li::marker { content: "(" counter(list-item, lower-alpha) ") "; }
+ol.enumerate3 > li::marker { content: counter(list-item, lower-roman) ". "; }
+ol.enumerate4 > li::marker { content: counter(list-item, upper-alpha) ". "; }
+dl.description > dt { float: left; clear: left; margin-right: 0.5em; }
+dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
+
+/* --- links to the page (page.lua) -------------------------------------- */
+
+/* a # in the margin of each heading and theorem, shown on hover (and
+   faintly on touch screens) */
+.tex8web-permalink { position: absolute; transform: translateX(-100%);
+    padding-inline-end: 0.3em; color: inherit; font-weight: normal; opacity: 0; }
+:is(h2, h3, h4, h5, h6, .newtheorem):hover .tex8web-permalink, .tex8web-permalink:focus { opacity: 0.4; }
+@media (hover: none) { .tex8web-permalink { opacity: 0.2; } }
+/* what a link leads to: a little space above it, and a tint */
+:target { scroll-margin-top: 1em; }
+:is(h2, h3, h4, h5, h6):target, .newtheorem:has(.head > a:target) {
+    background-color: color-mix(in srgb, currentColor 6%, transparent); }
+/* \WebPDF's link, after the title */
+.tex8web-pdf { margin-block: 0.5em 0; text-align: center; }

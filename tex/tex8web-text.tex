@@ -1,4 +1,4 @@
-% web: text, cross-references, theorems, the table of contents, lists and
+% tex8web: text, cross-references, theorems, the table of contents, lists and
 % figures.
 \makeatletter
 
@@ -56,7 +56,7 @@
 
 % section numbers in a box as wide as in the PDF (tocloft's widths, or the
 % standard classes'), so titles line up whether a number has one digit or
-% two (the third argument would add page numbers)
+% two (the third argument would add page numbers; see css/tex8web.css)
 \ConfigureToc{section}
     {\HCode{<span class="sectionToc"><span class="tocnumber">}}
     {\HCode{</span>}}
@@ -68,37 +68,26 @@
     {}
     {\HCode{</span><br />}}
 \ifdefined\cftsecnumwidth
-    \web@Css{.sectionToc .tocnumber { min-width: \web@em\cftsecnumwidth; }}
-    \web@Css{.subsectionToc { margin-left: \web@em\cftsubsecindent; }}
-    \web@Css{.subsectionToc .tocnumber { min-width: \web@em\cftsubsecnumwidth; }}
+    \web@Css{:root { --tex8web-toc-number: \web@em\cftsecnumwidth;
+        --tex8web-toc-indent: \web@em\cftsubsecindent;
+        --tex8web-toc-subnumber: \web@em\cftsubsecnumwidth; }}
 \else
-    \web@Css{.sectionToc .tocnumber { min-width: \web@em{1.5em}; }}
-    \web@Css{.subsectionToc { margin-left: \web@em{1.5em}; }}
-    \web@Css{.subsectionToc .tocnumber { min-width: \web@em{2.3em}; }}
+    \web@Css{:root { --tex8web-toc-number: \web@em{1.5em};
+        --tex8web-toc-indent: \web@em{1.5em};
+        --tex8web-toc-subnumber: \web@em{2.3em}; }}
     % and section entries in bold. (tocloft's own font commands aren't
     % followed)
     \Css{.sectionToc, .likesectionToc { font-weight: bold; }}
 \fi
-\Css{.tocnumber { display: inline-block; }}
 
 % --- lists ------------------------------------------------------------------
 
-% spaced as LaTeX spaces a list: \topsep around it, \itemsep and \parsep
-% between items. tex4ht numbers enumerate with the browser's counters; give
-% the inner levels LaTeX's labels, (a), i. and A. (enumitem's lists come out
-% differently, with their own labels.) A description's term runs into its
-% text
+% LaTeX's spacing of a list: \topsep around it, \itemsep and \parsep between
+% items (see css/tex8web.css)
 \begingroup\@listi
-    \xdef\web@listsep{\web@em\topsep}%
-    \xdef\web@itemsep{\web@em{\dimexpr\itemsep+\parsep\relax}}%
+    \web@Css{:root { --tex8web-list-sep: \web@em\topsep;
+        --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax}; }}
 \endgroup
-\Css{ol.enumerate1, ul.itemize1, dl.description { margin-block: \web@listsep; }}
-\Css{li.enumerate + li.enumerate, li.itemize + li.itemize { margin-top: \web@itemsep; }}
-\Css{ol.enumerate2 > li::marker { content: "(" counter(list-item, lower-alpha) ") "; }}
-\Css{ol.enumerate3 > li::marker { content: counter(list-item, lower-roman) ". "; }}
-\Css{ol.enumerate4 > li::marker { content: counter(list-item, upper-alpha) ". "; }}
-\Css{dl.description > dt { float: left; clear: left; margin-right: 0.5em; }}
-\Css{dl.description > dd { margin-left: 0; margin-bottom: \web@itemsep; }}
 
 % --- figures ----------------------------------------------------------------
 

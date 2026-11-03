@@ -1,0 +1,242 @@
+-- Reading macro definitions from LaTeX source: the document's own and
+-- those of the local packages it loads. Plain string work, without the
+-- page, so it can be tested on its own (test/unit/).
+local log = logging and logging.new("tex8web")
+
+local M = {}
+
+-- commands MathJax doesn't have; a definition that uses one can't be
+-- given to MathJax as it is (it needs a \WebMathMacros version)
+local unsupported = {}
+for _, name in ipairs({
+  "mathpalette", "makebox", "reflectbox", "scalebox", "resizebox", "rotatebox",
+  "scalerel", "settowidth", "widthof", "TextOrMath", "ifmmode", "ifx",
+  "expandafter", "csname",
+}) do unsupported["\\" .. name] = true end
+
+local function strip_comments(s)
+  return (s:gsub("\\%%", "\0"):gsub("%%[^\n]*", ""):gsub("%z", "\\%%"))
+end
+
+local function skip_space(s, i)
+  return s:find("%S", i) or #s + 1
+end
+
+-- the text of the group that opens at i (without its braces), and the
+-- index after it
+local function group(s, i)
+  local depth, j = 0, i
+  while j <= #s do
+    local c = s:sub(j, j)
+    if c == "\\" then
+      j = j + 1
+    elseif c == "{" then
+      depth = depth + 1
+    elseif c == "}" then
+      depth = depth - 1
+      if depth == 0 then return s:sub(i + 1, j - 1), j + 1 end
+    end
+    j = j + 1
+  end
+end
+
+-- an argument: a group, or a single control sequence or character
+local function argument(s, i)
+  i = skip_space(s, i)
+  if s:sub(i, i) == "{" then return group(s, i) end
+  local cs = s:match("^\\[%a@]+", i) or s:match("^\\.", i) or s:sub(i, i)
+  return cs, i + #cs
+end
+
+-- an optional argument [..] at i, if there is one
+local function optional(s, i)
+  local j = skip_space(s, i)
+  if s:sub(j, j) ~= "[" then return nil, i end
+  local depth = 0
+  for k = j, #s do
+    local c = s:sub(k, k)
+    if c == "{" then depth = depth + 1
+    elseif c == "}" then depth = depth - 1
+    elseif c == "]" and depth == 0 then return s:sub(j + 1, k - 1), k + 1 end
+  end
+end
+
+local function trim(s)
+  return s:match("^%s*(.-)%s*$")
+end
+
+-- the definition commands this understands. Each reads its arguments from
+-- after the command (and its star) and returns the macro's name, the
+-- definition for MathJax, and the text it expands to (to find the macros
+-- it uses in turn)
+local readers = {}
+
+function readers.newcommand(s, i)
+  local name, n, default, body
+  name, i = argument(s, i)
+  n, i = optional(s, i)
+  default, i = optional(s, i)
+  body, i = argument(s, i)
+  local def = "\\newcommand{" .. trim(name) .. "}"
+    .. (n and "[" .. n .. "]" or "") .. (default and "[" .. default .. "]" or "")
+    .. "{" .. body .. "}"
+  return trim(name), def, body, i
+end
+readers.renewcommand = readers.newcommand
+readers.providecommand = readers.newcommand
+
+-- xparse's commands, for argument specs \newcommand can express: mandatory
+-- arguments, after at most one optional argument with a default (O{..}).
+-- Others are kept with the reason MathJax can't have them, for define to
+-- report if the math uses them
+function readers.NewDocumentCommand(s, i)
+  local name, spec, body
+  name, i = argument(s, i)
+  spec, i = argument(s, i)
+  body, i = argument(s, i)
+  name = trim(name)
+  local rest = spec:gsub("%+", "")
+  local default
+  if rest:match("^%s*O") then
+    default, rest = rest:match("^%s*O(%b{})(.*)$")
+    default = default and default:sub(2, -2)
+  end
+  local n = 0
+  for c in rest:gmatch("%S") do
+    if c ~= "m" then
+      return name, nil, body, i, "has the argument spec {" .. spec .. "}"
+    end
+    n = n + 1
+  end
+  if default then n = n + 1 end
+  local def = "\\newcommand{" .. name .. "}" .. (n > 0 and "[" .. n .. "]" or "")
+    .. (default and "[" .. default .. "]" or "") .. "{" .. body .. "}"
+  return name, def, body, i
+end
+readers.RenewDocumentCommand = readers.NewDocumentCommand
+readers.DeclareDocumentCommand = readers.NewDocumentCommand
+readers.ProvideDocumentCommand = readers.NewDocumentCommand
+
+-- (as \mathop rather than MathJax's \operatorname, which leaves out the
+-- space between a number and the operator: 2\Var X. The starred form's
+-- limits go under it in display math only)
+function readers.DeclareMathOperator(s, i, star)
+  local name, body
+  name, i = argument(s, i)
+  body, i = argument(s, i)
+  local def = "\\newcommand{" .. trim(name) .. "}{\\mathop{\\mathrm{" .. body .. "}}"
+    .. (star == "*" and "" or "\\nolimits") .. "}"
+  return trim(name), def, body, i
+end
+
+function readers.DeclarePairedDelimiter(s, i)
+  local name, left, right
+  name, i = argument(s, i)
+  left, i = argument(s, i)
+  right, i = argument(s, i)
+  local def = "\\DeclarePairedDelimiter{" .. trim(name) .. "}{" .. left .. "}{" .. right .. "}"
+  return trim(name), def, left .. right, i
+end
+
+function readers.DeclarePairedDelimiterX(s, i)
+  local name, n, left, right, body
+  name, i = argument(s, i)
+  n, i = optional(s, i)
+  left, i = argument(s, i)
+  right, i = argument(s, i)
+  body, i = argument(s, i)
+  local def = "\\DeclarePairedDelimiterX{" .. trim(name) .. "}" .. (n and "[" .. n .. "]" or "")
+    .. "{" .. left .. "}{" .. right .. "}{" .. body .. "}"
+  return trim(name), def, left .. right .. body, i
+end
+
+function readers.def(s, i)
+  local name = s:match("^%s*(\\[%a@]+)", i)
+  if not name then return end
+  local params, j = s:match("^%s*\\[%a@]+([^{]*)()", i)
+  local body
+  body, i = group(s, j)
+  if not body then return end
+  return name, "\\def" .. name .. params .. "{" .. body .. "}", body, i
+end
+
+function readers.let(s, i)
+  local name, target, j = s:match("^%s*(\\[%a@]+)%s*=?%s*(\\[%a@]+)()", i)
+  if not name then return end
+  return name, "\\let" .. name .. target, target, j
+end
+
+-- the definitions in a source file: name -> {def, body}; and the local
+-- packages it loads
+function M.read(s, definitions)
+  s = strip_comments(s)
+  local i = 1
+  while true do
+    local start, stop, command, star = s:find("\\(%a+)(%*?)", i)
+    if not start then break end
+    i = stop + 1
+    local reader = readers[command]
+    if reader then
+      local ok, name, def, body, after, why = pcall(reader, s, i, star)
+      if ok and name and (def or why) then
+        definitions[name] = {def = def, body = body, problem = why}
+        i = after
+      elseif not ok and log then
+        log:debug("couldn't read \\" .. command .. ": " .. tostring(name))
+      end
+    end
+  end
+  local packages = {}
+  for _, command in ipairs({"usepackage", "RequirePackage"}) do
+    for list in s:gmatch("\\" .. command .. "%s*(%b{})") do packages[#packages + 1] = list end
+    for list in s:gmatch("\\" .. command .. "%s*%b[]%s*(%b{})") do packages[#packages + 1] = list end
+  end
+  local files = {}
+  for _, list in ipairs(packages) do
+    for name in list:sub(2, -2):gmatch("[^,%s]+") do files[#files + 1] = name .. ".sty" end
+  end
+  return files
+end
+
+local function read_file(path)
+  local f = io.open(path)
+  if not f then return end
+  local s = f:read("*a")
+  f:close()
+  return s
+end
+
+-- the definitions in the document and the local packages it loads
+function M.document(tex_file)
+  local definitions, seen, queue = {}, {}, {tex_file}
+  while #queue > 0 do
+    local path = table.remove(queue, 1)
+    local s = not seen[path] and read_file(path)
+    seen[path] = true
+    if s then
+      for _, file in ipairs(M.read(s, definitions)) do
+        queue[#queue + 1] = file
+      end
+    end
+  end
+  return definitions
+end
+
+-- the macros a piece of source uses
+function M.uses(text)
+  local names = {}
+  for name in text:gmatch("\\%a+") do names[#names + 1] = name end
+  -- and control symbols, which can be macros too (\newcommand{\1}{..})
+  for name in text:gmatch("\\[^%a%s]") do names[#names + 1] = name end
+  return names
+end
+
+-- why MathJax can't use a definition, if it can't
+function M.problem(body)
+  if body:find("\\[%a]*@") then return "uses an internal (@) macro" end
+  for _, name in ipairs(M.uses(body)) do
+    if unsupported[name] then return "uses " .. name end
+  end
+end
+
+return M

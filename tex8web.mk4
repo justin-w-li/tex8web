@@ -1,13 +1,10 @@
--- make4ht build file for HTML that looks like the PDF, with MathJax
--- typesetting the math from its LaTeX source. Use with tex8web.cfg (or a config
--- of your own that \input's tex8web-core.tex):
---   make4ht -c path/to/tex8web.cfg -e path/to/tex8web.mk4 document.tex
--- It puts this directory on TeX's and Lua's search paths, copies the Latin
--- Modern fonts (fonts/), the document's images and its PDF (\WebPDF) next
--- to the HTML, and
--- gives MathJax the document's macros. With node_modules installed (npm ci
--- here), prerender.mjs then typesets the math; otherwise the page loads
--- MathJax, with tex8web.js next to it.
+-- make4ht build file for tex8web: HTML that looks like the PDF, with MathJax
+-- typesetting the math from its LaTeX source. Use with tex8web.cfg (or a
+-- config of your own that \input's tex8web-core.tex):
+--   make4ht -c path/to/tex8web.cfg -e path/to/tex8web.mk4 -B build -d out document.tex
+-- It puts this directory on TeX's and Lua's search paths, runs the HTML
+-- passes (lua/tex8web/), copies the files the page needs next to it, and
+-- typesets the math with MathJax in Node, if it can (prerender.lua).
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
 -- (texlua's require doesn't look at package.path; add a searcher that does
@@ -20,13 +17,16 @@ end)
 os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 
 local domfilter = require "make4ht-domfilter"
-local log = logging.new("tex8web")
+local assets = require "tex8web.assets"
 local macros = require "tex8web.macros"
+local page = require "tex8web.page"
+local prerender = require "tex8web.prerender"
 local source = require "tex8web.source"
 local text = require "tex8web.text"
-local page = require "tex8web.page"
 
+-- each pass is function(document, context), in this order
 local passes = {
+  page.build_data,
   source.spaces,
   macros.define,
   text.theorem_spacing,
@@ -34,83 +34,28 @@ local passes = {
   page.permalinks,
   page.pdf_link,
   page.meta_tags,
+  page.scripts,
+  assets.copy,
 }
 
-local fix_html = domfilter({function(document, par)
-  for _, pass in ipairs(passes) do pass(document, par) end
+-- what the passes know about the page: tex8web's directory (root), the
+-- page's (dir), the document's name (input) and file (tex_file), the
+-- MathJax version; and what page.build_data adds
+local context
+local fix_html = domfilter({function(document)
+  for _, pass in ipairs(passes) do pass(document, context) end
   return document
 end}, "tex8web")
 
-local fonts = {
-  "lmroman10-regular.woff2",
-  "lmroman10-bold.woff2",
-  "lmroman10-italic.woff2",
-  "lmroman10-bolditalic.woff2",
-  "lmmono10-regular.woff2",
-}
-
-local function exists(path)
-  return lfs.attributes(path) ~= nil
-end
-
--- copies a file into the output, and lists it with tex4ht's output files,
--- so make4ht -d copies it too
-local function add(source, path)
-  copy(source, path)
-  Make:add_file(path)
-end
-
-local function quote(s)
-  return "'" .. s:gsub("'", "'\\''") .. "'"
-end
-
--- typesets the page's math with MathJax in Node (prerender.mjs), when its
--- node_modules is installed; otherwise MathJax does it in the browser
-local function prerender(filename)
-  if not exists(root .. "/node_modules/mathjax") then
-    log:info("math left for MathJax in the browser; run npm ci in " .. root
-      .. " to typeset it here")
-    return false
-  end
-  local node = io.popen("node " .. quote(root .. "/js/prerender.mjs") .. " " .. quote(filename))
-  -- (it prints the files it made: MathJax's styles and fonts)
-  local files = {}
-  for path in node:lines() do files[#files + 1] = path end
-  if not node:close() then
-    log:warning("prerender.mjs failed; math left for MathJax in the browser")
-    return false
-  end
-  for _, path in ipairs(files) do Make:add_file(path) end
-  return true
-end
+local mathjax = prerender.mathjax_version(root)
 
 Make:match("html$", function(filename, par)
-  local dir = filename:match("^(.*)/") or "."
-  for _, font in ipairs(fonts) do
-    add(root .. "/fonts/" .. font, dir .. "/fonts/" .. font)
-  end
-  -- images from \includegraphics, which the HTML references relative to the
-  -- source
-  local f = io.open(filename)
-  local html = f:read("*a")
-  f:close()
-  for src in html:gmatch("<img [^>]-src=['\"]([^'\"]+)['\"]") do
-    if not src:match("^%a+:") and not exists(dir .. "/" .. src) and exists(src) then
-      add(src, dir .. "/" .. src)
-    end
-  end
-  -- the PDF, from \WebPDF (tex8web-page.tex)
-  local pdf = html:match('<meta name="tex8web%-pdf" content="([^"]+)"')
-  if pdf then
-    if exists(pdf) then
-      add(pdf, dir .. "/" .. par.input .. ".pdf")
-    else
-      log:warning("\\WebPDF: no " .. pdf .. "; build the PDF first")
-    end
-  end
+  context = {root = root, dir = filename:match("^(.*)/") or ".", input = par.input,
+    tex_file = par.tex_file, mathjax = mathjax}
   local status = fix_html(filename, par)
-  if not prerender(filename) then
-    add(root .. "/js/tex8web.js", dir .. "/tex8web.js")
+  assets.stylesheet(context)
+  if not prerender.run(context, filename) then
+    assets.add(root .. "/js/tex8web.js", context.dir .. "/tex8web.js")
   end
   return status
 end)

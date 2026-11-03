@@ -1,20 +1,25 @@
-// web: MathJax's TeX input, adjusted to draw math at the sizes TeX does.
-// tex8web-page.tex sets window.tex8web to lengths from the document, in ems of
-// its body font, before this file and MathJax load:
+// tex8web: MathJax's TeX input, adjusted to draw math at the sizes TeX does.
+// tex8web(config, tex) returns MathJax's configuration with the adjustments
+// hooked in. tex holds lengths from the document, in ems of its body font
+// (tex8web-page.tex):
 //   exscale: the math extension font's size (TeX draws \big delimiters and
 //     large operators from it at its design size, 10pt, also in an 11pt
 //     document)
 //   baselineskip, jot: rows of arrays and alignments
 //   pt: 1pt (MathJax reads pt as a tenth of an em)
-(function () {
-  const tex = window.tex8web;
-  const config = window.MathJax = window.MathJax || {};
+// In a page, this file configures MathJax from the page's tex8web-config
+// (see the end); prerender.mjs calls tex8web() itself.
+//
+// Some of this reaches into MathJax's internals (marked "internal"), which
+// is why MathJax's version is pinned (package.json).
+function tex8web(config, tex) {
   const startup = config.startup = config.startup || {};
 
   // \big and co.: delimiters of TeX's sizes (MathJax asks for 1.2em and up,
   // just above the glyph it has for \big, which then comes out a size larger)
   const bigSizes = {big: 1.19, Big: 1.79, bigg: 2.39, Bigg: 2.99};
   function sizeBigDelimiters() {
+    // (internal: the macro map, and a macro's arguments)
     const macros = MathJax._.input.tex.MapHandler.MapHandler.getMap('macros');
     const factor = macros.lookup('big')._args[1] / 1.2;  // MathJax's size per em
     for (const [name, size] of Object.entries(bigSizes)) {
@@ -26,7 +31,8 @@
   }
 
   // MathJax's default space between rows (in its ems, in which 1pt is
-  // 0.1em), and TeX's struts and space, for each environment
+  // 0.1em), and TeX's struts and space, for each environment (the
+  // environments tex8web-math.tex numbers are listed there)
   const alignment = {rowspacing: 0.3, stretch: 1, space: () => tex.jot};
   const array = {rowspacing: 0.4, stretch: 1, space: () => 0};
   const environments = {
@@ -47,6 +53,7 @@
   // mtable's data-latex holds its source with macros expanded): wrap the
   // environments' functions to mark the tables they make
   function markEnvironments(parseOptions) {
+    // (internal: the environment handlers, and their functions)
     for (const {item} of parseOptions.handlers.get('environment')._configuration.items) {
       for (const [name, token] of item.map || []) {
         const make = token._func;
@@ -143,4 +150,10 @@
     markEnvironments(input.parseOptions);
     input.postFilters.add(adjust);
   };
-})();
+  return config;
+}
+
+if (typeof document !== 'undefined') {
+  const data = JSON.parse(document.getElementById('tex8web-config').textContent);
+  window.MathJax = tex8web(data.mathjax, data.tex);
+}

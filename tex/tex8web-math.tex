@@ -1,8 +1,9 @@
-% web: math. tex4ht's mathjax option leaves each formula's LaTeX source in
-% the page, for MathJax to typeset in the browser.
+% tex8web: math. tex4ht's mathjax option leaves each formula's LaTeX source
+% in the page, for MathJax to typeset.
 \makeatletter
 
-% MathJax's configuration:
+% MathJax's configuration, as JSON (tex8web-page.tex puts it in the page,
+% for tex8web.js):
 % - the extensions for the packages the document loads that MathJax has
 %   (others load when a macro needs them), and always mathtools, for
 %   \DeclarePairedDelimiter in macros.lua's definitions
@@ -13,44 +14,35 @@
 %   letters); display math that doesn't fit scrolls; math at the size of
 %   the text, as TeX does (rather than matching x-heights, which comes out a
 %   bit small)
-% - for speed: math typeset as it scrolls into view (ui/lazy), and no
-%   speech or braille (MathJax's semantic enrichment for them took 90% of
-%   the time, 20s for a long document; readers can turn speech on in
-%   MathJax's menu). Screen readers get each formula as MathML
-%   (assistiveMml, which MathJax leaves off when speech is on by default)
-\def\web@extensions{'mathtools'}
-\def\web@load{'[tex]/mathtools'}
+% - for speed, when MathJax typesets in the browser: math typeset as it
+%   scrolls into view (ui/lazy), and no speech or braille (MathJax's
+%   semantic enrichment for them took 90% of the time, 20s for a long
+%   document; readers can turn speech on in MathJax's menu). Screen readers
+%   get each formula as MathML (assistiveMml, which MathJax leaves off when
+%   speech is on by default)
+\def\web@extensions{"mathtools"}
+\def\web@load{"[tex]/mathtools"}
 \@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
         colortbl,dsfont,empheq,gensymb,mhchem,physics,textcomp,units,upgreek\do{%
     \@ifpackageloaded\web@package
-        {\edef\web@extensions{\web@extensions, '\web@package'}%
-         \edef\web@load{\web@load, '[tex]/\web@package'}}{}%
+        {\edef\web@extensions{\web@extensions, "\web@package"}%
+         \edef\web@load{\web@load, "[tex]/\web@package"}}{}%
 }
-\edef\web@config{\noexpand\Configure{MathJaxConfig}{{
-    loader: { load: ['ui/lazy', \web@load] },
-    options: { menuOptions: { settings: { enrich: false, speech: false, braille: false,
-        assistiveMml: true } } },
-    tex: { tags: 'none', packages: { '[+]': [\web@extensions] },
-        macros: { colon: '\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}' } },
-    output: { font: 'mathjax-tex', displayOverflow: 'scroll',
-        matchFontHeight: false } };
-}}
-\web@config
+\edef\web@mathjax{{
+    "loader": {"load": ["ui/lazy", \web@load]},
+    "options": {"menuOptions": {"settings": {"enrich": false, "speech": false,
+        "braille": false, "assistiveMml": true}}},
+    "tex": {"tags": "none", "packages": {"[+]": [\web@extensions]},
+        "macros": {"colon": "\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}"}},
+    "output": {"font": "mathjax-tex", "displayOverflow": "scroll",
+        "matchFontHeight": false}}}
 % \WebMathMacros{definitions}: macros for MathJax, in place of the
 % document's own (which macros.lua reads from its preamble and styles), for
-% macros MathJax can't read as they are. \WebMacrosHTML writes them in a
-% <script> in <head> (tex8web-page.tex), for macros.lua, which removes it
+% macros MathJax can't read as they are. tex8web-page.tex passes them on to
+% macros.lua
 \ExplSyntaxOn
 \tl_new:N \g__web_macros_tl
 \NewDocumentCommand\WebMathMacros{+m}{\tl_gput_right:Nn \g__web_macros_tl {#1}}
-\NewDocumentCommand\WebMacrosHTML{}{
-    \tl_set:Ne \l_tmpa_tl {\exp_args:NV \detokenize \g__web_macros_tl}
-    \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } \l_tmpa_tl
-    \regex_replace_all:nnN { \x{26} } { &amp; } \l_tmpa_tl
-    \regex_replace_all:nnN { \x{3C} } { &lt; } \l_tmpa_tl
-    \regex_replace_all:nnN { \x{3E} } { &gt; } \l_tmpa_tl
-    \HCode{<script~type="text/x-tex8web-macros">\l_tmpa_tl</script>\Hnewline}
-}
 
 % a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math
 % for MathJax: typeset it, re-reading the source, which tex4ht read with &
@@ -77,10 +69,11 @@
         { \__web_intertext:nw {#1} #2 \q_stop }
         { \__web_part:nn {#1} {#2} }
 }
+\tl_new:N \l__web_before_tl
 \cs_new_protected:Npn \__web_intertext:nw #1#2 \intertext #3#4 \q_stop {
-    \tl_set:Nn \l_tmpa_tl {#2}
-    \regex_replace_once:nnN { \c{\\} \s* \Z } {} \l_tmpa_tl
-    \tl_if_blank:VF \l_tmpa_tl { \exp_args:Nno \__web_part:nn {#1} {\l_tmpa_tl} }
+    \tl_set:Nn \l__web_before_tl {#2}
+    \regex_replace_once:nnN { \c{\\} \s* \Z } {} \l__web_before_tl
+    \tl_if_blank:VF \l__web_before_tl { \exp_args:Nno \__web_part:nn {#1} {\l__web_before_tl} }
     \HCode{<span~class="tex8web-intertext">} #3 \HCode{</span>}
     \__web_alignment:nn {#1} {#4}
 }
@@ -96,6 +89,10 @@
 \seq_new:N \l__web_envs_seq
 \seq_new:N \l__web_columns_seq
 \tl_new:N \l__web_next_tl
+\tl_new:N \l__web_count_tl
+\tl_new:N \l__web_env_tl
+% (tex8web.js has its own table of these environments, for their row
+% spacing)
 \clist_const:Nn \c__web_numbered_clist { equation, multline, align, gather, alignat, flalign }
 \clist_const:Nn \c__web_rows_clist { align, gather, alignat, flalign }
 \clist_const:Nn \c__web_alignments_clist
@@ -166,8 +163,8 @@
             \str_case_e:nn { \token_to_str:N #1 } {
                 { \token_to_str:N \begin } { \tl_set:Nn \l__web_next_tl {begin} }
                 { \token_to_str:N \end } {
-                    \seq_pop:NN \l__web_envs_seq \l_tmpa_tl
-                    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
+                    \seq_pop:NN \l__web_envs_seq \l__web_env_tl
+                    \seq_pop:NN \l__web_columns_seq \l__web_count_tl
                 }
                 { \token_to_str:N \label } { \tl_set:Nn \l__web_next_tl {label} }
                 { \token_to_str:N \tag } {
@@ -185,7 +182,7 @@
 % \\: a new row, which in amsmath's alignments numbered by row has its own
 % number
 \cs_new_protected:Npn \__web_newline: {
-    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
+    \seq_pop:NN \l__web_columns_seq \l__web_count_tl
     \seq_push:Nn \l__web_columns_seq {0}
     \bool_lazy_and:nnT \l__web_rows_bool
         { \int_compare_p:nNn { \seq_count:N \l__web_envs_seq } = 1 }
@@ -194,11 +191,11 @@
 }
 % &: in an alignment, {} at the start of each right-hand column
 \cs_new_protected:Npn \__web_column: {
-    \seq_pop:NN \l__web_columns_seq \l_tmpa_tl
-    \seq_push:Ne \l__web_columns_seq { \int_eval:n { \l_tmpa_tl + 1 } }
-    \seq_get:NN \l__web_envs_seq \l_tmpb_tl
-    \int_if_odd:nT { \l_tmpa_tl + 1 } {
-        \clist_if_in:NVT \c__web_alignments_clist \l_tmpb_tl
+    \seq_pop:NN \l__web_columns_seq \l__web_count_tl
+    \seq_push:Ne \l__web_columns_seq { \int_eval:n { \l__web_count_tl + 1 } }
+    \seq_get:NN \l__web_envs_seq \l__web_env_tl
+    \int_if_odd:nT { \l__web_count_tl + 1 } {
+        \clist_if_in:NVT \c__web_alignments_clist \l__web_env_tl
             { \tl_put_right:Nn \l__web_body_tl { {} } }
     }
 }
