@@ -2,8 +2,9 @@
 % it handles without a config of its own. No xcolor, packages that MathJax has
 % as extensions, xparse macros, equation numbers by section, titling's
 % title with a \thanks, a table of contents with a macro of its own, a
-% list of enumitem's \newlist, and titlesec's explicit headings, labeled
-% with \thetitle.
+% list of enumitem's \newlist, titlesec's explicit headings, labeled
+% with \thetitle and spaced in titlesec's *n form, and a title in a size of
+% its own.
 \documentclass{article}
 \usepackage{amsmath,amssymb,physics,braket,cancel}
 \usepackage{titling}
@@ -17,7 +18,8 @@
 \newlist{steps}{enumerate}{1}
 \setlist[steps]{label=Step \arabic*., leftmargin=*}
 \titleformat{\section}{\normalfont\Large\bfseries}{\thetitle.}{1em}{#1}
-\title{Generic}
+\titlespacing*{\section}{0pt}{*4}{*1.5}
+\title{\Large Generic}
 \author{Someone}
 \date{A day\thanks{A note on the date.}}
 \begin{document}

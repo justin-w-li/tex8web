@@ -65,6 +65,11 @@ function checkPage(page, name) {
     const mark = html.slice(at, at + 500).match(/<span class=['"]titlemark['"]>(.*?)<\/span>/)?.[1].replace(/<[^>]+>/g, '');
     if (at >= 0 && !mark?.includes(number.trim())) problems.push(`${name}: heading #${id} numbered ${mark?.trim()}, not ${number}`);
   }
+  // (one space between a heading's number and its title, which
+  // css/tex8web.css sizes)
+  for (const [, number, extra] of html.matchAll(/class=['"]titlemark['"]>(?:<span[^>]*>)*([^<]*)(?:<\/span>)+(?:<span class=['"]tex8web-labelsep['"]> <\/span>)?(\s|\u00a0|<span class=['"]tex8web-nbsp)?/g)) {
+    if (/[\s\u00a0]$/.test(number) || extra) problems.push(`${name}: more space after heading number ${number.trim()}`);
+  }
   const merrors = (html.match(/<mjx-merror/g) || []).length;
   if (merrors) problems.push(`${name}: ${merrors} MathJax error(s)`);
   // (MathJax draws a macro it doesn't know as its name, in red)

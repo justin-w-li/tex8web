@@ -132,14 +132,40 @@
 % classes' sizes), and a column as wide as the PDF's, in ems of the text.
 % With titlesec, a heading's size, family, weight, style and alignment are
 % those of its \titleformat (tex8web-hooks.sty), tried out in a box that's
-% thrown away
+% thrown away, and the space above and below it that of its \titlespacing
+% (or the class's, which titlesec reads when it loads). A number as far
+% from its title as in the PDF: titlesec's space after the label, KOMA's
+% (the glue its \sectionformat ends with), amsart's \enspace (which its
+% \@sect puts there, not \@seccntformat), or LaTeX's \quad
+% (css/tex8web.css)
 \newcommand\web@headsize[2]{% name, size command
     \begingroup
         \def\web@font{#2}%
         \ifcsname web@titlefont@#1\endcsname
             \expandafter\let\expandafter\web@font\csname web@titlefont@#1\endcsname
         \fi
+        \global\let\web@spacing\relax
+        \global\let\web@labelsep\relax
+        \ifcsname ttls@#1\endcsname
+            \expandafter\expandafter\expandafter\web@titlespacing\csname ttls@#1\endcsname
+        \fi
         \setbox0\vbox{\web@font
+            \ifx\web@spacing\relax\else
+                \xdef\web@spacing{--tex8web-#1-before: \web@em\web@before;
+                    --tex8web-#1-after: \web@em\web@after;}%
+            \fi
+            \ifcsname c@#1\endcsname
+                \ifcsname web@titlesep@#1\endcsname
+                    \setlength\dimen@{\csname web@titlesep@#1\endcsname}%
+                    \xdef\web@labelsep{\web@em\dimen@}%
+                \else\ifcsname #1format\endcsname
+                    \setbox0\hbox{\csname #1format\endcsname}\dimen@\wd0
+                    \setbox0\hbox{\csname #1format\endcsname\unskip}\advance\dimen@-\wd0
+                    \xdef\web@labelsep{\web@em\dimen@}%
+                \else\ifdefined\@secnumfont
+                    \gdef\web@labelsep{0.5em}%
+                \fi\fi\fi
+            \fi
             \xdef\web@size{\f@size pt}%
             \gdef\web@family{inherit}%
             \web@iffont\f@family\sfdefault{\gdef\web@family{var(--tex8web-sans)}}%
@@ -162,6 +188,8 @@
         \web@formathas\filleft{\gdef\web@align{right}}%
     \endgroup
     \web@Css{:root { --tex8web-#1-size: \web@em\web@size; }}%
+    \ifx\web@spacing\relax\else\web@Css{:root { \web@spacing }}\fi
+    \ifx\web@labelsep\relax\else\web@Css{:root { --tex8web-#1-labelsep: \web@labelsep; }}\fi
     \ifcsname web@titlefont@#1\endcsname
         \web@Css{:root { --tex8web-#1-family: \web@family;
             --tex8web-#1-weight: \web@weight; --tex8web-#1-style: \web@style;
@@ -176,6 +204,16 @@
         \ifx\web@a\web@b\else\web@Css{:root { --tex8web-#1-display: block; }}\fi
     \fi
 }
+% titlesec's {left}{right}{before}{after}{afterindent}: before and after
+% as \web@before and \web@after, in the text's font, as titlesec sets them
+% (\ttl@assign reads its *n form). (Not left in \@tempskipa: a format's
+% \center sets it)
+\def\web@titlespacing#1#2#3#4#5{%
+    \ttl@assign\@tempskipa#3\relax\beforetitleunit
+    \edef\web@before{\the\dimexpr\@tempskipa}%
+    \ttl@assign\@tempskipa#4\relax\aftertitleunit
+    \edef\web@after{\the\dimexpr\@tempskipa}%
+    \global\let\web@spacing\@empty}
 % #2 if the heading's format (\web@font) holds the command #1
 \newcommand\web@formathas[2]{%
     \def\web@a{\in@#1}\expandafter\web@a\expandafter{\web@font}\ifin@#2\fi}
@@ -183,7 +221,13 @@
 % compare whether they're \long)
 \newcommand\web@iffont[3]{%
     \edef\web@a{#1}\edef\web@b{#2}\ifx\web@a\web@b#3\fi}
-\web@headsize{title}{\LARGE}
+% (and the title in the size its text starts with, \title{\Large ..}, as
+% in \maketitle's {\LARGE \@title})
+\long\def\web@titlefirst#1#2\@nil{%
+    \in@{#1}{\tiny\scriptsize\footnotesize\small\normalsize\large\Large\LARGE\huge\Huge}%
+    \ifin@\def\web@titlesize{#1}\else\let\web@titlesize\@empty\fi}
+\ifdefined\@title\expandafter\web@titlefirst\@title\@empty\@nil\else\let\web@titlesize\@empty\fi
+\web@headsize{title}{\LARGE\web@titlesize}
 \web@headsize{section}{\Large}
 \web@headsize{subsection}{\large}
 \web@headsize{subsubsection}{\normalsize}

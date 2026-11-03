@@ -18,6 +18,53 @@ function M.theorem_spacing(document)
   end
 end
 
+-- the space between a heading's number and its title, as one space in a
+-- <span class="tex8web-labelsep">, which css/tex8web.css makes as wide as
+-- in the PDF: tex4ht writes it as spaces (and KOMA's as no-break spaces),
+-- in the number and after it, which the browser would collapse into one
+local function last_text(el)
+  local children = el:get_children()
+  local last = children[#children]
+  if last and last:is_element() then return last_text(last) end
+  return last and last:is_text() and last or nil
+end
+
+local function trim(text, space, nbsp)
+  repeat
+    local before = text
+    text = text:gsub(space, ""):gsub(nbsp, "")
+  until text == before
+  return text
+end
+
+function M.label_space(document)
+  for _, mark in ipairs(document:query_selector(".titlemark")) do
+    local spaced = false
+    local function strip(node, space, nbsp)
+      local text = trim(node:get_text(), space, nbsp)
+      spaced = spaced or text ~= node:get_text()
+      dom.set_node_text(node, text)
+    end
+    local last = last_text(mark)
+    if last then strip(last, "%s+$", "\u{A0}$") end
+    local parent = mark:get_parent()
+    local siblings = parent:get_children()
+    for i, node in ipairs(siblings) do
+      if node == mark then
+        local after = siblings[i + 1]
+        if after and after:is_text() then strip(after, "^%s+", "^\u{A0}") end
+        if spaced then
+          local space = mark:create_element("span", {class = "tex8web-labelsep"})
+          space:add_child_node(space:create_text_node(" "))
+          table.insert(siblings, i + 1, space)
+          dom.set_children(parent, siblings)
+        end
+        break
+      end
+    end
+  end
+end
+
 -- tex4ht's mathjax option puts each formula's source in a <span> or <div>
 -- of class mathjax-inline, mathjax-block or mathjax-env
 local function is_math(el)

@@ -49,6 +49,7 @@ local passes = {
   page.build_data,
   source.spaces,
   text.theorem_spacing,
+  text.label_space,
   text.no_break_spaces,
   text.sidenotes,
   page.controls,

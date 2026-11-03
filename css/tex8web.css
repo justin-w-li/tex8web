@@ -90,31 +90,46 @@ div.thanks { font-style: normal; }
     font-family: var(--tex8web-subsubsection-family, inherit);
     font-weight: var(--tex8web-subsubsection-weight, bold);
     font-style: var(--tex8web-subsubsection-style, normal); }
-/* (titlesec's; :where, so that a class's own wins, such as amsart's
-   centered sections in html4.4ht) */
+/* (titlesec's, with the space above and below a heading, by default the
+   browser's (h3, h4, h5); :where, so that a class's own wins, such as
+   amsart's centered sections in html4.4ht) */
 :where(.sectionHead, .likesectionHead) { font-variant: var(--tex8web-section-variant, normal);
-    text-align: var(--tex8web-section-align, left); }
+    text-align: var(--tex8web-section-align, left);
+    margin-block: var(--tex8web-section-before, 1em) var(--tex8web-section-after, 1em); }
 :where(.subsectionHead, .likesubsectionHead) { font-variant: var(--tex8web-subsection-variant, normal);
-    text-align: var(--tex8web-subsection-align, left); }
+    text-align: var(--tex8web-subsection-align, left);
+    margin-block: var(--tex8web-subsection-before, 1.33em) var(--tex8web-subsection-after, 1.33em); }
 :where(.subsubsectionHead, .likesubsubsectionHead) {
     font-variant: var(--tex8web-subsubsection-variant, normal);
-    text-align: var(--tex8web-subsubsection-align, left); }
+    text-align: var(--tex8web-subsubsection-align, left);
+    margin-block: var(--tex8web-subsubsection-before, 1.67em) var(--tex8web-subsubsection-after, 1.67em); }
 /* (run into their paragraph, unless titlesec puts them on a line of their
-   own, with the space below them that a paragraph has) */
+   own, by default with the space below them that a paragraph has) */
 .paragraphHead, .likeparagraphHead { display: var(--tex8web-paragraph-display, inline);
-    margin: 0 0 1em; font-size: var(--tex8web-paragraph-size);
+    margin: var(--tex8web-paragraph-before, 0) 0 var(--tex8web-paragraph-after, 1em);
+    font-size: var(--tex8web-paragraph-size);
     font-family: var(--tex8web-paragraph-family, inherit);
     font-weight: var(--tex8web-paragraph-weight, bold);
     font-style: var(--tex8web-paragraph-style, normal);
     font-variant: var(--tex8web-paragraph-variant, normal);
     text-align: var(--tex8web-paragraph-align, left); }
 .subparagraphHead, .likesubparagraphHead { display: var(--tex8web-subparagraph-display, inline);
-    margin: 0 0 1em; font-size: var(--tex8web-subparagraph-size);
+    margin: var(--tex8web-subparagraph-before, 0) 0 var(--tex8web-subparagraph-after, 1em);
+    font-size: var(--tex8web-subparagraph-size);
     font-family: var(--tex8web-subparagraph-family, inherit);
     font-weight: var(--tex8web-subparagraph-weight, bold);
     font-style: var(--tex8web-subparagraph-style, normal);
     font-variant: var(--tex8web-subparagraph-variant, normal);
     text-align: var(--tex8web-subparagraph-align, left); }
+/* the space between a heading's number and its title (text.label_space)
+   as wide as in the PDF, by default LaTeX's \quad; still a space, for
+   copying and finding the heading */
+.tex8web-labelsep { display: inline-block; white-space: pre; }
+.sectionHead .tex8web-labelsep { width: var(--tex8web-section-labelsep, 1em); }
+.subsectionHead .tex8web-labelsep { width: var(--tex8web-subsection-labelsep, 1em); }
+.subsubsectionHead .tex8web-labelsep { width: var(--tex8web-subsubsection-labelsep, 1em); }
+.paragraphHead .tex8web-labelsep { width: var(--tex8web-paragraph-labelsep, 1em); }
+.subparagraphHead .tex8web-labelsep { width: var(--tex8web-subparagraph-labelsep, 1em); }
 /* a column as wide as the PDF's, in ems of the text, so lines hold about as
    much; narrower screens get the screen's width. Below the controls, as
    far down on a wide screen as on a narrow one (page.lua) */

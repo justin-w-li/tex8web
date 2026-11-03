@@ -32,10 +32,23 @@ if (!only.length) {
 
 // --- builds ----------------------------------------------------------------
 
+// what tex8web measures in a document, where a test document sets it:
+// titlesec's spacing in its *n form, a \titleformat's space after the
+// label in a bold font's ems, and a title's own size
+const measured = {
+  'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
+    '--tex8web-section-labelsep': '1.125em', '--tex8web-title-size': '1.44em' },
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
+  const css = join(out, doc.tex.replace(/\.tex$/, '.css'));
+  const styles = existsSync(css) ? readFileSync(css, 'utf8') : '';
+  for (const [property, value] of Object.entries(measured[doc.name] ?? {})) {
+    if (!styles.includes(`${property}: ${value};`)) problems.push(`${property} isn't ${value}`);
+  }
   return [...problems, ...checkTexLog(join(aux, doc.tex.replace(/\.tex$/, '.log'))), ...checkLog(result.log),
     ...checkOutput(out)];
 }

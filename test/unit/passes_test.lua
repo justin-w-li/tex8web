@@ -36,6 +36,18 @@ return {
     equal(body(d), [[<div class='newtheorem' style='margin-top: 1em; margin-bottom: 2em'><p><span class='head'>Theorem 1.</span> Text</p></div>]])
   end,
 
+  ["text.label_space: one space between a heading's number and its title"] = function()
+    local d = parse([[<h3 class="sectionHead"><span class="titlemark">1    </span> <a id="x1-1"></a>Title</h3>]]
+      .. [[<p><span class="paragraphHead"><span class="titlemark"><span class="b">a    </span></span> <a id="x1-2"></a>Head</span> Text</p>]]
+      .. "<h4 class=\"subsectionHead\"><span class=\"titlemark\">1.1</span>\u{A0}\u{A0}<a id=\"x1-3\"></a>Sub</h4>"
+      .. [[<h3 class="sectionHead"><span class="titlemark"></span><a id="x1-4"></a>Bare</h3>]])
+    text.label_space(d)
+    equal(body(d), [[<h3 class='sectionHead'><span class='titlemark'>1</span><span class='tex8web-labelsep'> </span><a id='x1-1'></a>Title</h3>]]
+      .. [[<p><span class='paragraphHead'><span class='titlemark'><span class='b'>a</span></span><span class='tex8web-labelsep'> </span><a id='x1-2'></a>Head</span> Text</p>]]
+      .. [[<h4 class='subsectionHead'><span class='titlemark'>1.1</span><span class='tex8web-labelsep'> </span><a id='x1-3'></a>Sub</h4>]]
+      .. [[<h3 class='sectionHead'><span class='titlemark'></span><a id='x1-4'></a>Bare</h3>]])
+  end,
+
   ["text.no_break_spaces: a ~ kept with the math after it"] = function()
     local d = parse("<p>Lemma\u{A0}<span class=\"mathjax-inline\">\\(1\\)</span> and a\u{A0}b</p>")
     text.no_break_spaces(d)
