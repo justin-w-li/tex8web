@@ -56,6 +56,8 @@ html body { font-family: "Latin Modern Roman", serif; }
    and for Computer Modern (without lmodern) */
 [class*="-lmtt"], [class^="cmtt-"], [class^="ectt-"] { font-family: var(--tex8web-mono); }
 [class*="-lmss"], [class^="cmss"], [class^="ecss"] { font-family: var(--tex8web-sans); }
+/* (TeX Live's ht-fonts/alias/times/ptmr7t.htf calls Times monospace) */
+[class^="ptmr7t-"] { font-family: inherit; }
 /* Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em;
    text.lua marks no-break spaces, and keeps one together with the math
    after it */
@@ -299,8 +301,8 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     border-inline-start: 2px solid color-mix(in srgb, currentColor 20%, transparent); }
 .tex8web-sidenote p { margin: 0; text-indent: 0; }
 /* (in place of tex4ht's p + p, p + div and p + pre, which notes come
-   between) */
-:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :where(p, div, pre) {
+   between; :is, to outweigh its p { margin-top: 0 }) */
+:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(p, div, pre) {
     margin-top: 1em; }
 @media (--tex8web-wide) {
     .tex8web-sidenote { float: right; clear: right; position: relative;

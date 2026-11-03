@@ -135,7 +135,7 @@ These are deliberate:
 | Example | Source | Shows |
 | --- | --- | --- |
 | `basic` | Overleaf's "Example Project", by Overleaf, CC BY 4.0 | a figure, a table, lists, math, a bibliography, hyperref's colors |
-| `blog` | "Should Self-Driving Cars be bound by Isaac Asimov's Three Laws of Robotics?", by Pradhyumnaa Ganapathi Subramanian, CC BY 4.0 | an essay: prose, lists, a table |
+| `footnotes` | "Generic Law Review Article Template", by Kenneth A. Grady, CC BY 4.0, with its filler text replaced by a short article | footnotes in paragraphs, a quotation and a list, one holding a quotation, and `\ref`s to footnotes; `\thanks`; tocloft and titlesec headings five levels deep; Times (`mathptmx`) |
 | `custom` | "Class Notes Template", by Siladittya Manna, CC BY 4.0, with its placeholder text replaced by a short lecture | colored tcolorbox environments; a header laid out for the web by `custom.cfg`; a PDF link |
 | `complex` | "Fun Template 2", by Senan Sekhon, CC BY 4.0, with its bibliography rebuilt and its QED picture redrawn | a long document with many packages; `complex.cfg` gives MathJax the macros it can't read. Its known gaps are in `test/expected.json` |
 

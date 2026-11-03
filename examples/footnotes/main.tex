@@ -1,0 +1,168 @@
+% "Generic Law Review Article Template" by Kenneth A. Grady,
+% https://www.overleaf.com/latex/templates/generic-law-review-article-template/kbmpvfbmrkgp
+% licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+% Changes: this comment; the title, the filler text and headings, replaced
+% with a short article of our own, and the quotation in its example
+% footnote, replaced with one from Mapp v. Ohio.
+%
+%
+% Law Review Article Template
+% A "universal" template 
+% 
+%
+
+\documentclass[letterpaper,12pt,twoside]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage{lipsum} % You can remove this package if you do not want to use filler text.
+\usepackage{titlesec}
+\usepackage{ragged2e}
+\usepackage{fancyhdr}
+\usepackage[all]{nowidow}
+\usepackage{url}
+\usepackage{tocloft}
+\usepackage[headheight=110pt]{geometry}
+
+%------
+\makeatletter
+\renewcommand\normalsize{\@setfontsize\normalsize{12}{14}}
+\renewcommand\small{\@setfontsize\small{10}{12}}
+\renewcommand\scriptsize{\@setfontsize\scriptsize{7}{8}}
+\renewcommand\tiny{\@setfontsize\tiny{5}{6}}
+\renewcommand\large{\@setfontsize\large{13}{15}}
+\renewcommand\Large{\@setfontsize\Large{14}{16}}
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+\renewcommand{\thesubsubsection}{\arabic{subsubsection}}
+\renewcommand{\theparagraph}{\alph{paragraph}}
+\renewcommand{\thesubparagraph}{\roman{subparagraph}}
+%------
+\titleformat{\section}[block]{\normalfont\normalsize\scshape\center}{\thesection.}{1em}{}
+\titleformat{\subsection}[block]{\normalfont\itshape\center}{\thesubsection.}{1em}{}
+\titleformat{\subsubsection}{\normalfont}{\thesubsubsection.}{1em}{}
+\titleformat{\paragraph}{\normalfont}{\theparagraph.}{1em}{}
+\titleformat{\subparagraph}{\normalfont\small}{\thesubparagraph.}{1em}{}
+\titlespacing{\subparagraph}{0pt}{12pt}{12pt}
+\makeatother
+
+\renewcommand\contentsname{\hspace*{\fill}\normalfont\normalsize\scshape Table of Contents\hspace*{\fill}}   
+\renewcommand\cftsecfont{\normalfont\normalsize\scshape}
+\renewcommand\cftsubsecfont{\normalfont\normalsize\itshape}
+\renewcommand\cftsubsubsecfont{\normalfont\normalsize}
+\renewcommand\cftparafont{\normalfont\normalsize}
+\renewcommand\cftsubparafont{\normalfont\small}
+\renewcommand\cftsecpagefont{\normalfont\normalsize}
+\renewcommand\abstractname{\normalfont\normalsize\scshape Abstract}
+
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+
+\cftsetindents{section}{3em}{3em}
+\cftsetindents{subsection}{4em}{3em}
+\cftsetindents{subsubsection}{5em}{3em}
+\cftsetindents{paragraph}{6em}{3em}
+\cftsetindents{subparagraph}{7em}{3em}
+
+\fancypagestyle{mypagestyle}{%
+  \fancyhf{}% Clear header/footer
+  \fancyhead[OC]{\uppercase{Citations in Law Review Footnotes}}% Title on Odd pages, center.
+  \fancyhead[OL]{16-Oct-01]}
+  \fancyhead[OR]{\thepage}
+  \fancyhead[EC]{\uppercase{Citations in Law Review Footnotes}}% Title on Even page, center.
+  \fancyhead[EL]{\thepage}
+  \fancyhead[ER]{[16-Oct-01}
+  \fancyfoot[O]{}
+  \fancyfoot[E]{}
+  \renewcommand{\headrulewidth}{0pt}% Removes header rule
+}
+\pagestyle{mypagestyle}
+
+\title{\Large{\uppercase{Citations in Law Review Footnotes}}}
+\author{\large\emph{Name of Author}\thanks{Author affiliation.}}
+%-- If you have more than one author and they have different affiliations, put the percent sign before
+%-- the \author command above and remove it from the start of the \author command below.
+
+%\author{\large\emph{Name of Author1}\thanks{Author affiliation1.} \and \large\emph{Name of Author2}\thanks{Author affiliation2.} \and \large\emph{Name of Author3}\thanks{Author affiliation3.}}
+
+%--
+\date{} % Leave blank for no date. If you fill in the date it will appear below the author's name	
+
+\begin{document}
+\urlstyle{same}
+
+\maketitle
+\thispagestyle{empty}
+
+	\begin{abstract}
+	This is a generic template for a law review article. It is modeled after the Word law review article template that Eugene Volokh created. You can get to Professor Volokh's template here: \url{http://www2.law.ucla.edu/volokh/writing/}. This template, in addition to converting the coding from Word to \LaTeX,~adds some features. It includes the option of having multiple authors, using a table of contents, and including an abstract. The code indicates how to modify the template for an article with multiple authors and how to remove the table of contents, the abstract, or both. While there have been a few attempts to create a package that will automatically format citations using the Bluebook style, they have not gone very far or been very successful. So, you are left on your own. I have given examples in the text of how to use \LaTeX~codes to achieve the Bluebook style, which may help guide you. These should help you with most of the typesetting styles you need, and you can use the Bluebook to determine the particular requirements for a cite. 
+	\end{abstract}
+
+\tableofcontents % Delete this line and the next line and the next two lines if you do not want a table of contents
+\vspace{14pt}
+\clearpage
+
+\addcontentsline{toc}{section}{Introduction} % Delete if no Table of Contents
+\section*{Introduction}
+
+A law review article makes its argument in the text and gives its authority in the footnotes. A reader who wants to check a claim looks down the page, finds the case, statute or article it rests on, and can go to the source.\footnote{Footnotes also hold what would interrupt the text: qualifications, objections and the answers to them, and details that only some readers want.} Footnotes are numbered through the whole article, and one sentence may need several of them.\footnote{The mark follows punctuation, except a dash, and goes at the end of the clause or sentence it supports.}
+
+The form of the citations is set by \emph{The Bluebook: A Uniform System of Citation}, compiled by the editors of the \emph{Columbia Law Review}, the \emph{Harvard Law Review}, the \emph{University of Pennsylvania Law Review} and \emph{The Yale Law Journal}.\footnote{Its rules for law review footnotes differ from its rules for court documents and legal memoranda, which it gives separately. In law review footnotes, for example, the titles of books and the names of periodicals are set in large and small capitals.} This article describes the parts of a citation and the footnotes that hold them.
+
+\section{Signals and Short Forms}
+
+A citation rarely stands alone. A signal before it tells the reader how the source supports the text: no signal when the source states the proposition, \emph{see} when it supports it less directly, \emph{cf.}\ when it supports an analogous proposition, and \emph{but see} when it points the other way.\footnote{\emph{See, e.g.,} adds that other sources say the same, so those cited are examples rather than a complete list.} The source may be quoted at length, as in this passage of the Fourth Amendment:
+
+	\begin{quote}
+		The right of the people to be secure in their persons, houses, papers, and effects, against unreasonable searches and seizures, shall not be violated, and no Warrants shall issue, but upon probable cause, supported by Oath or affirmation, and particularly describing the place to be searched, and the persons or things to be seized.\footnote{U.S. \textsc{Const.} amend. IV.}
+	\end{quote}
+
+When the next citation is to the same source, \emph{id.} replaces it.\footnote{\emph{Id.} refers only to the source cited just before it, so it can't follow a footnote that cites more than one.} A source cited earlier, but not just before, takes a short form; books and articles take \emph{supra}, which gives the number of the footnote with the full citation.\footnote{Cases, statutes and constitutions take short forms, never \emph{supra}.}
+
+\subsection{The Parts of a Citation}
+
+Each kind of source has its own form: a case gives its name, the volume, reporter and first page where it is printed, the court and the year; a statute its title, code and section; an article its author, title, volume, journal, first page and year.\footnote{A pinpoint cite, the page on which the cited passage appears, follows the first page. In the first example below, 348 F. Supp. 954, 956--58 cites pages 956 to 958 of a case that begins on page 954.\label{fn:pinpoint}}
+
+The following list includes some examples of citations formatted according to the Bluebook style. These examples demonstrated how to use \LaTeX~typesetting codes to achieve the Bluebook style, but are not intended to explain how you should cite properly using the Bluebook style.
+
+	\begin{itemize}
+		\item Case: Jackson v. Metropolitan Edison Co., 348 F. Supp. 954, 956--58 (M.D. Pa. 1972), \emph{aff'd}, 483 F.2d 754 (3d Cir. 1973), \emph{aff'd}, 419 U.S. 345 (1974)
+		\item Constitution: \textsc{N.M. Const.} art. IV. \S~7
+		\item Statute: Administrative Procedure Act \S~6, 5 U.S.C. \S 555 (1982)
+		\item Legislative Materials: H.R. 3055, 94th Cong., 2d Sess. \S~2, 122 \textsc{Cong. Rec.} 16,870 (1976)
+		\item Book: 2 \textsc{F. Pollock \& F. Maitland, The History of English Law} 201--14 (1895)
+		\item Work not formally printed: H. Wechsler, Remarks at the Meeting of the Bar of the Supreme Court of the United States in Memory of Chief Justice Stone 5 (Nov. 12, 1947) (available in Columbia Law School Library)
+		\item Periodical: Rees, \emph{Legislative Jurisdiction}, 78 \textsc{Colum. L. Rev.} 1587, 1591--94 (1978)
+		\item	Newspaper: Boston Globe, Oct. 14, 1954, at 6, col. 1
+		\item Treaty: Parcel Post Agreement, June 3--14, 1951, United States-Gold Coast Colony, art. IV, 2 U.S.T. 1859, 1862, T.I.A.S. No. 2322, at 4
+	\end{itemize}
+
+This is a sentence with a footnote at the end that cites a case, a journal article, and a book, and includes a block quote.\footnote{\emph{See, e.g.,} Mapp v. Ohio, 367 U.S. 643 (1961); J.J. Prescott et al., \emph{Understanding Noncompetition Agreements: The 2014 Noncompete Survey Project}, 2016 \textsc{Mich. St. L. Rev.} 369 (2016); \textsc{Kenneth Culp Davis, Police Discretion 98--120 (1975)}. This is the block quote:
+	\begin{quote}
+		Nothing can destroy a government more quickly than its failure to observe its own laws, or worse, its disregard of the charter of its own existence.
+	\end{quote}
+	\emph{Mapp}, 367 U.S. at 659.}
+
+\subsubsection{Textual footnotes}
+
+Not every footnote is a citation. A textual footnote holds what supports the argument but would interrupt it: the history of a rule, an objection and the answer to it, or a point that matters only to specialists.\footnote{Long textual footnotes have their critics, who find in them a second article running under the first.} Its own sources are cited in it, and a footnote may hold a citation and an explanation together.\footnote{\emph{See} 2 \textsc{F. Pollock \& F. Maitland, The History of English Law} 201--14 (1895). The pages cited are an example of a pinpoint cite to a range; \emph{see supra} note~\ref{fn:pinpoint}.\label{fn:pollock}}
+
+\paragraph{Cross-references}
+
+\noindent A footnote can point to another: \emph{supra} to one above, \emph{infra} to one below, each with the footnote's number.\footnote{\emph{See infra} note~\ref{fn:conclusion}.} In \LaTeX, the number comes from a \verb|\label| in that footnote and a \verb|\ref| to it, so it stays right when footnotes are added or removed.\footnote{\textsc{Pollock \& Maitland}, \emph{supra} note~\ref{fn:pollock}, at 201.}
+
+\subparagraph{Lists}
+
+\noindent A footnote can also mark an item in a list:
+	\begin{itemize}
+		\item a case, cited in full the first time and by a short form after;\footnote{\emph{E.g.}, \emph{Mapp}, 367 U.S. at 659.}
+		\item a book or article, cited by \emph{supra} after its first citation;
+		\item a constitution, cited in full each time unless \emph{id.} replaces it.\footnote{\emph{E.g.}, U.S. \textsc{Const.} amend. IV.}
+	\end{itemize}
+
+\addcontentsline{toc}{section}{Conclusion} % Delete if no Table of Contents
+\section*{Conclusion}
+
+Footnotes let a law review article be read two ways: straight through, for the argument, or down the page, for the sources that carry it. The form of each citation tells the reader what the source is and where to find it.\footnote{For the template on which this article's layout is modeled, see \url{http://www2.law.ucla.edu/volokh/writing/}.\label{fn:conclusion}}
+
+\end{document}

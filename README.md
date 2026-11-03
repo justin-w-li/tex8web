@@ -27,7 +27,7 @@ make4ht -c path/to/tex8web/tex8web.cfg -e path/to/tex8web/tex8web.mk4 -B build -
 [`examples/`](examples) has four documents from the Overleaf gallery:
 
 - a basic article;
-- a blog-like essay;
+- a law review article, heavy with footnotes;
 - class notes with their own colors and boxes;
 - a long, heavily customized document.
 
