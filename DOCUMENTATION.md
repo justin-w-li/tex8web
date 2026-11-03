@@ -85,9 +85,9 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 - **`\WebPDF{path}`** copies the PDF next to the page and links it from an icon at the top left. The path is relative to the document's directory.
 - **`\Css{...}`** after `\input{tex8web-core.tex}` overrides tex8web's styles. tex8web's styles are in `css/tex8web.css`, and the document's measurements are custom properties you can override:
   - `--tex8web-textwidth`;
-  - `--tex8web-title-size`, `--tex8web-section-size`, `--tex8web-subsection-size`, `--tex8web-subsubsection-size`, and with titlesec each heading's `-family`, `-weight` and `-style`;
+  - `--tex8web-title-size`, `--tex8web-section-size` and so on down to `--tex8web-subparagraph-size`, and with titlesec each heading's `-family`, `-weight`, `-style`, `-variant` and `-align` (and `-display` for `\paragraph` and `\subparagraph`);
   - `--tex8web-list-sep`, `--tex8web-item-sep` (enumitem's lists carry their own, as `--tex8web-enumitem-*`);
-  - `--tex8web-toc-number`, `--tex8web-toc-indent`, `--tex8web-toc-subnumber`, `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`;
+  - `--tex8web-toc-section-number`, then `--tex8web-toc-<level>-indent` and `--tex8web-toc-<level>-number` for each level from `subsection` to `subparagraph`, and `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`;
   - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`;
   - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (listed in `css/tex8web.css`).
 
@@ -99,7 +99,8 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 
 - **Controls:** quiet icons at the top left: the table of contents (a drawer on a narrow screen; on a wide one, the button hides or shows the column, fading, and the page remembers the choice as it does the theme), the PDF (with `\WebPDF`, in a new tab), and light or dark. On a narrow screen they're in a bar across the top, which slides away while the reader scrolls down and comes back as they scroll up. From a wide screen to a narrow one, the icons and the table of contents fade out (unless the reader's system asks for reduced motion), and the bar comes back as the reader scrolls up, or at once at the top of the page.
 - **Theme:** the page follows the reader's light or dark setting until they choose with the button. The choice is kept in the browser (`localStorage`, key `tex8web-theme`), for every tex8web page of the site, and applied before the page is drawn. Switching fades the page from one theme to the other (a view transition), unless the reader's system asks for reduced motion. `data-theme="light"` or `"dark"` on the root element sets it. Light mode uses the PDF's colors; TikZ pictures are inverted in dark mode.
-- **Table of contents:** `\tableofcontents` (or a box holding only the table of contents) moves out of the text, beside it on a wide screen and into a drawer behind the contents button on a narrow one (sliding in, unless the reader's system asks for reduced motion), as wide in both. It marks the section being read and shows that section's subsections. The space before each entry is half the document's (tocloft's `\cftbeforesecskip` and `\cftbeforesubsecskip`, or LaTeX's), since the column or drawer is narrow.
+- **Table of contents:** `\tableofcontents` (or a box holding only the table of contents) moves out of the text, beside it on a wide screen and into a drawer behind the contents button on a narrow one (sliding in, unless the reader's system asks for reduced motion), as wide in both. It marks the section being read and shows the entries under that section. Entries are indented, and their numbers boxed, as in the PDF (tocloft's indents and widths, or LaTeX's), from the sections' indent. The space before each entry is half the document's (tocloft's `\cftbeforesecskip` and `\cftbeforesubsecskip`, or LaTeX's), since the column or drawer is narrow.
+- **Headings** are as much larger than the text as in the PDF. With titlesec, each from `\section` to `\subparagraph` has its `\titleformat`'s font, alignment and label (`\thesection.`, say), and a `\paragraph` or `\subparagraph` is on a line of its own unless its shape is `runin`. titlesec's other shapes, its spacing (`\titlespacing`) and the space after the label aren't followed.
 - **Footnotes** follow the paragraph, list or theorem that holds their mark: beside it on a wide screen, lined up with the mark, and below it on a narrow one. A footnote in a table, figure, box or formula stays at the end of the page. (`tex8web.mk4` gives tex4ht the `fn-in` option, which keeps footnotes on the page; `\thanks` stays under the title.)
 - **Previews:** pointing at a link to something on the page (`\ref`, `\eqref`, `\cite`, a footnote mark, a section) shows a copy of it in a card, over the text column: the theorem, box or table, the equation, the reference, the figure, the footnote, or the heading and what follows it. Reaching the link with the keyboard shows it too; on a touch screen, the first tap shows it and the second follows the link.
 - **Scrolling:** following a link on the page scrolls there smoothly (with JavaScript), unless the reader's system asks for reduced motion; reloading the page doesn't.
@@ -147,7 +148,8 @@ Each `main.tex` names its source, license and changes at the top.
 - **`npm test`** runs the Lua unit tests (`test/unit/`), then builds every test document (`test/fixtures/`) and example into `build/test/`, and checks each:
   - no TeX errors, and no build warnings;
   - no scripts in a prerendered page but tex8web's (tex8web-page.js, and a line that applies the reader's theme), no MathJax errors, no macros MathJax doesn't know, no `\widehat` or `\widetilde` as narrow as `\hat` or `\tilde`;
-  - the table of contents beside the text, not in it, and each enumitem list with its own lengths;
+  - the table of contents beside the text, not in it, each entry's number in its box, and each heading's label holding its entry's number;
+  - each enumitem list with its own lengths;
   - MathML for every formula;
   - every link and file in place;
   - nothing but published files in the output.

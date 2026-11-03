@@ -42,6 +42,37 @@
     \HLet\@@@setcref\web@setcref
 }{}
 
+% --- headings ---------------------------------------------------------------
+
+% a heading's number as titlesec's \titleformat labels it (\thesection.,
+% say), not as LaTeX's \@seccntformat does, which tex4ht uses (it draws
+% headings with LaTeX's commands, titlesec-hooks.4ht). (titlesec defines
+% \thetitle only in its own heading code)
+\let\web@seccntformat\@seccntformat
+\def\@seccntformat#1{%
+    \ifcsname web@titlelabel@#1\endcsname
+        {\expandafter\let\expandafter\thetitle\csname the#1\endcsname
+         \csname web@titlelabel@#1\endcsname}%
+    \else
+        \web@seccntformat{#1}%
+    \fi}
+% with titlesec, \paragraph and \subparagraph in their \titleformat's font
+% (css/tex8web.css) rather than in bold, as html4.4ht has them
+\ifcsname web@titlefont@paragraph\endcsname
+    \Configure{paragraph}{}{}
+        {\ShowPar\IgnoreIndent
+         \HCode{<span class="paragraphHead"\csname a:LRdir\endcsname>}\TitleMark\space}
+        {\HCode{</span>}\par\IgnorePar}
+\fi
+\ifcsname web@titlefont@subparagraph\endcsname
+    \Configure{subparagraph}{}{}
+        {\ShowPar\HCode{<span class="subparagraphHead"\csname a:LRdir\endcsname>}\TitleMark\space}
+        {\HCode{</span>}\IgnorePar}
+    \Configure{likesubparagraph}{}{}
+        {\ShowPar\HCode{<span class="likesubparagraphHead"\csname a:LRdir\endcsname>}}
+        {\HCode{</span>}\IgnorePar}
+\fi
+
 % --- theorems ---------------------------------------------------------------
 
 % spaced as in the PDF rather than tex4ht's 2em: amsthm's theorem style's
@@ -66,31 +97,45 @@
 
 % --- table of contents ------------------------------------------------------
 
-% section numbers in a box as wide as in the PDF (tocloft's widths, or the
-% standard classes'), so titles line up whether a number has one digit or
-% two, and the space above each entry as in the PDF: tocloft's, or
-% article's (the third argument would add page numbers; see
-% css/tex8web.css)
-\ConfigureToc{section}
-    {\HCode{<span class="sectionToc"><span class="tocnumber">}}
-    {\HCode{</span>}}
-    {}
-    {\HCode{</span><br />}}
-\ConfigureToc{subsection}
-    {\HCode{<span class="subsectionToc"><span class="tocnumber">}}
-    {\HCode{</span>}}
-    {}
-    {\HCode{</span><br />}}
+% numbers in a box as wide as in the PDF (tocloft's widths, or the standard
+% classes'), so titles line up whether a number has one digit or two;
+% entries indented as in the PDF, from the sections' indent; and the space
+% above each entry as in the PDF: tocloft's, or article's (the third
+% argument would add page numbers; see css/tex8web.css)
+\def\web@toc#1{%
+    \ConfigureToc{#1}
+        {\HCode{<span class="#1Toc"><span class="tocnumber">}}
+        {\HCode{</span>}}
+        {}
+        {\HCode{</span><br />}}}
+\web@toc{section}
+\web@toc{subsection}
+\web@toc{subsubsection}
+\web@toc{paragraph}
+\web@toc{subparagraph}
 \ifdefined\cftsecnumwidth
-    \web@Css{:root { --tex8web-toc-number: \web@em\cftsecnumwidth;
-        --tex8web-toc-indent: \web@em\cftsubsecindent;
-        --tex8web-toc-subnumber: \web@em\cftsubsecnumwidth;
+    \def\web@tocindent#1{\web@em{\dimexpr#1-\cftsecindent\relax}}%
+    \web@Css{:root { --tex8web-toc-section-number: \web@em\cftsecnumwidth;
+        --tex8web-toc-subsection-indent: \web@tocindent\cftsubsecindent;
+        --tex8web-toc-subsection-number: \web@em\cftsubsecnumwidth;
+        --tex8web-toc-subsubsection-indent: \web@tocindent\cftsubsubsecindent;
+        --tex8web-toc-subsubsection-number: \web@em\cftsubsubsecnumwidth;
+        --tex8web-toc-paragraph-indent: \web@tocindent\cftparaindent;
+        --tex8web-toc-paragraph-number: \web@em\cftparanumwidth;
+        --tex8web-toc-subparagraph-indent: \web@tocindent\cftsubparaindent;
+        --tex8web-toc-subparagraph-number: \web@em\cftsubparanumwidth;
         --tex8web-toc-section-skip: \web@em\cftbeforesecskip;
         --tex8web-toc-subsection-skip: \web@em\cftbeforesubsecskip; }}
 \else
-    \web@Css{:root { --tex8web-toc-number: \web@em{1.5em};
-        --tex8web-toc-indent: \web@em{1.5em};
-        --tex8web-toc-subnumber: \web@em{2.3em};
+    \web@Css{:root { --tex8web-toc-section-number: \web@em{1.5em};
+        --tex8web-toc-subsection-indent: \web@em{1.5em};
+        --tex8web-toc-subsection-number: \web@em{2.3em};
+        --tex8web-toc-subsubsection-indent: \web@em{3.8em};
+        --tex8web-toc-subsubsection-number: \web@em{3.2em};
+        --tex8web-toc-paragraph-indent: \web@em{7em};
+        --tex8web-toc-paragraph-number: \web@em{4.1em};
+        --tex8web-toc-subparagraph-indent: \web@em{10em};
+        --tex8web-toc-subparagraph-number: \web@em{5em};
         --tex8web-toc-section-skip: \web@em{1em};
         --tex8web-toc-subsection-skip: 0em; }}
     % and section entries in bold. (tocloft's own font commands aren't

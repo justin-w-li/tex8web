@@ -4,30 +4,38 @@
 \ProvidesPackage{tex8web-hooks}
 
 % titlesec: tex4ht makes \titleformat do nothing, and draws headings its
-% own way; keep the format (the font) of each, as \web@titlefont@<name>, for
-% tex8web-page.tex
+% own way; keep each heading's format (its font and alignment), shape and
+% label, as \web@titlefont@<name>, \web@titleshape@<name> and
+% \web@titlelabel@<name>, for tex8web-page.tex
 \AddToHook{package/titlesec/after}{%
     \let\web@titleformat\titleformat
     \def\titleformat{\@ifstar\web@titleformat@s\web@titleformat@i}%
 }
 \def\web@titleformat@s#1#2{%
-    \web@titlefont{#1}{#2}%
+    \web@titlenote{font}{#1}{#2}%
     \web@titleformat*{#1}{#2}%
 }
 \def\web@titleformat@i#1{%
     \@ifnextchar[{\web@titleformat@ii{#1}}{\web@titleformat@ii{#1}[hang]}%
 }
-\def\web@titleformat@ii#1[#2]#3{%
-    \web@titlefont{#1}{#3}%
-    \web@titleformat{#1}[#2]{#3}%
+\def\web@titleformat@ii#1[#2]#3#4{%
+    \web@titlenote{font}{#1}{#3}%
+    \web@titlenote{shape}{#1}{#2}%
+    \web@unlesshash{#4}{\web@titlenote{label}{#1}{#4}}%
+    \web@titleformat{#1}[#2]{#3}{#4}%
 }
 % (a heading named by a command, \section; titlesec's keys, name=\section,
 % aren't followed)
-\def\web@titlefont#1#2{%
-    \if\relax\detokenize\expandafter{\@gobble#1}\relax
-        \expandafter\gdef\csname web@titlefont@\expandafter\@gobble\string#1\endcsname{#2}%
+\def\web@titlenote#1#2#3{%
+    \if\relax\detokenize\expandafter{\@gobble#2}\relax
+        \expandafter\gdef\csname web@title#1@\expandafter\@gobble\string#2\endcsname{#3}%
     \fi
 }
+% #2 unless #1 holds a #, the title, which only titlesec's own heading code
+% (option explicit) fills in
+\ExplSyntaxOn
+\cs_new:Npn \web@unlesshash #1#2 { \str_if_in:nnF {#1} { \c_hash_str } {#2} }
+\ExplSyntaxOff
 
 % tcolorbox: the options of a box that leave nothing to read when tex4ht
 % draws it (tex8web-boxes.tex), noted as they're set, from the preamble on:

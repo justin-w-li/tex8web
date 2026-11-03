@@ -130,8 +130,9 @@
 
 % headings as much larger than the text as in the PDF (in the standard
 % classes' sizes), and a column as wide as the PDF's, in ems of the text.
-% With titlesec, a heading's size, family, weight and shape are those of its
-% \titleformat (tex8web-hooks.sty), tried out in a box that's thrown away
+% With titlesec, a heading's size, family, weight, style and alignment are
+% those of its \titleformat (tex8web-hooks.sty), tried out in a box that's
+% thrown away
 \newcommand\web@headsize[2]{% name, size command
     \begingroup
         \def\web@font{#2}%
@@ -146,14 +147,38 @@
             \xdef\web@weight{\if b\expandafter\@car\f@series\@nil bold\else normal\fi}%
             \gdef\web@style{normal}%
             \web@iffont\f@shape\itdefault{\gdef\web@style{italic}}%
-            \web@iffont\f@shape\sldefault{\gdef\web@style{italic}}}%
+            \web@iffont\f@shape\sldefault{\gdef\web@style{italic}}%
+            \gdef\web@variant{normal}%
+            \web@iffont\f@shape\scdefault{\gdef\web@variant{small-caps}}}%
+        % (by the commands in the format: tex4ht's \centering leaves the
+        % line's skips alone, latex.4ht)
+        \gdef\web@align{left}%
+        \web@formathas\center{\gdef\web@align{center}}%
+        \web@formathas\centering{\gdef\web@align{center}}%
+        \web@formathas\Centering{\gdef\web@align{center}}%
+        \web@formathas\filcenter{\gdef\web@align{center}}%
+        \web@formathas\raggedleft{\gdef\web@align{right}}%
+        \web@formathas\RaggedLeft{\gdef\web@align{right}}%
+        \web@formathas\filleft{\gdef\web@align{right}}%
     \endgroup
     \web@Css{:root { --tex8web-#1-size: \web@em\web@size; }}%
     \ifcsname web@titlefont@#1\endcsname
         \web@Css{:root { --tex8web-#1-family: \web@family;
-            --tex8web-#1-weight: \web@weight; --tex8web-#1-style: \web@style; }}%
+            --tex8web-#1-weight: \web@weight; --tex8web-#1-style: \web@style;
+            --tex8web-#1-variant: \web@variant; --tex8web-#1-align: \web@align; }}%
     \fi
 }
+% a \paragraph or \subparagraph that titlesec gives any shape but runin, on
+% a line of its own
+\newcommand\web@headdisplay[1]{%
+    \ifcsname web@titleshape@#1\endcsname
+        \edef\web@a{\csname web@titleshape@#1\endcsname}\def\web@b{runin}%
+        \ifx\web@a\web@b\else\web@Css{:root { --tex8web-#1-display: block; }}\fi
+    \fi
+}
+% #2 if the heading's format (\web@font) holds the command #1
+\newcommand\web@formathas[2]{%
+    \def\web@a{\in@#1}\expandafter\web@a\expandafter{\web@font}\ifin@#2\fi}
 % #3 if font macros #1 and #2 name the same font (\ifx alone would also
 % compare whether they're \long)
 \newcommand\web@iffont[3]{%
@@ -162,6 +187,10 @@
 \web@headsize{section}{\Large}
 \web@headsize{subsection}{\large}
 \web@headsize{subsubsection}{\normalsize}
+\web@headsize{paragraph}{\normalsize}
+\web@headsize{subparagraph}{\normalsize}
+\web@headdisplay{paragraph}
+\web@headdisplay{subparagraph}
 \web@Css{:root { --tex8web-textwidth: \web@em\textwidth; }}
 
 \makeatother

@@ -73,6 +73,17 @@ function check(doc, result, out, aux) {
     if (/class=['"]tableofcontents/.test(html.replace(toc, ''))) {
       problems.push(`${name}: a table of contents in the text, not beside it`);
     }
+    // (an entry's number in its box, which lines up the titles)
+    for (const [, level] of toc.matchAll(/<span class=['"]((?:sub)*(?:section|paragraph))Toc['"]>(?!<span class=['"]tocnumber)/g)) {
+      problems.push(`${name}: a ${level} entry in the table of contents without its number box`);
+    }
+    // (a heading's label may add to its number, as titlesec's \thesection.
+    // does, but holds it)
+    for (const [, number, id] of toc.matchAll(/<span class=['"]tocnumber['"]>([^<]+)<\/span><a href=['"]#([^'"]+)['"]/g)) {
+      const at = html.search(new RegExp(` id=['"]${id}['"]`));
+      const mark = html.slice(at, at + 500).match(/<span class=['"]titlemark['"]>(.*?)<\/span>/)?.[1].replace(/<[^>]+>/g, '');
+      if (at >= 0 && !mark?.includes(number.trim())) problems.push(`${name}: heading #${id} numbered ${mark?.trim()}, not ${number}`);
+    }
     const merrors = (html.match(/<mjx-merror/g) || []).length;
     if (merrors) problems.push(`${name}: ${merrors} MathJax error(s)`);
     // (MathJax draws a macro it doesn't know as its name, in red)

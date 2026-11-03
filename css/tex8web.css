@@ -76,6 +76,8 @@ div.newtheorem .head { font-weight: normal; }
    sizes other fonts relative to the text */
 html body { font-size: 12pt; }
 h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
+/* (a \thanks is a footnote in the PDF, upright; html4.4ht sets it in italic) */
+div.thanks { font-style: normal; }
 .sectionHead, .likesectionHead { font-size: var(--tex8web-section-size);
     font-family: var(--tex8web-section-family, inherit);
     font-weight: var(--tex8web-section-weight, bold);
@@ -88,6 +90,31 @@ h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
     font-family: var(--tex8web-subsubsection-family, inherit);
     font-weight: var(--tex8web-subsubsection-weight, bold);
     font-style: var(--tex8web-subsubsection-style, normal); }
+/* (titlesec's; :where, so that a class's own wins, such as amsart's
+   centered sections in html4.4ht) */
+:where(.sectionHead, .likesectionHead) { font-variant: var(--tex8web-section-variant, normal);
+    text-align: var(--tex8web-section-align, left); }
+:where(.subsectionHead, .likesubsectionHead) { font-variant: var(--tex8web-subsection-variant, normal);
+    text-align: var(--tex8web-subsection-align, left); }
+:where(.subsubsectionHead, .likesubsubsectionHead) {
+    font-variant: var(--tex8web-subsubsection-variant, normal);
+    text-align: var(--tex8web-subsubsection-align, left); }
+/* (run into their paragraph, unless titlesec puts them on a line of their
+   own, with the space below them that a paragraph has) */
+.paragraphHead, .likeparagraphHead { display: var(--tex8web-paragraph-display, inline);
+    margin: 0 0 1em; font-size: var(--tex8web-paragraph-size);
+    font-family: var(--tex8web-paragraph-family, inherit);
+    font-weight: var(--tex8web-paragraph-weight, bold);
+    font-style: var(--tex8web-paragraph-style, normal);
+    font-variant: var(--tex8web-paragraph-variant, normal);
+    text-align: var(--tex8web-paragraph-align, left); }
+.subparagraphHead, .likesubparagraphHead { display: var(--tex8web-subparagraph-display, inline);
+    margin: 0 0 1em; font-size: var(--tex8web-subparagraph-size);
+    font-family: var(--tex8web-subparagraph-family, inherit);
+    font-weight: var(--tex8web-subparagraph-weight, bold);
+    font-style: var(--tex8web-subparagraph-style, normal);
+    font-variant: var(--tex8web-subparagraph-variant, normal);
+    text-align: var(--tex8web-subparagraph-align, left); }
 /* a column as wide as the PDF's, in ems of the text, so lines hold about as
    much; narrower screens get the screen's width. Below the controls, as
    far down on a wide screen as on a narrow one (page.lua) */
@@ -156,10 +183,19 @@ figure.figure { margin-block: 1.75em; }
 .tableofcontents > br { display: none; }
 .sectionToc, .likesectionToc { margin-top: calc(var(--tex8web-toc-section-skip) / 2); }
 .subsectionToc, .likesubsectionToc { margin-top: calc(var(--tex8web-toc-subsection-skip) / 2); }
-.sectionToc .tocnumber { min-width: var(--tex8web-toc-number); }
-.subsectionToc { margin-left: var(--tex8web-toc-indent); }
-.subsectionToc .tocnumber { min-width: var(--tex8web-toc-subnumber); }
+.sectionToc .tocnumber { min-width: var(--tex8web-toc-section-number); }
+.subsectionToc { margin-left: var(--tex8web-toc-subsection-indent); }
+.subsectionToc .tocnumber { min-width: var(--tex8web-toc-subsection-number); }
+.subsubsectionToc { margin-left: var(--tex8web-toc-subsubsection-indent); }
+.subsubsectionToc .tocnumber { min-width: var(--tex8web-toc-subsubsection-number); }
+.paragraphToc { margin-left: var(--tex8web-toc-paragraph-indent); }
+.paragraphToc .tocnumber { min-width: var(--tex8web-toc-paragraph-number); }
+.subparagraphToc { margin-left: var(--tex8web-toc-subparagraph-indent); }
+.subparagraphToc .tocnumber { min-width: var(--tex8web-toc-subparagraph-number); }
 .tocnumber { display: inline-block; }
+/* (an entry without a number starts where the number would, as in the
+   PDF) */
+.tocnumber:empty { display: none; }
 
 /* --- lists ------------------------------------------------------------- */
 
@@ -289,7 +325,8 @@ dd.enumerate-enumitem { margin-left: 0; }
 .tex8web-toc a[aria-current] { border-radius: 0.2em;
     background-color: color-mix(in srgb, currentColor 10%, transparent); }
 .tex8web-js .tex8web-toc .tableofcontents > :is(.subsectionToc, .likesubsectionToc,
-    .subsubsectionToc, .likesubsubsectionToc):not(.tex8web-open) { display: none; }
+    .subsubsectionToc, .likesubsubsectionToc, .paragraphToc, .likeparagraphToc,
+    .subparagraphToc, .likesubparagraphToc):not(.tex8web-open) { display: none; }
 @media (--tex8web-wide) {
     /* (the icons where they are in the narrow screen's bar) */
     .tex8web-controls { inset: calc(env(safe-area-inset-top, 0px) + 0.5rem) auto auto 0.75rem;
