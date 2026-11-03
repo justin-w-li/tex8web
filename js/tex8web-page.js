@@ -202,7 +202,7 @@
       const a = link(event.target);
       if (event.pointerType === 'touch' || !(a || card.contains(event.target))) return;
       clearTimeout(timer);
-      if (a && a !== shown) timer = setTimeout(() => show(a), 300);
+      if (a && a !== shown) timer = setTimeout(() => show(a), 120);
     });
     document.addEventListener('pointerout', event => {
       const to = event.relatedTarget;
