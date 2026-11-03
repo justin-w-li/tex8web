@@ -17,18 +17,20 @@
 
 % tex4ht closes a box before tcolorbox adds its after upper (a proof's
 % \hfill$\square$), which then follows the box: add it first
+\web@needs{tcb@endboxanddraw}
 \let\web@tcb@endboxanddraw\tcb@endboxanddraw
 \def\tcb@endboxanddraw{%
     \tcb@insert@after@part
     \let\tcb@insert@after@part\relax
     \web@tcb@endboxanddraw}
-% and what follows an \hfill in an after upper or lower goes at the right
-\def\tcb@insert@after@upper@unskip{\ifvmode\else\unskip\fi
-    \web@hfillright\kvtcb@after@upper}
-\def\tcb@insert@after@upper@nounskip{\web@hfillright\kvtcb@after@upper}
-\def\tcb@insert@after@lower@unskip{\ifvmode\else\unskip\fi
-    \web@hfillright\kvtcb@after@lower}
-\def\tcb@insert@after@lower@nounskip{\web@hfillright\kvtcb@after@lower}
+% and what follows an \hfill in an after upper or lower goes at the right:
+% in macro #1, \web@hfillright before #2
+\def\web@tcb@hfillafter#1#2{%
+    \patchcmd#1{#2}{\web@hfillright#2}{}{\web@outdated{\string#1}}}
+\web@tcb@hfillafter\tcb@insert@after@upper@unskip\kvtcb@after@upper
+\web@tcb@hfillafter\tcb@insert@after@upper@nounskip\kvtcb@after@upper
+\web@tcb@hfillafter\tcb@insert@after@lower@unskip\kvtcb@after@lower
+\web@tcb@hfillafter\tcb@insert@after@lower@nounskip\kvtcb@after@lower
 % #1, with what follows its first \hfill in a span css/tex8web.css puts at
 % the right
 \let\web@endhfill\relax

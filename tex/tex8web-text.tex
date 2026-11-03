@@ -9,6 +9,8 @@
 % but titling's doesn't; and the marks not links, as in the PDF
 \let\web@thanks\thanks
 \def\thanks#1{{\let\footnote\thanks\web@thanks{#1}}}
+\web@needs{a:thank-mark}
+\web@needs{b:thank-mark}
 \Configure{thank}
     {\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
     {\HCode{<p>}\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
@@ -30,6 +32,8 @@
 % start and end instead, so that with nameinlink all of "Lemma 1" is the
 % link, as in the PDF
 \@ifpackageloaded{cleveref}{%
+    \web@needs{@@@setcref}%
+    \web@needs{cref@getlabel}%
     \def\web@setcref#1#2{\bgroup
         \def\rEfLiNK##1##2{\Link{##1}{}}%
         \def\XRrEfLiNK[##1]##2##3{\Link[##1]{##2}{}}%
@@ -146,6 +150,7 @@
 % a table of contents a document makes with \@starttoc{toc} itself (in a box,
 % say) is tex4ht's, as \tableofcontents makes without its heading. (tex4ht
 % writes the entries in its own form, which only it reads)
+\web@needs{:tableofcontents}
 \let\web@starttoc\@starttoc
 \def\@starttoc#1{%
     \def\web@a{#1}\def\web@b{toc}%
@@ -203,6 +208,7 @@
 \ExplSyntaxOn
 \cs_if_exist:NT \Gin@req@width
   {
+    \web@needs{a:Gin-dim}
     \cs_set_eq:Nc \__web_gin_dim: { a:Gin-dim }
     \Configure{Gin-dim}{%
         \expandafter\ifx\csname Gin:ewidth\endcsname\Gin@exclamation

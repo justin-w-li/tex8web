@@ -10,10 +10,14 @@ function files(dir) {
   return readdirSync(dir, { recursive: true }).map(f => join(dir, f)).filter(f => statSync(f).isFile());
 }
 
-// TeX's errors in its log (make4ht can exit 0 despite them)
+// TeX's errors in its log (make4ht can exit 0 despite them), and
+// tex8web's warnings that tex4ht or a package changed what it patches
 export function checkTexLog(path) {
-  const errors = existsSync(path) ? readFileSync(path, 'latin1').split('\n').filter(l => l.startsWith('!')) : ['no TeX log'];
-  return errors.length ? [`TeX errors: ${errors.slice(0, 3).join(' | ')}`] : [];
+  if (!existsSync(path)) return ['TeX errors: no TeX log'];
+  const lines = readFileSync(path, 'latin1').split('\n');
+  const errors = lines.filter(l => l.startsWith('!'));
+  const outdated = lines.filter(l => l.startsWith('Package tex8web Warning'));
+  return [...(errors.length ? [`TeX errors: ${errors.slice(0, 3).join(' | ')}`] : []), ...outdated];
 }
 
 // make4ht's warnings and errors in its log

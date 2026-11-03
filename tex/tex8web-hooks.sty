@@ -1,6 +1,7 @@
 % tex8web: what tex8web needs to know of a document's preamble that tex4ht
-% throws away. tex8web.mk4 has LaTeX load this with tex4ht, before the
-% preamble; the rest of tex8web comes after it (tex8web-core.tex).
+% throws away, and \web@needs for every module. tex8web.mk4 has LaTeX load
+% this with tex4ht, before the preamble; the rest of tex8web comes after it
+% (tex8web-core.tex).
 \ProvidesPackage{tex8web-hooks}
 
 % titlesec: tex4ht makes \titleformat do nothing, and draws headings its
@@ -74,6 +75,8 @@
     \web@tcb@note{attach boxed title to top right}{\def\web@tcb@boxed{right}}%
 }
 \def\web@tcb@install{%
+    \web@needs{tcb@reset}%
+    \web@needs{tcb@load@library}%
     \web@tcb@reset
     \preto\tcb@reset{\web@tcb@reset}%
     \web@tcb@notes
@@ -81,3 +84,11 @@
     \def\tcb@load@library##1##2{\web@tcb@load@library{##1}{##2}\web@tcb@notes}%
 }
 \AddToHook{package/tcolorbox/after}{\web@tcb@install}
+
+% \web@needs{name}: a warning, which npm test fails on, unless \<name>,
+% which tex8web patches or calls, is defined: a new tex4ht or package that
+% drops it then shows in the tests, not as a page quietly wrong. (A name
+% rather than a command, for tex4ht's, such as :tableofcontents)
+\def\web@needs#1{\ifcsname#1\endcsname\else\web@outdated{\@backslashchar#1}\fi}
+\def\web@outdated#1{\PackageWarningNoLine{tex8web}{#1 has changed or gone,
+    and tex8web needs updating for it}}

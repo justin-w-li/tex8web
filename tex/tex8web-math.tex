@@ -49,6 +49,8 @@
 % a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math
 % for MathJax: typeset it, re-reading the source, which tex4ht read with &
 % as a letter
+\web@needs{AltlDisplay}
+\web@needs{VerbMathToks}
 \cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
 \cs_set:Npn \AltlDisplay #1 \] {
     \str_if_in:nnTF {#1} {\begin{tikzcd}}
