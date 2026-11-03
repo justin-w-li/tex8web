@@ -2,7 +2,7 @@
 // with make4ht and checked. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { build, documents, expected, pool, root, testDir } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -77,14 +77,17 @@ function check(doc, result, out, aux) {
 }
 
 const docs = documents().filter(doc => !only.length || only.includes(doc.name));
-await pool(docs, 2, async doc => {
+const size = doc => statSync(join(doc.dir, doc.tex)).size;
+// each document built and checked, two at a time, the largest first, so
+// that the longest build doesn't hold up the end
+const jobs = [...docs].sort((a, b) => size(b) - size(a)).map(doc => async () => {
   const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
   const result = await build(doc, out, aux);
   report(doc.name, check(doc, result, out, aux));
 });
 
-// the page MathJax typesets in the browser, without node_modules
-if (!only.length) {
+// and the page MathJax typesets in the browser, without node_modules
+if (!only.length) jobs.push(async () => {
   const doc = docs.find(d => d.name === 'test-generic');
   const out = join(testDir(doc), 'fallback'), aux = join(testDir(doc), 'fallbackaux');
   const result = await build(doc, out, aux, { TEX8WEB_NO_PRERENDER: '1' });
@@ -97,7 +100,9 @@ if (!only.length) {
   if (!existsSync(join(out, 'tex8web.js'))) problems.push('no tex8web.js next to the page');
   if (html.includes('<mjx-container')) problems.push('math typeset at build time');
   report(`${doc.name} (MathJax in the browser)`, problems);
-}
+});
+
+await pool(jobs, 2, job => job());
 
 console.log(failures ? `\n${failures} failed` : '\nall passed');
 process.exit(failures ? 1 : 0);
