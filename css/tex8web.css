@@ -140,10 +140,11 @@ figure.figure { margin-block: 1.75em; }
 
 /* --- table of contents ------------------------------------------------- */
 
-/* one entry per line (rather than ended by a <br />), with the space
-   above it that the PDF has; section numbers in a box as wide as in the
+/* one entry per line (rather than ended by a <br />), its title's lines
+   after the first under the first, with the space above it that the PDF
+   has; section numbers in a box as wide as in the
    PDF, so titles line up whether a number has one digit or two */
-.tableofcontents > span { display: block; }
+.tableofcontents > span { display: flex; }
 .tableofcontents > br { display: none; }
 .sectionToc, .likesectionToc { margin-top: var(--tex8web-toc-section-skip); }
 .subsectionToc, .likesubsectionToc { margin-top: var(--tex8web-toc-subsection-skip); }
@@ -178,5 +179,52 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 :target { scroll-margin-top: 1em; }
 :is(h2, h3, h4, h5, h6):target, .newtheorem:has(.head > a:target) {
     background-color: color-mix(in srgb, currentColor 6%, transparent); }
-/* \WebPDF's link, after the title */
-.tex8web-pdf { margin-block: 0.5em 0; text-align: center; }
+
+/* --- controls and the table of contents (page.lua) -------------------- */
+
+/* @media (--tex8web-wide) is a screen with room beside the text for the
+   table of contents; assets.lua puts in the width */
+
+/* the controls: line icons at the top left, faint until pointed at, and
+   there as the page scrolls when there's room for them beside the text */
+.tex8web-controls { position: absolute; z-index: 10;
+    top: calc(env(safe-area-inset-top, 0px) + 0.75rem); left: 0.75rem;
+    display: flex; gap: 0.125rem; padding: 0.125rem; border-radius: 0.5rem;
+    background-color: var(--tex8web-bg); }
+.tex8web-control { display: inline-flex; padding: 0.375rem; border: 0;
+    border-radius: 0.375rem; color: inherit; background: none; cursor: pointer;
+    opacity: 0.45; }
+.tex8web-control:hover, .tex8web-control:focus-visible { opacity: 1;
+    background-color: color-mix(in srgb, currentColor 8%, transparent); }
+.tex8web-control[hidden] { display: none; }
+.tex8web-control svg { width: 1.25rem; height: 1.25rem; fill: none;
+    stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+@media not (--tex8web-wide) { html body { margin-block-start: 4rem; } }
+
+/* the table of contents: a drawer from the left, which the contents button
+   opens; on a wide screen, a column beside the text. tex8web-page.js marks
+   the section being read, and shows only its section's subsections */
+.tex8web-toc { inset: 0 auto 0 0; width: min(20rem, 85vw); height: 100%;
+    max-height: none; margin: 0; padding: 4rem 1.25rem 2rem; border: 0;
+    border-inline-end: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+    color: var(--tex8web-text); background-color: var(--tex8web-bg); overflow-y: auto; }
+.tex8web-toc::backdrop { background-color: rgb(0 0 0 / 0.3); }
+.tex8web-toc-title { margin-block: 0 0.75em; font-weight: bold; }
+.tex8web-toc .tableofcontents { font-size: 0.875em; }
+.tex8web-toc a { color: inherit; }
+.tex8web-toc a[aria-current] { border-radius: 0.2em;
+    background-color: color-mix(in srgb, currentColor 10%, transparent); }
+.tex8web-js .tex8web-toc .tableofcontents > :is(.subsectionToc, .likesubsectionToc,
+    .subsubsectionToc, .likesubsubsectionToc):not(.tex8web-open) { display: none; }
+@media (--tex8web-wide) {
+    .tex8web-controls { position: fixed; }
+    .tex8web-contents { display: none; }
+    .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
+        inset: 4rem auto 1rem 0.75rem; width: calc(50vw - var(--tex8web-textwidth) / 2 - 2.25rem);
+        max-width: 15rem; height: auto; padding: 0 0.5rem 0 0.375rem; border: 0;
+        background: none; }
+    .tex8web-toc::backdrop { display: none; }
+}
+
+/* following a link scrolls there, unless the reader would rather not */
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }

@@ -32,7 +32,7 @@ if (!only.length) {
 // --- builds ----------------------------------------------------------------
 
 // the files of a published page, by extension
-const published = new Set(['.html', '.css', '.woff2', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.pdf']);
+const published = new Set(['.html', '.css', '.js', '.woff2', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.pdf']);
 
 function files(dir) {
   return readdirSync(dir, { recursive: true }).map(f => join(dir, f)).filter(f => statSync(f).isFile());
@@ -62,7 +62,17 @@ function check(doc, result, out, aux) {
   for (const page of all.filter(f => f.endsWith('.html'))) {
     const html = readFileSync(page, 'utf8');
     const name = relative(out, page);
-    if (/<script/.test(html)) problems.push(`${name}: has a <script>`);
+    // (only tex8web-page.js, and the line before it that applies the
+    // reader's theme)
+    const scripts = [...html.matchAll(/<script([^>]*)>/g)].map(m => m[1]);
+    if (scripts.some(s => /src=/.test(s) && !/src=['"]tex8web-page\.js['"]/.test(s))
+        || scripts.filter(s => !/src=/.test(s)).length > 1) {
+      problems.push(`${name}: has a <script> besides tex8web's`);
+    }
+    const toc = html.match(/<nav[^>]*id=['"]tex8web-toc['"][^]*?<\/nav>/)?.[0] ?? '';
+    if (/class=['"]tableofcontents/.test(html.replace(toc, ''))) {
+      problems.push(`${name}: a table of contents in the text, not beside it`);
+    }
     const merrors = (html.match(/<mjx-merror/g) || []).length;
     if (merrors) problems.push(`${name}: ${merrors} MathJax error(s)`);
     // (MathJax draws a macro it doesn't know as its name, in red)

@@ -76,6 +76,17 @@ function M.rules_in_text_color(css)
   end))
 end
 
+-- css/tex8web.css's @media (--tex8web-wide), a screen with room beside the
+-- text (--tex8web-textwidth, which tex8web-page.tex sets and a config may
+-- set again) for the table of contents, 17em on each side. (Media queries
+-- can't read custom properties; the em of one is the browser's default
+-- font size, 16px, as large as the page's 12pt)
+function M.wide_screens(css)
+  local width = 40
+  for w in css:gmatch("%-%-tex8web%-textwidth: ([%d.]+)em") do width = tonumber(w) end
+  return (css:gsub("%(%-%-tex8web%-wide%)", string.format("(min-width: %.2fem)", width + 34)))
+end
+
 -- css/tex8web.css, where tex8web-core.tex marks its place in the document's
 -- stylesheet (a page that tex4ht splits off shares the stylesheet, which
 -- then has it already)
@@ -86,7 +97,7 @@ function M.stylesheet(context)
   if not i then return end
   css = css:sub(1, i - 1) .. read(context.root .. "/css/tex8web.css") .. css:sub(j + 1)
   local f = assert(io.open(path, "w"))
-  f:write(M.rules_in_text_color(css))
+  f:write(M.wide_screens(M.rules_in_text_color(css)))
   f:close()
 end
 

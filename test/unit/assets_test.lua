@@ -11,4 +11,9 @@ return {
       .. ".fbox {border:solid currentColor 0.4pt; color: black}\n.x {border-color: blackish}\n"
       .. ".border:hover{color:black}")
   end,
+
+  ["assets.wide_screens: the text's width and 17em each side"] = function()
+    equal(assets.wide_screens(":root { --tex8web-textwidth: 42.9em; }\n@media not (--tex8web-wide) { x }"),
+      ":root { --tex8web-textwidth: 42.9em; }\n@media not (min-width: 76.90em) { x }")
+  end,
 }

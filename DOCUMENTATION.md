@@ -46,6 +46,7 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
   - `fonts/` (Latin Modern; the sans-serif only if the page uses it);
   - the pictures;
   - the PDF (with `\WebPDF`);
+  - `tex8web-page.js` (the theme button and the table of contents' tracking);
   - `tex8web.js` (when not prerendered).
 
   The paths are relative, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can serve one copy of them.
@@ -81,20 +82,25 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
   - Use it for any macro the build names in its warning at the end ("macro(s) left undefined for MathJax"): those built with `\mathpalette`, `\scalebox` or internal `@` macros, and xparse commands with arguments other than `m` and a leading `O{}`.
   - Use it also for macros the bridge can't see: those defined in loops, or by commands of the document's own.
 - **`\WebColor{name}{light}{dark}`** makes the CSS variable `--name` from two xcolor (or color package) colors.
-- **`\WebPDF{path}`** copies the PDF next to the page and links it after the title. The path is relative to the document's directory.
+- **`\WebPDF{path}`** copies the PDF next to the page and links it from an icon at the top left. The path is relative to the document's directory.
 - **`\Css{...}`** after `\input{tex8web-core.tex}` overrides tex8web's styles. tex8web's styles are in `css/tex8web.css`, and the document's measurements are custom properties you can override:
   - `--tex8web-textwidth`;
   - `--tex8web-title-size`, `--tex8web-section-size`, `--tex8web-subsection-size`, `--tex8web-subsubsection-size`, and with titlesec each heading's `-family`, `-weight` and `-style`;
   - `--tex8web-list-sep`, `--tex8web-item-sep`;
   - `--tex8web-toc-number`, `--tex8web-toc-indent`, `--tex8web-toc-subnumber`, `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`;
   - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`;
-  - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (`tex/tex8web-boxes.tex` lists them).
+  - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (listed in `css/tex8web.css`).
+
+  In a config's `\Css`, `@media (--tex8web-wide)` (and `not (--tex8web-wide)`) is a screen with room for the table of contents beside the text.
 
 `examples/custom/custom.cfg` and `examples/complex/complex.cfg` are worked examples: a layout for a document's header box, and macros for MathJax.
 
 ## On the page
 
-- **Theme:** the page follows the reader's light or dark setting. `data-theme="light"` or `"dark"` on the root element overrides it. Light mode uses the PDF's colors; TikZ pictures are inverted in dark mode.
+- **Controls:** quiet icons at the top left: the table of contents (on a narrow screen), the PDF (with `\WebPDF`), and light or dark.
+- **Theme:** the page follows the reader's light or dark setting until they choose with the button. The choice is kept in the browser (`localStorage`, key `tex8web-theme`), for every tex8web page of the site, and applied before the page is drawn. `data-theme="light"` or `"dark"` on the root element sets it. Light mode uses the PDF's colors; TikZ pictures are inverted in dark mode.
+- **Table of contents:** `\tableofcontents` (or a box holding only the table of contents) moves out of the text, beside it on a wide screen and into a drawer behind the contents button on a narrow one. It marks the section being read and shows that section's subsections.
+- **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), and the theme follows the system.
 - **Links:** each heading and numbered theorem has a `#` link to it in the margin, shown on hover.
 - **Link previews** get the title, and the abstract as the description, if the document has one.
 - **Screen readers** get each formula as MathML. Speech and braille are MathJax's to add when it runs in the browser (in its menu).
@@ -137,7 +143,8 @@ Each `main.tex` names its source, license and changes at the top.
 
 - **`npm test`** runs the Lua unit tests (`test/unit/`), then builds every test document (`test/fixtures/`) and example into `build/test/`, and checks each:
   - no TeX errors, and no build warnings;
-  - no scripts left in a prerendered page, no MathJax errors, no macros MathJax doesn't know;
+  - no scripts in a prerendered page but tex8web's (tex8web-page.js, and a line that applies the reader's theme), no MathJax errors, no macros MathJax doesn't know;
+  - the table of contents beside the text, not in it;
   - MathML for every formula;
   - every link and file in place;
   - nothing but published files in the output.
@@ -248,10 +255,11 @@ A second, short document unlike the first:
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats) |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
-| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, no-break spaces, links, meta tags, scripts |
+| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, no-break spaces, links, controls and the table of contents, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `prerender.lua` | the files next to the page, bibtex and biber, prerendering |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/tex8web.js` | MathJax's sizes set as TeX's |
+| `js/tex8web-page.js` | the theme button, the table of contents' tracking |
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |
 | `examples/` | the examples |

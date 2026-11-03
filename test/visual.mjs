@@ -16,13 +16,19 @@ const only = process.argv.slice(2);
 const screen = 900;
 
 // the browser's typeset page as it stands, without its scripts and with
-// MathJax's styles (which it adds through the CSSOM) written out
+// MathJax's styles (which it adds through the CSSOM) written out; and
+// without what tex8web-page.js changed, which isn't MathJax's
 const typesetPage = `(async () => {
   await MathJax.startup.promise;
   await MathJax.startup.document.lazyTypesetAll?.();
   const css = [...document.styleSheets].filter(s => s.ownerNode?.id?.startsWith('MJX'))
     .map(s => [...s.cssRules].map(r => r.cssText).join('\\n')).join('\\n');
   const html = document.documentElement.cloneNode(true);
+  html.classList.remove('tex8web-js');
+  if (!html.classList.length) html.removeAttribute('class');
+  html.querySelector('.tex8web-theme')?.setAttribute('hidden', 'hidden');
+  html.querySelectorAll('[aria-current]').forEach(n => n.removeAttribute('aria-current'));
+  html.querySelectorAll('.tex8web-open').forEach(n => n.classList.remove('tex8web-open'));
   html.querySelectorAll('script, style[id^=MJX]').forEach(n => n.remove());
   const style = document.createElement('style');
   style.textContent = css;
