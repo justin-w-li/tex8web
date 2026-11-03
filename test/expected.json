@@ -1,0 +1,5 @@
+{
+  "test": {
+    "visual": "displays from section 3 on are up to 0.1px taller in the browser, which measures some text MathJax only estimates in Node"
+  }
+}

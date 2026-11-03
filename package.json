@@ -4,6 +4,11 @@
   "description": "LaTeX to web pages that look like the PDF: tex4ht + MathJax, with the math typeset at build time",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "test": "node test/run.mjs",
+    "test:visual": "node test/visual.mjs",
+    "examples": "node test/examples.mjs"
+  },
   "dependencies": {
     "@mathjax/mathjax-bbm-font-extension": "4.1.3",
     "@mathjax/mathjax-bboldx-font-extension": "4.1.3",
