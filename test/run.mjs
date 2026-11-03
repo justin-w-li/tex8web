@@ -100,6 +100,9 @@ function check(doc, result, out, aux) {
       if (path && !existsSync(join(dirname(page), decodeURI(path)))) problems.push(`${name}: missing ${path}`);
       if (!path && anchor && !ids.has(anchor)) problems.push(`${name}: no target for #${anchor}`);
     }
+    if (/<dl(?![^>]*style=)[^>]*class=['"]enumerate-enumitem/.test(html)) {
+      problems.push(`${name}: an enumitem list without its lengths`);
+    }
     // (a \thanks's mark in the title, and again before its note)
     const [title, notes = ''] = html.split(/class=['"]thanks['"]/);
     const marks = text => (text.match(/class=['"]thank-mark['"]/g) || []).length;

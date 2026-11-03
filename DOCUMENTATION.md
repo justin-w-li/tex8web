@@ -86,7 +86,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 - **`\Css{...}`** after `\input{tex8web-core.tex}` overrides tex8web's styles. tex8web's styles are in `css/tex8web.css`, and the document's measurements are custom properties you can override:
   - `--tex8web-textwidth`;
   - `--tex8web-title-size`, `--tex8web-section-size`, `--tex8web-subsection-size`, `--tex8web-subsubsection-size`, and with titlesec each heading's `-family`, `-weight` and `-style`;
-  - `--tex8web-list-sep`, `--tex8web-item-sep`;
+  - `--tex8web-list-sep`, `--tex8web-item-sep` (enumitem's lists carry their own, as `--tex8web-enumitem-*`);
   - `--tex8web-toc-number`, `--tex8web-toc-indent`, `--tex8web-toc-subnumber`, `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`;
   - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`;
   - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (listed in `css/tex8web.css`).
@@ -122,6 +122,7 @@ These are deliberate:
 
 - **`\intertext`:** the alignment is split at the text, so its columns no longer line up across it.
 - **`\qedhere`:** the QED box follows the display instead of sitting at the right margin.
+- **enumitem's label alignment:** a label is right-aligned before its item, hanging into the margin; `align=left`, `wide` and `itemindent` aren't followed.
 - **A TikZ picture in display math** (`\[ \begin{tikzcd} … \end{tikzcd} \]`) is drawn by TeX as a picture, together with any other math in the same display.
 - **Macros MathJax can't read** (see `\WebMathMacros` above), and macros that parse their arguments themselves, such as comma-separated lists. MathJax shows these in red.
 - **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.
@@ -146,7 +147,7 @@ Each `main.tex` names its source, license and changes at the top.
 - **`npm test`** runs the Lua unit tests (`test/unit/`), then builds every test document (`test/fixtures/`) and example into `build/test/`, and checks each:
   - no TeX errors, and no build warnings;
   - no scripts in a prerendered page but tex8web's (tex8web-page.js, and a line that applies the reader's theme), no MathJax errors, no macros MathJax doesn't know, no `\widehat` or `\widetilde` as narrow as `\hat` or `\tilde`;
-  - the table of contents beside the text, not in it;
+  - the table of contents beside the text, not in it, and each enumitem list with its own lengths;
   - MathML for every formula;
   - every link and file in place;
   - nothing but published files in the output.

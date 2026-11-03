@@ -120,6 +120,32 @@
         --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax}; }}
 \endgroup
 
+% enumitem's enumerate, and its lists made with \newlist: html4.4ht's grid of
+% labels and items, with each list's own lengths, set by the first \item,
+% where tex4ht opens the list (latex.4ht). (tex4ht's names need : a letter)
+\catcode58 11
+\@ifpackageloaded{enumitem}{%
+    \def\web@enumitem#1#2{%
+        \ConfigureList{#1}
+            {\EndP\edef\web@list{\noexpand\HCode{<dl \noexpand\a:LRdir
+                 class="enumerate-enumitem#2"
+                 style="--tex8web-enumitem-topsep: \web@em\topsep;
+                 --tex8web-enumitem-itemsep: \web@em{\dimexpr\itemsep+\parsep\relax};
+                 --tex8web-enumitem-indent: \web@em\leftmargin;
+                 --tex8web-enumitem-labelsep: \web@em\labelsep">}}\web@list
+             \PushMacro\end:itm \global\let\end:itm=\empty}
+            {\PopMacro\end:itm \global\let\end:itm \end:itm
+             \EndP\HCode{</dd></dl>}\ShowPar}
+            {\end:itm \global\def\end:itm{\EndP\Tg</dd>}\HCode{<dt
+                 class="enumerate-enumitem#2">}\bgroup \bf}
+            {\egroup\EndP\HCode{</dt><dd\Hnewline class="enumerate-enumitem">}}}%
+    \web@enumitem{enumerate}{}%
+    % (html4.4ht's own names the list last made, not this one)
+    \def\web@newlist#1{\web@enumitem{#1}{ enumitem-#1}}%
+    \Configure{enumitemnewlist}{\expandafter\web@newlist\expandafter{\a:enumitemenv}}%
+}{}
+\catcode58 12
+
 % --- figures ----------------------------------------------------------------
 
 % \includegraphics[width=..] becomes a percentage of the column, as in the

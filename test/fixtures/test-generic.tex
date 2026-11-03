@@ -1,15 +1,19 @@
 % A second test for tex8web: a document unlike the notes, to check what
 % it handles without a config of its own. No xcolor, packages that MathJax has
 % as extensions, xparse macros, equation numbers by section, titling's
-% title with a \thanks, and a table of contents with a macro of its own.
+% title with a \thanks, a table of contents with a macro of its own, and a
+% list of enumitem's \newlist.
 \documentclass{article}
 \usepackage{amsmath,amssymb,physics,braket,cancel}
 \usepackage{titling}
+\usepackage{enumitem}
 \usepackage{hyperref}
 \numberwithin{equation}{section}
 \NewDocumentCommand{\prob}{m}{\mathbb{P}\left(#1\right)}
 \NewDocumentCommand{\dist}{O{2} m m}{\lVert #2 - #3 \rVert_{#1}}
 \newcommand{\cond}[2]{#1 \,\middle|\, #2}
+\newlist{steps}{enumerate}{1}
+\setlist[steps]{label=Step \arabic*., leftmargin=*}
 \title{Generic}
 \author{Someone}
 \date{A day\thanks{A note on the date.}}
@@ -37,4 +41,8 @@ $\braket{\phi|\psi}$, and from cancel $\cancel{x}$.
 \end{gather}
 See \eqref{eq:a}, \eqref{eq:b} and \eqref{eq:c}, which should read (2.1),
 (2.2) and (2.3), followed by (2.4) for $x = y$.
+\begin{steps}
+    \item First.
+    \item Second.
+\end{steps}
 \end{document}
