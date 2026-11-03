@@ -114,7 +114,7 @@ function M.controls(document, context)
     else
       assets.add(context.pdf, context.dir .. "/" .. context.input .. ".pdf")
       control(controls, "pdf", {class = "tex8web-control", href = context.input .. ".pdf",
-        title = "View as PDF", ["aria-label"] = "View as PDF"})
+        target = "_blank", title = "View as PDF", ["aria-label"] = "View as PDF"})
     end
   end
   control(controls, "theme", {class = "tex8web-control tex8web-theme", type = "button",

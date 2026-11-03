@@ -1,16 +1,17 @@
-// tex8web's page in the browser: the theme button, footnotes lined up
-// with their marks, the table of contents following the section being
-// read, and previews of what a link on the page leads to. page.lua and
-// text.lua build what this works on (and page.lua marks <html> tex8web-js
-// before the page is drawn), and the page reads fine without it
-// (css/tex8web.css).
+// tex8web's page in the browser: the theme button, the controls' bar on a
+// narrow screen, footnotes lined up with their marks, the table of contents
+// following the section being read, and previews of what a link on the
+// page leads to. page.lua and text.lua build what this works on (and
+// page.lua marks <html> tex8web-js before the page is drawn), and the page
+// reads fine without it (css/tex8web.css).
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
 
   // the theme: light or dark as the reader last chose, on any tex8web page
   // (a script in <head> applies it before the page is drawn), or else as
-  // the system is
+  // the system is; the page fades from one to the other, unless the reader
+  // would rather not
   function theme() {
     const button = document.querySelector('.tex8web-theme');
     if (!button) return;
@@ -21,14 +22,32 @@
       button.title = `Switch to ${other} mode`;
       button.setAttribute('aria-label', button.title);
     };
-    button.addEventListener('click', () => {
+    const motion = matchMedia('(prefers-reduced-motion: no-preference)');
+    const flip = () => {
       root.dataset.theme = current() === 'dark' ? 'light' : 'dark';
       try { localStorage.setItem('tex8web-theme', root.dataset.theme); } catch {}
       label();
+    };
+    button.addEventListener('click', () => {
+      if (document.startViewTransition && motion.matches) document.startViewTransition(flip);
+      else flip();
     });
     system.addEventListener('change', label);
     label();
     button.hidden = false;
+  }
+
+  // the controls, in a bar across the top on a narrow screen
+  // (css/tex8web.css): out of the way while the reader scrolls down, back as
+  // soon as they scroll up
+  function bar() {
+    const controls = document.querySelector('.tex8web-controls');
+    if (!controls) return;
+    let last = scrollY;
+    addEventListener('scroll', () => {
+      controls.classList.toggle('tex8web-away', scrollY > last && scrollY > controls.offsetHeight);
+      last = scrollY;
+    }, { passive: true });
   }
 
   // footnotes beside the text (css/tex8web.css floats them there on a wide
@@ -166,7 +185,11 @@
       card.showPopover();
       const link = a.getBoundingClientRect(), width = card.offsetWidth, height = card.offsetHeight;
       const below = link.bottom + 6 + height <= innerHeight || link.top - 6 - height < 0;
-      card.style.left = `${Math.max(8, Math.min(link.left, root.clientWidth - width - 8))}px`;
+      // (from the link, but over the text: past the body's right edge by 16px
+      // at most)
+      const text = document.body.getBoundingClientRect();
+      const left = Math.max(text.left, Math.min(link.left, text.right + 16 - width));
+      card.style.left = `${Math.max(8, Math.min(left, root.clientWidth - width - 8))}px`;
       card.style.top = `${below ? link.bottom + 6 : link.top - 6 - height}px`;
       a.setAttribute('aria-describedby', card.id);
       shown = a;
@@ -210,6 +233,7 @@
   }
 
   theme();
+  bar();
   sidenotes();
   contents();
   previews();
