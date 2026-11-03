@@ -54,19 +54,51 @@
 
 % --- boxes ------------------------------------------------------------------
 
+% #1, with what follows its first \hfill in a span that css/tex8web.css puts
+% at the right
+\let\web@endhfill\relax
+\newcommand\web@hfillright[1]{%
+    \begingroup
+        \def\hfill{\ifx\web@endhfill\relax
+            \HCode{<span class="tex8web-hfill">}%
+            \gdef\web@endhfill{\HCode{</span>}}%
+        \fi}%
+        #1%
+        \web@endhfill
+        \global\let\web@endhfill\relax
+    \endgroup
+}
+
 % tcolorbox: tex4ht draws boxes as HTML, without tcolorbox's skins, so the
 % measures of a boxed title, which styles often use (yshift=-\tcboxedtitleheight),
 % are never set
 \@ifpackageloaded{tcolorbox}{%
     \providecommand\tcboxedtitleheight{0pt}%
     \providecommand\tcboxedtitlewidth{0pt}%
+    % and tex4ht closes a box before tcolorbox adds its after upper (a
+    % proof's \hfill$\square$), which then follows the box: add it first
+    \let\web@tcb@endboxanddraw\tcb@endboxanddraw
+    \def\tcb@endboxanddraw{%
+        \tcb@insert@after@part
+        \let\tcb@insert@after@part\relax
+        \web@tcb@endboxanddraw}%
+    % what follows an \hfill in an after upper or lower goes at the right
+    % (css/tex8web.css)
+    \def\tcb@insert@after@upper@unskip{\ifvmode\else\unskip\fi
+        \web@hfillright\kvtcb@after@upper}%
+    \def\tcb@insert@after@upper@nounskip{\web@hfillright\kvtcb@after@upper}%
+    \def\tcb@insert@after@lower@unskip{\ifvmode\else\unskip\fi
+        \web@hfillright\kvtcb@after@lower}%
+    \def\tcb@insert@after@lower@nounskip{\web@hfillright\kvtcb@after@lower}%
 }{}
 
 % --- table of contents ------------------------------------------------------
 
 % section numbers in a box as wide as in the PDF (tocloft's widths, or the
 % standard classes'), so titles line up whether a number has one digit or
-% two (the third argument would add page numbers; see css/tex8web.css)
+% two, and the space above each entry as in the PDF: tocloft's, or
+% article's (the third argument would add page numbers; see
+% css/tex8web.css)
 \ConfigureToc{section}
     {\HCode{<span class="sectionToc"><span class="tocnumber">}}
     {\HCode{</span>}}
@@ -80,11 +112,15 @@
 \ifdefined\cftsecnumwidth
     \web@Css{:root { --tex8web-toc-number: \web@em\cftsecnumwidth;
         --tex8web-toc-indent: \web@em\cftsubsecindent;
-        --tex8web-toc-subnumber: \web@em\cftsubsecnumwidth; }}
+        --tex8web-toc-subnumber: \web@em\cftsubsecnumwidth;
+        --tex8web-toc-section-skip: \web@em\cftbeforesecskip;
+        --tex8web-toc-subsection-skip: \web@em\cftbeforesubsecskip; }}
 \else
     \web@Css{:root { --tex8web-toc-number: \web@em{1.5em};
         --tex8web-toc-indent: \web@em{1.5em};
-        --tex8web-toc-subnumber: \web@em{2.3em}; }}
+        --tex8web-toc-subnumber: \web@em{2.3em};
+        --tex8web-toc-section-skip: \web@em{1em};
+        --tex8web-toc-subsection-skip: 0em; }}
     % and section entries in bold. (tocloft's own font commands aren't
     % followed)
     \Css{.sectionToc, .likesectionToc { font-weight: bold; }}

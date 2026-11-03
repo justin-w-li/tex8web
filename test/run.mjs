@@ -54,6 +54,11 @@ function check(doc, result, out, aux) {
   if (!existsSync(out)) return [...problems, 'no output directory'];
   const all = files(out);
   for (const f of all.filter(f => !published.has(extname(f)))) problems.push(`unexpected file ${relative(out, f)}`);
+  for (const css of all.filter(f => f.endsWith('.css'))) {
+    if (/border[\w-]*\s*:[^;{}]*\bblack\b/.test(readFileSync(css, 'utf8'))) {
+      problems.push(`${relative(out, css)}: a black rule, which dark mode hides`);
+    }
+  }
   for (const page of all.filter(f => f.endsWith('.html'))) {
     const html = readFileSync(page, 'utf8');
     const name = relative(out, page);

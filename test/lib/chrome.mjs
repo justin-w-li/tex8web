@@ -48,7 +48,8 @@ export async function launch() {
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' });
   const cleanup = () => {
     try { proc.kill('SIGKILL'); } catch {}
-    rmSync(profile, { recursive: true, force: true });
+    // (Chrome's helpers may still be writing into the profile as they die)
+    rmSync(profile, { recursive: true, force: true, maxRetries: 10 });
   };
   process.on('exit', cleanup);
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(1));

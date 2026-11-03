@@ -74,10 +74,22 @@ img { max-width: 100%; height: auto; }
 figure.figure { margin-block: 1.75em; }
 .mathjax-block img { display: block; margin: 0.7em auto; }
 
+/* --- boxes ------------------------------------------------------------- */
+
+/* what follows an \hfill at the end of a tcolorbox (tex8web-text.tex),
+   kept inside the box */
+.tex8web-hfill { float: right; }
+.tcolorbox-content, .tcolorbox .lowerbox { display: flow-root; }
+
 /* --- table of contents ------------------------------------------------- */
 
-/* section numbers in a box as wide as in the PDF, so titles line up
-   whether a number has one digit or two */
+/* one entry per line (rather than ended by a <br />), with the space
+   above it that the PDF has; section numbers in a box as wide as in the
+   PDF, so titles line up whether a number has one digit or two */
+.tableofcontents > span { display: block; }
+.tableofcontents > br { display: none; }
+.sectionToc, .likesectionToc { margin-top: var(--tex8web-toc-section-skip); }
+.subsectionToc, .likesubsectionToc { margin-top: var(--tex8web-toc-subsection-skip); }
 .sectionToc .tocnumber { min-width: var(--tex8web-toc-number); }
 .subsectionToc { margin-left: var(--tex8web-toc-indent); }
 .subsectionToc .tocnumber { min-width: var(--tex8web-toc-subnumber); }

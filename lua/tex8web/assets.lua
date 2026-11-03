@@ -1,6 +1,7 @@
 -- The files a page needs next to it: fonts, the document's pictures and
--- PDF, tex8web.js, and the static styles in the stylesheet. Each is listed
--- with tex4ht's output files, so make4ht -d copies it too.
+-- PDF, tex8web.js, and the static styles in the stylesheet, where tex4ht's
+-- rules are also drawn in the text's color. Each file is listed with
+-- tex4ht's output files, so make4ht -d copies it too.
 local M = {}
 
 local fonts = {
@@ -43,6 +44,14 @@ function M.copy(document, context)
   end
 end
 
+-- tex4ht draws rules (\hline, \fbox, a table's | columns) in black; in the
+-- text's color instead, so they show in dark mode
+function M.rules_in_text_color(css)
+  return (css:gsub("border[%w-]*%s*:[^;{}]*", function(declaration)
+    return (declaration:gsub("%f[%w]black%f[%W]", "currentColor"))
+  end))
+end
+
 -- css/tex8web.css, where tex8web-core.tex marks its place in the document's
 -- stylesheet (a page that tex4ht splits off shares the stylesheet, which
 -- then has it already)
@@ -51,8 +60,9 @@ function M.stylesheet(context)
   local css = read(path)
   local i, j = css:find("/* tex8web.css */", 1, true)
   if not i then return end
+  css = css:sub(1, i - 1) .. read(context.root .. "/css/tex8web.css") .. css:sub(j + 1)
   local f = assert(io.open(path, "w"))
-  f:write(css:sub(1, i - 1), read(context.root .. "/css/tex8web.css"), css:sub(j + 1))
+  f:write(M.rules_in_text_color(css))
   f:close()
 end
 

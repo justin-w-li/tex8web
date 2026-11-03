@@ -38,7 +38,7 @@ function equal(actual, expected)
 end
 
 local failed, passed = 0, 0
-for _, file in ipairs({"preamble_test", "passes_test"}) do
+for _, file in ipairs({"preamble_test", "passes_test", "assets_test"}) do
   local tests = require(file)
   local names = {}
   for name in pairs(tests) do names[#names + 1] = name end
