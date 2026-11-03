@@ -246,7 +246,7 @@ dd.enumerate-enumitem { margin-left: 0; }
            would */
         .tex8web-narrowing .tex8web-toc:not(:popover-open) {
             inset: 4rem auto 1rem 0.75rem; width: var(--tex8web-margin); height: auto;
-            padding: 0 0.5rem 0 0.375rem; border: 0; background: none;
+            padding: 0 0.5rem; border: 0; background: none;
             translate: none; opacity: 0; transition: opacity 0.2s, display 0.2s allow-discrete; }
         .tex8web-narrowing .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
             inset: calc(env(safe-area-inset-top, 0px) + 0.5rem) auto auto 0.75rem;
@@ -296,8 +296,9 @@ dd.enumerate-enumitem { margin-left: 0; }
         padding: 0.125rem; border: 0; border-radius: 0.5rem; }
     /* (the button needs tex8web-page.js here) */
     :root:not(.tex8web-js) .tex8web-contents { display: none; }
+    /* (its text where the drawer's is, and the icons, 1.25rem in) */
     .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
-        inset: 4rem auto 1rem 0.75rem; width: var(--tex8web-margin); height: auto; padding: 0 0.5rem 0 0.375rem; border: 0;
+        inset: 4rem auto 1rem 0.75rem; width: var(--tex8web-margin); height: auto; padding: 0 0.5rem; border: 0;
         background: none; translate: none; transition: none; }
     .tex8web-toc-hidden .tex8web-toc { display: none; opacity: 0; }
     .tex8web-toc::backdrop { display: none; }
