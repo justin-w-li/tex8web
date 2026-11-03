@@ -1,9 +1,9 @@
 -- MathJax reads the math's LaTeX source but not the document's preamble, so
 -- it doesn't know the document's own macros. Give it the definitions of
 -- those the math uses, read from the document and the local packages it
--- loads, and nothing else of the source.
+-- loads, and nothing else of the source. They go in a hidden element,
+-- as text, which tex8web.js gives MathJax before it typesets anything.
 local preamble = require "tex8web.preamble"
-local dom = require "tex8web.dom"
 
 local log = logging.new("tex8web")
 
@@ -62,10 +62,11 @@ function M.define(document, context)
   end
   if #defs == 0 then return end
   local body = document:query_selector("body")[1]
-  local div = body:create_element("div", {class = "tex8web-macros", hidden = "hidden",
-    ["data-tex8web-browser"] = ""})
-  div:add_child_node(div:create_text_node("\\(" .. table.concat(defs, "\n") .. "\\)"))
-  dom.set_children(body, {div, table.unpack(body:get_children())})
+  -- (mathjax_ignore: MathJax's class for text it doesn't look for math in)
+  local div = body:create_element("div", {id = "tex8web-macros", class = "mathjax_ignore",
+    hidden = "hidden", ["data-tex8web-browser"] = ""})
+  div:add_child_node(div:create_text_node(table.concat(defs, "\n")))
+  body:add_child_node(div)
 end
 
 return M

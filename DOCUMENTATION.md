@@ -20,14 +20,14 @@ A page goes through four stages:
    - It splits alignments at `\intertext`, and tex8web.js gives the parts the same columns, so they line up as one alignment.
    - It measures the document (text width, heading sizes, theorem and list spacing, link colors) for the stylesheet `css/tex8web.css`.
 2. **HTML passes** (`lua/tex8web/`, run by `tex8web.mk4`).
-   - **The macro bridge** (`macros.lua`, `preamble.lua`). MathJax doesn't see the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document and from the local packages it loads, and translates them for MathJax. The page gets only the macros its math uses; templates and the rest of the source are never published.
+   - **The macro bridge** (`macros.lua`, `preamble.lua`). MathJax doesn't see the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document and from the local packages it loads, and translates them for MathJax. The page gets only the macros its math uses, which tex8web.js gives MathJax before it typesets anything; templates and the rest of the source are never published.
    - The other passes fix spacing, add links to headings and theorems, add meta tags and the PDF link, and copy what the page needs next to it.
 3. **MathJax's sizes** (`js/tex8web.js`). MathJax's TeX input differs from TeX in a few sizes, and this file sets them as TeX does:
    - `\big` and its relatives;
    - the 10pt delimiters and large operators of an 11pt or 12pt document;
    - the rows of arrays and alignments;
    - line breaks after relations;
-   - the columns of an alignment split at `\intertext`, each as wide as in the widest part. These parts, and the macros' definitions, aren't left for MathJax to typeset as they scroll into view.
+   - the columns of an alignment split at `\intertext`, each as wide as in the widest part. These parts aren't left for MathJax to typeset as they scroll into view.
 4. **Prerendering** (`js/prerender.mjs`). MathJax typesets the page in Node, configured as it would be in the browser, and the page keeps the result.
    - Without `node_modules/` (or with `TEX8WEB_NO_PRERENDER=1`), this step is skipped. The page then loads MathJax from jsDelivr, typesets the math as it scrolls into view, and gives screen readers MathML.
    - tex8web.js relies on MathJax's internals. That is why MathJax's version is pinned in `package.json`, which both the prerendering and the page's script use.

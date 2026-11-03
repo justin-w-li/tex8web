@@ -166,23 +166,8 @@ function tex8web(config, tex) {
       return '';
     });
   }
-  // (and macros.lua's definitions, which a part may use, compiled at once
-  // too: ui/lazy's lazyAlwaysTypeset fails on some pages)
   function markAlignments(doc) {
-    let marked = false;
-    for (const math of doc.math) {
-      markAlignment(math);
-      marked ||= Boolean(math.tex8webAlignment);
-    }
-    if (!marked) return;
-    const adaptor = doc.adaptor;
-    for (const math of doc.math) {
-      let node = math.start.node;
-      while (node && !(adaptor.kind(node) === 'div' && adaptor.hasClass(node, 'tex8web-macros'))) {
-        node = adaptor.parent(node);
-      }
-      if (node) math.lazyCompile = false;
-    }
+    for (const math of doc.math) markAlignment(math);
   }
   // the top table of a part (none if MathJax couldn't parse it), and its
   // columns' widths (internal: its wrapper, made as getBBox makes it, with
@@ -249,6 +234,19 @@ function tex8web(config, tex) {
     ...options.renderActions,
     tex8webAlignment: [15, markAlignments, markAlignment],
     tex8webColumns: [115, alignColumns, () => {}],
+  };
+
+  // macros.lua's definitions (the page's #tex8web-macros, as text), given
+  // to MathJax before any math, which ui/lazy may typeset in any order
+  // (internal: ui/lazy compiles math without a node, as tex2mml's is, at
+  // once). A TeX error in one leaves the ones after it undefined
+  const pageReady = startup.pageReady;
+  startup.pageReady = function () {
+    const doc = MathJax.startup.document;
+    const [macros] = doc.adaptor.getElements(['#tex8web-macros'], doc.document);
+    const mml = macros ? MathJax.tex2mml(doc.adaptor.textContent(macros)) : '';
+    if (mml.includes('<merror')) console.warn('tex8web: a TeX error in a macro definition:', mml);
+    return pageReady ? pageReady() : MathJax.startup.defaultPageReady();
   };
 
   const ready = startup.ready;

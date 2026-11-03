@@ -42,9 +42,7 @@ else
   Make:autohtlatex(latex)
 end
 
--- each pass is function(document, context), in this order (macros.define
--- after page.controls, which puts the table of contents first in the page:
--- MathJax must read the definitions before any math that uses them)
+-- each pass is function(document, context), in this order
 local passes = {
   page.build_data,
   source.spaces,

@@ -176,7 +176,9 @@ return {
     local d = parse([[<span class="mathjax-inline">\(\twice \bad\)</span>]])
     macros.define(d, {tex_file = tex, macros = [[\newcommand{\override}{o}]]})
     os.remove(tex)
-    local definitions = d:query_selector("div.tex8web-macros")[1]:get_text()
+    local div = d:query_selector("body > div#tex8web-macros")[1]
+    local definitions = div:get_text()
+    check(not definitions:find("\\(", 1, true), definitions)
     check(definitions:find("\\newcommand{\\R}{\\mathbb{R}}", 1, true), definitions)
     check(definitions:find("\\newcommand{\\twice}{\\R\\R}", 1, true), definitions)
     check(not definitions:find("unused", 1, true), definitions)
