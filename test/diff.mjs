@@ -36,8 +36,15 @@ function diffPage(a, b) {
   const lines = [];
   const groups = new Map();
   const [old, now] = [sections(a), sections(b)];
-  for (const name of new Set([...old.keys(), ...now.keys()])) {
-    const [x, y] = [old.get(name), now.get(name)];
+  // (a section whose heading changed: one only in the old page and one only
+  // in the new, in the same place)
+  const [oldNames, newNames] = [[...old.keys()], [...now.keys()]];
+  const renamed = new Map(oldNames.map((name, i) => [name, newNames[i]])
+    .filter(([name, other]) => other !== undefined && !now.has(name) && !old.has(other)));
+  const was = new Map([...renamed].map(([name, other]) => [other, name]));
+  for (const name of new Set([...oldNames, ...newNames])) {
+    if (renamed.has(name)) continue;
+    const [x, y] = [old.get(was.get(name) ?? name), now.get(name)];
     if (x === y) continue;
     if (x === undefined || y === undefined) {
       lines.push(`  ${x === undefined ? 'added' : 'removed'}: ${name}`);
@@ -58,7 +65,8 @@ function diffPage(a, b) {
     // first differ)
     const key = x.slice(at, at + 50) + '\0' + y.slice(at, at + 50);
     if (!groups.has(key)) groups.set(key, { names: [], shown: [excerpt(x, at), excerpt(y, at)] });
-    groups.get(key).names.push(changed ? `${name} (${changed} formula(s))` : name);
+    const label = was.has(name) ? `${was.get(name)} → ${name}` : name;
+    groups.get(key).names.push(changed ? `${label} (${changed} formula(s))` : label);
   }
   for (const { names, shown: [x, y] } of groups.values()) lines.push(`  ${names.join('; ')}`, `    - ${x}`, `    + ${y}`);
   return cap(lines, 30);
