@@ -41,35 +41,84 @@
 
 % --- colors -----------------------------------------------------------------
 
-% \WebColor{name}{light color}{dark color} (xcolor colors) makes the CSS
-% variable --name, which is one or the other (see css/tex8web.css)
+% \WebColor{name}{light color}{dark color} makes the CSS variable --name,
+% which is one or the other (see css/tex8web.css)
 \newcommand\WebColor[3]{%
-    \ifdefined\convertcolorspec
-        \web@hex{#2}\web@light
-        \web@hex{#3}\web@dark
-        \web@Css{:root { --#1: light-dark(\#\web@light, \#\web@dark); }}%
-    \else
-        \PackageWarning{tex8web}{\string\WebColor\space needs xcolor}%
-    \fi
+    \web@hex{#2}\web@light
+    \web@hex{#3}\web@dark
+    \web@Css{:root { --#1: light-dark(\#\web@light, \#\web@dark); }}%
 }
-\newcommand\web@hex[2]{% color, macro for its hex code
-    \extractcolorspecs{#1}\web@model\web@spec
-    \convertcolorspec\web@model\web@spec{HTML}#2%
+% \web@hex{color}\macro: the color's hex code, which xcolor converts; with
+% only the color package (which hyperref's colorlinks load), read from the
+% driver's form color keeps (rgb r g b, gray g or cmyk c m y k)
+\ExplSyntaxOn
+\tl_new:N \l__web_color_tl
+\tl_new:N \l__web_hex_tl
+\cs_new_protected:Npn \web@hex #1#2 {
+    \cs_if_exist:NTF \convertcolorspec
+        {
+            \extractcolorspecs {#1} \web@model \web@spec
+            \convertcolorspec \web@model \web@spec {HTML} #2
+        }
+        {
+            \tl_set:Nn \l__web_hex_tl {000000}
+            \cs_if_exist:cT { \token_to_str:N \color@ #1 }
+                {
+                    \tl_set:Ne \l__web_color_tl { \use:c { \token_to_str:N \color@ #1 } }
+                    \regex_replace_all:nnN { \s+ } { \  } \l__web_color_tl
+                    \exp_after:wN \__web_hex_model:w \l__web_color_tl \q_stop
+                }
+            \tl_set_eq:NN #2 \l__web_hex_tl
+        }
 }
-% links: hyperref's colors with colorlinks. In a macro, so TeX doesn't meet
-% \ifHy@colorlinks when hyperref isn't loaded
-\newcommand\web@linkcolors{%
-    \ifHy@colorlinks
-        \ifdefined\convertcolorspec
-            \definecolor{tex8web-link-dark}{RGB}{108, 180, 255}%
-            \definecolor{tex8web-cite-dark}{RGB}{95, 211, 160}%
-            \definecolor{tex8web-url-dark}{RGB}{242, 127, 176}%
-        \fi
-        \WebColor{tex8web-link}{\@linkcolor}{tex8web-link-dark}%
-        \WebColor{tex8web-cite}{\@citecolor}{tex8web-cite-dark}%
-        \WebColor{tex8web-url}{\@urlcolor}{tex8web-url-dark}%
-    \fi
+\cs_new_protected:Npn \__web_hex_model:w #1 ~ #2 \q_stop {
+    \str_case:nn {#1} {
+        {rgb} { \__web_hex_rgb:w #2 \q_stop }
+        {gray} { \__web_hex_rgb:w #2 ~ #2 ~ #2 \q_stop }
+        {cmyk} { \__web_hex_cmyk:w #2 \q_stop }
+    }
 }
+\cs_new_protected:Npn \__web_hex_rgb:w #1 ~ #2 ~ #3 \q_stop {
+    \tl_set:Ne \l__web_hex_tl { \__web_hex_byte:n {#1} \__web_hex_byte:n {#2} \__web_hex_byte:n {#3} }
+}
+\cs_new_protected:Npn \__web_hex_cmyk:w #1 ~ #2 ~ #3 ~ #4 \q_stop {
+    \__web_hex_rgb:w {(1-#1)*(1-#4)} ~ {(1-#2)*(1-#4)} ~ {(1-#3)*(1-#4)} \q_stop
+}
+\cs_new:Npn \__web_hex_byte:n #1 {
+    \exp_args:Ne \__web_hex_pad:n { \int_to_Hex:n { \fp_eval:n { round(255*(#1)) } } }
+}
+\cs_new:Npn \__web_hex_pad:n #1 { \int_compare:nNnT { \tl_count:n {#1} } = 1 {0} #1 }
+\ExplSyntaxOff
+% links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
+% and the links keep the color of the text. tex4ht turns colorlinks on
+% itself, so count it as the document's when its hyperref options name it,
+% or its link colors aren't hyperref's defaults
+\ExplSyntaxOn
+\bool_new:N \l__web_colorlinks_bool
+\cs_new_protected:Npn \web@linkcolors {
+    \bool_set:Nn \l__web_colorlinks_bool
+        { ! \str_if_eq_p:ee { \@linkcolor / \@citecolor / \@urlcolor } { red / green / magenta } }
+    \cs_if_exist:cT { @raw@opt@hyperref.sty }
+        { \tl_if_in:cnT { @raw@opt@hyperref.sty } { colorlinks } { \bool_set_true:N \l__web_colorlinks_bool } }
+    \bool_lazy_and:nnT { \legacy_if_p:n { Hy@colorlinks } } { \l__web_colorlinks_bool }
+        {
+            \cs_if_exist:NTF \convertcolorspec
+                {
+                    \definecolor{tex8web-link-dark}{RGB}{108,180,255}
+                    \definecolor{tex8web-cite-dark}{RGB}{95,211,160}
+                    \definecolor{tex8web-url-dark}{RGB}{242,127,176}
+                }
+                {
+                    \definecolor{tex8web-link-dark}{rgb}{0.4235,0.7059,1}
+                    \definecolor{tex8web-cite-dark}{rgb}{0.3725,0.8275,0.6275}
+                    \definecolor{tex8web-url-dark}{rgb}{0.949,0.498,0.6902}
+                }
+            \WebColor{tex8web-link}{\@linkcolor}{tex8web-link-dark}
+            \WebColor{tex8web-cite}{\@citecolor}{tex8web-cite-dark}
+            \WebColor{tex8web-url}{\@urlcolor}{tex8web-url-dark}
+        }
+}
+\ExplSyntaxOff
 \@ifpackageloaded{hyperref}{\web@linkcolors}{}
 % pictures tex4ht generates (TikZ; \jobname0x.svg and so on) follow the
 % theme. (tex4ht inverts every picture named after the job in dark mode,

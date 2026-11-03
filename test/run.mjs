@@ -10,10 +10,15 @@ const expected = JSON.parse(readFileSync(join(root, 'test/expected.json'), 'utf8
 const only = process.argv.slice(2);
 let failures = 0;
 
+// problems test/expected.json lists for a document (allow: substrings of
+// them, why: the reason) are reported but don't fail it
 function report(name, problems) {
-  console.log(`${problems.length ? 'not ok' : 'ok'} - ${name}`);
-  for (const problem of problems) console.log(`    ${problem}`);
-  failures += problems.length ? 1 : 0;
+  const { allow = [], why } = expected[name] || {};
+  const known = problems.filter(p => allow.some(a => p.includes(a)));
+  const failed = problems.filter(p => !known.includes(p));
+  console.log(`${failed.length ? 'not ok' : 'ok'} - ${name}${known.length ? ` # known: ${why}` : ''}`);
+  for (const problem of [...new Set(failed)].slice(0, 12)) console.log(`    ${problem}`);
+  failures += failed.length ? 1 : 0;
 }
 
 // --- unit tests ------------------------------------------------------------
@@ -36,13 +41,15 @@ function files(dir) {
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
-  const allowed = expected[doc.name] || {};
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
   const texLog = join(aux, doc.tex.replace(/\.tex$/, '.log'));
   const errors = existsSync(texLog) ? readFileSync(texLog, 'latin1').split('\n').filter(l => l.startsWith('!')) : ['no TeX log'];
   if (errors.length) problems.push(`TeX errors: ${errors.slice(0, 3).join(' | ')}`);
-  for (const line of result.log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]/.test(l))) {
-    if (!(allowed.warnings || []).some(w => line.includes(w))) problems.push(line.trim());
+  // (make4ht falls back to parsing the page as HTML when tex4ht's isn't
+  // well-formed XML, as with boxes and minipages; the browser does the same)
+  const benign = /XML DOM parsing of .* failed|luaxml-mod-xml\.lua:\d+: Unbalanced Tag|HTML DOM parsing OK/;
+  for (const line of result.log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]/.test(l) && !benign.test(l))) {
+    problems.push(line.trim());
   }
   if (!existsSync(out)) return [...problems, 'no output directory'];
   const all = files(out);
@@ -53,6 +60,10 @@ function check(doc, result, out, aux) {
     if (/<script/.test(html)) problems.push(`${name}: has a <script>`);
     const merrors = (html.match(/<mjx-merror/g) || []).length;
     if (merrors) problems.push(`${name}: ${merrors} MathJax error(s)`);
+    // (MathJax draws a macro it doesn't know as its name, in red)
+    const unknown = [...html.matchAll(/<mjx-mtext style=['"]color: red;['"]>(.*?)<\/mjx-mtext>/g)]
+      .map(m => m[1].replace(/<[^>]+>/g, ''));
+    if (unknown.length) problems.push(`${name}: macros MathJax doesn't know: ${[...new Set(unknown)].join(', ')}`);
     const math = (html.match(/<mjx-container/g) || []).length;
     const mathml = (html.match(/<mjx-assistive-mml/g) || []).length;
     if (math !== mathml) problems.push(`${name}: ${math} formulas, ${mathml} with MathML for screen readers`);

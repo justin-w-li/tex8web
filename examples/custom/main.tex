@@ -1,0 +1,221 @@
+% "Class Notes Template" by Siladittya Manna,
+% https://www.overleaf.com/latex/templates/class-notes-template/jrwyqnwjbkfr
+% licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+% Changes: this comment; the metadata and the placeholder text, replaced
+% with a short lecture of our own.
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+
+% Mathematics and figures
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{tikz-cd}
+\usepackage{multicol}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+
+% Paragraph formatting
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1\baselineskip}
+
+% --------------------------------------------------------------------------
+% Class-note colors
+% --------------------------------------------------------------------------
+\definecolor{QuestionBlue}{HTML}{2563A6}
+\definecolor{StatementGray}{HTML}{59636E}
+\definecolor{DefinitionTeal}{HTML}{177E89}
+\definecolor{TheoremPurple}{HTML}{6B4C9A}
+\definecolor{PropositionBlue}{HTML}{3F5F9A}
+\definecolor{ProofGray}{HTML}{6C757D}
+\definecolor{AnswerGreen}{HTML}{2E7D32}
+\definecolor{ExampleOrange}{HTML}{C56A16}
+\definecolor{RemarkGold}{HTML}{9A7611}
+
+% Shared appearance for all class-note boxes
+\tcbset{
+  classnote/.style={
+    enhanced,
+    breakable,
+    boxrule=0.7pt,
+    arc=2pt,
+    left=8pt,
+    right=8pt,
+    top=6pt,
+    bottom=6pt,
+    before skip=10pt,
+    after skip=10pt,
+    fonttitle=\bfseries
+  }
+}
+
+% --------------------------------------------------------------------------
+% Reusable class-note environments
+% The optional argument changes the displayed title.
+% --------------------------------------------------------------------------
+\newtcolorbox{question}[1][Question]{
+  classnote, colback=QuestionBlue!5, colframe=QuestionBlue, title={#1}
+}
+\newtcolorbox{statement}[1][Statement]{
+  classnote, colback=StatementGray!5, colframe=StatementGray, title={#1}
+}
+\newtcolorbox{definition}[1][Definition]{
+  classnote, colback=DefinitionTeal!5, colframe=DefinitionTeal, title={#1}
+}
+\newtcbtheorem[auto counter]{theorem}{Theorem}{
+  classnote, colback=TheoremPurple!5, colframe=TheoremPurple
+}{thm}
+\newtcbtheorem[auto counter]{proposition}{Proposition}{
+  classnote, colback=PropositionBlue!5, colframe=PropositionBlue
+}{prop}
+\newtcolorbox{proof}[1][Proof]{
+  classnote, colback=ProofGray!5, colframe=ProofGray, title={#1},
+  after upper={\hfill$\square$}
+}
+\newtcolorbox{answer}[1][Answer]{
+  classnote, colback=AnswerGreen!5, colframe=AnswerGreen, title={#1}
+}
+\newtcolorbox{example}[1][Example]{
+  classnote, colback=ExampleOrange!5, colframe=ExampleOrange, title={#1}
+}
+\newtcolorbox{remark}[1][Remark]{
+  classnote, colback=RemarkGold!5, colframe=RemarkGold, title={#1}
+}
+
+% --------------------------------------------------------------------------
+% Metadata: edit these fields for each set of class notes.
+% --------------------------------------------------------------------------
+\newcommand{\notestitle}{Convexity and Jensen's Inequality}
+\newcommand{\courseid}{STAT 101}
+\newcommand{\instructorname}{A.~Lecturer}
+\newcommand{\classdate}{October 7}
+\newcommand{\documentlabel}{Classroom Queries}
+
+% Logo files. Paths must remain relative to this TeX file.
+\newcommand{\courselogo}{course.jpeg}
+\newcommand{\institutelogo}{inst.png}
+
+% --------------------------------------------------------------------------
+% Class-note header
+% --------------------------------------------------------------------------
+\newcommand{\makeclassnotesheader}{%
+\begin{tcolorbox}[
+  enhanced,
+  colback=QuestionBlue!3,
+  colframe=QuestionBlue,
+  boxrule=1.1pt,
+  arc=3pt,
+  left=12pt,
+  right=12pt,
+  top=12pt,
+  bottom=10pt
+]
+\noindent
+\begin{minipage}[c]{0.16\linewidth}
+  \centering
+  \IfFileExists{\courselogo}
+    {\includegraphics[width=0.94\linewidth,keepaspectratio]{\courselogo}}
+    {\fbox{\scriptsize Course Logo}}
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.62\linewidth}
+  \centering
+  {\small\bfseries\color{QuestionBlue}\MakeUppercase{\documentlabel}}\\[5pt]
+  {\LARGE\bfseries \notestitle}
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.16\linewidth}
+  \centering
+  \IfFileExists{\institutelogo}
+    {\includegraphics[width=0.94\linewidth,keepaspectratio]{\institutelogo}}
+    {\fbox{\scriptsize Institute Logo}}
+\end{minipage}
+\vspace{5pt}
+\hrule
+\vspace{8pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lll@{}}
+  \textbf{Course ID:} \courseid &
+  \textbf{Instructor:} \instructorname &
+  \textbf{Date:} \classdate
+\end{tabular*}
+\end{tcolorbox}%
+}
+
+\begin{document}
+\pagestyle{empty} % Remove this line if page numbers are desired.
+
+\makeclassnotesheader
+
+\section{Convex functions}
+
+Many inequalities in probability come from a single idea: a convex function
+lies below its chords. This lecture makes that precise and draws out
+Jensen's inequality and a few of its consequences.
+
+\begin{statement}[Setting]
+Throughout, $I \subseteq \mathbb{R}$ is an interval, $X$ is a random variable
+taking values in $I$ with $\mathbb{E}\lvert X\rvert < \infty$, and
+$\varphi \colon I \to \mathbb{R}$.
+\end{statement}
+
+\begin{definition}[Convex function]
+The function $\varphi$ is \emph{convex} if for all $x, y \in I$ and
+$\lambda \in [0,1]$,
+\[
+    \varphi\bigl(\lambda x + (1-\lambda) y\bigr) \le \lambda\varphi(x) + (1-\lambda)\varphi(y).
+\]
+It is \emph{strictly convex} if the inequality is strict whenever $x \ne y$
+and $0 < \lambda < 1$.
+\end{definition}
+
+\begin{theorem}{Jensen's inequality}{jensen}
+If $\varphi$ is convex and $\mathbb{E}\lvert\varphi(X)\rvert < \infty$, then
+\[
+    \varphi\bigl(\mathbb{E}[X]\bigr) \le \mathbb{E}\bigl[\varphi(X)\bigr].
+\]
+If $\varphi$ is strictly convex, equality holds only when $X$ is constant
+almost surely.
+\end{theorem}
+
+\begin{proof}
+Let $\mu = \mathbb{E}[X]$, which lies in $I$. A convex function has a
+supporting line at every interior point: there is a slope $c$ with
+\[
+    \varphi(x) \ge \varphi(\mu) + c\,(x - \mu) \quad \text{for all } x \in I.
+\]
+Put $x = X$ and take expectations: $\mathbb{E}[\varphi(X)] \ge \varphi(\mu) + c\,(\mathbb{E}[X] - \mu) = \varphi(\mu)$.
+\end{proof}
+
+\begin{proposition}{Second-derivative test}{second-derivative}
+If $\varphi$ is twice differentiable on the interior of $I$, then $\varphi$
+is convex if and only if $\varphi''(x) \ge 0$ there, and strictly convex if
+$\varphi'' > 0$.
+\end{proposition}
+
+\begin{question}
+Which is larger, $\bigl(\mathbb{E}[X]\bigr)^2$ or $\mathbb{E}[X^2]$? And
+$\log \mathbb{E}[X]$ or $\mathbb{E}[\log X]$, for $X > 0$?
+\end{question}
+
+\begin{answer}
+Since $x \mapsto x^2$ is convex, $\bigl(\mathbb{E}[X]\bigr)^2 \le \mathbb{E}[X^2]$;
+the difference is $\operatorname{Var}(X) \ge 0$. Since $\log$ is concave,
+the inequality reverses: $\mathbb{E}[\log X] \le \log \mathbb{E}[X]$.
+\end{answer}
+
+\begin{example}[The AM--GM inequality]
+Let $X$ take the values $a_1, \dots, a_n > 0$, each with probability $1/n$.
+Jensen's inequality for the concave function $\log$ gives
+\[
+    \frac{1}{n}\sum_{i=1}^n \log a_i \le \log\Bigl(\frac{1}{n}\sum_{i=1}^n a_i\Bigr),
+    \qquad\text{so}\qquad
+    \sqrt[n]{a_1 a_2 \cdots a_n} \le \frac{a_1 + \cdots + a_n}{n}.
+\]
+\end{example}
+
+\begin{remark}[Direction of the inequality]
+A common slip is to apply Jensen's inequality in the wrong direction. Draw
+the chord: for convex $\varphi$, the average of the values sits above the
+value at the average.
+\end{remark}
+
+\end{document}

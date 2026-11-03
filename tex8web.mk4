@@ -2,9 +2,10 @@
 -- typesetting the math from its LaTeX source. Use with tex8web.cfg (or a
 -- config of your own that \input's tex8web-core.tex):
 --   make4ht -c path/to/tex8web.cfg -e path/to/tex8web.mk4 -B build -d out document.tex
--- It puts this directory on TeX's and Lua's search paths, runs the HTML
--- passes (lua/tex8web/), copies the files the page needs next to it, and
--- typesets the math with MathJax in Node, if it can (prerender.lua).
+-- It puts this directory on TeX's and Lua's search paths, runs bibtex or
+-- biber when the document has a bibliography, runs the HTML passes
+-- (lua/tex8web/), copies the files the page needs next to it, and typesets
+-- the math with MathJax in Node, if it can (prerender.lua).
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
 -- (texlua's require doesn't look at package.path; add a searcher that does
@@ -18,11 +19,23 @@ os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 
 local domfilter = require "make4ht-domfilter"
 local assets = require "tex8web.assets"
+local bibliography = require "tex8web.bibliography"
 local macros = require "tex8web.macros"
 local page = require "tex8web.page"
 local prerender = require "tex8web.prerender"
 local source = require "tex8web.source"
 local text = require "tex8web.text"
+
+-- LaTeX; then the bibliography, if the document has one, which make4ht
+-- doesn't run itself; and LaTeX until the cross-references settle
+if mode == "draft" then
+  Make:htlatex {}
+else
+  Make:htlatex {}
+  Make:add("bibliography", bibliography.run)
+  Make:bibliography {}
+  Make:autohtlatex {}
+end
 
 -- each pass is function(document, context), in this order
 local passes = {

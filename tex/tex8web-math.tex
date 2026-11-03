@@ -8,7 +8,8 @@
 %   (others load when a macro needs them), and always mathtools, for
 %   \DeclarePairedDelimiter in macros.lua's definitions
 % - no automatic equation numbers (see \__web_part:nn below)
-% - \colon as amsmath has it (MathJax's is a plain punctuation colon)
+% - \colon as amsmath has it (MathJax's is a plain punctuation colon), and
+%   \relax, which MathJax doesn't have (macros often end in it)
 % - MathJax's Computer Modern font (its default, New Computer Modern, is
 %   heavier than the PDF, and its Latin Modern misplaces accents on Greek
 %   letters); display math that doesn't fit scrolls; math at the size of
@@ -33,7 +34,8 @@
     "options": {"menuOptions": {"settings": {"enrich": false, "speech": false,
         "braille": false, "assistiveMml": true}}},
     "tex": {"tags": "none", "packages": {"[+]": [\web@extensions]},
-        "macros": {"colon": "\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}"}},
+        "macros": {"colon": "\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}",
+            "relax": ""}},
     "output": {"font": "mathjax-tex", "displayOverflow": "scroll",
         "matchFontHeight": false}}}
 % \WebMathMacros{definitions}: macros for MathJax, in place of the

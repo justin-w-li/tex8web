@@ -1,5 +1,15 @@
 {
   "test": {
     "visual": "displays from section 3 on are up to 0.1px taller in the browser, which measures some text MathJax only estimates in Node"
+  },
+  "examples/complex": {
+    "why": "tex4ht doesn't convert the pictures in its side-by-side code boxes (tcolorbox listings), and MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat, \\Sum and its relatives)",
+    "allow": [
+      "make4ht exited with 1",
+      "x.svg doesn't exist",
+      ": missing main",
+      "left undefined for MathJax, which can't read their definitions: \\cvc",
+      "macros MathJax doesn't know: "
+    ]
   }
 }

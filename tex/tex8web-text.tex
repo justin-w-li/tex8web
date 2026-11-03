@@ -52,6 +52,16 @@
      \web@mark\HCode{</span>}}
     {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\par\indent\ShowPar}
 
+% --- boxes ------------------------------------------------------------------
+
+% tcolorbox: tex4ht draws boxes as HTML, without tcolorbox's skins, so the
+% measures of a boxed title, which styles often use (yshift=-\tcboxedtitleheight),
+% are never set
+\@ifpackageloaded{tcolorbox}{%
+    \providecommand\tcboxedtitleheight{0pt}%
+    \providecommand\tcboxedtitlewidth{0pt}%
+}{}
+
 % --- table of contents ------------------------------------------------------
 
 % section numbers in a box as wide as in the PDF (tocloft's widths, or the

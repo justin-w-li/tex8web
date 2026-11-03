@@ -1,7 +1,7 @@
 // Building the test documents and examples with make4ht, for the tests and
 // for npm run examples.
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,6 +31,12 @@ export function documents() {
 // it copies to -d, so both are passed relative to the document, where
 // characters like - in the path above don't matter
 export function build(doc, out, aux, env = {}) {
+  // the PDF a config links with \WebPDF, if it isn't built yet
+  const pdf = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];
+  if (pdf && !existsSync(join(doc.dir, pdf))) {
+    spawnSync('latexmk', ['-pdf', '-interaction=nonstopmode', `-outdir=${dirname(pdf)}`, doc.tex],
+      { cwd: doc.dir, stdio: 'ignore' });
+  }
   rmSync(out, { recursive: true, force: true });
   rmSync(aux, { recursive: true, force: true });
   // (make4ht's own mkdir fails when two builds make the same parent at once)
