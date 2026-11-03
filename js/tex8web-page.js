@@ -1,9 +1,10 @@
 // tex8web's page in the browser: the theme button, the controls' bar on a
-// narrow screen, footnotes lined up with their marks, the table of contents
-// following the section being read, and previews of what a link on the
-// page leads to. page.lua and text.lua build what this works on (and
-// page.lua marks <html> tex8web-js before the page is drawn), and the page
-// reads fine without it (css/tex8web.css).
+// narrow screen, smooth scrolling to links, footnotes lined up with their
+// marks, the table of contents following the section being read, and
+// previews of what a link on the page leads to. page.lua and text.lua
+// build what this works on (and page.lua marks <html> tex8web-js before
+// the page is drawn), and the page reads fine without it
+// (css/tex8web.css).
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
@@ -39,7 +40,8 @@
 
   // the controls, in a bar across the top on a narrow screen
   // (css/tex8web.css): out of the way while the reader scrolls down, back as
-  // soon as they scroll up
+  // soon as they scroll up; and while the window is made wider or narrower,
+  // nothing slides, and the bar is away unless the page is at its top
   function bar() {
     const controls = document.querySelector('.tex8web-controls');
     if (!controls) return;
@@ -48,6 +50,24 @@
       controls.classList.toggle('tex8web-away', scrollY > last && scrollY > controls.offsetHeight);
       last = scrollY;
     }, { passive: true });
+    let width = innerWidth, timer;
+    addEventListener('resize', () => {
+      if (innerWidth === width) return;  // (a phone's address bar coming and going)
+      width = innerWidth;
+      root.classList.add('tex8web-resizing');
+      controls.classList.toggle('tex8web-away', scrollY > controls.offsetHeight);
+      clearTimeout(timer);
+      timer = setTimeout(() => root.classList.remove('tex8web-resizing'), 100);
+    });
+  }
+
+  // following a link scrolls smoothly once the reader has followed one
+  // (css/tex8web.css): not the browser going back to their place as the
+  // page reloads
+  function smooth() {
+    document.addEventListener('click', event => {
+      if (event.target.closest?.('a[href*="#"]')) root.classList.add('tex8web-smooth');
+    });
   }
 
   // footnotes beside the text (css/tex8web.css floats them there on a wide
@@ -202,7 +222,7 @@
       const a = link(event.target);
       if (event.pointerType === 'touch' || !(a || card.contains(event.target))) return;
       clearTimeout(timer);
-      if (a && a !== shown) timer = setTimeout(() => show(a), 120);
+      if (a && a !== shown) timer = setTimeout(() => show(a), 50);
     });
     document.addEventListener('pointerout', event => {
       const to = event.relatedTarget;
@@ -234,6 +254,7 @@
 
   theme();
   bar();
+  smooth();
   sidenotes();
   contents();
   previews();

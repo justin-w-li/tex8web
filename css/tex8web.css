@@ -87,9 +87,10 @@ h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
     font-weight: var(--tex8web-subsubsection-weight, bold);
     font-style: var(--tex8web-subsubsection-style, normal); }
 /* a column as wide as the PDF's, in ems of the text, so lines hold about as
-   much; narrower screens get the screen's width */
+   much; narrower screens get the screen's width. Below the controls, as
+   far down on a wide screen as on a narrow one (page.lua) */
 html body { max-width: var(--tex8web-textwidth);
-    margin-block-start: 2.5em; margin-block-end: 4em; }
+    margin-block-start: 4rem; margin-block-end: 4em; }
 /* the text of an \intertext (tex8web-math.tex) */
 .tex8web-intertext { display: block; margin-block: 0.5em; }
 /* pictures: nothing wider than the column; a picture in display math
@@ -208,27 +209,38 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 .tex8web-control svg { width: 1.25rem; height: 1.25rem; fill: none;
     stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 @media not (--tex8web-wide) {
-    html { scroll-padding-top: 3.5rem; }
+    /* (room for the bar above what a link leads to, or the keyboard
+       reaches; as html's scroll-padding it would also move where Chrome
+       puts the page back as it reloads) */
+    :is(:target, :focus-visible) { scroll-margin-top: calc(3.5rem + 1em); }
     /* (room for a heading's or theorem's # at the left, in a heading up
        to about 1.5rem) */
-    html body { margin-block-start: 4rem; padding-inline: 1.75rem; }
+    html body { padding-inline: 1.75rem; }
     .tex8web-controls.tex8web-away:not(:has(:focus-visible)) { transform: translateY(-100%); }
 }
 @media (prefers-reduced-motion: no-preference) { .tex8web-controls { transition: transform 0.2s; } }
+/* (but no sliding while the window is resized, tex8web-page.js: from a
+   wide screen to a narrow one, the column of contents just goes, as does
+   the bar if the page isn't at its top) */
+.tex8web-resizing :is(.tex8web-controls, .tex8web-toc), .tex8web-resizing .tex8web-toc::backdrop {
+    transition: none; }
 
 /* the table of contents: a drawer from the left, which the contents button
    opens (sliding in, unless the reader would rather not); on a wide screen,
    a column beside the text, as wide as the drawer if there's room (and as
    wide as footnotes). Its lines close together, and entries a little
    apart. tex8web-page.js marks the section being read, and shows only its
-   section's subsections. (Narrowing the window past the wide screen's
-   width slides the column out as a closed drawer.) */
+   section's subsections */
 :root { --tex8web-toc-width: 15rem; }
 /* (85vw in all, with the padding) */
 .tex8web-toc { inset: 0 auto 0 0; width: min(var(--tex8web-toc-width), 85vw - 2.5rem); height: 100%;
     max-height: none; margin: 0; padding: 4rem 1.25rem 2rem; border: 0;
     border-inline-end: 1px solid color-mix(in srgb, currentColor 15%, transparent);
-    color: var(--tex8web-text); background-color: var(--tex8web-bg); overflow-y: auto; }
+    color: var(--tex8web-text); background-color: var(--tex8web-bg); overflow-y: auto;
+    scrollbar-width: none; }
+/* (it scrolls, without a scroll bar: ::-webkit-scrollbar for Safari
+   before 18.2) */
+.tex8web-toc::-webkit-scrollbar { display: none; }
 .tex8web-toc::backdrop { background-color: rgb(0 0 0 / 0.3); }
 @media (prefers-reduced-motion: no-preference) {
     .tex8web-toc { translate: -100% 0; transition: translate 0.2s, display 0.2s allow-discrete,
@@ -250,8 +262,9 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     .subsubsectionToc, .likesubsubsectionToc):not(.tex8web-open) { display: none; }
 @media (--tex8web-wide) {
     /* the width of the table of contents and of footnotes */
-    :root { --tex8web-margin: min(var(--tex8web-toc-width), 50vw - var(--tex8web-textwidth) / 2 - 2.25rem); }
-    .tex8web-controls { inset: calc(env(safe-area-inset-top, 0px) + 0.75rem) auto auto 0.75rem;
+    :root { --tex8web-margin: min(var(--tex8web-toc-width), 50vw - var(--tex8web-textwidth) / 2 - 3rem); }
+    /* (the icons where they are in the narrow screen's bar) */
+    .tex8web-controls { inset: calc(env(safe-area-inset-top, 0px) + 0.5rem) auto auto 0.75rem;
         padding: 0.125rem; border: 0; border-radius: 0.5rem; }
     .tex8web-contents { display: none; }
     .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
@@ -299,5 +312,7 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 .tex8web-preview > * > mjx-container[display] > mjx-math > mjx-mtable > mjx-labels {
     width: 100% !important; }
 
-/* following a link scrolls there, unless the reader would rather not */
-@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+/* following a link scrolls there, unless the reader would rather not
+   (tex8web-page.js; not for the browser going back to the reader's place
+   as the page reloads) */
+@media (prefers-reduced-motion: no-preference) { html.tex8web-smooth { scroll-behavior: smooth; } }
