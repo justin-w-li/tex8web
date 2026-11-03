@@ -39,7 +39,7 @@
 % \WebMathMacros{definitions}: macros for MathJax, in place of the
 % document's own (which macros.lua reads from its preamble and styles), for
 % macros MathJax can't read as they are. \WebMacrosHTML writes them in a
-% <script> in <head> (web-page.tex), for macros.lua, which removes it
+% <script> in <head> (tex8web-page.tex), for macros.lua, which removes it
 \ExplSyntaxOn
 \tl_new:N \g__web_macros_tl
 \NewDocumentCommand\WebMathMacros{+m}{\tl_gput_right:Nn \g__web_macros_tl {#1}}
@@ -49,7 +49,7 @@
     \regex_replace_all:nnN { \x{26} } { &amp; } \l_tmpa_tl
     \regex_replace_all:nnN { \x{3C} } { &lt; } \l_tmpa_tl
     \regex_replace_all:nnN { \x{3E} } { &gt; } \l_tmpa_tl
-    \HCode{<script~type="text/x-web-macros">\l_tmpa_tl</script>\Hnewline}
+    \HCode{<script~type="text/x-tex8web-macros">\l_tmpa_tl</script>\Hnewline}
 }
 
 % a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math
@@ -81,7 +81,7 @@
     \tl_set:Nn \l_tmpa_tl {#2}
     \regex_replace_once:nnN { \c{\\} \s* \Z } {} \l_tmpa_tl
     \tl_if_blank:VF \l_tmpa_tl { \exp_args:Nno \__web_part:nn {#1} {\l_tmpa_tl} }
-    \HCode{<span~class="intertext">} #3 \HCode{</span>}
+    \HCode{<span~class="tex8web-intertext">} #3 \HCode{</span>}
     \__web_alignment:nn {#1} {#4}
 }
 

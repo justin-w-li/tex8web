@@ -3,9 +3,9 @@
 
 % --- <head> -----------------------------------------------------------------
 
-% rebuilt so MathJax's config (web-math.tex) and web.js come before
+% rebuilt so MathJax's config (tex8web-math.tex) and tex8web.js come before
 % MathJax. The \WebMathMacros definitions are for macros.lua, which removes
-% them. web.js gets lengths from the document, in ems of its body font
+% them. tex8web.js gets lengths from the document, in ems of its body font
 % (see there)
 \setbox\z@\hbox{\everymath{}$\xdef\web@exscale{\web@ratio{\fontdimen6\textfont3}}$}
 \Configure{@HEAD}{}
@@ -14,14 +14,14 @@
 \Configure{@HEAD}{\HCode{<link rel="stylesheet" type="text/css" href="\jobname.css" />\Hnewline}}
 \Configure{@HEAD}{\WebMacrosHTML}
 \Configure{@HEAD}{\HCode{<script>window.MathJax = \csname a:MathJaxConfig\endcsname</script>\Hnewline}}
-\Configure{@HEAD}{\HCode{<script>window.web = { exscale: \web@exscale,
+\Configure{@HEAD}{\HCode{<script>window.tex8web = { exscale: \web@exscale,
     baselineskip: \web@ratio\baselineskip, jot: \web@ratio\jot,
     pt: \web@ratio{1pt} };</script>\Hnewline}}
-\Configure{@HEAD}{\HCode{<script src="web.js"></script>\Hnewline}}
+\Configure{@HEAD}{\HCode{<script src="tex8web.js"></script>\Hnewline}}
 \Configure{@HEAD}{\HCode{<script async="async" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-chtml.js"></script>\Hnewline}}
-% \WebPDF{path}: a link to the document's PDF after the title; web.mk4
+% \WebPDF{path}: a link to the document's PDF after the title; tex8web.mk4
 % copies the file (path from the document's directory) next to the page
-\newcommand\WebPDF[1]{\Configure{@HEAD}{\HCode{<meta name="web-pdf" content="#1" />\Hnewline}}}
+\newcommand\WebPDF[1]{\Configure{@HEAD}{\HCode{<meta name="tex8web-pdf" content="#1" />\Hnewline}}}
 
 % --- colors -----------------------------------------------------------------
 
@@ -48,41 +48,41 @@
 % (tex4ht gives body a color-scheme of its own, which would keep the page
 % in the system's setting)
 \Css{html body { color-scheme: inherit; }}
-\Css{:root { --web-bg: light-dark(\#FFFFFF, \#1E1E1E); --web-text: light-dark(\#000000, \#E3E3E3); }}
+\Css{:root { --tex8web-bg: light-dark(\#FFFFFF, \#1E1E1E); --tex8web-text: light-dark(\#000000, \#E3E3E3); }}
 % (html body: to win over tex4ht's own body rules)
-\Css{html body { background-color: var(--web-bg); color: var(--web-text); }}
+\Css{html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }}
 % links: hyperref's colors with colorlinks (otherwise the PDF draws boxes,
 % and the links here keep the color of the text). In a macro, so TeX doesn't
 % meet \ifHy@colorlinks when hyperref isn't loaded
 \newcommand\web@linkcolors{%
     \ifHy@colorlinks
         \ifdefined\convertcolorspec
-            \definecolor{web-link-dark}{RGB}{108, 180, 255}%
-            \definecolor{web-cite-dark}{RGB}{95, 211, 160}%
-            \definecolor{web-url-dark}{RGB}{242, 127, 176}%
+            \definecolor{tex8web-link-dark}{RGB}{108, 180, 255}%
+            \definecolor{tex8web-cite-dark}{RGB}{95, 211, 160}%
+            \definecolor{tex8web-url-dark}{RGB}{242, 127, 176}%
         \fi
-        \WebColor{web-link}{\@linkcolor}{web-link-dark}%
-        \WebColor{web-cite}{\@citecolor}{web-cite-dark}%
-        \WebColor{web-url}{\@urlcolor}{web-url-dark}%
+        \WebColor{tex8web-link}{\@linkcolor}{tex8web-link-dark}%
+        \WebColor{tex8web-cite}{\@citecolor}{tex8web-cite-dark}%
+        \WebColor{tex8web-url}{\@urlcolor}{tex8web-url-dark}%
     \fi
 }
 \@ifpackageloaded{hyperref}{\web@linkcolors}{}
-\Css{a { color: var(--web-link, inherit); text-decoration: none; }}
-\Css{a[href\string^="\#X"] { color: var(--web-cite, inherit); }}
-\Css{a.url, a[href\string^="mailto:"] { color: var(--web-url, inherit); }}
+\Css{a { color: var(--tex8web-link, inherit); text-decoration: none; }}
+\Css{a[href\string^="\#X"] { color: var(--tex8web-cite, inherit); }}
+\Css{a.url, a[href\string^="mailto:"] { color: var(--tex8web-url, inherit); }}
 % pictures tex4ht generates (TikZ; \jobname0x.svg and so on) are black line
 % art; invert them in dark mode
 \Css{@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --web-picture-filter: invert(1); } }}
-\Css{:root[data-theme="dark"] { --web-picture-filter: invert(1); }}
+    :root:not([data-theme="light"]) { --tex8web-picture-filter: invert(1); } }}
+\Css{:root[data-theme="dark"] { --tex8web-picture-filter: invert(1); }}
 % (tex4ht inverts every picture named after the job in dark mode, also
 % when the page is set to light)
 \Css{img[src\string^="\jobname"] { filter: none; }}
-\Css{img[src\string^="\jobname"][src\string$="x.svg"] { filter: var(--web-picture-filter, none); }}
+\Css{img[src\string^="\jobname"][src\string$="x.svg"] { filter: var(--tex8web-picture-filter, none); }}
 
 % --- fonts ------------------------------------------------------------------
 
-% Latin Modern, which web.mk4 copies into fonts/
+% Latin Modern, which tex8web.mk4 copies into fonts/
 \Css{@font-face { font-family: "Latin Modern Roman";
     src: url("fonts/lmroman10-regular.woff2") format("woff2"); }}
 \Css{@font-face { font-family: "Latin Modern Roman"; font-weight: bold;
@@ -100,8 +100,8 @@
 % Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em;
 % text.no_break_spaces marks no-break spaces, and keeps one together with
 % the math after it
-\Css{.nbsp { letter-spacing: -0.167em; }}
-\Css{.nowrap { white-space: nowrap; }}
+\Css{.tex8web-nbsp { letter-spacing: -0.167em; }}
+\Css{.tex8web-nowrap { white-space: nowrap; }}
 
 % --- layout -----------------------------------------------------------------
 
@@ -123,8 +123,8 @@
 % much; narrower screens get the screen's width
 \web@Css{html body { max-width: \web@em\textwidth;
     margin-block-start: 2.5em; margin-block-end: 4em; }}
-% the text of an \intertext (web-math.tex)
-\Css{.intertext { display: block; margin-block: 0.5em; }}
+% the text of an \intertext (tex8web-math.tex)
+\Css{.tex8web-intertext { display: block; margin-block: 0.5em; }}
 % pictures: nothing wider than the column; a picture in display math
 % (\[ \begin{tikzcd} .. \]) gets the margin MathJax gives display math
 \Css{img { max-width: 100\%; height: auto; }}
@@ -132,14 +132,14 @@
 \Css{.mathjax-block img { display: block; margin: 0.7em auto; }}
 % links to headings and theorems (page.lua): a # in the margin, shown on
 % hover (and faintly on touch screens)
-\Css{.web-permalink { position: absolute; transform: translateX(-100\%);
+\Css{.tex8web-permalink { position: absolute; transform: translateX(-100\%);
     padding-inline-end: 0.3em; color: inherit; font-weight: normal; opacity: 0; }}
-\Css{:is(h2, h3, h4, h5, h6, .newtheorem):hover .web-permalink, .web-permalink:focus { opacity: 0.4; }}
-\Css{@media (hover: none) { .web-permalink { opacity: 0.2; } }}
+\Css{:is(h2, h3, h4, h5, h6, .newtheorem):hover .tex8web-permalink, .tex8web-permalink:focus { opacity: 0.4; }}
+\Css{@media (hover: none) { .tex8web-permalink { opacity: 0.2; } }}
 % what a link leads to: a little space above it, and a tint
 \Css{:target { scroll-margin-top: 1em; }}
 \Css{:is(h2, h3, h4, h5, h6):target, .newtheorem:has(.head > a:target) {
     background-color: color-mix(in srgb, currentColor 6\%, transparent); }}
-\Css{.web-pdf { margin-block: 0.5em 0; text-align: center; }}
+\Css{.tex8web-pdf { margin-block: 0.5em 0; text-align: center; }}
 
 \makeatother

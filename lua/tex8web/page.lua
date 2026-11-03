@@ -1,11 +1,11 @@
 -- web: the page around the text: links to headings and theorems, the PDF,
 -- and meta tags for link previews.
-local dom = require "web.dom"
+local dom = require "tex8web.dom"
 
 local M = {}
 
 local function permalink(el, id)
-  local a = el:create_element("a", {class = "web-permalink", href = "#" .. id,
+  local a = el:create_element("a", {class = "tex8web-permalink", href = "#" .. id,
     ["aria-label"] = "Link here"})
   a:add_child_node(a:create_text_node("#"))
   dom.set_children(el, {a, table.unpack(el:get_children())})
@@ -34,14 +34,14 @@ function M.permalinks(document)
   end
 end
 
--- \WebPDF (web-page.tex): a link to the PDF, which web.mk4 copies next to
+-- \WebPDF (tex8web-page.tex): a link to the PDF, which tex8web.mk4 copies next to
 -- the page, after the title
 function M.pdf_link(document, parameters)
-  local meta = document:query_selector("meta[name='web-pdf']")[1]
+  local meta = document:query_selector("meta[name='tex8web-pdf']")[1]
   if not meta then return end
   meta:remove_node()
   local body = document:query_selector("body")[1]
-  local p = body:create_element("p", {class = "web-pdf"})
+  local p = body:create_element("p", {class = "tex8web-pdf"})
   local a = p:create_element("a", {href = parameters.input .. ".pdf"})
   a:add_child_node(a:create_text_node("View as PDF"))
   p:add_child_node(a)

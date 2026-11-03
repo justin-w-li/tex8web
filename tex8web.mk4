@@ -1,13 +1,13 @@
 -- make4ht build file for HTML that looks like the PDF, with MathJax
--- typesetting the math from its LaTeX source. Use with web.cfg (or a config
--- of your own that \input's web-core.tex):
---   make4ht -c path/to/web.cfg -e path/to/web.mk4 document.tex
+-- typesetting the math from its LaTeX source. Use with tex8web.cfg (or a config
+-- of your own that \input's tex8web-core.tex):
+--   make4ht -c path/to/tex8web.cfg -e path/to/tex8web.mk4 document.tex
 -- It puts this directory on TeX's and Lua's search paths, copies the Latin
 -- Modern fonts (fonts/), the document's images and its PDF (\WebPDF) next
 -- to the HTML, and
 -- gives MathJax the document's macros. With node_modules installed (npm ci
 -- here), prerender.mjs then typesets the math; otherwise the page loads
--- MathJax, with web.js next to it.
+-- MathJax, with tex8web.js next to it.
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
 -- (texlua's require doesn't look at package.path; add a searcher that does
@@ -20,11 +20,11 @@ end)
 os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 
 local domfilter = require "make4ht-domfilter"
-local log = logging.new("web")
-local macros = require "web.macros"
-local source = require "web.source"
-local text = require "web.text"
-local page = require "web.page"
+local log = logging.new("tex8web")
+local macros = require "tex8web.macros"
+local source = require "tex8web.source"
+local text = require "tex8web.text"
+local page = require "tex8web.page"
 
 local passes = {
   source.spaces,
@@ -39,7 +39,7 @@ local passes = {
 local fix_html = domfilter({function(document, par)
   for _, pass in ipairs(passes) do pass(document, par) end
   return document
-end}, "web")
+end}, "tex8web")
 
 local fonts = {
   "lmroman10-regular.woff2",
@@ -72,7 +72,7 @@ local function prerender(filename)
       .. " to typeset it here")
     return false
   end
-  local node = io.popen("node " .. quote(root .. "/prerender.mjs") .. " " .. quote(filename))
+  local node = io.popen("node " .. quote(root .. "/js/prerender.mjs") .. " " .. quote(filename))
   -- (it prints the files it made: MathJax's styles and fonts)
   local files = {}
   for path in node:lines() do files[#files + 1] = path end
@@ -99,8 +99,8 @@ Make:match("html$", function(filename, par)
       add(src, dir .. "/" .. src)
     end
   end
-  -- the PDF, from \WebPDF (web-page.tex)
-  local pdf = html:match('<meta name="web%-pdf" content="([^"]+)"')
+  -- the PDF, from \WebPDF (tex8web-page.tex)
+  local pdf = html:match('<meta name="tex8web%-pdf" content="([^"]+)"')
   if pdf then
     if exists(pdf) then
       add(pdf, dir .. "/" .. par.input .. ".pdf")
@@ -110,7 +110,7 @@ Make:match("html$", function(filename, par)
   end
   local status = fix_html(filename, par)
   if not prerender(filename) then
-    add(root .. "/js/web.js", dir .. "/web.js")
+    add(root .. "/js/tex8web.js", dir .. "/tex8web.js")
   end
   return status
 end)

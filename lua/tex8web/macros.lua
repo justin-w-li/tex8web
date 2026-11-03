@@ -2,9 +2,9 @@
 -- it doesn't know the document's own macros. Give it the definitions of
 -- those the math uses, read from the document and the local packages it
 -- loads, and nothing else of the source.
-local dom = require "web.dom"
+local dom = require "tex8web.dom"
 
-local log = logging.new("web")
+local log = logging.new("tex8web")
 
 local M = {}
 
@@ -254,7 +254,7 @@ function M.define(document, parameters)
   end
   -- the cfg's \WebMathMacros, which take precedence
   local overrides = {}
-  for _, script in ipairs(document:query_selector("script[type='text/x-web-macros']")) do
+  for _, script in ipairs(document:query_selector("script[type='text/x-tex8web-macros']")) do
     read_definitions(script:get_text(), overrides)
     script:remove_node()
   end
@@ -296,7 +296,7 @@ function M.define(document, parameters)
   end
   if #defs == 0 then return end
   local body = document:query_selector("body")[1]
-  local div = body:create_element("div", {class = "web-macros", hidden = "hidden"})
+  local div = body:create_element("div", {class = "tex8web-macros", hidden = "hidden"})
   div:add_child_node(div:create_text_node("\\(" .. table.concat(defs, "\n") .. "\\)"))
   dom.set_children(body, {div, table.unpack(body:get_children())})
 end

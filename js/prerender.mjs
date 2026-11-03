@@ -1,10 +1,10 @@
-// Typesets the math of a page web.mk4 made, in place, with MathJax in Node:
+// Typesets the math of a page tex8web.mk4 made, in place, with MathJax in Node:
 // the page then shows its math without JavaScript, also saved or offline.
-// web.mk4 runs it when node_modules is installed (npm ci in this directory).
+// tex8web.mk4 runs it when node_modules is installed (npm ci in this directory).
 //   node prerender.mjs page.html
-// It uses the page's own MathJax configuration and web.js, as the browser
+// It uses the page's own MathJax configuration and tex8web.js, as the browser
 // would. MathJax's styles go into page-mathjax.css, and the fonts they use
-// into fonts/mathjax/, next to the page; it prints their paths, for web.mk4
+// into fonts/mathjax/, next to the page; it prints their paths, for tex8web.mk4
 // to list with the output.
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -15,10 +15,10 @@ const file = process.argv[2];
 const html = readFileSync(file, 'utf8');
 
 // the page's scripts that set window.MathJax (the configuration) and
-// window.web (lengths for web.js), run on a window of their own (with a
+// window.tex8web (lengths for tex8web.js), run on a window of their own (with a
 // global window, MathJax would take Node for a browser)
 const window = {};
-const pageScript = /<script>((?:(?!<\/script>)[\s\S])*\bwindow\.(?:MathJax|web) =(?:(?!<\/script>)[\s\S])*)<\/script>\s*/g;
+const pageScript = /<script>((?:(?!<\/script>)[\s\S])*\bwindow\.(?:MathJax|tex8web) =(?:(?!<\/script>)[\s\S])*)<\/script>\s*/g;
 for (const [, code] of html.matchAll(pageScript)) new Function('window', code)(window);
 const config = window.MathJax;
 // everything at once, and MathML for screen readers, but no menu (it needs
@@ -37,18 +37,18 @@ config.loader.ready = () => {
   MathJax.loader.defaultReady();
 };
 globalThis.MathJax = config;
-new Function('window', readFileSync(new URL('js/web.js', import.meta.url), 'utf8'))(window);
+new Function('window', readFileSync(new URL('tex8web.js', import.meta.url), 'utf8'))(window);
 require('mathjax/tex-chtml.js');
 await MathJax.startup.promise;
 
 const adaptor = MathJax.startup.adaptor;
 const document = MathJax.startup.document.document;
 for (const script of adaptor.tags(adaptor.root(document), 'script')) {
-  if (/(^|\/)(web\.js|tex-chtml\.js)$/.test(adaptor.getAttribute(script, 'src') || '')) adaptor.remove(script);
+  if (/(^|\/)(tex8web\.js|tex-chtml\.js)$/.test(adaptor.getAttribute(script, 'src') || '')) adaptor.remove(script);
 }
 // (macros.lua's definitions, which MathJax has read)
 for (const div of adaptor.tags(adaptor.root(document), 'div')) {
-  if (adaptor.hasClass(div, 'web-macros')) adaptor.remove(div);
+  if (adaptor.hasClass(div, 'tex8web-macros')) adaptor.remove(div);
 }
 // MathJax's styles, in a file of their own (make4ht's later passes over
 // the page would escape the > in them), with its fonts, from node_modules

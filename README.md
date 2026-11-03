@@ -4,7 +4,7 @@ A tex4ht configuration that turns a LaTeX document into HTML that looks like its
 
 The conversion has four parts:
 
-1. **tex4ht** (`web.cfg`, `tex/`). tex4ht's `mathjax` option writes the text as HTML and leaves each formula's LaTeX in the page. The configuration does three more things:
+1. **tex4ht** (`tex8web.cfg`, `tex/`). tex4ht's `mathjax` option writes the text as HTML and leaves each formula's LaTeX in the page. The configuration does three more things:
    - It numbers equations with TeX's own numbers, so they agree with `\eqref`.
    - It splits alignments at `\intertext`.
    - It passes the document's lengths and colors to the page: text width, theorem spacing, list spacing, link colors.
@@ -31,7 +31,7 @@ npm ci
 which installs MathJax 4.1.3 and its fonts into `node_modules/`. Then:
 
 ```sh
-make4ht -c path/to/web/web.cfg -e path/to/web/web.mk4 -B build -d out document.tex
+make4ht -c path/to/tex8web/tex8web.cfg -e path/to/tex8web/tex8web.mk4 -B build -d out document.tex
 ```
 
 Everything is built in `build/`, and `out/` gets the page and the files it uses:
@@ -42,7 +42,7 @@ Everything is built in `build/`, and `out/` gets the page and the files it uses:
 - without prerendering, `web.js`;
 - with `\WebPDF` (below), `document.pdf`.
 
-Pass both files every time: `web.mk4` puts `tex/` on TeX's search path for `web.cfg`. Keep `-` out of the `-B` directory's name: make4ht reads it as a Lua pattern when it copies to `-d`, and a `-` there sends the files to the wrong place. The pages use relative paths, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can also serve one copy of them.
+Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `tex8web.cfg`. Keep `-` out of the `-B` directory's name: make4ht reads it as a Lua pattern when it copies to `-d`, and a `-` there sends the files to the wrong place. The pages use relative paths, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can also serve one copy of them.
 
 Without `node_modules/`, the build says so and the page loads MathJax 4.1.3 from jsDelivr. MathJax then typesets the math as it scrolls into view, so a long document is ready in under a second. Its speech and braille output are off (they took most of the time); screen readers get MathML, and a reader can turn speech on in MathJax's menu. Such a page needs JavaScript and the network, and a saved copy loses the math that wasn't typeset yet.
 
@@ -56,12 +56,12 @@ MathJax loads the extensions for the packages the document uses that it has: phy
 
 ## Your own config
 
-For macros or styles of your own, copy `web.cfg` and add to it after `\input{web-core.tex}`:
+For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input{tex8web-core.tex}`:
 
 ```latex
 \Preamble{xhtml,mathjax}
 \begin{document}
-\input{web-core.tex}
+\input{tex8web-core.tex}
 % a macro MathJax can't read as defined (here, one using \mathpalette)
 \WebMathMacros{
     \newcommand{\Sin}{\mathop{\phantom{\cos}\llap{\sin}}}
@@ -74,7 +74,7 @@ For macros or styles of your own, copy `web.cfg` and add to it after `\input{web
 \EndPreamble
 ```
 
-Pass it with `-c` instead of `web.cfg`. `\WebMathMacros` definitions take precedence over the document's own. Later `\Css` rules override earlier ones, so you can also change the layout choices below.
+Pass it with `-c` instead of `tex8web.cfg`. `\WebMathMacros` definitions take precedence over the document's own. Later `\Css` rules override earlier ones, so you can also change the layout choices below.
 
 ## Deliberate differences from the PDF
 
@@ -88,12 +88,12 @@ Pass it with `-c` instead of `web.cfg`. `\WebMathMacros` definitions take preced
 
 | Path | Contents |
 | --- | --- |
-| `web.cfg` | entry point for documents without a config of their own |
-| `tex/web-core.tex` | loads the three modules below |
-| `tex/web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ pictures in display math |
-| `tex/web-text.tex` | links, cross-references, theorems, table of contents, lists, figures |
-| `tex/web-page.tex` | `<head>`, colors, fonts, layout |
-| `web.mk4` | build file: search paths, fonts, images and the PDF, the HTML passes, prerendering |
+| `tex8web.cfg` | entry point for documents without a config of their own |
+| `tex/tex8web-core.tex` | loads the three modules below |
+| `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ pictures in display math |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, table of contents, lists, figures |
+| `tex/tex8web-page.tex` | `<head>`, colors, fonts, layout |
+| `tex8web.mk4` | build file: search paths, fonts, images and the PDF, the HTML passes, prerendering |
 | `lua/web/macros.lua` | the macro bridge |
 | `lua/web/source.lua`, `text.lua` | HTML passes: formula sources, theorem spacing, no-break spaces |
 | `lua/web/page.lua` | HTML pass: links to headings and theorems, the PDF link, meta tags |

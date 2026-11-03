@@ -1,6 +1,6 @@
 % web: tex4ht configuration for HTML that looks like the PDF, with MathJax
 % reading the math's LaTeX source. A tex4ht config \input's this after
-% \begin{document} (see web.cfg); web.mk4 puts this directory on TeX's
+% \begin{document} (see tex8web.cfg); tex8web.mk4 puts this directory on TeX's
 % search path.
 \makeatletter
 
@@ -25,9 +25,9 @@
 \newcommand\web@Css[1]{\edef\web@css{\noexpand\Css{#1}}\web@css}
 \makeatother
 
-\input{web-math.tex}
-\input{web-text.tex}
-\input{web-page.tex}
+\input{tex8web-math.tex}
+\input{tex8web-text.tex}
+\input{tex8web-page.tex}
 
 \makeatletter
 \web@restorecatcodes
