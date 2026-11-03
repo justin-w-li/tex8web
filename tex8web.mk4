@@ -26,10 +26,13 @@ local prerender = require "tex8web.prerender"
 local source = require "tex8web.source"
 local text = require "tex8web.text"
 
--- LaTeX, with tex/tex8web-hooks.sty loaded before the preamble; then the
--- bibliography, if the document has one, which make4ht doesn't run itself;
--- and LaTeX until the cross-references settle
-local latex = {packages = (Make.params.packages or "") .. "\\RequirePackage{tex8web-hooks}"}
+-- LaTeX, with tex/tex8web-hooks.sty loaded before the preamble and
+-- tex4ht's fn-in option, which keeps footnotes on the page (text.lua puts
+-- them beside the text); then the bibliography, if the document has one,
+-- which make4ht doesn't run itself; and LaTeX until the cross-references
+-- settle. (The parameters build on settings: Make.params is still empty)
+local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
+  tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
 if mode == "draft" then
   Make:htlatex(latex)
 else
@@ -46,6 +49,7 @@ local passes = {
   macros.define,
   text.theorem_spacing,
   text.no_break_spaces,
+  text.sidenotes,
   page.controls,
   page.permalinks,
   page.meta_tags,

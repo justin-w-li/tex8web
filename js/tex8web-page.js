@@ -1,7 +1,8 @@
-// tex8web's page in the browser: the theme button, and the table of
-// contents following the section being read. page.lua builds what this
-// works on (and marks <html> tex8web-js before the page is drawn), and the
-// page reads fine without it (css/tex8web.css).
+// tex8web's page in the browser: the theme button, footnotes lined up
+// with their marks, and the table of contents following the section being
+// read. page.lua and text.lua build what this works on (and page.lua marks
+// <html> tex8web-js before the page is drawn), and the page reads fine
+// without it (css/tex8web.css).
 (() => {
   const root = document.documentElement;
 
@@ -26,6 +27,30 @@
     label();
     button.hidden = false;
   }
+
+  // footnotes beside the text (css/tex8web.css floats them there on a wide
+  // screen): each level with its mark, or below the one above it; again
+  // whenever the page's layout changes (pictures, fonts, the width)
+  const notes = [...document.querySelectorAll('.tex8web-sidenote')]
+    .map(note => {
+      const hash = note.querySelector('.footnote-mark a')?.hash.slice(1);
+      return { note, mark: hash && document.getElementById(decodeURIComponent(hash)) };
+    })
+    .filter(({ mark }) => mark);
+  const place = () => {
+    for (const { note } of notes) note.style.top = '';
+    const tops = notes.map(({ note, mark }) => getComputedStyle(note).float === 'none' ? null : {
+      at: note.getBoundingClientRect().top, mark: mark.getBoundingClientRect().top,
+      height: note.offsetHeight + parseFloat(getComputedStyle(note).marginBottom) });
+    let below = -Infinity;
+    tops.forEach((top, i) => {
+      if (!top) return;
+      const want = Math.max(top.mark, below);
+      notes[i].note.style.top = `${want - top.at}px`;
+      below = want + top.height;
+    });
+  };
+  if (notes.length) new ResizeObserver(place).observe(document.body);
 
   // the table of contents: the entry of the section being read (the last
   // heading above the top quarter of the screen) is marked, and its

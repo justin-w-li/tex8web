@@ -92,4 +92,49 @@ function M.no_break_spaces(document)
   end)
 end
 
+-- footnotes (tex4ht's, at the end of the page with fn-in, which
+-- tex8web.mk4 sets) each after the paragraph, list or theorem that holds
+-- its mark, in order; css/tex8web.css puts them beside it on a wide
+-- screen. A footnote in a table, a figure, a box or math stays where it
+-- was. \thanks, which fn-in also puts there, goes back under the title
+local function stays(el)
+  local name = el:get_element_name()
+  return name == "table" or name == "figure" or dom.has_class(el, "^tcolorbox") or is_math(el)
+end
+
+local function is_top(el)
+  local name = el:is_element() and el:get_element_name()
+  return not name or name == "body" or name == "section" or name == "main"
+end
+
+function M.sidenotes(document)
+  local list = document:query_selector("div.footnotes")[1]
+  if not list then return end
+  local last = {} -- the last note put after each block
+  for _, note in ipairs(list:query_selector("aside.footnotetext")) do
+    local back = note:query_selector("span.footnote-mark a")[1]
+    local id = (back and back:get_attribute("href") or ""):match("^#(.+)")
+    local mark = id and document:query_selector("[id='" .. id .. "']")[1]
+    if mark and not dom.closest(mark, stays) then
+      local block = mark
+      while not is_top(block:get_parent()) do block = block:get_parent() end
+      local before = last[block] or block
+      note:remove_node()
+      note:set_attribute("class", note:get_attribute("class") .. " tex8web-sidenote")
+      before:get_parent():add_child_node(note, before:find_element_pos() + 1)
+      last[block] = note
+    end
+  end
+  local title = document:query_selector("div.maketitle")[1]
+  for _, el in ipairs(dom.elements(list)) do
+    if title and el:get_element_name() ~= "aside" then
+      el:remove_node()
+      local thanks = title:create_element("div", {class = "thanks"})
+      dom.set_children(thanks, el:get_children())
+      title:add_child_node(thanks)
+    end
+  end
+  if #dom.elements(list) == 0 then list:remove_node() end
+end
+
 return M

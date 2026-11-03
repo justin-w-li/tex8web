@@ -78,9 +78,9 @@ end
 
 -- css/tex8web.css's @media (--tex8web-wide), a screen with room beside the
 -- text (--tex8web-textwidth, which tex8web-page.tex sets and a config may
--- set again) for the table of contents, 17em on each side. (Media queries
--- can't read custom properties; the em of one is the browser's default
--- font size, 16px, as large as the page's 12pt)
+-- set again) for the table of contents and footnotes, 17em on each side.
+-- (Media queries can't read custom properties; the em of one is the
+-- browser's default font size, 16px, as large as the page's 12pt)
 function M.wide_screens(css)
   local width = 40
   for w in css:gmatch("%-%-tex8web%-textwidth: ([%d.]+)em") do width = tonumber(w) end

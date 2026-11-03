@@ -43,6 +43,36 @@ return {
       .. "<span class='mathjax-inline'>\\(1\\)</span></span> and a<span class='tex8web-nbsp'>\u{A0}</span>b</p>")
   end,
 
+  ["text.sidenotes: each footnote after its block, in order, unless in a box"] = function()
+    local function mark(n) return ([[<span class="footnote-mark"><a href="#fnNx0" id="fnNx0-bk">N</a></span>]]):gsub("N", n) end
+    local function note(n, text)
+      return ([[<aside class="footnotetext"><p><span class="footnote-mark"><a href="#fnNx0-bk" id="fnNx0">N</a></span>]]):gsub("N", n)
+        .. text .. "</p></aside>"
+    end
+    local d = parse([[<div class="maketitle"><h1>T</h1></div>]]
+      .. "<p>One" .. mark(1) .. " and" .. mark(2) .. "</p>"
+      .. [[<div class="newtheorem"><p>Two]] .. mark(3) .. "</p></div>"
+      .. [[<div class="tcolorbox"><p>Box]] .. mark(4) .. "</p></div>"
+      .. [[<div class="footnotes"><p><a id="tk-1"></a>Thanks.</p>]]
+      .. note(1, "First") .. note(2, "Second") .. note(3, "Third") .. note(4, "Fourth") .. "</div>")
+    text.sidenotes(d)
+    local order = {}
+    for _, el in ipairs(require("tex8web.dom").elements(d:query_selector("body")[1])) do
+      order[#order + 1] = el:get_text():gsub("%d", "")
+    end
+    equal(table.concat(order, "|"), "TThanks.|One and|First|Second|Two|Third|Box|Fourth")
+    equal(#d:query_selector("div.maketitle div.thanks"), 1)
+  end,
+
+  ["text.sidenotes: the emptied footnotes go"] = function()
+    local d = parse([[<p>One<span class="footnote-mark"><a href="#fn1x0" id="fn1x0-bk">1</a></span></p>]]
+      .. [[<div class="footnotes"><aside class="footnotetext"><p><span class="footnote-mark">]]
+      .. [[<a href="#fn1x0-bk" id="fn1x0">1</a></span>First</p></aside></div>]])
+    text.sidenotes(d)
+    equal(#d:query_selector("div.footnotes"), 0)
+    equal(d:query_selector("aside")[1]:get_attribute("class"), "footnotetext tex8web-sidenote")
+  end,
+
   ["page.build_data: the PDF and the macros, and the element removed"] = function()
     local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf">\newcommand{\x}{x}</script>]])
     local context = {}

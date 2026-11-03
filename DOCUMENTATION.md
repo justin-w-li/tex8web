@@ -91,7 +91,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
   - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`;
   - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (listed in `css/tex8web.css`).
 
-  In a config's `\Css`, `@media (--tex8web-wide)` (and `not (--tex8web-wide)`) is a screen with room for the table of contents beside the text.
+  In a config's `\Css`, `@media (--tex8web-wide)` (and `not (--tex8web-wide)`) is a screen with room for the table of contents and footnotes beside the text.
 
 `examples/custom/custom.cfg` and `examples/complex/complex.cfg` are worked examples: a layout for a document's header box, and macros for MathJax.
 
@@ -100,6 +100,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 - **Controls:** quiet icons at the top left: the table of contents (on a narrow screen), the PDF (with `\WebPDF`), and light or dark.
 - **Theme:** the page follows the reader's light or dark setting until they choose with the button. The choice is kept in the browser (`localStorage`, key `tex8web-theme`), for every tex8web page of the site, and applied before the page is drawn. `data-theme="light"` or `"dark"` on the root element sets it. Light mode uses the PDF's colors; TikZ pictures are inverted in dark mode.
 - **Table of contents:** `\tableofcontents` (or a box holding only the table of contents) moves out of the text, beside it on a wide screen and into a drawer behind the contents button on a narrow one. It marks the section being read and shows that section's subsections.
+- **Footnotes** follow the paragraph, list or theorem that holds their mark: beside it on a wide screen, lined up with the mark, and below it on a narrow one. A footnote in a table, figure, box or formula stays at the end of the page. (`tex8web.mk4` gives tex4ht the `fn-in` option, which keeps footnotes on the page; `\thanks` stays under the title.)
 - **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), and the theme follows the system.
 - **Links:** each heading and numbered theorem has a `#` link to it in the margin, shown on hover.
 - **Link previews** get the title, and the abstract as the description, if the document has one.
@@ -255,11 +256,11 @@ A second, short document unlike the first:
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats) |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
-| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, no-break spaces, links, controls and the table of contents, meta tags, scripts |
+| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, no-break spaces, footnotes, links, controls and the table of contents, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `prerender.lua` | the files next to the page, bibtex and biber, prerendering |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/tex8web.js` | MathJax's sizes set as TeX's |
-| `js/tex8web-page.js` | the theme button, the table of contents' tracking |
+| `js/tex8web-page.js` | the theme button, footnotes lined up with their marks, the table of contents' tracking |
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |
 | `examples/` | the examples |
