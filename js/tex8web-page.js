@@ -1,5 +1,5 @@
-// tex8web's page in the browser: the theme button, the controls' bar on a
-// narrow screen, smooth scrolling to links, footnotes lined up with their
+// tex8web's page in the browser: the theme button, the contents button on
+// a wide screen, the controls' bar on a narrow screen, smooth scrolling to links, footnotes lined up with their
 // marks, the table of contents following the section being read, and
 // previews of what a link on the page leads to. page.lua and text.lua
 // build what this works on (and page.lua marks <html> tex8web-js before
@@ -8,6 +8,7 @@
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
+  const layout = () => getComputedStyle(root).getPropertyValue('--tex8web-layout').trim();
 
   // the theme: light or dark as the reader last chose, on any tex8web page
   // (a script in <head> applies it before the page is drawn), or else as
@@ -38,6 +39,43 @@
     button.hidden = false;
   }
 
+  // on a wide screen, the contents button hides or shows the column of
+  // contents (css/tex8web.css), as the reader last chose on any tex8web
+  // page (a script in <head> applies it before the page is drawn); on a
+  // narrow one it opens the drawer, as its popovertarget does
+  function column() {
+    const button = document.querySelector('.tex8web-contents');
+    if (!button) return;
+    let timer;
+    const label = () => {
+      if (layout() !== 'wide') {
+        button.title = 'Contents';
+        button.removeAttribute('aria-expanded');
+      } else {
+        const hidden = root.classList.contains('tex8web-toc-hidden');
+        button.title = hidden ? 'Show contents' : 'Hide contents';
+        button.setAttribute('aria-expanded', String(!hidden));
+      }
+      button.setAttribute('aria-label', button.title);
+    };
+    button.addEventListener('click', event => {
+      if (layout() !== 'wide') return;
+      // (cancelling the click cancels the popovertarget's opening)
+      event.preventDefault();
+      clearTimeout(timer);
+      root.classList.add('tex8web-toggling');
+      timer = setTimeout(() => root.classList.remove('tex8web-toggling'), 400);
+      const hidden = root.classList.toggle('tex8web-toc-hidden');
+      try {
+        if (hidden) localStorage.setItem('tex8web-contents', 'hidden');
+        else localStorage.removeItem('tex8web-contents');
+      } catch {}
+      label();
+    });
+    addEventListener('resize', label);
+    label();
+  }
+
   // the controls, in a bar across the top on a narrow screen
   // (css/tex8web.css): out of the way while the reader scrolls down, back as
   // soon as they scroll up; and as the window goes from wide to narrow,
@@ -46,7 +84,6 @@
   function bar() {
     const controls = document.querySelector('.tex8web-controls');
     if (!controls) return;
-    const layout = () => getComputedStyle(root).getPropertyValue('--tex8web-layout').trim();
     const motion = matchMedia('(prefers-reduced-motion: no-preference)');
     const top = () => scrollY <= controls.offsetHeight;
     let was = layout(), width = innerWidth, last = scrollY, timer;
@@ -276,6 +313,7 @@
   }
 
   theme();
+  column();
   bar();
   smooth();
   sidenotes();

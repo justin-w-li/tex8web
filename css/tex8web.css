@@ -252,14 +252,13 @@ dd.enumerate-enumitem { margin-left: 0; }
             inset: calc(env(safe-area-inset-top, 0px) + 0.5rem) auto auto 0.75rem;
             padding: 0.125rem; border: 0; border-radius: 0.5rem;
             transform: none; transition: opacity 0.2s; }
-        .tex8web-narrowing .tex8web-away:not(:has(:focus-visible)) .tex8web-contents {
-            display: none; }
     }
 }
 
 /* the table of contents: a drawer from the left, which the contents button
    opens (sliding in, unless the reader would rather not); on a wide screen,
-   a column beside the text, as wide as the drawer and as footnotes. Its
+   a column beside the text, as wide as the drawer and as footnotes, which
+   the button hides and shows with tex8web-page.js (fading). Its
    lines close together, and entries a little apart. tex8web-page.js marks
    the section being read, and shows only its section's subsections */
 :root { --tex8web-margin: 14rem; }
@@ -295,11 +294,19 @@ dd.enumerate-enumitem { margin-left: 0; }
     /* (the icons where they are in the narrow screen's bar) */
     .tex8web-controls { inset: calc(env(safe-area-inset-top, 0px) + 0.5rem) auto auto 0.75rem;
         padding: 0.125rem; border: 0; border-radius: 0.5rem; }
-    .tex8web-contents { display: none; }
+    /* (the button needs tex8web-page.js here) */
+    :root:not(.tex8web-js) .tex8web-contents { display: none; }
     .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
         inset: 4rem auto 1rem 0.75rem; width: var(--tex8web-margin); height: auto; padding: 0 0.5rem 0 0.375rem; border: 0;
         background: none; translate: none; transition: none; }
+    .tex8web-toc-hidden .tex8web-toc { display: none; opacity: 0; }
     .tex8web-toc::backdrop { display: none; }
+    /* (only as the button is pressed: not as the page loads, or as the
+       window widens) */
+    @media (prefers-reduced-motion: no-preference) {
+        .tex8web-toggling .tex8web-toc { transition: opacity 0.2s, display 0.2s allow-discrete; }
+        @starting-style { .tex8web-toggling .tex8web-toc { opacity: 0; } }
+    }
 }
 
 /* footnotes (text.lua), each after the paragraph that holds its mark; on a

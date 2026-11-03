@@ -46,7 +46,7 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
   - `fonts/` (Latin Modern; the sans-serif only if the page uses it);
   - the pictures;
   - the PDF (with `\WebPDF`);
-  - `tex8web-page.js` (the theme button and the table of contents' tracking);
+  - `tex8web-page.js` (the theme and contents buttons and the table of contents' tracking);
   - `tex8web.js` (when not prerendered).
 
   The paths are relative, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can serve one copy of them.
@@ -97,13 +97,13 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 
 ## On the page
 
-- **Controls:** quiet icons at the top left: the table of contents (on a narrow screen), the PDF (with `\WebPDF`, in a new tab), and light or dark. On a narrow screen they're in a bar across the top, which slides away while the reader scrolls down and comes back as they scroll up. From a wide screen to a narrow one, the icons and the table of contents fade out (unless the reader's system asks for reduced motion), and the bar comes back as the reader scrolls up, or at once at the top of the page.
+- **Controls:** quiet icons at the top left: the table of contents (a drawer on a narrow screen; on a wide one, the button hides or shows the column, fading, and the page remembers the choice as it does the theme), the PDF (with `\WebPDF`, in a new tab), and light or dark. On a narrow screen they're in a bar across the top, which slides away while the reader scrolls down and comes back as they scroll up. From a wide screen to a narrow one, the icons and the table of contents fade out (unless the reader's system asks for reduced motion), and the bar comes back as the reader scrolls up, or at once at the top of the page.
 - **Theme:** the page follows the reader's light or dark setting until they choose with the button. The choice is kept in the browser (`localStorage`, key `tex8web-theme`), for every tex8web page of the site, and applied before the page is drawn. Switching fades the page from one theme to the other (a view transition), unless the reader's system asks for reduced motion. `data-theme="light"` or `"dark"` on the root element sets it. Light mode uses the PDF's colors; TikZ pictures are inverted in dark mode.
 - **Table of contents:** `\tableofcontents` (or a box holding only the table of contents) moves out of the text, beside it on a wide screen and into a drawer behind the contents button on a narrow one (sliding in, unless the reader's system asks for reduced motion), as wide in both. It marks the section being read and shows that section's subsections. The space before each entry is half the document's (tocloft's `\cftbeforesecskip` and `\cftbeforesubsecskip`, or LaTeX's), since the column or drawer is narrow.
 - **Footnotes** follow the paragraph, list or theorem that holds their mark: beside it on a wide screen, lined up with the mark, and below it on a narrow one. A footnote in a table, figure, box or formula stays at the end of the page. (`tex8web.mk4` gives tex4ht the `fn-in` option, which keeps footnotes on the page; `\thanks` stays under the title.)
 - **Previews:** pointing at a link to something on the page (`\ref`, `\eqref`, `\cite`, a footnote mark, a section) shows a copy of it in a card, over the text column: the theorem, box or table, the equation, the reference, the figure, the footnote, or the heading and what follows it. Reaching the link with the keyboard shows it too; on a touch screen, the first tap shows it and the second follows the link.
 - **Scrolling:** following a link on the page scrolls there smoothly (with JavaScript), unless the reader's system asks for reduced motion; reloading the page doesn't.
-- **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), and the theme follows the system.
+- **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), the theme follows the system, and on a wide screen the table of contents can't be hidden.
 - **Links:** each heading and numbered theorem has a `#` link to it in the margin, shown on hover.
 - **Link previews** get the title, and the abstract as the description, if the document has one.
 - **Screen readers** get each formula as MathML. Speech and braille are MathJax's to add when it runs in the browser (in its menu).

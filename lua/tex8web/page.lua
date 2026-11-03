@@ -98,7 +98,7 @@ local function contents(document, body)
 end
 
 -- the controls at the top left: the table of contents (as a drawer, on a
--- narrow screen), the PDF (\WebPDF), copied next to the page, and the
+-- narrow screen; hidden or shown, on a wide one), the PDF (\WebPDF), copied next to the page, and the
 -- theme, which needs tex8web-page.js; then the table of contents
 function M.controls(document, context)
   local body = document:query_selector("body")[1]
@@ -156,7 +156,8 @@ function M.meta_tags(document)
 end
 
 -- tex8web-page.js (the theme button, the table of contents' tracking),
--- with the reader's theme applied first; and for MathJax in the browser,
+-- with the reader's theme, and whether they hid the table of contents,
+-- applied first; and for MathJax in the browser,
 -- MathJax and tex8web.js, which configures it from tex8web-config
 -- (prerender.mjs removes those two again)
 function M.scripts(document, context)
@@ -169,7 +170,9 @@ function M.scripts(document, context)
   -- (LuaXML escapes <, > and & in a script; this has none)
   script({}, "document.documentElement.classList.add('tex8web-js'); "
     .. "try { const theme = localStorage.getItem('tex8web-theme'); "
-    .. "if (theme) document.documentElement.dataset.theme = theme } catch (e) {}")
+    .. "if (theme) document.documentElement.dataset.theme = theme; "
+    .. "if (localStorage.getItem('tex8web-contents') === 'hidden') "
+    .. "document.documentElement.classList.add('tex8web-toc-hidden') } catch (e) {}")
   assets.add(context.root .. "/js/tex8web-page.js", context.dir .. "/tex8web-page.js")
   script({src = "tex8web-page.js", defer = "defer"})
   script({src = "tex8web.js"})
