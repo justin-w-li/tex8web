@@ -6,13 +6,12 @@
 // build/test/<document>/visual/. In both, the columns of an alignment
 // should line up across its \intertext.
 //   node test/visual.mjs [document names...]
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build, documents, root } from './lib/build.mjs';
+import { build, documents, expected, testDir } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
 
-const expected = JSON.parse(readFileSync(join(root, 'test/expected.json'), 'utf8'));
 const only = process.argv.slice(2);
 const screen = 900;
 
@@ -70,7 +69,7 @@ async function screens(chrome, file) {
 const chrome = await launch();
 let failures = 0;
 for (const doc of documents().filter(d => !only.length || only.includes(d.name))) {
-  const dir = join(root, 'build/test', doc.name.replace(/[^A-Za-z0-9]/g, '_'));
+  const dir = testDir(doc);
   const [pre, browser] = [join(dir, 'html'), join(dir, 'fallback')];
   const visual = join(dir, 'visual');
   rmSync(visual, { recursive: true, force: true });

@@ -7,6 +7,12 @@ import { fileURLToPath } from 'node:url';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
+// the problems a document is known to have (test/expected.json)
+export const expected = JSON.parse(readFileSync(join(root, 'test/expected.json'), 'utf8'));
+
+// where the tests build a document
+export const testDir = doc => join(root, 'build/test', doc.name.replace(/[^A-Za-z0-9]/g, '_'));
+
 // test/fixtures/*.tex and examples/*/main.tex, each with its config: the
 // example's own <name>.cfg if it has one, otherwise tex8web.cfg
 export function documents() {

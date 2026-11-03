@@ -4,10 +4,9 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { build, documents, pool, root } from './lib/build.mjs';
+import { build, documents, expected, pool, root, testDir } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
-const expected = JSON.parse(readFileSync(join(root, 'test/expected.json'), 'utf8'));
 const only = process.argv.slice(2);
 let failures = 0;
 
@@ -78,9 +77,8 @@ function check(doc, result, out, aux) {
 }
 
 const docs = documents().filter(doc => !only.length || only.includes(doc.name));
-const dirOf = doc => join(root, 'build/test', doc.name.replace(/[^A-Za-z0-9]/g, '_'));
 await pool(docs, 2, async doc => {
-  const out = join(dirOf(doc), 'html'), aux = join(dirOf(doc), 'aux');
+  const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
   const result = await build(doc, out, aux);
   report(doc.name, check(doc, result, out, aux));
 });
@@ -88,7 +86,7 @@ await pool(docs, 2, async doc => {
 // the page MathJax typesets in the browser, without node_modules
 if (!only.length) {
   const doc = docs.find(d => d.name === 'test-generic');
-  const out = join(dirOf(doc), 'fallback'), aux = join(dirOf(doc), 'fallbackaux');
+  const out = join(testDir(doc), 'fallback'), aux = join(testDir(doc), 'fallbackaux');
   const result = await build(doc, out, aux, { TEX8WEB_NO_PRERENDER: '1' });
   const html = existsSync(join(out, `${doc.name}.html`)) ? readFileSync(join(out, `${doc.name}.html`), 'utf8') : '';
   const problems = [];
