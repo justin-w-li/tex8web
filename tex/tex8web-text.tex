@@ -193,6 +193,11 @@
 
 % --- figures ----------------------------------------------------------------
 
+% no alt text but the author's (graphicx's alt key): tex4ht's own, PIC and
+% [Picture] (html4.4ht), are read aloud by screen readers
+\Configure{GraphicsAlt}{}
+\Configure{Picture-alt}{}
+
 % \includegraphics[width=..] becomes a percentage of the column, as in the
 % PDF; other sizes as tex4ht writes them
 \ExplSyntaxOn

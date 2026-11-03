@@ -107,7 +107,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 - **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), the theme follows the system, and on a wide screen the table of contents can't be hidden.
 - **Links:** each heading and numbered theorem has a `#` link to it in the margin, shown on hover.
 - **Link previews** get the title, and the abstract as the description, if the document has one.
-- **Screen readers** get each formula as MathML. Speech and braille are MathJax's to add when it runs in the browser (in its menu).
+- **Screen readers** get each formula as MathML. Speech and braille are MathJax's to add when it runs in the browser (in its menu). An image's alt text is graphicx's `alt` key, or empty, which they skip.
 
 ## Differences from the PDF
 
@@ -152,6 +152,7 @@ Each `main.tex` names its source, license and changes at the top.
   - each enumitem list with its own lengths;
   - MathML for every formula;
   - every link and file in place;
+  - no image with tex4ht's made-up alt text (PIC, [Picture]);
   - nothing but published files in the output.
 
   It also builds one document for MathJax in the browser. `test/expected.json` lists the known problems a document is allowed, with the reason. `node test/run.mjs <name>` checks one document.

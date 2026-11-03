@@ -95,6 +95,9 @@ function checkPage(page, name) {
   if (/<dl(?![^>]*style=)[^>]*class=['"]enumerate-enumitem/.test(html)) {
     problems.push(`${name}: an enumitem list without its lengths`);
   }
+  // (tex4ht's made-up alt text, which a screen reader would read)
+  const alts = [...html.matchAll(/<img(?![^>]* alt=['"](?!PIC['"]|\[Picture\]['"]))[^>]*>/g)];
+  if (alts.length) problems.push(`${name}: ${alts.length} image(s) without alt text or with tex4ht's`);
   // (a \thanks's mark in the title, and again before its note)
   const [title, notes = ''] = html.split(/class=['"]thanks['"]/);
   const marks = text => (text.match(/class=['"]thank-mark['"]/g) || []).length;
