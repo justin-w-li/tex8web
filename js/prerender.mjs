@@ -18,10 +18,13 @@ const html = readFileSync(file, 'utf8');
 const data = JSON.parse(html.match(/<script[^>]*id=["']tex8web-config["'][^>]*>([^]*?)<\/script>/)[1]);
 runInThisContext(readFileSync(new URL('tex8web.js', import.meta.url), 'utf8'));
 const config = globalThis.tex8web(data.mathjax, data.tex);
-// everything at once, and MathML for screen readers, but no menu (it needs
-// the browser)
+// everything at once, but no menu (it needs the browser); and no MathML for
+// screen readers unless TEX8WEB_MATHML is set (the tests check the math by
+// it): a hidden copy of every formula, it is a quarter of a long page and
+// most of the time a phone takes to lay the page out
+const mathml = Boolean(process.env.TEX8WEB_MATHML);
 config.loader.load = config.loader.load.filter(name => name !== 'ui/lazy')
-  .concat('adaptors/liteDOM', 'a11y/assistive-mml');
+  .concat('adaptors/liteDOM', mathml ? ['a11y/assistive-mml'] : []);
 config.loader.paths = { mathjax: 'mathjax' };
 config.loader.require = require;
 // (the components add options for the menu, which isn't loaded, and MathJax
@@ -30,8 +33,9 @@ config.loader.ready = () => {
   delete MathJax.config.options.menuOptions;
   MathJax.loader.defaultReady();
 };
-Object.assign(config.options, { enableEnrichment: false, enableSpeech: false, enableBraille: false,
-  enableAssistiveMml: true });
+Object.assign(config.options, { enableEnrichment: false, enableSpeech: false, enableBraille: false });
+// (an option of a11y/assistive-mml's, which MathJax warns of without it)
+if (mathml) config.options.enableAssistiveMml = true;
 config.startup.document = html;
 globalThis.MathJax = config;
 require('mathjax/tex-chtml.js');

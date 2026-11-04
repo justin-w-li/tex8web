@@ -25,7 +25,8 @@ export function checkLog(log) {
   // (make4ht falls back to parsing the page as HTML when tex4ht's isn't
   // well-formed XML, as with boxes and minipages; the browser does the same)
   const benign = /XML DOM parsing of .* failed|luaxml-mod-xml\.lua:\d+: Unbalanced Tag|HTML DOM parsing OK/;
-  return log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]/.test(l) && !benign.test(l))
+  // (MathJax's own warnings, from prerendering, start with "MathJax:")
+  return log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]|^MathJax:/.test(l) && !benign.test(l))
     .map(line => line.trim());
 }
 
@@ -101,9 +102,10 @@ const pageChecks = [
     }
     return [];
   },
+  // (with TEX8WEB_MATHML, which the tests set)
   function mathML(html) {
     const math = count(html, /<mjx-container/g), mathml = count(html, /<mjx-assistive-mml/g);
-    return math !== mathml ? [`${math} formulas, ${mathml} with MathML for screen readers`] : [];
+    return mathml && math !== mathml ? [`${math} formulas, ${mathml} with MathML for screen readers`] : [];
   },
   function links(html, page) {
     const problems = [];

@@ -82,7 +82,7 @@ const size = doc => statSync(join(doc.dir, doc.tex)).size;
 // that the longest build doesn't hold up the end
 const jobs = [...docs].sort((a, b) => size(b) - size(a)).map(doc => async () => {
   const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
-  const result = await build(doc, out, aux);
+  const result = await build(doc, out, aux, { TEX8WEB_MATHML: '1' });
   report(doc.name, check(doc, result, out, aux));
 });
 

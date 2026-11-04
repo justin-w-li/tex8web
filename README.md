@@ -1,6 +1,6 @@
 # tex8web
 
-tex8web turns a LaTeX document into a web page that looks like its PDF. It is a configuration for [make4ht](https://ctan.org/pkg/make4ht) (tex4ht). tex4ht writes the text; MathJax typesets the math from its LaTeX source, at build time. The page is plain HTML and CSS, with a little JavaScript it doesn't need: a table of contents beside the text that follows your place, footnotes beside their paragraph, previews of what a reference points to, and a light/dark switch. It works offline and saved, and gives screen readers the math as MathML.
+tex8web turns a LaTeX document into a web page that looks like its PDF. It is a configuration for [make4ht](https://ctan.org/pkg/make4ht) (tex4ht). tex4ht writes the text; MathJax typesets the math from its LaTeX source, at build time. The page is plain HTML and CSS, with a little JavaScript it doesn't need: a table of contents beside the text that follows your place, footnotes beside their paragraph, previews of what a reference points to, and a light/dark switch. It works offline and saved.
 
 ## Install
 

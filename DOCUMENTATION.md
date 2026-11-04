@@ -29,6 +29,7 @@ A page goes through four stages:
    - line breaks after relations;
    - the columns of an alignment split at `\intertext`, each as wide as in the widest part. These parts aren't left for MathJax to typeset as they scroll into view.
 4. **Prerendering** (`js/prerender.mjs`). MathJax typesets the page in Node, configured as it would be in the browser, and the page keeps the result.
+   - It leaves out the MathML MathJax adds for screen readers, a hidden copy of each formula that is a quarter of a long page and most of what a phone takes to lay it out. `TEX8WEB_MATHML=1` keeps it, as the tests do: they check the math by it.
    - Without `node_modules/` (or with `TEX8WEB_NO_PRERENDER=1`), this step is skipped. The page then loads MathJax from jsDelivr, typesets the math as it scrolls into view, and gives screen readers MathML.
    - tex8web.js relies on MathJax's internals. That is why MathJax's version is pinned in `package.json`, which both the prerendering and the page's script use. `npm test` checks what it makes of `test.tex`'s math (`typeset` in `test/run.mjs`): run it when updating MathJax.
 
@@ -109,7 +110,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 - **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), the theme follows the system, and on a wide screen the table of contents can't be hidden.
 - **Links:** each heading and numbered theorem has a `#` link to it in the margin, shown on hover. A narrow screen has no room for it, so there the heading or theorem's head is the link (links inside it still work; a theorem's head that wraps is a link only as far across as its last line).
 - **Link previews** get the title, and the abstract as the description, if the document has one.
-- **Screen readers** get each formula as MathML. Speech and braille are MathJax's to add when it runs in the browser (in its menu). An image's alt text is graphicx's `alt` key, or empty, which they skip.
+- **Screen readers** get each formula as MathML only when MathJax typesets it in the browser, which also adds speech and braille in its menu, or when the page is built with `TEX8WEB_MATHML=1`. An image's alt text is graphicx's `alt` key, or empty, which they skip.
 
 ## Differences from the PDF
 
@@ -153,7 +154,7 @@ Each `main.tex` names its source, license and changes at the top.
   - the table of contents beside the text, not in it, each entry's number in its box, and each heading's label holding its entry's number, with one space after it, which the stylesheet sizes; and test-generic's measured spacing, label space and title size;
   - each enumitem list with its own lengths;
   - in `test.tex`, what tex8web.js makes of the math through MathJax's internals (delimiter sizes, an align's rows);
-  - MathML for every formula;
+  - MathML for every formula (the tests build with `TEX8WEB_MATHML=1`);
   - every link and file in place;
   - no image with tex4ht's made-up alt text (PIC, [Picture]);
   - nothing but published files in the output.

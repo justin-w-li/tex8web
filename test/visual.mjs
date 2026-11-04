@@ -214,7 +214,7 @@ async function screens(chrome, file) {
 const docs = documents().filter(d => !only.length || only.includes(d.name));
 // each document built twice, prerendered (html) and for the browser
 // (fallback), a few builds at a time (a build runs mostly on one core)
-const variants = [['html', 'aux', {}], ['fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
+const variants = [['html', 'aux', { TEX8WEB_MATHML: '1' }], ['fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
 const codes = await pool(docs.flatMap(doc => variants.map(variant => [doc, ...variant])),
   Math.max(2, availableParallelism() >> 1),
   async ([doc, out, aux, env]) => (await build(doc, join(testDir(doc), out), join(testDir(doc), aux), env)).code);
