@@ -155,7 +155,7 @@ These are deliberate:
 - **Macros MathJax can't read** (see `\WebMathMacros` above), and macros that parse their arguments themselves, such as comma-separated lists. MathJax shows these in red.
 - **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.
 - **tcolorbox:** a box gets its colors (with darker ones in dark mode), rules, corners, borderlines, shadow, spacing and title font; a boxed title is a tab at the top of the box, and `attach title to upper` starts the text. What a skin draws freehand with TikZ (`interior code`, `frame code`, overlays, shadings) comes out as a plain frame and background. Pictures inside listing boxes (`tcblisting` side by side) aren't converted. A fragile command in a box's title can break the build; `\robustify` it in your config. A box whose title shows a counter it steps itself (`step=exercise, title=Exercise~\theexercise`), holding a box that steps the same counter, shows the inner box's number in its title, as tex4ht writes the title after the box's contents (`\newtcbtheorem`'s and auto counters' numbers are right).
-- **`\color` as a declaration** (`{\color{blue} text}`) is lost, and the text keeps the color around it; `\textcolor{blue}{text}` keeps its color (tex4ht's).
+- **`\color` as a declaration** (`{\color{blue} text}`) gets a span like `\textcolor`'s, with the same color in dark mode, but black is the page's text color. Given before them in its group, it doesn't reach what tex4ht writes without a `<p>` (a heading, a table's cells, a `\parbox`'s text), nor a list's labels. A float in a colored group takes its color, which in the PDF it doesn't (nor is `\normalcolor` followed). Where tex4ht leaves an argument without a group (ulem's `\uline` and `\sout`), a `\color` in it lasts past it, as a font change does.
 - **The reader's place** is kept by a theorem's id, tex4ht's count of it: a theorem added before it in the document moves the place to the one before.
 - **A minipage in a paragraph's text** (`text \begin{minipage}..\end{minipage} text`) breaks the paragraph around it, and `\centering` in a minipage is followed only in a figure, which is centered as a whole.
 - **Minipages, more:** two minipages each in its own `\fbox` stay one above the other. On a screen that always shows a scroll bar, a band of window widths as wide as the bar treats the column as wide while it is narrower than the text: a minipage wrapped alone onto a line keeps its PDF width there rather than the column's. A `\ref` to a figure inside a minipage leads to the whole figure, where tex4ht puts the caption's anchor.
@@ -192,6 +192,7 @@ Each `main.tex` names its source, license and changes at the top.
   - each enumitem list with its own lengths;
   - in `test.tex`, what tex8web.js makes of the math through MathJax's internals (delimiter sizes, an align's rows);
   - in `test-index.tex`, the index: its entries, a subentry, a page range and a "see", each number linking back to its `\index`, an entry indexed three times in a row with three numbers rather than a range, and numbers in an entry's text left as they are; in `test-imakeidx.tex`, imakeidx's main index and a named one, with its title and style file;
+  - in `test-color.tex`, `\color` as a declaration, and tex4ht's page well-formed;
   - MathML for every formula (the tests build with `TEX8WEB_MATHML=1`);
   - every link and file in place, and no id repeated;
   - no image with tex4ht's made-up alt text (PIC, [Picture]);
@@ -316,7 +317,7 @@ A report: a list of figures before the table of contents, a part, two chapters w
 | `tex/tex8web-core.tex` | loads the four modules below |
 | `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ pictures in display math |
 | `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, framed's boxes, figures |
-| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, colors (`\WebColor`), the document's measurements and heading fonts |
+| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, colors (`\WebColor`, `\color` as a declaration), the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats, tcolorbox's options, imakeidx's commands for its indexes), and `\web@needs`, which warns when tex4ht or a package no longer has what tex8web patches |
 | `css/tex8web.css` | the page's styles |

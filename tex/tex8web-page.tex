@@ -57,7 +57,8 @@
 }
 % \web@hex{color}\macro: the color's hex code, which xcolor converts; with
 % only the color package (which hyperref's colorlinks load), read from the
-% driver's form color keeps (rgb r g b, gray g or cmyk c m y k)
+% driver's form color keeps (rgb r g b, gray g or cmyk c m y k). The color
+% . is the current one
 \ExplSyntaxOn
 \tl_new:N \l__web_color_tl
 \tl_new:N \l__web_hex_tl
@@ -69,9 +70,11 @@
         }
         {
             \tl_set:Nn \l__web_hex_tl {000000}
-            \cs_if_exist:cT { \token_to_str:N \color@ #1 }
+            \str_if_eq:nnTF {#1} {.}
+                { \tl_set_eq:NN \l__web_color_tl \current@color }
+                { \tl_set:Ne \l__web_color_tl { \cs_if_exist_use:c { \token_to_str:N \color@ #1 } } }
+            \tl_if_empty:NF \l__web_color_tl
                 {
-                    \tl_set:Ne \l__web_color_tl { \use:c { \token_to_str:N \color@ #1 } }
                     \regex_replace_all:nnN { \s+ } { \  } \l__web_color_tl
                     \exp_after:wN \__web_hex_model:w \l__web_color_tl \q_stop
                 }
@@ -95,6 +98,128 @@
     \exp_args:Ne \__web_hex_pad:n { \int_to_Hex:n { \fp_eval:n { round(255*(#1)) } } }
 }
 \cs_new:Npn \__web_hex_pad:n #1 { \int_compare:nNnT { \tl_count:n {#1} } = 1 {0} #1 }
+\ExplSyntaxOff
+% \color as a declaration ({\color{red} text}), in a span like \textcolor's
+% (html4.4ht), whose \a:color, tex4ht's hook in \color (color.4ht), is
+% empty. In a paragraph the span opens at once; from vertical mode, at each
+% paragraph until the group ends. A paragraph's end, \par:end, is written
+% only before the next paragraph or block, so the span's end goes first in
+% it: whichever comes first, the group's end or the paragraph's, closes the
+% span. Black is the page's text color, as in tcolorbox's boxes
+\ExplSyntaxOn
+\tl_new:N \l__web_textcolor_tl
+\bool_new:N \l__web_textcolor_bool
+\bool_new:N \l__web_owncolor_bool
+% (\Tg doesn't leave vertical mode, which \HCode would, starting a paragraph)
+\cs_new_protected:Npn \__web_textcolor_end: { \Tg</span> }
+\prg_new_conditional:Npnn \__web_textcolor_if_open: { p, T, F } {
+    \exp_args:No \tl_if_head_eq_meaning:nNTF { \par:end } \__web_textcolor_end:
+        { \prg_return_true: } { \prg_return_false: }
+}
+\cs_new_protected:Npn \__web_textcolor_open: {
+    \HCode{<span~style="color:\l__web_textcolor_tl;">}
+    \tl_if_empty:NTF \par:end
+        { \cs_gset:Npn \par:end { \__web_textcolor_end: \cs_gset_eq:NN \par:end \empty } }
+        { \tl_gput_left:Nn \par:end { \__web_textcolor_end: } }
+}
+\cs_new_protected:Npn \__web_textcolor_close: {
+    \__web_textcolor_end:
+    \tl_gset:Ne \par:end { \exp_args:No \tl_tail:n { \par:end } }
+}
+\cs_new_protected:Npn \__web_textcolor_par: {
+    \bool_lazy_and:nnT { \mode_if_horizontal_p: } { ! \tl_if_empty_p:N \l__web_textcolor_tl }
+        { \__web_textcolor_if_open:F { \__web_textcolor_open: } }
+}
+\cs_new_protected:Npn \__web_textcolor_group_end: {
+    \__web_textcolor_if_open:T { \__web_textcolor_close: }
+    \__web_textcolor_par:
+}
+% a link's end (\EndLink) closes the spans opened in it, and ends their
+% color: hyperref's link text is a group, which tex4ht's (\hyperlink,
+% \hyperref, cleveref's) often isn't
+\tl_new:N \g__web_textcolor_link_tl
+\tl_new:N \g__web_textcolor_linkcolor_tl
+\cs_new_protected:Npn \__web_textcolor_link: {
+    \tl_gset_eq:NN \g__web_textcolor_link_tl \par:end
+    \tl_gset_eq:NN \g__web_textcolor_linkcolor_tl \l__web_textcolor_tl
+}
+\cs_new_protected:Npn \__web_textcolor_link_end: {
+    \bool_until_do:nn
+        { \tl_if_eq_p:NN \par:end \g__web_textcolor_link_tl || ! \__web_textcolor_if_open_p: }
+        { \__web_textcolor_close: }
+    \tl_set_eq:NN \l__web_textcolor_tl \g__web_textcolor_linkcolor_tl
+}
+% the color is read once it is set (\set@color), as xcolor's
+% \color{red!50!black} goes through \a:color twice. A link's color
+% (hyperref's \HyColor@UseColor) is the stylesheet's, a \colorbox's (its
+% \color@b@x) html4.4ht's, and tcolorbox's own (tcbcol...) its box's, which
+% tex8web-boxes.tex sets
+\cs_new_protected:Npn \__web_textcolor:n #1 {
+    \bool_lazy_or:nnF { \l__web_owncolor_bool } { \str_if_eq_p:ee { \str_range:nnn {#1} {1} {6} } { tcbcol } }
+        { \bool_set_true:N \l__web_textcolor_bool }
+}
+\cs_new_protected:Npn \__web_textcolor_set: {
+    \bool_if:NT \l__web_textcolor_bool {
+        \bool_set_false:N \l__web_textcolor_bool
+        \web@hex{.}\l__web_textcolor_tl
+        \str_if_eq:VnTF \l__web_textcolor_tl {000000}
+            { \tl_set:Nn \l__web_textcolor_tl { var(--tex8web-text) } }
+            { \tl_put_left:Nn \l__web_textcolor_tl {\#} }
+        \mode_if_horizontal:T { \__web_textcolor_open: }
+        \group_insert_after:N \__web_textcolor_group_end:
+    }
+}
+\cs_new_protected:Npn \__web_owncolor:n #1 {
+    \bool_set_true:N \l__web_owncolor_bool
+    #1
+    \bool_set_false:N \l__web_owncolor_bool
+}
+\cs_if_exist:NT \a:color {
+    \web@needs{par:end}
+    \Configure{color}{\__web_textcolor:n}
+    \cs_set_eq:NN \__web_set_color: \set@color
+    \cs_set:Npn \set@color { \__web_set_color: \__web_textcolor_set: }
+    % (not in a paragraph tex4ht writes without its <p>, often empty, before
+    % a list or in a float)
+    \Configure{@BODY}{
+        \cs_set_eq:NN \__web_HtmlPar: \HtmlPar
+        \cs_set:Npn \HtmlPar
+            { \legacy_if:nTF { :nopar } { \__web_HtmlPar: } { \__web_HtmlPar: \__web_textcolor_par: } }
+    }
+    \cs_set_eq:NN \__web_Link: \Link
+    \cs_set:Npn \Link { \__web_textcolor_link: \__web_Link: }
+    \cs_set_eq:NN \__web_EndLink: \EndLink
+    \cs_set:Npn \EndLink { \__web_textcolor_link_end: \__web_EndLink: }
+    \cs_if_exist:NT \HyColor@UseColor {
+        \cs_set_eq:NN \__web_HyColor_UseColor:n \HyColor@UseColor
+        \cs_set:Npn \HyColor@UseColor #1 { \__web_owncolor:n { \__web_HyColor_UseColor:n {#1} } }
+    }
+    \cs_set_eq:NN \__web_color_b_x:nnn \color@b@x
+    \cs_set:Npn \color@b@x #1#2#3 {
+        \__web_owncolor:n { \__web_color_b_x:nnn {#1} {#2} { \bool_set_false:N \l__web_owncolor_bool #3 } }
+    }
+    % (none in the page's <title>)
+    \Configure{@TITLE}{\bool_set_true:N \l__web_owncolor_bool}
+    % (article.4ht writes the title's, author's and date's elements in the
+    % group of their text: a \color in it gets a group of its own)
+    \clist_map_inline:nn { ttl, author, date } {
+        \cs_if_exist:cT { a:#1 } {
+            \tl_gput_right:cn { a:#1 } { \begingroup }
+            \tl_gput_left:cn { b:#1 } { \endgroup }
+        }
+    }
+    % a footnote is in the text's color in the PDF, which LaTeX's output
+    % routine gives it
+    \clist_map_inline:nn { \@footnotetext, \@mpfootnotetext } {
+        \cs_set_eq:cN { __web_ \cs_to_str:N #1 :n } #1
+        \cs_set:Npn #1 ##1 {
+            \group_begin:
+                \tl_clear:N \l__web_textcolor_tl
+                \use:c { __web_ \cs_to_str:N #1 :n } {##1}
+            \group_end:
+        }
+    }
+}
 \ExplSyntaxOff
 % links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
 % and the links keep the color of the text. tex4ht turns colorlinks on

@@ -156,7 +156,7 @@ const permalinks = {
     /<div class='tcolorbox proof' id='[^']+'>\s*<div class='tcolorbox-title'>\s*<!--/,
   ],
   'examples/complex': [
-    /<div class='tcolorbox definition' id='[^']+'><a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<!--[^>]*--><p[^>]*>\s*<span[^>]*>Definition<span class='tex8web-nbsp'>.<\/span>1\.2[^]*Note that <a href='#\1'>Definition/,
+    /<div class='tcolorbox definition' id='[^']+'><a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<!--[^>]*--><p[^>]*>\s*<span[^>]*>Definition<span class='tex8web-nbsp'>.<\/span>1\.2[^]*Note that <a href='#\1'><span style='color:#[0-9A-F]{6};'>Definition/,
   ],
   'test-ntheorem': [
     /<span class='head'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#<\/a><a id='\1'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1\.1<\/span>[^]*<a href='#\1'>1\.1</,
@@ -173,6 +173,29 @@ const permalinks = {
   ],
   'test-newtheorem-hyperref': [
     /<span class='head'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#<\/a><a id='\1'><\/a>\s*<a id='theorem\.1'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1<\/span>[^]*<a href='#\1'>1</,
+  ],
+};
+
+// \color as a declaration, in test-color.tex, in spans that close and open
+// again at each paragraph, and never left open past an element tex4ht
+// closes; the theorem's head isn't colored, as in the PDF. A footnote, a
+// link and a box keep their own colors. tex4ht's page must be well-formed,
+// which make4ht would otherwise mend silently
+const colors = {
+  'test-color': [
+    /<h1 class='titleHead'><span style='color:#0000FF;'>Colors<\/span><\/h1>\s*<div class='author'><span style='color:#FF0000;'><span [^>]*>Someone<\/span><\/span><\/div>/,
+    /Heading <span style='color:#0000FF;'>in blue<\/span><\/h3>/,
+    /A <span style='color:#FF0000;'>red<\/span> word, <span style='color:#000080;'>a mix<\/span>, <span style='color:#008000;'>a model<\/span> and <span style='color:#0A7828;'>leaf <span style='color:#FF0000;'>red<\/span> leaf<\/span>\. <span style='color:#FF0000;'>Red, <span style='color:var\(--tex8web-text\);'>black,<\/span> red<\/span>, <span class='colorbox' id='colorbox1'>boxed<\/span>, <span class='colorbox' id='colorbox2'><span style='color:#FF0000;'>red boxed<\/span><\/span>,\s*<a href='#here'><span style='color:#FF0000;'>linked<\/span><\/a> after\.\s*<\/p><!--[^>]*--><p[^>]*>\s*<a id='here'><\/a>Not red\./,
+    /<p[^>]*>\s*<span style='color:#0A7828;'>A first paragraph in leaf\.\s*<\/span><\/p><!--[^>]*--><p[^>]*>\s*<span style='color:#0A7828;'>A second paragraph in leaf\.<\/span>\s*<\/p>/,
+    /Black <span style='color:#FF0000;'>until the end\.\s*<\/span><\/p><!--[^>]*--><p[^>]*>\s*<span style='color:#FF0000;'>A paragraph<\/span> after\./,
+    /Theorem 1\.<\/span>\s*<\/span><span style='color:#FF0000;'><span class='cmti-10'>A red theorem\.<\/span>\s*<\/span>\s*<\/p>/,
+    /<p[^>]*><span style='color:#0000FF;'>Centered in blue\.<\/span><\/p><\/div>/,
+    /<div class='minipage[^>]*><!--[^>]*--><p[^>]*><span style='color:#0000FF;'>In a minipage\.\s*<\/span>\s*<\/p><\/div><\/div>\s*<ul class='itemize1'>\s*<li class='itemize'><span style='color:#FF0000;'>One\.\s*<\/span><\/li>\s*<li class='itemize'><span style='color:#FF0000;'>Two\.<\/span><\/li><\/ul>/,
+    /<mjx-mstyle [^>]*style='color: red;'>/,
+    /<aside class='footnotetext tex8web-sidenote'[^>]*>\s*<!--[^>]*--><p[^>]*><a id='[^']+'><\/a><span class='footnote-mark'>[^]*?<span class='cmr-8'>In the text’s color\.<\/span><\/p><\/aside>/,
+    /and <a href='https:\/\/example\.com'>a link<\/a>, by <a href='#[^']+'><span style='color:#008080;'>theorem<\/span><span class='tex8web-nbsp'>.<\/span>1<\/a>\./,
+    /<p[^>]*>\s*<span style='color:#0000FF;'>Before a box\.\s*<\/span>\s*<\/p>\s*<div class='tcolorbox /,
+    /<div class='tcolorbox-content'><!--[^>]*--><p[^>]*>In the box’s colors, <span style='color:#FF0000;'>and red<\/span>\.<\/p>/,
   ],
 };
 
@@ -222,6 +245,12 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of permalinks[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the links`);
+  }
+  for (const pattern of colors[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the colors`);
+  }
+  if (colors[doc.name] && /XML DOM parsing of .* failed/.test(result.log)) {
+    problems.push("tex4ht's page isn't well-formed XML");
   }
   // (prerender.mjs leaves out a token of one character)
   if (/<mjx-m[ion](?: (?:space|size)='[^']*')*><mjx-c class='[^']*'>[^<]*<\/mjx-c><\/mjx-m[ion]>/.test(html)) {
