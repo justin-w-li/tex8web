@@ -1,0 +1,17 @@
+% A test for tex8web's index: makeidx's \makeindex and \printindex, with
+% entries on several pages, a subentry, a page range and a "see" entry; each
+% number links back to its \index.
+\documentclass{article}
+\usepackage{makeidx}
+\makeindex
+\begin{document}
+\section{Groups}
+A group\index{group} is a set with an associative operation.
+\index{group!abelian}An abelian group is one whose operation commutes.
+\index{ring|(}A ring has two operations.
+\newpage
+\section{Rings}
+A field\index{field} is a ring whose nonzero elements form a group\index{group}.
+\index{ring|)}\index{module|see{ring}}
+\printindex
+\end{document}

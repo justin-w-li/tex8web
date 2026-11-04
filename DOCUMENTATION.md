@@ -54,7 +54,8 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
 
   The paths are relative, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can serve one copy of them.
 - **Bibliographies:** `tex8web.mk4` runs bibtex or biber when the document has a bibliography (make4ht itself doesn't).
-- **Platform:** the build calls the shell to run Node and bibtex, so it needs a POSIX system (macOS, Linux); Windows isn't supported yet.
+- **Indexes:** `tex8web.mk4` runs makeindex when the document has an index (makeidx's or imakeidx's `\makeindex`), through make4ht's indexing library, which links each number in the index back to its `\index`.
+- **Platform:** the build calls the shell to run Node, bibtex and makeindex, so it needs a POSIX system (macOS, Linux); Windows isn't supported yet.
 
 ## Your own config
 
@@ -132,6 +133,7 @@ These are deliberate:
 - Paragraphs are separated by space instead of indented.
 - Display math that doesn't fit scrolls sideways; on a narrow screen, so does a table or verbatim block that doesn't, rather than widening the page.
 - The table of contents has no page numbers or dot leaders.
+- An index is in one column, and its entries' numbers count the `\index` commands in order, as tex4ht's do, rather than giving pages.
 - Dark mode has its own palette.
 
 ## Known limitations
@@ -145,6 +147,7 @@ These are deliberate:
 - **A minipage in a paragraph's text** (`text \begin{minipage}..\end{minipage} text`) breaks the paragraph around it, and `\centering` in a minipage is followed only in a figure, which is centered as a whole.
 - **Minipages, more:** two minipages each in its own `\fbox` stay one above the other. On a screen that always shows a scroll bar, a band of window widths as wide as the bar treats the column as wide while it is narrower than the text: a minipage wrapped alone onto a line keeps its PDF width there rather than the column's. A `\ref` to a figure inside a minipage leads to the whole figure, where tex4ht puts the caption's anchor.
 - **A picture's height:** only `\includegraphics`'s `width` is followed. With `height` (alone, or with `width`), the picture keeps its own proportions, at a size that isn't the PDF's.
+- **Indexes:** only the document's main index is made, not imakeidx's others (`\makeindex[name=...]`), and imakeidx's `program` and `options` aren't followed: makeindex always runs, with no style file. A number in an entry's text after `^`, `[` or a comma (`\index{$L^2$ space}`) is taken for a page and made a link, which breaks the formula (make4ht's `make4ht-indexing.lua`).
 - **Chapters:** a chapter's label is tex4ht's, and without tocloft the table of contents is indented as in article, not as in book or report.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX (sidenotes, margin figures, letterspacing), need a config of their own.
 - **The theme button, while a long page loads,** shows with the other controls but does nothing until `tex8web-page.js` runs, which as a deferred script waits for the whole page to be read in.
@@ -170,6 +173,7 @@ Each `main.tex` names its source, license and changes at the top.
   - the table of contents beside the text, not in it, each entry's number in its box, and each heading's label holding its entry's number, with one space after it, which the stylesheet sizes; and test-generic's measured spacing, label space and title size;
   - each enumitem list with its own lengths;
   - in `test.tex`, what tex8web.js makes of the math through MathJax's internals (delimiter sizes, an align's rows);
+  - in `test-index.tex`, the index: its entries, a subentry, a page range and a "see", each number linking back to its `\index`;
   - MathML for every formula (the tests build with `TEX8WEB_MATHML=1`);
   - every link and file in place;
   - no image with tex4ht's made-up alt text (PIC, [Picture]);
@@ -287,7 +291,7 @@ A second, short document unlike the first:
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, heading numbers, no-break spaces, rows of minipages, footnotes, links, controls and the table of contents, meta tags, scripts |
-| `lua/tex8web/assets.lua`, `bibliography.lua`, `prerender.lua` | the files next to the page, bibtex and biber, prerendering |
+| `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, prerendering |
 | `lua/tex8web/files.lua` | reading files, and quoting their names for the shell |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/tex8web.js` | MathJax's sizes set as TeX's, and the columns of an alignment split at `\intertext` |
