@@ -345,7 +345,8 @@ async function resuming(chrome, file) {
     await page.close();
     page = await chrome.open(`${url}#${other}`, { place: true });
     if (await page.evaluate(top(at)) < 50) problems.push(`place: #${at} at the top, not the address's #${other}`);
-    await page.evaluate('localStorage.clear()');
+    // (leaving no place, as the page keeps none at its top)
+    await page.evaluate('scrollTo(0, 0)');
     await page.close();
   }
   return problems;
@@ -515,10 +516,15 @@ async function compare(chrome, doc, built) {
 // headless Chrome sometimes draws a screen garbled
 const chrome = await launch();
 // (each page opened at its top, not where a check before left it, which
-// tex8web-page.js would keep as the reader's place; but resuming's)
+// tex8web-page.js would keep as the reader's place: no place kept, by
+// listeners that come first and stop its own, nor any left; but
+// resuming's)
+const forget = `for (const [target, type] of [[window, 'pagehide'], [document, 'visibilitychange']]) {
+  target.addEventListener(type, event => event.stopImmediatePropagation(), true);
+}
+Object.keys(localStorage).filter(k => k.startsWith('tex8web-place:')).forEach(k => localStorage.removeItem(k));`;
 const open = chrome.open;
-chrome.open = (url, options = {}) => open(url, options.place ? options : { ...options,
-  script: "Object.keys(localStorage).filter(k => k.startsWith('tex8web-place:')).forEach(k => localStorage.removeItem(k))" });
+chrome.open = (url, options = {}) => open(url, options.place ? options : { ...options, script: forget });
 let failures = 0;
 for (const [i, doc] of docs.entries()) {
   const { lines, failed } = await compare(chrome, doc, codes[2 * i] === 0 && codes[2 * i + 1] === 0);
