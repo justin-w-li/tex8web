@@ -332,7 +332,7 @@
     const kinds = ['section'];
     if (document.querySelector('.newtheorem .head > .tex8web-permalink')) kinds.push('theorem');
     if (document.querySelector('.tex8web-term[id]')) kinds.push('term');
-    input.placeholder = `Find a ${kinds.length > 1 ? `${kinds.slice(0, -1).join(', ')} or ` : ''}${kinds.at(-1)}`;
+    input.placeholder = `Find a ${kinds.length > 1 ? `${kinds.slice(0, -1).join(', ')}${kinds.length > 2 ? ',' : ''} or ` : ''}${kinds.at(-1)}`;
     input.hidden = false;
   }
 
