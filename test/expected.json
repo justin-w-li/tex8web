@@ -11,6 +11,6 @@
       "left undefined for MathJax, which can't read their definitions: \\cvc",
       "macros MathJax doesn't know: "
     ],
-    "visual": "from its first numbered display on, formulas are up to 0.02px taller in the browser, which measures some text MathJax only estimates in Node; across the page the screens shift by a few pixels"
+    "visual": "from its first numbered display on, formulas are up to 0.02px taller in the browser, which measures some text MathJax only estimates in Node; across the page the screens shift by a few pixels; and a table of pictures too wide for a phone's screen makes the page wider than it"
   }
 }

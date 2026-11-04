@@ -163,20 +163,23 @@ figure { margin-inline: 0; }
         (100dvh - var(--tex8web-room)) * var(--tex8web-ratio));
     inset: 0 auto auto 0; max-width: none; max-height: none; margin: 0;
     padding: calc(0.5rem * var(--tex8web-zoom, 1)); border: 0; outline: 0; overflow: visible;
-    background-color: var(--tex8web-bg); transform-origin: 0 0; touch-action: none; }
+    background-color: var(--tex8web-bg); transform-origin: 0 0; touch-action: none;
+    -webkit-user-select: none; user-select: none; }
 .tex8web-viewer::backdrop { background-color: rgb(0 0 0 / 0.6); backdrop-filter: blur(3px); }
 .tex8web-viewer img { display: block; width: calc(var(--tex8web-fit) * var(--tex8web-zoom, 1));
-    max-width: none; user-select: none; cursor: grab; }
+    max-width: none; cursor: grab; -webkit-touch-callout: none; }
 .tex8web-viewer.tex8web-dragging img { cursor: grabbing; }
 /* (the page stays still behind it, its scroll bar's room kept) */
 :root:has(.tex8web-viewer[open]) { overflow: hidden; scrollbar-gutter: stable; }
 @media (prefers-reduced-motion: no-preference) {
-    .tex8web-viewer { opacity: 0; transition: opacity var(--tex8web-fade),
-        display var(--tex8web-fade) allow-discrete, overlay var(--tex8web-fade) allow-discrete; }
-    .tex8web-viewer[open] { opacity: 1; }
+    /* (closing in half the time opening takes) */
+    .tex8web-viewer { opacity: 0; transition: opacity calc(0.5 * var(--tex8web-fade)),
+        display calc(0.5 * var(--tex8web-fade)) allow-discrete,
+        overlay calc(0.5 * var(--tex8web-fade)) allow-discrete; }
+    .tex8web-viewer[open] { opacity: 1; transition-duration: var(--tex8web-fade); }
     @starting-style { .tex8web-viewer[open] { opacity: 0; } }
-    .tex8web-viewer::backdrop { opacity: 0; transition: opacity var(--tex8web-fade); }
-    .tex8web-viewer[open]::backdrop { opacity: 1; }
+    .tex8web-viewer::backdrop { opacity: 0; transition: opacity calc(0.5 * var(--tex8web-fade)); }
+    .tex8web-viewer[open]::backdrop { opacity: 1; transition-duration: var(--tex8web-fade); }
     @starting-style { .tex8web-viewer[open]::backdrop { opacity: 0; } }
     /* (a double-click's zoom, in one motion: less than tex8web-page.js's
        faded(), when it lays the picture out) */
@@ -270,10 +273,13 @@ dl.description > dt { float: left; clear: left; margin-right: 0.5em; }
 dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 /* enumitem's enumerate, a grid of labels and items in tex4ht, with each
    list's own lengths (tex8web-text.tex): a label is on one line, as in
-   TeX's box, and sticks out to the left if wider than its column */
+   TeX's box, and sticks out to the left if wider than its column; an
+   item is no wider than its column (minmax), so that a display too wide
+   for it scrolls, as elsewhere, rather than widening the page */
 dl.enumerate-enumitem { margin-block: var(--tex8web-enumitem-topsep);
     row-gap: var(--tex8web-enumitem-itemsep); column-gap: var(--tex8web-enumitem-labelsep);
-    grid-template-columns: calc(var(--tex8web-enumitem-indent) - var(--tex8web-enumitem-labelsep)) 1fr; }
+    grid-template-columns: calc(var(--tex8web-enumitem-indent) - var(--tex8web-enumitem-labelsep))
+        minmax(0, 1fr); }
 dt.enumerate-enumitem { justify-self: end; white-space: nowrap; }
 dd.enumerate-enumitem { margin-left: 0; }
 

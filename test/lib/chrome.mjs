@@ -99,6 +99,16 @@ export async function launch() {
             x, y, button: type === 'wheel' ? 'none' : 'left', buttons: ['pressed', 'moved'].includes(type) ? 1 : 0,
             clickCount: 1, deltaX: 0, deltaY: 0, ...extra });
         },
+        // a finger's tap at x, y
+        async tap(x, y) {
+          await page.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+          await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+          await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        },
+        // the window's size changed, as turning a phone changes it
+        async resize(w, h) {
+          await page.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
+        },
         async close() {
           page.close();
           await browser.send('Target.closeTarget', { targetId });

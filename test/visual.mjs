@@ -5,7 +5,8 @@
 // <screen>-browser.png and <screen>-prerendered.png, in
 // build/test/<document>/visual/. In both, the columns of an alignment
 // should line up across its \intertext. And the prerendered page's closer
-// view of pictures should work with the mouse.
+// view of pictures should work with the mouse and a finger, and the page
+// be no wider than a phone's screen.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
@@ -202,6 +203,56 @@ async function viewing(chrome, file) {
   return problems;
 }
 
+// the closer view with a finger, on a phone's screen: a double tap zooms
+// in (Safari on iOS sends no dblclick), and turning the phone keeps the
+// point at the middle of the screen where it was in the picture
+async function touching(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 400, height: 800 });
+  const problems = [];
+  const sleep = ms => new Promise(done => setTimeout(done, ms));
+  const state = () => page.evaluate(`(() => {
+    const dialog = document.querySelector('.tex8web-viewer'), box = dialog.firstChild.getBoundingClientRect();
+    return { open: dialog.open, laid: Number(dialog.style.getPropertyValue('--tex8web-zoom')),
+      middle: [(innerWidth / 2 - box.left) / box.width, (innerHeight / 2 - box.top) / box.height] };
+  })()`);
+  const at = await page.evaluate(`(() => {
+    const img = document.querySelector('.tex8web-zoomable');
+    if (!img) return null;
+    img.scrollIntoView({ block: 'center' });
+    const box = img.getBoundingClientRect();
+    return [box.left + box.width / 2, box.top + box.height / 2];
+  })()`);
+  if (at) {
+    await page.tap(...at);
+    await sleep(300);
+    const opened = await state();
+    if (!opened.open) problems.push('a picture tapped: no viewer');
+    await page.tap(200, 400);
+    await sleep(80);
+    await page.tap(200, 400);
+    await sleep(800);
+    const zoomed = await state();
+    if (!(zoomed.laid > 2 * opened.laid)) problems.push(`a double tap: zoom ${zoomed.laid}, from ${opened.laid}`);
+    await page.resize(800, 400);
+    await sleep(300);
+    const turned = await state();
+    if (turned.middle.some((m, i) => !(Math.abs(m - zoomed.middle[i]) < 0.002))) {
+      problems.push(`turned: the picture at ${turned.middle.join(', ')} of it in the middle, not ${zoomed.middle.join(', ')}`);
+    }
+  }
+  await page.close();
+  return problems;
+}
+
+// on a phone's screen, how much wider than it the page is: nothing should
+// be (a display too wide scrolls on its own)
+async function overflow(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
+  const [width, room] = await page.evaluate('[document.documentElement.scrollWidth, document.documentElement.clientWidth]');
+  await page.close();
+  return width > room ? [`${width - room}px wider than a screen ${room}px wide`] : [];
+}
+
 async function screens(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { javascript: false, height: screen });
   const height = await page.evaluate('document.documentElement.scrollHeight');
@@ -255,6 +306,8 @@ async function compare(chrome, doc, built) {
     });
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
     layout.push(...(await viewing(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    problems.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
   const known = expected[doc.name]?.visual;
   if (problems.length && known && !layout.length) {

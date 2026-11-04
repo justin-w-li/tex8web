@@ -347,7 +347,7 @@
     // for a moment and the layout catches up (an SVG drawn sharp again).
     // It opens at zoom `home`: 1, but a picture of pixels at its own size,
     // if the screen has room for it, rather than blurred, larger
-    let zoom = 1, laid = 1, home = 1, x = 0, y = 0, plate, timer;
+    let zoom = 1, laid = 1, home = 1, x = 0, y = 0, plate, natural, seen, timer;
     const show = () => { dialog.style.transform = `translate(${x}px, ${y}px) scale(${zoom / laid})`; };
     const lay = () => {
       dialog.classList.remove('tex8web-easing');
@@ -364,15 +364,18 @@
       [x, y, zoom] = [now.e, now.f, now.a * laid];
       show();
     };
+    // (at a scale of 1, the picture laid out as shown)
     const measure = () => {
       const box = dialog.getBoundingClientRect();
       plate = [box.width / laid, box.height / laid];
+      home = natural ? Math.min(1, natural / (picture.getBoundingClientRect().width / laid)) : 1;
     };
     // (anywhere, as long as the picture covers the middle of the screen:
     // zooming in on a point of the picture never moves it from there)
     const place = (left, top) => {
       x = Math.min(innerWidth / 2, Math.max(innerWidth / 2 - plate[0] * zoom, left));
       y = Math.min(innerHeight / 2, Math.max(innerHeight / 2 - plate[1] * zoom, top));
+      seen = [innerWidth, innerHeight];
       show();
     };
     // to zoom `to` at left, top, easing there (css/tex8web.css) or not
@@ -397,12 +400,11 @@
       picture.setAttribute('src', img.getAttribute('src'));
       picture.alt = img.alt;
       dialog.style.setProperty('--tex8web-ratio', box.width / box.height);
+      natural = /\.svg$/i.test(img.getAttribute('src')) ? 0 : img.naturalWidth;
       zoom = 1;
       lay();
       dialog.showModal();
       measure();
-      const fitted = picture.getBoundingClientRect().width;
-      home = /\.svg$/i.test(img.getAttribute('src')) ? 1 : Math.min(1, img.naturalWidth / fitted);
       center();
       lay();
     };
@@ -420,12 +422,18 @@
       else img.addEventListener('load', () => mark(img), { once: true });
     }
     document.body.append(dialog);
+    // (turning a phone, say: as far into the zoom from where it started,
+    // with the point at the middle of the screen still there)
     addEventListener('resize', () => {
       if (!dialog.open) return;
       settle();
+      const fx = (seen[0] / 2 - x) / (plate[0] * zoom), fy = (seen[1] / 2 - y) / (plate[1] * zoom);
+      const further = zoom / home;
       lay();
       measure();
-      place(x, y);
+      zoom = Math.min(4, further * home);
+      lay();
+      place(innerWidth / 2 - fx * plate[0] * zoom, innerHeight / 2 - fy * plate[1] * zoom);
     });
     dialog.addEventListener('wheel', event => {
       event.preventDefault();
@@ -449,14 +457,20 @@
     });
     // dragging moves the picture; two fingers also zoom, as they spread
     // or close. A click ending a drag isn't one
-    let dragged = false, from, last;
+    let dragged = false, touch = false, tapped = 0, from, last;
     const both = () => {
       const [a, b = a] = pointers.values();
       return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, apart: Math.hypot(a.x - b.x, a.y - b.y) };
     };
     dialog.addEventListener('pointerdown', event => {
       if (event.button !== 0) return;
-      if (!pointers.size) dragged = false;
+      // (a first finger starts afresh: one Safari on iOS lost track of, a
+      // press held for its menu, isn't still down)
+      if (event.isPrimary) {
+        pointers.clear();
+        dragged = false;
+        touch = event.pointerType === 'touch';
+      }
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       dialog.setPointerCapture(event.pointerId);
       from = last = both();
@@ -486,14 +500,22 @@
       return event.clientX >= box.left && event.clientX <= box.right
         && event.clientY >= box.top && event.clientY <= box.bottom;
     };
-    dialog.addEventListener('click', event => {
-      if (!dragged && !on(event)) dialog.close();
-    });
-    dialog.addEventListener('dblclick', event => {
+    const twice = event => {
       if (!on(event)) return;
       if (zoom > home) center(true);
       else zoomTo(2.5 * home, event.clientX, event.clientY, true);
+    };
+    // (a double tap by its two clicks: Safari on iOS sends no dblclick
+    // where touch-action is none)
+    dialog.addEventListener('click', event => {
+      if (dragged) return;
+      if (!on(event)) dialog.close();
+      else if (touch && event.timeStamp - tapped < 300) {
+        tapped = 0;
+        twice(event);
+      } else tapped = event.timeStamp;
     });
+    dialog.addEventListener('dblclick', event => { if (!touch) twice(event); });
   }
 
   theme();
