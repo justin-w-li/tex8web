@@ -134,6 +134,8 @@ These are deliberate:
 - **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.
 - **tcolorbox:** a box gets its colors (with darker ones in dark mode), rules, corners, borderlines, shadow, spacing and title font; a boxed title is a tab at the top of the box, and `attach title to upper` starts the text. What a skin draws freehand with TikZ (`interior code`, `frame code`, overlays, shadings) comes out as a plain frame and background. Pictures inside listing boxes (`tcblisting` side by side) aren't converted. A fragile command in a box's title can break the build; `\robustify` it in your config.
 - **A minipage in a paragraph's text** (`text \begin{minipage}..\end{minipage} text`) breaks the paragraph around it, and `\centering` in a minipage is followed only in a figure, which is centered as a whole.
+- **Minipages, more:** two minipages each in its own `\fbox` stay one above the other. On a screen that always shows a scroll bar, a band of window widths as wide as the bar treats the column as wide while it is narrower than the text: a minipage wrapped alone onto a line keeps its PDF width there rather than the column's. A `\ref` to a figure inside a minipage leads to the whole figure, where tex4ht puts the caption's anchor.
+- **A picture's height:** only `\includegraphics`'s `width` is followed. With `height` (alone, or with `width`), the picture keeps its own proportions, at a size that isn't the PDF's.
 - **Chapters:** a chapter's label is tex4ht's, and without tocloft the table of contents is indented as in article, not as in book or report.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX (sidenotes, margin figures, letterspacing), need a config of their own.
 
