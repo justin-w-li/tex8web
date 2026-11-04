@@ -35,6 +35,8 @@ const typesetPage = `(async () => {
   if (!html.classList.length) html.removeAttribute('class');
   html.querySelector('.tex8web-toc-filter')?.setAttribute('hidden', 'hidden');
   html.querySelector('.tex8web-toc-results')?.remove();
+  html.querySelector('.tex8web-where')?.replaceChildren();
+  html.querySelector('.tex8web-where')?.setAttribute('hidden', 'hidden');
   html.querySelectorAll('[aria-current]').forEach(n => n.removeAttribute('aria-current'));
   html.querySelectorAll('.tex8web-open').forEach(n => n.classList.remove('tex8web-open'));
   html.querySelectorAll('script, style[id^=MJX]').forEach(n => n.remove());
@@ -337,6 +339,39 @@ async function resuming(chrome, file) {
   return problems;
 }
 
+// on a phone's screen, the bar naming the section being read: nothing
+// before the first heading, then a section halfway down scrolled to near
+// the top; and tapped, opening the table of contents
+async function naming(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
+  const problems = [];
+  const [before, want, got, opened] = await page.evaluate(`new Promise(done => {
+    const where = document.querySelector('.tex8web-where');
+    const links = [...document.querySelectorAll('#tex8web-toc .tableofcontents a')];
+    const a = links[links.length >> 1];
+    if (!a) return done([]);
+    const shown = () => where.hidden ? '' : where.textContent;
+    const first = document.getElementById(decodeURIComponent(links[0].hash.slice(1)));
+    const before = first.getBoundingClientRect().top > innerHeight / 4 ? shown() : '';
+    const el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+    scrollTo(0, scrollY + el.getBoundingClientRect().top - 100);
+    const copy = a.cloneNode(true);
+    copy.querySelectorAll('mjx-assistive-mml').forEach(n => n.remove());
+    setTimeout(() => {
+      const got = shown();
+      where.click();
+      done([before, copy.textContent.replace(/\\s+/g, ' ').trim(), got,
+        document.getElementById('tex8web-toc').matches(':popover-open')]);
+    }, 300);
+  })`);
+  await page.close();
+  if (want === undefined) return problems;
+  if (before) problems.push(`bar: "${before}" before the first heading`);
+  if (!got.endsWith(want)) problems.push(`bar: "${got}", not the section "${want}"`);
+  if (!opened) problems.push('bar: tapped, no table of contents');
+  return problems;
+}
+
 // on a phone's screen, how much wider than it the page is: nothing should
 // be (a display too wide scrolls on its own)
 async function overflow(chrome, file) {
@@ -452,6 +487,7 @@ async function compare(chrome, doc, built) {
     }
     layout.push(...(await filtering(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await resuming(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await naming(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
   const known = expected[doc.name]?.visual;

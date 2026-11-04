@@ -351,6 +351,8 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* (the theme button needs tex8web-page.js, but not to show: a long page
    is drawn well before that deferred script runs) */
 :root:not(.tex8web-js) .tex8web-theme { display: none; }
+/* (the section being read, on a narrow screen: tex8web-page.js) */
+.tex8web-where { display: none; opacity: 0.6; }
 .tex8web-control svg { width: 1.25rem; height: 1.25rem; fill: none;
     stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 @media not (--tex8web-wide) {
@@ -358,6 +360,9 @@ dd.enumerate-enumitem { margin-left: 0; }
        reaches; as html's scroll-padding it would also move where Chrome
        puts the page back as it reloads) */
     :is(:target, :focus-visible) { scroll-margin-top: calc(3.5rem + 1em); }
+    .tex8web-where:not([hidden]) { display: block; flex: 1; min-width: 0; overflow: hidden;
+        font: inherit; font-size: 0.875em; line-height: 1.25rem; text-align: start;
+        white-space: nowrap; text-overflow: ellipsis; }
     html body { padding-inline: 1.25rem; }
     /* (no # in a margin this narrow: its link covers the heading or
        theorem's head instead, under the links in it but over its math,
@@ -385,6 +390,7 @@ dd.enumerate-enumitem { margin-left: 0; }
             inset: var(--tex8web-column-inset); width: var(--tex8web-margin); height: auto;
             padding: 0 0.5rem; border: 0; background: none; translate: none; opacity: 0;
             transition: opacity var(--tex8web-fade), display var(--tex8web-fade) allow-discrete; }
+        .tex8web-narrowing .tex8web-where { display: none; }
         .tex8web-narrowing .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
             inset: var(--tex8web-icons-inset); padding: 0.125rem; border: 0;
             border-radius: 0.5rem; transform: none; transition: opacity var(--tex8web-fade); }

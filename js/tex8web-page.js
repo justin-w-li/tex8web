@@ -13,6 +13,16 @@
   // twice css/tex8web.css's --tex8web-fade (in seconds), in ms: a little
   // after the fades end
   const faded = () => 2000 * parseFloat(getComputedStyle(root).getPropertyValue('--tex8web-fade'));
+  // an element's text, without the MathML MathJax may add for screen
+  // readers, which repeats the formula
+  const text = el => {
+    const copy = el.cloneNode(true);
+    copy.querySelectorAll('.tex8web-permalink, mjx-assistive-mml').forEach(node => node.remove());
+    return copy.textContent.replace(/\s+/g, ' ').trim();
+  };
+  // a link in the table of contents as its entry reads: number and title
+  const entryText = a => [a.parentElement.querySelector('.tocnumber')?.textContent.trim(), text(a)]
+    .filter(Boolean).join(' ');
 
   // the theme: light or dark as the reader last chose, on any tex8web page
   // (a script in <head> applies it before the page is drawn), or else as
@@ -166,7 +176,9 @@
 
   // the table of contents: the entry of the section being read (the last
   // heading above the top quarter of the screen) is marked, and its
-  // section's subsections shown; as a drawer, it closes on following a link
+  // section's subsections shown, and on a narrow screen it's in the bar
+  // (css/tex8web.css), once the first heading is read; as a drawer, it
+  // closes on following a link
   function contents() {
     const toc = document.getElementById('tex8web-toc');
     if (!toc) return;
@@ -174,6 +186,7 @@
       .map(a => ({ a, heading: target(a) }))
       .filter(entry => entry.heading);
     if (!entries.length) return;
+    const where = document.querySelector('.tex8web-where');
     const isSection = el => el.matches('.sectionToc, .likesectionToc, .chapterToc, .likechapterToc');
     let current;
     const update = () => {
@@ -183,11 +196,13 @@
         if (entry.heading.getBoundingClientRect().top > line) break;
         reading = entry;
       }
+      if (where) where.hidden = reading.heading.getBoundingClientRect().top > line;
       if (reading === current) return;
       current?.a.removeAttribute('aria-current');
       toc.querySelectorAll('.tex8web-open').forEach(el => el.classList.remove('tex8web-open'));
       current = reading;
       current.a.setAttribute('aria-current', 'location');
+      if (where) where.textContent = entryText(current.a);
       // (tex4ht's entries are siblings: a section's, then its subsections')
       let section = current.a.closest('.tableofcontents > span');
       while (section && !isSection(section)) section = section.previousElementSibling;
@@ -225,22 +240,14 @@
     results.hidden = true;
     list.after(results);
     const fold = s => s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
-    // (without the MathML MathJax may add for screen readers, which
-    // repeats the formula)
-    const text = el => {
-      const copy = el.cloneNode(true);
-      copy.querySelectorAll('.tex8web-permalink, mjx-assistive-mml').forEach(node => node.remove());
-      return copy.textContent.replace(/\s+/g, ' ').trim();
-    };
     // (on first use, as the math is typeset by then if MathJax runs in the
     // browser)
     let items;
     function collect() {
       const all = [];
       for (const a of list.querySelectorAll('a[href^="#"]')) {
-        const number = a.parentElement.querySelector('.tocnumber')?.textContent.trim();
         const el = target(a);
-        if (el) all.push({ el, href: a.hash, kind: 'heading', label: [number, text(a)].filter(Boolean).join(' ') });
+        if (el) all.push({ el, href: a.hash, kind: 'heading', label: entryText(a) });
       }
       for (const link of document.querySelectorAll('.newtheorem .head > .tex8web-permalink')) {
         all.push({ el: link.parentElement, href: link.hash, kind: 'theorem',

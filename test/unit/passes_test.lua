@@ -145,6 +145,7 @@ return {
     equal(#nav:query_selector("input.tex8web-toc-filter[hidden]"), 1)
     equal(#d:query_selector("h3"), 1)
     equal(#d:query_selector("button.tex8web-contents"), 1)
+    equal(#d:query_selector("button.tex8web-where[hidden]"), 1)
     equal(#d:query_selector("a.tex8web-control"), 1)
     equal(d:query_selector("a.tex8web-control")[1]:get_attribute("href"), "https://github.com/justin-w-li/tex8web")
   end,
@@ -179,6 +180,7 @@ return {
     equal(#d:query_selector("nav"), 0)
     equal(#d:query_selector("p"), 1)
     equal(#d:query_selector("button.tex8web-contents"), 0)
+    equal(#d:query_selector("button.tex8web-where"), 0)
     equal(#d:query_selector("button.tex8web-theme"), 1)
   end,
 

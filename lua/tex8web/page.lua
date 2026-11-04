@@ -131,7 +131,9 @@ end
 -- the controls at the top left: the table of contents (as a drawer, on a
 -- narrow screen; hidden or shown, on a wide one), the PDF (\WebPDF),
 -- copied next to the page, the theme, which needs tex8web-page.js, and
--- tex8web's repository; then the table of contents
+-- tex8web's repository, and on a narrow screen the section being read,
+-- which tex8web-page.js fills in and which opens the table of contents
+-- too; then the table of contents
 function M.controls(document, context)
   local body = document:query_selector("body")[1]
   local controls = body:create_element("div", {class = "tex8web-controls"})
@@ -153,6 +155,14 @@ function M.controls(document, context)
     title = "Theme", ["aria-label"] = "Theme"})
   control(controls, "github", {class = "tex8web-control", href = "https://github.com/justin-w-li/tex8web",
     target = "_blank", title = "Made with tex8web", ["aria-label"] = "Made with tex8web"})
+  if toc then
+    local where = controls:create_element("button", {class = "tex8web-control tex8web-where",
+      type = "button", popovertarget = "tex8web-toc", hidden = "hidden",
+      ["aria-describedby"] = "tex8web-toc-title"})
+    -- (or LuaXML writes <button/>, which HTML reads as an open tag)
+    where:add_child_node(where:create_text_node(""))
+    controls:add_child_node(where)
+  end
   local children = {controls, toc}
   for _, child in ipairs(body:get_children()) do children[#children + 1] = child end
   dom.set_children(body, children)
