@@ -251,6 +251,8 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
 .tex8web-tcb-inline > .tcolorbox-content { display: block; }
 /* what follows an \hfill in an after upper (a proof's square) */
 .tex8web-hfill { float: right; }
+/* framed's, as far from the text as in the PDF (tex8web-text.tex) */
+.framedenv { margin-block: var(--tex8web-framed-sep); }
 
 /* --- table of contents ------------------------------------------------- */
 

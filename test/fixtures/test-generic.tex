@@ -4,13 +4,14 @@
 % title with a \thanks, a table of contents with a macro of its own, a
 % list of enumitem's \newlist (with a display too wide for a phone), a
 % table and a verbatim too wide for a phone, titlesec's explicit headings,
-% labeled with \thetitle and spaced in titlesec's *n form, and a title in a
-% size of its own.
+% labeled with \thetitle and spaced in titlesec's *n form, a title in a
+% size of its own, and framed's box.
 \documentclass{article}
 \usepackage{amsmath,amssymb,physics,braket,cancel}
 \usepackage{titling}
 \usepackage[explicit]{titlesec}
 \usepackage{enumitem}
+\usepackage{framed}
 \usepackage{hyperref}
 \numberwithin{equation}{section}
 \NewDocumentCommand{\prob}{m}{\mathbb{P}\left(#1\right)}
@@ -59,6 +60,9 @@ A table wider than a phone's screen:
     first column & second column & third column & fourth column & fifth column & sixth column
 \end{tabular}
 \end{center}
+\begin{framed}
+    A framed box, \verb|\topsep| from the text.
+\end{framed}
 \begin{verbatim}
 a line of code wider than a phone's screen, which should scroll on its own
 \end{verbatim}

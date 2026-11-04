@@ -195,6 +195,17 @@
 }{}
 \catcode58 12
 
+% --- framed -----------------------------------------------------------------
+
+% framed's space above and below its boxes, every \MakeFramed (framedenv in
+% html4.4ht): \OuterFrameSep, or \topsep while that is \maxdimen
+\@ifpackageloaded{framed}{%
+    \begingroup\@listi
+        \ifdim\OuterFrameSep=\maxdimen \OuterFrameSep\topsep \fi
+        \web@Css{:root { --tex8web-framed-sep: \web@em\OuterFrameSep; }}
+    \endgroup
+}{}
+
 % --- figures ----------------------------------------------------------------
 
 % no alt text but the author's (graphicx's alt key): tex4ht's own, PIC and

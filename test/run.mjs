@@ -33,10 +33,11 @@ if (!only.length) {
 
 // what tex8web measures in a document, where a test document sets it:
 // titlesec's spacing in its *n form, a \titleformat's space after the
-// label in a bold font's ems, and a title's own size
+// label in a bold font's ems, a title's own size, and framed's space
+// around its box (\topsep)
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
-    '--tex8web-section-labelsep': '1.125em', '--tex8web-title-size': '1.44em' },
+    '--tex8web-section-labelsep': '1.125em', '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
 };
 
 // what tex8web.js makes of some of test.tex's math through MathJax's

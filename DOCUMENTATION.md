@@ -90,6 +90,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
   - `--tex8web-textwidth`;
   - `--tex8web-title-size`, `--tex8web-section-size` and so on down to `--tex8web-subparagraph-size`; each numbered heading's `-labelsep` (the space after its number), and with titlesec each heading's `-family`, `-weight`, `-style`, `-variant`, `-align`, `-before` and `-after` (and `-display` for `\paragraph` and `\subparagraph`);
   - `--tex8web-list-sep`, `--tex8web-item-sep` (enumitem's lists carry their own, as `--tex8web-enumitem-*`);
+  - `--tex8web-framed-sep`, framed's `\OuterFrameSep` above and below its boxes;
   - `--tex8web-toc-section-number`, then `--tex8web-toc-<level>-indent` and `--tex8web-toc-<level>-number` for each level from `subsection` to `subparagraph`, and `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`, `--tex8web-toc-section-weight`;
   - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`;
   - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (listed in `css/tex8web.css`).
@@ -255,13 +256,15 @@ A second, short document unlike the first:
 - packages that MathJax has as extensions (physics, braket, cancel);
 - macros defined with `\NewDocumentCommand`;
 - equations numbered by section;
-- titlesec's headings, spaced in its `*n` form, and a `\Large` title.
+- titlesec's headings, spaced in its `*n` form, and a `\Large` title;
+- a framed box.
 
 | Look at | As in the PDF |
 | --- | --- |
 | Build | No `!` errors, although xcolor isn't loaded |
 | Text | `\prob`, `\dist` (with and without its optional argument), `\dv`, `\abs`, `\qty`, `\braket` and `\cancel` drawn, none in red |
 | Numbers | The displays numbered (2.1) to (2.4) and (∗); the line after `\nonumber` and the one with `\notag` unnumbered; the references in the last paragraph reading (2.1), (2.2) and (2.3) |
+| Framed | The box as far from the text above and below as in the PDF |
 
 ## Files
 
@@ -271,7 +274,7 @@ A second, short document unlike the first:
 | `tex8web.mk4` | the build file: search paths, the build steps, the HTML passes, prerendering |
 | `tex/tex8web-core.tex` | loads the four modules below |
 | `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ pictures in display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, figures |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, framed's boxes, figures |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, colors (`\WebColor`), the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats, tcolorbox's options), and `\web@needs`, which warns when tex4ht or a package no longer has what tex8web patches |
