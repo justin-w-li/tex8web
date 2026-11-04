@@ -202,14 +202,6 @@
     }
     % (none in the page's <title>)
     \Configure{@TITLE}{\bool_set_true:N \l__web_owncolor_bool}
-    % (article.4ht writes the title's, author's and date's elements in the
-    % group of their text: a \color in it gets a group of its own)
-    \clist_map_inline:nn { ttl, author, date } {
-        \cs_if_exist:cT { a:#1 } {
-            \tl_gput_right:cn { a:#1 } { \begingroup }
-            \tl_gput_left:cn { b:#1 } { \endgroup }
-        }
-    }
     % a footnote is in the text's color in the PDF, which LaTeX's output
     % routine gives it
     \clist_map_inline:nn { \@footnotetext, \@mpfootnotetext } {
