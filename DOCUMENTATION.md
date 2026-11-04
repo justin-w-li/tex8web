@@ -106,7 +106,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 - **Previews:** pointing at a link to something on the page (`\ref`, `\eqref`, `\cite`, a footnote mark, a section) shows a copy of it in a card, over the text column: the theorem, box or table, the equation, the reference, the figure, the footnote, or the heading and what follows it. Reaching the link with the keyboard shows it too; on a touch screen, the first tap shows it and the second follows the link.
 - **Scrolling:** following a link on the page scrolls there smoothly (with JavaScript), unless the reader's system asks for reduced motion; reloading the page doesn't.
 - **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), the theme follows the system, and on a wide screen the table of contents can't be hidden.
-- **Links:** each heading and numbered theorem has a `#` link to it in the margin, shown on hover.
+- **Links:** each heading and numbered theorem has a `#` link to it in the margin, shown on hover; a narrow screen has no room for it.
 - **Link previews** get the title, and the abstract as the description, if the document has one.
 - **Screen readers** get each formula as MathML. Speech and braille are MathJax's to add when it runs in the browser (in its menu). An image's alt text is graphicx's `alt` key, or empty, which they skip.
 
