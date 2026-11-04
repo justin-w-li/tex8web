@@ -112,13 +112,14 @@ function unwrap(node) {
       || !only(node, ['texclass', 'space', 'rspace', 'size'])) return;
   const [first, last] = [children[0], children.at(-1)];
   const size = adaptor.getAttribute(node, 'size');
-  const style = child => adaptor.getAttribute(child, 'style') || '';
-  const sized = child => has(child, 'size') || style(child).includes('font-size');
-  if (size && (children.length > 1 || sized(first))) return;
-  const free = (child, name, margin) => !has(child, name) && (size || !sized(child))
-    && !style(child).includes(margin);
-  if (has(node, 'space') && !free(first, 'space', 'margin-left')) return;
-  if (has(node, 'rspace') && !free(last, 'rspace', 'margin-right')) return;
+  // (a child whose own style, or class, a character's font aside, may set
+  // its margins or font size)
+  const own = child => /margin|font/.test(adaptor.getAttribute(child, 'style') || '')
+    || (adaptor.kind(child) !== 'mjx-c' && has(child, 'class'));
+  if (size && (children.length > 1 || has(first, 'size') || own(first))) return;
+  const free = (child, name) => !has(child, name) && (size || !has(child, 'size')) && !own(child);
+  if (has(node, 'space') && !free(first, 'space')) return;
+  if (has(node, 'rspace') && !free(last, 'rspace')) return;
   if (size) adaptor.setAttribute(first, 'size', size);
   if (has(node, 'space')) adaptor.setAttribute(first, 'space', adaptor.getAttribute(node, 'space'));
   if (has(node, 'rspace')) adaptor.setAttribute(last, 'rspace', adaptor.getAttribute(node, 'rspace'));
@@ -134,7 +135,15 @@ function flatten(node) {
   else if (kind === 'mjx-script') script(node);
   else if (wrappers.includes(kind)) unwrap(node);
 }
-for (const math of adaptor.tags(root, 'mjx-math')) {
+// (MathJax gives each child of a breakable inline formula its upright font,
+// which would win over the font of a character now among them: its rule is
+// narrowed below, and the math left as it is if MathJax has changed it)
+const style = adaptor.tags(adaptor.head(document), 'style').find(s => adaptor.getAttribute(s, 'id') === 'MJX-CHTML-styles');
+const breakable = 'mjx-container[jax="CHTML"] > mjx-math.TEX-N[breakable] > * {';
+const mathjaxCss = adaptor.textContent(style);
+const flat = mathjaxCss.includes(breakable) || !adaptor.tags(root, 'mjx-math').some(math => has(math, 'breakable'));
+if (!flat) console.error(`MathJax: no "${breakable}" in its styles; prerender.mjs needs updating`);
+for (const math of flat ? adaptor.tags(root, 'mjx-math') : []) {
   for (const child of adaptor.childNodes(math)) if (isElement(child)) flatten(child);
 }
 // (tex4ht's span around inline math, which the passes before this one look
@@ -153,15 +162,7 @@ for (const span of adaptor.tags(root, 'span')) {
 // MathJax's styles, in a file of their own (make4ht's later passes over
 // the page would escape the > in them), with its fonts, from node_modules
 const files = [];
-const style = adaptor.tags(adaptor.head(document), 'style').find(s => adaptor.getAttribute(s, 'id') === 'MJX-CHTML-styles');
-// (MathJax gives each child of a breakable inline formula its upright font,
-// which would win over the font of a character now among them)
-const breakable = 'mjx-container[jax="CHTML"] > mjx-math.TEX-N[breakable] > * {';
-const mathjaxCss = adaptor.textContent(style);
-if (adaptor.tags(root, 'mjx-math').some(math => has(math, 'breakable')) && !mathjaxCss.includes(breakable)) {
-  console.error(`MathJax: no "${breakable}" in its styles to narrow; prerender.mjs needs updating`);
-}
-const css = mathjaxCss.replace(breakable, breakable.replace('> * {', '> :not([class*="TEX-"]) {'))
+const css = mathjaxCss.replace(breakable, breakable.replace('> * {', '> :not(mjx-c) {'))
   .replace(/url\("([^"]+\.woff2)"\)/g, (_, url) => {
   const name = basename(url);
   const path = join(dirname(file), 'fonts', 'mathjax', name);

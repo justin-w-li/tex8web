@@ -30,7 +30,7 @@ A page goes through four stages:
    - the columns of an alignment split at `\intertext`, each as wide as in the widest part. These parts aren't left for MathJax to typeset as they scroll into view.
 4. **Prerendering** (`js/prerender.mjs`). MathJax typesets the page in Node, configured as it would be in the browser, and the page keeps the result.
    - It leaves out the MathML MathJax adds for screen readers, a hidden copy of each formula that is a quarter of a long page and most of what a phone takes to lay it out. `TEX8WEB_MATHML=1` keeps it, as the tests do: they check the math by it.
-   - It leaves out the elements of MathJax's output whose box is just their children's, side by side: a token of one character (its `mjx-c` stays), a script of one character, the wrappers (`mjx-TeXAtom`, `mjx-msub` and its relatives, `mjx-mrow`) in math lined up on the left, and tex4ht's `span.mathjax-inline` around inline math. Most of a long page's elements are MathJax's, and a phone's browser restyles the page as it scrolls in time that grows with them: a long page of notes goes from 67,000 elements to 40,000. The page looks the same, which test:visual checks against MathJax's own output in the browser; only the markup differs from MathJax's.
+   - It leaves out the elements of MathJax's output whose box is just their children's, side by side: a token of one character (its `mjx-c` stays), a script of one character, the wrappers (`mjx-TeXAtom`, `mjx-msub` and its relatives, `mjx-mrow`) in math lined up on the left, and tex4ht's `span.mathjax-inline` around inline math. Most of a long page's elements are MathJax's, and a phone's browser restyles the page as it scrolls in time that grows with them: a long page of notes goes from 67,000 elements to 40,000. The page looks the same, which test:visual checks against MathJax's own output in the browser; only the markup differs from MathJax's. One difference comes from make4ht: it pulls the space between bold or italic text and inline math into the bold or italic span when the math is in tex4ht's span, which prerendering leaves out, so there the space is upright, as in TeX.
    - MathJax clips each character to its box, which in Safari gives every character a layer of its own and makes painting a long page as it scrolls several times slower. The stylesheet removes the clip, prerendered or not. The page looks the same; only a selection's highlight is taller, as tall as the line box of MathJax's ZERO font.
    - Without `node_modules/` (or with `TEX8WEB_NO_PRERENDER=1`), this step is skipped. The page then loads MathJax from jsDelivr, typesets the math as it scrolls into view, and gives screen readers MathML.
    - tex8web.js relies on MathJax's internals. That is why MathJax's version is pinned in `package.json`, which both the prerendering and the page's script use. `npm test` checks what it makes of `test.tex`'s math (`typeset` in `test/run.mjs`): run it when updating MathJax.
@@ -147,7 +147,7 @@ These are deliberate:
 - **A picture's height:** only `\includegraphics`'s `width` is followed. With `height` (alone, or with `width`), the picture keeps its own proportions, at a size that isn't the PDF's.
 - **Line spacing** is the browser's (`line-height: normal`), not TeX's `\baselineskip`, so lines sit a little further apart than in the PDF; under a heading, about 0.15em. Matching it would change every page, and math taller than the line couldn't fall back to TeX's `\lineskip`.
 - **framed's `\FrameSep`:** a framed box has no padding between its rule and its text, since tex8web can't tell which `\MakeFramed` environments have it (`framed` does; one with only a bar in its `\FrameCommand` doesn't).
-- **A config's styles for `.mathjax-inline`** apply only when MathJax typesets the page in the browser: prerendering leaves that span out, but where tex4ht puts inline math outside a paragraph.
+- **A config's styles for `.mathjax-inline`** apply only when MathJax typesets the page in the browser: prerendering leaves that span out, except where tex4ht puts inline math outside a paragraph.
 - **Chapters:** a chapter's label is tex4ht's, and without tocloft the table of contents is indented as in article, not as in book or report.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX (sidenotes, margin figures, letterspacing), need a config of their own.
 - **The theme button, while a long page loads,** shows with the other controls but does nothing until `tex8web-page.js` runs, which as a deferred script waits for the whole page to be read in.
@@ -264,7 +264,7 @@ Background dark and text light. Links in lighter link colors. The TikZ figure in
 
 A second, short document unlike the first:
 - no xcolor;
-- packages that MathJax has as extensions (physics, braket, cancel);
+- packages that MathJax has as extensions (physics, braket, cancel, bbm);
 - macros defined with `\NewDocumentCommand`;
 - equations numbered by section;
 - titlesec's headings, spaced in its `*n` form, and a `\Large` title;
@@ -274,7 +274,7 @@ A second, short document unlike the first:
 | Look at | As in the PDF |
 | --- | --- |
 | Build | No `!` errors, although xcolor isn't loaded |
-| Text | `\prob`, `\dist` (with and without its optional argument), `\dv`, `\abs`, `\qty`, `\braket` and `\cancel` drawn, none in red |
+| Text | `\prob`, `\dist` (with and without its optional argument), `\dv`, `\abs`, `\qty`, `\braket`, `\cancel` and `\mathbbm` drawn, none in red; 𝟙 and 𝒜 in their own fonts beside a + |
 | Numbers | The displays numbered (2.1) to (2.4) and (∗); the line after `\nonumber` and the one with `\notag` unnumbered; the references in the last paragraph reading (2.1), (2.2) and (2.3) |
 | Framed | The boxes as far from the text above and below as in the PDF, the first further below its heading, Framed, than the list is below A list |
 | Under headings | The theorem under section 1, and the lists under A list and A description, as close to their headings as text would be |
