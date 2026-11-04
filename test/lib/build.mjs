@@ -14,12 +14,13 @@ export const expected = JSON.parse(readFileSync(join(root, 'test/expected.json')
 export const testDir = doc => join(root, 'build/test', doc.name.replace(/[^A-Za-z0-9]/g, '_'));
 
 // test/fixtures/*.tex and examples/*/main.tex, each with its config: the
-// example's own <name>.cfg if it has one, otherwise tex8web.cfg
+// document's own <name>.cfg if it has one, otherwise tex8web.cfg
 export function documents() {
   const docs = [];
-  for (const file of readdirSync(join(root, 'test/fixtures')).filter(f => f.endsWith('.tex')).sort()) {
-    docs.push({ name: file.replace(/\.tex$/, ''), dir: join(root, 'test/fixtures'), tex: file,
-      cfg: join(root, 'tex8web.cfg') });
+  const fixtures = join(root, 'test/fixtures');
+  for (const file of readdirSync(fixtures).filter(f => f.endsWith('.tex')).sort()) {
+    const name = file.replace(/\.tex$/, ''), own = join(fixtures, `${name}.cfg`);
+    docs.push({ name, dir: fixtures, tex: file, cfg: existsSync(own) ? own : join(root, 'tex8web.cfg') });
   }
   const examples = join(root, 'examples');
   for (const name of existsSync(examples) ? readdirSync(examples).sort() : []) {

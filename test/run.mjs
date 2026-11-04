@@ -37,6 +37,8 @@ if (!only.length) {
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
     '--tex8web-section-labelsep': '1.125em', '--tex8web-title-size': '1.44em' },
+  // (and test.cfg's \WebColor, from an xcolor expression and an RGB color)
+  'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)' },
 };
 
 // what tex8web.js makes of some of test.tex's math through MathJax's
