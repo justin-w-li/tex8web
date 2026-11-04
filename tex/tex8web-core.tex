@@ -21,6 +21,10 @@
 % a length as a multiple of the body font size, and in ems of it
 \newcommand\web@ratio[1]{\strip@pt\dimexpr#1*65536/\dimexpr\f@size pt\relax\relax}
 \newcommand\web@em[1]{\web@ratio{#1}em}
+% the text width as the document begins (the config runs after every
+% \begin{document} hook, geometry's included)
+\newdimen\web@textwidth
+\web@textwidth\textwidth
 % \Css, with its argument expanded now rather than when tex4ht writes it
 \newcommand\web@Css[1]{\edef\web@css{\noexpand\Css{#1}}\web@css}
 % the place of the static styles: tex8web.mk4 puts css/tex8web.css here,

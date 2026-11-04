@@ -203,8 +203,9 @@
 \Configure{Picture-alt}{}
 
 % \includegraphics[width=..] keeps its size beside the text, as a fraction of
-% the PDF's text width (in a minipage too), and shrinks only with a column
-% narrower than it (img's max-width); other sizes as tex4ht writes them
+% the PDF's text width, and shrinks only with a column narrower than it
+% (img's max-width); other sizes as tex4ht writes them. (\web@textwidth, as
+% a minipage, and so a tcolorbox or subfigure, sets \textwidth to its own)
 \ExplSyntaxOn
 \cs_if_exist:NT \Gin@req@width
   {
@@ -214,7 +215,7 @@
         \expandafter\ifx\csname Gin:ewidth\endcsname\Gin@exclamation
             \__web_gin_dim:
         \else
-            style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\textwidth,4)})"
+            style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\web@textwidth,4)})"
         \fi
     }
   }

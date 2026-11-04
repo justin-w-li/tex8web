@@ -8,6 +8,7 @@
 \usepackage{lmodern}
 \usepackage{amsmath, amssymb, amsthm, mathtools, bm, mathrsfs}
 \usepackage{booktabs}
+\usepackage{graphicx}
 \usepackage{tikz}
 \usepackage[colorlinks]{hyperref}
 \usepackage[nameinlink]{cleveref}
@@ -300,6 +301,18 @@ Gather*, multline and alignat:
     \end{tikzpicture}
     \caption{A TikZ picture.}
     \label{fig:tikz}
+\end{figure}
+\begin{figure}[h]
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=0.5\linewidth]{test-picture.png}
+        \caption{Half as wide as its minipage.}
+    \end{minipage}\hfill
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{test-picture.png}
+        \caption{As wide as its minipage.}
+    \end{minipage}
 \end{figure}
 
 \begin{thebibliography}{9}

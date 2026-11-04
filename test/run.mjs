@@ -62,6 +62,9 @@ const typeset = {
 // width, which holds as a narrower screen reflows the text
 const pictures = {
   'examples/basic': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.25\)'/],
+  // (in minipages, whose \textwidth is their own)
+  'test': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.225\)'/,
+    /<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.45\)'/],
 };
 
 // what's wrong with a built page: its log, the page and the files with it

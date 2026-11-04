@@ -131,6 +131,7 @@ These are deliberate:
 - **Macros MathJax can't read** (see `\WebMathMacros` above), and macros that parse their arguments themselves, such as comma-separated lists. MathJax shows these in red.
 - **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.
 - **tcolorbox:** a box gets its colors (with darker ones in dark mode), rules, corners, borderlines, shadow, spacing and title font; a boxed title is a tab at the top of the box, and `attach title to upper` starts the text. What a skin draws freehand with TikZ (`interior code`, `frame code`, overlays, shadings) comes out as a plain frame and background. Pictures inside listing boxes (`tcblisting` side by side) aren't converted. A fragile command in a box's title can break the build; `\robustify` it in your config.
+- **Minipages** are as wide as the column, one above the other, rather than side by side; a picture in one keeps its size.
 - **Chapters:** a chapter's label is tex4ht's, and without tocloft the table of contents is indented as in article, not as in book or report.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX (sidenotes, margin figures, letterspacing), need a config of their own.
 
@@ -235,6 +236,7 @@ Each `main.tex` names its source, license and changes at the top.
 | References | "Table 1" and "fig. 1" each linked as a whole (cleveref's `nameinlink`); citations [1] [2] in the citation color | Only the number linked |
 | Table | Caption above, booktabs rules, math in cells | |
 | Figure | TikZ drawing at its PDF size, caption below | |
+| Pictures | Each as wide as in the PDF, the second twice the first (one above the other) | As wide as the text |
 
 #### Dark mode
 
