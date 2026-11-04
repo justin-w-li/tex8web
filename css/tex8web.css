@@ -144,6 +144,9 @@ html body { max-width: var(--tex8web-textwidth);
    (\[ \begin{tikzcd} .. \]) gets the margin MathJax gives display math */
 img { max-width: 100%; height: auto; }
 figure.figure { margin-block: 1.75em; }
+/* floats (a figure, a table) aren't indented in LaTeX, as browsers indent
+   a <figure> */
+figure { margin-inline: 0; }
 .mathjax-block img { display: block; margin: 0.7em auto; }
 /* the closer view of a picture (tex8web-page.js): as large as the screen
    allows with a margin (4% of the screen's shorter side, at least 1rem)
