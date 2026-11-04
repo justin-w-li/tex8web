@@ -91,6 +91,12 @@ export async function launch() {
             clip: { x: 0, y, width, height: h, scale: 1 } });
           return data;
         },
+        // the mouse's left button at x, y in the window: type is pressed,
+        // moved (held) or released
+        async mouse(type, x, y) {
+          await page.send('Input.dispatchMouseEvent', { type: `mouse${type[0].toUpperCase()}${type.slice(1)}`,
+            x, y, button: 'left', buttons: type === 'released' ? 0 : 1, clickCount: 1 });
+        },
         async close() {
           page.close();
           await browser.send('Target.closeTarget', { targetId });

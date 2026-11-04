@@ -4,7 +4,8 @@
 // The two should be identical; differing screens are saved, as
 // <screen>-browser.png and <screen>-prerendered.png, in
 // build/test/<document>/visual/. In both, the columns of an alignment
-// should line up across its \intertext.
+// should line up across its \intertext. And the prerendered page's closer
+// view of pictures should work with the mouse.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
@@ -58,6 +59,73 @@ const misaligned = `(() => {
   }).filter(found => found && found[1].join() !== found[2].join());
 })()`;
 
+// the closer view of pictures (tex8web-page.js), with the mouse: which
+// pictures open it, and on the first, that it fits the screen, zooms in
+// keeping the point clicked under the pointer, drags, zooms out and closes
+async function viewing(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href);
+  const problems = [];
+  const sleep = ms => new Promise(done => setTimeout(done, ms));
+  const click = async (x, y) => {
+    await page.mouse('pressed', x, y);
+    await page.mouse('released', x, y);
+    await sleep(100);
+  };
+  const state = () => page.evaluate(`(() => {
+    const dialog = document.querySelector('.tex8web-viewer'), box = dialog.firstChild.getBoundingClientRect();
+    return { open: dialog.open, zoomed: dialog.classList.contains('tex8web-zoomed'), left: box.left, top: box.top,
+      width: box.width, height: box.height, scroll: [dialog.scrollLeft, dialog.scrollTop],
+      end: [dialog.scrollWidth - dialog.clientWidth, dialog.scrollHeight - dialog.clientHeight],
+      room: [innerWidth, innerHeight].map(n => n - 3 * parseFloat(getComputedStyle(document.documentElement).fontSize)) };
+  })()`);
+  // (a picture in a figure or display math opens it; an icon in the text,
+  // up to one and a half times as tall, doesn't)
+  const wrong = await page.evaluate(`[...document.querySelectorAll('img:not(.tex8web-viewer img, a img)')]
+    .filter(img => img.closest('figure, .mathjax-block') ? !img.classList.contains('tex8web-zoomable')
+      : img.classList.contains('tex8web-zoomable') && img.offsetHeight <= 1.5 * parseFloat(getComputedStyle(img).fontSize))
+    .map(img => img.getAttribute('src'))`);
+  if (wrong.length) problems.push(`opening the viewer or not, wrongly: ${wrong.join(', ')}`);
+  const at = await page.evaluate(`(() => {
+    const img = document.querySelector('.tex8web-zoomable');
+    if (!img) return null;
+    img.scrollIntoView({ block: 'center' });
+    const box = img.getBoundingClientRect();
+    return [box.left + box.width / 2, box.top + box.height / 2];
+  })()`);
+  if (at) {
+    await click(...at);
+    const fit = await state();
+    const scale = Math.max(fit.width / fit.room[0], fit.height / fit.room[1]);
+    if (!fit.open) problems.push('a picture clicked: no viewer');
+    else if (Math.abs(scale - 1) > 0.01) problems.push(`the viewer's picture ${fit.width}x${fit.height}, for ${fit.room.join('x')}`);
+    const [x, y] = [Math.round(fit.left + 0.3 * fit.width), Math.round(fit.top + 0.3 * fit.height)];
+    await click(x, y);
+    const zoom = await state();
+    const fx = (x - fit.left) / fit.width, fy = (y - fit.top) / fit.height;
+    const drift = Math.max(Math.abs(zoom.left + fx * zoom.width - x), Math.abs(zoom.top + fy * zoom.height - y));
+    // (to a pixel either way: scrolling goes by whole pixels)
+    if (!zoom.zoomed || Math.abs(zoom.width - 2 * fit.width) > 1 || drift > 1) {
+      problems.push(`zoomed in: ${zoom.width}px wide (from ${fit.width}px), the point clicked ${drift.toFixed(1)}px away`);
+    }
+    await page.mouse('pressed', x, y);
+    for (let i = 1; i <= 5; i++) await page.mouse('moved', x - 10 * i, y - 10 * i);
+    await page.mouse('released', x - 50, y - 50);
+    await sleep(100);
+    const dragged = await state();
+    const want = zoom.scroll.map((s, i) => Math.min(s + 50, zoom.end[i]));
+    if (!dragged.zoomed) problems.push('a drag zoomed out');
+    else if (dragged.scroll.some((s, i) => Math.abs(s - want[i]) > 1)) {
+      problems.push(`dragged by 50px: scrolled from ${zoom.scroll.join(', ')} to ${dragged.scroll.join(', ')}`);
+    }
+    await click(x - 50, y - 50);
+    if ((await state()).zoomed) problems.push('a click on the zoomed picture: not zoomed out');
+    await click(2, 2);
+    if ((await state()).open) problems.push('a click beside the picture: the viewer still open');
+  }
+  await page.close();
+  return problems;
+}
+
 async function screens(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { javascript: false, height: screen });
   const height = await page.evaluate('document.documentElement.scrollHeight');
@@ -110,6 +178,7 @@ async function compare(chrome, doc, built) {
       if (b[i]) writeFileSync(join(visual, `${name}-prerendered.png`), Buffer.from(b[i], 'base64'));
     });
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
+    layout.push(...(await viewing(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
   const known = expected[doc.name]?.visual;
   if (problems.length && known && !layout.length) {

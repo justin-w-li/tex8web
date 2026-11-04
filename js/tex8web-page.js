@@ -1,10 +1,11 @@
 // tex8web's page in the browser: the theme button, the contents button on
 // a wide screen, the controls' bar on a narrow screen, smooth scrolling to
 // links, footnotes lined up with their marks, the table of contents
-// following the section being read, and previews of what a link on the
-// page leads to. page.lua and text.lua build what this works on (and
-// tex8web-head.js marks <html> tex8web-js before the page is drawn), and
-// the page reads fine without it (css/tex8web.css).
+// following the section being read, previews of what a link on the page
+// leads to, and a closer view of pictures. page.lua and text.lua build
+// what this works on (and tex8web-head.js marks <html> tex8web-js before
+// the page is drawn), and the page reads fine without it
+// (css/tex8web.css).
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
@@ -315,6 +316,80 @@
     addEventListener('scroll', () => { if (shown !== document.activeElement) hide(); }, { passive: true });
   }
 
+  // pictures, in a figure, in display math, or over twice as tall as the
+  // text (not an icon in a line), and not a link: clicking one shows it as
+  // large as the screen allows (css/tex8web.css), over the page; clicking
+  // it again, twice as large, to drag or scroll around, and again as large
+  // as the screen; clicking beside it, or Escape, closes it
+  function viewer() {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'tex8web-viewer';
+    const picture = document.createElement('img');
+    picture.draggable = false;
+    dialog.append(picture);
+    const open = event => {
+      const img = event.currentTarget, box = img.getBoundingClientRect();
+      // (the same src, which tex8web-page.tex's rule for TikZ pictures in
+      // dark mode picks out)
+      picture.setAttribute('src', img.getAttribute('src'));
+      picture.alt = img.alt;
+      dialog.style.setProperty('--tex8web-ratio', box.width / box.height);
+      dialog.classList.remove('tex8web-zoomed');
+      dialog.showModal();
+    };
+    // (once each picture has its size; and a listener on each, as Safari on
+    // iOS may not pass a tap on an img, which isn't clickable, up to the
+    // document)
+    const mark = img => {
+      if (img.closest('a') || !(img.closest('figure, .mathjax-block')
+        || img.offsetHeight > 2 * parseFloat(getComputedStyle(img).fontSize))) return;
+      img.classList.add('tex8web-zoomable');
+      img.addEventListener('click', open);
+    };
+    for (const img of document.images) {
+      if (img.complete) mark(img);
+      else img.addEventListener('load', () => mark(img), { once: true });
+    }
+    document.body.append(dialog);
+    let drag, dragged = false;
+    dialog.addEventListener('pointerdown', event => {
+      dragged = false;
+      const zoomed = dialog.classList.contains('tex8web-zoomed');
+      if (!zoomed || event.pointerType === 'touch' || event.button !== 0) return;
+      drag = { x: event.clientX, y: event.clientY, left: dialog.scrollLeft, top: dialog.scrollTop };
+      dialog.setPointerCapture(event.pointerId);
+    });
+    dialog.addEventListener('pointermove', event => {
+      if (!drag) return;
+      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+      if (Math.hypot(dx, dy) > 4) dragged = true;
+      if (!dragged) return;
+      dialog.classList.add('tex8web-dragging');
+      dialog.scrollTo(drag.left - dx, drag.top - dy);
+    });
+    // (on pointerup or pointercancel, or the dialog closing mid-drag)
+    dialog.addEventListener('lostpointercapture', () => {
+      drag = null;
+      dialog.classList.remove('tex8web-dragging');
+    });
+    // (by where it is, not its target: the dialog, holding the pointer,
+    // gets the click)
+    dialog.addEventListener('click', event => {
+      if (dragged) return;
+      const box = picture.getBoundingClientRect();
+      const x = (event.clientX - box.left) / box.width, y = (event.clientY - box.top) / box.height;
+      if (x < 0 || x > 1 || y < 0 || y > 1) {
+        dialog.close();
+        return;
+      }
+      // the point clicked stays under the pointer
+      dialog.classList.toggle('tex8web-zoomed');
+      const at = dialog.getBoundingClientRect();
+      dialog.scrollTo(at.left + picture.offsetLeft + x * picture.offsetWidth - event.clientX,
+        at.top + picture.offsetTop + y * picture.offsetHeight - event.clientY);
+    });
+  }
+
   theme();
   column();
   bar();
@@ -322,4 +397,5 @@
   sidenotes();
   contents();
   previews();
+  viewer();
 })();
