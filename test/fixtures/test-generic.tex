@@ -5,7 +5,8 @@
 % list of enumitem's \newlist (with a display too wide for a phone), a
 % table and a verbatim too wide for a phone, titlesec's explicit headings,
 % labeled with \thetitle and spaced in titlesec's *n form, a title in a
-% size of its own, framed's boxes, and a theorem and a list under headings.
+% size of its own, framed's boxes, a theorem and a list under headings, and
+% small capitals of an accented letter.
 \documentclass{article}
 \usepackage{amsmath,amssymb,physics,braket,cancel,bbm}
 \usepackage{titling}
@@ -53,6 +54,8 @@ Text with $\prob{\cond{A}{B}}$, $\dist{x}{y}$ and $\dist[\infty]{x}{y}$, and
 from physics $\dv{f}{x}$, $\abs{x}$, $\qty(\frac{a}{b})$, from braket
 $\braket{\phi|\psi}$, from cancel $\cancel{x}$, and from bbm
 $\mathbbm{1}_A + a$, beside $\mathcal{A} + b$.
+Small capitals in T1, whose capital the page's font needs although the text
+has only the small letter: {\fontencoding{T1}\selectfont\textsc{Erdős}}.
 \begin{equation}\label{eq:a}
     \prob{X > t} \le \frac{\mathbb{E}X}{t}
 \end{equation}

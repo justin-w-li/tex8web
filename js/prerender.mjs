@@ -7,7 +7,7 @@
 // they use into fonts/mathjax/, next to the page; it prints their paths, for
 // tex8web.mk4 to list with the output. Those fonts and Latin Modern's
 // (assets.lua) are cut down to the characters the document has.
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
 import { runInThisContext } from 'node:vm';
@@ -205,30 +205,42 @@ for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: ur
 // (data-latex holds each node's source, for MathJax's menu)
 const page = adaptor.doctype(document) + '\n' + adaptor.outerHTML(root)
   .replace(/ data-latex(-item)?="[^"]*"/g, '');
-writeFileSync(file, page);
 // the fonts, each with only the glyphs of the characters in the document's
-// pages and styles: a third as much to fetch. Each from
-// its original, as the pages of a document tex4ht splits share them: the
-// last page typeset sees the others done. With the characters a browser
-// may draw itself (a hyphen where it breaks a word, the filter's
-// ellipsis) and Latin-1, for what a reader types into the filter
+// pages and styles: a third as much to fetch. Each from its original, as
+// the pages of a document tex4ht splits share them: the last page typeset
+// sees the others done (make4ht copies a file each time a page lists it).
+// With the characters a browser may draw itself: a hyphen where it breaks
+// a word, the filter's ellipsis, the capitals of small caps (Latin Modern
+// has none of its own), an accent composed or not; and Latin-1, for what
+// a reader types into the filter. Before the page is written, which
+// tex8web.mk4 takes for typeset only if this finishes
 const dir = dirname(file);
-const read = pattern => readdirSync(dir).filter(name => pattern.test(name) && join(dir, name) !== file)
+const read = pattern => readdirSync(dir).filter(name => pattern.test(name) && name !== basename(file))
   .map(name => readFileSync(join(dir, name), 'utf8')).join('');
-// (and the characters of entities and of CSS's escapes)
-const character = (hex, base = 16) => parseInt(hex, base) <= 0x10ffff ? String.fromCodePoint(parseInt(hex, base)) : '';
+// (the characters of entities and of CSS's escapes)
+const character = (hex, base = 16) => {
+  const code = parseInt(hex, base);
+  return code <= 0x10ffff ? String.fromCodePoint(code) : '';
+};
 let text = '\u2010\u2026';
 for (let code = 0x20; code <= 0xff; code++) text += String.fromCharCode(code);
 text += (page + read(/\.html$/)).replace(/&#x([\da-f]+);/gi, (_, hex) => character(hex))
   .replace(/&#(\d+);/g, (_, n) => character(n, 10));
 text += read(/\.css$/).replace(/\\([\da-f]{1,6}) ?/gi, (_, hex) => character(hex));
-for (const name of readdirSync(join(dir, 'fonts')).filter(name => name.endsWith('.woff2'))) {
-  fonts.push([new URL(`../fonts/${name}`, import.meta.url), join(dir, 'fonts', name)]);
+text += text.toUpperCase() + text.toLowerCase();
+text += text.normalize('NFC') + text.normalize('NFD');
+// (Latin Modern's, those assets.lua copied)
+const latinModern = new URL('../fonts/', import.meta.url);
+for (const name of readdirSync(latinModern).filter(name => name.endsWith('.woff2'))) {
+  const path = join(dir, 'fonts', name);
+  if (existsSync(path)) fonts.push([new URL(name, latinModern), path]);
 }
 const chars = [...new Set(text)].join('');
-for (const [source, path] of fonts) {
-  writeFileSync(path, await subsetFont(readFileSync(source), chars, { targetFormat: 'woff2' }));
-}
+// (MathJax's fonts state their license, the SIL Open Font License, in
+// their names 13 and 14, which HarfBuzz drops unless asked)
+await Promise.all(fonts.map(async ([source, path]) => writeFileSync(path,
+  await subsetFont(readFileSync(source), chars, { targetFormat: 'woff2', preserveNameIds: [7, 13, 14] }))));
+writeFileSync(file, page);
 const errors = (page.match(/<mjx-merror/g) || []).length;
 if (errors) console.error(`${errors} formula(s) with MathJax errors`);
 console.log(files.join('\n'));

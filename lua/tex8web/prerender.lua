@@ -18,7 +18,8 @@ end
 -- MathJax in the browser
 function M.run(context, filename)
   if os.getenv("TEX8WEB_NO_PRERENDER") then return false end
-  if lfs.attributes(context.root .. "/node_modules/mathjax") == nil then
+  if lfs.attributes(context.root .. "/node_modules/mathjax") == nil
+      or lfs.attributes(context.root .. "/node_modules/subset-font") == nil then
     log:info("math left for MathJax in the browser; run npm ci in " .. context.root
       .. " to typeset it here")
     return false

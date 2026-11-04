@@ -55,7 +55,7 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
   - `tex8web-head.js` (the reader's theme, applied before the page is drawn) and `tex8web-page.js` (the theme and contents buttons and the table of contents' tracking);
   - `tex8web.js` (when not prerendered).
 
-  The paths are relative, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can serve one copy of them.
+  The paths are relative, so `out/` can be published as it is. A prerendered page's fonts have only its document's characters, so each document needs its own.
 - **Bibliographies:** `tex8web.mk4` runs bibtex or biber when the document has a bibliography (make4ht itself doesn't).
 - **Indexes:** `tex8web.mk4` runs makeindex on each index the document prints: makeidx's, or each of imakeidx's (`\makeindex[name=...]`), with its `options`, such as a style file. imakeidx runs nothing under tex4ht; `tex8web-hooks.sty` notes the command it would run in the `.aux`, for `index.lua`. makeindex gets each `\index`'s number in place of its page, counted from 1000001 so that no number in an entry's text is taken for one, and each is made a link back to its `\index`, shown counted from 1 (with makeindex's `-r`, so that consecutive counts aren't merged into a range; `|(` and `|)` still make one). (make4ht's indexing library reads tex4ht's `.idx`, but its links aren't used: it takes a number in an entry's text after `^`, `[` or a comma, as in `\index{$L^2$ space}`, for a page.)
 - **Platform:** the build calls the shell to run Node, bibtex and makeindex, so it needs a POSIX system (macOS, Linux); Windows isn't supported yet.
@@ -285,6 +285,7 @@ Background dark and text light. Links in lighter link colors. The TikZ figure in
 A second, short document unlike the first:
 - no xcolor;
 - packages that MathJax has as extensions (physics, braket, cancel, bbm);
+- small capitals of an accented letter (`\textsc{Erdős}`), whose capital a prerendered page's font must have;
 - macros defined with `\NewDocumentCommand`;
 - equations numbered by section;
 - titlesec's headings, spaced in its `*n` form, and a `\Large` title;
