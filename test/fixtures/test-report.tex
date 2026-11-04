@@ -1,0 +1,31 @@
+% A test for tex8web's chapters and parts: a report, with a list of figures
+% before the table of contents (which goes beside the text, the list
+% staying in it), a part, two chapters with sections and a subsection, a
+% figure, and an appendix.
+\documentclass{report}
+\usepackage{hyperref}
+\title{Report}
+\author{Someone}
+\begin{document}
+\maketitle
+\listoffigures
+\tableofcontents
+\part{Beginnings}
+\chapter{First}
+Some text.
+\section{A section}
+\begin{figure}
+    \centering
+    \fbox{A picture}
+    \caption{A figure}
+\end{figure}
+\subsection{A subsection}
+More text.
+\chapter{Second}
+\section{Another section}
+The end.
+\appendix
+\chapter{Extra}
+\section{More}
+After the end.
+\end{document}

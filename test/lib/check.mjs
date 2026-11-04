@@ -54,13 +54,15 @@ const pageChecks = [
     const scripts = [...html.matchAll(/<script([^>]*)>/g)].map(m => m[1]);
     return scripts.some(s => !/src=['"]tex8web-(head|page)\.js['"]/.test(s)) ? ["has a <script> besides tex8web's"] : [];
   },
+  // (a list of figures or tables is a div.tableofcontents too, and stays)
   function tocBeside(html) {
-    return /class=['"]tableofcontents/.test(html.replace(toc(html), ''))
+    return [...html.replace(toc(html), '').matchAll(/class=['"]tableofcontents['"]>([^]*?)<\/div>/g)]
+      .some(([, list]) => /class=['"]\w*(?:part|chapter|section|paragraph)Toc['"]/.test(list))
       ? ['a table of contents in the text, not beside it'] : [];
   },
   // (an entry's number in its box, which lines up the titles)
   function tocNumbers(html) {
-    return [...toc(html).matchAll(/<span class=['"]((?:sub)*(?:section|paragraph))Toc['"]>(?!<span class=['"]tocnumber)/g)]
+    return [...toc(html).matchAll(/<span class=['"](chapter|appendix|(?:sub)*(?:section|paragraph))Toc['"]>(?!<span class=['"]tocnumber)/g)]
       .map(([, level]) => `a ${level} entry in the table of contents without its number box`);
   },
   // (a heading's label may add to its number, as titlesec's \thesection.
@@ -69,7 +71,7 @@ const pageChecks = [
     const problems = [];
     for (const [, number, id] of toc(html).matchAll(/<span class=['"]tocnumber['"]>([^<]+)<\/span><a href=['"]#([^'"]+)['"]/g)) {
       const at = html.search(new RegExp(` id=['"]${id}['"]`));
-      const mark = html.slice(at, at + 500).match(/<span class=['"]titlemark['"]>(.*?)<\/span>/)?.[1].replace(/<[^>]+>/g, '');
+      const mark = html.slice(at, at + 500).match(/<span class=['"]titlemark['"]>((?:<span[^>]*>[^<]*<\/span>|[^<])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '');
       if (at >= 0 && !mark?.includes(number.trim())) problems.push(`heading #${id} numbered ${mark?.trim()}, not ${number}`);
     }
     return problems;

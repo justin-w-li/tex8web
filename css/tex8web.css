@@ -81,6 +81,13 @@ html body { font-size: 12pt; }
 h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
 /* (a \thanks is a footnote in the PDF, upright; html4.4ht sets it in italic) */
 div.thanks { font-style: normal; }
+/* (a part's and a chapter's label, "Chapter 1", above the title in a size of
+   its own; an article's parts aren't measured, and keep the browser's
+   size) */
+.partHead, .likepartHead { font-size: var(--tex8web-part-size, 2em); }
+.partHead .titlemark { font-size: var(--tex8web-part-label-size, 1em); }
+.chapterHead, .likechapterHead, .appendixHead { font-size: var(--tex8web-chapter-size); }
+:is(.chapterHead, .appendixHead) .titlemark { font-size: var(--tex8web-chapter-label-size); }
 .sectionHead, .likesectionHead { font-size: var(--tex8web-section-size);
     font-family: var(--tex8web-section-family, inherit);
     font-weight: var(--tex8web-section-weight, bold);
@@ -261,9 +268,19 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
    one digit or two */
 .tableofcontents > span { display: flex; }
 .tableofcontents > br { display: none; }
+/* (not html4.4ht's double line height for chapters, which stood for the
+   space above them; nor its part's title larger than the part's number,
+   html4.4ht sizing both the entry and its link) */
+.chapterToc, .likechapterToc, .appendixToc { margin-top: calc(var(--tex8web-toc-chapter-skip) / 2);
+    font-weight: var(--tex8web-toc-chapter-weight, bold); }
+:is(.chapterToc, .likechapterToc, .appendixToc), :is(.chapterToc, .likechapterToc, .appendixToc) a {
+    line-height: inherit; }
+:is(.partToc, .likepartToc) a { font-size: inherit; }
 .sectionToc, .likesectionToc { margin-top: calc(var(--tex8web-toc-section-skip) / 2);
     font-weight: var(--tex8web-toc-section-weight, normal); }
 .subsectionToc, .likesubsectionToc { margin-top: calc(var(--tex8web-toc-subsection-skip) / 2); }
+:is(.chapterToc, .appendixToc) .tocnumber { min-width: var(--tex8web-toc-chapter-number); }
+.sectionToc { margin-left: var(--tex8web-toc-section-indent, 0em); }
 .sectionToc .tocnumber { min-width: var(--tex8web-toc-section-number); }
 .subsectionToc { margin-left: var(--tex8web-toc-subsection-indent); }
 .subsectionToc .tocnumber { min-width: var(--tex8web-toc-subsection-number); }

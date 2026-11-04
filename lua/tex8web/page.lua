@@ -14,12 +14,14 @@ local function trim(s)
 end
 
 -- tex8web-page.tex's build element, for the later passes: the PDF
--- (context.pdf) and the \WebMathMacros definitions (context.macros)
+-- (context.pdf), \contentsname (context.contents) and the \WebMathMacros
+-- definitions (context.macros)
 function M.build_data(document, context)
   local element = document:query_selector("script[type='text/x-tex8web-build']")[1]
   if not element then return end
   local pdf = element:get_attribute("data-pdf")
   context.pdf = pdf ~= "" and pdf or nil
+  context.contents = element:get_attribute("data-contents")
   context.macros = element:get_text()
   element:remove_node()
 end
@@ -70,14 +72,28 @@ local function control(parent, name, attributes)
   parent:add_child_node(el)
 end
 
+-- whether a list of tex4ht's is the table of contents: \listoffigures and
+-- \listoftables make a div.tableofcontents too, of lofToc and lotToc
+-- entries
+local function holds_contents(list)
+  for _, entry in ipairs(dom.elements(list)) do
+    for _, level in ipairs({"part", "chapter", "section", "paragraph"}) do
+      if dom.has_class(entry, "^%a*" .. level .. "Toc$") then return true end
+    end
+  end
+end
+
 -- the table of contents (tex4ht's, from \tableofcontents) out of the text,
 -- into a sidebar, which on a narrow screen is a drawer (a popover, which
 -- the contents button opens); with the unnumbered heading above it, or the
--- box around it if it's all the box holds. Returns the sidebar
-local function contents(document, body)
-  local list = document:query_selector("div.tableofcontents")[1]
+-- box around it if it's all the box holds, or titled \contentsname.
+-- Returns the sidebar and its title
+local function contents(document, body, title)
+  local list
+  for _, candidate in ipairs(document:query_selector("div.tableofcontents")) do
+    if holds_contents(candidate) then list = candidate break end
+  end
   if not list then return end
-  local title = "Contents"
   local heading = dom.previous_element(list)
   if heading and dom.has_class(heading, "^like%a*Head$") then
     title = trim(heading:get_text())
@@ -98,7 +114,7 @@ local function contents(document, body)
   p:add_child_node(p:create_text_node(title))
   nav:add_child_node(p)
   nav:add_child_node(list)
-  return nav
+  return nav, title
 end
 
 -- the controls at the top left: the table of contents (as a drawer, on a
@@ -108,10 +124,10 @@ end
 function M.controls(document, context)
   local body = document:query_selector("body")[1]
   local controls = body:create_element("div", {class = "tex8web-controls"})
-  local toc = contents(document, body)
+  local toc, title = contents(document, body, context.contents)
   if toc then
     control(controls, "contents", {class = "tex8web-control tex8web-contents", type = "button",
-      popovertarget = "tex8web-toc", title = "Contents", ["aria-label"] = "Contents"})
+      popovertarget = "tex8web-toc", title = title, ["aria-label"] = title})
   end
   if context.pdf then
     if lfs.attributes(context.pdf) == nil then
