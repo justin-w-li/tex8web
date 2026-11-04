@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-tex8web turns LaTeX notes into static web pages that look like their PDF and read well on any screen, with almost no extra work from someone used to writing TeX. It is not a textbook platform. A change belongs here if it brings the page closer to the PDF or makes it easier to read; "we could" is not a reason. README.md says what tex8web does and DOCUMENTATION.md how (architecture, files, tests, limitations). Read them before any non-trivial change.
+tex8web turns LaTeX documents into static web pages that look like their PDF and read well on any screen, with almost no extra work from someone used to writing TeX. It is not a textbook platform. A change belongs here if it brings the page closer to the PDF or makes it easier to read; "we could" is not a reason. README.md says what tex8web does and DOCUMENTATION.md how (architecture, files, tests, limitations). Read them before any non-trivial change.
 
 ## Product
 

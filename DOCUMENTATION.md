@@ -58,19 +58,23 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
 
 ## Your own config
 
-For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input{tex8web-core.tex}`. Then pass your copy with `-c`.
+Most documents need no config of their own: build them with `tex8web.cfg` as it is. tex8web reads what it needs from the document itself: its macros (for MathJax), colors, theorem styles, lists, headings (titlesec), table of contents (tocloft) and boxes (tcolorbox). Write a config when the build asks for one, with its warning about macros MathJax can't read, or for something the PDF doesn't have, such as a link to it. `examples/custom/custom.cfg` and `examples/complex/complex.cfg` are worked examples: a layout for a document's header box and a PDF link, and macros for MathJax.
+
+A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-core.tex}`, passed with `-c` in place of `tex8web.cfg`:
 
 ```latex
 \Preamble{xhtml,mathjax}
 \begin{document}
 \input{tex8web-core.tex}
 
-% a macro MathJax can't read as defined (here, one using \mathpalette)
+% a macro MathJax can't read as defined (here, one using \scalebox)
 \WebMathMacros{
-    \newcommand{\Sin}{\mathop{\phantom{\cos}\llap{\sin}}}
+    \newcommand{\bigtimes}{\mathop{\Large\times}}
 }
 
-% a color for your own CSS, in light and dark mode: var(--highlight)
+% soul's highlighter, \hl{...}, as a span of your own, with a color for
+% light and dark mode: var(--highlight)
+\renewcommand{\hl}[1]{\HCode{<span class="highlight">}#1\HCode{</span>}}
 \definecolor{highlight-dark}{RGB}{74, 67, 37}
 \WebColor{highlight}{yellow!20}{highlight-dark}
 \Css{.highlight { background-color: var(--highlight); }}
@@ -81,10 +85,17 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 \EndPreamble
 ```
 
+| Macro | Use it when |
+| --- | --- |
+| `\WebMathMacros{definitions}` | the build ends with "macro(s) left undefined for MathJax", or math shows in red: give MathJax a version of the macro it can read |
+| `\WebColor{name}{light}{dark}` | your config writes HTML or CSS of its own (a macro redefined with `\HCode`, say) and needs a color that follows dark mode |
+| `\WebPDF{path}` | you publish the PDF beside the page and want an icon that links to it |
+| `\Css{...}` | you want a style of your own, or to change one of tex8web's |
+
 - **`\WebMathMacros{definitions}`** gives MathJax its own definitions, in MathJax's TeX, which take precedence over the document's.
   - Use it for any macro the build names in its warning at the end ("macro(s) left undefined for MathJax"): those built with `\mathpalette`, `\scalebox` or internal `@` macros, and xparse commands with arguments other than `m` and a leading `O{}`.
   - Use it also for macros the bridge can't see: those defined in loops, by commands of the document's own, or in files it `\input`s (the bridge reads only the document and the local packages it loads).
-- **`\WebColor{name}{light}{dark}`** makes the CSS variable `--name` from two xcolor (or color package) colors.
+- **`\WebColor{name}{light}{dark}`** makes the CSS variable `--name` from two xcolor (or color package) colors: the first in light mode, the second in dark mode.
 - **`\WebPDF{path}`** copies the PDF next to the page and links it from an icon at the top left. The path is relative to the document's directory.
 - **`\Css{...}`** after `\input{tex8web-core.tex}` overrides tex8web's styles. tex8web's styles are in `css/tex8web.css`, and the document's measurements are custom properties you can override:
   - `--tex8web-textwidth`;
@@ -95,8 +106,6 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
   - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (listed in `css/tex8web.css`).
 
   In a config's `\Css`, `@media (--tex8web-wide)` (and `not (--tex8web-wide)`) is a screen with room for the table of contents and footnotes beside the text.
-
-`examples/custom/custom.cfg` and `examples/complex/complex.cfg` are worked examples: a layout for a document's header box, and macros for MathJax.
 
 ## On the page
 
@@ -155,7 +164,7 @@ Each `main.tex` names its source, license and changes at the top.
 
 ## Testing
 
-- **`npm test`** runs the Lua unit tests (`test/unit/`), then builds every test document (`test/fixtures/`) and example into `build/test/`, and checks each:
+- **`npm test`** runs the Lua unit tests (`test/unit/`), then builds every test document (`test/fixtures/`, each with its own `<name>.cfg` if it has one, as `test.cfg` gives `test.tex` a `\WebColor`) and example into `build/test/`, and checks each:
   - no TeX errors, no build warnings, and no warning from tex8web that tex4ht or a package no longer has a command tex8web patches or calls;
   - no scripts in a prerendered page but tex8web's (tex8web-head.js and tex8web-page.js), no MathJax errors, no macros MathJax doesn't know, no `\widehat` or `\widetilde` as narrow as `\hat` or `\tilde`;
   - the table of contents beside the text, not in it, each entry's number in its box, and each heading's label holding its entry's number, with one space after it, which the stylesheet sizes; and test-generic's measured spacing, label space and title size;

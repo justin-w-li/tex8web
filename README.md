@@ -22,6 +22,8 @@ make4ht -c path/to/tex8web/tex8web.cfg -e path/to/tex8web/tex8web.mk4 -B build -
 
 `out/` gets `document.html` with its stylesheets, fonts and pictures, ready to publish. tex4ht's working files stay in `build/`.
 
+Most documents need no config of their own. When the build asks for one, or you want a link to the PDF, see [Your own config](DOCUMENTATION.md#your-own-config).
+
 ## Examples
 
 [`examples/`](examples) has four documents from the Overleaf gallery:

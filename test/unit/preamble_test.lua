@@ -61,9 +61,9 @@ return {
   end,
 
   ["the local packages a source loads"] = function()
-    local _, packages = read("\\usepackage{amsmath,styles/notes}\\usepackage[x]{extras}\\RequirePackage{more}")
+    local _, packages = read("\\usepackage{amsmath,styles/macros}\\usepackage[x]{shapes}\\RequirePackage{more}")
     table.sort(packages)
-    equal(packages, {"amsmath.sty", "extras.sty", "more.sty", "styles/notes.sty"})
+    equal(packages, {"amsmath.sty", "more.sty", "shapes.sty", "styles/macros.sty"})
   end,
 
   ["the macros a source uses, control symbols too"] = function()
@@ -74,7 +74,7 @@ return {
 
   ["what MathJax can't read"] = function()
     equal(preamble.problem("\\mathpalette\\x{y}"), "uses \\mathpalette")
-    equal(preamble.problem("\\my@helper{x}"), "uses an internal (@) macro")
+    equal(preamble.problem("\\x@helper{x}"), "uses an internal (@) macro")
     equal(preamble.problem("\\frac{1}{2}"), nil)
   end,
 }
