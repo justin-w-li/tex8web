@@ -16,6 +16,9 @@
    in the system's setting; html body: to win over tex4ht's body rules) */
 html body { color-scheme: inherit; }
 :root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); --tex8web-text: light-dark(#000000, #E3E3E3); }
+/* what a link leads to, and the table of contents' entry for the section
+   being read */
+:root { --tex8web-highlight: light-dark(#F9EFF7, #423A37); }
 html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
 /* links: hyperref's colors with colorlinks (tex8web-page.tex); otherwise
    the color of the text, as the PDF draws boxes */
@@ -246,7 +249,7 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* what a link leads to: a little space above it, and a tint */
 :target { scroll-margin-top: 1em; }
 :is(h2, h3, h4, h5, h6):target, .newtheorem:has(.head > a:target) {
-    background-color: color-mix(in srgb, currentColor 6%, transparent); }
+    background-color: var(--tex8web-highlight); }
 
 /* --- controls and the table of contents (page.lua) -------------------- */
 
@@ -350,7 +353,7 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* (and not hyphenated, as tex4ht's links are) */
 .tex8web-toc a { color: inherit; hyphens: manual; }
 .tex8web-toc a[aria-current] { border-radius: 0.2em;
-    background-color: light-dark(#EAF1FF, #423A37); }
+    background-color: var(--tex8web-highlight); }
 .tex8web-js .tex8web-toc .tableofcontents > :is(.subsectionToc, .likesubsectionToc,
     .subsubsectionToc, .likesubsubsectionToc, .paragraphToc, .likeparagraphToc,
     .subparagraphToc, .likesubparagraphToc):not(.tex8web-open) { display: none; }
