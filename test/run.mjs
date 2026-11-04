@@ -58,6 +58,12 @@ const typeset = {
   ],
 };
 
+// pictures sized by \includegraphics[width=..]: a share of the PDF's text
+// width, which holds as a narrower screen reflows the text
+const pictures = {
+  'examples/basic': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.25\)'/],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -71,6 +77,9 @@ function check(doc, result, out, aux) {
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
   for (const pattern of typeset[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} in the typeset math`);
+  }
+  for (const pattern of pictures[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);
   }
   return [...problems, ...checkTexLog(join(aux, doc.tex.replace(/\.tex$/, '.log'))), ...checkLog(result.log),
     ...checkOutput(out)];

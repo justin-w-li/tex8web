@@ -117,6 +117,7 @@ For macros or styles of your own, copy `tex8web.cfg` and add to it after `\input
 These are deliberate:
 
 - The text is 12pt, larger than most PDFs, and everything else is in proportion. The column is as wide as the PDF's in ems.
+- A picture keeps its size beside the text as a narrower screen reflows the text, and shrinks only once the column is narrower than it.
 - Paragraphs are separated by space instead of indented.
 - Display math that doesn't fit scrolls sideways.
 - The table of contents has no page numbers or dot leaders.
