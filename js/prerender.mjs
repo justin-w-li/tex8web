@@ -174,7 +174,28 @@ const css = mathjaxCss.replace(breakable, breakable.replace('> * {', '> :not(mjx
 const cssFile = file.replace(/\.html$/, '') + '-mathjax.css';
 writeFileSync(cssFile, css);
 files.push(cssFile);
-adaptor.replace(adaptor.node('link', { rel: 'stylesheet', href: basename(cssFile) }), style);
+const stylesheet = adaptor.node('link', { rel: 'stylesheet', href: basename(cssFile) });
+adaptor.replace(stylesheet, style);
+
+// the fonts the math uses, preloaded: fetched as the page starts loading,
+// rather than as each is first laid out, which lays out the whole page
+// again (on a phone, a quarter of a second for a long page, each time). A
+// font is used if its name is a class in the math (MJX-TEX-C, TEX-C); ZERO
+// comes with every one of them, and BRK draws mjx-break
+const classes = new Set();
+const collect = node => {
+  for (const name of (adaptor.getAttribute(node, 'class') || '').split(' ')) classes.add(name);
+  for (const child of adaptor.childNodes(node)) if (isElement(child)) collect(child);
+};
+for (const math of adaptor.tags(root, 'mjx-math')) collect(math);
+const breaks = adaptor.tags(root, 'mjx-break').length > 0;
+for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: url\("([^"]+)"\)/g)) {
+  const name = family.slice('MJX-'.length);
+  if (classes.has(name) || (name === 'TEX-ZERO' && classes.size) || (name === 'BRK' && breaks)) {
+    adaptor.insert(adaptor.node('link', { rel: 'preload', as: 'font', type: 'font/woff2', crossorigin: '',
+      href: url }), stylesheet);
+  }
+}
 
 // (data-latex holds each node's source, for MathJax's menu)
 const page = adaptor.doctype(document) + '\n' + adaptor.outerHTML(root)

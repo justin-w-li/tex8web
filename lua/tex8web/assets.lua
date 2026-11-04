@@ -46,8 +46,37 @@ local function uses_sans(document, context)
   return found
 end
 
+-- the faces of Latin Modern Roman and Mono the page's text uses: in
+-- tex4ht's classes for them (ec-lmbx-10, cmti-10), or in elements the
+-- browser sets in bold, italic or monospace (headings bold, by
+-- css/tex8web.css's default)
+local function roman_faces(document)
+  local used = {["lmroman10-regular.woff2"] = true}
+  local tags = {h1 = "bold", h2 = "bold", h3 = "bold", h4 = "bold", h5 = "bold", h6 = "bold",
+    b = "bold", strong = "bold", em = "italic", i = "italic", cite = "italic",
+    pre = "mono", code = "mono", tt = "mono", kbd = "mono", samp = "mono"}
+  local file = {bold = "lmroman10-bold.woff2", italic = "lmroman10-italic.woff2",
+    bolditalic = "lmroman10-bolditalic.woff2", mono = "lmmono10-regular.woff2"}
+  document:traverse_elements(function(el)
+    local class = el:get_attribute("class") or ""
+    local font = class:match("^%a+%-(lm%a+)%-") or class:match("^([ce][cm]%a+)%-")
+    local face = tags[el:get_element_name()]
+    if font and not font:find("ss") then
+      face = font:find("tt") and "mono" or (font:find("bxi") or font:find("bxti") or font:find("bi$"))
+        and "bolditalic" or font:find("bx") and "bold"
+        or (font:find("ri") or font:find("ti") or font:find("it") or font:find("sl")) and "italic"
+        or face
+    end
+    if face then used[file[face]] = true end
+  end)
+  return used
+end
+
 -- the fonts, and the pictures, which the page references relative to the
--- document (\includegraphics), unless tex4ht made them
+-- document (\includegraphics), unless tex4ht made them. The faces of the
+-- text are preloaded: fetched as the page starts loading, rather than as
+-- each is first laid out, which lays out the whole page again (prerender.mjs
+-- does the same for MathJax's)
 function M.copy(document, context)
   local function add_font(font)
     M.add(context.root .. "/fonts/" .. font, context.dir .. "/fonts/" .. font)
@@ -55,6 +84,14 @@ function M.copy(document, context)
   for _, font in ipairs(fonts) do add_font(font) end
   if uses_sans(document, context) then
     for _, font in ipairs(sans_fonts) do add_font(font) end
+  end
+  local head = document:query_selector("head")[1]
+  local faces = roman_faces(document)
+  for _, font in ipairs(fonts) do
+    if faces[font] then
+      head:add_child_node(head:create_element("link", {rel = "preload", as = "font",
+        type = "font/woff2", crossorigin = "", href = "fonts/" .. font}))
+    end
   end
   for _, img in ipairs(document:query_selector("img")) do
     local src = img:get_attribute("src") or ""

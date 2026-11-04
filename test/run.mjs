@@ -83,6 +83,13 @@ const terms = {
   'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
 };
 
+// fonts preloaded: the faces of the text, from tex4ht's classes and the
+// headings, and MathJax's that the math uses
+const preloads = {
+  'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
+    'mathjax/mjx-tex-zero', 'mathjax/mjx-tex-n', 'mathjax/mjx-tex-c', 'mathjax/mjx-tex-lo'],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -99,6 +106,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of pictures[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);
+  }
+  for (const font of preloads[doc.name] ?? []) {
+    if (!new RegExp(`<link [^>]*href='fonts/${font}\\.woff2' rel='preload'`).test(html)) problems.push(`${font} not preloaded`);
   }
   for (const pattern of minipages[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);
