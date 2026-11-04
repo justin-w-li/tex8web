@@ -121,9 +121,9 @@ local function contents(document, body)
   local p = nav:create_element("p", {id = "tex8web-toc-title", class = "tex8web-toc-title"})
   p:add_child_node(p:create_text_node(title))
   nav:add_child_node(p)
-  -- (tex8web-page.js shows it)
+  -- (tex8web-page.js shows it, and says what it finds)
   nav:add_child_node(nav:create_element("input", {type = "search", class = "tex8web-toc-filter",
-    hidden = "hidden", placeholder = "Find a section, theorem or term"}))
+    hidden = "hidden"}))
   nav:add_child_node(list)
   return nav
 end
