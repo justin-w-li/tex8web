@@ -112,7 +112,7 @@ div.thanks { font-style: normal; }
    empty paragraph before a list there) */
 :is(.sectionHead, .likesectionHead, .subsectionHead, .likesubsectionHead, .subsubsectionHead,
     .likesubsubsectionHead) + :is(div.newtheorem, ol.enumerate1, ul.itemize1, dl.description,
-    dl.enumerate-enumitem) { margin-top: 0 !important; }
+    dl.enumerate-enumitem, dl.thebibliography) { margin-top: 0 !important; }
 /* (run into their paragraph, unless titlesec puts them on a line of their
    own, by default with the space below them that a paragraph has) */
 .paragraphHead, .likeparagraphHead { display: var(--tex8web-paragraph-display, inline);
