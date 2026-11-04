@@ -259,5 +259,15 @@
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
 \web@Css{:root { --tex8web-textwidth: \web@em\web@textwidth; }}
+% The abstract's leading as in the PDF, a fraction of the text's: tex4ht
+% sets \small as a span, which leaves the paragraph's own line height at the
+% text's. (The class's \abstract sets the size)
+\AtBeginDocument{%
+    \let\web@abstract\abstract
+    \renewcommand\abstract{%
+        \dimen@\baselineskip
+        \web@abstract
+        \web@Css{:root { --tex8web-abstract-leading:
+            \strip@pt\dimexpr\baselineskip*65536/\dimen@\relax; }}}}
 
 \makeatother

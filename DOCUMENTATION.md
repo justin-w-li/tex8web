@@ -218,7 +218,7 @@ Each `main.tex` names its source, license and changes at the top.
 | Look at | As in the PDF | Typical failure |
 | --- | --- | --- |
 | Title, author, date | Title not bold, larger than the author and date | Bold title in the browser's default heading size |
-| Abstract | Centered "Abstract", text smaller and indented | |
+| Abstract | Centered "Abstract", text smaller and indented, lines closer together than the text's | Lines as far apart as the text's |
 | Contents | Section entries bold; numbers in a column, so titles line up; `$L^2$` in entry 4 set as math | Titles ragged after "10"; "L2" as plain text |
 
 #### 1 Text

@@ -35,13 +35,14 @@ if (!only.length) {
 // titlesec's spacing in its *n form, a \titleformat's space after the
 // label in a bold font's ems, a title's own size, and framed's space
 // around its box (\topsep); report's table of contents, its sections
-// indented from its chapters, and its chapter's title and label
+// indented from its chapters, and its chapter's title and label; the
+// abstract's leading, \small's 12pt over the text's 13.6pt
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
     '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
   // (and test.cfg's \WebColor, from an xcolor expression and an RGB color)
-  'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)' },
+  'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',

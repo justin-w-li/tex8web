@@ -81,6 +81,8 @@ html body { font-size: 12pt; }
 h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
 /* (a \thanks is a footnote in the PDF, upright; html4.4ht sets it in italic) */
 div.thanks { font-style: normal; }
+/* (lh in line-height is the parent's, so this is a fraction of the text's) */
+.abstract p { line-height: calc(var(--tex8web-abstract-leading, 1) * 1lh); }
 /* (a part's and a chapter's label, "Chapter 1", above the title in a size of
    its own; an article's parts aren't measured, and keep the browser's
    size) */
