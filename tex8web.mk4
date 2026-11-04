@@ -47,6 +47,7 @@ local passes = {
   text.theorem_spacing,
   text.label_space,
   text.no_break_spaces,
+  text.minipages,
   text.sidenotes,
   page.controls,
   macros.define,

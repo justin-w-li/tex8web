@@ -67,6 +67,15 @@ const pictures = {
     /<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.45\)'/],
 };
 
+// minipages and subfigures, two in one row, each with its share of the
+// PDF's text width and its position
+const minipages = {
+  'test': [
+    /<div class='tex8web-minipages'><div class='minipage[^']* tex8web-minipage-c' style='--tex8web-share: 0\.45'>(?:(?!tex8web-minipages)[^])*<div class='minipage tex8web-minipage-c' style='--tex8web-share: 0\.45'>/,
+    /<div class='tex8web-minipages'><div class='subfigure[^']* tex8web-minipage-[tcb]' style='--tex8web-share: 0\.48'>(?:(?!tex8web-minipages)[^])*<div class='subfigure tex8web-minipage-[tcb]' style='--tex8web-share: 0\.48'>/,
+  ],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -83,6 +92,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of pictures[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);
+  }
+  for (const pattern of minipages[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);
   }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {

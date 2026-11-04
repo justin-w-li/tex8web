@@ -139,6 +139,61 @@ function M.no_break_spaces(document)
   end)
 end
 
+-- minipages and subfigures side by side (tex8web-text.tex): each run of
+-- them on one line of the PDF, with nothing but space between, in one row.
+-- One that begins a paragraph (tex8web-par) starts a new line
+local function is_minipage(node)
+  return node:is_element() and node:get_element_name() == "div"
+    and (dom.has_class(node, "^minipage ") or dom.has_class(node, "^subfigure "))
+end
+
+-- (~ between two is a space too)
+local function is_space(node)
+  if node:is_text() then return not node:get_text():find("%S") end
+  return not node:is_element() or node:get_attribute("class") == "tex8web-nbsp"
+end
+
+function M.minipages(document)
+  local parents, seen = {}, {}
+  for _, el in ipairs(document:query_selector("div.minipage, div.subfigure")) do
+    local parent = el:get_parent()
+    if not seen[parent] then seen[parent], parents[#parents + 1] = true, parent end
+  end
+  for _, parent in ipairs(parents) do
+    local children, out, i = parent:get_children(), {}, 1
+    while i <= #children do
+      if is_minipage(children[i]) then
+        local row = parent:create_element("div", {class = "tex8web-minipages"})
+        row:add_child_node(children[i])
+        local j = i + 1
+        while true do
+          local k = j
+          while children[k] and is_space(children[k]) do k = k + 1 end
+          if not (children[k] and is_minipage(children[k]))
+              or dom.has_class(children[k], "tex8web%-par") then
+            break
+          end
+          row:add_child_node(children[k])
+          j = k + 1
+        end
+        -- (\noindent's empty paragraph before it, which would only add
+        -- the space between paragraphs at the top of a box)
+        local before = out[#out]
+        if before and before:is_element() and before:get_element_name() == "p"
+            and #before:get_children() == 0 then
+          out[#out] = nil
+        end
+        out[#out + 1] = row
+        i = j
+      else
+        out[#out + 1] = children[i]
+        i = i + 1
+      end
+    end
+    dom.set_children(parent, out)
+  end
+end
+
 -- footnotes (tex4ht's, at the end of the page with fn-in, which
 -- tex8web.mk4 sets) each after the paragraph, list or theorem that holds
 -- its mark, in order; css/tex8web.css puts them beside it on a wide

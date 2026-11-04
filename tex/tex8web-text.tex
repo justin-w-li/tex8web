@@ -219,6 +219,45 @@
         \fi
     }
   }
+
+% a minipage, or subcaption's subfigure (a minipage inside), as wide as in
+% the PDF, as a share of the text width, with its position (t, c or b) and
+% whether it starts a line (begins a paragraph), for text.lua and the
+% stylesheet to set it beside the next. html4.4ht writes the div as the
+% environment begins, before the minipage's arguments are read; here, once
+% they are, with the class \web@minipage{..} asked for. tcolorbox's
+% minipages ask for none: its box is its own markup
+\web@needs{@iiiminipage}
+\cs_set_eq:NN \__web_minipage:w \@iiiminipage
+\tl_new:N \g__web_minipage_class_tl
+\tl_new:N \l__web_minipage_pos_tl
+\cs_set:Npn \web@minipage #1
+  { \tl_gset:Nx \g__web_minipage_class_tl { #1 \mode_if_vertical:T { ~tex8web-par } } }
+\cs_set:Npn \@iiiminipage #1
+  { \tl_set:Nn \l__web_minipage_pos_tl {#1} \__web_minipage:w {#1} }
+\Configure{minipage}
+  {
+    \tl_if_empty:NF \g__web_minipage_class_tl
+      {
+        \HCode{<div~class="\g__web_minipage_class_tl\c_space_tl tex8web-minipage-\l__web_minipage_pos_tl"~
+          style="--tex8web-share:~\fp_eval:n{round(\@tempdima/\web@textwidth,4)}">}
+        \tl_gclear:N \g__web_minipage_class_tl
+      }
+  }
+  {}
 \ExplSyntaxOff
+\ConfigureEnv{minipage}
+    {\web@minipage{minipage}\ifvmode\IgnorePar\fi\EndP{\ifnum0=`}\fi}
+    {\ifnum0=`{\fi}\EndP\HCode{</div>}}
+    {}{}
+% (and the rest of html4.4ht's subfigure, for subcaption)
+\@ifpackageloaded{subcaption}{%
+    \Configure{subfigure}
+        {\web@minipage{subfigure}\ifvmode\IgnorePar\fi\EndP
+         \Configure{caption}{\ifvmode\IgnorePar\fi\EndP\HCode{<div class="caption"><span class="id">}}%
+            {:}{\HCode{</span><span \Hnewline class="content">}}%
+            {\HCode{</span></div>}}}%
+        {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}%
+}{}
 
 \makeatother

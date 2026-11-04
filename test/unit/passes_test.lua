@@ -55,6 +55,20 @@ return {
       .. "<span class='mathjax-inline'>\\(1\\)</span></span> and a<span class='tex8web-nbsp'>\u{A0}</span>b</p>")
   end,
 
+  ["text.minipages: each line of minipages and subfigures in a row, nested ones too, without \\noindent's empty paragraph"] = function()
+    local d = parse([[<div class="minipage tex8web-par tex8web-minipage-t">A</div> <span class="tex8web-nbsp">]]
+      .. "\u{A0}" .. [[</span><div class="subfigure tex8web-minipage-b">]]
+      .. [[<div class="minipage tex8web-par tex8web-minipage-c">B</div></div>]]
+      .. [[<div class="minipage tex8web-par tex8web-minipage-c">C</div><p class="noindent"></p>]]
+      .. [[<div class="minipage tex8web-minipage-c">D</div><div class="minipage-like">E</div>]])
+    text.minipages(d)
+    equal(body(d), [[<div class='tex8web-minipages'><div class='minipage tex8web-par tex8web-minipage-t'>A</div>]]
+      .. [[<div class='subfigure tex8web-minipage-b'><div class='tex8web-minipages'>]]
+      .. [[<div class='minipage tex8web-par tex8web-minipage-c'>B</div></div></div></div>]]
+      .. [[<div class='tex8web-minipages'><div class='minipage tex8web-par tex8web-minipage-c'>C</div></div>]]
+      .. [[<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c'>D</div></div><div class='minipage-like'>E</div>]])
+  end,
+
   ["text.sidenotes: each footnote after its block, in order, unless in a box"] = function()
     local function mark(n) return ([[<span class="footnote-mark"><a href="#fnNx0" id="fnNx0-bk">N</a></span>]]):gsub("N", n) end
     local function note(n, text)

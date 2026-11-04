@@ -119,6 +119,7 @@ These are deliberate:
 
 - The text is 12pt, larger than most PDFs, and everything else is in proportion. The column is as wide as the PDF's in ems.
 - A picture keeps its size beside the text as a narrower screen reflows the text, and shrinks only once the column is narrower than it.
+- Minipages and subcaption's subfigures on one line of the PDF are side by side, each as wide as in the PDF, spread along the line as by `\hfill` whatever the space between them (`\quad`, say); in a figure, which is centered as a whole, they are spaced evenly. On a column narrower than the text, as on a phone, they wrap, and one alone on its line is as wide as the column.
 - Paragraphs are separated by space instead of indented.
 - Display math that doesn't fit scrolls sideways; on a narrow screen, so does a table or verbatim block that doesn't, rather than widening the page.
 - The table of contents has no page numbers or dot leaders.
@@ -132,7 +133,7 @@ These are deliberate:
 - **Macros MathJax can't read** (see `\WebMathMacros` above), and macros that parse their arguments themselves, such as comma-separated lists. MathJax shows these in red.
 - **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.
 - **tcolorbox:** a box gets its colors (with darker ones in dark mode), rules, corners, borderlines, shadow, spacing and title font; a boxed title is a tab at the top of the box, and `attach title to upper` starts the text. What a skin draws freehand with TikZ (`interior code`, `frame code`, overlays, shadings) comes out as a plain frame and background. Pictures inside listing boxes (`tcblisting` side by side) aren't converted. A fragile command in a box's title can break the build; `\robustify` it in your config.
-- **Minipages** are as wide as the column, one above the other, rather than side by side; a picture in one keeps its size.
+- **A minipage in a paragraph's text** (`text \begin{minipage}..\end{minipage} text`) breaks the paragraph around it, and `\centering` in a minipage is followed only in a figure, which is centered as a whole.
 - **Chapters:** a chapter's label is tex4ht's, and without tocloft the table of contents is indented as in article, not as in book or report.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX (sidenotes, margin figures, letterspacing), need a config of their own.
 
@@ -237,7 +238,8 @@ Each `main.tex` names its source, license and changes at the top.
 | References | "Table 1" and "fig. 1" each linked as a whole (cleveref's `nameinlink`); citations [1] [2] in the citation color | Only the number linked |
 | Table | Caption above, booktabs rules, math in cells | |
 | Figure | TikZ drawing at its PDF size, caption below | |
-| Pictures | Each as wide as in the PDF, the second twice the first (one above the other) | As wide as the text |
+| Pictures | Side by side, each as wide as in the PDF, the second twice the first | One above the other, as wide as the text |
+| Subfigures | Side by side, each picture half as wide as its subfigure, captions (a) and (b) below them | One above the other, or the pictures as wide as the subfigures |
 
 #### Dark mode
 
@@ -272,7 +274,7 @@ A second, short document unlike the first:
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats, tcolorbox's options), and `\web@needs`, which warns when tex4ht or a package no longer has what tex8web patches |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
-| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, heading numbers, no-break spaces, footnotes, links, controls and the table of contents, meta tags, scripts |
+| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, heading numbers, no-break spaces, rows of minipages, footnotes, links, controls and the table of contents, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `prerender.lua` | the files next to the page, bibtex and biber, prerendering |
 | `lua/tex8web/files.lua` | reading files, and quoting their names for the shell |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |

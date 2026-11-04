@@ -147,6 +147,23 @@ figure.figure { margin-block: 1.75em; }
 /* floats (a figure, a table) aren't indented in LaTeX, as browsers indent
    a <figure> */
 figure { margin-inline: 0; }
+/* minipages and subfigures side by side while the column has room, each
+   as wide as in the PDF (--tex8web-share of the text, tex8web-text.tex),
+   spread along the line as by \hfill, the usual space between them (but
+   evenly in a figure, which tex4ht centers, as \centering does), and
+   aligned as its [t], [c] or [b] says (and not as tex4ht's subfigure, at
+   most 45% with a margin). On a column narrower than the text, as on a
+   phone, they wrap, and one alone on its line grows to the column's width:
+   (text width + the body's padding there - 100vw) is then positive */
+.tex8web-minipages { display: flex; flex-wrap: wrap; justify-content: space-between;
+    align-items: center; row-gap: 1em; }
+figure .tex8web-minipages { justify-content: space-evenly; }
+.tex8web-minipages > div { --tex8web-width: calc(var(--tex8web-textwidth) * var(--tex8web-share));
+    width: var(--tex8web-width); flex-grow: 1; margin: 0;
+    max-width: min(100%, max(var(--tex8web-width),
+        (var(--tex8web-textwidth) + 2.5rem - 100vw) * 1000)); }
+.tex8web-minipages > .tex8web-minipage-t { align-self: baseline; }
+.tex8web-minipages > .tex8web-minipage-b { align-self: last baseline; }
 .mathjax-block img { display: block; margin: 0.7em auto; }
 /* a tabular or verbatim too wide for a narrow screen scrolls on its own,
    as a display too wide does, rather than widening the page */

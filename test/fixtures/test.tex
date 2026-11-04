@@ -9,6 +9,7 @@
 \usepackage{amsmath, amssymb, amsthm, mathtools, bm, mathrsfs}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{subcaption}
 \usepackage{tikz}
 \usepackage[colorlinks]{hyperref}
 \usepackage[nameinlink]{cleveref}
@@ -313,6 +314,20 @@ Gather*, multline and alignat:
         \includegraphics[width=\linewidth]{test-picture.png}
         \caption{As wide as its minipage.}
     \end{minipage}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=0.5\linewidth]{test-picture.png}
+        \caption{One.}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=0.5\linewidth]{test-picture.png}
+        \caption{Two.}
+    \end{subfigure}
+    \caption{Subfigures.}
 \end{figure}
 
 \begin{thebibliography}{9}
