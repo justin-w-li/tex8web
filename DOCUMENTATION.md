@@ -21,7 +21,7 @@ A page goes through four stages:
    - It measures the document (text width, heading sizes, theorem and list spacing, link colors) for the stylesheet `css/tex8web.css`.
 2. **HTML passes** (`lua/tex8web/`, run by `tex8web.mk4`).
    - **The macro bridge** (`macros.lua`, `preamble.lua`). MathJax doesn't see the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document and from the local packages it loads, and translates them for MathJax. The page gets only the macros its math uses, which tex8web.js gives MathJax before it typesets anything; templates and the rest of the source are never published.
-   - The other passes fix spacing, add links to headings and theorems, add meta tags and the PDF link, and copy what the page needs next to it, preloading the faces of Latin Modern the text uses.
+   - The other passes fix spacing, add links to headings and theorems, add meta tags and the PDF link, and copy what the page needs next to it, preloading the faces of Latin Modern the text is set in (by the stylesheet's rules for tex4ht's font classes and for headings).
 3. **MathJax's sizes** (`js/tex8web.js`). MathJax's TeX input differs from TeX in a few sizes, and this file sets them as TeX does:
    - `\big` and its relatives;
    - the 10pt delimiters and large operators of an 11pt or 12pt document;
@@ -149,6 +149,7 @@ These are deliberate:
 - **Line spacing** is the browser's (`line-height: normal`), not TeX's `\baselineskip`, so lines sit a little further apart than in the PDF; under a heading, about 0.15em. Matching it would change every page, and math taller than the line couldn't fall back to TeX's `\lineskip`.
 - **framed's `\FrameSep`:** a framed box has no padding between its rule and its text, since tex8web can't tell which `\MakeFramed` environments have it (`framed` does; one with only a bar in its `\FrameCommand` doesn't).
 - **A config's styles for `.mathjax-inline`** apply only when MathJax typesets the page in the browser: prerendering leaves that span out, except where tex4ht puts inline math outside a paragraph.
+- **A page opened from disk** (`file://`) in Chrome: its fonts load as they would without preloading, and the console reports each preload as blocked, since Chrome refuses the cross-origin requests that font preloads are.
 - **Chapters:** a chapter's label is tex4ht's, and without tocloft the table of contents is indented as in article, not as in book or report.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX (sidenotes, margin figures, letterspacing), need a config of their own.
 - **The theme button, while a long page loads,** shows with the other controls but does nothing until `tex8web-page.js` runs, which as a deferred script waits for the whole page to be read in.

@@ -83,11 +83,13 @@ const terms = {
   'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
 };
 
-// fonts preloaded: the faces of the text, from tex4ht's classes and the
-// headings, and MathJax's that the math uses
+// the fonts preloaded, and no others: the faces of the text (bold
+// headings, italic, \texttt; but not \verb, in the browser's monospace)
+// and MathJax's that the math uses
 const preloads = {
-  'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
-    'mathjax/mjx-tex-zero', 'mathjax/mjx-tex-n', 'mathjax/mjx-tex-c', 'mathjax/mjx-tex-lo'],
+  'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmroman10-bolditalic',
+    'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'b', 'c', 'mi', 'v', 'lo', 'so', 's3', 's4', 'brk']
+      .map(font => `mathjax/mjx-tex-${font}`)],
 };
 
 // what's wrong with a built page: its log, the page and the files with it
@@ -107,8 +109,11 @@ function check(doc, result, out, aux) {
   for (const pattern of pictures[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);
   }
-  for (const font of preloads[doc.name] ?? []) {
-    if (!new RegExp(`<link [^>]*href='fonts/${font}\\.woff2' rel='preload'`).test(html)) problems.push(`${font} not preloaded`);
+  if (preloads[doc.name]) {
+    const found = [...html.matchAll(/<link [^>]*rel='preload'[^>]*>/g)]
+      .map(([link]) => link.match(/href='fonts\/([^']+)\.woff2'/)?.[1]).sort().join(' ');
+    const wanted = [...preloads[doc.name]].sort().join(' ');
+    if (found !== wanted) problems.push(`fonts preloaded: ${found}, not ${wanted}`);
   }
   for (const pattern of minipages[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);

@@ -181,14 +181,16 @@ adaptor.replace(stylesheet, style);
 // rather than as each is first laid out, which lays out the whole page
 // again (on a phone, a quarter of a second for a long page, each time). A
 // font is used if its name is a class in the math (MJX-TEX-C, TEX-C); ZERO
-// comes with every one of them, and BRK draws mjx-break
+// comes with every one of them, and BRK draws where a line breaks (an
+// mjx-break, or a line of a breakable display)
 const classes = new Set();
 const collect = node => {
   for (const name of (adaptor.getAttribute(node, 'class') || '').split(' ')) classes.add(name);
   for (const child of adaptor.childNodes(node)) if (isElement(child)) collect(child);
 };
 for (const math of adaptor.tags(root, 'mjx-math')) collect(math);
-const breaks = adaptor.tags(root, 'mjx-break').length > 0;
+const breaks = adaptor.tags(root, 'mjx-break').length > 0
+  || adaptor.tags(root, 'mjx-linestack').some(stack => has(stack, 'breakable'));
 for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: url\("([^"]+)"\)/g)) {
   const name = family.slice('MJX-'.length);
   if (classes.has(name) || (name === 'TEX-ZERO' && classes.size) || (name === 'BRK' && breaks)) {
