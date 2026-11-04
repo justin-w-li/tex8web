@@ -80,6 +80,10 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 \WebColor{highlight}{yellow!20}{highlight-dark}
 \Css{.highlight { background-color: var(--highlight); }}
 
+% the terms a command of the document's own sets (here \term{...}), which
+% the table of contents' filter finds
+\WebTerm\term
+
 % a link to the PDF after the title (build it first)
 \WebPDF{build/pdf/document.pdf}
 
@@ -90,6 +94,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 | --- | --- |
 | `\WebMathMacros{definitions}` | the build ends with "macro(s) left undefined for MathJax", or math shows in red: give MathJax a version of the macro it can read |
 | `\WebColor{name}{light}{dark}` | your config writes HTML or CSS of its own (a macro redefined with `\HCode`, say) and needs a color that follows dark mode |
+| `\WebTerm\cs` | your document marks the terms it defines with a one-argument command (`\newcommand{\term}[1]{\emph{#1}}`, say) and you want the contents filter to find them |
 | `\WebPDF{path}` | you publish the PDF beside the page and want an icon that links to it |
 | `\Css{...}` | you want a style of your own, or to change one of tex8web's |
 
@@ -97,11 +102,13 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
   - Use it for any macro the build names in its warning at the end ("macro(s) left undefined for MathJax"): those built with `\mathpalette`, `\scalebox` or internal `@` macros, and xparse commands with arguments other than `m` and a leading `O{}`.
   - Use it also for macros the bridge can't see: those defined in loops, by commands of the document's own, or in files it `\input`s (the bridge reads only the document and the local packages it loads).
 - **`\WebColor{name}{light}{dark}`** makes the CSS variable `--name` from two xcolor (or color package) colors: the first in light mode, the second in dark mode.
+- **`\WebTerm\cs`** makes what a one-argument command `\cs` sets in the text a term, which the table of contents' filter finds. Its id, which the filter links to, is `term-` and its text without its math. In math, `\cs` is as the macro bridge has it, and isn't found; in a heading or a theorem's note, it's found as the heading or theorem. Give each command to `\WebTerm` once.
 - **`\WebPDF{path}`** copies the PDF next to the page and links it from an icon at the top left. The path is relative to the document's directory.
 - **`\Css{...}`** after `\input{tex8web-core.tex}` overrides tex8web's styles. tex8web's styles are in `css/tex8web.css`, and the document's measurements are custom properties you can override:
   - `--tex8web-textwidth`;
   - `--tex8web-title-size`, `--tex8web-section-size` and so on down to `--tex8web-subparagraph-size` (and in a class with chapters, `--tex8web-part-size` and `--tex8web-chapter-size`, with `--tex8web-part-label-size` and `--tex8web-chapter-label-size` for their labels); each numbered heading's `-labelsep` (the space after its number), and with titlesec each heading's `-family`, `-weight`, `-style`, `-variant`, `-align`, `-before` and `-after` (and `-display` for `\paragraph` and `\subparagraph`);
   - `--tex8web-list-sep`, `--tex8web-item-sep` (enumitem's lists carry their own, as `--tex8web-enumitem-*`);
+  - `--tex8web-framed-sep`, framed's `\OuterFrameSep` above and below its boxes;
   - `--tex8web-toc-section-number`, then `--tex8web-toc-<level>-indent` and `--tex8web-toc-<level>-number` for each level from `subsection` to `subparagraph`, and `--tex8web-toc-section-skip`, `--tex8web-toc-subsection-skip`, `--tex8web-toc-section-weight`; in a class with chapters, also `--tex8web-toc-chapter-number`, `--tex8web-toc-section-indent`, `--tex8web-toc-chapter-skip` and `--tex8web-toc-chapter-weight`;
   - colors: `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url`;
   - each tcolorbox's frame, colors and spacing, as `--tcb-*` on the box's element (listed in `css/tex8web.css`).
@@ -110,9 +117,11 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 
 ## On the page
 
-- **Controls:** quiet icons at the top left: the table of contents (a drawer on a narrow screen; on a wide one, the button hides or shows the column, fading, and the page remembers the choice as it does the theme), the PDF (with `\WebPDF`, in a new tab), and light or dark. On a narrow screen they're in a bar across the top, which slides away while the reader scrolls down and comes back as they scroll up (a turn of a few pixels, or a bounce past the page's end, doesn't count). From a wide screen to a narrow one, the icons and the table of contents fade out (unless the reader's system asks for reduced motion), and the bar comes back as the reader scrolls up, or at once at the top of the page.
+- **Controls:** quiet icons at the top left: the table of contents (a drawer on a narrow screen; on a wide one, the button hides or shows the column, fading, and the page remembers the choice as it does the theme), the PDF (with `\WebPDF`, in a new tab), light or dark, and tex8web's repository on GitHub (in a new tab). On a narrow screen they're in a bar across the top, which also names the section being read (its entry in the table of contents, once the reader reaches the first) and opens the table of contents when tapped there, and which slides away while the reader scrolls down and comes back as they scroll up (a turn of a few pixels, or a bounce past the page's end, doesn't count). From a wide screen to a narrow one, the icons and the table of contents fade out (unless the reader's system asks for reduced motion), and the bar comes back as the reader scrolls up, or at once at the top of the page.
 - **Theme:** the page follows the reader's light or dark setting until they choose with the button. The choice is kept in the browser (`localStorage`, key `tex8web-theme`), for every tex8web page of the site, and applied before the page is drawn. Switching fades the page from one theme to the other (a view transition), unless the reader's system asks for reduced motion. `data-theme="light"` or `"dark"` on the root element sets it. Light mode uses the PDF's colors; TikZ pictures are inverted in dark mode.
+- **The reader's place:** as they leave a page, the last heading or numbered theorem above the top of the screen is kept in the browser (`localStorage`, key `tex8web-place:` and the page's path), and the page opens there next time, that heading or theorem a little below the top. Not as the page reloads or the reader goes back to it, when the browser keeps their place, nor when the address leads somewhere on the page (`#...`).
 - **Table of contents:** `\tableofcontents` (or a box holding only the table of contents) moves out of the text, beside it on a wide screen and into a drawer behind the contents button on a narrow one (sliding in, unless the reader's system asks for reduced motion), as wide in both; a `\listoffigures` or `\listoftables` stays in the text. Its title, which also labels the contents button, is the heading above it, or the box's title, or else `\contentsname`. It marks the section being read and shows the entries under that section. Entries are indented, and their numbers boxed, as in the PDF (tocloft's indents and widths, or the class's, which tex8web reads from its `\l@section` and the like, or else article's), from the top level's indent (chapters', or sections'). The space before each entry is half the document's (tocloft's `\cftbeforesecskip` and `\cftbeforesubsecskip`, or the class's), since the column or drawer is narrow; entries are bold where the class's are (without tocloft).
+- **Finding:** a field at the top of the table of contents finds, as the reader types, the headings, numbered theorems and terms (`\WebTerm`) whose text has every word typed, in place of the entries and in the document's order; a term is shown with the theorem it's in, or else its section. Results show their math typeset, as the page does. Case and accents don't count, nor the style of MathJax's letters (𝜎 is found as σ), and a Greek letter, ∞, ∂, ∇ or ∅ is found by its name in TeX too (`sigma` or `\sigma` finds σ, and `epsilon` finds both ε and ϵ), since the typeset page no longer has the source. The arrow keys choose among them, from the first, while the focus stays in the field (for a screen reader, a combobox and its list), and Enter follows the one chosen; clearing the field brings back the entries. Its placeholder names only what the page has ("Find a section or theorem"). Theorems without a number (`\newtheorem*`) and tcolorbox's aren't found. Without JavaScript there is no field.
 - **Headings** are as much larger than the text as in the PDF, with as much space between number and title: LaTeX's `\quad`, amsart's `\enspace`, KOMA's `\enskip`, or titlesec's. In a class with chapters, a part's and a chapter's title are in report's and book's `\Huge`, and their label ("Chapter 1") above it in `\huge`. The title is in the size its text starts with (`\title{\Large ...}`), when `\title` is in the preamble. With titlesec, each from `\section` to `\subparagraph` has its `\titleformat`'s font, alignment, label (`\thesection.`, say) and space after the label, and its `\titlespacing` above and below it (or the class's); a `\paragraph` or `\subparagraph` is on a line of its own unless its shape is `runin`. titlesec's other shapes, its `\titlelabel`, and titling's `\pretitle` aren't followed.
 - **Footnotes** follow the paragraph, list or theorem that holds their mark: beside it on a wide screen, lined up with the mark, and below it on a narrow one. A footnote in a table, figure, box or formula stays at the end of the page. (`tex8web.mk4` gives tex4ht the `fn-in` option, which keeps footnotes on the page; `\thanks` stays under the title.)
 - **Previews:** pointing at a link to something on the page (`\ref`, `\eqref`, `\cite`, a footnote mark, a section) shows a copy of it in a card, over the text column: the theorem, box or table, the equation, the reference, the figure, the footnote, or the heading and what follows it. Reaching the link with the keyboard shows it too; on a touch screen, the first tap shows it and the second follows the link, and a tap anywhere else only closes it.
@@ -144,6 +153,7 @@ These are deliberate:
 - **Macros MathJax can't read** (see `\WebMathMacros` above), and macros that parse their arguments themselves, such as comma-separated lists. MathJax shows these in red.
 - **Small differences** in the sizes of radicals and of `\left … \right` delimiters, which MathJax picks from its own font.
 - **tcolorbox:** a box gets its colors (with darker ones in dark mode), rules, corners, borderlines, shadow, spacing and title font; a boxed title is a tab at the top of the box, and `attach title to upper` starts the text. What a skin draws freehand with TikZ (`interior code`, `frame code`, overlays, shadings) comes out as a plain frame and background. Pictures inside listing boxes (`tcblisting` side by side) aren't converted. A fragile command in a box's title can break the build; `\robustify` it in your config.
+- **The reader's place** is kept by a theorem's id, tex4ht's count of it: a theorem added before it in the document moves the place to the one before.
 - **A minipage in a paragraph's text** (`text \begin{minipage}..\end{minipage} text`) breaks the paragraph around it, and `\centering` in a minipage is followed only in a figure, which is centered as a whole.
 - **Minipages, more:** two minipages each in its own `\fbox` stay one above the other. On a screen that always shows a scroll bar, a band of window widths as wide as the bar treats the column as wide while it is narrower than the text: a minipage wrapped alone onto a line keeps its PDF width there rather than the column's. A `\ref` to a figure inside a minipage leads to the whole figure, where tex4ht puts the caption's anchor.
 - **A picture's height:** only `\includegraphics`'s `width` is followed. With `height` (alone, or with `width`), the picture keeps its own proportions, at a size that isn't the PDF's.
@@ -269,13 +279,15 @@ A second, short document unlike the first:
 - packages that MathJax has as extensions (physics, braket, cancel);
 - macros defined with `\NewDocumentCommand`;
 - equations numbered by section;
-- titlesec's headings, spaced in its `*n` form, and a `\Large` title.
+- titlesec's headings, spaced in its `*n` form, and a `\Large` title;
+- a framed box.
 
 | Look at | As in the PDF |
 | --- | --- |
 | Build | No `!` errors, although xcolor isn't loaded |
 | Text | `\prob`, `\dist` (with and without its optional argument), `\dv`, `\abs`, `\qty`, `\braket` and `\cancel` drawn, none in red |
 | Numbers | The displays numbered (2.1) to (2.4) and (∗); the line after `\nonumber` and the one with `\notag` unnumbered; the references in the last paragraph reading (2.1), (2.2) and (2.3) |
+| Framed | The box as far from the text above and below as in the PDF |
 
 #### test-report.tex
 
@@ -294,19 +306,19 @@ A report: a list of figures before the table of contents, a part, two chapters w
 | `tex8web.mk4` | the build file: search paths, the build steps, the HTML passes, prerendering |
 | `tex/tex8web-core.tex` | loads the four modules below |
 | `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ pictures in display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, figures |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, framed's boxes, figures |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, colors (`\WebColor`), the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats, tcolorbox's options), and `\web@needs`, which warns when tex4ht or a package no longer has what tex8web patches |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
-| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, heading numbers, no-break spaces, rows of minipages, footnotes, links, controls and the table of contents, meta tags, scripts |
+| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, heading numbers, no-break spaces, rows of minipages, footnotes, links, controls and the table of contents, terms' ids, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, prerendering |
 | `lua/tex8web/files.lua` | reading files, and quoting their names for the shell |
 | `lua/tex8web/dom.lua` | the few DOM operations LuaXML lacks |
 | `js/tex8web.js` | MathJax's sizes set as TeX's, and the columns of an alignment split at `\intertext` |
 | `js/tex8web-head.js` | the reader's theme, and whether they hid the table of contents, applied before the page is drawn |
-| `js/tex8web-page.js` | the theme button, the narrow screen's bar, footnotes lined up with their marks, the table of contents' tracking, previews, the closer view of pictures |
+| `js/tex8web-page.js` | the theme button, the narrow screen's bar, footnotes lined up with their marks, the table of contents' tracking and filter, previews, the closer view of pictures |
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |
 | `examples/` | the examples |

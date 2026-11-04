@@ -13,6 +13,41 @@
   // twice css/tex8web.css's --tex8web-fade (in seconds), in ms: a little
   // after the fades end
   const faded = () => 2000 * parseFloat(getComputedStyle(root).getPropertyValue('--tex8web-fade'));
+  // an element's text, without the MathML MathJax may add for screen
+  // readers, which repeats the formula
+  const text = el => {
+    const copy = el.cloneNode(true);
+    copy.querySelectorAll('.tex8web-permalink, mjx-assistive-mml').forEach(node => node.remove());
+    return copy.textContent.replace(/\s+/g, ' ').trim();
+  };
+  // an element as a line of text with its math typeset (copies of
+  // MathJax's), without the styles of the text around it, and without a
+  // last period (a theorem's head has one)
+  const shown = el => {
+    const line = document.createDocumentFragment();
+    const add = el => {
+      for (const node of el.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) line.append(node.textContent.replace(/\s+/g, ' '));
+        else if (node.matches('mjx-container')) line.append(node.cloneNode(true));
+        else if (!node.matches('.tex8web-permalink, mjx-assistive-mml')) add(node);
+      }
+    };
+    add(el);
+    line.querySelectorAll('mjx-assistive-mml').forEach(node => node.remove());
+    line.normalize();
+    const last = line.lastChild;
+    if (last?.nodeType === Node.TEXT_NODE) last.textContent = last.textContent.replace(/\.?\s*$/, '');
+    return line;
+  };
+  // a link in the table of contents as its entry reads: number and title
+  const entryText = a => [a.parentElement.querySelector('.tocnumber')?.textContent.trim(), text(a)]
+    .filter(Boolean).join(' ');
+  const entryShown = a => {
+    const line = shown(a);
+    const number = a.parentElement.querySelector('.tocnumber')?.textContent.trim();
+    if (number) line.prepend(`${number} `);
+    return line;
+  };
 
   // the theme: light or dark as the reader last chose, on any tex8web page
   // (a script in <head> applies it before the page is drawn), or else as
@@ -166,7 +201,9 @@
 
   // the table of contents: the entry of the section being read (the last
   // heading above the top quarter of the screen) is marked, and its
-  // section's subsections shown; as a drawer, it closes on following a link
+  // section's subsections shown, and on a narrow screen it's in the bar
+  // (css/tex8web.css), once the first heading is read; as a drawer, it
+  // closes on following a link
   function contents() {
     const toc = document.getElementById('tex8web-toc');
     if (!toc) return;
@@ -174,6 +211,7 @@
       .map(a => ({ a, heading: target(a) }))
       .filter(entry => entry.heading);
     if (!entries.length) return;
+    const where = document.querySelector('.tex8web-where');
     const isSection = el => el.matches('.sectionToc, .likesectionToc, .chapterToc, .likechapterToc, .appendixToc, .partToc, .likepartToc');
     let current;
     const update = () => {
@@ -183,11 +221,13 @@
         if (entry.heading.getBoundingClientRect().top > line) break;
         reading = entry;
       }
+      if (where) where.hidden = reading.heading.getBoundingClientRect().top > line;
       if (reading === current) return;
       current?.a.removeAttribute('aria-current');
       toc.querySelectorAll('.tex8web-open').forEach(el => el.classList.remove('tex8web-open'));
       current = reading;
       current.a.setAttribute('aria-current', 'location');
+      if (where) where.replaceChildren(entryShown(current.a));
       // (tex4ht's entries are siblings: a section's, then its subsections')
       let section = current.a.closest('.tableofcontents > span');
       while (section && !isSection(section)) section = section.previousElementSibling;
@@ -195,8 +235,9 @@
         if (el !== section && isSection(el)) break;
         el.classList.add('tex8web-open');
       }
+      // (not while the filter's results stand in for the entries)
       const a = current.a.getBoundingClientRect(), box = toc.getBoundingClientRect();
-      if (a.top < box.top || a.bottom > box.bottom) toc.scrollTop += a.top - box.top - box.height / 3;
+      if (a.height && (a.top < box.top || a.bottom > box.bottom)) toc.scrollTop += a.top - box.top - box.height / 3;
     };
     let pending = false;
     addEventListener('scroll', () => {
@@ -208,6 +249,169 @@
     toc.addEventListener('click', event => {
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });
+  }
+
+  // the contents' filter: in place of the entries, the headings, theorems
+  // and terms (\WebTerm) whose text has every word typed, ignoring case,
+  // accents and the style of MathJax's letters (𝜎 is σ). The arrow keys
+  // choose among them, from the first, with the focus kept in the field (a
+  // combobox), and Enter follows the one chosen
+  function filter() {
+    const toc = document.getElementById('tex8web-toc');
+    const input = toc?.querySelector('.tex8web-toc-filter');
+    if (!input) return;
+    const list = toc.querySelector('.tableofcontents');
+    const results = document.createElement('ol');
+    results.className = 'tex8web-toc-results';
+    results.id = 'tex8web-toc-results';
+    results.setAttribute('role', 'listbox');
+    results.hidden = true;
+    list.after(results);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-controls', results.id);
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
+    const fold = s => s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
+    // (and a Greek letter or symbol by its name in TeX, which the page,
+    // typeset, no longer has: σ is also sigma, and ε varepsilon, which
+    // epsilon finds too)
+    const names = { α: 'alpha', β: 'beta', γ: 'gamma', δ: 'delta', ε: 'varepsilon', ζ: 'zeta', η: 'eta',
+      θ: 'vartheta', ι: 'iota', κ: 'kappa', λ: 'lambda', μ: 'mu', ν: 'nu', ξ: 'xi', π: 'varpi', ρ: 'varrho',
+      σ: 'varsigma', τ: 'tau', υ: 'upsilon', φ: 'varphi', χ: 'chi', ψ: 'psi', ω: 'omega',
+      '∞': 'infty', '∂': 'partial', '∇': 'nabla', '∅': 'emptyset' };
+    const key = label => {
+      const folded = fold(label);
+      return `${folded}\n${[...folded].map(c => names[c] ?? c).join('')}`;
+    };
+    // (on first use, as the math is typeset by then if MathJax runs in the
+    // browser)
+    let items;
+    function collect() {
+      const all = [];
+      for (const a of list.querySelectorAll('a[href^="#"]')) {
+        const el = target(a);
+        if (el) all.push({ el, href: a.hash, kind: 'heading', label: entryText(a), show: () => entryShown(a) });
+      }
+      for (const link of document.querySelectorAll('.newtheorem .head > .tex8web-permalink')) {
+        all.push({ el: link.parentElement, href: link.hash, kind: 'theorem',
+          label: text(link.parentElement).replace(/\.$/, ''), show: () => shown(link.parentElement) });
+      }
+      // (not one in a heading or a theorem's head, which is found as that)
+      for (const term of document.querySelectorAll('.tex8web-term[id]')) {
+        if (!term.closest('h2, h3, h4, h5, h6, .head')) {
+          all.push({ el: term, href: `#${term.id}`, kind: 'term', label: text(term), show: () => shown(term) });
+        }
+      }
+      all.sort((a, b) => a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
+      // (a term is shown with the theorem it's in, or else its section, and
+      // once there)
+      let heading, theorem;
+      const seen = new Set();
+      return all.filter(item => {
+        item.key = key(item.label);
+        if (item.kind === 'heading') heading = item;
+        else if (item.kind === 'theorem') theorem = item;
+        else if (theorem && item.el.closest('.newtheorem') === theorem.el.closest('.newtheorem')) item.where = theorem;
+        else item.where = heading;
+        if (item.kind !== 'term') return true;
+        const once = `${item.key}\n${item.where?.label}`;
+        return !seen.has(once) && seen.add(once);
+      });
+    }
+    const row = (item, i) => {
+      const li = document.createElement('li');
+      li.id = `tex8web-result-${i}`;
+      li.setAttribute('role', 'option');
+      const a = document.createElement('a');
+      a.href = item.href;
+      a.append(item.show());
+      if (item.where) {
+        const where = document.createElement('span');
+        where.className = 'tex8web-toc-where';
+        where.append(item.where.show());
+        a.append(' ', where);
+      }
+      li.append(a);
+      return li;
+    };
+    let chosen;
+    const choose = i => {
+      const rows = results.querySelectorAll('[role="option"]');
+      chosen = rows[Math.max(0, Math.min(i, rows.length - 1))];
+      rows.forEach(row => row.setAttribute('aria-selected', String(row === chosen)));
+      if (!chosen) return input.removeAttribute('aria-activedescendant');
+      input.setAttribute('aria-activedescendant', chosen.id);
+      chosen.scrollIntoView({ block: 'nearest' });
+    };
+    input.addEventListener('input', () => {
+      // (\sigma as sigma)
+      const words = fold(input.value).replaceAll('\\', '').split(/\s+/).filter(Boolean);
+      list.hidden = words.length > 0;
+      results.hidden = !words.length;
+      input.setAttribute('aria-expanded', String(words.length > 0));
+      if (!words.length) return;
+      items ??= collect();
+      const found = items.filter(item => words.every(word => item.key.includes(word)));
+      const none = document.createElement('li');
+      none.className = 'tex8web-toc-none';
+      none.textContent = 'No matches';
+      results.replaceChildren(...(found.length ? found.map(row) : [none]));
+      choose(0);
+    });
+    input.addEventListener('keydown', event => {
+      if (results.hidden || event.isComposing) return;
+      if (event.key === 'Enter') chosen?.querySelector('a').click();
+      else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const rows = [...results.querySelectorAll('[role="option"]')];
+        choose(rows.indexOf(chosen) + (event.key === 'ArrowDown' ? 1 : -1));
+      }
+    });
+    // (naming only what the page has)
+    const kinds = ['section'];
+    if (document.querySelector('.newtheorem .head > .tex8web-permalink')) kinds.push('theorem');
+    if (document.querySelector('.tex8web-term[id]')) kinds.push('term');
+    input.placeholder = `Find a ${kinds.length > 1 ? `${kinds.slice(0, -1).join(', ')}${kinds.length > 2 ? ',' : ''} or ` : ''}${kinds.at(-1)}`;
+  }
+
+  // the reader's place: the last heading or theorem above the top of the
+  // screen as they leave the page, gone back to when they next open it,
+  // but not as it reloads or they go back to it, when the browser keeps
+  // their place, nor when a link leads somewhere on it
+  function place() {
+    const key = `tex8web-place:${location.pathname}`;
+    // (where it's put back, a little below the top, still counts as above
+    // it, so that opening the page and leaving keeps the place)
+    const below = () => parseFloat(getComputedStyle(root).fontSize);
+    const save = () => {
+      let last;
+      for (const a of document.querySelectorAll('.tex8web-permalink')) {
+        const el = target(a);
+        if (el.getBoundingClientRect().top > below() + 1) break;
+        last = el;
+      }
+      try {
+        if (last) localStorage.setItem(key, last.id);
+        else localStorage.removeItem(key);
+      } catch {}
+    };
+    addEventListener('pagehide', save);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+    if (location.hash || performance.getEntriesByType('navigation')[0]?.type !== 'navigate') return;
+    let el;
+    try { el = document.getElementById(localStorage.getItem(key)); } catch {}
+    if (!el) return;
+    const go = () => scrollTo(0, scrollY + el.getBoundingClientRect().top - below());
+    go();
+    // (and again once the fonts and pictures are in, which may have moved
+    // it, unless the reader has moved by then: not by scrollY, which the
+    // browser's scroll anchoring changes too)
+    let moved = false;
+    for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) {
+      addEventListener(type, () => { moved = true; }, { once: true, passive: true });
+    }
+    const loaded = new Promise(done => addEventListener('load', done));
+    Promise.all([loaded, document.fonts.ready]).then(() => { if (!moved) go(); });
   }
 
   // previews: pointing at (or focusing, with the keyboard) a link to
@@ -557,6 +761,8 @@
   smooth();
   sidenotes();
   contents();
+  filter();
+  place();
   previews();
   viewer();
 })();

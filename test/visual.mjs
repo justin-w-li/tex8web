@@ -33,6 +33,9 @@ const typesetPage = `(async () => {
   const html = document.documentElement.cloneNode(true);
   html.classList.remove('tex8web-js');
   if (!html.classList.length) html.removeAttribute('class');
+  html.querySelector('.tex8web-toc-results')?.remove();
+  html.querySelector('.tex8web-where')?.replaceChildren();
+  html.querySelector('.tex8web-where')?.setAttribute('hidden', 'hidden');
   html.querySelectorAll('[aria-current]').forEach(n => n.removeAttribute('aria-current'));
   html.querySelectorAll('.tex8web-open').forEach(n => n.classList.remove('tex8web-open'));
   html.querySelectorAll('script, style[id^=MJX]').forEach(n => n.remove());
@@ -264,6 +267,134 @@ async function touching(chrome, file) {
   return problems;
 }
 
+// the contents' filter: a named theorem found by its head, first among
+// what matches, and Enter going to it; then, among the many with an e,
+// down twice and up once choosing the second, which Enter goes to; and
+// test.tex's ε-ball found by \epsilon, its ε typeset
+async function filtering(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 1600 });
+  const problems = [];
+  const sleep = ms => new Promise(done => setTimeout(done, ms));
+  const head = await page.evaluate(`(() => {
+    const input = document.querySelector('.tex8web-toc-filter');
+    const head = [...document.querySelectorAll('.newtheorem .head')]
+      .find(h => h.querySelector('.tex8web-permalink') && /\\(.+\\)/.test(h.textContent));
+    if (!input) return document.getElementById('tex8web-toc') && 'none';
+    if (!head) return null;
+    input.focus();
+    input.value = head.textContent.replace('#', '').replace(/\\.\\s*$/, '');
+    input.dispatchEvent(new Event('input'));
+    return head.querySelector('.tex8web-permalink').hash;
+  })()`);
+  if (head === 'none') problems.push('filter: none beside the table of contents');
+  else if (head) {
+    const first = await page.evaluate(`document.querySelector('.tex8web-toc-results a')?.hash`);
+    if (first !== head) problems.push(`filter: ${first} first, not the theorem ${head}`);
+    await page.press('Enter', 13);
+    await sleep(100);
+    if (await page.evaluate('location.hash') !== head) problems.push(`filter: Enter went to ${await page.evaluate('location.hash')}, not ${head}`);
+    const second = await page.evaluate(`(() => {
+      const input = document.querySelector('.tex8web-toc-filter');
+      input.focus();
+      input.value = 'e';
+      input.dispatchEvent(new Event('input'));
+      return document.querySelectorAll('.tex8web-toc-results a')[1]?.hash;
+    })()`);
+    if (second) {
+      for (const [key, code] of [['ArrowDown', 40], ['ArrowDown', 40], ['ArrowUp', 38], ['Enter', 13]]) await page.press(key, code);
+      await sleep(100);
+      if (await page.evaluate('location.hash') !== second) problems.push(`filter: arrows and Enter went to ${await page.evaluate('location.hash')}, not ${second}`);
+    }
+    const ball = await page.evaluate(`(() => {
+      if (!document.getElementById('term-ball')) return null;
+      const input = document.querySelector('.tex8web-toc-filter');
+      input.value = '\\\\epsilon ball';
+      input.dispatchEvent(new Event('input'));
+      const a = document.querySelector('.tex8web-toc-results a');
+      return [a?.hash, !!a?.querySelector('mjx-container')];
+    })()`);
+    if (ball && (ball[0] !== '#term-ball' || !ball[1])) problems.push(`filter: \\epsilon ball found ${ball[0]}, ${ball[1] ? '' : 'not '}typeset`);
+  }
+  await page.close();
+  return problems;
+}
+
+// the reader's place: a theorem halfway down at the top of the screen as
+// they leave, there again as they next open the page, and the time after
+// (having left it there); but a link's target there instead when the
+// address has one
+async function resuming(chrome, file) {
+  const url = pathToFileURL(file).href;
+  let page = await chrome.open(url, { place: true });
+  const problems = [];
+  const at = await page.evaluate(`(() => {
+    const heads = [...document.querySelectorAll('.newtheorem .head > .tex8web-permalink')];
+    const a = heads[heads.length >> 1];
+    if (!a) return null;
+    const el = document.getElementById(a.hash.slice(1));
+    scrollTo(0, scrollY + el.getBoundingClientRect().top + 2);
+    // (not on a page too short to scroll it there)
+    if (Math.round(el.getBoundingClientRect().top) !== -2) return null;
+    dispatchEvent(new Event('pagehide'));
+    return el.id;
+  })()`);
+  await page.close();
+  if (at) {
+    const top = id => `Math.round(document.getElementById(${JSON.stringify(id)}).getBoundingClientRect().top)`;
+    page = await chrome.open(url, { place: true });
+    const rem = await page.evaluate('parseFloat(getComputedStyle(document.documentElement).fontSize)');
+    for (const time of ['again', 'a third time']) {
+      const back = await page.evaluate(top(at));
+      if (Math.abs(back - rem) > 2) problems.push(`place: #${at} ${back}px from the top on opening the page ${time}`);
+      await page.close();
+      // (for the closed page's pagehide to have kept the place)
+      await new Promise(done => setTimeout(done, 200));
+      page = await chrome.open(url, { place: true });
+    }
+    const other = await page.evaluate("document.querySelector('.tex8web-permalink').hash.slice(1)");
+    await page.close();
+    page = await chrome.open(`${url}#${other}`, { place: true });
+    if (await page.evaluate(top(at)) < 50) problems.push(`place: #${at} at the top, not the address's #${other}`);
+    // (leaving no place, as the page keeps none at its top)
+    await page.evaluate('scrollTo(0, 0)');
+    await page.close();
+  }
+  return problems;
+}
+
+// on a phone's screen, the bar naming the section being read: nothing
+// before the first heading, then a section halfway down scrolled to near
+// the top; and tapped, opening the table of contents
+async function naming(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
+  const problems = [];
+  const [before, want, got, opened] = await page.evaluate(`new Promise(done => {
+    const where = document.querySelector('.tex8web-where');
+    const links = [...document.querySelectorAll('#tex8web-toc .tableofcontents a')];
+    const a = links[links.length >> 1];
+    if (!a) return done([]);
+    const shown = () => where.hidden ? '' : where.textContent.replace(/\\s+/g, ' ').trim();
+    const first = document.getElementById(decodeURIComponent(links[0].hash.slice(1)));
+    const before = first.getBoundingClientRect().top > innerHeight / 4 ? shown() : '';
+    const el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+    scrollTo(0, scrollY + el.getBoundingClientRect().top - 100);
+    const copy = a.cloneNode(true);
+    copy.querySelectorAll('mjx-assistive-mml').forEach(n => n.remove());
+    setTimeout(() => {
+      const got = shown();
+      where.click();
+      done([before, copy.textContent.replace(/\\s+/g, ' ').trim(), got,
+        document.getElementById('tex8web-toc').matches(':popover-open')]);
+    }, 300);
+  })`);
+  await page.close();
+  if (want === undefined) return problems;
+  if (before) problems.push(`bar: "${before}" before the first heading`);
+  if (!got.endsWith(want)) problems.push(`bar: "${got}", not the section "${want}"`);
+  if (!opened) problems.push('bar: tapped, no table of contents');
+  return problems;
+}
+
 // on a phone's screen, how much wider than it the page is: nothing should
 // be (a display too wide scrolls on its own)
 async function overflow(chrome, file) {
@@ -377,6 +508,9 @@ async function compare(chrome, doc, built) {
     for (const file of [typeset, join(pre, html)]) {
       layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
     }
+    layout.push(...(await filtering(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await resuming(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await naming(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
   const known = expected[doc.name]?.visual;
@@ -391,6 +525,16 @@ async function compare(chrome, doc, built) {
 // then the documents in Chrome, one at a time: with several tabs at once,
 // headless Chrome sometimes draws a screen garbled
 const chrome = await launch();
+// (each page opened at its top, not where a check before left it, which
+// tex8web-page.js would keep as the reader's place: no place kept, by
+// listeners that come first and stop its own, nor any left; but
+// resuming's)
+const forget = `for (const [target, type] of [[window, 'pagehide'], [document, 'visibilitychange']]) {
+  target.addEventListener(type, event => event.stopImmediatePropagation(), true);
+}
+Object.keys(localStorage).filter(k => k.startsWith('tex8web-place:')).forEach(k => localStorage.removeItem(k));`;
+const open = chrome.open;
+chrome.open = (url, options = {}) => open(url, options.place ? options : { ...options, script: forget });
 let failures = 0;
 for (const [i, doc] of docs.entries()) {
   const { lines, failed } = await compare(chrome, doc, codes[2 * i] === 0 && codes[2 * i + 1] === 0);

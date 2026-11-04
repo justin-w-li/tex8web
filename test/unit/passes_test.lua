@@ -122,6 +122,18 @@ return {
     equal(links[2]:get_attribute("href"), "#x1-2")
   end,
 
+  ["page.terms: an id from each term's text, without its math, once each"] = function()
+    local d = parse([[<span class="tex8web-term">Inner product</span>]]
+      .. [[<span class="tex8web-term"><span class="mathjax-inline">\(\sigma\)</span>-algebra</span>]]
+      .. [[<span class="tex8web-term">inner  product</span>]]
+      .. [[<span class="tex8web-term"><span class="mathjax-inline">\(L^2\)</span></span>]]
+      .. [[<span class="tex8web-term">Hölder's inequality</span>]])
+    page.terms(d)
+    local ids = {}
+    for _, term in ipairs(d:query_selector("span.tex8web-term")) do ids[#ids + 1] = term:get_attribute("id") end
+    equal(ids, {"term-inner-product", "term-algebra", "term-inner-product-2", "term", "term-hölder-s-inequality"})
+  end,
+
   ["page.controls: the table of contents beside the text, its heading as its title"] = function()
     local d = parse([[<h3 class="likesectionHead" id="contents"><a id="x1-1"></a>Contents</h3>]]
       .. [[<div class="tableofcontents"><span class="sectionToc"><a href="#intro">Intro</a></span></div>]]
@@ -130,9 +142,12 @@ return {
     local nav = d:query_selector("nav#tex8web-toc")[1]
     equal(d:query_selector("#tex8web-toc-title")[1]:get_text(), "Contents")
     equal(#nav:query_selector("div.tableofcontents"), 1)
+    equal(#nav:query_selector("input.tex8web-toc-filter"), 1)
     equal(#d:query_selector("h3"), 1)
     equal(d:query_selector("button.tex8web-contents")[1]:get_attribute("aria-label"), "Contents")
-    equal(#d:query_selector("a.tex8web-control"), 0)
+    equal(#d:query_selector("button.tex8web-where[hidden]"), 1)
+    equal(#d:query_selector("a.tex8web-control"), 1)
+    equal(d:query_selector("a.tex8web-control")[1]:get_attribute("href"), "https://github.com/justin-w-li/tex8web")
   end,
 
   ["page.controls: the table of contents, not a list of figures before it"] = function()
@@ -169,7 +184,7 @@ return {
   ["page.controls: a warning, and no PDF control, without the PDF"] = function()
     local d = parse("<p>Text</p>")
     page.controls(d, {pdf = "no/such.pdf"})
-    equal(#d:query_selector("a.tex8web-control"), 0)
+    equal(#d:query_selector("a.tex8web-control"), 1)
     check(logged[1]:find("no/such.pdf", 1, true), logged[1])
   end,
 
@@ -179,6 +194,7 @@ return {
     equal(#d:query_selector("nav"), 0)
     equal(#d:query_selector("p"), 1)
     equal(#d:query_selector("button.tex8web-contents"), 0)
+    equal(#d:query_selector("button.tex8web-where"), 0)
     equal(#d:query_selector("button.tex8web-theme"), 1)
   end,
 

@@ -60,6 +60,10 @@ const pageChecks = [
       .some(([, list]) => /class=['"]\w*(?:part|chapter|section|paragraph)Toc['"]/.test(list))
       ? ['a table of contents in the text, not beside it'] : [];
   },
+  function tocFilter(html) {
+    return toc(html) && !/<input[^>]*class=['"]tex8web-toc-filter['"]/.test(toc(html))
+      ? ['a table of contents without its filter'] : [];
+  },
   // (an entry's number in its box, which lines up the titles)
   function tocNumbers(html) {
     return [...toc(html).matchAll(/<span class=['"](chapter|appendix|(?:sub)*(?:section|paragraph))Toc['"]>(?!<span class=['"]tocnumber)/g)]

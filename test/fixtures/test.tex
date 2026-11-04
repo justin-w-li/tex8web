@@ -32,6 +32,7 @@
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\mr}{\mathrm}
 \newcommand{\KL}{D_\mathrm{KL}}
+\newcommand{\term}[1]{\emph{#1}}
 
 \title{Lorem ipsum dolor sit amet}
 \author{consectetur adipiscing elit}
@@ -245,7 +246,8 @@ Gather*, multline and alignat:
 \section{Theorems and \texorpdfstring{$L^2$}{L2} in a heading}
 
 \begin{definition}[Inner product]
-    An \emph{inner product} on a real vector space $V$ is a map $\langle \cdot, \cdot \rangle \colon V \times V \to \R$ that is bilinear, symmetric and positive definite.
+    An \term{inner product} on a real vector space $V$ is a map $\langle \cdot, \cdot \rangle \colon V \times V \to \R$ that is bilinear, symmetric and positive definite.
+    For $\varepsilon > 0$, the \term{$\varepsilon$-ball} around $x \in V$ is $\{ y \in V : \norm{x - y} < \varepsilon \}$.
 \end{definition}
 \begin{theorem}[Cauchy--Schwarz]\label{thm:cs}
     For all $x, y \in V$, $\abs{\langle x, y \rangle} \leq \norm{x}\norm{y}$.

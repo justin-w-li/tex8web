@@ -65,13 +65,15 @@ export async function launch() {
   const browser = await connect(version.webSocketDebuggerUrl);
 
   return {
-    async open(url, { javascript = true, width = 1000, height = 900, colorScheme = 'light' } = {}) {
+    // (script runs in the page before its own scripts)
+    async open(url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', script } = {}) {
       const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
       const page = await connect(`ws://127.0.0.1:${port}/devtools/page/${targetId}`);
       await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
       await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
       if (!javascript) await page.send('Emulation.setScriptExecutionDisabled', { value: true });
       await page.send('Page.enable');
+      if (script) await page.send('Page.addScriptToEvaluateOnNewDocument', { source: script });
       await page.send('Page.navigate', { url });
       for (let i = 0; i < 300; i++) {
         const { result } = await page.send('Runtime.evaluate', { expression: 'document.readyState', returnByValue: true });

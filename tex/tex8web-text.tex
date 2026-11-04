@@ -99,6 +99,17 @@
      \web@mark\HCode{</span>}}
     {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\par\indent\ShowPar}
 
+% --- terms ------------------------------------------------------------------
+
+% \WebTerm\cs: what \cs{...} sets is a term, which the contents' filter finds
+% (page.terms gives it an id). In math, which the mathjax option passes to
+% MathJax as source, \cs is the bridge's
+\NewDocumentCommand\WebTerm{m}{%
+    \expandafter\NewCommandCopy\csname web@term@\string#1\endcsname#1%
+    \renewcommand#1[1]{\leavevmode\HCode{<span class="tex8web-term">}%
+        \csname web@term@\string#1\endcsname{##1}\HCode{</span>}}%
+}
+
 % --- table of contents ------------------------------------------------------
 
 % numbers in a box as wide as in the PDF (tocloft's widths, or the class's),
@@ -247,6 +258,17 @@
     \Configure{enumitemnewlist}{\expandafter\web@newlist\expandafter{\a:enumitemenv}}%
 }{}
 \catcode58 12
+
+% --- framed -----------------------------------------------------------------
+
+% framed's space above and below its boxes, every \MakeFramed (framedenv in
+% html4.4ht): \OuterFrameSep, or \topsep while that is \maxdimen
+\@ifpackageloaded{framed}{%
+    \begingroup\@listi
+        \ifdim\OuterFrameSep=\maxdimen \OuterFrameSep\topsep \fi
+        \web@Css{:root { --tex8web-framed-sep: \web@em\OuterFrameSep; }}
+    \endgroup
+}{}
 
 % --- figures ----------------------------------------------------------------
 

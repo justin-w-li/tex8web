@@ -258,6 +258,8 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
 .tex8web-tcb-inline > .tcolorbox-content { display: block; }
 /* what follows an \hfill in an after upper (a proof's square) */
 .tex8web-hfill { float: right; }
+/* framed's, as far from the text as in the PDF (tex8web-text.tex) */
+.framedenv { margin-block: var(--tex8web-framed-sep); }
 
 /* --- table of contents ------------------------------------------------- */
 
@@ -330,7 +332,7 @@ dd.enumerate-enumitem { margin-left: 0; }
 @media (hover: none) { .tex8web-permalink { opacity: 0.2; } }
 /* what a link leads to: a little space above it, and a tint */
 :target { scroll-margin-top: 1em; }
-:is(h2, h3, h4, h5, h6):target, .newtheorem:has(.head > a:target) {
+:is(h2, h3, h4, h5, h6, .tex8web-term):target, .newtheorem:has(.head > a:target) {
     background-color: var(--tex8web-highlight); }
 
 /* --- controls and the table of contents (page.lua) -------------------- */
@@ -366,6 +368,8 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* (the theme button needs tex8web-page.js, but not to show: a long page
    is drawn well before that deferred script runs) */
 :root:not(.tex8web-js) .tex8web-theme { display: none; }
+/* (the section being read, on a narrow screen: tex8web-page.js) */
+.tex8web-where { display: none; opacity: 0.6; }
 .tex8web-control svg { width: 1.25rem; height: 1.25rem; fill: none;
     stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 @media not (--tex8web-wide) {
@@ -373,6 +377,11 @@ dd.enumerate-enumitem { margin-left: 0; }
        reaches; as html's scroll-padding it would also move where Chrome
        puts the page back as it reloads) */
     :is(:target, :focus-visible) { scroll-margin-top: calc(3.5rem + 1em); }
+    .tex8web-where:not([hidden]) { display: block; flex: 1; min-width: 0; overflow: hidden;
+        font: inherit; font-size: 0.875em; line-height: 1.25rem; text-align: start;
+        white-space: nowrap; text-overflow: ellipsis;
+        /* (up a little from the middle, where lowercase letters look low) */
+        padding-block: 0.275rem 0.475rem; }
     html body { padding-inline: 1.25rem; }
     /* (no # in a margin this narrow: its link covers the heading or
        theorem's head instead, under the links in it but over its math,
@@ -400,6 +409,7 @@ dd.enumerate-enumitem { margin-left: 0; }
             inset: var(--tex8web-column-inset); width: var(--tex8web-margin); height: auto;
             padding: 0 0.5rem; border: 0; background: none; translate: none; opacity: 0;
             transition: opacity var(--tex8web-fade), display var(--tex8web-fade) allow-discrete; }
+        .tex8web-narrowing .tex8web-where { display: none; }
         .tex8web-narrowing .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
             inset: var(--tex8web-icons-inset); padding: 0.125rem; border: 0;
             border-radius: 0.5rem; transform: none; transition: opacity var(--tex8web-fade); }
@@ -437,6 +447,26 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* (and not hyphenated, as tex4ht's links are) */
 .tex8web-toc a { color: inherit; hyphens: manual; }
 .tex8web-toc a[aria-current] { border-radius: 0.2em;
+    background-color: var(--tex8web-highlight); }
+/* the filter (tex8web-page.js): a field, and what matches in place of the
+   entries, the one chosen (which Enter follows) marked while the field has
+   focus */
+.tex8web-toc-filter { display: block; box-sizing: border-box; width: 100%; margin-block: 0 0.75em;
+    padding: 0.25em 0; border: 0; border-radius: 0;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+    font: inherit; font-size: 0.875em; color: inherit; background: none; appearance: none; }
+.tex8web-toc-filter:focus { outline: none; border-bottom-color: currentColor; }
+/* (Chrome's and Safari's clear button, in the text's color rather than
+   the system's accent) */
+.tex8web-toc-filter::-webkit-search-cancel-button { filter: grayscale(1); opacity: 0.6; }
+/* (as the theme button, without JavaScript) */
+:root:not(.tex8web-js) .tex8web-toc-filter { display: none; }
+/* (Safari on iOS zooms into a field in a smaller font as it's focused) */
+@media (pointer: coarse) { .tex8web-toc-filter { font-size: max(16px, 0.875em); } }
+.tex8web-toc-results { margin: 0; padding: 0; list-style: none; font-size: 0.875em; line-height: 1.25; }
+.tex8web-toc-results li { padding-top: 0.6em; }
+.tex8web-toc-where, .tex8web-toc-none { opacity: 0.6; }
+.tex8web-toc-filter:focus ~ .tex8web-toc-results [aria-selected="true"] a { border-radius: 0.2em;
     background-color: var(--tex8web-highlight); }
 .tex8web-js .tex8web-toc .tableofcontents > :is(.subsectionToc, .likesubsectionToc,
     .subsubsectionToc, .likesubsubsectionToc, .paragraphToc, .likeparagraphToc,
