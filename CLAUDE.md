@@ -4,7 +4,7 @@ tex8web turns LaTeX notes into static web pages that look like their PDF and rea
 
 ## Product
 
-- **The PDF is the reference.** Everything on the page comes from the document or helps in reading it. The page chrome stays minimal (quiet line icons): no branding, banners, hero sections or call-to-action buttons.
+- **The PDF is the reference.** Everything on the page comes from the document or helps in reading it. The page chrome stays minimal (quiet line icons): no branding, banners, hero sections or call-to-action buttons. The one exception is the icon linking to tex8web's repository.
 - **No decorative styling:** no gradients, glass, colored shadows, pill badges, emoji, or attention-seeking animation. If it looks like a SaaS landing page, it's wrong. Motion only explains a change (a drawer opening, a fade), and is off under `prefers-reduced-motion`.
 - **Static and fast.**
   - Every page reads fully with JavaScript off; JS only enhances it.

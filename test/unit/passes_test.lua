@@ -145,7 +145,8 @@ return {
     equal(#nav:query_selector("input.tex8web-toc-filter[hidden]"), 1)
     equal(#d:query_selector("h3"), 1)
     equal(#d:query_selector("button.tex8web-contents"), 1)
-    equal(#d:query_selector("a.tex8web-control"), 0)
+    equal(#d:query_selector("a.tex8web-control"), 1)
+    equal(d:query_selector("a.tex8web-control")[1]:get_attribute("href"), "https://github.com/justin-w-li/tex8web")
   end,
 
   ["page.controls: a box that only holds the table of contents goes too"] = function()
@@ -168,7 +169,7 @@ return {
   ["page.controls: a warning, and no PDF control, without the PDF"] = function()
     local d = parse("<p>Text</p>")
     page.controls(d, {pdf = "no/such.pdf"})
-    equal(#d:query_selector("a.tex8web-control"), 0)
+    equal(#d:query_selector("a.tex8web-control"), 1)
     check(logged[1]:find("no/such.pdf", 1, true), logged[1])
   end,
 
