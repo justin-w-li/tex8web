@@ -7,8 +7,9 @@
 // should line up across its \intertext. And the prerendered page's closer
 // view of pictures should work with the mouse and a finger, the page be no
 // wider than a phone's screen, its bar there come and go as it scrolls,
-// its theme button be there before tex8web-page.js runs, and no math
-// character be clipped.
+// its theme button be there before tex8web-page.js runs, a theorem, list
+// or framed box under a heading as far below it as in the PDF, and no
+// math character be clipped.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
@@ -449,6 +450,34 @@ async function clipped(chrome, file) {
   return n ? [`${n} math characters clipped`] : [];
 }
 
+// just under a heading (css/tex8web.css): a theorem or list only the
+// heading's space below it, as LaTeX adds no \topsep there; a framed box
+// framed's space more, as far as titlesec's space below (in the text's
+// ems) adds to it
+async function spaced(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
+  const wrong = await page.evaluate(`(() => {
+    const em = parseFloat(getComputedStyle(document.body).fontSize);
+    const length = name => (parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0) * em;
+    return [...document.querySelectorAll('h3, h4, h5')].flatMap(h => {
+      // (past an empty paragraph, which tex4ht may open before a list)
+      let next = h.nextElementSibling;
+      if (next?.matches('p') && !next.textContent.trim() && next.nextElementSibling) next = next.nextElementSibling;
+      const below = parseFloat(getComputedStyle(h).marginBottom);
+      const level = h.className.match(/((?:sub)*section)Head/i)?.[1].toLowerCase();
+      let want;
+      if (next?.matches('.newtheorem, ol, ul, dl')) want = below;
+      else if (next?.matches('.framedenv')) {
+        want = Math.max(below, length('--tex8web-' + level + '-after-text') + length('--tex8web-framed-sep'));
+      } else return [];
+      const gap = next.getBoundingClientRect().top - h.getBoundingClientRect().bottom;
+      return Math.abs(gap - want) > 0.5 ? [[h.id, gap.toFixed(1), want.toFixed(1)]] : [];
+    });
+  })()`);
+  await page.close();
+  return wrong.map(([id, gap, want]) => `#${id}: what follows it ${gap}px below, not ${want}px`);
+}
+
 async function screens(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { javascript: false, height: screen });
   const height = await page.evaluate('document.documentElement.scrollHeight');
@@ -505,6 +534,7 @@ async function compare(chrome, doc, built) {
     layout.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await bar(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await themed(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await spaced(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     for (const file of [typeset, join(pre, html)]) {
       layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
     }

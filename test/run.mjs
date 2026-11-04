@@ -37,7 +37,8 @@ if (!only.length) {
 // around its box (\topsep)
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
-    '--tex8web-section-labelsep': '1.125em', '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
+    '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
+    '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
 };
 
 // what tex8web.js makes of some of test.tex's math through MathJax's

@@ -36,6 +36,14 @@ return {
     equal(body(d), [[<div class='newtheorem' style='margin-top: 1em; margin-bottom: 2em'><p><span class='head'>Theorem 1.</span> Text</p></div>]])
   end,
 
+  ["text.heading_lists: no empty paragraph between a heading and a list, only there"] = function()
+    local d = parse([[<h3>A</h3><p class="noindent">]] .. "\n " .. [[</p><ol><li>a</li></ol>]]
+      .. [[<h3>B</h3><p>Text</p><ol><li>b</li></ol><p> </p><dl><dt>c</dt></dl>]])
+    text.heading_lists(d)
+    equal(body(d), [[<h3>A</h3><ol><li>a</li></ol>]]
+      .. [[<h3>B</h3><p>Text</p><ol><li>b</li></ol><p> </p><dl><dt>c</dt></dl>]])
+  end,
+
   ["text.label_space: one space between a heading's number and its title"] = function()
     local d = parse([[<h3 class="sectionHead"><span class="titlemark">1    </span> <a id="x1-1"></a>Title</h3>]]
       .. [[<p><span class="paragraphHead"><span class="titlemark"><span class="b">a    </span></span> <a id="x1-2"></a>Head</span> Text</p>]]

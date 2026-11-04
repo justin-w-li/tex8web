@@ -209,13 +209,23 @@
 % --- framed -----------------------------------------------------------------
 
 % framed's space above and below its boxes, every \MakeFramed (framedenv in
-% html4.4ht): \OuterFrameSep, or \topsep while that is \maxdimen
+% html4.4ht): \OuterFrameSep, or \topsep while that is \maxdimen. And
+% html4.4ht's box, but counted globally: its \advance is local to the
+% environment, which gave every box the same id
+\catcode58 11
 \@ifpackageloaded{framed}{%
     \begingroup\@listi
         \ifdim\OuterFrameSep=\maxdimen \OuterFrameSep\topsep \fi
         \web@Css{:root { --tex8web-framed-sep: \web@em\OuterFrameSep; }}
     \endgroup
+    \web@needs{framed:cnt}%
+    \Configure{makeframed}
+        {\global\advance\framed:cnt by 1\relax
+         \def\framed@id{\@currenvir-\the\framed:cnt}%
+         \ifvmode\IgnorePar\fi\EndP\HCode{<div class="framedenv" id="\framed@id">}\par}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}%
 }{}
+\catcode58 12
 
 % --- figures ----------------------------------------------------------------
 
