@@ -439,9 +439,12 @@
     }
     document.body.append(cover);
     // (the page behind isn't inert, as a modal dialog's is: the keyboard
-    // stays off it)
+    // stays off it; and Escape fades it out too, rather than the popover's
+    // own closing, which the keydown's default action is)
     document.addEventListener('keydown', event => {
-      if (event.key === 'Tab' && cover.matches(':popover-open')) event.preventDefault();
+      if (!cover.matches(':popover-open') || !['Tab', 'Escape'].includes(event.key)) return;
+      event.preventDefault();
+      if (event.key === 'Escape') close();
     });
     // (turning a phone, say: as far into the zoom from where it started,
     // with the point at the middle of the screen still there)
@@ -521,6 +524,16 @@
       return event.clientX >= box.left && event.clientX <= box.right
         && event.clientY >= box.top && event.clientY <= box.bottom;
     };
+    // (as long as the fade out takes, which is none if the reader would
+    // rather not see one)
+    const close = () => {
+      if (cover.classList.contains('tex8web-closing')) return;
+      cover.classList.add('tex8web-closing');
+      setTimeout(() => {
+        cover.hidePopover();
+        cover.classList.remove('tex8web-closing');
+      }, 1000 * parseFloat(getComputedStyle(cover).transitionDuration));
+    };
     const twice = event => {
       if (!on(event)) return;
       if (zoom > home) center(true);
@@ -530,7 +543,7 @@
     // where touch-action is none)
     cover.addEventListener('click', event => {
       if (dragged) return;
-      if (!on(event)) cover.hidePopover();
+      if (!on(event)) close();
       else if (touch && event.timeStamp - tapped < 300) {
         tapped = 0;
         twice(event);

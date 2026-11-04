@@ -203,13 +203,21 @@ async function viewing(chrome, file) {
   await sleep(100);
   if (await page.evaluate('document.activeElement.outerHTML.slice(0, 80)') !== focused) problems.push('Tab: the focus behind the viewer moved');
   await page.press('Escape', 27);
-  await sleep(100);
+  await sleep(300);
   if ((await state()).open) problems.push('Escape: the viewer still open');
   await click(...at);
   await sleep(100);
   if (!(await state()).open) problems.push('a picture clicked again: no viewer');
+  // (fading out still open, in the top layer: Safari would draw it under
+  // the page's bar, or, on iOS, not at all)
   await click(2, 2);
-  await sleep(100);
+  await sleep(50);
+  const fading = await page.evaluate(`(() => {
+    const cover = document.querySelector('.tex8web-viewer');
+    return cover.matches(':popover-open') && Number(getComputedStyle(cover).opacity);
+  })()`);
+  if (!(fading > 0 && fading < 1)) problems.push(`a click beside the picture: no fade out (${fading})`);
+  await sleep(250);
   if ((await state()).open) problems.push('a click beside the picture: the viewer still open');
   await page.close();
   return problems;
