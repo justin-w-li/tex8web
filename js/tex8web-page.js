@@ -321,7 +321,7 @@
   // large as the screen allows (css/tex8web.css), over the page. There the
   // wheel or a pinch zooms in or out around the pointer, from half to 4
   // times (room to overshoot, zooming out), a double-click in or back to
-  // as large as the screen, and dragging moves it; clicking beside it, or
+  // where it started, and dragging moves it; clicking beside it, or
   // Escape, closes it
   function viewer() {
     const dialog = document.createElement('dialog');
@@ -332,8 +332,10 @@
     // the dialog (the picture's plate, fitted to the screen at zoom 1) at
     // x, y, zoom times as large: laid out at `laid` times, and the rest a
     // transform, which the GPU draws smoothly, until the zoom has stopped
-    // for a moment and the layout catches up (an SVG drawn sharp again)
-    let zoom = 1, laid = 1, x = 0, y = 0, plate, timer;
+    // for a moment and the layout catches up (an SVG drawn sharp again).
+    // It opens at zoom `home`: 1, but a picture of pixels at its own size,
+    // if the screen has room for it, rather than blurred, larger
+    let zoom = 1, laid = 1, home = 1, x = 0, y = 0, plate, timer;
     const show = () => { dialog.style.transform = `translate(${x}px, ${y}px) scale(${zoom / laid})`; };
     const lay = () => {
       dialog.classList.remove('tex8web-easing');
@@ -372,10 +374,10 @@
     // around the point px, py, which stays where it is
     const zoomTo = (to, px, py, ease) => {
       settle();
-      to = Math.min(4, Math.max(0.5, to));
+      to = Math.min(4, Math.max(home / 2, to));
       go(to, px - (px - x) * to / zoom, py - (py - y) * to / zoom, ease);
     };
-    const center = ease => go(1, (innerWidth - plate[0]) / 2, (innerHeight - plate[1]) / 2, ease);
+    const center = ease => go(home, (innerWidth - plate[0] * home) / 2, (innerHeight - plate[1] * home) / 2, ease);
     const open = event => {
       const img = event.currentTarget, box = img.getBoundingClientRect();
       // (the same src, which tex8web-page.tex's rule for TikZ pictures in
@@ -387,7 +389,10 @@
       lay();
       dialog.showModal();
       measure();
+      const fitted = picture.getBoundingClientRect().width;
+      home = /\.svg$/i.test(img.getAttribute('src')) ? 1 : Math.min(1, img.naturalWidth / fitted);
       center();
+      lay();
     };
     // (once each picture has its size; and a listener on each, as Safari on
     // iOS may not pass a tap on an img, which isn't clickable, up to the
@@ -474,8 +479,8 @@
     });
     dialog.addEventListener('dblclick', event => {
       if (!on(event)) return;
-      if (zoom > 1) center(true);
-      else zoomTo(2.5, event.clientX, event.clientY, true);
+      if (zoom > home) center(true);
+      else zoomTo(2.5 * home, event.clientX, event.clientY, true);
     });
   }
 

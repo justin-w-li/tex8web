@@ -78,7 +78,7 @@ async function viewing(chrome, file) {
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
     return { open: dialog.open, laid: Number(dialog.style.getPropertyValue('--tex8web-zoom')), width: img.offsetWidth,
       at: [box.left, box.top], size: [box.width, box.height], plate: [plate.left, plate.top, plate.width, plate.height],
-      view: [innerWidth, innerHeight],
+      view: [innerWidth, innerHeight], natural: img.naturalWidth, svg: /\.svg$/i.test(img.getAttribute('src')),
       room: [innerWidth, innerHeight].map(n => n - 2 * Math.max(rem, 0.04 * Math.min(innerWidth, innerHeight)) - rem) };
   })()`);
   // where the dialog should be, from where it would be: anywhere the
@@ -114,13 +114,16 @@ async function viewing(chrome, file) {
   }
   await click(...at);
   await sleep(100);
+  // as large as the screen allows (zoom 1), or a picture of pixels at its
+  // own size if smaller (home)
   const fit = await state();
-  const zoom = s => s.size[0] / fit.size[0];
+  const fitted = Math.min(fit.room[0], fit.room[1] * fit.size[0] / fit.size[1]);
+  const home = fit.svg ? 1 : Math.min(1, fit.natural / fitted);
+  const zoom = s => s.size[0] / fitted;
   const centered = s => s.view.map((v, i) => (v - s.plate[2 + i]) / 2);
-  const scale = Math.max(fit.size[0] / fit.room[0], fit.size[1] / fit.room[1]);
   if (!fit.open) problems.push('a picture clicked: no viewer');
-  else if (Math.abs(scale - 1) > 0.01 || !(off(fit, centered(fit)) <= 0.5)) {
-    problems.push(`the viewer's picture ${fit.size.join('x')} at ${fit.at.join(', ')}, for ${fit.room.join('x')}`);
+  else if (Math.abs(zoom(fit) - home) > 0.001 || !(off(fit, centered(fit)) <= 0.5)) {
+    problems.push(`the viewer's picture ${fit.size.join('x')} at ${fit.at.join(', ')}, for ${fit.room.join('x')} (${fit.natural}px wide)`);
   }
   const p = [Math.round(fit.at[0] + 0.3 * fit.size[0]), Math.round(fit.at[1] + 0.3 * fit.size[1])];
   // the dialog zoomed to z around q, from s
@@ -136,7 +139,7 @@ async function viewing(chrome, file) {
       await page.mouse('wheel', ...p, { deltaY });
       await sleep(50);
       const now = await state();
-      zoomed(now, s, Math.min(4, Math.max(0.5, zoom(s) * Math.exp(-deltaY * 0.002))), what);
+      zoomed(now, s, Math.min(4, Math.max(home / 2, zoom(s) * Math.exp(-deltaY * 0.002))), what);
       s = now;
     }
     return s;
@@ -159,7 +162,7 @@ async function viewing(chrome, file) {
   if (Math.abs(zoom(dragged) - zoom(wheeled)) > 0.001 || !(off(dragged, want) <= 0.5)) {
     problems.push(`dragged by 800px: zoom ${zoom(dragged)}, at ${dragged.plate.slice(0, 2).join(', ')} (not ${want.join(', ')})`);
   }
-  // (past as large as the screen, to half that)
+  // (past where it started, to half that)
   const out = await wheel(dragged, 100, 8, 'the wheel turned back');
   // a double-click on the picture, where the drag left it: the point stays
   // under the pointer all the way (css/tex8web.css eases it), in one motion
@@ -169,19 +172,19 @@ async function viewing(chrome, file) {
   let between = false;
   for (let t = 0; t < 400; t += 40) {
     const now = await state();
-    between ||= zoom(now) > 1.01 && zoom(now) < 2.49;
+    between ||= zoom(now) > 1.01 * home && zoom(now) < 2.49 * home;
     zoomed(now, out, zoom(now), 'during a double-click', q);
     await sleep(40);
   }
-  if (!between) problems.push('a double-click: no zoom between 1 and 2.5 on the way');
-  const zoomedIn = await until(s => Math.abs(s.laid - 2.5) < 0.001);
-  if (zoomedIn) zoomed(zoomedIn, out, 2.5, 'a double-click', q);
-  else problems.push('a double-click: not at zoom 2.5');
+  if (!between) problems.push('a double-click: no zoom between where it started and 2.5 times that on the way');
+  const zoomedIn = await until(s => Math.abs(s.laid - 2.5 * home) < 0.001);
+  if (zoomedIn) zoomed(zoomedIn, out, 2.5 * home, 'a double-click', q);
+  else problems.push(`a double-click: not at zoom ${2.5 * home}`);
   await click(...q);
   await click(...q, 2);
-  const back = await until(s => Math.abs(s.laid - 1) < 0.001);
+  const back = await until(s => Math.abs(s.laid - home) < 0.001);
   if (!back || !(off(back, centered(back)) <= 0.5)) {
-    problems.push(`a second double-click: ${back ? `at ${back.plate.slice(0, 2).join(', ')}` : 'not at zoom 1'}`);
+    problems.push(`a second double-click: ${back ? `at ${back.plate.slice(0, 2).join(', ')}` : `not at zoom ${home}`}`);
   }
   // (from beside the picture to beside it, the picture moving along: a
   // drag, not a click beside it; then a click beside it)
