@@ -106,6 +106,10 @@ function check(doc, result, out, aux) {
   for (const pattern of terms[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the terms`);
   }
+  // (prerender.mjs leaves out a token of one character)
+  if (/<mjx-m[ion](?: (?:space|size)='[^']*')*><mjx-c class='[^']*'>[^<]*<\/mjx-c><\/mjx-m[ion]>/.test(html)) {
+    problems.push('a token of one character left in the typeset math');
+  }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
     problems.push('no MathML for screen readers, with TEX8WEB_MATHML');
