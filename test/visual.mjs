@@ -295,6 +295,44 @@ async function filtering(chrome, file) {
   return problems;
 }
 
+// the reader's place: a theorem halfway down at the top of the screen as
+// they leave, there again as they next open the page, and the time after
+// (having left it there); but a link's target there instead when the
+// address has one
+async function resuming(chrome, file) {
+  const url = pathToFileURL(file).href;
+  let page = await chrome.open(url);
+  const problems = [];
+  const at = await page.evaluate(`(() => {
+    const heads = [...document.querySelectorAll('.newtheorem .head > .tex8web-permalink')];
+    const a = heads[heads.length >> 1];
+    if (!a) return null;
+    const el = document.getElementById(a.hash.slice(1));
+    scrollTo(0, scrollY + el.getBoundingClientRect().top + 2);
+    dispatchEvent(new Event('pagehide'));
+    return el.id;
+  })()`);
+  await page.close();
+  if (at) {
+    const top = id => `Math.round(document.getElementById(${JSON.stringify(id)}).getBoundingClientRect().top)`;
+    page = await chrome.open(url);
+    const rem = await page.evaluate('parseFloat(getComputedStyle(document.documentElement).fontSize)');
+    for (const time of ['again', 'a third time']) {
+      const back = await page.evaluate(top(at));
+      if (Math.abs(back - rem) > 2) problems.push(`place: #${at} ${back}px from the top on opening the page ${time}`);
+      await page.close();
+      page = await chrome.open(url);
+    }
+    const other = await page.evaluate("document.querySelector('.tex8web-permalink').hash.slice(1)");
+    await page.close();
+    page = await chrome.open(`${url}#${other}`);
+    if (await page.evaluate(top(at)) < 50) problems.push(`place: #${at} at the top, not the address's #${other}`);
+  }
+  await page.evaluate('localStorage.clear()');
+  await page.close();
+  return problems;
+}
+
 // on a phone's screen, how much wider than it the page is: nothing should
 // be (a display too wide scrolls on its own)
 async function overflow(chrome, file) {
@@ -409,6 +447,7 @@ async function compare(chrome, doc, built) {
       layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
     }
     layout.push(...(await filtering(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await resuming(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
   const known = expected[doc.name]?.visual;

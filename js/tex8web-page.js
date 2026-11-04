@@ -298,6 +298,41 @@
     input.hidden = false;
   }
 
+  // the reader's place: the last heading or theorem above the top of the
+  // screen as they leave the page, gone back to when they next open it,
+  // but not as it reloads or they go back to it, when the browser keeps
+  // their place, nor when a link leads somewhere on it
+  function place() {
+    const key = `tex8web-place:${location.pathname}`;
+    // (where it's put back, a little below the top, still counts as above
+    // it, so that opening the page and leaving keeps the place)
+    const below = () => parseFloat(getComputedStyle(root).fontSize);
+    const save = () => {
+      let last;
+      for (const a of document.querySelectorAll('.tex8web-permalink')) {
+        const el = target(a);
+        if (el.getBoundingClientRect().top > below() + 1) break;
+        last = el;
+      }
+      try {
+        if (last) localStorage.setItem(key, last.id);
+        else localStorage.removeItem(key);
+      } catch {}
+    };
+    addEventListener('pagehide', save);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+    if (location.hash || performance.getEntriesByType('navigation')[0]?.type !== 'navigate') return;
+    let el;
+    try { el = document.getElementById(localStorage.getItem(key)); } catch {}
+    if (!el) return;
+    const go = () => scrollTo(0, scrollY + el.getBoundingClientRect().top - below());
+    go();
+    // (and again once the fonts and pictures are in, which may have moved
+    // it, unless the reader has scrolled by then)
+    const y = scrollY;
+    addEventListener('load', () => { if (scrollY === y) go(); });
+  }
+
   // previews: pointing at (or focusing, with the keyboard) a link to
   // something on the page, a \ref, \eqref, \cite, footnote mark or section,
   // shows a copy of it in a card; on a touch screen the first tap shows it
@@ -646,6 +681,7 @@
   sidenotes();
   contents();
   filter();
+  place();
   previews();
   viewer();
 })();
