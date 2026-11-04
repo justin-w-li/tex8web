@@ -198,11 +198,10 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
 /* (the page stays still behind it, its scroll bar's room kept) */
 :root:has(.tex8web-viewer:popover-open) { overflow: hidden; scrollbar-gutter: stable; }
 @media (prefers-reduced-motion: no-preference) {
-    /* (closing, in less time than opening takes: tex8web-page.js fades it
-       out, then hides it, as Safari on iOS doesn't fade a popover out as
-       it hides) */
+    /* (closing, tex8web-page.js fades it out, then hides it, as Safari on
+       iOS doesn't fade a popover out as it hides) */
     .tex8web-viewer { transition: opacity var(--tex8web-fade); }
-    .tex8web-viewer.tex8web-closing { opacity: 0; transition-duration: calc(0.75 * var(--tex8web-fade)); }
+    .tex8web-viewer.tex8web-closing { opacity: 0; }
     @starting-style { .tex8web-viewer:popover-open { opacity: 0; } }
     /* (a double-click's zoom, in one motion: less than tex8web-page.js's
        faded(), when it lays the picture out) */
