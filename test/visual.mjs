@@ -267,18 +267,20 @@ async function touching(chrome, file) {
   return problems;
 }
 
-// the contents' filter: a named theorem found by its head, first among
-// what matches, and Enter going to it; then, among the many with an e,
-// down twice and up once choosing the second, which Enter goes to; and
-// test.tex's ε-ball found by \epsilon, its ε typeset
+// the contents' filter: a named theorem found by its head (or a numbered
+// box by its title), first among what matches, and Enter going to it;
+// then, among the many with an e, down twice and up once choosing the
+// second, which Enter goes to; and test.tex's ε-ball found by \epsilon,
+// its ε typeset
 async function filtering(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { width: 1600 });
   const problems = [];
   const sleep = ms => new Promise(done => setTimeout(done, ms));
   const head = await page.evaluate(`(() => {
     const input = document.querySelector('.tex8web-toc-filter');
-    const head = [...document.querySelectorAll('.newtheorem .head')]
-      .find(h => h.querySelector('.tex8web-permalink') && /\\(.+\\)/.test(h.textContent));
+    const head = [...document.querySelectorAll('.newtheorem .head, .tcolorbox-title')]
+      .find(h => h.querySelector(':scope > .tex8web-permalink')
+        && (h.matches('.tcolorbox-title') || /\\(.+\\)/.test(h.textContent)));
     if (!input) return document.getElementById('tex8web-toc') && 'none';
     if (!head) return null;
     input.focus();
@@ -364,7 +366,8 @@ async function resuming(chrome, file) {
 
 // on a phone's screen, the bar naming the section being read: nothing
 // before the first heading, then a section halfway down scrolled to near
-// the top; and tapped, opening the table of contents
+// the top (unless the page is too short to scroll it there); and tapped,
+// opening the table of contents
 async function naming(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
   const problems = [];
@@ -378,6 +381,7 @@ async function naming(chrome, file) {
     const before = first.getBoundingClientRect().top > innerHeight / 4 ? shown() : '';
     const el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
     scrollTo(0, scrollY + el.getBoundingClientRect().top - 100);
+    if (el.getBoundingClientRect().top > innerHeight / 4) return done([]);
     const copy = a.cloneNode(true);
     copy.querySelectorAll('mjx-assistive-mml').forEach(n => n.remove());
     setTimeout(() => {

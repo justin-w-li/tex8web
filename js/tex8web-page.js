@@ -28,6 +28,8 @@
     const add = el => {
       for (const node of el.childNodes) {
         if (node.nodeType === Node.TEXT_NODE) line.append(node.textContent.replace(/\s+/g, ' '));
+        // (and not tex4ht's comments, <!-- l. 12 -->, as in a box's title)
+        else if (node.nodeType !== Node.ELEMENT_NODE) continue;
         else if (node.matches('mjx-container')) line.append(node.cloneNode(true));
         else if (!node.matches('.tex8web-permalink, mjx-assistive-mml')) add(node);
       }
