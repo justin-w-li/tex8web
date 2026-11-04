@@ -18,6 +18,21 @@ function M.theorem_spacing(document)
   end
 end
 
+-- a list just under a heading, without the empty paragraph html4.4ht opens
+-- there before an enumerate or a description, through which the list's
+-- margin would still collapse with the heading's (css/tex8web.css sets it
+-- as LaTeX does, with no \topsep under a heading)
+function M.heading_lists(document)
+  for _, list in ipairs(document:query_selector("ol, ul, dl")) do
+    local p = dom.previous_element(list)
+    local heading = p and dom.previous_element(p)
+    if heading and heading:get_element_name():match("^h[2-6]$") and p:get_element_name() == "p"
+        and #dom.elements(p) == 0 and not p:get_text():find("%S") then
+      p:remove_node()
+    end
+  end
+end
+
 -- the space between a heading's number and its title, as one space in a
 -- <span class="tex8web-labelsep">, which css/tex8web.css makes as wide as
 -- in the PDF: tex4ht writes it as spaces (and KOMA's as no-break spaces),

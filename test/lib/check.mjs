@@ -124,6 +124,12 @@ const pageChecks = [
     }
     return problems;
   },
+  // (a link to a repeated id goes to the first)
+  function uniqueIds(html) {
+    const seen = new Set(), repeated = new Set();
+    for (const [, id] of html.matchAll(/ id=['"]([^'"]+)['"]/g)) (seen.has(id) ? repeated : seen).add(id);
+    return repeated.size ? [`repeated ids: ${[...repeated].slice(0, 5).join(', ')}`] : [];
+  },
   function enumitemLengths(html) {
     return /<dl(?![^>]*style=)[^>]*class=['"]enumerate-enumitem/.test(html) ? ['an enumitem list without its lengths'] : [];
   },

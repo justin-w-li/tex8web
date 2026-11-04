@@ -38,7 +38,8 @@ if (!only.length) {
 // indented from its chapters, and its chapter's title and label
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
-    '--tex8web-section-labelsep': '1.125em', '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
+    '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
+    '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
   // (and test.cfg's \WebColor, from an xcolor expression and an RGB color)
   'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
@@ -138,6 +139,15 @@ const permalinks = {
   ],
 };
 
+// the fonts preloaded, and no others: the faces of the text (bold
+// headings, italic, \texttt; but not \verb, in the browser's monospace)
+// and MathJax's that the math uses
+const preloads = {
+  'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmroman10-bolditalic',
+    'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'b', 'c', 'mi', 'v', 'lo', 'so', 's3', 's4', 'brk']
+      .map(font => `mathjax/mjx-tex-${font}`)],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -155,6 +165,12 @@ function check(doc, result, out, aux) {
   for (const pattern of pictures[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);
   }
+  if (preloads[doc.name]) {
+    const found = [...html.matchAll(/<link [^>]*rel='preload'[^>]*>/g)]
+      .map(([link]) => link.match(/href='fonts\/([^']+)\.woff2'/)?.[1]).sort().join(' ');
+    const wanted = [...preloads[doc.name]].sort().join(' ');
+    if (found !== wanted) problems.push(`fonts preloaded: ${found}, not ${wanted}`);
+  }
   for (const pattern of minipages[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);
   }
@@ -169,6 +185,10 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of permalinks[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the links`);
+  }
+  // (prerender.mjs leaves out a token of one character)
+  if (/<mjx-m[ion](?: (?:space|size)='[^']*')*><mjx-c class='[^']*'>[^<]*<\/mjx-c><\/mjx-m[ion]>/.test(html)) {
+    problems.push('a token of one character left in the typeset math');
   }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {

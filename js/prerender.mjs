@@ -49,11 +49,121 @@ const root = adaptor.root(document);
 for (const node of [...adaptor.tags(root, 'script'), ...adaptor.tags(root, 'div')]) {
   if (adaptor.hasAttribute(node, 'data-tex8web-browser')) adaptor.remove(node);
 }
+// MathJax's output with fewer elements: a phone's browser restyles a long
+// page as it scrolls, in time that grows with its elements, most of them
+// MathJax's. Each element left out adds nothing to the boxes inside it but
+// what its one character can take on itself (MathJax gives these tags
+// display: inline-block, and math has line-height 0), so the page looks the
+// same, as test:visual checks against MathJax's own output in the browser
+const tokens = ['mjx-mi', 'mjx-mo', 'mjx-mn'];
+const wrappers = ['mjx-TeXAtom', 'mjx-msub', 'mjx-msup', 'mjx-msubsup', 'mjx-mrow'];
+// (MathJax's font sizes, which an em in the element itself scales by)
+const sizes = { s: 0.707, ss: 0.5, Tn: 0.6, sm: 0.85, lg: 1.2, Lg: 1.44, LG: 1.73, hg: 2.07, HG: 2.49 };
+// (an element's attributes, but data-latex, which the page loses below)
+const attributes = node => adaptor.allAttributes(node).filter(({ name }) => !name.startsWith('data-latex'));
+const only = (node, names) => attributes(node).every(({ name }) => names.includes(name));
+const has = (node, name) => adaptor.getAttribute(node, name) != null;
+const isElement = node => !adaptor.kind(node).startsWith('#');
+
+// a token of one character: the character (mjx-c), which takes its
+// spacing and size
+function token(node) {
+  const [c, ...rest] = adaptor.childNodes(node);
+  if (rest.length || !c || adaptor.kind(c) !== 'mjx-c' || !only(c, ['class'])
+      || !only(node, ['space', 'size'])) return;
+  for (const { name, value } of attributes(node)) adaptor.setAttribute(c, name, value);
+  adaptor.replace(c, node);
+}
+
+// a script of one character: the character, raised or lowered itself, with
+// the script's padding (MathJax's CSS: .033em left, .05em right) and
+// margin. Each in the script's ems, which the character's size makes
+// smaller: calc() keeps each length as it was, to round to the layout's
+// units on its own as before (the character's left padding is free)
+function script(node) {
+  const [c, ...rest] = adaptor.childNodes(node);
+  if (rest.length || !c || adaptor.kind(c) !== 'mjx-c' || !only(c, ['class', 'size'])
+      || !only(node, ['style'])) return;
+  const scale = has(c, 'size') ? sizes[adaptor.getAttribute(c, 'size')] : 1;
+  if (!scale) return;
+  const em = n => scale === 1 ? `${n}em` : `calc(${n}em / ${scale})`;
+  const style = { 'padding-left': em(0.033), 'margin-right': em(0.05) };
+  for (const part of (adaptor.getAttribute(node, 'style') || '').split(';').filter(p => p.trim())) {
+    const [, name, value] = part.match(/^\s*([\w-]+):\s*(-?[\d.]+)(?:em)?\s*$/) || [];
+    if (!['vertical-align', 'margin-left'].includes(name)) return;
+    if (+value) style[name] = em(+value);
+  }
+  adaptor.setAttribute(c, 'style', Object.entries(style).map(([name, value]) => `${name}: ${value};`).join(' '));
+  adaptor.replace(c, node);
+}
+
+// whether what's in node lines up on the left, as MathJax's CSS has it
+// for these tags, and so for a script's two lines, which don't say
+const left = node => [...tokens, ...wrappers, 'mjx-math'].includes(adaptor.kind(node))
+  || (['mjx-script', 'mjx-mstyle'].includes(adaptor.kind(node)) && left(adaptor.parent(node)));
+
+// a wrapper: its children, in its place, in a parent that also lines them
+// up on the left. Its space and rspace (margins, in the em of the element
+// they're on) go to its first and last child, which must then be of its
+// size; its size only to an only child
+function unwrap(node) {
+  const children = adaptor.childNodes(node);
+  if (!children.length || !children.every(isElement) || !left(adaptor.parent(node))
+      || !only(node, ['texclass', 'space', 'rspace', 'size'])) return;
+  const [first, last] = [children[0], children.at(-1)];
+  const size = adaptor.getAttribute(node, 'size');
+  // (a child whose own style, or class, a character's font aside, may set
+  // its margins or font size)
+  const own = child => /margin|font/.test(adaptor.getAttribute(child, 'style') || '')
+    || (adaptor.kind(child) !== 'mjx-c' && has(child, 'class'));
+  if (size && (children.length > 1 || has(first, 'size') || own(first))) return;
+  const free = (child, name) => !has(child, name) && (size || !has(child, 'size')) && !own(child);
+  if (has(node, 'space') && !free(first, 'space')) return;
+  if (has(node, 'rspace') && !free(last, 'rspace')) return;
+  if (size) adaptor.setAttribute(first, 'size', size);
+  if (has(node, 'space')) adaptor.setAttribute(first, 'space', adaptor.getAttribute(node, 'space'));
+  if (has(node, 'rspace')) adaptor.setAttribute(last, 'rspace', adaptor.getAttribute(node, 'rspace'));
+  for (const child of children) adaptor.insert(child, node);
+  adaptor.remove(node);
+}
+
+// (from the inside out: a script's character is a token first)
+function flatten(node) {
+  for (const child of adaptor.childNodes(node)) if (isElement(child)) flatten(child);
+  const kind = adaptor.kind(node);
+  if (tokens.includes(kind)) token(node);
+  else if (kind === 'mjx-script') script(node);
+  else if (wrappers.includes(kind)) unwrap(node);
+}
+// (MathJax gives each child of a breakable inline formula its upright font,
+// which would win over the font of a character now among them: its rule is
+// narrowed below, and the math left as it is if MathJax has changed it)
+const style = adaptor.tags(adaptor.head(document), 'style').find(s => adaptor.getAttribute(s, 'id') === 'MJX-CHTML-styles');
+const breakable = 'mjx-container[jax="CHTML"] > mjx-math.TEX-N[breakable] > * {';
+const mathjaxCss = adaptor.textContent(style);
+const flat = mathjaxCss.includes(breakable) || !adaptor.tags(root, 'mjx-math').some(math => has(math, 'breakable'));
+if (!flat) console.error(`MathJax: no "${breakable}" in its styles; prerender.mjs needs updating`);
+for (const math of flat ? adaptor.tags(root, 'mjx-math') : []) {
+  for (const child of adaptor.childNodes(math)) if (isElement(child)) flatten(child);
+}
+// (tex4ht's span around inline math, which the passes before this one look
+// for, and nothing after; but not at the top of the body, where make4ht's
+// fixinlines, after this, gathers text and inline elements such as a span,
+// but not an mjx-container, into a paragraph)
+for (const span of adaptor.tags(root, 'span')) {
+  const [container, ...rest] = adaptor.childNodes(span);
+  if (!rest.length && container && adaptor.kind(container) === 'mjx-container'
+      && adaptor.kind(adaptor.parent(span)) !== 'body'
+      && only(span, ['class']) && adaptor.getAttribute(span, 'class') === 'mathjax-inline') {
+    adaptor.replace(container, span);
+  }
+}
+
 // MathJax's styles, in a file of their own (make4ht's later passes over
 // the page would escape the > in them), with its fonts, from node_modules
 const files = [];
-const style = adaptor.tags(adaptor.head(document), 'style').find(s => adaptor.getAttribute(s, 'id') === 'MJX-CHTML-styles');
-const css = adaptor.textContent(style).replace(/url\("([^"]+\.woff2)"\)/g, (_, url) => {
+const css = mathjaxCss.replace(breakable, breakable.replace('> * {', '> :not(mjx-c) {'))
+  .replace(/url\("([^"]+\.woff2)"\)/g, (_, url) => {
   const name = basename(url);
   const path = join(dirname(file), 'fonts', 'mathjax', name);
   mkdirSync(dirname(path), { recursive: true });
@@ -64,7 +174,30 @@ const css = adaptor.textContent(style).replace(/url\("([^"]+\.woff2)"\)/g, (_, u
 const cssFile = file.replace(/\.html$/, '') + '-mathjax.css';
 writeFileSync(cssFile, css);
 files.push(cssFile);
-adaptor.replace(adaptor.node('link', { rel: 'stylesheet', href: basename(cssFile) }), style);
+const stylesheet = adaptor.node('link', { rel: 'stylesheet', href: basename(cssFile) });
+adaptor.replace(stylesheet, style);
+
+// the fonts the math uses, preloaded: fetched as the page starts loading,
+// rather than as each is first laid out, which lays out the whole page
+// again (on a phone, a quarter of a second for a long page, each time). A
+// font is used if its name is a class in the math (MJX-TEX-C, TEX-C); ZERO
+// comes with every one of them, and BRK draws where a line breaks (an
+// mjx-break, or a line of a breakable display)
+const classes = new Set();
+const collect = node => {
+  for (const name of (adaptor.getAttribute(node, 'class') || '').split(' ')) classes.add(name);
+  for (const child of adaptor.childNodes(node)) if (isElement(child)) collect(child);
+};
+for (const math of adaptor.tags(root, 'mjx-math')) collect(math);
+const breaks = adaptor.tags(root, 'mjx-break').length > 0
+  || adaptor.tags(root, 'mjx-linestack').some(stack => has(stack, 'breakable'));
+for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: url\("([^"]+)"\)/g)) {
+  const name = family.slice('MJX-'.length);
+  if (classes.has(name) || (name === 'TEX-ZERO' && classes.size) || (name === 'BRK' && breaks)) {
+    adaptor.insert(adaptor.node('link', { rel: 'preload', as: 'font', type: 'font/woff2', crossorigin: '',
+      href: url }), stylesheet);
+  }
+}
 
 // (data-latex holds each node's source, for MathJax's menu)
 const page = adaptor.doctype(document) + '\n' + adaptor.outerHTML(root)

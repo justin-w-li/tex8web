@@ -161,7 +161,8 @@
         \setbox0\vbox{\web@font
             \ifx\web@spacing\relax\else
                 \xdef\web@spacing{--tex8web-#1-before: \web@em\web@before;
-                    --tex8web-#1-after: \web@em\web@after;}%
+                    --tex8web-#1-after: \web@em\web@after;
+                    --tex8web-#1-after-text: \web@aftertext;}%
             \fi
             \ifcsname c@#1\endcsname
                 \ifcsname web@titlesep@#1\endcsname
@@ -214,7 +215,8 @@
     \fi
 }
 % titlesec's {left}{right}{before}{after}{afterindent}: before and after
-% as \web@before and \web@after, in the text's font, as titlesec sets them
+% as \web@before and \web@after, in the text's font, as titlesec sets them,
+% and after in the text's ems, as \web@aftertext
 % (\ttl@assign reads its *n form). (Not left in \@tempskipa: a format's
 % \center sets it)
 \def\web@titlespacing#1#2#3#4#5{%
@@ -222,6 +224,7 @@
     \edef\web@before{\the\dimexpr\@tempskipa}%
     \ttl@assign\@tempskipa#4\relax\aftertitleunit
     \edef\web@after{\the\dimexpr\@tempskipa}%
+    \edef\web@aftertext{\web@em\web@after}%
     \global\let\web@spacing\@empty}
 % #2 if the heading's format (\web@font) holds the command #1
 \newcommand\web@formathas[2]{%

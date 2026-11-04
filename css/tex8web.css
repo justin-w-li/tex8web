@@ -113,6 +113,13 @@ div.thanks { font-style: normal; }
     font-variant: var(--tex8web-subsubsection-variant, normal);
     text-align: var(--tex8web-subsubsection-align, left);
     margin-block: var(--tex8web-subsubsection-before, 1.67em) var(--tex8web-subsubsection-after, 1.67em); }
+/* a theorem or list just under a heading only the heading's space below it:
+   LaTeX's \@item adds no \topsep after a heading (\if@nobreak). (Important
+   over a theorem's inline margin, text.lua's; text.lua also takes out the
+   empty paragraph before a list there) */
+:is(.sectionHead, .likesectionHead, .subsectionHead, .likesubsectionHead, .subsubsectionHead,
+    .likesubsubsectionHead) + :is(div.newtheorem, ol.enumerate1, ul.itemize1, dl.description,
+    dl.enumerate-enumitem, dl.thebibliography) { margin-top: 0 !important; }
 /* (run into their paragraph, unless titlesec puts them on a line of their
    own, by default with the space below them that a paragraph has) */
 .paragraphHead, .likeparagraphHead { display: var(--tex8web-paragraph-display, inline);
@@ -259,8 +266,17 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
 .tex8web-tcb-inline > .tcolorbox-content { display: block; }
 /* what follows an \hfill in an after upper (a proof's square) */
 .tex8web-hfill { float: right; }
-/* framed's, as far from the text as in the PDF (tex8web-text.tex) */
+/* framed's, as far from the text as in the PDF (tex8web-text.tex). Under
+   a titlesec heading, that and the heading's space below, not the larger:
+   titlesec puts it with \vspace, which ends in \vskip\z@skip (source2e),
+   so framed's \addvspace adds to it */
 .framedenv { margin-block: var(--tex8web-framed-sep); }
+:is(.sectionHead, .likesectionHead) + .framedenv {
+    margin-top: calc(var(--tex8web-section-after-text, 0em) + var(--tex8web-framed-sep)); }
+:is(.subsectionHead, .likesubsectionHead) + .framedenv {
+    margin-top: calc(var(--tex8web-subsection-after-text, 0em) + var(--tex8web-framed-sep)); }
+:is(.subsubsectionHead, .likesubsubsectionHead) + .framedenv {
+    margin-top: calc(var(--tex8web-subsubsection-after-text, 0em) + var(--tex8web-framed-sep)); }
 
 /* --- table of contents ------------------------------------------------- */
 

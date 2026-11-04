@@ -54,6 +54,7 @@ local passes = {
   page.build_data,
   source.spaces,
   text.theorem_spacing,
+  text.heading_lists,
   text.label_space,
   text.no_break_spaces,
   text.minipages,
