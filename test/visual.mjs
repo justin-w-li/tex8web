@@ -33,7 +33,6 @@ const typesetPage = `(async () => {
   const html = document.documentElement.cloneNode(true);
   html.classList.remove('tex8web-js');
   if (!html.classList.length) html.removeAttribute('class');
-  html.querySelector('.tex8web-toc-filter')?.setAttribute('hidden', 'hidden');
   html.querySelector('.tex8web-toc-results')?.remove();
   html.querySelector('.tex8web-where')?.replaceChildren();
   html.querySelector('.tex8web-where')?.setAttribute('hidden', 'hidden');

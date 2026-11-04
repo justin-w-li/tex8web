@@ -142,7 +142,7 @@ return {
     local nav = d:query_selector("nav#tex8web-toc")[1]
     equal(d:query_selector("#tex8web-toc-title")[1]:get_text(), "Contents")
     equal(#nav:query_selector("div.tableofcontents"), 1)
-    equal(#nav:query_selector("input.tex8web-toc-filter[hidden]"), 1)
+    equal(#nav:query_selector("input.tex8web-toc-filter"), 1)
     equal(#d:query_selector("h3"), 1)
     equal(#d:query_selector("button.tex8web-contents"), 1)
     equal(#d:query_selector("button.tex8web-where[hidden]"), 1)

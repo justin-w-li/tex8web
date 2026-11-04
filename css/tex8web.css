@@ -442,7 +442,8 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* (Chrome's and Safari's clear button, in the text's color rather than
    the system's accent) */
 .tex8web-toc-filter::-webkit-search-cancel-button { filter: grayscale(1); opacity: 0.6; }
-.tex8web-toc-filter[hidden] { display: none; }
+/* (as the theme button, without JavaScript) */
+:root:not(.tex8web-js) .tex8web-toc-filter { display: none; }
 /* (Safari on iOS zooms into a field in a smaller font as it's focused) */
 @media (pointer: coarse) { .tex8web-toc-filter { font-size: max(16px, 0.875em); } }
 .tex8web-toc-results { margin: 0; padding: 0; list-style: none; font-size: 0.875em; line-height: 1.25; }

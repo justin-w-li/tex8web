@@ -58,9 +58,8 @@ const pageChecks = [
     return /class=['"]tableofcontents/.test(html.replace(toc(html), ''))
       ? ['a table of contents in the text, not beside it'] : [];
   },
-  // (hidden until tex8web-page.js shows it)
   function tocFilter(html) {
-    return toc(html) && !/<input(?=[^>]*class=['"]tex8web-toc-filter['"])(?=[^>]*hidden)/.test(toc(html))
+    return toc(html) && !/<input[^>]*class=['"]tex8web-toc-filter['"]/.test(toc(html))
       ? ['a table of contents without its filter'] : [];
   },
   // (an entry's number in its box, which lines up the titles)

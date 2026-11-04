@@ -333,7 +333,6 @@
     if (document.querySelector('.newtheorem .head > .tex8web-permalink')) kinds.push('theorem');
     if (document.querySelector('.tex8web-term[id]')) kinds.push('term');
     input.placeholder = `Find a ${kinds.length > 1 ? `${kinds.slice(0, -1).join(', ')}${kinds.length > 2 ? ',' : ''} or ` : ''}${kinds.at(-1)}`;
-    input.hidden = false;
   }
 
   // the reader's place: the last heading or theorem above the top of the
