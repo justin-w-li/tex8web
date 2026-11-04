@@ -1,0 +1,11 @@
+% A test for tex8web: LaTeX's own \newtheorem with hyperref, but without
+% amsmath, whose \ifmeasuring@ hyperref's \MakeLinkTarget tests. The
+% theorem's link leads where a \ref to it does.
+\documentclass{article}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{One}
+\begin{theorem}\label{thm:one}A numbered theorem.\end{theorem}
+Theorem~\ref{thm:one} is numbered.
+\end{document}
