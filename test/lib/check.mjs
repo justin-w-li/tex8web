@@ -62,7 +62,7 @@ const pageChecks = [
   },
   // (an entry's number in its box, which lines up the titles)
   function tocNumbers(html) {
-    return [...toc(html).matchAll(/<span class=['"]((?:sub)*(?:section|paragraph))Toc['"]>(?!<span class=['"]tocnumber)/g)]
+    return [...toc(html).matchAll(/<span class=['"](chapter|appendix|(?:sub)*(?:section|paragraph))Toc['"]>(?!<span class=['"]tocnumber)/g)]
       .map(([, level]) => `a ${level} entry in the table of contents without its number box`);
   },
   // (a heading's label may add to its number, as titlesec's \thesection.
@@ -71,7 +71,7 @@ const pageChecks = [
     const problems = [];
     for (const [, number, id] of toc(html).matchAll(/<span class=['"]tocnumber['"]>([^<]+)<\/span><a href=['"]#([^'"]+)['"]/g)) {
       const at = html.search(new RegExp(` id=['"]${id}['"]`));
-      const mark = html.slice(at, at + 500).match(/<span class=['"]titlemark['"]>(.*?)<\/span>/)?.[1].replace(/<[^>]+>/g, '');
+      const mark = html.slice(at, at + 500).match(/<span class=['"]titlemark['"]>((?:<span[^>]*>[^<]*<\/span>|[^<])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '');
       if (at >= 0 && !mark?.includes(number.trim())) problems.push(`heading #${id} numbered ${mark?.trim()}, not ${number}`);
     }
     return problems;

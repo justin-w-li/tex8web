@@ -33,10 +33,17 @@ if (!only.length) {
 
 // what tex8web measures in a document, where a test document sets it:
 // titlesec's spacing in its *n form, a \titleformat's space after the
-// label in a bold font's ems, and a title's own size
+// label in a bold font's ems, and a title's own size; report's table of
+// contents, its sections indented from its chapters, and its chapter's
+// title and label
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
     '--tex8web-section-labelsep': '1.125em', '--tex8web-title-size': '1.44em' },
+  'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
+    '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
+    '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
+    '--tex8web-toc-section-skip': '0em', '--tex8web-toc-section-weight': 'normal',
+    '--tex8web-chapter-size': '2.488em', '--tex8web-chapter-label-size': '0.8336em' },
 };
 
 // what tex8web.js makes of some of test.tex's math through MathJax's
@@ -76,6 +83,16 @@ const minipages = {
   ],
 };
 
+// the table of contents beside the text, titled by its heading, with
+// chapters' numbers in their boxes; the list of figures before it left in
+// the text
+const contents = {
+  'test-report': [
+    /<nav [^>]*id='tex8web-toc'[^>]*><p [^>]*>Contents<\/p><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
+    /<\/nav>(?:(?!<\/nav>)[^])*<div class='tableofcontents'>\s*<span class='lofToc'>/,
+  ],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -95,6 +112,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of minipages[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);
+  }
+  for (const pattern of contents[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the page`);
   }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {

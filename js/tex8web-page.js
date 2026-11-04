@@ -174,7 +174,7 @@
       .map(a => ({ a, heading: target(a) }))
       .filter(entry => entry.heading);
     if (!entries.length) return;
-    const isSection = el => el.matches('.sectionToc, .likesectionToc, .chapterToc, .likechapterToc');
+    const isSection = el => el.matches('.sectionToc, .likesectionToc, .chapterToc, .likechapterToc, .appendixToc, .partToc, .likepartToc');
     let current;
     const update = () => {
       const line = innerHeight / 4;
