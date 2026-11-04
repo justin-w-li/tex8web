@@ -6,7 +6,8 @@
 // build/test/<document>/visual/. In both, the columns of an alignment
 // should line up across its \intertext. And the prerendered page's closer
 // view of pictures should work with the mouse and a finger, the page be no
-// wider than a phone's screen, and no math character be clipped.
+// wider than a phone's screen, its bar there come and go as it scrolls,
+// and no math character be clipped.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
@@ -264,6 +265,25 @@ async function overflow(chrome, file) {
   return width > room ? [`${width - room}px wider than a screen ${room}px wide`] : [];
 }
 
+// on a phone's screen, the controls' bar (tex8web-page.js): away scrolling
+// down, back scrolling up, but not for a pixel or two the other way
+async function bar(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
+  const away = await page.evaluate(`(async () => {
+    const away = [];
+    if (document.documentElement.scrollHeight < 1600) return away;
+    for (const y of [300, 600, 597, 560, 563]) {
+      scrollTo(0, y);
+      await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+      away.push(document.querySelector('.tex8web-controls').classList.contains('tex8web-away'));
+    }
+    return away;
+  })()`);
+  await page.close();
+  return away.length && away.join() !== 'true,true,true,false,false'
+    ? [`the bar away ${away.join(', ')} scrolling to 300, 600, 597, 560 and 563px`] : [];
+}
+
 // math characters with a clip (css/tex8web.css): there should be none
 async function clipped(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
@@ -327,6 +347,7 @@ async function compare(chrome, doc, built) {
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
     layout.push(...(await viewing(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await bar(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     for (const file of [typeset, join(pre, html)]) {
       layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
     }

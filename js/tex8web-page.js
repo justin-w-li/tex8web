@@ -94,13 +94,18 @@
     // (only on a narrow screen: the browser may restyle the page for a
     // narrow one before the resize event, and a bar already away would
     // then vanish there rather than fade; and not for the scrolling that
-    // keeps the reader's place as the width changes)
+    // keeps the reader's place as the width changes. Safari on iOS bounces
+    // past the page's ends and jitters a pixel or two back as its own bars
+    // grow or shrink, so a turn counts only once it has gone 10px)
     addEventListener('scroll', () => {
-      if (innerWidth === width) {
+      const end = document.documentElement.scrollHeight - innerHeight;
+      if (innerWidth !== width) {
+        width = innerWidth;
+        last = scrollY;
+      } else if (scrollY >= 0 && scrollY <= end && (Math.abs(scrollY - last) >= 10 || top())) {
         controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > last && !top());
+        last = scrollY;
       }
-      width = innerWidth;
-      last = scrollY;
     }, { passive: true });
     addEventListener('resize', () => {
       const now = layout();
