@@ -302,8 +302,8 @@
     });
     // a touch beside the card closes it at once, as Safari on iOS sends no
     // click for a tap on plain text; and that tap's click (caught on its way
-    // down to what was tapped, and not a later one from the keyboard) does
-    // nothing else
+    // down to what was tapped, and not a later one from the keyboard, whose
+    // detail, the count of clicks, is 0) does nothing else
     let touch = false, closing = null;
     document.addEventListener('pointerdown', event => {
       touch = event.pointerType === 'touch';
@@ -313,7 +313,7 @@
     });
     document.addEventListener('click', event => {
       const a = link(event.target);
-      if (event.target === closing) {
+      if (event.target === closing && event.detail) {
         event.preventDefault();
         event.stopPropagation();
       } else if (a && touch && a !== shown) {

@@ -84,6 +84,10 @@ function check(doc, result, out, aux) {
   for (const pattern of pictures[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);
   }
+  // (checkOutput checks that every formula has it, once one does)
+  if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
+    problems.push('no MathML for screen readers, with TEX8WEB_MATHML');
+  }
   return [...problems, ...checkTexLog(join(aux, doc.tex.replace(/\.tex$/, '.log'))), ...checkLog(result.log),
     ...checkOutput(out)];
 }
