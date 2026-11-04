@@ -478,9 +478,11 @@ dd.enumerate-enumitem { margin-left: 0; }
     @starting-style { .tex8web-toc:popover-open::backdrop { opacity: 0; } }
 }
 /* (its title above, as the PDF's: not bold, and lines as close as the
-   entries') */
-.tex8web-toc-doctitle { display: block; margin-block-end: 2.25em; line-height: 1.25; }
+   entries'; the space below it is the contents' title's, so it doesn't
+   change with the title's size) */
+.tex8web-toc-doctitle { display: block; font-size: 1.25em; line-height: 1.25; }
 .tex8web-toc-title { margin-block: 0 0.5em; font-weight: bold; }
+.tex8web-toc-doctitle + .tex8web-toc-title { margin-block-start: 2.25em; }
 .tex8web-toc .tableofcontents { font-size: 0.875em; line-height: 1.25; }
 .tex8web-toc .tableofcontents > span { padding-top: 0.3em; }
 /* (and not hyphenated, as tex4ht's links are) */
