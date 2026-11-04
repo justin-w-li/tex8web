@@ -5,11 +5,13 @@
 // It configures MathJax from the page's tex8web-config, with tex8web.js, as
 // the browser would. MathJax's styles go into page-mathjax.css and the fonts
 // they use into fonts/mathjax/, next to the page; it prints their paths, for
-// tex8web.mk4 to list with the output.
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
+// tex8web.mk4 to list with the output. Those fonts and Latin Modern's
+// (assets.lua) are cut down to the characters the document has.
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
 import { runInThisContext } from 'node:vm';
+import subsetFont from 'subset-font';
 
 const require = createRequire(import.meta.url);
 const file = process.argv[2];
@@ -162,12 +164,13 @@ for (const span of adaptor.tags(root, 'span')) {
 // MathJax's styles, in a file of their own (make4ht's later passes over
 // the page would escape the > in them), with its fonts, from node_modules
 const files = [];
+const fonts = [];
 const css = mathjaxCss.replace(breakable, breakable.replace('> * {', '> :not(mjx-c) {'))
   .replace(/url\("([^"]+\.woff2)"\)/g, (_, url) => {
   const name = basename(url);
   const path = join(dirname(file), 'fonts', 'mathjax', name);
   mkdirSync(dirname(path), { recursive: true });
-  copyFileSync(require.resolve(url), path);
+  fonts.push([require.resolve(url), path]);
   files.push(path);
   return `url("fonts/mathjax/${name}")`;
 });
@@ -203,6 +206,29 @@ for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: ur
 const page = adaptor.doctype(document) + '\n' + adaptor.outerHTML(root)
   .replace(/ data-latex(-item)?="[^"]*"/g, '');
 writeFileSync(file, page);
+// the fonts, each with only the glyphs of the characters in the document's
+// pages and styles: a third as much to fetch. Each from
+// its original, as the pages of a document tex4ht splits share them: the
+// last page typeset sees the others done. With the characters a browser
+// may draw itself (a hyphen where it breaks a word, the filter's
+// ellipsis) and Latin-1, for what a reader types into the filter
+const dir = dirname(file);
+const read = pattern => readdirSync(dir).filter(name => pattern.test(name) && join(dir, name) !== file)
+  .map(name => readFileSync(join(dir, name), 'utf8')).join('');
+// (and the characters of entities and of CSS's escapes)
+const character = (hex, base = 16) => parseInt(hex, base) <= 0x10ffff ? String.fromCodePoint(parseInt(hex, base)) : '';
+let text = '\u2010\u2026';
+for (let code = 0x20; code <= 0xff; code++) text += String.fromCharCode(code);
+text += (page + read(/\.html$/)).replace(/&#x([\da-f]+);/gi, (_, hex) => character(hex))
+  .replace(/&#(\d+);/g, (_, n) => character(n, 10));
+text += read(/\.css$/).replace(/\\([\da-f]{1,6}) ?/gi, (_, hex) => character(hex));
+for (const name of readdirSync(join(dir, 'fonts')).filter(name => name.endsWith('.woff2'))) {
+  fonts.push([new URL(`../fonts/${name}`, import.meta.url), join(dir, 'fonts', name)]);
+}
+const chars = [...new Set(text)].join('');
+for (const [source, path] of fonts) {
+  writeFileSync(path, await subsetFont(readFileSync(source), chars, { targetFormat: 'woff2' }));
+}
 const errors = (page.match(/<mjx-merror/g) || []).length;
 if (errors) console.error(`${errors} formula(s) with MathJax errors`);
 console.log(files.join('\n'));

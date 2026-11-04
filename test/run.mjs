@@ -227,6 +227,12 @@ function check(doc, result, out, aux) {
   if (/<mjx-m[ion](?: (?:space|size)='[^']*')*><mjx-c class='[^']*'>[^<]*<\/mjx-c><\/mjx-m[ion]>/.test(html)) {
     problems.push('a token of one character left in the typeset math');
   }
+  // (prerender.mjs cuts Latin Modern down to the document's characters;
+  // test:visual checks that the page looks the same)
+  const font = join(out, 'fonts/lmroman10-regular.woff2');
+  if (html.includes('<mjx-container') && statSync(font).size >= statSync(join(root, 'fonts/lmroman10-regular.woff2')).size) {
+    problems.push('Latin Modern Roman not cut down to the page\'s characters');
+  }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
     problems.push('no MathML for screen readers, with TEX8WEB_MATHML');
