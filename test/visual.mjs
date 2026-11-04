@@ -73,10 +73,11 @@ async function viewing(chrome, file) {
   };
   const state = () => page.evaluate(`(() => {
     const dialog = document.querySelector('.tex8web-viewer'), box = dialog.firstChild.getBoundingClientRect();
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
     return { open: dialog.open, zoomed: dialog.classList.contains('tex8web-zoomed'), left: box.left, top: box.top,
       width: box.width, height: box.height, scroll: [dialog.scrollLeft, dialog.scrollTop],
       end: [dialog.scrollWidth - dialog.clientWidth, dialog.scrollHeight - dialog.clientHeight],
-      room: [innerWidth, innerHeight].map(n => n - 3 * parseFloat(getComputedStyle(document.documentElement).fontSize)) };
+      room: [innerWidth, innerHeight].map(n => n - 2 * Math.max(rem, 0.04 * Math.min(innerWidth, innerHeight)) - rem) };
   })()`);
   // (a picture in a figure or display math opens it; an icon in the text,
   // up to one and a half times as tall, doesn't)
