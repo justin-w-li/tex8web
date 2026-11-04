@@ -1,0 +1,17 @@
+% A test for tex8web: LaTeX's own \newtheorem, without amsthm or ntheorem.
+% A numbered theorem, one with a note, a lemma sharing its counter and a
+% remark numbered within sections each get a link at their head, which a
+% \ref to them leads to.
+\documentclass{article}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{remark}{Remark}[section]
+\begin{document}
+\section{One}
+\begin{theorem}\label{thm:one}A numbered theorem.\end{theorem}
+\begin{theorem}[A note]\label{thm:note}Another, with a note.\end{theorem}
+\begin{lemma}\label{lem:one}A lemma.\end{lemma}
+\begin{remark}\label{rem:one}A remark.\end{remark}
+Theorem~\ref{thm:one}, Theorem~\ref{thm:note}, Lemma~\ref{lem:one} and
+Remark~\ref{rem:one}.
+\end{document}

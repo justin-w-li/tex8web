@@ -104,9 +104,9 @@
 % ntheorem's nonumber styles (\newtheorem*) do: their \@begintheorem has
 % no #2
 \ExplSyntaxOn
+\web@needs{:thm}
 \@ifpackageloaded{ntheorem}
   {
-    \web@needs{:thm}
     \cs_set_eq:NN \__web_thm: \:thm
     \cs_set:Npn \:thm
       {
@@ -115,6 +115,28 @@
         \__web_thm:
       }
   }
+  {}
+% LaTeX's own theorems, likewise: their \@thm (ltthm.dtx) steps the counter
+% with \@kernel@refstepcounter, which tex4ht doesn't patch as it does
+% \refstepcounter (latex.4ht), so they would get no anchor, and a \label
+% in one would lead to the section
+\web@needs{o:@thm:}
+\exp_args:Nee \str_if_in:nnT { \cs_replacement_spec:N \o:@thm: }
+  { \token_to_str:N \@kernel@refstepcounter }
+  {
+    \cs_set_eq:NN \__web_kernel_thm: \:thm
+    \cs_set:Npn \:thm
+      {
+        \ShowRefstepAnchor
+        \cs_set_eq:NN \@kernel@refstepcounter \refstepcounter
+        \__web_kernel_thm:
+      }
+  }
+% hyperref's tex4ht driver stops early (hyperref.sty's \MaybeStopEarly):
+% after its \MakeLinkTarget, which LaTeX's theorems call, tests amsmath's
+% \ifmeasuring@, but before it defines \ifmeasuring@ for want of amsmath
+\@ifpackageloaded{hyperref}
+  { \cs_if_exist:cF { ifmeasuring@ } { \cs_set_eq:cN { ifmeasuring@ } \if_false: } }
   {}
 \ExplSyntaxOff
 
