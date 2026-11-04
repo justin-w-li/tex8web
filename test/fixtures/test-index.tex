@@ -1,6 +1,7 @@
 % A test for tex8web's index: makeidx's \makeindex and \printindex, with
 % entries on several pages, a subentry, a page range and a "see" entry; each
-% number links back to its \index.
+% number links back to its \index. Entries whose text has numbers (after ^
+% or a comma, as an entry's or a subentry's) keep them, unlinked.
 \documentclass{article}
 \usepackage{makeidx}
 \makeindex
@@ -13,5 +14,7 @@ A group\index{group} is a set with an associative operation.
 \section{Rings}
 A field\index{field} is a ring whose nonzero elements form a group\index{group}.
 \index{ring|)}\index{module|see{ring}}
+The space\index{$L^2$ space} of square-integrable functions, by the
+theorem\index{Theorem, 2nd form}\index{group!cyclic, of order 2}.
 \printindex
 \end{document}

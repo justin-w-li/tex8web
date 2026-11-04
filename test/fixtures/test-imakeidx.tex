@@ -1,0 +1,13 @@
+% A test for imakeidx's indexes: the main one, and one of names with its
+% own title and style file (test-imakeidx.ist, whose delimiter between an
+% entry and its numbers has no comma); each number links back to its \index.
+\documentclass{article}
+\usepackage{imakeidx}
+\makeindex
+\makeindex[name=names,title=Index of names,options=-s test-imakeidx.ist]
+\begin{document}
+Groups\index{group} were named by Galois\index[names]{Galois}; Euler's
+theorem\index[names]{Euler}\index{theorem!Euler's} came first.
+\printindex
+\printindex[names]
+\end{document}
