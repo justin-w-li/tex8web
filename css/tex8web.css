@@ -18,7 +18,7 @@ html body { color-scheme: inherit; }
 :root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); --tex8web-text: light-dark(#000000, #E3E3E3); }
 /* what a link leads to, and the table of contents' entry for the section
    being read */
-:root { --tex8web-highlight: light-dark(#F9EFF7, #423A37); }
+:root { --tex8web-highlight: light-dark(#EAECF6, #3B3533); }
 html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
 /* links: hyperref's colors with colorlinks (tex8web-page.tex); otherwise
    the color of the text, as the PDF draws boxes */
