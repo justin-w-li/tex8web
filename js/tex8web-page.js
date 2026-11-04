@@ -336,51 +336,62 @@
   // where it started, and dragging moves it; clicking beside it, or
   // Escape, closes it
   function viewer() {
-    const dialog = document.createElement('dialog');
-    dialog.className = 'tex8web-viewer';
+    if (!HTMLElement.prototype.showPopover) return;
+    // a popover covering the page, rather than a modal <dialog>, which
+    // makes the rest of the page inert and so restyles all of it as it
+    // opens and closes (20ms on a long page in Chrome on a laptop); it
+    // takes the pointer, as the darkened page around the picture
+    const cover = document.createElement('div');
+    cover.className = 'tex8web-viewer';
+    cover.popover = 'auto';
+    cover.setAttribute('role', 'dialog');
+    cover.setAttribute('aria-modal', 'true');
+    const plate = document.createElement('div');
+    plate.className = 'tex8web-plate';
     const picture = document.createElement('img');
     picture.draggable = false;
-    dialog.append(picture);
-    // the dialog (the picture's plate, fitted to the screen at zoom 1) at
+    plate.append(picture);
+    cover.append(plate);
+    // the plate (the picture's background, fitted to the screen at zoom 1) at
     // x, y, zoom times as large: laid out at `laid` times, and the rest a
     // transform, which the GPU draws smoothly, until the zoom has stopped
     // for a moment and the layout catches up (an SVG drawn sharp again).
     // It opens at zoom `home`: 1, but a picture of pixels at its own size,
     // if the screen has room for it, rather than blurred, larger
-    let zoom = 1, laid = 1, home = 1, x = 0, y = 0, plate, natural, seen, timer;
-    const show = () => { dialog.style.transform = `translate(${x}px, ${y}px) scale(${zoom / laid})`; };
+    let zoom = 1, laid = 1, home = 1, x = 0, y = 0, fitted, natural, seen, timer;
+    const show = () => { plate.style.transform = `translate(${x}px, ${y}px) scale(${zoom / laid})`; };
     const lay = () => {
-      dialog.classList.remove('tex8web-easing');
+      plate.classList.remove('tex8web-easing');
       laid = zoom;
-      dialog.style.setProperty('--tex8web-zoom', laid);
+      plate.style.setProperty('--tex8web-zoom', laid);
       show();
     };
     // (a double-click's zoom stopped where it has got to, for what moves
     // it next to start from there)
     const settle = () => {
-      if (!dialog.classList.contains('tex8web-easing')) return;
-      const now = new DOMMatrix(getComputedStyle(dialog).transform);
-      dialog.classList.remove('tex8web-easing');
+      if (!plate.classList.contains('tex8web-easing')) return;
+      const now = new DOMMatrix(getComputedStyle(plate).transform);
+      plate.classList.remove('tex8web-easing');
       [x, y, zoom] = [now.e, now.f, now.a * laid];
       show();
     };
     // (at a scale of 1, the picture laid out as shown)
     const measure = () => {
-      const box = dialog.getBoundingClientRect();
-      plate = [box.width / laid, box.height / laid];
+      const box = plate.getBoundingClientRect();
+      fitted = [box.width / laid, box.height / laid];
       home = natural ? Math.min(1, natural / (picture.getBoundingClientRect().width / laid)) : 1;
     };
     // (anywhere, as long as the picture covers the middle of the screen:
     // zooming in on a point of the picture never moves it from there)
     const place = (left, top) => {
-      x = Math.min(innerWidth / 2, Math.max(innerWidth / 2 - plate[0] * zoom, left));
-      y = Math.min(innerHeight / 2, Math.max(innerHeight / 2 - plate[1] * zoom, top));
+      x = Math.min(innerWidth / 2, Math.max(innerWidth / 2 - fitted[0] * zoom, left));
+      y = Math.min(innerHeight / 2, Math.max(innerHeight / 2 - fitted[1] * zoom, top));
       seen = [innerWidth, innerHeight];
       show();
     };
     // to zoom `to` at left, top, easing there (css/tex8web.css) or not
     const go = (to, left, top, ease = false) => {
-      if (ease) dialog.classList.add('tex8web-easing');
+      if (ease) plate.classList.add('tex8web-easing');
       zoom = to;
       place(left, top);
       clearTimeout(timer);
@@ -392,18 +403,18 @@
       to = Math.min(4, Math.max(home / 2, to));
       go(to, px - (px - x) * to / zoom, py - (py - y) * to / zoom, ease);
     };
-    const center = ease => go(home, (innerWidth - plate[0] * home) / 2, (innerHeight - plate[1] * home) / 2, ease);
+    const center = ease => go(home, (innerWidth - fitted[0] * home) / 2, (innerHeight - fitted[1] * home) / 2, ease);
     const open = event => {
       const img = event.currentTarget, box = img.getBoundingClientRect();
       // (the same src, which tex8web-page.tex's rule for TikZ pictures in
       // dark mode picks out)
       picture.setAttribute('src', img.getAttribute('src'));
       picture.alt = img.alt;
-      dialog.style.setProperty('--tex8web-ratio', box.width / box.height);
+      plate.style.setProperty('--tex8web-ratio', box.width / box.height);
       natural = /\.svg$/i.test(img.getAttribute('src')) ? 0 : img.naturalWidth;
       zoom = 1;
       lay();
-      dialog.showModal();
+      cover.showPopover();
       measure();
       center();
       lay();
@@ -421,21 +432,26 @@
       if (img.complete) mark(img);
       else img.addEventListener('load', () => mark(img), { once: true });
     }
-    document.body.append(dialog);
+    document.body.append(cover);
+    // (the page behind isn't inert, as a modal dialog's is: the keyboard
+    // stays off it)
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Tab' && cover.matches(':popover-open')) event.preventDefault();
+    });
     // (turning a phone, say: as far into the zoom from where it started,
     // with the point at the middle of the screen still there)
     addEventListener('resize', () => {
-      if (!dialog.open) return;
+      if (!cover.matches(':popover-open')) return;
       settle();
-      const fx = (seen[0] / 2 - x) / (plate[0] * zoom), fy = (seen[1] / 2 - y) / (plate[1] * zoom);
+      const fx = (seen[0] / 2 - x) / (fitted[0] * zoom), fy = (seen[1] / 2 - y) / (fitted[1] * zoom);
       const further = zoom / home;
       lay();
       measure();
       zoom = Math.min(4, further * home);
       lay();
-      place(innerWidth / 2 - fx * plate[0] * zoom, innerHeight / 2 - fy * plate[1] * zoom);
+      place(innerWidth / 2 - fx * fitted[0] * zoom, innerHeight / 2 - fy * fitted[1] * zoom);
     });
-    dialog.addEventListener('wheel', event => {
+    cover.addEventListener('wheel', event => {
       event.preventDefault();
       // (a pinch on a trackpad comes as a wheel with ctrl, in smaller steps;
       // but a mouse's wheel with ctrl, no more than 100px a notch)
@@ -447,11 +463,11 @@
     // on a touch screen, which the pointers below follow)
     const pointers = new Map();
     let pinched;
-    dialog.addEventListener('gesturestart', event => {
+    cover.addEventListener('gesturestart', event => {
       event.preventDefault();
       pinched = zoom;
     });
-    dialog.addEventListener('gesturechange', event => {
+    cover.addEventListener('gesturechange', event => {
       event.preventDefault();
       if (!pointers.size) zoomTo(pinched * event.scale, event.clientX, event.clientY);
     });
@@ -462,7 +478,7 @@
       const [a, b = a] = pointers.values();
       return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, apart: Math.hypot(a.x - b.x, a.y - b.y) };
     };
-    dialog.addEventListener('pointerdown', event => {
+    cover.addEventListener('pointerdown', event => {
       if (event.button !== 0) return;
       // (a first finger starts afresh: one Safari on iOS lost track of, a
       // press held for its menu, isn't still down)
@@ -472,28 +488,28 @@
         touch = event.pointerType === 'touch';
       }
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      dialog.setPointerCapture(event.pointerId);
+      cover.setPointerCapture(event.pointerId);
       from = last = both();
     });
-    dialog.addEventListener('pointermove', event => {
+    cover.addEventListener('pointermove', event => {
       if (!pointers.has(event.pointerId)) return;
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       const now = both();
       if (!dragged && pointers.size === 1 && Math.hypot(now.x - from.x, now.y - from.y) <= 4) return;
       dragged = true;
-      dialog.classList.add('tex8web-dragging');
+      cover.classList.add('tex8web-dragging');
       settle();
       if (pointers.size > 1 && last.apart) zoomTo(zoom * now.apart / last.apart, last.x, last.y);
       place(x + now.x - last.x, y + now.y - last.y);
       last = now;
     });
-    // (on pointerup or pointercancel, or the dialog closing mid-drag)
-    dialog.addEventListener('lostpointercapture', event => {
+    // (on pointerup or pointercancel, or the viewer closing mid-drag)
+    cover.addEventListener('lostpointercapture', event => {
       pointers.delete(event.pointerId);
       if (pointers.size) last = both();
-      else dialog.classList.remove('tex8web-dragging');
+      else cover.classList.remove('tex8web-dragging');
     });
-    // (by where it is, not its target: the dialog, holding the pointer,
+    // (by where it is, not its target: the cover, holding the pointer,
     // gets the click)
     const on = event => {
       const box = picture.getBoundingClientRect();
@@ -507,15 +523,15 @@
     };
     // (a double tap by its two clicks: Safari on iOS sends no dblclick
     // where touch-action is none)
-    dialog.addEventListener('click', event => {
+    cover.addEventListener('click', event => {
       if (dragged) return;
-      if (!on(event)) dialog.close();
+      if (!on(event)) cover.hidePopover();
       else if (touch && event.timeStamp - tapped < 300) {
         tapped = 0;
         twice(event);
       } else tapped = event.timeStamp;
     });
-    dialog.addEventListener('dblclick', event => { if (!touch) twice(event); });
+    cover.addEventListener('dblclick', event => { if (!touch) twice(event); });
   }
 
   theme();

@@ -3,9 +3,9 @@
 % as extensions, xparse macros, equation numbers by section, titling's
 % title with a \thanks, a table of contents with a macro of its own, a
 % list of enumitem's \newlist (with a display too wide for a phone), a
-% table too wide for a phone, titlesec's explicit headings, labeled with
-% \thetitle and spaced in titlesec's *n form, and a title in a size of its
-% own.
+% table and a verbatim too wide for a phone, titlesec's explicit headings,
+% labeled with \thetitle and spaced in titlesec's *n form, and a title in a
+% size of its own.
 \documentclass{article}
 \usepackage{amsmath,amssymb,physics,braket,cancel}
 \usepackage{titling}
@@ -59,4 +59,7 @@ A table wider than a phone's screen:
     first column & second column & third column & fourth column & fifth column & sixth column
 \end{tabular}
 \end{center}
+\begin{verbatim}
+a line of code wider than a phone's screen, which should scroll on its own
+\end{verbatim}
 \end{document}

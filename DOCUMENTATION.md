@@ -119,7 +119,7 @@ These are deliberate:
 - The text is 12pt, larger than most PDFs, and everything else is in proportion. The column is as wide as the PDF's in ems.
 - A picture keeps its size beside the text as a narrower screen reflows the text, and shrinks only once the column is narrower than it.
 - Paragraphs are separated by space instead of indented.
-- Display math that doesn't fit scrolls sideways.
+- Display math that doesn't fit scrolls sideways; on a narrow screen, so does a table or verbatim block that doesn't, rather than widening the page.
 - The table of contents has no page numbers or dot leaders.
 - Dark mode has its own palette.
 

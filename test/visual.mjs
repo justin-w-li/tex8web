@@ -74,15 +74,15 @@ async function viewing(chrome, file) {
     await page.mouse('released', x, y, { clickCount: count });
   };
   const state = () => page.evaluate(`(() => {
-    const dialog = document.querySelector('.tex8web-viewer'), img = dialog.firstChild;
-    const box = img.getBoundingClientRect(), plate = dialog.getBoundingClientRect();
+    const cover = document.querySelector('.tex8web-viewer'), img = cover.querySelector('img');
+    const box = img.getBoundingClientRect(), plate = img.parentElement.getBoundingClientRect();
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    return { open: dialog.open, laid: Number(dialog.style.getPropertyValue('--tex8web-zoom')), width: img.offsetWidth,
+    return { open: cover.matches(':popover-open'), laid: Number(img.parentElement.style.getPropertyValue('--tex8web-zoom')), width: img.offsetWidth,
       at: [box.left, box.top], size: [box.width, box.height], plate: [plate.left, plate.top, plate.width, plate.height],
       view: [innerWidth, innerHeight], natural: img.naturalWidth, svg: /\.svg$/i.test(img.getAttribute('src')),
       room: [innerWidth, innerHeight].map(n => n - 2 * Math.max(rem, 0.04 * Math.min(innerWidth, innerHeight)) - rem) };
   })()`);
-  // where the dialog should be, from where it would be: anywhere the
+  // where the plate should be, from where it would be: anywhere the
   // picture still covers the middle of the screen
   const placed = (s, at) => at.map((a, i) => Math.min(s.view[i] / 2, Math.max(s.view[i] / 2 - s.plate[2 + i], a)));
   const off = (s, want) => Math.max(...want.slice(0, 2).map((w, i) => Math.abs(s.plate[i] - w)));
@@ -127,7 +127,7 @@ async function viewing(chrome, file) {
     problems.push(`the viewer's picture ${fit.size.join('x')} at ${fit.at.join(', ')}, for ${fit.room.join('x')} (${fit.natural}px wide)`);
   }
   const p = [Math.round(fit.at[0] + 0.3 * fit.size[0]), Math.round(fit.at[1] + 0.3 * fit.size[1])];
-  // the dialog zoomed to z around q, from s
+  // the plate zoomed to z around q, from s
   const zoomed = (now, s, z, what, q = p) => {
     const want = placed(now, s.plate.slice(0, 2).map((a, i) => q[i] - (q[i] - a) * z / zoom(s)));
     if (Math.abs(zoom(now) - z) > 0.001 || !(off(now, want) <= 0.5)) {
@@ -196,6 +196,17 @@ async function viewing(chrome, file) {
   const beside = await state();
   if (beside.at[0] <= 42 && beside.at[1] <= 42) problems.push('a drag beside the picture: ended on it');
   else if (!beside.open) problems.push('a drag ending beside the picture closed the viewer');
+  // (the keyboard stays off the page behind)
+  const focused = await page.evaluate('document.activeElement.outerHTML.slice(0, 80)');
+  await page.press('Tab', 9);
+  await sleep(100);
+  if (await page.evaluate('document.activeElement.outerHTML.slice(0, 80)') !== focused) problems.push('Tab: the focus behind the viewer moved');
+  await page.press('Escape', 27);
+  await sleep(100);
+  if ((await state()).open) problems.push('Escape: the viewer still open');
+  await click(...at);
+  await sleep(100);
+  if (!(await state()).open) problems.push('a picture clicked again: no viewer');
   await click(2, 2);
   await sleep(100);
   if ((await state()).open) problems.push('a click beside the picture: the viewer still open');
@@ -211,8 +222,8 @@ async function touching(chrome, file) {
   const problems = [];
   const sleep = ms => new Promise(done => setTimeout(done, ms));
   const state = () => page.evaluate(`(() => {
-    const dialog = document.querySelector('.tex8web-viewer'), box = dialog.firstChild.getBoundingClientRect();
-    return { open: dialog.open, laid: Number(dialog.style.getPropertyValue('--tex8web-zoom')),
+    const cover = document.querySelector('.tex8web-viewer'), img = cover.querySelector('img'), box = img.getBoundingClientRect();
+    return { open: cover.matches(':popover-open'), laid: Number(img.parentElement.style.getPropertyValue('--tex8web-zoom')),
       middle: [(innerWidth / 2 - box.left) / box.width, (innerHeight / 2 - box.top) / box.height] };
   })()`);
   const at = await page.evaluate(`(() => {
@@ -306,7 +317,7 @@ async function compare(chrome, doc, built) {
     });
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
     layout.push(...(await viewing(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    problems.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
   const known = expected[doc.name]?.visual;

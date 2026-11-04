@@ -99,6 +99,13 @@ export async function launch() {
             x, y, button: type === 'wheel' ? 'none' : 'left', buttons: ['pressed', 'moved'].includes(type) ? 1 : 0,
             clickCount: 1, deltaX: 0, deltaY: 0, ...extra });
         },
+        // a key pressed and let go: key and keyCode as in a KeyboardEvent
+        // ('Escape', 27)
+        async press(key, keyCode) {
+          for (const type of ['keyDown', 'keyUp']) {
+            await page.send('Input.dispatchKeyEvent', { type, key, code: key, windowsVirtualKeyCode: keyCode });
+          }
+        },
         // a finger's tap at x, y
         async tap(x, y) {
           await page.send('Emulation.setTouchEmulationEnabled', { enabled: true });
