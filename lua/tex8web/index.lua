@@ -56,8 +56,9 @@ end
 -- runs makeindex on each index the document prints, in the build directory,
 -- with the options imakeidx was given (a style file found in the directory
 -- make4ht runs in, the document's). (makeindex won't write the .ind to a
--- build directory above it: openout_any = p. A failed run is a warning, as
--- for the bibliography)
+-- build directory above it: openout_any = p. -r: three \index in a row
+-- aren't a range, as their numbers aren't pages. A failed run is a warning,
+-- as for the bibliography)
 function M.run(par)
   local dir = (par.builddir ~= "" and par.builddir) or "."
   local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""
@@ -65,7 +66,7 @@ function M.run(par)
   for _, index in ipairs(M.indexes(aux, par.input, lfs.attributes(dir .. "/" .. par.input .. ".idx"))) do
     local options = index.options:gsub("%S+", files.quote)
     local command = "cd " .. files.quote(dir) .. " && INDEXSTYLE=" .. files.quote(styles)
-      .. " makeindex -q -i -t " .. files.quote(index.name .. ".ilg") .. " -o " .. files.quote(index.name .. ".ind")
+      .. " makeindex -q -r -i -t " .. files.quote(index.name .. ".ilg") .. " -o " .. files.quote(index.name .. ".ind")
       .. " " .. options
     log:info("index: " .. command)
     indexing.load_enc()

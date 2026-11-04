@@ -56,7 +56,7 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
 
   The paths are relative, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can serve one copy of them.
 - **Bibliographies:** `tex8web.mk4` runs bibtex or biber when the document has a bibliography (make4ht itself doesn't).
-- **Indexes:** `tex8web.mk4` runs makeindex on each index the document prints: makeidx's, or each of imakeidx's (`\makeindex[name=...]`), with its `options`, such as a style file. imakeidx runs nothing under tex4ht; `tex8web-hooks.sty` notes the command it would run in the `.aux`, for `index.lua`. makeindex gets each `\index`'s number in place of its page, counted from 1000001 so that no number in an entry's text is taken for one, and each is made a link back to its `\index`, shown counted from 1. (make4ht's indexing library reads tex4ht's `.idx`, but its links aren't used: it takes a number in an entry's text after `^`, `[` or a comma, as in `\index{$L^2$ space}`, for a page.)
+- **Indexes:** `tex8web.mk4` runs makeindex on each index the document prints: makeidx's, or each of imakeidx's (`\makeindex[name=...]`), with its `options`, such as a style file. imakeidx runs nothing under tex4ht; `tex8web-hooks.sty` notes the command it would run in the `.aux`, for `index.lua`. makeindex gets each `\index`'s number in place of its page, counted from 1000001 so that no number in an entry's text is taken for one, and each is made a link back to its `\index`, shown counted from 1 (with makeindex's `-r`, so that consecutive counts aren't merged into a range; `|(` and `|)` still make one). (make4ht's indexing library reads tex4ht's `.idx`, but its links aren't used: it takes a number in an entry's text after `^`, `[` or a comma, as in `\index{$L^2$ space}`, for a page.)
 - **Platform:** the build calls the shell to run Node, bibtex and makeindex, so it needs a POSIX system (macOS, Linux); Windows isn't supported yet.
 
 ## Your own config
@@ -193,7 +193,7 @@ Each `main.tex` names its source, license and changes at the top.
   - the table of contents beside the text, not in it (a list of figures stays), each entry's number in its box, and each heading's label holding its entry's number, with one space after it, which the stylesheet sizes; test-generic's measured spacing, label space and title size; and test-report's table of contents (with its title, beside the text, the list of figures before it still in the text) and its measured indents, number widths and chapter sizes;
   - each enumitem list with its own lengths;
   - in `test.tex`, what tex8web.js makes of the math through MathJax's internals (delimiter sizes, an align's rows);
-  - in `test-index.tex`, the index: its entries, a subentry, a page range and a "see", each number linking back to its `\index`, and numbers in an entry's text left as they are; in `test-imakeidx.tex`, imakeidx's main index and a named one, with its title and style file;
+  - in `test-index.tex`, the index: its entries, a subentry, a page range and a "see", each number linking back to its `\index`, an entry indexed three times in a row with three numbers rather than a range, and numbers in an entry's text left as they are; in `test-imakeidx.tex`, imakeidx's main index and a named one, with its title and style file;
   - MathML for every formula (the tests build with `TEX8WEB_MATHML=1`);
   - every link and file in place, and no id repeated;
   - no image with tex4ht's made-up alt text (PIC, [Picture]);

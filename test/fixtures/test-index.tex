@@ -1,7 +1,8 @@
 % A test for tex8web's index: makeidx's \makeindex and \printindex, with
 % entries on several pages, a subentry, a page range and a "see" entry; each
 % number links back to its \index. Entries whose text has numbers (after ^
-% or a comma, as an entry's or a subentry's) keep them, unlinked.
+% or a comma, as an entry's or a subentry's) keep them, unlinked. An entry
+% indexed three times in a row has three numbers, not a range.
 \documentclass{article}
 \usepackage{makeidx}
 \makeindex
@@ -16,5 +17,7 @@ A field\index{field} is a ring whose nonzero elements form a group\index{group}.
 \index{ring|)}\index{module|see{ring}}
 The space\index{$L^2$ space} of square-integrable functions, by the
 theorem\index{Theorem, 2nd form}\index{group!cyclic, of order 2}.
+A set\index{set} is not a group\index{set} until it has
+an operation\index{set}.
 \printindex
 \end{document}
