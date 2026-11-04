@@ -254,7 +254,7 @@
   }
 
   // the contents' filter: in place of the entries, the headings, theorems
-  // and terms (\WebTerm) whose text has every word typed, ignoring case,
+  // and boxes with # links, and terms (\WebTerm) whose text has every word typed, ignoring case,
   // accents and the style of MathJax's letters (𝜎 is σ). The arrow keys
   // choose among them, from the first, with the focus kept in the field (a
   // combobox), and Enter follows the one chosen
@@ -316,7 +316,7 @@
         item.key = key(item.label);
         if (item.kind === 'heading') heading = item;
         else if (item.kind === 'theorem') theorem = item;
-        else if (theorem && item.el.closest(theorems) === theorem.el.closest(theorems)) item.where = theorem;
+        else if (theorem?.el.closest(theorems).contains(item.el)) item.where = theorem;
         else item.where = heading;
         if (item.kind !== 'term') return true;
         const once = `${item.key}\n${item.where?.label}`;
@@ -379,7 +379,7 @@
     input.placeholder = `Find a ${kinds.length > 1 ? `${kinds.slice(0, -1).join(', ')}${kinds.length > 2 ? ',' : ''} or ` : ''}${kinds.at(-1)}`;
   }
 
-  // the reader's place: the last heading or theorem above the top of the
+  // the reader's place: the last heading, theorem or box above the top of the
   // screen as they leave the page, gone back to when they next open it,
   // but not as it reloads or they go back to it, when the browser keeps
   // their place, nor when a link leads somewhere on it

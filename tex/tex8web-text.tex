@@ -152,8 +152,8 @@
 \web@toc{paragraph}
 \web@toc{subparagraph}
 \ifdefined\cftsecnumwidth
-    \ifdefined\c@chapter\let\web@toctop\cftchapindent\else\let\web@toctop\cftsecindent\fi
-    \def\web@tocindent#1{\web@em{\dimexpr#1-\web@toctop\relax}}%
+    \ifdefined\c@chapter\let\web@topindent\cftchapindent\else\let\web@topindent\cftsecindent\fi
+    \def\web@tocindent#1{\web@em{\dimexpr#1-\web@topindent\relax}}%
     \web@Css{:root { --tex8web-toc-section-number: \web@em\cftsecnumwidth;
         --tex8web-toc-subsection-indent: \web@tocindent\cftsubsecindent;
         --tex8web-toc-subsection-number: \web@em\cftsubsecnumwidth;

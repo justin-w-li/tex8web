@@ -1,5 +1,5 @@
 -- The page around the text: what tex8web-page.tex hands on, links to
--- headings and theorems, the controls (contents, PDF, theme) and the table
+-- headings, theorems and boxes, the controls (contents, PDF, theme) and the table
 -- of contents beside the text, meta tags for link previews, and the
 -- scripts.
 local assets = require "tex8web.assets"

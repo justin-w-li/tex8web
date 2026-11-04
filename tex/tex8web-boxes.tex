@@ -192,15 +192,18 @@
     \web@Css{\#\csname :tcbcolid\endcsname\space{\web@tcb@css}}%
 }
 
-% whether the box steps its counter (\web@tcb@numbered empty), which
-% tcolorbox does in the box's phantom; tex4ht never puts the phantom on the
-% page, so the counter's anchor is lost. (A raster steps a counter of its own
-% there for each box)
+% whether the box steps a counter (\web@tcb@numbered empty), its own or
+% one named by step, which tcolorbox does in the box's phantom; tex4ht never
+% puts the phantom on the page, so the counter's anchor is lost. (A raster
+% steps a counter of its own there for each box, which doesn't count)
 \web@needs{tcb@set@@phantom}
 \let\web@tcb@setphantom\tcb@set@@phantom
 \ExplSyntaxOn
+\str_new:N \l__web_phantom_str
 \def\tcb@set@@phantom{%
-    \str_if_in:NnTF \kvtcb@phantom { \refstepcounter { \tcbcounter } }
+    \str_set:NV \l__web_phantom_str \kvtcb@phantom
+    \str_remove_all:Nn \l__web_phantom_str { \refstepcounter { tcbrasternum } }
+    \str_if_in:NnTF \l__web_phantom_str { \refstepcounter }
         { \let\web@tcb@numbered\@empty } { \let\web@tcb@numbered\relax }
     \web@tcb@setphantom}
 \ExplSyntaxOff
