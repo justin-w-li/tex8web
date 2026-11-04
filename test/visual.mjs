@@ -321,6 +321,8 @@ async function resuming(chrome, file) {
       const back = await page.evaluate(top(at));
       if (Math.abs(back - rem) > 2) problems.push(`place: #${at} ${back}px from the top on opening the page ${time}`);
       await page.close();
+      // (for the closed page's pagehide to have kept the place)
+      await new Promise(done => setTimeout(done, 200));
       page = await chrome.open(url);
     }
     const other = await page.evaluate("document.querySelector('.tex8web-permalink').hash.slice(1)");

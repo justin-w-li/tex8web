@@ -328,9 +328,14 @@
     const go = () => scrollTo(0, scrollY + el.getBoundingClientRect().top - below());
     go();
     // (and again once the fonts and pictures are in, which may have moved
-    // it, unless the reader has scrolled by then)
-    const y = scrollY;
-    addEventListener('load', () => { if (scrollY === y) go(); });
+    // it, unless the reader has moved by then: not by scrollY, which the
+    // browser's scroll anchoring changes too)
+    let moved = false;
+    for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) {
+      addEventListener(type, () => { moved = true; }, { once: true, passive: true });
+    }
+    const loaded = new Promise(done => addEventListener('load', done));
+    Promise.all([loaded, document.fonts.ready]).then(() => { if (!moved) go(); });
   }
 
   // previews: pointing at (or focusing, with the keyboard) a link to
