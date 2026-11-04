@@ -85,6 +85,17 @@
 }
 \AddToHook{package/tcolorbox/after}{\web@tcb@install}
 
+% imakeidx: under tex4ht it runs no index program (imakeidx-hooks.4ht passes
+% it noautomatic), but calls \imki@finalmessage for each index \printindex
+% prints, with the index's program and options set; note the command it
+% would run in the .aux, as a comment, for index.lua. (After the package's
+% own option quiet, which makes it do nothing)
+\AddToHook{package/imakeidx/after}{%
+    \web@needs{imki@finalmessage}%
+    \def\imki@finalmessage#1{\immediate\write\@auxout{\@percentchar\space
+        tex8web index: \imki@program\imki@options#1.idx}}%
+}
+
 % \web@needs{name}: a warning, which npm test fails on, unless \<name>,
 % which tex8web patches or calls, is defined: a new tex4ht or package that
 % drops it then shows in the tests, not as a page quietly wrong. (A name

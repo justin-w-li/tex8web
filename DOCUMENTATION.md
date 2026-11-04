@@ -56,7 +56,7 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
 
   The paths are relative, so `out/` can be published as it is. The fonts are the same for every document, so a site with several can serve one copy of them.
 - **Bibliographies:** `tex8web.mk4` runs bibtex or biber when the document has a bibliography (make4ht itself doesn't).
-- **Indexes:** `tex8web.mk4` runs makeindex when the document has an index (makeidx's or imakeidx's `\makeindex`), through make4ht's indexing library, which links each number in the index back to its `\index`.
+- **Indexes:** `tex8web.mk4` runs makeindex on each index the document prints: makeidx's, or each of imakeidx's (`\makeindex[name=...]`), with its `options`, such as a style file. imakeidx runs nothing under tex4ht; `tex8web-hooks.sty` notes the command it would run in the `.aux`, for `index.lua`. makeindex gets each `\index`'s number in place of its page, counted from 1000001 so that no number in an entry's text is taken for one, and each is made a link back to its `\index`, shown counted from 1 (with makeindex's `-r`, so that consecutive counts aren't merged into a range; `|(` and `|)` still make one). (make4ht's indexing library reads tex4ht's `.idx`, but its links aren't used: it takes a number in an entry's text after `^`, `[` or a comma, as in `\index{$L^2$ space}`, for a page.)
 - **Platform:** the build calls the shell to run Node, bibtex and makeindex, so it needs a POSIX system (macOS, Linux); Windows isn't supported yet.
 
 ## Your own config
@@ -164,7 +164,7 @@ These are deliberate:
 - **framed's `\FrameSep`:** a framed box has no padding between its rule and its text, since tex8web can't tell which `\MakeFramed` environments have it (`framed` does; one with only a bar in its `\FrameCommand` doesn't).
 - **A config's styles for `.mathjax-inline`** apply only when MathJax typesets the page in the browser: prerendering leaves that span out, except where tex4ht puts inline math outside a paragraph.
 - **A page opened from disk** (`file://`) in Chrome: its fonts load as they would without preloading, and the console reports each preload as blocked, since Chrome refuses the cross-origin requests that font preloads are.
-- **Indexes:** only the document's main index is made, not imakeidx's others (`\makeindex[name=...]`), and imakeidx's `program` and `options` aren't followed: makeindex always runs, with no style file. A number in an entry's text after `^`, `[` or a comma (`\index{$L^2$ space}`) is taken for a page and made a link, which breaks the formula (make4ht's `make4ht-indexing.lua`).
+- **Indexes:** imakeidx's `program` isn't followed: makeindex runs, without the options given for xindy or texindy. imakeidx's `splitindex` option isn't supported. A number in an entry's text from 1000001 up can be taken for an `\index`'s and made a link. With `\Configure{makeindex}`'s locators (a section number in place of the count), a locator repeated in an entry shows each time.
 - **Chapters and parts:** a chapter's label, "Chapter 1", is tex4ht's. Headings of parts and chapters are in report's and book's sizes, whatever the class's own; an article's parts keep the browser's size, and in the table of contents parts keep tex4ht's look. The AMS classes, whose table of contents sets each number in the line, and classes whose entries set no number width (titletoc's `\titlecontents`) get article's indents and widths.
 - **`\contentsname` in another alphabet** (Russian, Greek): a table of contents without a heading, which is titled `\contentsname`, shows LaTeX's commands for its letters (`\CYRS`) as its title and the contents button's label.
 - **The page's own controls** are labelled in English ("Link here", "View as PDF", "Theme", the filter's placeholder and "No matches"), whatever the document's language; the table of contents' title follows the document.
@@ -192,7 +192,7 @@ Each `main.tex` names its source, license and changes at the top.
   - the table of contents beside the text, not in it (a list of figures stays), each entry's number in its box, and each heading's label holding its entry's number, with one space after it, which the stylesheet sizes; test-generic's measured spacing, label space and title size; and test-report's table of contents (with its title, beside the text, the list of figures before it still in the text) and its measured indents, number widths and chapter sizes;
   - each enumitem list with its own lengths;
   - in `test.tex`, what tex8web.js makes of the math through MathJax's internals (delimiter sizes, an align's rows);
-  - in `test-index.tex`, the index: its entries, a subentry, a page range and a "see", each number linking back to its `\index`;
+  - in `test-index.tex`, the index: its entries, a subentry, a page range and a "see", each number linking back to its `\index`, an entry indexed three times in a row with three numbers rather than a range, and numbers in an entry's text left as they are; in `test-imakeidx.tex`, imakeidx's main index and a named one, with its title and style file;
   - MathML for every formula (the tests build with `TEX8WEB_MATHML=1`);
   - every link and file in place, and no id repeated;
   - no image with tex4ht's made-up alt text (PIC, [Picture]);
@@ -319,7 +319,7 @@ A report: a list of figures before the table of contents, a part, two chapters w
 | `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, framed's boxes, figures |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, colors (`\WebColor`), the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
-| `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats, tcolorbox's options), and `\web@needs`, which warns when tex4ht or a package no longer has what tex8web patches |
+| `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard from it (titlesec's formats, tcolorbox's options, imakeidx's commands for its indexes), and `\web@needs`, which warns when tex4ht or a package no longer has what tex8web patches |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, theorem spacing, heading numbers, no-break spaces, rows of minipages, footnotes, links, controls and the table of contents, terms' ids, meta tags, scripts |
