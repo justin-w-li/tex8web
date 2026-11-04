@@ -5,8 +5,8 @@
 // <screen>-browser.png and <screen>-prerendered.png, in
 // build/test/<document>/visual/. In both, the columns of an alignment
 // should line up across its \intertext. And the prerendered page's closer
-// view of pictures should work with the mouse and a finger, and the page
-// be no wider than a phone's screen.
+// view of pictures should work with the mouse and a finger, the page be no
+// wider than a phone's screen, and no math character be clipped.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
@@ -264,6 +264,15 @@ async function overflow(chrome, file) {
   return width > room ? [`${width - room}px wider than a screen ${room}px wide`] : [];
 }
 
+// math characters with a clip (css/tex8web.css): there should be none
+async function clipped(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
+  const n = await page.evaluate(`[...document.querySelectorAll('mjx-c')]
+    .filter(c => getComputedStyle(c).clipPath !== 'none').length`);
+  await page.close();
+  return n ? [`${n} math characters clipped`] : [];
+}
+
 async function screens(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { javascript: false, height: screen });
   const height = await page.evaluate('document.documentElement.scrollHeight');
@@ -318,6 +327,9 @@ async function compare(chrome, doc, built) {
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
     layout.push(...(await viewing(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    for (const file of [typeset, join(pre, html)]) {
+      layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
+    }
     layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
   const known = expected[doc.name]?.visual;

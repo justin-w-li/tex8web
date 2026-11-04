@@ -151,6 +151,12 @@ figure { margin-inline: 0; }
 /* a tabular or verbatim too wide for a narrow screen scrolls on its own,
    as a display too wide does, rather than widening the page */
 @media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }
+/* MathJax clips each character to its box, hiding the tall line box of its
+   ZERO font, which only a selection shows (output/chtml.ts). Safari gives
+   each clipped element a layer, and painting a long page as it scrolls
+   takes several times as long. (mjx-container outranks MathJax's selector,
+   whose style sheet comes later) */
+mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path: none; }
 /* the closer view of a picture (tex8web-page.js): as large as the screen
    allows with a margin (4% of the screen's shorter side, at least 1rem)
    and 0.5rem of padding around it, or from half to 4 times that, padding too
