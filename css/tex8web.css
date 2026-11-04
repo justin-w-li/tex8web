@@ -147,7 +147,7 @@ figure.figure { margin-block: 1.75em; }
 .mathjax-block img { display: block; margin: 0.7em auto; }
 /* the closer view of a picture (tex8web-page.js): as large as the screen
    allows with a margin (4% of the screen's shorter side, at least 1rem)
-   and 0.5rem of padding around it, or up to 4 times that, padding too
+   and 0.5rem of padding around it, or from half to 4 times that, padding too
    (--tex8web-zoom, and a transform of tex8web-page.js's until it lays the
    picture out again), the page behind it darkened and a little blurred.
    The page's background is on the dialog, which TikZ pictures and

@@ -136,7 +136,7 @@ async function viewing(chrome, file) {
       await page.mouse('wheel', ...p, { deltaY });
       await sleep(50);
       const now = await state();
-      zoomed(now, s, Math.min(4, Math.max(1, zoom(s) * Math.exp(-deltaY * 0.002))), what);
+      zoomed(now, s, Math.min(4, Math.max(0.5, zoom(s) * Math.exp(-deltaY * 0.002))), what);
       s = now;
     }
     return s;
@@ -159,7 +159,8 @@ async function viewing(chrome, file) {
   if (Math.abs(zoom(dragged) - zoom(wheeled)) > 0.001 || !(off(dragged, want) <= 0.5)) {
     problems.push(`dragged by 800px: zoom ${zoom(dragged)}, at ${dragged.plate.slice(0, 2).join(', ')} (not ${want.join(', ')})`);
   }
-  const out = await wheel(dragged, 100, 5, 'the wheel turned back');
+  // (past as large as the screen, to half that)
+  const out = await wheel(dragged, 100, 8, 'the wheel turned back');
   // a double-click on the picture, where the drag left it: the point stays
   // under the pointer all the way (css/tex8web.css eases it), in one motion
   const q = out.at.map((a, i) => Math.round(a + out.size[i] / 2));

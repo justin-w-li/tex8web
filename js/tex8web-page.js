@@ -319,9 +319,10 @@
   // pictures, in a figure, in display math, or over twice as tall as the
   // text (not an icon in a line), and not a link: clicking one shows it as
   // large as the screen allows (css/tex8web.css), over the page. There the
-  // wheel or a pinch zooms in or out around the pointer, up to 4 times, a
-  // double-click in or back to as large as the screen, and dragging moves
-  // it; clicking beside it, or Escape, closes it
+  // wheel or a pinch zooms in or out around the pointer, from half to 4
+  // times (room to overshoot, zooming out), a double-click in or back to
+  // as large as the screen, and dragging moves it; clicking beside it, or
+  // Escape, closes it
   function viewer() {
     const dialog = document.createElement('dialog');
     dialog.className = 'tex8web-viewer';
@@ -371,7 +372,7 @@
     // around the point px, py, which stays where it is
     const zoomTo = (to, px, py, ease) => {
       settle();
-      to = Math.min(4, Math.max(1, to));
+      to = Math.min(4, Math.max(0.5, to));
       go(to, px - (px - x) * to / zoom, py - (py - y) * to / zoom, ease);
     };
     const center = ease => go(1, (innerWidth - plate[0]) / 2, (innerHeight - plate[1]) / 2, ease);
