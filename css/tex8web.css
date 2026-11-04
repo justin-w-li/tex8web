@@ -287,8 +287,9 @@ dd.enumerate-enumitem { margin-left: 0; }
        puts the page back as it reloads) */
     :is(:target, :focus-visible) { scroll-margin-top: calc(3.5rem + 1em); }
     /* (room for a heading's or theorem's # at the left, in a heading up
-       to about 1.5rem) */
-    html body { padding-inline: 1.75rem; }
+       to about 1.5rem, set closer to it than on a wide screen) */
+    html body { padding-inline: 1.5rem; }
+    .tex8web-permalink { padding-inline-end: 0.15em; }
     /* (transparent rather than hidden, which would take its buttons out
        of reach of the keyboard; the fade below fades to it too) */
     .tex8web-controls.tex8web-away:not(:has(:focus-visible)) { transform: translateY(-100%);
