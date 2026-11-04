@@ -269,7 +269,8 @@ async function touching(chrome, file) {
 }
 
 // the contents' filter: a named theorem found by its head, first among
-// what matches, and Enter going to it
+// what matches, and Enter going to it; then, among the many with an e,
+// down twice and up once choosing the second, which Enter goes to
 async function filtering(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { width: 1600 });
   const problems = [];
@@ -292,6 +293,18 @@ async function filtering(chrome, file) {
     await page.press('Enter', 13);
     await sleep(100);
     if (await page.evaluate('location.hash') !== head) problems.push(`filter: Enter went to ${await page.evaluate('location.hash')}, not ${head}`);
+    const second = await page.evaluate(`(() => {
+      const input = document.querySelector('.tex8web-toc-filter');
+      input.focus();
+      input.value = 'e';
+      input.dispatchEvent(new Event('input'));
+      return document.querySelectorAll('.tex8web-toc-results a')[1]?.hash;
+    })()`);
+    if (second) {
+      for (const [key, code] of [['ArrowDown', 40], ['ArrowDown', 40], ['ArrowUp', 38], ['Enter', 13]]) await page.press(key, code);
+      await sleep(100);
+      if (await page.evaluate('location.hash') !== second) problems.push(`filter: arrows and Enter went to ${await page.evaluate('location.hash')}, not ${second}`);
+    }
   }
   await page.close();
   return problems;

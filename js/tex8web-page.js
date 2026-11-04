@@ -228,8 +228,9 @@
 
   // the contents' filter: in place of the entries, the headings, theorems
   // and terms (\WebTerm) whose text has every word typed, ignoring case,
-  // accents and the style of MathJax's letters (𝜎 is σ); Enter follows
-  // the first
+  // accents and the style of MathJax's letters (𝜎 is σ). The arrow keys
+  // choose among them, from the first, with the focus kept in the field (a
+  // combobox), and Enter follows the one chosen
   function filter() {
     const toc = document.getElementById('tex8web-toc');
     const input = toc?.querySelector('.tex8web-toc-filter');
@@ -237,8 +238,14 @@
     const list = toc.querySelector('.tableofcontents');
     const results = document.createElement('ol');
     results.className = 'tex8web-toc-results';
+    results.id = 'tex8web-toc-results';
+    results.setAttribute('role', 'listbox');
     results.hidden = true;
     list.after(results);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-controls', results.id);
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
     const fold = s => s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
     // (on first use, as the math is typeset by then if MathJax runs in the
     // browser)
@@ -273,8 +280,10 @@
         return !seen.has(once) && seen.add(once);
       });
     }
-    const row = item => {
+    const row = (item, i) => {
       const li = document.createElement('li');
+      li.id = `tex8web-result-${i}`;
+      li.setAttribute('role', 'option');
       const a = document.createElement('a');
       a.href = item.href;
       a.textContent = item.label;
@@ -287,10 +296,20 @@
       li.append(a);
       return li;
     };
+    let chosen;
+    const choose = i => {
+      const rows = results.querySelectorAll('[role="option"]');
+      chosen = rows[Math.max(0, Math.min(i, rows.length - 1))];
+      rows.forEach(row => row.setAttribute('aria-selected', String(row === chosen)));
+      if (!chosen) return input.removeAttribute('aria-activedescendant');
+      input.setAttribute('aria-activedescendant', chosen.id);
+      chosen.scrollIntoView({ block: 'nearest' });
+    };
     input.addEventListener('input', () => {
       const words = fold(input.value).split(/\s+/).filter(Boolean);
       list.hidden = words.length > 0;
       results.hidden = !words.length;
+      input.setAttribute('aria-expanded', String(words.length > 0));
       if (!words.length) return;
       items ??= collect();
       const found = items.filter(item => words.every(word => item.key.includes(word)));
@@ -298,9 +317,16 @@
       none.className = 'tex8web-toc-none';
       none.textContent = 'No matches';
       results.replaceChildren(...(found.length ? found.map(row) : [none]));
+      choose(0);
     });
     input.addEventListener('keydown', event => {
-      if (event.key === 'Enter' && !event.isComposing && !results.hidden) results.querySelector('a')?.click();
+      if (results.hidden || event.isComposing) return;
+      if (event.key === 'Enter') chosen?.querySelector('a').click();
+      else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const rows = [...results.querySelectorAll('[role="option"]')];
+        choose(rows.indexOf(chosen) + (event.key === 'ArrowDown' ? 1 : -1));
+      }
     });
     // (naming only what the page has)
     const kinds = ['section'];
