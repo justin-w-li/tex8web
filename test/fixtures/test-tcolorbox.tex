@@ -2,8 +2,10 @@
 % numbered theorem, labelled or not, a box numbered by step and a labelled
 % box do, where a \ref to them leads; an unnumbered theorem, a box in a
 % raster (which numbers its boxes for itself) and a box without a title
-% don't. (Its table of contents gives test:visual's filter check a box to
-% find)
+% don't. A numbered or labelled box holding another keeps its own link,
+% \ref and number. A boxed title at the left, in the middle and at the
+% right has its link beside it (labelled, for the link). (Its table of
+% contents gives test:visual's filter check a box to find)
 \documentclass{article}
 \usepackage[most]{tcolorbox}
 \newtcbtheorem{theorem}{Theorem}{}{thm}
@@ -21,5 +23,16 @@
 \begin{tcolorbox}[title=Also in a raster]Another.\end{tcolorbox}
 \end{tcbraster}
 \begin{tcolorbox}[label=untitled]A labelled box without a title.\end{tcolorbox}
-See Theorem~\ref{thm:one} and the box~\ref{box}.
+\begin{theorem}{Outer}{outer}A labelled theorem holding another:
+\begin{theorem}{Inner}{}A numbered theorem in it.\end{theorem}
+\end{theorem}
+\begin{tcolorbox}[title=Outer box, label=outerbox]A labelled box holding another:
+\begin{tcolorbox}[title=Inner box, label=innerbox]A labelled box in it.\end{tcolorbox}
+\end{tcolorbox}
+\tcbset{boxed/.style={enhanced, leftrule=2mm, attach boxed title to top #1, label=boxed-#1}}
+\begin{tcolorbox}[boxed=left, title=Boxed left]A boxed title at the left.\end{tcolorbox}
+\begin{tcolorbox}[boxed=center, title=Boxed center]A boxed title in the middle.\end{tcolorbox}
+\begin{tcolorbox}[boxed=right, title=Boxed right]A boxed title at the right.\end{tcolorbox}
+See Theorem~\ref{thm:one} and the box~\ref{box}; Theorem~\ref{thm:outer}, the
+outer box~\ref{outerbox} and the inner box~\ref{innerbox}.
 \end{document}

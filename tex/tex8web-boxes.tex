@@ -205,21 +205,55 @@
     \str_remove_all:Nn \l__web_phantom_str { \refstepcounter { tcbrasternum } }
     \str_if_in:NnTF \l__web_phantom_str { \refstepcounter }
         { \let\web@tcb@numbered\@empty } { \let\web@tcb@numbered\relax }
-    \web@tcb@setphantom}
+    \web@tcb@setphantom
+    \web@tcb@keep}
 \ExplSyntaxOff
+
+% tcolorbox.4ht keeps a box's label, from its phantom to its drawing, after
+% its contents, in one global macro, which a box inside it takes or
+% replaces with its own. So the box keeps it, locally, until it's drawn
+% (\Configure{tcolorbox}); and its number for the title (a theorem's
+% \thetcbcounter), which tex4ht writes then too, after a box inside it has
+% stepped the counter
+\let\web@tcb@label\relax
+\def\web@tcb@keep{%
+    \ifcsname tcolorbox:label:key\endcsname
+        \web@tcb@letcs\web@tcb@label{tcolorbox:label:key}%
+        \web@tcb@letcs\web@tcb@currentlabel{tcolorbox:currentlabel}%
+        \web@tcb@letcs\web@tcb@crefcurrentlabel{tcolorbox:cref@currentlabel}%
+        \global\expandafter\let\csname tcolorbox:label:key\endcsname\undefined
+    \else
+        \let\web@tcb@label\relax
+    \fi
+    \ifdefined\thetcbcounter\protected@edef\thetcbcounter{\thetcbcounter}\fi}
+\def\web@tcb@give{%
+    \ifx\web@tcb@label\relax\else
+        \global\expandafter\let\csname tcolorbox:label:key\endcsname\web@tcb@label
+        \global\expandafter\let\csname tcolorbox:currentlabel\endcsname\web@tcb@currentlabel
+        \global\expandafter\let\csname tcolorbox:cref@currentlabel\endcsname\web@tcb@crefcurrentlabel
+    \fi}
+% \let#1 to the macro named #2, which may be undefined (\csname would make
+% it \relax)
+\def\web@tcb@letcs#1#2{%
+    \ifcsname#2\endcsname
+        \expandafter\let\expandafter#1\csname#2\endcsname
+    \else
+        \let#1\undefined
+    \fi}
 
 % tex4ht's box, with that style; the title in its font (fonttitle), which
 % tex4ht leaves out; and an anchor for a numbered box, where tcolorbox.4ht
 % puts a label's, for page.lua's link
 \Configure{tcolorbox}
     {\ifvmode\IgnorePar\fi\EndP
+     \web@tcb@give
      \web@tcb@style
      \edef\kvtcb@before@title{\unexpanded\expandafter{\kvtcb@fonttitle}%
          \unexpanded\expandafter{\kvtcb@before@title}}%
      \HCode{<div class="tcolorbox \@currenvir\web@tcb@classes"
          id="\csname :tcbcolid\endcsname">}%
      \ifx\web@tcb@numbered\@empty
-         \ifcsname tcolorbox:label:key\endcsname\else\AnchorLabel\fi
+         \ifx\web@tcb@label\relax\AnchorLabel\fi
      \fi}
     {\ifx\kvtcb@title\@empty\else\HCode{\Hnewline<div class="tcolorbox-title">}\par\fi}
     {\ifx\kvtcb@title\@empty\else\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\fi

@@ -350,9 +350,10 @@ dd.enumerate-enumitem { margin-left: 0; }
 :is(h2, h3, h4, h5, h6, .newtheorem):hover .tex8web-permalink,
     .tcolorbox:hover > .tcolorbox-title > .tex8web-permalink, .tex8web-permalink:focus { opacity: 0.4; }
 @media (hover: none) { .tex8web-permalink { opacity: 0.2; } }
-/* (a box's # in the margin too, in the text's color: back past the
-   title's padding and the box's left rule (and a boxed title's own), or beside a boxed title in the
-   middle or at the right. The box's overflow: clip doesn't hide it, as the
+/* (a box's # in the text's color, in the margin too: back past the
+   title's padding and the box's left rule (and a boxed title's own); but
+   just beside a boxed title in the middle or at the right, which the box's
+   rule isn't beside. The box's overflow: clip doesn't hide it, as the
    link's containing block is outside the box) */
 @media (--tex8web-wide) {
     .tcolorbox-title > .tex8web-permalink { color: var(--tex8web-text);
@@ -360,6 +361,8 @@ dd.enumerate-enumitem { margin-left: 0; }
     [class*="tex8web-tcb-boxed-"] > .tcolorbox-title > .tex8web-permalink {
         margin-inline-start: calc(-1 * (var(--tcb-title-padding-left) + var(--tcb-title-rule-left)
             + var(--tcb-rule-left))); }
+    :is(.tex8web-tcb-boxed-center, .tex8web-tcb-boxed-right) > .tcolorbox-title > .tex8web-permalink {
+        margin-inline-start: calc(-1 * (var(--tcb-title-padding-left) + var(--tcb-title-rule-left))); }
     .tex8web-tcb-inline > .tcolorbox-title > .tex8web-permalink {
         margin-inline-start: calc(-1 * (var(--tcb-padding-left) + var(--tcb-rule-left))); }
 }

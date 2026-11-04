@@ -107,13 +107,17 @@ return {
     equal(d:query_selector("aside")[1]:get_attribute("class"), "footnotetext tex8web-sidenote")
   end,
 
-  ["page.build_data: the PDF, \\contentsname and the macros, and the element removed"] = function()
-    local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf" data-contents="Table des matières">\newcommand{\x}{x}</script>]])
+  ["page.build_data: the PDF, \\contentsname and the macros, and the elements removed"] = function()
+    local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf">\newcommand{\x}{x}</script>]]
+      .. [[<script type="text/x-tex8web-contents">
+Table des
+matières </script>]])
     local context = {}
     page.build_data(d, context)
     equal(context, {pdf = "build/doc.pdf", contents = "Table des matières", macros = "\\newcommand{\\x}{x}"})
     equal(#d:query_selector("script"), 0)
-    local e = parse("", [[<script type="text/x-tex8web-build" data-pdf=""></script>]])
+    local e = parse("", [[<script type="text/x-tex8web-build" data-pdf=""></script>]]
+      .. [[<script type="text/x-tex8web-contents">Contents</script>]])
     local none = {}
     page.build_data(e, none)
     equal(none.pdf, nil)
