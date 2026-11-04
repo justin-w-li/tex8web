@@ -123,7 +123,7 @@ local function contents(document, body)
   nav:add_child_node(p)
   -- (tex8web-page.js shows it)
   nav:add_child_node(nav:create_element("input", {type = "search", class = "tex8web-toc-filter",
-    hidden = "hidden", placeholder = "Find", ["aria-label"] = "Find a section, theorem or term"}))
+    hidden = "hidden", placeholder = "Find a section, theorem or term"}))
   nav:add_child_node(list)
   return nav
 end

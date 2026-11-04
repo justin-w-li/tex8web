@@ -362,7 +362,9 @@ dd.enumerate-enumitem { margin-left: 0; }
     :is(:target, :focus-visible) { scroll-margin-top: calc(3.5rem + 1em); }
     .tex8web-where:not([hidden]) { display: block; flex: 1; min-width: 0; overflow: hidden;
         font: inherit; font-size: 0.875em; line-height: 1.25rem; text-align: start;
-        white-space: nowrap; text-overflow: ellipsis; }
+        white-space: nowrap; text-overflow: ellipsis;
+        /* (up a little from the middle, where lowercase letters look low) */
+        padding-block: 0.275rem 0.475rem; }
     html body { padding-inline: 1.25rem; }
     /* (no # in a margin this narrow: its link covers the heading or
        theorem's head instead, under the links in it but over its math,
@@ -444,7 +446,7 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* (Safari on iOS zooms into a field in a smaller font as it's focused) */
 @media (pointer: coarse) { .tex8web-toc-filter { font-size: max(16px, 0.875em); } }
 .tex8web-toc-results { margin: 0; padding: 0; list-style: none; font-size: 0.875em; line-height: 1.25; }
-.tex8web-toc-results li { padding-top: 0.3em; }
+.tex8web-toc-results li { padding-top: 0.6em; }
 .tex8web-toc-where, .tex8web-toc-none { opacity: 0.6; }
 .tex8web-toc-filter:focus ~ .tex8web-toc-results li:first-child a { border-radius: 0.2em;
     background-color: var(--tex8web-highlight); }
