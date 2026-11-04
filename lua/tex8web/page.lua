@@ -54,6 +54,24 @@ function M.permalinks(document)
   end
 end
 
+-- an id for each term (\WebTerm's), for the contents' filter to link to:
+-- term-<its text>, without its math, which would show its source (and
+-- with letters beyond ASCII, as make4ht's ids for headings have them)
+function M.terms(document)
+  local used = {}
+  for _, term in ipairs(document:query_selector("span.tex8web-term")) do
+    local slug = term:get_text():gsub("\\%(.-\\%)", ""):lower():gsub("[^%w\128-\255]+", "-"):gsub("^%-", ""):gsub("%-$", "")
+    local base = slug ~= "" and "term-" .. slug or "term"
+    local id, n = base, 1
+    while used[id] do
+      n = n + 1
+      id = base .. "-" .. n
+    end
+    used[id] = true
+    term:set_attribute("id", id)
+  end
+end
+
 -- line icons for the controls (24 by 24, drawn with css/tex8web.css's
 -- stroke)
 local icons = {
@@ -97,6 +115,9 @@ local function contents(document, body)
   local p = nav:create_element("p", {id = "tex8web-toc-title", class = "tex8web-toc-title"})
   p:add_child_node(p:create_text_node(title))
   nav:add_child_node(p)
+  -- (tex8web-page.js shows it)
+  nav:add_child_node(nav:create_element("input", {type = "search", class = "tex8web-toc-filter",
+    hidden = "hidden", placeholder = "Find", ["aria-label"] = "Find a section, theorem or term"}))
   nav:add_child_node(list)
   return nav
 end

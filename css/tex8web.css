@@ -315,7 +315,7 @@ dd.enumerate-enumitem { margin-left: 0; }
 @media (hover: none) { .tex8web-permalink { opacity: 0.2; } }
 /* what a link leads to: a little space above it, and a tint */
 :target { scroll-margin-top: 1em; }
-:is(h2, h3, h4, h5, h6):target, .newtheorem:has(.head > a:target) {
+:is(h2, h3, h4, h5, h6, .tex8web-term):target, .newtheorem:has(.head > a:target) {
     background-color: var(--tex8web-highlight); }
 
 /* --- controls and the table of contents (page.lua) -------------------- */
@@ -422,6 +422,25 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* (and not hyphenated, as tex4ht's links are) */
 .tex8web-toc a { color: inherit; hyphens: manual; }
 .tex8web-toc a[aria-current] { border-radius: 0.2em;
+    background-color: var(--tex8web-highlight); }
+/* the filter (tex8web-page.js): a field, and what matches in place of the
+   entries, the first (which Enter follows) marked while the field has
+   focus */
+.tex8web-toc-filter { display: block; box-sizing: border-box; width: 100%; margin-block: 0 0.75em;
+    padding: 0.25em 0; border: 0; border-radius: 0;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+    font: inherit; font-size: 0.875em; color: inherit; background: none; appearance: none; }
+.tex8web-toc-filter:focus { outline: none; border-bottom-color: currentColor; }
+/* (Chrome's and Safari's clear button, in the text's color rather than
+   the system's accent) */
+.tex8web-toc-filter::-webkit-search-cancel-button { filter: grayscale(1); opacity: 0.6; }
+.tex8web-toc-filter[hidden] { display: none; }
+/* (Safari on iOS zooms into a field in a smaller font as it's focused) */
+@media (pointer: coarse) { .tex8web-toc-filter { font-size: max(16px, 0.875em); } }
+.tex8web-toc-results { margin: 0; padding: 0; list-style: none; font-size: 0.875em; line-height: 1.25; }
+.tex8web-toc-results li { padding-top: 0.3em; }
+.tex8web-toc-where, .tex8web-toc-none { opacity: 0.6; }
+.tex8web-toc-filter:focus ~ .tex8web-toc-results li:first-child a { border-radius: 0.2em;
     background-color: var(--tex8web-highlight); }
 .tex8web-js .tex8web-toc .tableofcontents > :is(.subsectionToc, .likesubsectionToc,
     .subsubsectionToc, .likesubsubsectionToc, .paragraphToc, .likeparagraphToc,

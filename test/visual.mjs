@@ -33,6 +33,8 @@ const typesetPage = `(async () => {
   const html = document.documentElement.cloneNode(true);
   html.classList.remove('tex8web-js');
   if (!html.classList.length) html.removeAttribute('class');
+  html.querySelector('.tex8web-toc-filter')?.setAttribute('hidden', 'hidden');
+  html.querySelector('.tex8web-toc-results')?.remove();
   html.querySelectorAll('[aria-current]').forEach(n => n.removeAttribute('aria-current'));
   html.querySelectorAll('.tex8web-open').forEach(n => n.classList.remove('tex8web-open'));
   html.querySelectorAll('script, style[id^=MJX]').forEach(n => n.remove());
@@ -264,6 +266,35 @@ async function touching(chrome, file) {
   return problems;
 }
 
+// the contents' filter: a named theorem found by its head, first among
+// what matches, and Enter going to it
+async function filtering(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 1600 });
+  const problems = [];
+  const sleep = ms => new Promise(done => setTimeout(done, ms));
+  const head = await page.evaluate(`(() => {
+    const input = document.querySelector('.tex8web-toc-filter');
+    const head = [...document.querySelectorAll('.newtheorem .head')]
+      .find(h => h.querySelector('.tex8web-permalink') && /\\(.+\\)/.test(h.textContent));
+    if (!input) return document.getElementById('tex8web-toc') && 'none';
+    if (!head) return null;
+    input.focus();
+    input.value = head.textContent.replace('#', '').replace(/\\.\\s*$/, '');
+    input.dispatchEvent(new Event('input'));
+    return head.querySelector('.tex8web-permalink').hash;
+  })()`);
+  if (head === 'none') problems.push('filter: none beside the table of contents');
+  else if (head) {
+    const first = await page.evaluate(`document.querySelector('.tex8web-toc-results a')?.hash`);
+    if (first !== head) problems.push(`filter: ${first} first, not the theorem ${head}`);
+    await page.press('Enter', 13);
+    await sleep(100);
+    if (await page.evaluate('location.hash') !== head) problems.push(`filter: Enter went to ${await page.evaluate('location.hash')}, not ${head}`);
+  }
+  await page.close();
+  return problems;
+}
+
 // on a phone's screen, how much wider than it the page is: nothing should
 // be (a display too wide scrolls on its own)
 async function overflow(chrome, file) {
@@ -377,6 +408,7 @@ async function compare(chrome, doc, built) {
     for (const file of [typeset, join(pre, html)]) {
       layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
     }
+    layout.push(...(await filtering(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
   const known = expected[doc.name]?.visual;

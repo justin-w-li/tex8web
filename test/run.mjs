@@ -77,6 +77,11 @@ const minipages = {
   ],
 };
 
+// a term (\WebTerm), with its id for the contents' filter
+const terms = {
+  'test': [/<span class='tex8web-term' id='term-inner-product'>/],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -96,6 +101,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of minipages[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);
+  }
+  for (const pattern of terms[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the terms`);
   }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {

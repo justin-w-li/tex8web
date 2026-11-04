@@ -195,8 +195,9 @@
         if (el !== section && isSection(el)) break;
         el.classList.add('tex8web-open');
       }
+      // (not while the filter's results stand in for the entries)
       const a = current.a.getBoundingClientRect(), box = toc.getBoundingClientRect();
-      if (a.top < box.top || a.bottom > box.bottom) toc.scrollTop += a.top - box.top - box.height / 3;
+      if (a.height && (a.top < box.top || a.bottom > box.bottom)) toc.scrollTop += a.top - box.top - box.height / 3;
     };
     let pending = false;
     addEventListener('scroll', () => {
@@ -208,6 +209,93 @@
     toc.addEventListener('click', event => {
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });
+  }
+
+  // the contents' filter: in place of the entries, the headings, theorems
+  // and terms (\WebTerm) whose text has every word typed, ignoring case,
+  // accents and the style of MathJax's letters (𝜎 is σ); Enter follows
+  // the first
+  function filter() {
+    const toc = document.getElementById('tex8web-toc');
+    const input = toc?.querySelector('.tex8web-toc-filter');
+    if (!input) return;
+    const list = toc.querySelector('.tableofcontents');
+    const results = document.createElement('ol');
+    results.className = 'tex8web-toc-results';
+    results.hidden = true;
+    list.after(results);
+    const fold = s => s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
+    // (without the MathML MathJax may add for screen readers, which
+    // repeats the formula)
+    const text = el => {
+      const copy = el.cloneNode(true);
+      copy.querySelectorAll('.tex8web-permalink, mjx-assistive-mml').forEach(node => node.remove());
+      return copy.textContent.replace(/\s+/g, ' ').trim();
+    };
+    // (on first use, as the math is typeset by then if MathJax runs in the
+    // browser)
+    let items;
+    function collect() {
+      const all = [];
+      for (const a of list.querySelectorAll('a[href^="#"]')) {
+        const number = a.parentElement.querySelector('.tocnumber')?.textContent.trim();
+        const el = target(a);
+        if (el) all.push({ el, href: a.hash, kind: 'heading', label: [number, text(a)].filter(Boolean).join(' ') });
+      }
+      for (const link of document.querySelectorAll('.newtheorem .head > .tex8web-permalink')) {
+        all.push({ el: link.parentElement, href: link.hash, kind: 'theorem',
+          label: text(link.parentElement).replace(/\.$/, '') });
+      }
+      // (not one in a heading or a theorem's head, which is found as that)
+      for (const term of document.querySelectorAll('.tex8web-term[id]')) {
+        if (!term.closest('h2, h3, h4, h5, h6, .head')) all.push({ el: term, href: `#${term.id}`, kind: 'term', label: text(term) });
+      }
+      all.sort((a, b) => a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
+      // (a term is shown with the theorem it's in, or else its section, and
+      // once there)
+      let heading, theorem;
+      const seen = new Set();
+      return all.filter(item => {
+        item.key = fold(item.label);
+        if (item.kind === 'heading') heading = item;
+        else if (item.kind === 'theorem') theorem = item;
+        else if (theorem && item.el.closest('.newtheorem') === theorem.el.closest('.newtheorem')) item.where = theorem.label;
+        else item.where = heading?.label;
+        if (item.kind !== 'term') return true;
+        const once = `${item.key}\n${item.where}`;
+        return !seen.has(once) && seen.add(once);
+      });
+    }
+    const row = item => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = item.href;
+      a.textContent = item.label;
+      if (item.where) {
+        const where = document.createElement('span');
+        where.className = 'tex8web-toc-where';
+        where.textContent = item.where;
+        a.append(' ', where);
+      }
+      li.append(a);
+      return li;
+    };
+    input.addEventListener('input', () => {
+      const words = fold(input.value).split(/\s+/).filter(Boolean);
+      list.hidden = words.length > 0;
+      results.hidden = !words.length;
+      if (!words.length) return;
+      items ??= collect();
+      const found = items.filter(item => words.every(word => item.key.includes(word)));
+      const none = document.createElement('li');
+      none.className = 'tex8web-toc-none';
+      none.textContent = 'No matches';
+      results.replaceChildren(...(found.length ? found.map(row) : [none]));
+    });
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.isComposing && !results.hidden) results.querySelector('a')?.click();
+    });
+    input.hidden = false;
   }
 
   // previews: pointing at (or focusing, with the keyboard) a link to
@@ -557,6 +645,7 @@
   smooth();
   sidenotes();
   contents();
+  filter();
   previews();
   viewer();
 })();

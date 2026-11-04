@@ -32,12 +32,15 @@
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\mr}{\mathrm}
 \newcommand{\KL}{D_\mathrm{KL}}
+\newcommand{\term}[1]{\emph{#1}}
 
 \title{Lorem ipsum dolor sit amet}
 \author{consectetur adipiscing elit}
 \date{sed do eiusmod}
 
 \begin{document}
+% (as a config would, after \input{tex8web-core.tex})
+\ifdefined\WebTerm \WebTerm\term \fi
 \maketitle
 \begin{abstract}
     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
@@ -245,7 +248,7 @@ Gather*, multline and alignat:
 \section{Theorems and \texorpdfstring{$L^2$}{L2} in a heading}
 
 \begin{definition}[Inner product]
-    An \emph{inner product} on a real vector space $V$ is a map $\langle \cdot, \cdot \rangle \colon V \times V \to \R$ that is bilinear, symmetric and positive definite.
+    An \term{inner product} on a real vector space $V$ is a map $\langle \cdot, \cdot \rangle \colon V \times V \to \R$ that is bilinear, symmetric and positive definite.
 \end{definition}
 \begin{theorem}[Cauchy--Schwarz]\label{thm:cs}
     For all $x, y \in V$, $\abs{\langle x, y \rangle} \leq \norm{x}\norm{y}$.
