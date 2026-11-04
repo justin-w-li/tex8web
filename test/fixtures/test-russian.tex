@@ -1,0 +1,10 @@
+% A test for tex8web: a table of contents without a heading, titled
+% \contentsname, in another alphabet (babel's Russian, in T2A)
+\documentclass{article}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\begin{document}
+\makeatletter\@starttoc{toc}\makeatother
+\section{Введение}
+Текст.
+\end{document}
