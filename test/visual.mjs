@@ -315,7 +315,7 @@ async function filtering(chrome, file) {
 // address has one
 async function resuming(chrome, file) {
   const url = pathToFileURL(file).href;
-  let page = await chrome.open(url);
+  let page = await chrome.open(url, { place: true });
   const problems = [];
   const at = await page.evaluate(`(() => {
     const heads = [...document.querySelectorAll('.newtheorem .head > .tex8web-permalink')];
@@ -331,7 +331,7 @@ async function resuming(chrome, file) {
   await page.close();
   if (at) {
     const top = id => `Math.round(document.getElementById(${JSON.stringify(id)}).getBoundingClientRect().top)`;
-    page = await chrome.open(url);
+    page = await chrome.open(url, { place: true });
     const rem = await page.evaluate('parseFloat(getComputedStyle(document.documentElement).fontSize)');
     for (const time of ['again', 'a third time']) {
       const back = await page.evaluate(top(at));
@@ -339,11 +339,11 @@ async function resuming(chrome, file) {
       await page.close();
       // (for the closed page's pagehide to have kept the place)
       await new Promise(done => setTimeout(done, 200));
-      page = await chrome.open(url);
+      page = await chrome.open(url, { place: true });
     }
     const other = await page.evaluate("document.querySelector('.tex8web-permalink').hash.slice(1)");
     await page.close();
-    page = await chrome.open(`${url}#${other}`);
+    page = await chrome.open(`${url}#${other}`, { place: true });
     if (await page.evaluate(top(at)) < 50) problems.push(`place: #${at} at the top, not the address's #${other}`);
     await page.evaluate('localStorage.clear()');
     await page.close();
@@ -514,6 +514,11 @@ async function compare(chrome, doc, built) {
 // then the documents in Chrome, one at a time: with several tabs at once,
 // headless Chrome sometimes draws a screen garbled
 const chrome = await launch();
+// (each page opened at its top, not where a check before left it, which
+// tex8web-page.js would keep as the reader's place; but resuming's)
+const open = chrome.open;
+chrome.open = (url, options = {}) => open(url, options.place ? options : { ...options,
+  script: "Object.keys(localStorage).filter(k => k.startsWith('tex8web-place:')).forEach(k => localStorage.removeItem(k))" });
 let failures = 0;
 for (const [i, doc] of docs.entries()) {
   const { lines, failed } = await compare(chrome, doc, codes[2 * i] === 0 && codes[2 * i + 1] === 0);
