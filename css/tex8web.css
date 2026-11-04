@@ -345,7 +345,7 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* (and not hyphenated, as tex4ht's links are) */
 .tex8web-toc a { color: inherit; hyphens: manual; }
 .tex8web-toc a[aria-current] { border-radius: 0.2em;
-    background-color: color-mix(in srgb, currentColor 10%, transparent); }
+    background-color: light-dark(#EAF1FF, #423A37); }
 .tex8web-js .tex8web-toc .tableofcontents > :is(.subsectionToc, .likesubsectionToc,
     .subsubsectionToc, .likesubsubsectionToc, .paragraphToc, .likeparagraphToc,
     .subparagraphToc, .likesubparagraphToc):not(.tex8web-open) { display: none; }
