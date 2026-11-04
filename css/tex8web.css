@@ -286,9 +286,14 @@ dd.enumerate-enumitem { margin-left: 0; }
        reaches; as html's scroll-padding it would also move where Chrome
        puts the page back as it reloads) */
     :is(:target, :focus-visible) { scroll-margin-top: calc(3.5rem + 1em); }
-    /* (no # in a margin this narrow) */
     html body { padding-inline: 1.25rem; }
-    .tex8web-permalink { display: none; }
+    /* (no # in a margin this narrow: its link covers the heading or
+       theorem's head instead, under the links in it but over its math,
+       which MathJax positions) */
+    :is(h2, h3, h4, h5, h6, .newtheorem .head) { position: relative; }
+    .tex8web-permalink { z-index: 1; inset: 0; transform: none; color: transparent; }
+    :is(h2, h3, h4, h5, h6, .newtheorem .head) a[href]:not(.tex8web-permalink) { position: relative;
+        z-index: 2; }
     /* (transparent rather than hidden, which would take its buttons out
        of reach of the keyboard; the fade below fades to it too) */
     .tex8web-controls.tex8web-away:not(:has(:focus-visible)) { transform: translateY(-100%);
