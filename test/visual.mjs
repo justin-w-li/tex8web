@@ -322,49 +322,6 @@ async function filtering(chrome, file) {
   return problems;
 }
 
-// the reader's place: a theorem halfway down at the top of the screen as
-// they leave, there again as they next open the page, and the time after
-// (having left it there); but a link's target there instead when the
-// address has one
-async function resuming(chrome, file) {
-  const url = pathToFileURL(file).href;
-  let page = await chrome.open(url, { place: true });
-  const problems = [];
-  const at = await page.evaluate(`(() => {
-    const heads = [...document.querySelectorAll('.newtheorem .head > .tex8web-permalink')];
-    const a = heads[heads.length >> 1];
-    if (!a) return null;
-    const el = document.getElementById(a.hash.slice(1));
-    scrollTo(0, scrollY + el.getBoundingClientRect().top + 2);
-    // (not on a page too short to scroll it there)
-    if (Math.round(el.getBoundingClientRect().top) !== -2) return null;
-    dispatchEvent(new Event('pagehide'));
-    return el.id;
-  })()`);
-  await page.close();
-  if (at) {
-    const top = id => `Math.round(document.getElementById(${JSON.stringify(id)}).getBoundingClientRect().top)`;
-    page = await chrome.open(url, { place: true });
-    const rem = await page.evaluate('parseFloat(getComputedStyle(document.documentElement).fontSize)');
-    for (const time of ['again', 'a third time']) {
-      const back = await page.evaluate(top(at));
-      if (Math.abs(back - rem) > 2) problems.push(`place: #${at} ${back}px from the top on opening the page ${time}`);
-      await page.close();
-      // (for the closed page's pagehide to have kept the place)
-      await new Promise(done => setTimeout(done, 200));
-      page = await chrome.open(url, { place: true });
-    }
-    const other = await page.evaluate("document.querySelector('.tex8web-permalink').hash.slice(1)");
-    await page.close();
-    page = await chrome.open(`${url}#${other}`, { place: true });
-    if (await page.evaluate(top(at)) < 50) problems.push(`place: #${at} at the top, not the address's #${other}`);
-    // (leaving no place, as the page keeps none at its top)
-    await page.evaluate('scrollTo(0, 0)');
-    await page.close();
-  }
-  return problems;
-}
-
 // on a phone's screen, the bar naming the section being read: nothing
 // before the first heading, then a section halfway down scrolled to near
 // the top (unless the page is too short to scroll it there); and tapped,
@@ -543,7 +500,6 @@ async function compare(chrome, doc, built) {
       layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
     }
     layout.push(...(await filtering(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    layout.push(...(await resuming(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await naming(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
@@ -559,16 +515,6 @@ async function compare(chrome, doc, built) {
 // then the documents in Chrome, one at a time: with several tabs at once,
 // headless Chrome sometimes draws a screen garbled
 const chrome = await launch();
-// (each page opened at its top, not where a check before left it, which
-// tex8web-page.js would keep as the reader's place: no place kept, by
-// listeners that come first and stop its own, nor any left; but
-// resuming's)
-const forget = `for (const [target, type] of [[window, 'pagehide'], [document, 'visibilitychange']]) {
-  target.addEventListener(type, event => event.stopImmediatePropagation(), true);
-}
-Object.keys(localStorage).filter(k => k.startsWith('tex8web-place:')).forEach(k => localStorage.removeItem(k));`;
-const open = chrome.open;
-chrome.open = (url, options = {}) => open(url, options.place ? options : { ...options, script: forget });
 let failures = 0;
 for (const [i, doc] of docs.entries()) {
   const { lines, failed } = await compare(chrome, doc, codes[2 * i] === 0 && codes[2 * i + 1] === 0);

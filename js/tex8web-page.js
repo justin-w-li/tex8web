@@ -379,46 +379,6 @@
     input.placeholder = `Find a ${kinds.length > 1 ? `${kinds.slice(0, -1).join(', ')}${kinds.length > 2 ? ',' : ''} or ` : ''}${kinds.at(-1)}`;
   }
 
-  // the reader's place: the last heading, theorem or box above the top of the
-  // screen as they leave the page, gone back to when they next open it,
-  // but not as it reloads or they go back to it, when the browser keeps
-  // their place, nor when a link leads somewhere on it
-  function place() {
-    const key = `tex8web-place:${location.pathname}`;
-    // (where it's put back, a little below the top, still counts as above
-    // it, so that opening the page and leaving keeps the place)
-    const below = () => parseFloat(getComputedStyle(root).fontSize);
-    const save = () => {
-      let last;
-      for (const a of document.querySelectorAll('.tex8web-permalink')) {
-        const el = target(a);
-        if (el.getBoundingClientRect().top > below() + 1) break;
-        last = el;
-      }
-      try {
-        if (last) localStorage.setItem(key, last.id);
-        else localStorage.removeItem(key);
-      } catch {}
-    };
-    addEventListener('pagehide', save);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-    if (location.hash || performance.getEntriesByType('navigation')[0]?.type !== 'navigate') return;
-    let el;
-    try { el = document.getElementById(localStorage.getItem(key)); } catch {}
-    if (!el) return;
-    const go = () => scrollTo(0, scrollY + el.getBoundingClientRect().top - below());
-    go();
-    // (and again once the fonts and pictures are in, which may have moved
-    // it, unless the reader has moved by then: not by scrollY, which the
-    // browser's scroll anchoring changes too)
-    let moved = false;
-    for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) {
-      addEventListener(type, () => { moved = true; }, { once: true, passive: true });
-    }
-    const loaded = new Promise(done => addEventListener('load', done));
-    Promise.all([loaded, document.fonts.ready]).then(() => { if (!moved) go(); });
-  }
-
   // previews: pointing at (or focusing, with the keyboard) a link to
   // something on the page, a \ref, \eqref, \cite, footnote mark or section,
   // shows a copy of it in a card; on a touch screen the first tap shows it
@@ -767,7 +727,6 @@
   sidenotes();
   contents();
   filter();
-  place();
   previews();
   viewer();
 })();
