@@ -300,20 +300,26 @@
       if (a && a.matches(':focus-visible')) show(a);
       else if (!card.contains(event.target)) hide();
     });
-    let touch = false;
-    document.addEventListener('pointerdown', event => { touch = event.pointerType === 'touch'; });
-    // (as the click comes down to what was tapped: a tap beside the card on
-    // a touch screen only closes it, whatever it lands on)
+    // a touch beside the card closes it at once, as Safari on iOS sends no
+    // click for a tap on plain text; and that tap's click (caught on its way
+    // down to what was tapped, and not a later one from the keyboard) does
+    // nothing else
+    let touch = false, closing = null;
+    document.addEventListener('pointerdown', event => {
+      touch = event.pointerType === 'touch';
+      closing = touch && shown && !card.contains(event.target) && !link(event.target)
+        ? event.target : null;
+      if (closing) hide();
+    });
     document.addEventListener('click', event => {
       const a = link(event.target);
-      if (a && touch && a !== shown) {
+      if (event.target === closing) {
+        event.preventDefault();
+        event.stopPropagation();
+      } else if (a && touch && a !== shown) {
         event.preventDefault();
         show(a);
       } else if (!card.contains(event.target)) {
-        if (touch && shown && !a) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
         hide();
       }
     }, true);
