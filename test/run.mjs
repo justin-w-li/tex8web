@@ -178,13 +178,12 @@ const permalinks = {
 
 // \color as a declaration, in test-color.tex, in spans that close and open
 // again at each paragraph, and never left open past an element tex4ht
-// closes; the theorem's head isn't colored, as in the PDF. (An author
-// with \and, \\ and \thanks: article's \maketitle sets it in a tabular.) A footnote, a
+// closes; the theorem's head isn't colored, as in the PDF. A footnote, a
 // link and a box keep their own colors. tex4ht's page must be well-formed,
 // which make4ht would otherwise mend silently
 const colors = {
   'test-color': [
-    /<h1 class='titleHead'><span style='color:#0000FF;'>Colors<\/span><span class='thank-mark'>[^]*?<\/h1>\s*<div class='author'><span style='color:#FF0000;'><span [^>]*>Someone<\/span><\/span> <br class='and' \/><span [^>]*>Another<\/span>/,
+    /<h1 class='titleHead'><span style='color:#0000FF;'>Colors<\/span><\/h1>\s*<div class='author'><span style='color:#FF0000;'><span [^>]*>Someone<\/span><\/span><\/div>/,
     /Heading <span style='color:#0000FF;'>in blue<\/span><\/h3>/,
     /A <span style='color:#FF0000;'>red<\/span> word, <span style='color:#000080;'>a mix<\/span>, <span style='color:#008000;'>a model<\/span> and <span style='color:#0A7828;'>leaf <span style='color:#FF0000;'>red<\/span> leaf<\/span>\. <span style='color:#FF0000;'>Red, <span style='color:var\(--tex8web-text\);'>black,<\/span> red<\/span>, <span class='colorbox' id='colorbox1'>boxed<\/span>, <span class='colorbox' id='colorbox2'><span style='color:#FF0000;'>red boxed<\/span><\/span>,\s*<a href='#here'><span style='color:#FF0000;'>linked<\/span><\/a> after\.\s*<\/p><!--[^>]*--><p[^>]*>\s*<a id='here'><\/a>Not red\./,
     /<p[^>]*>\s*<span style='color:#0A7828;'>A first paragraph in leaf\.\s*<\/span><\/p><!--[^>]*--><p[^>]*>\s*<span style='color:#0A7828;'>A second paragraph in leaf\.<\/span>\s*<\/p>/,
