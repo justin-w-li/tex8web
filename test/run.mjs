@@ -76,6 +76,16 @@ const minipages = {
   ],
 };
 
+// links at the heads of numbered theorems, to the anchor a \ref to one
+// leads to; none at an unnumbered one's
+const permalinks = {
+  'test-ntheorem': [
+    /<span class='head'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#<\/a><a id='\1'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1\.1<\/span>[^]*<a href='#\1'>1\.1</,
+    /<span class='head'><a [^>]*class='tex8web-permalink'[^>]*>#<\/a><a id='[^']+'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1\.2/,
+    /<span class='head'>\s*<span class='cmbx-10'>Remark</,
+  ],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -95,6 +105,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of minipages[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);
+  }
+  for (const pattern of permalinks[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the links`);
   }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
