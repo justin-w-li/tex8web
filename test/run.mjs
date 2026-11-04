@@ -128,7 +128,9 @@ const contents = {
 
 // colors in dark mode, at another lightness (a light-dark() of the color),
 // and black text in the page's text color: \textcolor's, \colorbox's and
-// \fcolorbox's (in the stylesheet), listings', and in math (a \rule too)
+// \fcolorbox's (in the stylesheet), listings', and in math (a \rule too);
+// and the colors of math and table cells as xcolor has them: a document's
+// own (ink), a \colorlet (ember), a mix, and green, which CSS has darker
 const lightDark = (color, l) => `light-dark\\(${color}, oklch\\(from ${color} ${l} c h\\)\\)`;
 const colors = {
   'test-color': [
@@ -141,6 +143,11 @@ const colors = {
     new RegExp(`<mjx-mpadded style='background-color: ${lightDark('yellow', 'min\\(l, 1\\.24 - l\\)')};'>`),
     new RegExp(`<mjx-mpadded [^>]*style='border: \\S+ solid ${lightDark('blue', 'max\\(l, 0\\.62\\)')};`),
     /<mjx-mspace style='background-color: var\(--tex8web-text\);/,
+    // (ink, red!50!black, green, ember, red!50!yellow in a macro)
+    ...['#c80064', '#800000', '#00ff00', '#640032', '#ff8000'].map(hex =>
+      new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
+    new RegExp(`#TBL-1-1- td\\{ background-color:${lightDark('#FFFFB2', 'min\\(l, 1\\.24 - l\\)')}\\}`),
+    new RegExp(`#TBL-1-2-1\\{ background-color:${lightDark('#F1BFD8', 'min\\(l, 1\\.24 - l\\)')}\\}`),
     /<pre class='lstlisting'[^>]*>(?:(?!<\/pre>)[^])*<span style='color:var\(--tex8web-text\)'>/,
   ],
 };

@@ -103,3 +103,22 @@
 \def\web@needs#1{\ifcsname#1\endcsname\else\web@outdated{\@backslashchar#1}\fi}
 \def\web@outdated#1{\PackageWarningNoLine{tex8web}{#1 has changed or gone,
     and tex8web needs updating for it}}
+
+% xcolor: the names of the colors the document defines (\definecolor,
+% \colorlet, \providecolor and the sets all end in \XC@definecolor), for
+% tex8web-page.tex to give MathJax their values; and whether xcolor came
+% before colortbl, which doesn't load it, but colortbl.4ht does, after the
+% document's colors that the color package made, which xcolor can't read
+\ExplSyntaxOn
+\clist_new:N \g__web_colors_clist
+\bool_new:N \g__web_xcolor_bool
+\AddToHook { package/xcolor/before }
+    { \@ifpackageloaded { colortbl } { } { \bool_gset_true:N \g__web_xcolor_bool } }
+\AddToHook{package/xcolor/after}{
+    \cs_set_eq:NN \__web_definecolor:w \XC@definecolor
+    \cs_gset:Npn \XC@definecolor [ #1 ] #2 {
+        \clist_gput_right:Nn \g__web_colors_clist {#2}
+        \__web_definecolor:w [ #1 ] {#2}
+    }
+}
+\ExplSyntaxOff

@@ -95,6 +95,63 @@
     \exp_args:Ne \__web_hex_pad:n { \int_to_Hex:n { \fp_eval:n { round(255*(#1)) } } }
 }
 \cs_new:Npn \__web_hex_pad:n #1 { \int_compare:nNnT { \tl_count:n {#1} } = 1 {0} #1 }
+% the colors MathJax's math can name, for macros.lua to give it (it has no
+% xcolor): "name hex" for each the document defines and each of xcolor's
+% own (which mixes like red!50!black start from), as the page ends
+\clist_const:Nn \c__web_colors_clist
+    { black, blue, brown, cyan, darkgray, gray, green, lightgray, lime, magenta,
+      olive, orange, pink, purple, red, teal, violet, white, yellow }
+\tl_new:N \l__web_colors_tl
+\cs_new_protected:Npn \__web_colors_element: {
+    \tl_clear:N \l__web_colors_tl
+    \bool_if:NT \g__web_xcolor_bool
+        {
+            \clist_map_inline:Nn \c__web_colors_clist { \__web_color:n {##1} }
+            \clist_map_inline:Nn \g__web_colors_clist { \__web_color:n {##1} }
+        }
+    \HCode{<script~type="text/x-tex8web-colors">\l__web_colors_tl</script>}
+}
+\cs_new_protected:Npn \__web_color:n #1 {
+    \@ifundefinedcolor {#1} {}
+        {
+            \web@hex {#1} \l__web_hex_tl
+            \tl_put_right:Ne \l__web_colors_tl { \tl_to_str:n {#1} ~ \l__web_hex_tl ~ }
+        }
+}
+\AtEndDocument{\__web_colors_element:}
+% colortbl's colors (\cellcolor, \rowcolor, \columncolor): tex4ht (colortbl.4ht
+% and html4.4ht's \add:color) writes the cell's rule with its own conversion,
+% which gives names xcolor and dvips have beyond CSS's a wrong rgb(), and
+% truncates the rest, off the page's hex colors that dark mode follows. Use
+% \web@hex for a color xcolor knows, a name or an expression; the cell colors
+% tex4ht makes itself (tblcol-1, a color with a model) stay as they are
+\cs_if_exist:NT \add:color
+    {
+        \cs_set_eq:NN \__web_add_color:nnn \add:color
+        \cs_set_protected:Npn \add:color #1 #2 #3
+            {
+                \bool_if:NTF \g__web_xcolor_bool
+                    {
+                        \tl_if_in:nnTF {#2} { ! }
+                            { \__web_cell_color:nnn {#1} {#2} {#3} }
+                            {
+                                \tl_if_head_eq_charcode:nNTF {#2} -
+                                    { \__web_cell_color:nnn {#1} {#2} {#3} }
+                                    {
+                                        \@ifundefinedcolor {#2}
+                                            { \__web_add_color:nnn {#1} {#2} {#3} }
+                                            { \__web_cell_color:nnn {#1} {#2} {#3} }
+                                    }
+                            }
+                    }
+                    { \__web_add_color:nnn {#1} {#2} {#3} }
+            }
+        \cs_new_protected:Npn \__web_cell_color:nnn #1 #2 #3
+            {
+                \web@hex {#2} \l__web_hex_tl
+                \web@Css { \# TBL- \TableNo - #3 { ~ #1 : \# \l__web_hex_tl } }
+            }
+    }
 \ExplSyntaxOff
 % links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
 % and the links keep the color of the text. tex4ht turns colorlinks on
