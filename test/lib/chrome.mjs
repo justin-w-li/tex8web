@@ -91,11 +91,13 @@ export async function launch() {
             clip: { x: 0, y, width, height: h, scale: 1 } });
           return data;
         },
-        // the mouse's left button at x, y in the window: type is pressed,
-        // moved (held) or released
-        async mouse(type, x, y) {
+        // the mouse at x, y in the window: type is pressed, moved (with the
+        // left button held), released or wheel; extra is more of DevTools'
+        // Input.dispatchMouseEvent (clickCount, deltaY)
+        async mouse(type, x, y, extra = {}) {
           await page.send('Input.dispatchMouseEvent', { type: `mouse${type[0].toUpperCase()}${type.slice(1)}`,
-            x, y, button: 'left', buttons: type === 'released' ? 0 : 1, clickCount: 1 });
+            x, y, button: type === 'wheel' ? 'none' : 'left', buttons: ['pressed', 'moved'].includes(type) ? 1 : 0,
+            clickCount: 1, deltaX: 0, deltaY: 0, ...extra });
         },
         async close() {
           page.close();

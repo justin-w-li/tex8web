@@ -318,15 +318,43 @@
 
   // pictures, in a figure, in display math, or over twice as tall as the
   // text (not an icon in a line), and not a link: clicking one shows it as
-  // large as the screen allows (css/tex8web.css), over the page; clicking
-  // it again, twice as large, to drag or scroll around, and again as large
-  // as the screen; clicking beside it, or Escape, closes it
+  // large as the screen allows (css/tex8web.css), over the page. There the
+  // wheel, a pinch or a double-click zooms in or out around the pointer, up
+  // to 4 times, and dragging moves it; clicking beside it, or Escape,
+  // closes it
   function viewer() {
     const dialog = document.createElement('dialog');
     dialog.className = 'tex8web-viewer';
     const picture = document.createElement('img');
     picture.draggable = false;
     dialog.append(picture);
+    // the dialog, around the picture, is at x, y: centered on a side the
+    // screen has room for, and on the other, not short of the screen's edge
+    let zoom = 1, x = 0, y = 0, timer;
+    const move = (left, top, width = dialog.offsetWidth, height = dialog.offsetHeight) => {
+      const fit = (at, size, room) => size <= room ? (room - size) / 2 : Math.min(0, Math.max(room - size, at));
+      x = fit(left, width, innerWidth);
+      y = fit(top, height, innerHeight);
+      dialog.style.translate = `${x}px ${y}px`;
+    };
+    // (sizes worked out rather than measured, so that a double-click's
+    // zoom can ease from the old to the new, css/tex8web.css)
+    const zoomTo = (to, px, py, ease = false) => {
+      to = Math.min(4, Math.max(1, to));
+      dialog.classList.remove('tex8web-easing');
+      const box = picture.getBoundingClientRect(), padding = picture.offsetLeft;
+      const width = box.width * to / zoom, height = box.height * to / zoom;
+      const left = px - (px - box.left) / box.width * width, top = py - (py - box.top) / box.height * height;
+      if (ease) {
+        dialog.classList.add('tex8web-easing');
+        clearTimeout(timer);
+        timer = setTimeout(() => dialog.classList.remove('tex8web-easing'), faded());
+      }
+      zoom = to;
+      dialog.style.setProperty('--tex8web-zoom', zoom);
+      dialog.classList.toggle('tex8web-zoomed', zoom > 1);
+      move(left - padding, top - padding, width + 2 * padding, height + 2 * padding);
+    };
     const open = event => {
       const img = event.currentTarget, box = img.getBoundingClientRect();
       // (the same src, which tex8web-page.tex's rule for TikZ pictures in
@@ -334,8 +362,11 @@
       picture.setAttribute('src', img.getAttribute('src'));
       picture.alt = img.alt;
       dialog.style.setProperty('--tex8web-ratio', box.width / box.height);
-      dialog.classList.remove('tex8web-zoomed');
+      zoom = 1;
+      dialog.style.setProperty('--tex8web-zoom', zoom);
+      dialog.classList.remove('tex8web-zoomed', 'tex8web-easing');
       dialog.showModal();
+      move(0, 0);
     };
     // (once each picture has its size; and a listener on each, as Safari on
     // iOS may not pass a tap on an img, which isn't clickable, up to the
@@ -351,42 +382,75 @@
       else img.addEventListener('load', () => mark(img), { once: true });
     }
     document.body.append(dialog);
-    let drag, dragged = false;
+    addEventListener('resize', () => {
+      dialog.classList.remove('tex8web-easing');
+      if (dialog.open) move(x, y);
+    });
+    dialog.addEventListener('wheel', event => {
+      event.preventDefault();
+      // (a pinch on a trackpad comes as a wheel with ctrl, in smaller steps;
+      // but a mouse's wheel with ctrl, no more than 100px a notch)
+      const pixels = event.deltaY * [1, 16, innerHeight][event.deltaMode];
+      const step = Math.max(-100, Math.min(100, pixels)) * (event.ctrlKey ? 0.01 : 0.002);
+      zoomTo(zoom * Math.exp(-step), event.clientX, event.clientY);
+    }, { passive: false });
+    // Safari's pinch on a trackpad, which isn't a wheel (but not its pinch
+    // on a touch screen, which the pointers below follow)
+    const pointers = new Map();
+    let pinched;
+    dialog.addEventListener('gesturestart', event => {
+      event.preventDefault();
+      pinched = zoom;
+    });
+    dialog.addEventListener('gesturechange', event => {
+      event.preventDefault();
+      if (!pointers.size) zoomTo(pinched * event.scale, event.clientX, event.clientY);
+    });
+    // dragging moves the picture; two fingers also zoom, as they spread
+    // or close. A click ending a drag isn't one
+    let dragged = false, from, last;
+    const both = () => {
+      const [a, b = a] = pointers.values();
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, apart: Math.hypot(a.x - b.x, a.y - b.y) };
+    };
     dialog.addEventListener('pointerdown', event => {
-      dragged = false;
-      const zoomed = dialog.classList.contains('tex8web-zoomed');
-      if (!zoomed || event.pointerType === 'touch' || event.button !== 0) return;
-      drag = { x: event.clientX, y: event.clientY, left: dialog.scrollLeft, top: dialog.scrollTop };
+      if (event.button !== 0) return;
+      if (!pointers.size) dragged = false;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       dialog.setPointerCapture(event.pointerId);
+      from = last = both();
     });
     dialog.addEventListener('pointermove', event => {
-      if (!drag) return;
-      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
-      if (Math.hypot(dx, dy) > 4) dragged = true;
-      if (!dragged) return;
+      if (!pointers.has(event.pointerId)) return;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      const now = both();
+      if (!dragged && pointers.size === 1 && Math.hypot(now.x - from.x, now.y - from.y) <= 4) return;
+      // (and a double-click's zoom done, which the edges are kept to)
+      dragged = true;
+      dialog.classList.remove('tex8web-easing');
       dialog.classList.add('tex8web-dragging');
-      dialog.scrollTo(drag.left - dx, drag.top - dy);
+      if (pointers.size > 1 && last.apart) zoomTo(zoom * now.apart / last.apart, last.x, last.y);
+      move(x + now.x - last.x, y + now.y - last.y);
+      last = now;
     });
     // (on pointerup or pointercancel, or the dialog closing mid-drag)
-    dialog.addEventListener('lostpointercapture', () => {
-      drag = null;
-      dialog.classList.remove('tex8web-dragging');
+    dialog.addEventListener('lostpointercapture', event => {
+      pointers.delete(event.pointerId);
+      if (pointers.size) last = both();
+      else dialog.classList.remove('tex8web-dragging');
     });
     // (by where it is, not its target: the dialog, holding the pointer,
     // gets the click)
-    dialog.addEventListener('click', event => {
-      if (dragged) return;
+    const on = event => {
       const box = picture.getBoundingClientRect();
-      const x = (event.clientX - box.left) / box.width, y = (event.clientY - box.top) / box.height;
-      if (x < 0 || x > 1 || y < 0 || y > 1) {
-        dialog.close();
-        return;
-      }
-      // the point clicked stays under the pointer
-      dialog.classList.toggle('tex8web-zoomed');
-      const at = dialog.getBoundingClientRect();
-      dialog.scrollTo(at.left + picture.offsetLeft + x * picture.offsetWidth - event.clientX,
-        at.top + picture.offsetTop + y * picture.offsetHeight - event.clientY);
+      return event.clientX >= box.left && event.clientX <= box.right
+        && event.clientY >= box.top && event.clientY <= box.bottom;
+    };
+    dialog.addEventListener('click', event => {
+      if (!dragged && !on(event)) dialog.close();
+    });
+    dialog.addEventListener('dblclick', event => {
+      if (on(event)) zoomTo(zoom > 1 ? 1 : 2.5, event.clientX, event.clientY, true);
     });
   }
 

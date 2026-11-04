@@ -60,25 +60,35 @@ const misaligned = `(() => {
 })()`;
 
 // the closer view of pictures (tex8web-page.js), with the mouse: which
-// pictures open it, and on the first, that it fits the screen, zooms in
-// keeping the point clicked under the pointer, drags, zooms out and closes
+// pictures open it, and on the first, that it fits the screen, that the
+// wheel and a double-click zoom around the pointer and the picture is
+// dragged, kept centered or within the screen, and that it closes
 async function viewing(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href);
   const problems = [];
   const sleep = ms => new Promise(done => setTimeout(done, ms));
-  const click = async (x, y) => {
-    await page.mouse('pressed', x, y);
-    await page.mouse('released', x, y);
+  const click = async (x, y, count = 1) => {
+    await page.mouse('pressed', x, y, { clickCount: count });
+    await page.mouse('released', x, y, { clickCount: count });
     await sleep(100);
   };
   const state = () => page.evaluate(`(() => {
-    const dialog = document.querySelector('.tex8web-viewer'), box = dialog.firstChild.getBoundingClientRect();
+    const dialog = document.querySelector('.tex8web-viewer');
+    const box = dialog.firstChild.getBoundingClientRect(), plate = dialog.getBoundingClientRect();
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    return { open: dialog.open, zoomed: dialog.classList.contains('tex8web-zoomed'), left: box.left, top: box.top,
-      width: box.width, height: box.height, scroll: [dialog.scrollLeft, dialog.scrollTop],
-      end: [dialog.scrollWidth - dialog.clientWidth, dialog.scrollHeight - dialog.clientHeight],
+    return { open: dialog.open, zoom: Number(dialog.style.getPropertyValue('--tex8web-zoom')),
+      at: [box.left, box.top], size: [box.width, box.height], plate: [plate.left, plate.top, plate.width, plate.height],
+      view: [innerWidth, innerHeight],
       room: [innerWidth, innerHeight].map(n => n - 2 * Math.max(rem, 0.04 * Math.min(innerWidth, innerHeight)) - rem) };
   })()`);
+  // where the picture should be, the dialog around it at left, top (where
+  // it would be): centered on a side the screen has room for, and on the
+  // other, not short of the screen's edge
+  const placed = (s, left, top) => [left, top].map((at, i) => {
+    const size = s.plate[2 + i], view = s.view[i], padding = s.at[i] - s.plate[i];
+    return padding + (size <= view ? (view - size) / 2 : Math.min(0, Math.max(view - size, at)));
+  });
+  const off = (s, want) => Math.max(...s.at.map((at, i) => Math.abs(at - want[i])));
   // (a picture in a figure or display math opens it; an icon in the text,
   // up to one and a half times as tall, doesn't)
   const wrong = await page.evaluate(`[...document.querySelectorAll('img:not(.tex8web-viewer img, a img)')]
@@ -96,30 +106,58 @@ async function viewing(chrome, file) {
   if (at) {
     await click(...at);
     const fit = await state();
-    const scale = Math.max(fit.width / fit.room[0], fit.height / fit.room[1]);
+    const scale = Math.max(fit.size[0] / fit.room[0], fit.size[1] / fit.room[1]);
     if (!fit.open) problems.push('a picture clicked: no viewer');
-    else if (Math.abs(scale - 1) > 0.01) problems.push(`the viewer's picture ${fit.width}x${fit.height}, for ${fit.room.join('x')}`);
-    const [x, y] = [Math.round(fit.left + 0.3 * fit.width), Math.round(fit.top + 0.3 * fit.height)];
-    await click(x, y);
-    const zoom = await state();
-    const fx = (x - fit.left) / fit.width, fy = (y - fit.top) / fit.height;
-    const drift = Math.max(Math.abs(zoom.left + fx * zoom.width - x), Math.abs(zoom.top + fy * zoom.height - y));
-    // (to a pixel either way: scrolling goes by whole pixels)
-    if (!zoom.zoomed || Math.abs(zoom.width - 2 * fit.width) > 1 || drift > 1) {
-      problems.push(`zoomed in: ${zoom.width}px wide (from ${fit.width}px), the point clicked ${drift.toFixed(1)}px away`);
+    else if (Math.abs(scale - 1) > 0.01 || !(off(fit, placed(fit)) <= 0.5)) {
+      problems.push(`the viewer's picture ${fit.size.join('x')} at ${fit.at.join(', ')}, for ${fit.room.join('x')}`);
+    }
+    const [x, y] = [Math.round(fit.at[0] + 0.3 * fit.size[0]), Math.round(fit.at[1] + 0.3 * fit.size[1])];
+    // the picture zoomed to z around x, y, from s
+    const zoomed = async (s, z, what) => {
+      const now = await state();
+      const want = placed(now, ...s.at.map((at, i) => [x, y][i] - ([x, y][i] - at) * z / s.zoom - (now.at[i] - now.plate[i])));
+      if (Math.abs(now.zoom - z) > 0.001 || Math.abs(now.size[0] - fit.size[0] * z) > 0.5 || !(off(now, want) <= 0.5)) {
+        problems.push(`${what}: zoom ${now.zoom} (not ${z.toFixed(3)}), ${now.size[0]}px wide (from ${fit.size[0]}px), at ${now.at.join(', ')} (not ${want.join(', ')})`);
+      }
+      return now;
+    };
+    // (a notch at a time, as each may be kept to the screen's edges)
+    let wheeled = fit;
+    for (let i = 0; i < 3; i++) {
+      await page.mouse('wheel', x, y, { deltaY: -100 });
+      await sleep(100);
+      wheeled = await zoomed(wheeled, wheeled.zoom * Math.exp(0.2), 'the wheel turned');
     }
     await page.mouse('pressed', x, y);
-    for (let i = 1; i <= 5; i++) await page.mouse('moved', x - 10 * i, y - 10 * i);
-    await page.mouse('released', x - 50, y - 50);
+    // (far enough to reach the screen's edge)
+    for (let i = 1; i <= 8; i++) await page.mouse('moved', x + 50 * i, y + 50 * i);
+    await page.mouse('released', x + 400, y + 400);
     await sleep(100);
     const dragged = await state();
-    const want = zoom.scroll.map((s, i) => Math.min(s + 50, zoom.end[i]));
-    if (!dragged.zoomed) problems.push('a drag zoomed out');
-    else if (dragged.scroll.some((s, i) => Math.abs(s - want[i]) > 1)) {
-      problems.push(`dragged by 50px: scrolled from ${zoom.scroll.join(', ')} to ${dragged.scroll.join(', ')}`);
+    const want = placed(dragged, wheeled.plate[0] + 400, wheeled.plate[1] + 400);
+    if (dragged.zoom !== wheeled.zoom || !(off(dragged, want) <= 0.5)) {
+      problems.push(`dragged by 400px: zoom ${dragged.zoom}, at ${dragged.at.join(', ')} (not ${want.join(', ')})`);
     }
-    await click(x - 50, y - 50);
-    if ((await state()).zoomed) problems.push('a click on the zoomed picture: not zoomed out');
+    for (let i = 0; i < 5; i++) await page.mouse('wheel', x, y, { deltaY: 100 });
+    await sleep(100);
+    const out = await state();
+    if (out.zoom !== 1 || !(off(out, fit.at) <= 0.5)) problems.push(`the wheel turned back: zoom ${out.zoom}, at ${out.at.join(', ')}`);
+    // (a double-click eases, css/tex8web.css: a little after it ends)
+    await click(x, y);
+    await click(x, y, 2);
+    await sleep(500);
+    await zoomed(out, 2.5, 'a double-click');
+    await click(x, y);
+    await click(x, y, 2);
+    await sleep(500);
+    const back = await state();
+    if (back.zoom !== 1 || !(off(back, fit.at) <= 0.5)) problems.push(`a second double-click: zoom ${back.zoom}, at ${back.at.join(', ')}`);
+    // (from the picture to beside it: a drag, not a click beside it)
+    await page.mouse('pressed', x, y);
+    for (let i = 1; i <= 4; i++) await page.mouse('moved', x - (x - 2) * i / 4, y - (y - 2) * i / 4);
+    await page.mouse('released', 2, 2);
+    await sleep(100);
+    if (!(await state()).open) problems.push('a drag ending beside the picture closed the viewer');
     await click(2, 2);
     if ((await state()).open) problems.push('a click beside the picture: the viewer still open');
   }
