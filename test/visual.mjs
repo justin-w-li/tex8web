@@ -309,6 +309,8 @@ async function resuming(chrome, file) {
     if (!a) return null;
     const el = document.getElementById(a.hash.slice(1));
     scrollTo(0, scrollY + el.getBoundingClientRect().top + 2);
+    // (not on a page too short to scroll it there)
+    if (Math.round(el.getBoundingClientRect().top) !== -2) return null;
     dispatchEvent(new Event('pagehide'));
     return el.id;
   })()`);
@@ -329,9 +331,9 @@ async function resuming(chrome, file) {
     await page.close();
     page = await chrome.open(`${url}#${other}`);
     if (await page.evaluate(top(at)) < 50) problems.push(`place: #${at} at the top, not the address's #${other}`);
+    await page.evaluate('localStorage.clear()');
+    await page.close();
   }
-  await page.evaluate('localStorage.clear()');
-  await page.close();
   return problems;
 }
 
