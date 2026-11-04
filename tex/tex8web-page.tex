@@ -30,7 +30,7 @@
     \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } \l__web_build_tl
     \__web_escape:N \l__web_build_tl
     \HCode{<script~type="text/x-tex8web-build"~data-pdf="\tl_to_str:N \g__web_pdf_tl">
-        \l__web_build_tl</script>\Hnewline<script~type="text/x-tex8web-contents">}
+        \l__web_build_tl</script><script~type="text/x-tex8web-contents">}
     \contentsname
     \HCode{</script>\Hnewline}
 }
