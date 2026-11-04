@@ -106,9 +106,11 @@
 
 % xcolor: the names of the colors the document defines (\definecolor,
 % \colorlet, \providecolor and the sets all end in \XC@definecolor), for
-% tex8web-page.tex to give MathJax their values; and whether xcolor came
-% before colortbl, which doesn't load it, but colortbl.4ht does, after the
-% document's colors that the color package made, which xcolor can't read
+% tex8web-page.tex to give MathJax their values (a name's macros expanded,
+% as xcolor does); and whether xcolor came before colortbl, which doesn't
+% load it, but colortbl.4ht does, after the document's colors that the color
+% package made, which xcolor can't read (for colortbl's cells only: math
+% gets only the colors recorded here)
 \ExplSyntaxOn
 \clist_new:N \g__web_colors_clist
 \bool_new:N \g__web_xcolor_bool
@@ -117,7 +119,7 @@
 \AddToHook{package/xcolor/after}{
     \cs_set_eq:NN \__web_definecolor:w \XC@definecolor
     \cs_gset:Npn \XC@definecolor [ #1 ] #2 {
-        \clist_gput_right:Nn \g__web_colors_clist {#2}
+        \clist_gput_right:Ne \g__web_colors_clist {#2}
         \__web_definecolor:w [ #1 ] {#2}
     }
 }

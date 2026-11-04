@@ -148,6 +148,9 @@ const colors = {
       new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
     new RegExp(`#TBL-1-1- td\\{ background-color:${lightDark('#FFFFB2', 'min\\(l, 1\\.24 - l\\)')}\\}`),
     new RegExp(`#TBL-1-2-1\\{ background-color:${lightDark('#F1BFD8', 'min\\(l, 1\\.24 - l\\)')}\\}`),
+    // (a complement, which tex4ht gives no rule)
+    new RegExp(`#TBL-1-3- td\\{ background-color:${lightDark('#37FF9B', 'min\\(l, 1\\.24 - l\\)')}\\}`),
+    new RegExp(`#TBL-1-3-2\\{ background-color:${lightDark('#37FF9B', 'min\\(l, 1\\.24 - l\\)')}\\}`),
     /<pre class='lstlisting'[^>]*>(?:(?!<\/pre>)[^])*<span style='color:var\(--tex8web-text\)'>/,
   ],
 };
