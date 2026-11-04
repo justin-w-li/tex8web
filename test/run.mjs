@@ -79,7 +79,7 @@ const minipages = {
 
 // a term (\WebTerm), with its id for the contents' filter
 const terms = {
-  'test': [/<span class='tex8web-term' id='term-inner-product'>/],
+  'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
 };
 
 // what's wrong with a built page: its log, the page and the files with it

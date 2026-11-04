@@ -269,7 +269,8 @@ async function touching(chrome, file) {
 
 // the contents' filter: a named theorem found by its head, first among
 // what matches, and Enter going to it; then, among the many with an e,
-// down twice and up once choosing the second, which Enter goes to
+// down twice and up once choosing the second, which Enter goes to; and
+// test.tex's ε-ball found by \epsilon, its ε typeset
 async function filtering(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { width: 1600 });
   const problems = [];
@@ -304,6 +305,15 @@ async function filtering(chrome, file) {
       await sleep(100);
       if (await page.evaluate('location.hash') !== second) problems.push(`filter: arrows and Enter went to ${await page.evaluate('location.hash')}, not ${second}`);
     }
+    const ball = await page.evaluate(`(() => {
+      if (!document.getElementById('term-ball')) return null;
+      const input = document.querySelector('.tex8web-toc-filter');
+      input.value = '\\\\epsilon ball';
+      input.dispatchEvent(new Event('input'));
+      const a = document.querySelector('.tex8web-toc-results a');
+      return [a?.hash, !!a?.querySelector('mjx-container')];
+    })()`);
+    if (ball && (ball[0] !== '#term-ball' || !ball[1])) problems.push(`filter: \\epsilon ball found ${ball[0]}, ${ball[1] ? '' : 'not '}typeset`);
   }
   await page.close();
   return problems;
@@ -363,7 +373,7 @@ async function naming(chrome, file) {
     const links = [...document.querySelectorAll('#tex8web-toc .tableofcontents a')];
     const a = links[links.length >> 1];
     if (!a) return done([]);
-    const shown = () => where.hidden ? '' : where.textContent;
+    const shown = () => where.hidden ? '' : where.textContent.replace(/\\s+/g, ' ').trim();
     const first = document.getElementById(decodeURIComponent(links[0].hash.slice(1)));
     const before = first.getBoundingClientRect().top > innerHeight / 4 ? shown() : '';
     const el = document.getElementById(decodeURIComponent(a.hash.slice(1)));

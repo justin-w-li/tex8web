@@ -20,9 +20,34 @@
     copy.querySelectorAll('.tex8web-permalink, mjx-assistive-mml').forEach(node => node.remove());
     return copy.textContent.replace(/\s+/g, ' ').trim();
   };
+  // an element as a line of text with its math typeset (copies of
+  // MathJax's), without the styles of the text around it, and without a
+  // last period (a theorem's head has one)
+  const shown = el => {
+    const line = document.createDocumentFragment();
+    const add = el => {
+      for (const node of el.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) line.append(node.textContent.replace(/\s+/g, ' '));
+        else if (node.matches('mjx-container')) line.append(node.cloneNode(true));
+        else if (!node.matches('.tex8web-permalink, mjx-assistive-mml')) add(node);
+      }
+    };
+    add(el);
+    line.querySelectorAll('mjx-assistive-mml').forEach(node => node.remove());
+    line.normalize();
+    const last = line.lastChild;
+    if (last?.nodeType === Node.TEXT_NODE) last.textContent = last.textContent.replace(/\.?\s*$/, '');
+    return line;
+  };
   // a link in the table of contents as its entry reads: number and title
   const entryText = a => [a.parentElement.querySelector('.tocnumber')?.textContent.trim(), text(a)]
     .filter(Boolean).join(' ');
+  const entryShown = a => {
+    const line = shown(a);
+    const number = a.parentElement.querySelector('.tocnumber')?.textContent.trim();
+    if (number) line.prepend(`${number} `);
+    return line;
+  };
 
   // the theme: light or dark as the reader last chose, on any tex8web page
   // (a script in <head> applies it before the page is drawn), or else as
@@ -202,7 +227,7 @@
       toc.querySelectorAll('.tex8web-open').forEach(el => el.classList.remove('tex8web-open'));
       current = reading;
       current.a.setAttribute('aria-current', 'location');
-      if (where) where.textContent = entryText(current.a);
+      if (where) where.replaceChildren(entryShown(current.a));
       // (tex4ht's entries are siblings: a section's, then its subsections')
       let section = current.a.closest('.tableofcontents > span');
       while (section && !isSection(section)) section = section.previousElementSibling;
@@ -247,6 +272,17 @@
     input.setAttribute('aria-autocomplete', 'list');
     input.setAttribute('aria-expanded', 'false');
     const fold = s => s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
+    // (and a Greek letter or symbol by its name in TeX, which the page,
+    // typeset, no longer has: σ is also sigma, and ε varepsilon, which
+    // epsilon finds too)
+    const names = { α: 'alpha', β: 'beta', γ: 'gamma', δ: 'delta', ε: 'varepsilon', ζ: 'zeta', η: 'eta',
+      θ: 'vartheta', ι: 'iota', κ: 'kappa', λ: 'lambda', μ: 'mu', ν: 'nu', ξ: 'xi', π: 'varpi', ρ: 'varrho',
+      σ: 'varsigma', τ: 'tau', υ: 'upsilon', φ: 'varphi', χ: 'chi', ψ: 'psi', ω: 'omega',
+      '∞': 'infty', '∂': 'partial', '∇': 'nabla', '∅': 'emptyset' };
+    const key = label => {
+      const folded = fold(label);
+      return `${folded}\n${[...folded].map(c => names[c] ?? c).join('')}`;
+    };
     // (on first use, as the math is typeset by then if MathJax runs in the
     // browser)
     let items;
@@ -254,15 +290,17 @@
       const all = [];
       for (const a of list.querySelectorAll('a[href^="#"]')) {
         const el = target(a);
-        if (el) all.push({ el, href: a.hash, kind: 'heading', label: entryText(a) });
+        if (el) all.push({ el, href: a.hash, kind: 'heading', label: entryText(a), show: () => entryShown(a) });
       }
       for (const link of document.querySelectorAll('.newtheorem .head > .tex8web-permalink')) {
         all.push({ el: link.parentElement, href: link.hash, kind: 'theorem',
-          label: text(link.parentElement).replace(/\.$/, '') });
+          label: text(link.parentElement).replace(/\.$/, ''), show: () => shown(link.parentElement) });
       }
       // (not one in a heading or a theorem's head, which is found as that)
       for (const term of document.querySelectorAll('.tex8web-term[id]')) {
-        if (!term.closest('h2, h3, h4, h5, h6, .head')) all.push({ el: term, href: `#${term.id}`, kind: 'term', label: text(term) });
+        if (!term.closest('h2, h3, h4, h5, h6, .head')) {
+          all.push({ el: term, href: `#${term.id}`, kind: 'term', label: text(term), show: () => shown(term) });
+        }
       }
       all.sort((a, b) => a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
       // (a term is shown with the theorem it's in, or else its section, and
@@ -270,13 +308,13 @@
       let heading, theorem;
       const seen = new Set();
       return all.filter(item => {
-        item.key = fold(item.label);
+        item.key = key(item.label);
         if (item.kind === 'heading') heading = item;
         else if (item.kind === 'theorem') theorem = item;
-        else if (theorem && item.el.closest('.newtheorem') === theorem.el.closest('.newtheorem')) item.where = theorem.label;
-        else item.where = heading?.label;
+        else if (theorem && item.el.closest('.newtheorem') === theorem.el.closest('.newtheorem')) item.where = theorem;
+        else item.where = heading;
         if (item.kind !== 'term') return true;
-        const once = `${item.key}\n${item.where}`;
+        const once = `${item.key}\n${item.where?.label}`;
         return !seen.has(once) && seen.add(once);
       });
     }
@@ -286,11 +324,11 @@
       li.setAttribute('role', 'option');
       const a = document.createElement('a');
       a.href = item.href;
-      a.textContent = item.label;
+      a.append(item.show());
       if (item.where) {
         const where = document.createElement('span');
         where.className = 'tex8web-toc-where';
-        where.textContent = item.where;
+        where.append(item.where.show());
         a.append(' ', where);
       }
       li.append(a);
@@ -306,7 +344,8 @@
       chosen.scrollIntoView({ block: 'nearest' });
     };
     input.addEventListener('input', () => {
-      const words = fold(input.value).split(/\s+/).filter(Boolean);
+      // (\sigma as sigma)
+      const words = fold(input.value).replaceAll('\\', '').split(/\s+/).filter(Boolean);
       list.hidden = words.length > 0;
       results.hidden = !words.length;
       input.setAttribute('aria-expanded', String(words.length > 0));
