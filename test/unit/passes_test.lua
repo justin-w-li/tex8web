@@ -99,11 +99,11 @@ return {
     equal(d:query_selector("aside")[1]:get_attribute("class"), "footnotetext tex8web-sidenote")
   end,
 
-  ["page.build_data: the PDF and the macros, and the element removed"] = function()
-    local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf">\newcommand{\x}{x}</script>]])
+  ["page.build_data: the PDF, \\contentsname and the macros, and the element removed"] = function()
+    local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf" data-contents="Table des matières">\newcommand{\x}{x}</script>]])
     local context = {}
     page.build_data(d, context)
-    equal(context, {pdf = "build/doc.pdf", macros = "\\newcommand{\\x}{x}"})
+    equal(context, {pdf = "build/doc.pdf", contents = "Table des matières", macros = "\\newcommand{\\x}{x}"})
     equal(#d:query_selector("script"), 0)
     local e = parse("", [[<script type="text/x-tex8web-build" data-pdf=""></script>]])
     local none = {}
@@ -126,30 +126,44 @@ return {
     local d = parse([[<h3 class="likesectionHead" id="contents"><a id="x1-1"></a>Contents</h3>]]
       .. [[<div class="tableofcontents"><span class="sectionToc"><a href="#intro">Intro</a></span></div>]]
       .. [[<h3 class="sectionHead" id="intro">Intro</h3>]])
-    page.controls(d, {})
+    page.controls(d, {contents = "Table of Contents"})
     local nav = d:query_selector("nav#tex8web-toc")[1]
     equal(d:query_selector("#tex8web-toc-title")[1]:get_text(), "Contents")
     equal(#nav:query_selector("div.tableofcontents"), 1)
     equal(#d:query_selector("h3"), 1)
-    equal(#d:query_selector("button.tex8web-contents"), 1)
+    equal(d:query_selector("button.tex8web-contents")[1]:get_attribute("aria-label"), "Contents")
     equal(#d:query_selector("a.tex8web-control"), 0)
+  end,
+
+  ["page.controls: the table of contents, not a list of figures before it"] = function()
+    local d = parse([[<h3 class="likesectionHead">List of Figures</h3>]]
+      .. [[<div class="tableofcontents"><span class="lofToc">1 <a href="#f">F</a></span></div>]]
+      .. [[<h3 class="likesectionHead">Contents</h3>]]
+      .. [[<div class="tableofcontents"><span class="subsectionToc"><a href="#s">S</a></span></div>]])
+    page.controls(d, {contents = "Contents"})
+    equal(#d:query_selector("nav#tex8web-toc span.subsectionToc"), 1)
+    equal(d:query_selector("#tex8web-toc-title")[1]:get_text(), "Contents")
+    equal(#d:query_selector("body > div.tableofcontents span.lofToc"), 1)
+    equal(d:query_selector("h3")[1]:get_text(), "List of Figures")
   end,
 
   ["page.controls: a box that only holds the table of contents goes too"] = function()
     local d = parse([[<div class="tcolorbox" id="tcolobox-1"><div class="tcolorbox-title"><p>Outline</p></div>]]
-      .. [[<div class="tcolorbox-content"><div class="tableofcontents"></div></div></div><p>Text</p>]])
-    page.controls(d, {})
+      .. [[<div class="tcolorbox-content"><div class="tableofcontents"><span class="sectionToc"></span></div></div></div><p>Text</p>]])
+    page.controls(d, {contents = "Contents"})
     equal(#d:query_selector("div.tcolorbox"), 0)
     equal(d:query_selector("#tex8web-toc-title")[1]:get_text(), "Outline")
     equal(#d:query_selector("nav#tex8web-toc div.tableofcontents"), 1)
     equal(#d:query_selector("p"), 2)
   end,
 
-  ["page.controls: a numbered heading before the table of contents stays"] = function()
-    local d = parse([[<h3 class="sectionHead" id="intro">1 Intro</h3><div class="tableofcontents"></div>]])
-    page.controls(d, {})
+  ["page.controls: a numbered heading before the table of contents stays, and \\contentsname titles it"] = function()
+    local d = parse([[<h3 class="sectionHead" id="intro">1 Intro</h3>]]
+      .. [[<div class="tableofcontents"><span class="chapterToc"></span></div>]])
+    page.controls(d, {contents = "Table des matières"})
     equal(#d:query_selector("h3"), 1)
-    equal(d:query_selector("#tex8web-toc-title")[1]:get_text(), "Contents")
+    equal(d:query_selector("#tex8web-toc-title")[1]:get_text(), "Table des matières")
+    equal(d:query_selector("button.tex8web-contents")[1]:get_attribute("title"), "Table des matières")
   end,
 
   ["page.controls: a warning, and no PDF control, without the PDF"] = function()

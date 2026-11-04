@@ -10,24 +10,33 @@
 %   prerendering: MathJax's configuration (tex8web-math.tex), and lengths
 %   from the document, in ems of its body font, for MathJax's sizes (see
 %   tex8web.js). page.lua adds the scripts that read it
-% - a build element, for the HTML passes, which remove it: the PDF (\WebPDF)
-%   and the \WebMathMacros definitions
+% - a build element, for the HTML passes, which remove it: the PDF (\WebPDF),
+%   \contentsname and the \WebMathMacros definitions
 % \WebPDF{path}: a link to the document's PDF after the title; tex8web.mk4
 % copies the file (path from the document's directory) next to the page
 \setbox\z@\hbox{\everymath{}$\xdef\web@exscale{\web@ratio{\fontdimen6\textfont3}}$}
 \ExplSyntaxOn
 \tl_new:N \g__web_pdf_tl
 \NewDocumentCommand\WebPDF{m}{\tl_gset:Nn \g__web_pdf_tl {#1}}
+\cs_new_protected:Npn \__web_escape:N #1 {
+    \regex_replace_all:nnN { \x{26} } { &amp; } #1
+    \regex_replace_all:nnN { \x{3C} } { &lt; } #1
+    \regex_replace_all:nnN { \x{3E} } { &gt; } #1
+}
 \cs_new_protected:Npn \__web_build_element: {
     \tl_set:Ne \l__web_build_tl {\exp_args:NV \detokenize \g__web_macros_tl}
     \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } \l__web_build_tl
-    \regex_replace_all:nnN { \x{26} } { &amp; } \l__web_build_tl
-    \regex_replace_all:nnN { \x{3C} } { &lt; } \l__web_build_tl
-    \regex_replace_all:nnN { \x{3E} } { &gt; } \l__web_build_tl
-    \HCode{<script~type="text/x-tex8web-build"~data-pdf="\tl_to_str:N \g__web_pdf_tl">
-        \l__web_build_tl</script>\Hnewline}
+    \__web_escape:N \l__web_build_tl
+    % (babel's names may hold accents, \`e, which \text_purify:n makes
+    % characters)
+    \str_set:Ne \l__web_contents_str {\text_purify:n {\contentsname}}
+    \__web_escape:N \l__web_contents_str
+    \regex_replace_all:nnN { \x{22} } { &quot; } \l__web_contents_str
+    \HCode{<script~type="text/x-tex8web-build"~data-pdf="\tl_to_str:N \g__web_pdf_tl"
+        ~data-contents="\l__web_contents_str">\l__web_build_tl</script>\Hnewline}
 }
 \tl_new:N \l__web_build_tl
+\str_new:N \l__web_contents_str
 \Configure{@HEAD}{}
 \Configure{@HEAD}{\HCode{<meta~charset="utf-8"~/>\Hnewline}}
 \Configure{@HEAD}{\HCode{<meta~name="viewport"~content="width=device-width,initial-scale=1"~/>\Hnewline}}
