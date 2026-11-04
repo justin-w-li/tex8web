@@ -1,0 +1,17 @@
+% A test for tex8web: colors in dark mode. \textcolor, \colorbox's and
+% \fcolorbox's, listings' and those in math each get another lightness in
+% dark mode (a light-dark() of the color); black text is the page's text
+% color.
+\documentclass{article}
+\usepackage{xcolor}
+\usepackage{listings}
+\definecolor{navy}{RGB}{0,0,128}
+\begin{document}
+Plain, \textcolor{navy}{navy}, \textcolor{black}{black},
+\colorbox{yellow!30}{on yellow} and \fcolorbox{blue}{green!10}{framed}.
+In math, $a + \textcolor{red}{b} + {\color{black} c}$ and
+\[ \colorbox{yellow}{$x$} + \fcolorbox{blue}{white}{$y$} + \rule{1em}{1pt}. \]
+\begin{lstlisting}
+\begin{document}
+\end{lstlisting}
+\end{document}

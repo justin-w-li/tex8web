@@ -1,4 +1,7 @@
 {
+  "test-color": {
+    "visual": "\\colorbox's and \\fcolorbox's boxes in math are 1.4px wider in the browser, which measures the text mode inside them that MathJax only estimates in Node"
+  },
   "test": {
     "visual": "from section 3 on, some displays are up to 0.06px taller in the browser, which measures some text MathJax only estimates in Node"
   },

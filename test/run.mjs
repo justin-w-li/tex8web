@@ -126,6 +126,25 @@ const contents = {
   ],
 };
 
+// colors in dark mode, at another lightness (a light-dark() of the color),
+// and black text in the page's text color: \textcolor's, \colorbox's and
+// \fcolorbox's (in the stylesheet), listings', and in math (a \rule too)
+const lightDark = (color, l) => `light-dark\\(${color}, oklch\\(from ${color} ${l} c h\\)\\)`;
+const colors = {
+  'test-color': [
+    new RegExp(`<span style='color:${lightDark('#000080', 'max\\(l, 1 - l\\)')};'>navy</span>`),
+    /<span style='color:var\(--tex8web-text\);'>black<\/span>/,
+    new RegExp(`#colorbox1\\{background-color:${lightDark('#FFFFB2', 'min\\(l, 1\\.24 - l\\)')};\\}`),
+    new RegExp(`#colorbox2\\{border: solid 1px ${lightDark('#0000FF', 'max\\(l, 0\\.62\\)')};\\}`),
+    new RegExp(`<mjx-mstyle style='color: ${lightDark('red', 'max\\(l, 1 - l\\)')};'>`),
+    /<mjx-mstyle style='color: var\(--tex8web-text\);'>/,
+    new RegExp(`<mjx-mpadded style='background-color: ${lightDark('yellow', 'min\\(l, 1\\.24 - l\\)')};'>`),
+    new RegExp(`<mjx-mpadded [^>]*style='border: \\S+ solid ${lightDark('blue', 'max\\(l, 0\\.62\\)')};`),
+    /<mjx-mspace style='background-color: var\(--tex8web-text\);/,
+    /<pre class='lstlisting'[^>]*>(?:(?!<\/pre>)[^])*<span style='color:var\(--tex8web-text\)'>/,
+  ],
+};
+
 // a term (\WebTerm), with its id for the contents' filter
 const terms = {
   'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
@@ -216,6 +235,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of contents[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} in the page`);
+  }
+  for (const pattern of colors[doc.name] ?? []) {
+    if (!pattern.test(html + styles)) problems.push(`no ${pattern.source} among the colors`);
   }
   for (const pattern of terms[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the terms`);

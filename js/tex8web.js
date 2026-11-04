@@ -100,6 +100,27 @@ function tex8web(config, tex) {
     mtable.attributes.set('rowspacing', spacing.join(' '));
   }
 
+  // colors (\color, \colorbox, \fcolorbox: mathcolor, mathbackground and
+  // a border in style) in dark mode at another lightness, as tcolorbox's
+  // (tex8web-boxes.tex); black text in the text's color
+  const lightDark = (color, l) => `light-dark(${color}, oklch(from ${color} ${l} c h))`;
+  const text = color => /^(black|#000000)$/i.test(color) ? 'var(--tex8web-text)' : lightDark(color, 'max(l, 1 - l)');
+  function darken(node) {
+    const color = node.attributes.getExplicit('mathcolor');
+    if (color) node.attributes.set('mathcolor', text(color));
+    // (\rule is an mspace with a background, in the text's color)
+    const background = node.attributes.getExplicit('mathbackground');
+    if (background) {
+      node.attributes.set('mathbackground',
+        node.isKind('mspace') ? text(background) : lightDark(background, 'min(l, 1.24 - l)'));
+    }
+    const style = node.attributes.getExplicit('style');
+    if (style?.startsWith('border: ')) {
+      node.attributes.set('style', style.replace(/^(border: \S+ solid )([^;]+)/,
+        (_, border, color) => border + lightDark(color, 'max(l, 0.62)')));
+    }
+  }
+
   const bars = ['|', '‖', '∥'];
   const wideAccents = ['^', '~'];
   let TEXCLASS;
@@ -109,6 +130,7 @@ function tex8web(config, tex) {
     const scale = (100 * tex.exscale).toFixed(1) + '%';
     const operators = [];
     data.root.walkTree(node => {
+      darken(node);
       if (node.isKind('mtable')) {
         const env = environment(node);
         if (env) spaceRows(node, env, factory);

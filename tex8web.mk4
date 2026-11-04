@@ -65,6 +65,7 @@ local passes = {
   page.terms,
   page.meta_tags,
   page.scripts,
+  assets.inline_colors,
   assets.copy,
 }
 

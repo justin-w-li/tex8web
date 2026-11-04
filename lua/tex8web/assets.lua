@@ -173,6 +173,29 @@ function M.rules_in_text_color(css)
   end))
 end
 
+-- tex4ht's colors, in its stylesheet (\colorbox's and \fcolorbox's, soul's
+-- highlights) and in style attributes (\textcolor's, listings'), in dark
+-- mode at another lightness, as tcolorbox's (tex8web-boxes.tex); black text
+-- and rules in the text's color
+local dark = {color = "max(l, 1 - l)", background = "min(l, 1.24 - l)", border = "max(l, 0.62)"}
+local black = {color = "var(--tex8web-text)", border = "currentColor"}
+function M.colors_in_dark_mode(css)
+  return (css:gsub("%f[%w-]([%a-]+)(%s*:%s*)([^;{}]*)", function(property, colon, value)
+    local kind = property:match("^%a+")
+    if not dark[kind] or value:find("light-dark", 1, true) then return end
+    return property .. colon .. value:gsub("#%x%x%x%x%x%x%f[^%w]", function(hex)
+      if hex == "#000000" and black[kind] then return black[kind] end
+      return ("light-dark(%s, oklch(from %s %s c h))"):format(hex, hex, dark[kind])
+    end)
+  end))
+end
+
+function M.inline_colors(document)
+  for _, el in ipairs(document:query_selector("[style]")) do
+    el:set_attribute("style", M.colors_in_dark_mode(el:get_attribute("style")))
+  end
+end
+
 -- the last value the stylesheet gives --tex8web-<name>, in ems or rems
 -- (the same here; see wide_screens), or nil with a warning
 local function ems(css, name)
@@ -209,7 +232,7 @@ function M.stylesheet(context)
   if not i then return end
   css = css:sub(1, i - 1) .. assert(files.read(context.root .. "/css/tex8web.css")) .. css:sub(j + 1)
   local f = assert(io.open(path, "w"))
-  f:write(M.wide_screens(M.rules_in_text_color(css)))
+  f:write(M.wide_screens(M.colors_in_dark_mode(M.rules_in_text_color(css))))
   f:close()
 end
 
