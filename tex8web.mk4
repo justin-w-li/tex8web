@@ -3,9 +3,10 @@
 -- config of your own that \input's tex8web-core.tex):
 --   make4ht -c path/to/tex8web.cfg -e path/to/tex8web.mk4 -B build -d out document.tex
 -- It puts this directory on TeX's and Lua's search paths, runs bibtex or
--- biber when the document has a bibliography, runs the HTML passes
--- (lua/tex8web/), copies the files the page needs next to it, and typesets
--- the math with MathJax in Node, if it can (prerender.lua).
+-- biber when the document has a bibliography and makeindex when it has an
+-- index, runs the HTML passes (lua/tex8web/), copies the files the page
+-- needs next to it, and typesets the math with MathJax in Node, if it can
+-- (prerender.lua).
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
 -- (texlua's require doesn't look at package.path; add a searcher that does
@@ -20,6 +21,7 @@ os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 local domfilter = require "make4ht-domfilter"
 local assets = require "tex8web.assets"
 local bibliography = require "tex8web.bibliography"
+local index = require "tex8web.index"
 local macros = require "tex8web.macros"
 local page = require "tex8web.page"
 local prerender = require "tex8web.prerender"
@@ -28,17 +30,24 @@ local text = require "tex8web.text"
 
 -- LaTeX, with tex/tex8web-hooks.sty loaded before the preamble and
 -- tex4ht's fn-in option, which keeps footnotes on the page (text.lua puts
--- them beside the text); then the bibliography, if the document has one,
--- which make4ht doesn't run itself; and LaTeX until the cross-references
--- settle. (The parameters build on settings: Make.params is still empty)
+-- them beside the text); then the bibliography and the index, if the
+-- document has them, which make4ht doesn't run itself; and LaTeX until the
+-- cross-references settle. (The parameters build on settings: Make.params
+-- is still empty)
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
 Make:htlatex(latex)
 if mode ~= "draft" then
   Make:add("bibliography", bibliography.run)
   Make:bibliography {}
+  Make:add("index", index.run)
+  Make:index {}
   Make:autohtlatex(latex)
 end
+-- (tex4ht's class files list \jobname.4idx among the page's files, for its
+-- own index script (\warn:idx in article.4ht); make4ht never makes it, and
+-- copying it to -d logs an error)
+Make:match("4idx$", function() return false end)
 
 -- each pass is function(document, context), in this order
 local passes = {

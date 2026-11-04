@@ -76,6 +76,17 @@ const minipages = {
   ],
 };
 
+// the index's entries, a subentry, a range and a "see", each number a
+// link back to where its \index is (numbered as tex4ht does, not by page)
+const index = {
+  'test-index': [
+    /A group<a id='([^']+)'>[^]*<div class='index-item'>group, <a href='#\1'>1<\/a>, <a href='#[^']+'>5<\/a>/,
+    /<a id='([^']+)'><\/a>An abelian group[^]*<div class='index-subitem'>abelian, <a href='#\1'>2<\/a>/,
+    /<div class='index-item'>ring, <a href='#[^']+'>3<\/a>–<a href='#[^']+'>6<\/a>/,
+    /<div class='index-item'>module, <span[^>]*>see <\/span>ring/,
+  ],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -95,6 +106,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of minipages[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);
+  }
+  for (const pattern of index[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the index`);
   }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
