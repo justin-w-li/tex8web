@@ -137,6 +137,9 @@ function M.copy(document, context)
     M.add(context.root .. "/fonts/" .. font, context.dir .. "/fonts/" .. font)
   end
   for _, font in ipairs(fonts) do add_font(font) end
+  -- (their copyright, licenses and changes, which the licenses ask a copy
+  -- to come with)
+  add_font("LICENSE.txt")
   local sans = uses_sans(document, context)
   if sans then
     for _, font in ipairs(sans_fonts) do add_font(font) end

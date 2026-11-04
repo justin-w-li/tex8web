@@ -47,4 +47,4 @@ Most documents need no config of their own. When the build asks for one, or you 
 
 ## License
 
-MIT (see [LICENSE](LICENSE)). The fonts in `fonts/` are under the GUST Font License, and each example under its own license, named at its top.
+MIT (see [LICENSE](LICENSE)). The fonts in `fonts/` are under the GUST Font License (see `fonts/LICENSE.txt`, which also goes with every page), and each example under its own license, named at its top.

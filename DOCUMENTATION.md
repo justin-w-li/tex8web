@@ -49,7 +49,7 @@ Pass both files every time: `tex8web.mk4` puts `tex/` on TeX's search path for `
 - **`-d out`** collects the page and everything it uses:
   - `document.html`, `document.css`;
   - `document-mathjax.css` and `fonts/mathjax/` (MathJax's styles and fonts, when prerendered);
-  - `fonts/` (Latin Modern; the sans-serif only if the page uses it);
+  - `fonts/` (Latin Modern, the sans-serif only if the page uses it, and `LICENSE.txt`: the fonts' copyright, licenses and what tex8web changed in them);
   - the pictures;
   - the PDF (with `\WebPDF`);
   - `tex8web-head.js` (the reader's theme, applied before the page is drawn) and `tex8web-page.js` (the theme and contents buttons and the table of contents' tracking);
@@ -331,6 +331,6 @@ A report: a list of figures before the table of contents, a part, two chapters w
 | `js/tex8web-head.js` | the reader's theme, and whether they hid the table of contents, applied before the page is drawn |
 | `js/tex8web-page.js` | the theme button, the narrow screen's bar, footnotes lined up with their marks, the table of contents' tracking and filter, previews, the closer view of pictures |
 | `js/prerender.mjs` | MathJax in Node |
-| `fonts/` | Latin Modern (roman, sans and mono), as WOFF2 |
+| `fonts/` | Latin Modern (roman, sans and mono), as WOFF2, and `LICENSE.txt`, which goes with every page's fonts |
 | `examples/` | the examples |
 | `test/` | the tests: `run.mjs`, `visual.mjs`, `unit/`, `fixtures/`, `expected.json`; `check.mjs` and `diff.mjs`, for other builds; `lib/` |

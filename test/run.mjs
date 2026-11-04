@@ -233,6 +233,7 @@ function check(doc, result, out, aux) {
   if (html.includes('<mjx-container') && statSync(font).size >= statSync(join(root, 'fonts/lmroman10-regular.woff2')).size) {
     problems.push('Latin Modern Roman not cut down to the page\'s characters');
   }
+  if (!existsSync(join(out, 'fonts/LICENSE.txt'))) problems.push('no fonts/LICENSE.txt with the fonts');
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
     problems.push('no MathML for screen readers, with TEX8WEB_MATHML');

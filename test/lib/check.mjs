@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, join, relative } from 'node:path';
 
 // the files of a published page, by extension
-const published = new Set(['.html', '.css', '.js', '.woff2', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.pdf']);
+const published = new Set(['.html', '.css', '.js', '.woff2', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.pdf', '.txt']);
 
 function files(dir) {
   return readdirSync(dir, { recursive: true }).map(f => join(dir, f)).filter(f => statSync(f).isFile());
