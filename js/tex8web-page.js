@@ -302,15 +302,21 @@
     });
     let touch = false;
     document.addEventListener('pointerdown', event => { touch = event.pointerType === 'touch'; });
+    // (as the click comes down to what was tapped: a tap beside the card on
+    // a touch screen only closes it, whatever it lands on)
     document.addEventListener('click', event => {
       const a = link(event.target);
       if (a && touch && a !== shown) {
         event.preventDefault();
         show(a);
       } else if (!card.contains(event.target)) {
+        if (touch && shown && !a) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         hide();
       }
-    });
+    }, true);
     document.addEventListener('keydown', event => { if (event.key === 'Escape') hide(); });
     // (but not for the scroll that brings a focused link into view)
     addEventListener('scroll', () => { if (shown !== document.activeElement) hide(); }, { passive: true });
