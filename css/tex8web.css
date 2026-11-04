@@ -216,8 +216,9 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
    tex8web-boxes.tex sets these on each box (by its id):
    - colors: --tcb-frame, --tcb-back, --tcb-text, --tcb-title-text,
      --tcb-title-back, and for a boxed title --tcb-title-frame;
-   - lengths: --tcb-rule-top (-right, -bottom, -left), --tcb-padding,
-     --tcb-radius, --tcb-title-padding, and for a boxed title
+   - lengths: --tcb-rule-top (-right, -bottom, -left), --tcb-padding
+     (and --tcb-padding-left), --tcb-radius, --tcb-title-padding (and
+     --tcb-title-padding-left), and for a boxed title
      --tcb-title-rule-top (...) and --tcb-title-radius;
    - only where the box has them: --tcb-line-top (...: a borderline),
      --tcb-before and --tcb-after, --tcb-shadow, --tcb-title-shadow,
@@ -305,15 +306,26 @@ dd.enumerate-enumitem { margin-left: 0; }
 
 /* --- links to the page (page.lua) -------------------------------------- */
 
-/* a # in the margin of each heading and theorem, shown on hover (and
+/* a # in the margin of each heading, theorem and box, shown on hover (and
    faintly on touch screens) */
 .tex8web-permalink { position: absolute; transform: translateX(-100%);
     padding-inline-end: 0.3em; color: inherit; font-weight: normal; opacity: 0; }
-:is(h2, h3, h4, h5, h6, .newtheorem):hover .tex8web-permalink, .tex8web-permalink:focus { opacity: 0.4; }
+:is(h2, h3, h4, h5, h6, .newtheorem):hover .tex8web-permalink,
+    .tcolorbox:hover > .tcolorbox-title > .tex8web-permalink, .tex8web-permalink:focus { opacity: 0.4; }
 @media (hover: none) { .tex8web-permalink { opacity: 0.2; } }
+/* (a box's # in the margin too, in the text's color: back past the
+   title's padding and the box's left rule, or beside a boxed title in the
+   middle or at the right. The box's overflow: clip doesn't hide it, as the
+   link's containing block is outside the box) */
+@media (--tex8web-wide) {
+    .tcolorbox-title > .tex8web-permalink { color: var(--tex8web-text);
+        margin-inline-start: calc(-1 * (var(--tcb-title-padding-left) + var(--tcb-rule-left))); }
+    .tex8web-tcb-inline > .tcolorbox-title > .tex8web-permalink {
+        margin-inline-start: calc(-1 * (var(--tcb-padding-left) + var(--tcb-rule-left))); }
+}
 /* what a link leads to: a little space above it, and a tint */
 :target { scroll-margin-top: 1em; }
-:is(h2, h3, h4, h5, h6):target, .newtheorem:has(.head > a:target) {
+:is(h2, h3, h4, h5, h6):target, .newtheorem:has(.head > a:target), .tcolorbox:has(> a:target) {
     background-color: var(--tex8web-highlight); }
 
 /* --- controls and the table of contents (page.lua) -------------------- */
@@ -357,12 +369,12 @@ dd.enumerate-enumitem { margin-left: 0; }
        puts the page back as it reloads) */
     :is(:target, :focus-visible) { scroll-margin-top: calc(3.5rem + 1em); }
     html body { padding-inline: 1.25rem; }
-    /* (no # in a margin this narrow: its link covers the heading or
-       theorem's head instead, under the links in it but over its math,
-       which MathJax positions) */
-    :is(h2, h3, h4, h5, h6, .newtheorem .head) { position: relative; }
+    /* (no # in a margin this narrow: its link covers the heading,
+       theorem's head or box's title instead, under the links in it but
+       over its math, which MathJax positions) */
+    :is(h2, h3, h4, h5, h6, .newtheorem .head, .tcolorbox-title) { position: relative; }
     .tex8web-permalink { z-index: 1; inset: 0; transform: none; color: transparent; }
-    :is(h2, h3, h4, h5, h6, .newtheorem .head) a[href]:not(.tex8web-permalink) { position: relative;
+    :is(h2, h3, h4, h5, h6, .newtheorem .head, .tcolorbox-title) a[href]:not(.tex8web-permalink) { position: relative;
         z-index: 2; }
     /* (transparent rather than hidden, which would take its buttons out
        of reach of the keyboard; the fade below fades to it too) */

@@ -40,9 +40,9 @@ local function anchor(el)
   end
 end
 
--- a # before each heading and each theorem's head, which links to it
--- (make4ht later gives headings ids from their titles, and rewrites links
--- to their anchors to those)
+-- a # before each heading, each theorem's head and each box's title, which
+-- links to it (make4ht later gives headings ids from their titles, and
+-- rewrites links to their anchors to those)
 function M.permalinks(document)
   local heads = document:query_selector(".newtheorem span.head")
   for level = 2, 6 do
@@ -51,6 +51,16 @@ function M.permalinks(document)
   for _, head in ipairs(heads) do
     local id = anchor(head)
     if id then permalink(head, id) end
+  end
+  -- (a box's anchors are before its title, in the box; with a label
+  -- tcolorbox.4ht can make two, and \ref leads to the last)
+  for _, title in ipairs(document:query_selector("div.tcolorbox > div.tcolorbox-title")) do
+    local id
+    for _, child in ipairs(dom.elements(title:get_parent())) do
+      if child == title then break end
+      id = child:get_attribute("id")
+    end
+    if id then permalink(title, id) end
   end
 end
 

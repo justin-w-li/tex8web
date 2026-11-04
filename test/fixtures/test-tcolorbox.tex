@@ -1,0 +1,19 @@
+% A test for tex8web: which tcolorbox boxes get a link at their title. A
+% numbered theorem, labelled or not, and a labelled box do, where a \ref to
+% them leads; an unnumbered theorem, a box in a raster (which numbers its
+% boxes for itself) and a box without a title don't.
+\documentclass{article}
+\usepackage[most]{tcolorbox}
+\newtcbtheorem{theorem}{Theorem}{}{thm}
+\begin{document}
+\begin{theorem}{Labelled}{one}A numbered theorem.\end{theorem}
+\begin{theorem}{Unlabelled}{}Another.\end{theorem}
+\begin{theorem*}{Unnumbered}{}An unnumbered theorem.\end{theorem*}
+\begin{tcolorbox}[title=Labelled box, label=box]A labelled box.\end{tcolorbox}
+\begin{tcbraster}[raster columns=2]
+\begin{tcolorbox}[title=In a raster]A box in a raster.\end{tcolorbox}
+\begin{tcolorbox}[title=Also in a raster]Another.\end{tcolorbox}
+\end{tcbraster}
+\begin{tcolorbox}[label=untitled]A labelled box without a title.\end{tcolorbox}
+See Theorem~\ref{thm:one} and the box~\ref{box}.
+\end{document}
