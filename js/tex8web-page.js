@@ -283,6 +283,9 @@
       const folded = fold(label);
       return `${folded}\n${[...folded].map(c => names[c] ?? c).join('')}`;
     };
+    // (numbered theorems and boxes, by their # links: page.lua)
+    const theorems = '.newtheorem, .tcolorbox';
+    const theoremLinks = '.newtheorem .head > .tex8web-permalink, .tcolorbox > .tcolorbox-title > .tex8web-permalink';
     // (on first use, as the math is typeset by then if MathJax runs in the
     // browser)
     let items;
@@ -292,13 +295,13 @@
         const el = target(a);
         if (el) all.push({ el, href: a.hash, kind: 'heading', label: entryText(a), show: () => entryShown(a) });
       }
-      for (const link of document.querySelectorAll('.newtheorem .head > .tex8web-permalink')) {
+      for (const link of document.querySelectorAll(theoremLinks)) {
         all.push({ el: link.parentElement, href: link.hash, kind: 'theorem',
           label: text(link.parentElement).replace(/\.$/, ''), show: () => shown(link.parentElement) });
       }
       // (not one in a heading or a theorem's head, which is found as that)
       for (const term of document.querySelectorAll('.tex8web-term[id]')) {
-        if (!term.closest('h2, h3, h4, h5, h6, .head')) {
+        if (!term.closest('h2, h3, h4, h5, h6, .head, .tcolorbox-title')) {
           all.push({ el: term, href: `#${term.id}`, kind: 'term', label: text(term), show: () => shown(term) });
         }
       }
@@ -311,7 +314,7 @@
         item.key = key(item.label);
         if (item.kind === 'heading') heading = item;
         else if (item.kind === 'theorem') theorem = item;
-        else if (theorem && item.el.closest('.newtheorem') === theorem.el.closest('.newtheorem')) item.where = theorem;
+        else if (theorem && item.el.closest(theorems) === theorem.el.closest(theorems)) item.where = theorem;
         else item.where = heading;
         if (item.kind !== 'term') return true;
         const once = `${item.key}\n${item.where?.label}`;
@@ -369,7 +372,7 @@
     });
     // (naming only what the page has)
     const kinds = ['section'];
-    if (document.querySelector('.newtheorem .head > .tex8web-permalink')) kinds.push('theorem');
+    if (document.querySelector(theoremLinks)) kinds.push('theorem');
     if (document.querySelector('.tex8web-term[id]')) kinds.push('term');
     input.placeholder = `Find a ${kinds.length > 1 ? `${kinds.slice(0, -1).join(', ')}${kinds.length > 2 ? ',' : ''} or ` : ''}${kinds.at(-1)}`;
   }

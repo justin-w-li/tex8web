@@ -98,6 +98,25 @@
          data-before="\web@thmskip" data-after="\web@thmpostskip"></span>}}%
      \web@mark\HCode{</span>}}
     {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\par\indent\ShowPar}
+% ntheorem's number gets its anchor in the head, as amsthm's does
+% (amsthm.4ht), for page.lua's link: latex.4ht leaves it for a \label to
+% make after the head. Not when the head leaves the number out, as
+% ntheorem's nonumber styles (\newtheorem*) do: their \@begintheorem has
+% no #2
+\ExplSyntaxOn
+\@ifpackageloaded{ntheorem}
+  {
+    \web@needs{:thm}
+    \cs_set_eq:NN \__web_thm: \:thm
+    \cs_set:Npn \:thm
+      {
+        \exp_args:Nee \str_if_in:nnT { \cs_replacement_spec:N \@begintheorem }
+          { \c_hash_str 2 } { \ShowRefstepAnchor }
+        \__web_thm:
+      }
+  }
+  {}
+\ExplSyntaxOff
 
 % --- terms ------------------------------------------------------------------
 

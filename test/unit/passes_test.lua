@@ -134,6 +134,19 @@ return {
     equal(ids, {"term-inner-product", "term-algebra", "term-inner-product-2", "term", "term-hölder-s-inequality"})
   end,
 
+  ["page.permalinks: a # in the title of a box with an anchor of its own, its last"] = function()
+    local d = parse([[<div class="tcolorbox" id="tcolobox-1"><a id="x1-2x"></a><a id="x1-2xdoc"></a>]]
+      .. [[<div class="tcolorbox-title"><p>Theorem 1</p></div><div class="tcolorbox-content"></div></div>]]
+      .. [[<div class="tcolorbox" id="tcolobox-2"><div class="tcolorbox-title"><p>Box</p></div>]]
+      .. [[<div class="tcolorbox-content"><div class="tcolorbox" id="tcolobox-3"><a id="x1-3x1"></a>]]
+      .. [[<div class="tcolorbox-content"><p>Untitled</p></div></div></div></div>]])
+    page.permalinks(d)
+    local links = d:query_selector("a.tex8web-permalink")
+    equal(#links, 1)
+    equal(links[1]:get_attribute("href"), "#x1-2xdoc")
+    equal(links[1]:get_parent():get_attribute("class"), "tcolorbox-title")
+  end,
+
   ["page.controls: the table of contents beside the text, its heading as its title"] = function()
     local d = parse([[<h3 class="likesectionHead" id="contents"><a id="x1-1"></a>Contents</h3>]]
       .. [[<div class="tableofcontents"><span class="sectionToc"><a href="#intro">Intro</a></span></div>]]

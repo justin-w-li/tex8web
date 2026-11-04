@@ -1,0 +1,17 @@
+% A test for tex8web: ntheorem's theorems, which can't share a document with
+% amsthm's. Numbered ones, one with a note, get a link at their head; an
+% unnumbered one (\newtheorem*) doesn't; a \ref leads to the numbered one's
+% head.
+\documentclass{article}
+\usepackage[thmmarks]{ntheorem}
+\theorembodyfont{\itshape}
+\newtheorem{theorem}{Theorem}[section]
+\theorembodyfont{\upshape}
+\newtheorem*{remark}{Remark}
+\begin{document}
+\section{One}
+\begin{theorem}\label{thm:one}A numbered theorem.\end{theorem}
+\begin{theorem}[A note]Another, unlabelled.\end{theorem}
+\begin{remark}An unnumbered remark.\end{remark}
+Theorem~\ref{thm:one} is numbered.
+\end{document}

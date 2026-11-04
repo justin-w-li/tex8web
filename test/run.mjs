@@ -111,6 +111,32 @@ const terms = {
   'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
 };
 
+// links at the heads of numbered theorems and the titles of numbered or
+// labelled boxes, to the anchor a \ref to one leads to; none at an
+// unnumbered one's
+const permalinks = {
+  'test-tcolorbox': [
+    /<a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<!--[^>]*--><p[^>]*>\s*Theorem<span class='tex8web-nbsp'>.<\/span>1:[^]*<a href='#\1'>1</,
+    /<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink'[^>]*>#<\/a>\s*<!--[^>]*--><p[^>]*>\s*Theorem<span class='tex8web-nbsp'>.<\/span>2:/,
+    /<div class='tcolorbox-title'>\s*<!--[^>]*--><p[^>]*>\s*Theorem:/,
+    /<a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<!--[^>]*--><p[^>]*>\s*Labelled box[^]*<a href='#\1'>/,
+    /<div class='tcolorbox-title'>\s*<!--[^>]*--><p[^>]*>\s*In a raster/,
+    /<div class='tcolorbox-title'>\s*<!--[^>]*--><p[^>]*>\s*Also in a raster/,
+  ],
+  'examples/custom': [
+    /<div class='tcolorbox theorem' id='[^']+'><a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>/,
+    /<div class='tcolorbox proof' id='[^']+'>\s*<div class='tcolorbox-title'>\s*<!--/,
+  ],
+  'examples/complex': [
+    /<div class='tcolorbox definition' id='[^']+'><a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<!--[^>]*--><p[^>]*>\s*<span[^>]*>Definition<span class='tex8web-nbsp'>.<\/span>1\.2[^]*Note that <a href='#\1'>Definition/,
+  ],
+  'test-ntheorem': [
+    /<span class='head'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#<\/a><a id='\1'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1\.1<\/span>[^]*<a href='#\1'>1\.1</,
+    /<span class='head'><a [^>]*class='tex8web-permalink'[^>]*>#<\/a><a id='[^']+'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1\.2/,
+    /<span class='head'>\s*<span class='cmbx-10'>Remark</,
+  ],
+};
+
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -139,6 +165,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of terms[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the terms`);
+  }
+  for (const pattern of permalinks[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the links`);
   }
   // (checkOutput checks that every formula has it, once one does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
