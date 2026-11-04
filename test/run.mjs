@@ -98,12 +98,13 @@ const index = {
   ],
 };
 
-// the table of contents beside the text, titled by its heading, with
+// the table of contents beside the text, under the document's title (a link
+// to the top), titled by its heading, with
 // chapters' numbers in their boxes; the list of figures before it left in
 // the text
 const contents = {
   'test-report': [
-    /<nav [^>]*id='tex8web-toc'[^>]*><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
+    /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
     /<\/nav>(?:(?!<\/nav>)[^])*<div class='tableofcontents'>\s*<span class='lofToc'>/,
   ],
 };

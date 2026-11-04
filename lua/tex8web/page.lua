@@ -144,6 +144,13 @@ local function contents(document, body, title)
   end
   local nav = body:create_element("nav", {id = "tex8web-toc", class = "tex8web-toc",
     popover = "auto", ["aria-labelledby"] = "tex8web-toc-title"})
+  -- (the document's title, above the contents', takes the reader to the top)
+  local document_title = document:query_selector("title")[1]
+  if document_title and trim(document_title:get_text()) ~= "" then
+    local a = nav:create_element("a", {class = "tex8web-toc-doctitle", href = "#"})
+    a:add_child_node(a:create_text_node(trim(document_title:get_text())))
+    nav:add_child_node(a)
+  end
   local p = nav:create_element("p", {id = "tex8web-toc-title", class = "tex8web-toc-title"})
   p:add_child_node(p:create_text_node(title))
   nav:add_child_node(p)
