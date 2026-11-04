@@ -7,9 +7,10 @@
 // should line up across its \intertext. And the prerendered page's closer
 // view of pictures should work with the mouse and a finger, the page be no
 // wider than a phone's screen, its bar there come and go as it scrolls,
-// and no math character be clipped.
+// its theme button be there before tex8web-page.js runs, and no math
+// character be clipped.
 //   node test/visual.mjs [document names...]
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -32,7 +33,6 @@ const typesetPage = `(async () => {
   const html = document.documentElement.cloneNode(true);
   html.classList.remove('tex8web-js');
   if (!html.classList.length) html.removeAttribute('class');
-  html.querySelector('.tex8web-theme')?.setAttribute('hidden', 'hidden');
   html.querySelectorAll('[aria-current]').forEach(n => n.removeAttribute('aria-current'));
   html.querySelectorAll('.tex8web-open').forEach(n => n.classList.remove('tex8web-open'));
   html.querySelectorAll('script, style[id^=MJX]').forEach(n => n.remove());
@@ -292,6 +292,23 @@ async function bar(chrome, file) {
     ? [`the bar away ${away.join(', ')} scrolling to 300, 600, 597, 560 and 563px`] : [];
 }
 
+// the theme button: hidden with JavaScript off, as it needs
+// tex8web-page.js, but there before that runs, with the other controls (a
+// long page is drawn well before its deferred scripts run)
+async function themed(chrome, file) {
+  const early = file.replace(/\.html$/, '.early.html');
+  writeFileSync(early, readFileSync(file, 'utf8').replace(/<script [^>]*src='tex8web-page\.js'[^>]*><\/script>/, ''));
+  const problems = [];
+  for (const [url, javascript] of [[file, false], [early, true]]) {
+    const page = await chrome.open(pathToFileURL(url).href, { javascript });
+    const shown = await page.evaluate(`document.querySelector('.tex8web-theme').checkVisibility()`);
+    await page.close();
+    if (shown !== javascript) problems.push(`the theme button ${shown ? 'shown' : 'hidden'} with JavaScript ${javascript ? 'on, before tex8web-page.js runs' : 'off'}`);
+  }
+  rmSync(early);
+  return problems;
+}
+
 // math characters with a clip (css/tex8web.css): there should be none
 async function clipped(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
@@ -356,6 +373,7 @@ async function compare(chrome, doc, built) {
     layout.push(...(await viewing(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await bar(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await themed(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     for (const file of [typeset, join(pre, html)]) {
       layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
     }

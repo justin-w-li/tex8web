@@ -40,7 +40,6 @@
     });
     system.addEventListener('change', label);
     label();
-    button.hidden = false;
   }
 
   // on a wide screen, the contents button hides or shows the column of

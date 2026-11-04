@@ -123,7 +123,7 @@ function M.controls(document, context)
     end
   end
   control(controls, "theme", {class = "tex8web-control tex8web-theme", type = "button",
-    hidden = "hidden", title = "Theme", ["aria-label"] = "Theme"})
+    title = "Theme", ["aria-label"] = "Theme"})
   local children = {controls, toc}
   for _, child in ipairs(body:get_children()) do children[#children + 1] = child end
   dom.set_children(body, children)
