@@ -315,6 +315,20 @@ const permalinks = {
   ],
 };
 
+// amsthm's \qedhere: in a display, its box is the display's tag at the right
+// (MathJax's \square, c25FB) and no box follows the display; a proof
+// without it keeps its own box after the display
+const inProof = title => `>${title}\\.<\\/span>(?:(?!<\\/div>)[^])*`;
+const tagged = title => new RegExp(`${inProof(title)}<mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FB(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/p>\\s*<\\/div>`);
+const qed = {
+  'test-qedhere': [
+    ...['Bracket', 'Star', 'Align star', 'Gather star', 'Numbered', 'Numbered align'].map(tagged),
+    new RegExp(`${inProof('Display, no qedhere')}<\\/mjx-container><\\/span>\\s*□\\s*<\\/p>`),
+    // (once each, in the six tags)
+    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){6}$/,
+  ],
+};
+
 // the fonts preloaded, and no others: the faces of the text (bold
 // headings, italic, \texttt; but not \verb, in the browser's monospace)
 // and MathJax's that the math uses
@@ -373,6 +387,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of colors[doc.name] ?? []) {
     if (!pattern.test(html + styles)) problems.push(`no ${pattern.source} among the colors`);
+  }
+  for (const pattern of qed[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} around the QED boxes`);
   }
   for (const pattern of terms[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the terms`);

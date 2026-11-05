@@ -1,0 +1,47 @@
+% A test for tex8web: amsthm's \qedhere in each place it works, and proofs
+% without it.
+\documentclass{article}
+\usepackage{amsmath,amsthm,enumitem}
+\begin{document}
+\begin{proof}[Plain]
+Ends in text.
+\end{proof}
+\begin{proof}[Display, no qedhere]
+Ends in a display.
+\[ a = b \]
+\end{proof}
+\begin{proof}[Bracket]
+Ends in a display.
+\[ a = b \qedhere \]
+\end{proof}
+\begin{proof}[Star]
+Ends in a display.
+\begin{equation*} a = b \qedhere \end{equation*}
+\end{proof}
+\begin{proof}[Align star]
+Ends in an alignment.
+\begin{align*} a &= b \\ c &= d \qedhere \end{align*}
+\end{proof}
+\begin{proof}[Gather star]
+Ends in a gather.
+\begin{gather*} a = b \\ c = d \qedhere \end{gather*}
+\end{proof}
+\begin{proof}[Numbered]
+Ends in a numbered display.
+\begin{equation} a = b \qedhere \end{equation}
+\end{proof}
+\begin{proof}[Numbered align]
+Ends in a numbered alignment.
+\begin{align} a &= b \\ c &= d \qedhere \end{align}
+\end{proof}
+\begin{proof}[Text]
+Ends in text with a box here. \qedhere
+\end{proof}
+\begin{proof}[List]
+Ends in a list.
+\begin{enumerate}
+\item One.
+\item Two. \qedhere
+\end{enumerate}
+\end{proof}
+\end{document}

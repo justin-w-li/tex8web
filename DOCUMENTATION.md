@@ -179,7 +179,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **Macros MathJax can't read** show in red. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
 - **`\color` for the whole document**, in the preamble or in `\AtBeginDocument`, isn't followed. Neither is `\normalcolor` in a colored group.
 - **tocloft's fonts for lists of figures and tables**, `\cftfigfont` and `\cfttabfont`, aren't followed. Those lists stay in the text's font.
-- **`\qedhere`.** The QED box follows the display instead of sitting at the right margin.
+- **The QED box** of an amsthm proof follows the text instead of sitting at the right margin, and so does a `\qedhere` in text or in a list item. A `\qedhere` in a display puts the box at the display's right, as in the PDF. In `multline` the box goes under the number, not at the end of the last line. After `$$ $$` and `displaymath` the proof still ends with a box below the display.
 - **enumitem.** Labels are right-aligned and hang into the margin. `align=left`, `wide` and `itemindent` aren't followed.
 - **A TikZ picture in display math**, such as a `tikzcd`, is drawn as a picture together with the rest of that display's math.
 - **Delimiters and radicals** can differ slightly in size, since MathJax picks them from its own font.

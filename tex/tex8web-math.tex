@@ -61,7 +61,11 @@
 \cs_set:Npn \AltlDisplay #1 \] {
     \str_if_in:nnTF {#1} {\begin{tikzcd}}
         { \char_set_catcode_alignment:N \& \tex_scantokens:D {#1\]} }
-        { \__web_AltlDisplay:w #1 \] }
+        {
+            \str_if_in:nnTF {#1} {\qedhere}
+                { \__web_qedhere_display:n {#1} }
+                { \__web_AltlDisplay:w #1 \] }
+        }
 }
 
 % amsmath's displays, which tex4ht passes to MathJax as they are, except:
@@ -118,6 +122,7 @@
 \bool_new:N \l__web_numbered_bool
 \bool_new:N \l__web_rows_bool
 \bool_new:N \l__web_number_row_bool
+\bool_new:N \l__web_qed_bool
 \seq_new:N \l__web_envs_seq
 \seq_new:N \l__web_columns_seq
 \tl_new:N \l__web_next_tl
@@ -152,6 +157,7 @@
 }
 \cs_new_protected:Npn \__web_row_start: {
     \bool_set_true:N \l__web_number_row_bool
+    \bool_set_false:N \l__web_qed_bool
     \tl_clear:N \l__web_label_tl
     \tl_clear:N \l__web_tag_tl
 }
@@ -159,11 +165,14 @@
 \cs_new_protected:Npn \__web_row_end: {
     \tl_if_empty:NF \l__web_tag_tl
         { \protected@edef\@currentlabel{\l__web_tag_tl} }
-    \bool_lazy_and:nnT \l__web_numbered_bool \l__web_number_row_bool
+    \bool_lazy_and:nnTF \l__web_numbered_bool \l__web_number_row_bool
         {
             \refstepcounter{equation}
-            \tl_put_right:Ne \l__web_body_tl { \exp_not:N \tag {\theequation} }
+            \bool_if:NTF \l__web_qed_bool
+                { \__web_qed_tag:e { (\theequation) \exp_not:N \\ } }
+                { \tl_put_right:Ne \l__web_body_tl { \exp_not:N \tag {\theequation} } }
         }
+        { \bool_if:NT \l__web_qed_bool { \__web_qed_tag:n {} } }
     \tl_if_empty:NF \l__web_label_tl { \exp_args:No \label {\l__web_label_tl} }
     \__web_row_start:
 }
@@ -205,6 +214,10 @@
                 }
                 { \token_to_str:N \notag } { \bool_set_false:N \l__web_number_row_bool }
                 { \token_to_str:N \nonumber } { \bool_set_false:N \l__web_number_row_bool }
+                { \token_to_str:N \qedhere } {
+                    \__web_qedhere:
+                    \bool_if:NT \l__web_rows_bool { \bool_set_false:N \l__web_number_row_bool }
+                }
                 { \token_to_str:N \\ } { \__web_newline: }
             }
         }
@@ -231,7 +244,46 @@
             { \tl_put_right:Nn \l__web_body_tl { {} } }
     }
 }
-\clist_map_inline:nn { equation, align, align*, gather, gather*, alignat, alignat*,
+% amsthm's \qedhere in a display, which TeX never runs (MathJax gets the
+% source). Without this the proof ends with its own box below the display.
+% Take the box off the proof's stack, as \qedhere does, and give the display
+% a tag of \qedsymbol (macros.lua gives MathJax a default), where amsthm puts
+% it: at the right of the last row, which has no number then, or under the
+% number of an equation. Each tag has its own \label, for the id MathJax
+% makes of it
+\int_new:N \g__web_qed_int
+\cs_new_protected:Npn \__web_qedhere: {
+    \cs_if_exist:NT \QED@stack {
+        \tl_if_empty:NF \QED@stack
+            { \exp_last_unbraced:NV \__web_qedhere:Nnw \QED@stack \q_stop }
+    }
+}
+\cs_new_protected:Npn \__web_qedhere:Nnw #1#2#3 \q_stop {
+    \tl_if_empty:nF {#2} {
+        \bool_set_true:N \l__web_qed_bool
+        \tl_gset:Nn \QED@stack { #1 {} #3 }
+    }
+}
+\cs_new_protected:Npn \__web_qed_tag:n #1 {
+    \int_gincr:N \g__web_qed_int
+    \tl_put_right:Ne \l__web_body_tl {
+        \exp_not:N \tag * { \exp_not:n {#1} \exp_not:N \qedsymbol }
+        \exp_not:N \label { web-qed- \int_use:N \g__web_qed_int }
+    }
+}
+\cs_generate_variant:Nn \__web_qed_tag:n { e }
+\cs_new_protected:Npn \__web_qedhere_display:n #1 {
+    \tl_set:Nn \l_tmpa_tl {#1}
+    \bool_set_false:N \l__web_qed_bool
+    \__web_qedhere:
+    \bool_if:NT \l__web_qed_bool {
+        \tl_clear:N \l__web_body_tl
+        \__web_qed_tag:n {}
+        \exp_args:NNnV \tl_replace_once:Nnn \l_tmpa_tl { \qedhere } \l__web_body_tl
+    }
+    \exp_after:wN \__web_AltlDisplay:w \l_tmpa_tl \]
+}
+\clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
         flalign, flalign*, multline } {
     \cs_if_exist:cT {#1} {
         \RenewDocumentEnvironment{#1}{+!b}{ \__web_display:nn {#1} {##1} }{}
