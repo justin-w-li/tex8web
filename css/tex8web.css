@@ -583,23 +583,25 @@ dd.enumerate-enumitem { margin-left: 0; }
 /* printed, the page is the document, in light mode's colors (the reader's
    theme and system aside) and with its boxes' backgrounds, which browsers
    leave out unless told. None of the controls, the table of contents (no
-   page numbers to give), previews or the closer view of pictures: fixed,
-   they would print on every sheet. Footnotes follow the layout of the
-   sheet's width: after their paragraph on a sheet of paper, as on a narrow
-   screen; beside it only on a sheet as wide as a wide screen, at the
-   paragraph's top, since tex8web-page.js lines them up with their marks
-   for the screen. Page breaks as TeX's: none inside a tcolorbox, a
-   display, a figure or a table, nor after a heading; theorems and framed
-   boxes break, as in the PDF */
+   page numbers to give), # links, previews or the closer view of pictures:
+   fixed, they would print on every sheet. Footnotes follow the layout of
+   the sheet's width: after their paragraph on a sheet of paper, as on a
+   narrow screen; beside what follows it only on a sheet as wide as a wide
+   screen, since tex8web-page.js lines them up with their marks for the
+   screen. What scrolls on a narrow screen, a display, a tabular or
+   verbatim too wide (MathJax's rule, which follows this stylesheet, wins
+   but for !important), runs into the margin as in the PDF rather than
+   losing its end. No page break inside a tcolorbox (tcolorbox's own, unless
+   breakable, which tex8web doesn't know), a display, a figure or a table,
+   nor after a heading; theorems and framed boxes break, as in the PDF */
 @media print {
     :root { color-scheme: light !important; --tex8web-picture-filter: none !important;
-        print-color-adjust: exact; }
+        --tex8web-highlight: transparent; print-color-adjust: exact; }
     .tex8web-controls, .tex8web-toc, .tex8web-preview, .tex8web-viewer, .tex8web-permalink {
         display: none !important; }
     html body { margin-block: 0; padding-inline: 0; }
-    :is(h2, h3, h4, h5, h6, .tex8web-term):target, .newtheorem:has(.head > a:target),
-        .tcolorbox:has(> a:target) { background-color: transparent; }
     .tex8web-sidenote { top: auto !important; }
+    mjx-container[display], div.tabular, pre { overflow: visible !important; }
     .tcolorbox, mjx-container[display], figure, div.table, table { break-inside: avoid; }
-    h2, h3, h4, h5, h6 { break-after: avoid; }
+    h1, h2, h3, h4, h5, h6 { break-after: avoid; }
 }
