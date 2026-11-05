@@ -1,9 +1,9 @@
 // npm run test:visual: each test document and example, prerendered, against
 // the same page typeset by MathJax in the browser, compared screen by
 // screen with JavaScript off (needs Chrome, and the network for MathJax).
-// The two should be identical (test/expected.json may excuse differing
-// screens, never a different number of them); differing screens are
-// saved, as <screen>-browser.png and <screen>-prerendered.png, in
+// The two should be identical (the browser's MathJax measures text as
+// Node's estimates it); differing screens are saved, as
+// <screen>-browser.png and <screen>-prerendered.png, in
 // build/visual/<document>/visual/. In both, the columns of an alignment
 // should line up across its \intertext. And the prerendered page's closer
 // view of pictures should work with the mouse and a finger, the page be no
@@ -15,7 +15,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build, documents, expected, largestFirst, pool, testDir, workers } from './lib/build.mjs';
+import { build, documents, largestFirst, pool, testDir, workers } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
 
 const only = process.argv.slice(2);
@@ -47,6 +47,34 @@ const typesetPage = `(async () => {
   style.textContent = css;
   html.querySelector('head').append(style);
   return '<!DOCTYPE html>' + html.outerHTML;
+})()`;
+
+// MathJax in the browser measuring text as MathJax in Node estimates it
+// (text in math that MathJax has no glyphs for, as \text's in a \colorbox):
+// so that the two pages can be compared exactly. Run before the page's
+// scripts, it sets the measures once the adaptor exists, at pageReady
+// (internal: the lite adaptor's nodeSize, and its nodeBBox of nothing)
+const nodeMeasures = `(() => {
+  const cjk = new RegExp(["[","\\u1100-\\u115f","\\u2329\\u232a","\\u2e80-\\u303e","\\u3040-\\u3247","\\u3250-\\u4dbf",
+    "\\u4e00-\\ua4c6","\\ua960-\\ua97c","\\uac00-\\ud7a3","\\uf900-\\ufaff","\\ufe10-\\ufe19","\\ufe30-\\ufe6b",
+    "\\uff01-\\uff60\\uffe0-\\uffe6","\\u{1b000}-\\u{1b001}","\\u{1f200}-\\u{1f251}","\\u{20000}-\\u{3fffd}","]"].join(""), "gu");
+  let config;
+  Object.defineProperty(window, 'MathJax', { configurable: true, get: () => config, set(value) {
+    config = value;
+    const startup = value?.startup;
+    if (!startup || startup.tex8webMeasures) return;
+    startup.tex8webMeasures = true;
+    const pageReady = startup.pageReady;
+    startup.pageReady = function () {
+      const adaptor = MathJax.startup.adaptor;
+      adaptor.nodeSize = node => {
+        const text = adaptor.textContent(node), other = Array.from(text.replace(cjk, '')).length;
+        return [Array.from(text).length - other + other * 0.6, 0.8];
+      };
+      adaptor.nodeBBox = () => ({ left: 0, right: 0, top: 0, bottom: 0 });
+      return pageReady ? pageReady.call(this) : MathJax.startup.defaultPageReady();
+    };
+  } });
 })()`;
 
 // the alignments split at an \intertext whose columns don't line up across
@@ -483,9 +511,9 @@ async function compare(chrome, doc, ok) {
   if (!ok && !existsSync(join(pre, `${doc.tex.replace(/\.tex$/, '')}.html`))) {
     return { lines: [`not ok - ${doc.name}`, '    build failed'], failed: true };
   }
-  const problems = [], layout = [];
+  const problems = [];
   for (const html of readdirSync(pre).filter(f => f.endsWith('.html'))) {
-    const page = await chrome.open(pathToFileURL(join(browser, html)).href);
+    const page = await chrome.open(pathToFileURL(join(browser, html)).href, { before: nodeMeasures });
     const typeset = join(browser, html.replace(/\.html$/, '.typeset.html'));
     writeFileSync(typeset, await page.evaluate(typesetPage));
     await page.close();
@@ -496,20 +524,19 @@ async function compare(chrome, doc, ok) {
       const page = await chrome.open(pathToFileURL(file).href, { javascript: false, height: screen });
       const name = relative(dir, file);
       for (const [text, a, b] of await page.evaluate(misaligned)) {
-        layout.push(`${name}: columns at ${a.join(', ')} before "${text}", ${b.join(', ')} after`);
+        problems.push(`${name}: columns at ${a.join(', ')} before "${text}", ${b.join(', ')} after`);
       }
       const n = await page.evaluate(clipped);
-      if (n) layout.push(`${name}: ${n} math characters clipped`);
+      if (n) problems.push(`${name}: ${n} math characters clipped`);
       if (file !== typeset) {
-        for (const [id, gap, want] of await page.evaluate(spaced)) layout.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
-        if (await page.evaluate(themeShown)) layout.push(`${html}: the theme button shown with JavaScript off`);
+        for (const [id, gap, want] of await page.evaluate(spaced)) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
+        if (await page.evaluate(themeShown)) problems.push(`${html}: the theme button shown with JavaScript off`);
       }
       shots.push(await page.screens());
       await page.close();
     }
     const [a, b] = shots;
-    // (a screen more or less is never a known difference)
-    if (a.length !== b.length) layout.push(`${html}: ${a.length} screens in the browser, ${b.length} prerendered`);
+    if (a.length !== b.length) problems.push(`${html}: ${a.length} screens in the browser, ${b.length} prerendered`);
     const differing = [];
     a.forEach((shot, i) => {
       if (shot === b[i]) return;
@@ -521,14 +548,9 @@ async function compare(chrome, doc, ok) {
     });
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
     for (const check of [viewing, phone, themed, printed, filtering, naming, touching]) {
-      layout.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+      problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     }
   }
-  const known = expected[doc.name]?.visual;
-  if (problems.length && known && !layout.length) {
-    return { lines: [`ok - ${doc.name} # known: ${known}`, ...problems.map(p => `    ${p}`)], failed: false };
-  }
-  problems.unshift(...layout);
   return { lines: [`${problems.length ? 'not ok' : 'ok'} - ${doc.name}`, ...problems.map(p => `    ${p}`)],
     failed: problems.length > 0 };
 }

@@ -1,4 +1,4 @@
-// Headless Chrome over the DevTools protocol, for test/visual.mjs. The
+// Headless Chrome over the DevTools protocol, for test:visual and shots.mjs. The
 // profile directory is removed however the process ends.
 //   const chrome = await launch();
 //   const page = await chrome.open('file:///…/page.html', { javascript: false });
@@ -70,13 +70,15 @@ export async function launch() {
   const browser = await connect(version.webSocketDebuggerUrl);
 
   return {
-    async open(url, { javascript = true, width = 1000, height = 900, colorScheme = 'light' } = {}) {
+    async open(url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before } = {}) {
       const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
       const page = await connect(`ws://127.0.0.1:${port}/devtools/page/${targetId}`);
       await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
       await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
       if (!javascript) await page.send('Emulation.setScriptExecutionDisabled', { value: true });
       await page.send('Page.enable');
+      // (a script to run before the page's own)
+      if (before) await page.send('Page.addScriptToEvaluateOnNewDocument', { source: before });
       await page.send('Page.navigate', { url });
       const evaluate = async expression => {
         const r = await page.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
