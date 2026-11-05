@@ -33,7 +33,7 @@ Most documents need no config of their own. When the build asks for one, or you 
 - class notes with their own colors and boxes;
 - a long, heavily customized document.
 
-`npm run examples` builds them into `examples/<name>/build/html`.
+`npm run examples` builds them into `examples/<name>/build`.
 
 ## Documentation
 

@@ -1,12 +1,8 @@
 {
   "examples/complex": {
-    "why": "tex4ht doesn't convert the pictures in its side-by-side code boxes (tcolorbox listings), and MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat, \\Sum and its relatives)",
+    "why": "MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat and \\passtonextarg)",
     "allow": [
-      "make4ht exited with 1",
-      "x.svg doesn't exist",
-      ": missing main",
-      "left undefined for MathJax, which can't read their definitions: \\cvc",
-      "macros MathJax doesn't know: "
+      "left undefined for MathJax, which can't read their definitions: \\cvc"
     ]
   }
 }

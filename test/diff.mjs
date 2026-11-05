@@ -3,7 +3,7 @@
 // difference is), the lines of its stylesheets, and the files added,
 // removed or changed. Sections with the same first difference are listed
 // together. Left out: fonts/, which tex8web copies unchanged, and the PDF,
-// whose dates differ in every build.
+// whose dates differ in every build. Fails if anything changed.
 //   node test/diff.mjs <old html directory> <new html directory>
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
@@ -74,8 +74,13 @@ function diffPage(a, b) {
 
 // the lines only in a or only in b, in order (a longest common subsequence)
 function diffLines(a, b) {
-  const [x, y] = [a.split('\n'), b.split('\n')];
-  const lcs = Array.from({ length: x.length + 1 }, () => new Uint16Array(y.length + 1));
+  let [x, y] = [a.split('\n'), b.split('\n')];
+  // (what both start and end with left out, as the table is their product)
+  let start = 0, end = 0;
+  while (start < Math.min(x.length, y.length) && x[start] === y[start]) start++;
+  while (end < Math.min(x.length, y.length) - start && x[x.length - 1 - end] === y[y.length - 1 - end]) end++;
+  [x, y] = [x.slice(start, x.length - end), y.slice(start, y.length - end)];
+  const lcs = Array.from({ length: x.length + 1 }, () => new Uint32Array(y.length + 1));
   for (let i = x.length - 1; i >= 0; i--) {
     for (let j = y.length - 1; j >= 0; j--) {
       lcs[i][j] = x[i] === y[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
@@ -110,3 +115,4 @@ for (const file of new Set([...old, ...now])) {
   else if (ext === '.css') out.push(...diffLines(a.toString(), b.toString()));
 }
 console.log(out.length ? out.join('\n') : 'unchanged');
+process.exit(out.length ? 1 : 0);

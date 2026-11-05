@@ -178,7 +178,7 @@ These are deliberate:
 
 ## Examples
 
-`npm run examples` builds each into `examples/<name>/build/html`. The examples, with their sources:
+`npm run examples` builds each into `examples/<name>/build/html`, and its PDF into `examples/<name>/build/pdf`, and fails if a page or PDF is missing. The examples, with their sources:
 
 | Example | Source | Shows |
 | --- | --- | --- |
@@ -208,9 +208,10 @@ Each `main.tex` names its source, license and changes at the top.
   - no image with tex4ht's made-up alt text (PIC, [Picture]);
   - nothing but published files in the output.
 
-  It also builds one document for MathJax in the browser. `test/expected.json` lists the known problems a document is allowed, with the reason. `node test/run.mjs <name>` checks one document.
+  It also builds one document for MathJax in the browser. `test/expected.json` lists the known problems a document is allowed, with the reason; one that no longer happens fails, until it's taken out. Each document's make4ht log is kept in `build/test/<document>/make4ht.log`, and a build still running after five minutes, which has hung, is stopped with all it started. `node test/run.mjs <name>` checks one document.
 - **`node test/check.mjs <html directory> [make4ht log]`** makes the same checks of any build's pages (and of make4ht's log), and fails if one fails.
-- **`node test/diff.mjs <old> <new>`** says what changed between two builds of a page: the sections that differ, with how many of their formulas and their first difference (sections with the same one together, and a section whose heading changed as one), the stylesheets' changed lines, and the files added or removed. A rebuild of a document's page that shouldn't change it should print `unchanged`.
+- **`node test/diff.mjs <old> <new>`** says what changed between two builds of a page: the sections that differ, with how many of their formulas and their first difference (sections with the same one together, and a section whose heading changed as one), the stylesheets' changed lines, and the files added or removed. A rebuild of a document's page that shouldn't change it should print `unchanged`; it fails otherwise.
+- **`node test/shots.mjs <out> <page or html directory>`** takes the screenshots a visual change is checked with: each page whole, 1400 and 390px wide, light and dark, with JavaScript on. **`node test/shots.mjs <out> <old> <new>`** compares two builds' pages that way, screen by screen, saves the screens that differ (`-old.png`, `-new.png`), and fails if any do: the check that a change which shouldn't show doesn't, when `diff.mjs` finds the HTML changed. The PDF's page to set beside them: `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
 - **`npm run test:visual`** (needs Chrome and the network) builds each document twice, prerendered and for the browser. It compares the two in headless Chrome, screen by screen, with JavaScript off, once each page and its fonts are loaded; they must be identical, with the browser's MathJax measuring text it has no glyphs for as prerendering estimates it (see the known limitations). Differing screens are saved in `build/visual/<document>/visual/`. It builds into `build/visual/`, apart from `npm test`'s builds, and compares each document as soon as its two builds are done. In both, an alignment's columns must line up across its `\intertext`. On the prerendered page, the closer view of pictures is driven with the mouse: which pictures open it, fitting the screen, the wheel and a double-click zooming around the pointer (the double-click's point checked midway too), dragging within the bounds, the picture drawn again at its size, and closing; then, on a phone's screen, a tap opening it, a double tap zooming in and turning the phone. Every page must also be no wider than a phone's screen (390px), its bar there going away and coming back as it scrolls but not for a turn of a few pixels, its theme button hidden with JavaScript off but shown before `tex8web-page.js` runs, printed from dark mode in light mode's colors and without the controls, and on paper with its footnotes after their paragraphs and nothing that scrolls, a theorem, list or framed box under a heading as far below it as in the PDF, with no math character clipped, in both pages. A change to the math path (MathJax's configuration, tex8web.js, prerendering, the macro bridge) needs it; others change both pages alike.
 - **The visual checklist:** `test/fixtures/test.tex` is an ordinary article that touches what a tex4ht + MathJax conversion tends to get wrong. Its PDF is the reference:
 
@@ -343,4 +344,4 @@ A report: a list of figures before the table of contents, a part, two chapters w
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern (roman, sans and mono), as WOFF2, and `LICENSE.txt`, which goes with every page's fonts |
 | `examples/` | the examples |
-| `test/` | the tests: `run.mjs`, `visual.mjs`, `unit/`, `fixtures/`, `expected.json`; `check.mjs` and `diff.mjs`, for other builds; `lib/` |
+| `test/` | the tests: `run.mjs`, `visual.mjs`, `unit/`, `fixtures/`, `expected.json`; `check.mjs`, `diff.mjs` and `shots.mjs`, for other builds; `lib/` |

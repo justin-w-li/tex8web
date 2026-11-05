@@ -2,7 +2,7 @@
 // with make4ht and checked. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build, documents, expected, largestFirst, pool, root, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -11,11 +11,13 @@ const only = process.argv.slice(2);
 let failures = 0;
 
 // problems test/expected.json lists for a document (allow: substrings of
-// them, why: the reason) are reported but don't fail it
+// them, why: the reason) are reported but don't fail it; one listed that
+// no longer happens does, so that the list stays true
 function report(name, problems) {
   const { allow = [], why } = expected[name] || {};
   const known = problems.filter(p => allow.some(a => p.includes(a)));
   const failed = problems.filter(p => !known.includes(p));
+  for (const a of allow.filter(a => !problems.some(p => p.includes(a)))) failed.push(`allowed in test/expected.json, but fixed: ${a}`);
   console.log(`${failed.length ? 'not ok' : 'ok'} - ${name}${known.length ? ` # known: ${why}` : ''}`);
   for (const problem of [...new Set(failed)].slice(0, 12)) console.log(`    ${problem}`);
   failures += failed.length ? 1 : 0;
@@ -246,7 +248,8 @@ const preloads = {
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
   const problems = [];
-  if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
+  // (unless an error in its log, which checkLog reports, says why)
+  if (result.code !== 0 && !/\[(ERROR|FATAL)\]/.test(result.log)) problems.push(`make4ht exited with ${result.code}`);
   const css = join(out, doc.tex.replace(/\.tex$/, '.css'));
   const styles = existsSync(css) ? readFileSync(css, 'utf8') : '';
   for (const [property, value] of Object.entries(measured[doc.name] ?? {})) {
@@ -294,7 +297,7 @@ function check(doc, result, out, aux) {
   // (prerender.mjs cuts Latin Modern down to the document's characters;
   // test:visual checks that the page looks the same)
   const font = join(out, 'fonts/lmroman10-regular.woff2');
-  if (html.includes('<mjx-container') && statSync(font).size >= statSync(join(root, 'fonts/lmroman10-regular.woff2')).size) {
+  if (html.includes('<mjx-container') && statSync(font, { throwIfNoEntry: false })?.size >= statSync(join(root, 'fonts/lmroman10-regular.woff2')).size) {
     problems.push('Latin Modern Roman not cut down to the page\'s characters');
   }
   if (!existsSync(join(out, 'fonts/LICENSE.txt'))) problems.push('no fonts/LICENSE.txt with the fonts');
@@ -311,6 +314,7 @@ const docs = documents().filter(doc => !only.length || only.includes(doc.name));
 const jobs = largestFirst(docs).map(doc => async () => {
   const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
   const result = await build(doc, out, aux, { TEX8WEB_MATHML: '1' });
+  writeFileSync(join(testDir(doc), 'make4ht.log'), result.log);
   report(doc.name, check(doc, result, out, aux));
 });
 

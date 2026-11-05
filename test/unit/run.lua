@@ -38,7 +38,12 @@ function equal(actual, expected)
 end
 
 local failed, passed = 0, 0
-for _, file in ipairs({"preamble_test", "passes_test", "assets_test", "index_test"}) do
+local files = {}
+for file in lfs.dir(here) do
+  files[#files + 1] = file:match("^(.+_test)%.lua$")
+end
+table.sort(files)
+for _, file in ipairs(files) do
   local tests = require(file)
   local names = {}
   for name in pairs(tests) do names[#names + 1] = name end

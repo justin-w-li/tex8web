@@ -44,6 +44,16 @@ export const largestFirst = docs => docs.map(doc => [doc, statSync(join(doc.dir,
 // of the machine to other work (a laptop's performance cores are often four)
 export const workers = Math.min(4, Math.max(2, availableParallelism() >> 1));
 
+// builds running, each in a process group of its own (so that one that
+// hangs is killed with what it started: LaTeX, Node, dvisvgm), which Ctrl-C
+// doesn't reach: killed as this process ends
+const running = new Set();
+process.on('exit', () => running.forEach(pid => { try { process.kill(-pid, 'SIGKILL'); } catch {} }));
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(1));
+// a build taking longer has hung (the longest test build takes under a
+// minute)
+const deadline = 300;
+
 // runs make4ht on a document, with the page in out and tex4ht's files in
 // aux (both absolute). make4ht reads the -B directory as a Lua pattern when
 // it copies to -d, so both are passed relative to the document, where
@@ -62,11 +72,20 @@ export async function build(doc, out, aux, env = {}) {
   const args = ['-u', '-c', relative(doc.dir, doc.cfg), '-e', relative(doc.dir, join(root, 'tex8web.mk4')),
     '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out), doc.tex];
   return new Promise(done => {
-    const child = spawn('make4ht', args, { cwd: doc.dir, env: { ...process.env, ...env } });
+    const child = spawn('make4ht', args, { cwd: doc.dir, env: { ...process.env, ...env }, detached: true });
+    running.add(child.pid);
     let log = '';
+    const timer = setTimeout(() => {
+      log += `\n[FATAL] make4ht timed out after ${deadline}s, at: ${log.trim().split('\n').pop()}\n`;
+      process.kill(-child.pid, 'SIGKILL');
+    }, deadline * 1000);
     child.stdout.on('data', d => log += d);
     child.stderr.on('data', d => log += d);
-    child.on('close', code => done({ code, log: log.replace(/\x1b\[[0-9;]*m/g, '') }));
+    child.on('close', code => {
+      clearTimeout(timer);
+      running.delete(child.pid);
+      done({ code, log: log.replace(/\x1b\[[0-9;]*m/g, '') });
+    });
   });
 }
 
