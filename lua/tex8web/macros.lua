@@ -18,8 +18,8 @@ local fallbacks = {
 
 -- MathJax names colors as CSS and dvips do, and has no xcolor. The math's
 -- colors it would get wrong are given as \definecolor lines: the document's
--- own and xcolor's, and mixes like red!50!black, from the "name hex" pairs
--- tex8web-page.tex wrote, as rgb fractions (colors MathJax has right are left out)
+-- own and xcolor's, and mixes like red!50!black, from the "name r,g,b" rgb
+-- fractions tex8web-page.tex wrote (colors MathJax has right are left out)
 local css = {red = "FF0000", blue = "0000FF", cyan = "00FFFF", magenta = "FF00FF",
   yellow = "FFFF00", black = "000000", white = "FFFFFF", gray = "808080"}
 

@@ -46,7 +46,7 @@ function tex8web(config, tex) {
   loader['[tex]/color'] = {...loader['[tex]/color'], ready: addColorModels};
   function addColorModels() {
     const {ColorModel} = MathJax._.input.tex.color.ColorUtil;
-    const {TexError} = MathJax._.input.tex.TexError;
+    const TexError = MathJax._.input.tex.TexError.default;
     const normalizeColor = ColorModel.prototype.normalizeColor;
     ColorModel.prototype.normalizeColor = function (model, value) {
       const spec = colorModels[model];
@@ -291,12 +291,13 @@ function tex8web(config, tex) {
   // macros.lua's definitions (the page's #tex8web-macros, as text), given
   // to MathJax before any math, which ui/lazy may typeset in any order
   // (internal: ui/lazy compiles math without a node, as tex2mml's is, at
-  // once). A TeX error in one leaves the ones after it undefined
+  // once), and as a promise, as a \definecolor loads the color extension.
+  // A TeX error in one leaves the ones after it undefined
   const pageReady = startup.pageReady;
-  startup.pageReady = function () {
+  startup.pageReady = async function () {
     const doc = MathJax.startup.document;
     const [macros] = doc.adaptor.getElements(['#tex8web-macros'], doc.document);
-    const mml = macros ? MathJax.tex2mml(doc.adaptor.textContent(macros)) : '';
+    const mml = macros ? await MathJax.tex2mmlPromise(doc.adaptor.textContent(macros)) : '';
     if (mml.includes('<merror')) console.warn('tex8web: a TeX error in a macro definition:', mml);
     return pageReady ? pageReady() : MathJax.startup.defaultPageReady();
   };

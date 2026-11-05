@@ -161,14 +161,19 @@ const colors = {
   // \rowcolors' alternating rows, from the row it starts at, then
   // \columncolor, \rowcolor[HTML], \cellcolor, and a \rowcolor on a
   // \multicolumn's row
+  // (xcolor without colortbl, whose extension would bring MathJax's color
+  // extension with it: a document's color, one \colorlet names, a model)
+  'test-color-math': ['#c80064', '#00ff00', '#3366cc'].map(hex =>
+    new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
   'test-colortbl': [
-    ...[['1-1', 'FFE5E5'], ['1-2', 'E5E5FF'], ['1-3', 'FFE5E5'], ['2-2', 'E5FFE5'], ['2-4', 'E5FFE5'],
-      ['4-1', 'DDEEFF'], ['5-2', 'BFFFBF']].map(([row, hex]) =>
-      new RegExp(`#TBL-${row}- td\\{ background-color:${lightDark(`#${hex}`, 'min\\(l, 1\\.24 - l\\)')}\\}`)),
-    ...[['3-1-1', 'CCFFCC'], ['3-2-1', 'CCFFCC'], ['4-2-1', 'F1BFD8'], ['5-1-1', 'F1BFD8']].map(([cell, hex]) =>
-      new RegExp(`#TBL-${cell}\\{ background-color:${lightDark(`#${hex}`, 'min\\(l, 1\\.24 - l\\)')}\\}`)),
+    // (\rowcolors' on the rows, under the cells' colors)
+    ...[['1-1-', 'FFE5E5'], ['1-2-', 'E5E5FF'], ['1-3-', 'FFE5E5'], ['2-2-', 'E5FFE5'], ['2-4-', 'E5FFE5'],
+      ['6-1-', 'FFE5E5'], ['6-2-', 'E5E5FF'], ['4-1- td', 'DDEEFF'], ['5-2- td', 'BFFFBF'], ['6-2- td', '00FF00'],
+      ['3-1-1', 'CCFFCC'], ['3-2-1', 'CCFFCC'], ['4-2-1', 'F1BFD8'], ['5-1-1', 'F1BFD8'], ['6-1-2', 'FFFF00']]
+      .map(([selector, hex]) =>
+        new RegExp(`#TBL-${selector}\\{ background-color:${lightDark(`#${hex}`, 'min\\(l, 1\\.24 - l\\)')}\\}`)),
     // (\rowcolors{2}{}{...} leaves the first row and every odd one without)
-    /^(?![^]*#TBL-2-(?:1|3|5)- td)/,
+    /^(?![^]*#TBL-2-(?:1|3|5)-\{)/,
   ],
 };
 

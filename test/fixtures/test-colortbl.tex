@@ -2,7 +2,8 @@
 % \rowcolors (the table option) gives alternating rows a background;
 % colortbl loaded before xcolor, as some documents do; \cellcolor,
 % \rowcolor (also in HTML model) and \columncolor, and a \multicolumn
-% in a colored row.
+% in a colored row; \rowcolors' commands for each row ([\hline]) left out,
+% and a \cellcolor and a \rowcolor over its rows.
 \documentclass{article}
 \usepackage{colortbl}
 \usepackage[table]{xcolor}
@@ -34,4 +35,10 @@ three & four \\
 \multicolumn{2}{c}{\cellcolor{ink!25}head} \\
 \rowcolor{green!25}\multicolumn{2}{c}{x} \\
 \end{tabular}
+
+{\rowcolors[\hline]{1}{red!10}{blue!10}
+\begin{tabular}{ll}
+a & \cellcolor{yellow} b \\
+\rowcolor{green} c & d \\
+\end{tabular}}
 \end{document}

@@ -162,19 +162,21 @@
                 % new array runs a row's hooks (which colortbl's \rowcolors uses), and
                 % old array's \everycr, that xcolor.4ht used, from its own \halign; tex4ht
                 % builds another, so call it as tex4ht starts a row (\halignTR) instead
-                % (html4.4ht's \Configure{rowcolors} also never draws the color)
+                % (html4.4ht's \Configure{rowcolors} also never draws the color). The
+                % color goes on the row, under a \rowcolor's or \cellcolor's on its
+                % cells, as in the PDF; and without \rowcolors' commands for each row
+                % ([\hline]), which can't run there
                 \cs_new_protected:Npn \__web_row_color:n #1
-                    { \add:color { background-color } {#1} { \HRow - ~ td } }
+                    { \add:color { background-color } {#1} { \HRow - } }
                 \Configure { rowcolors } { \__web_row_color:n }
+                \cs_set_eq:NN \__web_rowcolors:w \rowc@l@rs
+                \cs_set:Npn \rowc@l@rs [ #1 ] { \__web_rowcolors:w [ ] }
                 \cs_new_protected:Npn \__web_row_colors:
                     {
-                        \cs_if_exist:NT \@rowc@lors
-                            {
-                                \group_begin:
-                                    \cs_set_eq:NN \o:noalign: \use:n
-                                    \@rowc@lors
-                                \group_end:
-                            }
+                        \group_begin:
+                            \cs_set_eq:NN \o:noalign: \use:n
+                            \@rowc@lors
+                        \group_end:
                     }
                 \append:def \halignTR { \__web_row_colors: }
             }

@@ -105,14 +105,14 @@
     and tex8web needs updating for it}}
 
 % xcolor: the names of the colors the document defines (\definecolor,
-% \colorlet, \providecolor and the sets all end in \XC@definecolor), for
-% tex8web-page.tex to give MathJax their values (a name's macros expanded,
-% as xcolor does); and whether xcolor came before colortbl, which doesn't
-% load it, but colortbl.4ht does, after the document's colors that the color
-% package made, which xcolor can't read (for colortbl's cells only: math
-% gets only the colors recorded here). The options dvipsnames, svgnames and
-% x11names define their colors as xcolor loads, before its hook below, so
-% the wrapper goes in as their files are read
+% \colorlet, \providecolor and the sets all log the name with \XC@logdef,
+% expanded), once each, for tex8web-page.tex to give MathJax their values;
+% and whether xcolor came before colortbl, which doesn't load it, but
+% colortbl.4ht does, after the document's colors that the color package
+% made, which xcolor can't read (for colortbl's cells). The options
+% dvipsnames, svgnames and x11names define their colors as xcolor loads,
+% before its hook below, so the wrapper goes in as their files are read
+% (which the color package's dvips driver also reads, before xcolor)
 \ExplSyntaxOn
 \clist_new:N \g__web_colors_clist
 \bool_new:N \g__web_xcolor_bool
@@ -127,16 +127,24 @@
     }
 \bool_new:N \g__web_record_bool
 \cs_new_protected:Npn \__web_record_colors: {
-    \bool_if:NF \g__web_record_bool
+    \bool_lazy_or:nnF { \g__web_record_bool } { ! \cs_if_exist_p:N \XC@logdef }
         {
             \bool_gset_true:N \g__web_record_bool
-            \cs_gset_eq:NN \__web_definecolor:w \XC@definecolor
-            \cs_gset:Npn \XC@definecolor [ ##1 ] ##2 {
-                \clist_gput_right:Ne \g__web_colors_clist {##2}
-                \__web_definecolor:w [ ##1 ] {##2}
+            \cs_gset_eq:NN \__web_logdef:n \XC@logdef
+            \cs_gset:Npn \XC@logdef ##1 {
+                \__web_note_color:e {##1}
+                \__web_logdef:n {##1}
             }
         }
 }
+\cs_new_protected:Npn \__web_note_color:n #1 {
+    \cs_if_exist:cF { __web_color_ #1 : }
+        {
+            \cs_gset:cpn { __web_color_ #1 : } { }
+            \clist_gput_right:Nn \g__web_colors_clist {#1}
+        }
+}
+\cs_generate_variant:Nn \__web_note_color:n { e }
 \AddToHook { package/xcolor/after } { \__web_record_colors: }
 \clist_map_inline:nn { dvipsnam.def, svgnam.def, x11nam.def }
     { \AddToHook { file/#1/before } { \__web_record_colors: } }
