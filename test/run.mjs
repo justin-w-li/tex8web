@@ -76,6 +76,14 @@ const typeset = {
   ],
 };
 
+// what screen readers hear: ClearSpeak's words, | as "given", no "normal"
+// before an upright letter, Δ as "Delta", and A^\top as "A transpose"
+const speech = {
+  'test': [/aria-label='P of open paren A given B close paren'/, /aria-label='Gamma of z'/,
+    /aria-label='d x'/, /aria-label='Delta of S'/, /aria-label='A transpose'/,
+    /^(?![^]*down tack)/, /aria-label='x sub i transpose'/],
+};
+
 // pictures sized by \includegraphics's width, scale or height: a share of
 // the PDF's text width, which holds as a narrower screen reflows the text
 const share = (alt, fraction) => new RegExp(`<img alt='${alt}' [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${fraction.replace('.', '\\.')}\\)'`);
@@ -323,6 +331,9 @@ function check(doc, result, out, aux) {
   if (doc.name.startsWith('examples/') && !/<title>\s*\S/.test(html)) problems.push('no <title>');
   for (const pattern of typeset[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} in the typeset math`);
+  }
+  for (const pattern of speech[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the speech`);
   }
   for (const pattern of pictures[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);

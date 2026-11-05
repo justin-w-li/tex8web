@@ -21,6 +21,10 @@
 %   document; readers can turn speech on in MathJax's menu). Screen readers
 %   get each formula as MathML (assistiveMml, which MathJax leaves off when
 %   speech is on by default)
+% - speech, prerendered or from the menu, in ClearSpeak's words, with |
+%   read as "given", as in P(A | B), rather than "divides", and \Delta as
+%   "Delta" rather than "triangle". The menu's own setting would otherwise
+%   replace the speech's rules with ClearSpeak's defaults
 \def\web@extensions{"mathtools"}
 \def\web@load{"[tex]/mathtools"}
 \@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
@@ -32,7 +36,9 @@
 \edef\web@mathjax{{
     "loader": {"load": ["ui/lazy", \web@load]},
     "options": {"menuOptions": {"settings": {"enrich": false, "speech": false,
-        "braille": false, "assistiveMml": true}}},
+        "braille": false, "assistiveMml": true,
+        "speechRules": "clearspeak-VerticalLine_Given:TriangleSymbol_Delta"}},
+        "sre": {"domain": "clearspeak", "style": "VerticalLine_Given:TriangleSymbol_Delta"}},
     "tex": {"tags": "none", "packages": {"[+]": [\web@extensions]},
         "macros": {"colon": "\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}",
             "relax": ""}},

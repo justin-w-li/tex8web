@@ -193,10 +193,35 @@ adaptor.replace(stylesheet, style);
 // defined, among them macros.lua's, which tex8web.js gives it only once: a
 // \def in the math has its meaning in the speech of what comes before it)
 MathJax.texReset();
+
+// For the speech only, and so only while it is typeset, the math is
+// adjusted for the speech rule engine. TeX's upright letters (Γ, a
+// \mathrm{d}) lose MathJax's mathvariant="normal", which it speaks as
+// "normal Gamma". And A^\top, which it speaks as "A raised to the down tack
+// power", becomes A then the word "transpose" (but not on an operator,
+// as in \int^\top)
+const tex = MathJax.startup.document.inputJax.find(jax => jax.name === 'TeX');
+const { OP } = MathJax._.core.MmlTree.MmlNode.TEXCLASS;
+const tokenText = node => node.isToken ? node.getText() : node.childNodes.length === 1 ? tokenText(node.childNodes[0]) : '';
+const forSpeech = ({ data }) => data.root.walkTree(node => {
+  const factory = data.nodeFactory;
+  if (node.isKind('mi') && node.attributes.getExplicit('mathvariant') === 'normal') {
+    node.attributes.unset('mathvariant');
+  } else if (node.isKind('msup') || node.isKind('msubsup')) {
+    const [base, sub, sup] = [node.base, node.sub, node.sup].map(i => node.childNodes[i]);
+    if (!sup || !['⊤', '⊺'].includes(tokenText(sup))) return;
+    if (base.isEmbellished && base.coreMO().texClass === OP) return;
+    const scripted = node.isKind('msup') ? base : factory.create('node', 'msub', [base, sub]);
+    node.parent.replaceChild(factory.create('node', 'mrow',
+      [scripted, factory.create('token', 'mtext', {}, 'transpose')]), node);
+  }
+});
+tex.postFilters.add(forSpeech);
 Object.assign(MathJax.config.options, { enableEnrichment: true, enableSpeech: true },
   mathml && { enableAssistiveMml: false });
 const spoken = MathJax.startup.getDocument(html);
 await spoken.renderPromise();
+tex.postFilters.remove(forSpeech);
 const items = [...MathJax.startup.document.math];
 [...spoken.math].forEach(({ outputData: { speech } }, i) => {
   const container = items[i].typesetRoot;

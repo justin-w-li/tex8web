@@ -194,7 +194,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.
 - **imakeidx's `program`** isn't followed: makeindex always runs. Its `splitindex` option isn't supported.
-- **The page's controls are in English**, whatever the document's language. So is the speech for math, which reads some notation oddly: Δ as "normal triangle", `\mid` as "divides".
+- **The page's controls are in English**, whatever the document's language. So is the speech for math. It reads `|` as "given", as in `P(A | B)`, so a document about divisibility hears `a | b` as "a given b".
 - **The browser's find-in-page** finds a formula's characters one at a time, but not a run of them such as `Δ(S)`.
 - **A page opened from disk in Chrome** loads its fonts without preloading, and the console reports each preload as blocked.
 - **Styles for `.mathjax-inline`** in a config apply only when MathJax typesets in the browser.
