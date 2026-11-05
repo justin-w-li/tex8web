@@ -254,4 +254,113 @@ function M.sidenotes(document)
   if #dom.elements(list) == 0 then list:remove_node() end
 end
 
+-- \color as a declaration ({\color{red} text}): tex8web-page.tex marks where
+-- it is set (span.tex8web-color, the color in data-color) and where its group
+-- ends (span.tex8web-color-end). What lies between takes the color: a block
+-- wholly between them on itself, the rest in a span around each run of
+-- inline content. tcolorbox's boxes keep their own colors, as in the PDF.
+-- tex4ht's link text isn't a group, as hyperref's is in the PDF, so a color
+-- set in a link ends with it
+local blocks = {p = true, div = true, ul = true, ol = true, li = true, dl = true, dt = true,
+  dd = true, h1 = true, h2 = true, h3 = true, h4 = true, h5 = true, h6 = true, table = true,
+  tr = true, td = true, th = true, figure = true, figcaption = true, aside = true,
+  blockquote = true, pre = true, center = true}
+
+local function is_mark(node)
+  return dom.has_class(node, "^tex8web%-color")
+end
+
+-- each node under root, numbered where it opens and where it closes
+local function number(root)
+  local open, close, n = {}, {}, 0
+  local function walk(node)
+    n = n + 1
+    open[node] = n
+    if node:is_element() then
+      for _, child in ipairs(node:get_children()) do walk(child) end
+    end
+    n = n + 1
+    close[node] = n
+  end
+  walk(root)
+  return open, close
+end
+
+local function color(root, from, to, value)
+  local open, close = number(root)
+  local s, e = open[from], to and open[to] or close[root]
+  local function visit(el)
+    local out, run = {}, nil
+    for _, node in ipairs(el:get_children()) do
+      local inside = open[node] > s and close[node] < e
+      local block = node:is_element() and blocks[node:get_element_name()]
+      if inside and not block and (run or node:is_element() and not is_mark(node)
+          or node:is_text() and node:get_text():find("%S")) then
+        if not run then
+          run = el:create_element("span", {style = "color:" .. value .. ";"})
+          out[#out + 1] = run
+        end
+        run:add_child_node(node)
+      else
+        run = nil
+        out[#out + 1] = node
+        if node:is_element() and not dom.has_class(node, "^tcolorbox") then
+          if inside then
+            local style = node:get_attribute("style")
+            node:set_attribute("style", (style and style:gsub(";?%s*$", "; ") or "")
+              .. "color:" .. value .. ";")
+          elseif close[node] > s and open[node] < e then
+            visit(node)
+          end
+        end
+      end
+    end
+    dom.set_children(el, out)
+  end
+  visit(root)
+end
+
+local function within(node, el)
+  return dom.closest(node, function(x) return x == el end) ~= nil
+end
+
+local function color_from(from, to, body)
+  local value = from:get_attribute("data-color")
+  if not within(from, body) then return end
+  local link = dom.closest(from, function(el) return el:get_element_name() == "a" end)
+  if link and not (to and within(to, link)) then return color(link, from, nil, value) end
+  local root = to and from:get_parent() or body
+  while to and not within(to, root) do root = root:get_parent() end
+  color(root, from, to, value)
+end
+
+function M.colors(document)
+  local body = document:query_selector("body")[1]
+  local marks, starts = {}, {}
+  local function walk(el)
+    for _, node in ipairs(dom.elements(el)) do
+      if is_mark(node) then marks[#marks + 1] = node else walk(node) end
+    end
+  end
+  -- (and in the page's <title>, which takes no color)
+  walk(document:query_selector("html")[1])
+  for _, mark in ipairs(marks) do
+    if dom.has_class(mark, "^tex8web%-color$") then
+      starts[#starts + 1] = mark
+    elseif #starts > 0 then
+      color_from(table.remove(starts), mark, body)
+    end
+  end
+  for _, from in ipairs(starts) do color_from(from, nil, body) end
+  -- (a mark set between paragraphs is alone in a paragraph of its own)
+  for _, mark in ipairs(marks) do
+    local parent = mark:get_parent()
+    mark:remove_node()
+    if parent:get_element_name() == "p" and not parent:get_attribute("class")
+        and #dom.elements(parent) == 0 and not parent:get_text():find("%S") then
+      parent:remove_node()
+    end
+  end
+end
+
 return M

@@ -176,7 +176,6 @@ Each item says what goes wrong and, where there is one, what to do.
 - **`-B` with a `-` in its path.** make4ht reads the `-B` directory as a Lua pattern, so a `-` anywhere in its path sends files to the wrong place. Keep `-` out of it, and keep it relative to the document, as `bin/tex8web`'s default `build/tex4ht` is.
 - **A space in tex8web's path or in a config's path.** tex4ht can't read such a config, so `bin/tex8web` stops. Move tex8web or the config to a path without spaces.
 - **Macros MathJax can't read** show in red. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
-- **`\color` as a declaration**, as in `{\color{blue} text}`, is lost. `\textcolor{blue}{text}` works.
 - **tocloft's entry fonts**, such as `\cftsecfont`, aren't followed. The table of contents' entries are in the text's font.
 - **`\qedhere`.** The QED box follows the display instead of sitting at the right margin.
 - **enumitem.** Labels are right-aligned and hang into the margin. `align=left`, `wide` and `itemindent` aren't followed.

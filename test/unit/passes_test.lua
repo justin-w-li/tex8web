@@ -108,6 +108,39 @@ return {
     equal(d:query_selector("aside")[1]:get_attribute("class"), "footnotetext tex8web-sidenote")
   end,
 
+  ["text.colors: a declaration's color in spans, nested, and black as the text's"] = function()
+    local d = parse([[<p>A <span class="tex8web-color" data-color="#FF0000"></span>red<span class="tex8web-color-end"></span> word, ]]
+      .. [[<span class="tex8web-color" data-color="#FF0000"></span>Red, <span class="cmti-10"><span class="tex8web-color" data-color="var(--tex8web-text)"></span>black,<span class="tex8web-color-end"></span></span> red<span class="tex8web-color-end"></span>, after</p>]])
+    text.colors(d)
+    equal(body(d), [[<p>A <span style='color:#FF0000;'>red</span> word, ]]
+      .. [[<span style='color:#FF0000;'>Red, <span class='cmti-10'><span style='color:var(--tex8web-text);'>black,</span></span> red</span>, after</p>]])
+  end,
+
+  ["text.colors: across paragraphs, a block on itself, not into a tcolorbox"] = function()
+    local d = parse([[<span class="tex8web-color" data-color="#0A7828"></span>]] .. "\n"
+      .. [[<p style="margin: 0">First.</p>]] .. "\n" .. [[<ul><li>One.</li></ul><div class="tcolorbox"><p>Box.</p></div>]]
+      .. [[<p>Second.<span class="tex8web-color-end"></span></p><p>After.</p>]])
+    text.colors(d)
+    equal(body(d), "\n" .. [[<p style='margin: 0; color:#0A7828;'>First.</p>]] .. "\n"
+      .. [[<ul style='color:#0A7828;'><li>One.</li></ul><div class='tcolorbox'><p>Box.</p></div>]]
+      .. [[<p><span style='color:#0A7828;'>Second.</span></p><p>After.</p>]])
+  end,
+
+  ["text.colors: a color set in a link ends with it; one left open, with the page"] = function()
+    local d = parse([[<p><a href="#h"><span class="tex8web-color" data-color="#FF0000"></span>linked</a> after.<span class="tex8web-color-end"></span></p>]]
+      .. [[<p>Black <span class="tex8web-color" data-color="#0000FF"></span>blue</p><p>Blue.</p>]])
+    text.colors(d)
+    equal(body(d), [[<p><a href='#h'><span style='color:#FF0000;'>linked</span></a> after.</p>]]
+      .. [[<p>Black <span style='color:#0000FF;'>blue</span></p><p style='color:#0000FF;'>Blue.</p>]])
+  end,
+
+  ["text.colors: none in the page's title"] = function()
+    local d = parse("<p>Text</p>", [[<span class="tex8web-color" data-color="#FF0000"></span>]])
+    text.colors(d)
+    equal(#d:query_selector("span"), 0)
+    equal(body(d), "<p>Text</p>")
+  end,
+
   ["page.build_data: the PDF, \\contentsname and the macros, and the elements removed"] = function()
     local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf">\newcommand{\x}{x}</script>]]
       .. [[<script type="text/x-tex8web-contents">

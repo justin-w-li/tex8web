@@ -165,6 +165,8 @@ const fonts = {
 // and the colors of math and table cells as xcolor has them: a document's
 // own (ink), a \colorlet (ember), a mix, and green, which CSS has darker
 const lightDark = (color, l) => `light-dark\\(${color}, oklch\\(from ${color} ${l} c h\\)\\)`;
+const dark = hex => `light-dark(${hex}, oklch(from ${hex} max(l, 1 - l) c h))`;
+const text = (hex, html) => `<span style='color:${dark(hex)};'>${html}</span>`;
 const colors = {
   'test-color': [
     new RegExp(`<span style='color:${lightDark('#000080', 'max\\(l, 1 - l\\)')};'>navy</span>`),
@@ -189,6 +191,32 @@ const colors = {
     new RegExp(`#TBL-1-3-2\\{ background-color:${lightDark('#37FF9B', 'min\\(l, 1\\.24 - l\\)')}\\}`),
     /<pre class='lstlisting'[^>]*>(?:(?!<\/pre>)[^])*<span style='color:var\(--tex8web-text\)'>/,
   ],
+  // \color as a declaration: in spans that end with its group, a block
+  // wholly in it colored itself, nothing left open past an element tex4ht
+  // closes. The theorem's head isn't colored, as in the PDF; a footnote, a
+  // link (urlcolor) and a box keep their own colors. (The author, with \and,
+  // \\ and \thanks, is in article's tabular)
+  'test-declared': [
+    `<h1 class='titleHead'>${text('#0000FF', 'Colors')}<span class='thank-mark'>`,
+    `<div class='author'>${text('#FF0000', "<span class='cmr-12'>Someone</span>")} <br class='and' />`,
+    `Heading ${text('#0000FF', 'in blue')}</h3>`,
+    `A ${text('#FF0000', 'red')} word, ${text('#000080', 'a mix')}, ${text('#008000', 'a model')} and `
+      + `${text('#0A7828', `leaf ${text('#FF0000', 'red')} leaf`)}. `
+      + `${text('#FF0000', "Red, <span style='color:var(--tex8web-text);'>black,</span> red")}, `
+      + `<span class='colorbox' id='colorbox1'>boxed</span>, `
+      + `<span class='colorbox' id='colorbox2'>${text('#FF0000', 'red boxed')}</span>,\n`
+      + `<a href='#here'>${text('#FF0000', 'linked')}</a> after.`,
+    `<p class='indent' style='color:${dark('#0A7828')};'>   A first paragraph in leaf.\n</p>`,
+    `<p class='indent'>${text('#0A7828', '   A second paragraph in leaf.')}\n</p>`,
+    `Black ${text('#FF0000', 'until the end.\n')}</p>`,
+    `<span class='cmbx-10'>Theorem 1.</span>  </span>${text('#FF0000', "<span class='cmti-10'>A red theorem.</span>\n")}</p>`,
+    `<p class='noindent' style='color:${dark('#0000FF')};'>Centered in blue.</p>`,
+    `<p class='noindent'>${text('#0000FF', 'In a minipage.\n')}`,
+    `<ul class='itemize1' style='color:${dark('#FF0000')};'>`,
+    `<span class='cmr-8'>In the text’s color.</span></p></aside>`,
+    `and <a href='https://example.com'>a link</a>, by <a href='#x1-1001r1'>${text('#008080', 'theorem')}`,
+    `In the box’s colors, ${text('#FF0000', 'and red')}.</p>`,
+  ].map(html => new RegExp(html.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))),
   // table colors as the PDF has them (the document loads colortbl before
   // xcolor's table option, which the build errors on without the fix):
   // \rowcolors' alternating rows, from the row it starts at, then
@@ -240,7 +268,7 @@ const permalinks = {
     /<div class='tcolorbox proof' id='[^']+'>\s*<div class='tcolorbox-title'>\s*<!--/,
   ],
   'examples/complex': [
-    /<div class='tcolorbox definition' id='[^']+'><a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<!--[^>]*--><p[^>]*>\s*<span[^>]*>Definition<span class='tex8web-nbsp'>.<\/span>1\.2[^]*Note that <a href='#\1'>Definition/,
+    /<div class='tcolorbox definition' id='[^']+'><a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<!--[^>]*--><p[^>]*>\s*<span[^>]*>Definition<span class='tex8web-nbsp'>.<\/span>1\.2[^]*Note that <a href='#\1'><span style='color:[^']*;'>Definition/,
   ],
   'test-ntheorem': [
     /<span class='head'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#<\/a><a id='\1'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1\.1<\/span>[^]*<a href='#\1'>1\.1</,

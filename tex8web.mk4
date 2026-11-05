@@ -52,6 +52,7 @@ Make:match("4idx$", function() return false end)
 -- each pass is function(document, context), in this order
 local passes = {
   page.build_data,
+  text.colors,
   source.spaces,
   text.theorem_spacing,
   text.heading_lists,

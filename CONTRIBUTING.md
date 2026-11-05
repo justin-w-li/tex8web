@@ -83,7 +83,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - TeX errors, build warnings, and tex8web's warning that tex4ht or a package changed;
   - MathJax errors, macros MathJax doesn't know, the sizes `tex8web.js` sets, and no `NaN` in any style;
   - the table of contents beside the text, with its numbers and indents;
-  - colors in dark mode, indexes, enumitem's lengths, alt text, each example's title, the title of a page without \maketitle, and pictures' sizes (also with the graphics package, and after angle);
+  - colors in dark mode, `\color` as a declaration (`test-declared.tex`), indexes, enumitem's lengths, alt text, each example's title, the title of a page without \maketitle, and pictures' sizes (also with the graphics package, and after angle);
   - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`);
   - speech for every formula, links and files in place, unique ids, and only publishable files.
 
@@ -142,12 +142,12 @@ Open an issue with:
 | `tex/tex8web-core.tex` | loads the four modules below |
 | `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ in display math |
 | `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, framed's boxes, figures, `\WebTerm` |
-| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebColor`, the document's measurements and heading fonts |
+| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebColor`, `\color` as a declaration, the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard, and `\web@needs` |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
-| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, spacing, footnotes, links, controls, the table of contents, meta tags, scripts |
+| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, colors, spacing, footnotes, links, controls, the table of contents, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, prerendering |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
 | `js/tex8web.js` | MathJax's sizes set as TeX's |
