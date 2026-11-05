@@ -16,21 +16,21 @@
     {\HCode{<p>}\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
     {\HCode{</p>}}
 
-% the page's title without \maketitle: the \title's text, as tex4ht writes
-% it for the <title> when \maketitle runs (article.4ht, html4.4ht: \a:mktl,
-% the first argument of \Configure{maketitle}, run here with its markup
-% dropped). A config's own \Configure{TITLE+} still wins
-\web@needs{a:mktl}
+% the page's title without \maketitle: the \title's text, written as for
+% \maketitle's <title> (\a:mktl is the first argument of its
+% \Configure{maketitle}, run here without its markup). A config's own
+% \Configure{TITLE+} still wins.
 \newif\ifweb@titled
-\def\web@notitle{\@latex@error{No \noexpand\title given}\@ehc}% the kernel's \@title
-\AddToHook{cmd/maketitle/before}{\global\web@titledtrue}
+\ifdefined\maketitle
+    \AddToHook{cmd/maketitle/before}{\global\web@titledtrue}
+\fi
 \AtEndDocument{%
-    \ifweb@titled\else\ifx\@title\web@notitle\else
+    \ifweb@titled\else\ifcsname a:mktl\endcsname\ifx\@title\web@notitle\else
         \begingroup
             \let\HCode\@gobble \let\EndP\relax \let\IgnorePar\relax
             \csname a:mktl\endcsname
         \endgroup
-    \fi\fi}
+    \fi\fi\fi}
 
 % --- links ------------------------------------------------------------------
 
@@ -347,30 +347,43 @@
 % \includegraphics keeps the PDF's width beside the text, as a fraction of
 % the PDF's text width, and shrinks only with a column narrower than it
 % (img's max-width). The width is the one graphicx works out from width,
-% height and scale; only a width is written, so that a height never
-% squashes the picture. A picture with none of the three, or whose
-% natural size tex4ht doesn't know (no .xbb file beside a bitmap, \noBoundingBox
-% in graphics.4ht), is left to tex4ht, unless the width alone is asked for,
-% or with a height that squashes. (\web@textwidth, as a minipage, and so a
-% tcolorbox or subfigure, sets \textwidth to its own)
+% height and scale. Only a width is written, so a height never squashes the
+% picture. tex4ht's size is kept when no size is asked for, when graphicx
+% resizes a box around the picture instead (a size after angle, or scale
+% with a size: \Gin@@ewidth or \Gin@@eheight, which graphicx sets only in
+% the other case, is missing), and when the width depends on a natural size
+% that tex4ht doesn't know (no .xbb file beside a bitmap: \noBoundingBox in
+% graphics.4ht). (\web@textwidth, as a minipage, and so a tcolorbox or
+% subfigure, sets \textwidth to its own)
 \ExplSyntaxOn
 \cs_if_exist:NT \Gin@req@width
   {
     \web@needs{a:Gin-dim}
     \cs_set_eq:Nc \__web_gin_dim: { a:Gin-dim }
+    % (the graphics package alone never sets them, graphicx.4ht does)
+    \cs_if_exist:NF \Gin:ewidth { \cs_set_eq:NN \Gin:ewidth \Gin@exclamation }
+    \cs_if_exist:NF \Gin:eheight { \cs_set_eq:NN \Gin:eheight \Gin@exclamation }
     \Configure{Gin-dim}{%
         \bool_if:nTF
           {
             ! (
-              \tl_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
-              \tl_if_eq_p:NN \Gin:eheight \Gin@exclamation &&
+              \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
+              \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation &&
               \str_if_eq_p:Vn \Gin@scalex { 1 }
             ) &&
+            ! (
+              ! \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
+              ! \cs_if_exist_p:N \Gin@@ewidth
+            ) &&
+            ! (
+              ! \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation &&
+              ! \cs_if_exist_p:N \Gin@@eheight
+            ) &&
             (
-              \tl_if_eq_p:NN \noBoundingBox \UnDefined ||
+              \cs_if_eq_p:NN \noBoundingBox \UnDefined ||
               (
-                ! \tl_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
-                ( \tl_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_eq_p:NN \ifGin@iso \iffalse )
+                ! \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
+                ( \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_eq_p:NN \ifGin@iso \iffalse )
               )
             )
           }

@@ -2,7 +2,9 @@
 % each give the picture the PDF's width, as a share of the text width, and
 % a height never squashes it. The picture's size comes from
 % test-picture.xbb, which tex4ht needs for a size it can't take from width
-% alone. A picture without a size keeps tex4ht's.
+% alone. A picture without a size keeps tex4ht's, and so does one that
+% graphicx resizes in a box (a size after angle, scale with a size), whose
+% width isn't the PDF's.
 \documentclass{article}
 \usepackage{graphicx}
 \begin{document}
@@ -17,4 +19,12 @@
 \includegraphics[alt={fitted}, width=100pt, height=40pt, keepaspectratio]{test-picture.png}
 
 \includegraphics[alt={bare}]{test-picture.png}
+
+\includegraphics[alt={rotated}, angle=90, width=100pt]{test-picture.png}
+
+\includegraphics[alt={angle last}, width=100pt, angle=90]{test-picture.png}
+
+\includegraphics[alt={scaled first}, scale=0.5, width=100pt]{test-picture.png}
+
+\includegraphics[alt={scaled last}, width=100pt, scale=0.5]{test-picture.png}
 \end{document}

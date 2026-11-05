@@ -96,6 +96,9 @@
         tex8web index: \imki@program\imki@options#1.idx}}%
 }
 
+% \@title as the class leaves it without a \title, for tex8web-text.tex
+\let\web@notitle\@title
+
 % \web@needs{name}: a warning, which npm test fails on, unless \<name>,
 % which tex8web patches or calls, is defined: a new tex4ht or package that
 % drops it then shows in the tests, not as a page quietly wrong. (A name

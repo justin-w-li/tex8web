@@ -183,7 +183,9 @@ Each item says what goes wrong and, where there is one, what to do.
 - **Colors in math.** A color passed to a macro by name isn't converted. Neither is a color defined inside a group. The models `hsb`, `Hsb`, `tHsb` and `wave` aren't supported. A color redefined later in the document has its last value everywhere in math.
 - **Table colors.** With colortbl but not xcolor, `\textcolor` of the document's own colors is lost: load xcolor first. In a table with `\hline`, `\rowcolors` alternates wrongly.
 - **Minipages.** A minipage inside a paragraph's text breaks the paragraph around it. `\centering` in a minipage is followed only in a figure. Two minipages, each in its own `\fbox`, stack.
-- **`scale` and `height` without a `.xbb` file.** tex4ht reads a bitmap's or PDF's size from a `.xbb` file beside it. Without one, a picture with `scale` or `height` isn't at the PDF's size. Make the file with `extractbb -x picture.png`.
+- **A picture's size without its `.xbb` file.** tex4ht reads a bitmap's or PDF's size from a `.xbb` file beside it. Without one, a picture with `scale`, `height`, or `width` and `height` with `keepaspectratio` isn't at the PDF's size. Make the file with `extractbb -x picture.png`.
+- **A size after `angle`,** as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`**, aren't followed. The picture is at tex4ht's size. Put the size before `angle`, or leave `scale` out.
+- **`trim` and `viewport`.** The page shows the whole picture at the width of the part that is kept.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.

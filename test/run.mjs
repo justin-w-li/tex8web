@@ -80,7 +80,11 @@ const pictures = {
   // keepaspectratio and without, which never squashes it; and one
   // without a size, as tex4ht writes it)
   'test-graphics': [share('width', '0.2899'), share('scale', '0.2793'), share('height', '0.371'),
-    share('both', '0.2899'), share('fitted', '0.1546'), /<img alt='bare' (?:(?!style=)[^>])*\/>/],
+    share('both', '0.2899'), share('fitted', '0.1546'), share('angle last', '0.2899'), /<img alt='bare' (?:(?!style=)[^>])*\/>/,
+    // (a size after angle, scale with a size: tex4ht's)
+    ...['rotated', 'scaled first', 'scaled last'].map(alt => new RegExp(`<img alt='${alt}' (?:(?!style=)[^>])*\\/>`))],
+  // (the graphics package: a bare picture without a .xbb, tex4ht's size)
+  'test-graphics-only': [/<img (?:(?!style=)[^>])*\/>/],
   'examples/basic': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.25\)'/],
   // (in minipages, whose \textwidth is their own)
   'test': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.225\)'/,
@@ -92,6 +96,7 @@ const pictures = {
 const titles = {
   'test-title': [/<title>Notes on Groups\s+and Rings<\/title>/,
     /<meta content='Notes on Groups\s+and Rings' property='og:title' \/>/],
+  'test-nomaketitle': [/<title>Without a maketitle<\/title>/],
 };
 
 // minipages and subfigures, two in one row, each with its share of the
