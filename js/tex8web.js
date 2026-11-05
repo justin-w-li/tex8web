@@ -333,5 +333,15 @@ function tex8web(config, tex) {
 
 if (typeof document !== 'undefined') {
   const data = JSON.parse(document.getElementById('tex8web-config').textContent);
+  // MathJax's TeX extensions with fonts of their own (bbm and co.) load the
+  // fonts from jsDelivr without a version, where MathJax's own font has one:
+  // a later release of them would change the page. Pin them to MathJax's
+  // (the extensions set the paths only if they aren't set; page.lua gives
+  // this script MathJax's version)
+  const version = document.currentScript.dataset.mathjax;
+  const paths = data.mathjax.loader.paths = data.mathjax.loader.paths || {};
+  for (const name of ['bbm', 'bboldx', 'dsfont', 'mhchem']) {
+    paths[`mathjax-${name}-extension`] = `https://cdn.jsdelivr.net/npm/@mathjax/mathjax-${name}-font-extension@${version}`;
+  }
   window.MathJax = tex8web(data.mathjax, data.tex);
 }

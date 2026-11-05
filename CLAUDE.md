@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-tex8web turns LaTeX documents into static web pages that look like their PDF and read well on any screen, with almost no extra work from someone used to writing TeX. It is not a textbook platform. A change belongs here if it brings the page closer to the PDF or makes it easier to read; "we could" is not a reason. README.md says what tex8web does and DOCUMENTATION.md how (architecture, files, tests, limitations). Read them before any non-trivial change.
+tex8web turns LaTeX documents into static web pages that look like their PDF and read well on any screen, with almost no extra work from someone used to writing TeX. It is not a textbook platform. A change belongs here if it brings the page closer to the PDF or makes it easier to read; "we could" is not a reason. README.md says what tex8web does, DOCUMENTATION.md how to use it (configs, behavior, limitations), and CONTRIBUTING.md how it works (architecture, tests, files, releases). Read them before any non-trivial change.
 
 ## Product
 
@@ -50,6 +50,16 @@ tex8web turns LaTeX documents into static web pages that look like their PDF and
 
 Never restate the code, narrate, describe removed code or past versions (unless it records a real failure to avoid), or refer to the request that prompted the change. Keep comments short and plain: write like a senior engineer, not an LLM.
 
+## Writing
+
+Docs, comments and commit messages are read by strangers.
+- One idea per sentence. Aim for 20 words; split anything over 35.
+- At most one parenthetical per sentence, never one inside another. Don't stack clauses with commas and possessives.
+- User docs say what a reader or writer sees or does. Thresholds, timings and edge cases belong in tests.
+- Say a thing once, where it belongs, and link to it from elsewhere.
+- Never name private documents, courses or notes in code, tests, docs or commits. Say "a long document".
+- **Commits:** a subject of at most 72 characters, without a final period, saying what the page or tool now does (`Review fixes: …` is fine). Then a blank line and a body wrapped at 72 that says why, and which check covers it.
+
 ## Process
 
 - **Work toward checks that can pass or fail.** "Fix the bug" means writing a test that reproduces it and making it pass. Split multi-step work into milestones, each with its check, and commit each milestone once it's verified.
@@ -65,5 +75,5 @@ Never restate the code, narrate, describe removed code or past versions (unless 
   - `npm test`, then commit; batch several tweaks per commit;
   - run `npm run test:visual` and the full rebuild once, at the end of a batch.
 - **Keep the docs true.**
-  - `DOCUMENTATION.md` changes when behavior, files or limitations do.
+  - `DOCUMENTATION.md` changes when behavior or limitations do, and `CONTRIBUTING.md` when internals, tests or files do.
   - Known gaps go in `test/expected.json`.

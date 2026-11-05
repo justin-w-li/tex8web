@@ -4,6 +4,18 @@
   "description": "LaTeX to web pages that look like the PDF: tex4ht + MathJax, with the math typeset at build time",
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justin-w-li/tex8web.git"
+  },
+  "homepage": "https://justin-w-li.github.io/tex8web/",
+  "bugs": "https://github.com/justin-w-li/tex8web/issues",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "tex8web": "bin/tex8web"
+  },
   "scripts": {
     "test": "node test/run.mjs",
     "test:visual": "node test/visual.mjs",

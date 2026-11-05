@@ -257,6 +257,8 @@ function check(doc, result, out, aux) {
   }
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  // (the examples are published: a browser's tab and link previews show it)
+  if (doc.name.startsWith('examples/') && !/<title>\s*\S/.test(html)) problems.push('no <title>');
   for (const pattern of typeset[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} in the typeset math`);
   }
@@ -328,7 +330,8 @@ if (!only.length) jobs.push(async () => {
   const html = existsSync(join(out, `${doc.name}.html`)) ? readFileSync(join(out, `${doc.name}.html`), 'utf8') : '';
   const problems = [];
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
-  for (const needed of ['id=\'tex8web-config\'', 'src=\'tex8web.js\'', '/tex-chtml.js']) {
+  // (data-mathjax: the version tex8web.js pins MathJax's font extensions to)
+  for (const needed of ['id=\'tex8web-config\'', 'src=\'tex8web.js\'', 'data-mathjax=\'', '/tex-chtml.js']) {
     if (!html.includes(needed)) problems.push(`page lacks ${needed}`);
   }
   if (!existsSync(join(out, 'tex8web.js'))) problems.push('no tex8web.js next to the page');

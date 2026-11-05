@@ -13,6 +13,11 @@ local function trim(s)
   return s:match("^%s*(.-)%s*$")
 end
 
+-- an element's text on one line, as TeX may have broken it over several
+local function text_of(element)
+  return trim((element:get_text():gsub("%s+", " ")))
+end
+
 -- tex8web-page.tex's build elements, for the later passes: the PDF
 -- (context.pdf), the \WebMathMacros definitions (context.macros), the
 -- colors for math (context.colors) and \contentsname (context.contents) as
@@ -24,9 +29,8 @@ function M.build_data(document, context)
   context.pdf = pdf ~= "" and pdf or nil
   context.macros = element:get_text()
   element:remove_node()
-  -- (on as many lines as TeX broke it into)
   local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]
-  context.contents = trim((name:get_text():gsub("%s+", " ")))
+  context.contents = text_of(name)
   name:remove_node()
   local colors = document:query_selector("script[type='text/x-tex8web-colors']")[1]
   context.colors = colors:get_text()
@@ -137,14 +141,14 @@ local function contents(document, body, title)
   if not list then return end
   local heading = dom.previous_element(list)
   if heading and dom.has_class(heading, "^like%a*Head$") then
-    title = trim(heading:get_text())
+    title = text_of(heading)
     heading:remove_node()
   end
   local content = list:get_parent()
   local box = dom.has_class(content, "^tcolorbox%-content$") and content:get_parent()
   if box and #dom.elements(content) == 1 then
     local box_title = box:query_selector(".tcolorbox-title")[1]
-    if box_title then title = trim(box_title:get_text()) end
+    if box_title then title = text_of(box_title) end
     box:remove_node()
   else
     list:remove_node()
@@ -222,15 +226,16 @@ local function abstract_text(document)
   return text
 end
 
--- og:title and og:type, and from the abstract, if there is one, the
--- description
+-- og:title (if the title isn't empty) and og:type, and from the abstract,
+-- if there is one, the description
 function M.meta_tags(document)
   local head = document:query_selector("head")[1]
   local title = document:query_selector("title")[1]
   local function add(attribute, name, content)
     head:add_child_node(head:create_element("meta", {[attribute] = name, content = content}))
   end
-  if title then add("property", "og:title", trim(title:get_text())) end
+  local title_text = title and trim(title:get_text()) or ""
+  if title_text ~= "" then add("property", "og:title", title_text) end
   add("property", "og:type", "article")
   local description = abstract_text(document)
   if description and description ~= "" then
@@ -255,7 +260,7 @@ function M.scripts(document, context)
   end
   script({src = "tex8web-head.js"})
   script({src = "tex8web-page.js", defer = "defer"})
-  script({src = "tex8web.js", ["data-tex8web-browser"] = ""})
+  script({src = "tex8web.js", ["data-tex8web-browser"] = "", ["data-mathjax"] = context.mathjax})
   script({async = "async", id = "MathJax-script", ["data-tex8web-browser"] = "",
     src = "https://cdn.jsdelivr.net/npm/mathjax@" .. context.mathjax .. "/tex-chtml.js"})
 end

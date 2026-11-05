@@ -1,7 +1,7 @@
 -- make4ht build file for tex8web: HTML that looks like the PDF, with MathJax
 -- typesetting the math from its LaTeX source. Use with tex8web.cfg (or a
 -- config of your own that \input's tex8web-core.tex):
---   make4ht -c path/to/tex8web.cfg -e path/to/tex8web.mk4 -B build -d out document.tex
+--   make4ht -c path/to/tex8web.cfg -e path/to/tex8web.mk4 -B build/tex4ht -d build/html document.tex
 -- It puts this directory on TeX's and Lua's search paths, runs bibtex or
 -- biber when the document has a bibliography and makeindex when it has an
 -- index, runs the HTML passes (lua/tex8web/), copies the files the page

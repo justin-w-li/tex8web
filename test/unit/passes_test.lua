@@ -2,6 +2,7 @@
 local dom = require "luaxml-domobject"
 local macros = require "tex8web.macros"
 local page = require "tex8web.page"
+local prerender = require "tex8web.prerender"
 local source = require "tex8web.source"
 local text = require "tex8web.text"
 
@@ -177,6 +178,13 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(d:query_selector("a.tex8web-control")[1]:get_attribute("href"), "https://github.com/justin-w-li/tex8web")
   end,
 
+  ["page.controls: a title on several lines, as TeX broke it, on one"] = function()
+    local d = parse([[<h3 class="likesectionHead">Table of]] .. "\n" .. [[Contents</h3>]]
+      .. [[<div class="tableofcontents"><span class="sectionToc"><a href="#intro">Intro</a></span></div>]])
+    page.controls(d, {contents = "Contents"})
+    equal(d:query_selector("button.tex8web-contents")[1]:get_attribute("aria-label"), "Table of Contents")
+  end,
+
   ["page.controls: the table of contents, not a list of figures before it"] = function()
     local d = parse([[<h3 class="likesectionHead">List of Figures</h3>]]
       .. [[<div class="tableofcontents"><span class="lofToc">1 <a href="#f">F</a></span></div>]]
@@ -237,6 +245,25 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     check(description:match("^About x and word"), description)
     check(description:match(" word…$"), description)
     check(utf8.len(description) <= 200, "too long: " .. utf8.len(description))
+  end,
+
+  ["page.meta_tags: no og:title for an empty title"] = function()
+    local d = dom.html_parse("<html><head><title> </title></head><body><p>a</p></body></html>")
+    page.meta_tags(d)
+    equal(#d:query_selector("meta[property='og:title']"), 0)
+  end,
+
+  ["prerender.run: without node_modules, a warning that the browser typesets the math"] = function()
+    local root, skip = os.tmpname(), os.getenv("TEX8WEB_NO_PRERENDER")
+    os.remove(root)
+    lfs.mkdir(root)
+    os.setenv("TEX8WEB_NO_PRERENDER", nil)
+    local result = prerender.run({root = root}, "x.html")
+    os.setenv("TEX8WEB_NO_PRERENDER", skip)
+    lfs.rmdir(root)
+    equal(result, false)
+    check(logged[1] and logged[1]:find("^warning: math left for MathJax in the browser"),
+      logged[1] or "nothing logged")
   end,
 
   ["macros.define: the definitions the math uses, and a warning for the rest"] = function()
