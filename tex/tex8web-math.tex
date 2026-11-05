@@ -6,9 +6,7 @@
 % for tex8web.js):
 % - the extensions for the packages the document loads that MathJax has
 %   (others load when a macro needs them), and always mathtools, for
-%   \DeclarePairedDelimiter in macros.lua's definitions, and color, which
-%   tex8web.js adds color models to before any math (autoload would load
-%   it at the first \color)
+%   \DeclarePairedDelimiter in macros.lua's definitions
 % - no automatic equation numbers (see \__web_part:nn below)
 % - \colon as amsmath has it (MathJax's is a plain punctuation colon), and
 %   \relax, which MathJax doesn't have (macros often end in it)
@@ -23,8 +21,8 @@
 %   document; readers can turn speech on in MathJax's menu). Screen readers
 %   get each formula as MathML (assistiveMml, which MathJax leaves off when
 %   speech is on by default)
-\def\web@extensions{"mathtools", "color"}
-\def\web@load{"[tex]/mathtools", "[tex]/color"}
+\def\web@extensions{"mathtools"}
+\def\web@load{"[tex]/mathtools"}
 \@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
         colortbl,dsfont,empheq,gensymb,mhchem,physics,textcomp,units,upgreek\do{%
     \@ifpackageloaded\web@package

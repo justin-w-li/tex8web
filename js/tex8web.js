@@ -14,6 +14,7 @@
 // is why MathJax's version is pinned (package.json).
 function tex8web(config, tex) {
   const startup = config.startup = config.startup || {};
+  const loader = config.loader = config.loader || {};
 
   // \big and co.: delimiters of TeX's sizes (MathJax asks for 1.2em and up,
   // just above the glyph it has for \big, which then comes out a size larger)
@@ -32,8 +33,8 @@ function tex8web(config, tex) {
 
   // \color[model]{values}: MathJax's color extension knows the models rgb,
   // RGB and gray; give it xcolor's HTML, Gray, cmy and cmyk, converted to
-  // RGB as xcolor does (internal: the extension's ColorModel, whose
-  // models are private to it, and its TexError)
+  // RGB as xcolor does, once it has loaded (internal: the extension's
+  // ColorModel, whose models are private to it, and its TexError)
   const decimal = max => v => /^(\d+(\.\d*)?|\.\d+)$/.test(v) && v <= max;
   const colorModels = {
     HTML: {count: 1, valid: v => /^[0-9A-Fa-f]{6}$/.test(v),
@@ -42,6 +43,7 @@ function tex8web(config, tex) {
     cmy: {count: 3, valid: decimal(1), rgb: ([c, m, y]) => [1 - c, 1 - m, 1 - y]},
     cmyk: {count: 4, valid: decimal(1), rgb: ([c, m, y, k]) => [c, m, y].map(x => 1 - Math.min(1, +x + +k))},
   };
+  loader['[tex]/color'] = {...loader['[tex]/color'], ready: addColorModels};
   function addColorModels() {
     const {ColorModel} = MathJax._.input.tex.color.ColorUtil;
     const {TexError} = MathJax._.input.tex.TexError;
@@ -303,7 +305,6 @@ function tex8web(config, tex) {
   startup.ready = function () {
     sizeBigDelimiters();
     if (ready) ready(); else MathJax.startup.defaultReady();
-    addColorModels();
     TEXCLASS = MathJax._.core.MmlTree.MmlNode.TEXCLASS;
     const input = MathJax.startup.document.inputJax.find(jax => jax.name === 'TeX');
     markEnvironments(input.parseOptions);
