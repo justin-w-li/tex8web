@@ -116,6 +116,11 @@ export async function launch() {
         async resize(w, h) {
           await page.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
         },
+        // the page as on another medium ('print'), or the screen ('')
+        async media(type) {
+          await page.send('Emulation.setEmulatedMedia', { media: type,
+            features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
+        },
         async close() {
           page.close();
           await browser.send('Target.closeTarget', { targetId });

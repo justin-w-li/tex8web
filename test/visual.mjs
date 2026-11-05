@@ -402,6 +402,31 @@ async function themed(chrome, file) {
   return problems;
 }
 
+// printed (css/tex8web.css), from a wide screen in dark mode (the system's
+// and the reader's): light mode's colors and pictures, none of the page's
+// own controls, and every footnote
+async function printed(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 1600, colorScheme: 'dark' });
+  await page.media('print');
+  const wrong = await page.evaluate(`(() => {
+    document.documentElement.dataset.theme = 'dark';
+    const wrong = [], body = getComputedStyle(document.body);
+    if (body.backgroundColor !== 'rgb(255, 255, 255)' || body.color !== 'rgb(0, 0, 0)') {
+      wrong.push(\`text \${body.color} on \${body.backgroundColor}\`);
+    }
+    const shown = [...document.querySelectorAll('.tex8web-controls, .tex8web-toc, .tex8web-permalink')]
+      .filter(el => el.checkVisibility());
+    if (shown.length) wrong.push(\`\${shown.length} of the controls, contents and # links shown\`);
+    const notes = [...document.querySelectorAll('.tex8web-sidenote')].filter(el => !el.checkVisibility());
+    if (notes.length) wrong.push(\`\${notes.length} footnotes hidden\`);
+    const inverted = [...document.images].filter(img => getComputedStyle(img).filter !== 'none');
+    if (inverted.length) wrong.push(\`\${inverted.length} pictures inverted\`);
+    return wrong;
+  })()`);
+  await page.close();
+  return wrong.map(w => `printed: ${w}`);
+}
+
 // math characters with a clip (css/tex8web.css): there should be none
 async function clipped(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
@@ -495,6 +520,7 @@ async function compare(chrome, doc, built) {
     layout.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await bar(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await themed(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    layout.push(...(await printed(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     layout.push(...(await spaced(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     for (const file of [typeset, join(pre, html)]) {
       layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
