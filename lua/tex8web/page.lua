@@ -256,7 +256,7 @@ function M.scripts(document, context)
   end
   script({src = "tex8web-head.js"})
   script({src = "tex8web-page.js", defer = "defer"})
-  script({src = "tex8web.js", ["data-tex8web-browser"] = ""})
+  script({src = "tex8web.js", ["data-tex8web-browser"] = "", ["data-mathjax"] = context.mathjax})
   script({async = "async", id = "MathJax-script", ["data-tex8web-browser"] = "",
     src = "https://cdn.jsdelivr.net/npm/mathjax@" .. context.mathjax .. "/tex-chtml.js"})
 end

@@ -324,7 +324,8 @@ if (!only.length) jobs.push(async () => {
   const html = existsSync(join(out, `${doc.name}.html`)) ? readFileSync(join(out, `${doc.name}.html`), 'utf8') : '';
   const problems = [];
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
-  for (const needed of ['id=\'tex8web-config\'', 'src=\'tex8web.js\'', '/tex-chtml.js']) {
+  // (data-mathjax: the version tex8web.js pins MathJax's font extensions to)
+  for (const needed of ['id=\'tex8web-config\'', 'src=\'tex8web.js\'', 'data-mathjax=\'', '/tex-chtml.js']) {
     if (!html.includes(needed)) problems.push(`page lacks ${needed}`);
   }
   if (!existsSync(join(out, 'tex8web.js'))) problems.push('no tex8web.js next to the page');
