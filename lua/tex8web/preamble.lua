@@ -168,8 +168,9 @@ function readers.let(s, i)
   return name, "\\let" .. name .. target, target, j
 end
 
--- the definitions in a source file: name -> {def, body}; and the local
--- packages it loads
+-- the definitions in a source file: name -> {def, body}; and the files
+-- it loads that may hold more: its local packages, then what it \inputs
+-- or \includes
 function M.read(s, definitions)
   s = strip_comments(s)
   local i = 1
@@ -193,14 +194,24 @@ function M.read(s, definitions)
     for list in s:gmatch("\\" .. command .. "%s*(%b{})") do packages[#packages + 1] = list end
     for list in s:gmatch("\\" .. command .. "%s*%b[]%s*(%b{})") do packages[#packages + 1] = list end
   end
-  local styles = {}
+  local loaded = {}
   for _, list in ipairs(packages) do
-    for name in list:sub(2, -2):gmatch("[^,%s]+") do styles[#styles + 1] = name .. ".sty" end
+    for name in list:sub(2, -2):gmatch("[^,%s]+") do loaded[#loaded + 1] = name .. ".sty" end
   end
-  return styles
+  local inputs = {}
+  for _, command in ipairs({"input", "include", "InputIfFileExists"}) do
+    for name in s:gmatch("\\" .. command .. "%s*{([^}]*)}") do inputs[#inputs + 1] = trim(name) end
+  end
+  for name in s:gmatch("\\input%s+([^%s{}\\]+)") do inputs[#inputs + 1] = name end
+  for _, name in ipairs(inputs) do
+    -- TeX adds .tex to a name without an extension
+    loaded[#loaded + 1] = name:match("[^/]*%.[^/]*$") and name or name .. ".tex"
+  end
+  return loaded
 end
 
--- the definitions in the document and the local packages it loads
+-- the definitions in the document, the local packages it loads and the
+-- files it inputs
 function M.document(tex_file)
   local definitions, seen, queue = {}, {}, {tex_file}
   while #queue > 0 do

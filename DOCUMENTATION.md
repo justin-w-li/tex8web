@@ -96,7 +96,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 **`\WebMathMacros`** gives MathJax its own definitions, which take precedence over the document's. Write them in MathJax's TeX. You need it for:
 - the macros the build's warning names, such as those built with `\mathpalette`, `\scalebox` or internal `@` macros;
 - xparse commands with arguments other than `m` and a leading `O{}`;
-- macros the build can't see, because they are defined in loops, by your own commands, or in `\input` files. The build reads only the document and the local packages it loads.
+- macros the build can't see, because they are defined in loops or by your own commands. The build reads the document and the local packages it loads, and follows their `\input` and `\include` to files named relative to the document's directory.
 
 **`\WebColor`** makes the CSS variable `--name` from two colors: the first in light mode, the second in dark mode.
 

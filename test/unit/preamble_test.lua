@@ -66,6 +66,40 @@ return {
     equal(packages, {"amsmath.sty", "more.sty", "shapes.sty", "styles/macros.sty"})
   end,
 
+  ["the files a source inputs, with .tex added to a bare name"] = function()
+    local _, files = read("\\input{a}\\input b\\include{dir/c}\\input{d.txt}\\InputIfFileExists{e}{}{}"
+      .. "\\inputminted{x}{y} % \\input{commented}")
+    table.sort(files)
+    equal(files, {"a.tex", "b.tex", "d.txt", "dir/c.tex", "e.tex"})
+  end,
+
+  ["document follows \\input and \\include, and skips a missing file"] = function()
+    local dir = os.tmpname()
+    os.remove(dir)
+    lfs.mkdir(dir)
+    local function write(name, text)
+      local f = assert(io.open(dir .. "/" .. name, "w"))
+      f:write(text)
+      f:close()
+    end
+    write("braced.tex", "\\newcommand{\\a}{a}")
+    write("bare.tex", "\\newcommand{\\b}{b}")
+    write("chapter.tex", "\\newcommand{\\c}{c}")
+    write("commented.tex", "\\newcommand{\\d}{d}")
+    write("main.tex", "\\input{" .. dir .. "/braced}\\input " .. dir .. "/bare.tex\n"
+      .. "\\include{" .. dir .. "/chapter}\\input{" .. dir .. "/missing}\n"
+      .. "% \\input{" .. dir .. "/commented}\n")
+    local definitions = preamble.document(dir .. "/main.tex")
+    for _, name in ipairs({"braced", "bare", "chapter", "commented", "main"}) do
+      os.remove(dir .. "/" .. name .. ".tex")
+    end
+    lfs.rmdir(dir)
+    equal(definitions["\\a"].def, "\\newcommand{\\a}{a}")
+    equal(definitions["\\b"].def, "\\newcommand{\\b}{b}")
+    equal(definitions["\\c"].def, "\\newcommand{\\c}{c}")
+    equal(definitions["\\d"], nil)
+  end,
+
   ["the macros a source uses, control symbols too"] = function()
     local names = preamble.uses("\\frac{a}{b} + \\1 + \\alpha")
     table.sort(names)

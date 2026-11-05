@@ -39,7 +39,7 @@ A page goes through four stages.
 
 `tex8web.mk4` runs bibtex or biber and makeindex, then the passes in `lua/tex8web/`.
 
-**The macro bridge** (`macros.lua`, `preamble.lua`). MathJax never sees the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document and from the local packages it loads. It translates them for MathJax. The page gets only the macros its math uses, so templates and the rest of the source are never published.
+**The macro bridge** (`macros.lua`, `preamble.lua`). MathJax never sees the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document, the local packages it loads, and the files they `\input` or `\include`. It translates them for MathJax. The page gets only the macros its math uses, so templates and the rest of the source are never published.
 
 The bridge also handles colors. MathJax knows only CSS's and dvips's color names. The bridge gives it, as `\definecolor` lines:
 - the document's own colors, from `\definecolor` and `\colorlet`;
