@@ -83,7 +83,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - TeX errors, build warnings, and tex8web's warning that tex4ht or a package changed;
   - MathJax errors, macros MathJax doesn't know, the sizes `tex8web.js` sets, and no `NaN` in any style;
   - the table of contents beside the text, with its numbers and indents;
-  - colors in dark mode, indexes, enumitem's lengths, alt text, and a title for every page;
+  - colors in dark mode, indexes, enumitem's lengths, alt text, and each example's title;
   - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`);
   - speech for every formula, links and files in place, unique ids, and only publishable files.
 

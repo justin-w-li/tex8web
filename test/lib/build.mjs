@@ -55,9 +55,9 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => p
 // minute)
 const deadline = 300;
 
-// runs make4ht on a document, with the page in out and tex4ht's files in
-// aux (both absolute). make4ht reads the -B directory as a Lua pattern when
-// it copies to -d, so both are passed relative to the document, where
+// runs bin/tex8web on a document, with the page in out and tex4ht's files
+// in aux (both absolute). make4ht reads the -B directory as a Lua pattern
+// when it copies to -d, so it is passed relative to the document, where
 // characters like - in the path above don't matter
 export async function build(doc, out, aux, env = {}) {
   // the PDF a config links with \WebPDF, if it isn't built yet
@@ -70,10 +70,9 @@ export async function build(doc, out, aux, env = {}) {
   rmSync(aux, { recursive: true, force: true });
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
-  const args = ['-u', '-c', relative(doc.dir, doc.cfg), '-e', relative(doc.dir, join(root, 'tex8web.mk4')),
-    '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out), doc.tex];
+  const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out), doc.tex];
   return new Promise(done => {
-    const child = spawn('make4ht', args, { cwd: doc.dir, env: { ...process.env, ...env }, detached: true });
+    const child = spawn(join(root, 'bin/tex8web'), args, { cwd: doc.dir, env: { ...process.env, ...env }, detached: true });
     running.add(child.pid);
     let log = '';
     const timer = setTimeout(() => {

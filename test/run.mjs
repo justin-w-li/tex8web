@@ -257,6 +257,8 @@ function check(doc, result, out, aux) {
   }
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  // (the examples are published: a browser's tab and link previews show it)
+  if (doc.name.startsWith('examples/') && !/<title>\s*\S/.test(html)) problems.push('no <title>');
   for (const pattern of typeset[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} in the typeset math`);
   }
