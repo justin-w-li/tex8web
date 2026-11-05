@@ -121,7 +121,12 @@ export async function launch() {
         async screens() {
           const total = await evaluate('document.documentElement.scrollHeight');
           const shots = [];
-          for (let y = 0; y < total; y += height) shots.push(await screenshot(y, Math.min(height, total - y)));
+          for (let y = 0; y < total; y += height) {
+            // (twice: the first capture of a part beyond the window can
+            // miss what Chrome hasn't painted there yet, such as a display)
+            await screenshot(y, Math.min(height, total - y));
+            shots.push(await screenshot(y, Math.min(height, total - y)));
+          }
           return shots;
         },
         // the mouse at x, y in the window: type is pressed, moved (with the
