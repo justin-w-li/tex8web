@@ -4,7 +4,7 @@
 //   const page = await chrome.open('file:///…/page.html', { javascript: false });
 //   await page.evaluate('document.title'); await page.screenshot(y, height);
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -50,12 +50,14 @@ export async function launch() {
   // (Chrome won't run as root, as in a container, with its sandbox)
   const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars',
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
-    '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore', detached: true });
+    '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'],
+    { stdio: ['ignore', 'ignore', openSync(`${profile}.log`, 'w')], detached: true });
   const cleanup = () => {
     // (the whole group: on Linux, Chrome's helpers outlive it otherwise and
     // keep writing into the profile)
     try { process.kill(-proc.pid, 'SIGKILL'); } catch {}
     try {
+      rmSync(`${profile}.log`, { force: true });
       rmSync(profile, { recursive: true, force: true, maxRetries: 10 });
     } catch (e) {
       console.error(`tex8web: Chrome's profile ${profile} is left behind (${e.code})`);
@@ -64,13 +66,17 @@ export async function launch() {
   process.on('exit', cleanup);
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(1));
 
+  // (up to 30s: a first start, beside builds using every core, is slow)
   let port;
-  for (let i = 0; i < 100 && !port; i++) {
+  for (let i = 0; i < 300 && !port && proc.exitCode === null; i++) {
     const file = join(profile, 'DevToolsActivePort');
     if (existsSync(file)) port = readFileSync(file, 'utf8').split('\n')[0];
     else await sleep(100);
   }
-  if (!port) throw new Error('Chrome did not start');
+  if (!port) {
+    const log = readFileSync(`${profile}.log`, 'utf8').trim().split('\n').slice(-10).join('\n');
+    throw new Error(`Chrome did not start (${binary}, exit ${proc.exitCode}):\n${log}`);
+  }
   const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
   const browser = await connect(version.webSocketDebuggerUrl);
 
