@@ -126,6 +126,12 @@ const contents = {
   ],
 };
 
+// the text in its own font, after font commands the PDF keeps in a group:
+// a \contentsname in small capitals
+const fonts = {
+  'test-fonts': [/<p class='noindent'>The text, in its own font\.\s*<\/p>/],
+};
+
 // colors in dark mode, at another lightness (a light-dark() of the color),
 // and black text in the page's text color: \textcolor's, \colorbox's and
 // \fcolorbox's (in the stylesheet), listings', and in math (a \rule too);
@@ -267,6 +273,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of contents[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} in the page`);
+  }
+  for (const pattern of fonts[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the text's own font`);
   }
   for (const pattern of colors[doc.name] ?? []) {
     if (!pattern.test(html + styles)) problems.push(`no ${pattern.source} among the colors`);

@@ -195,6 +195,7 @@ Each `main.tex` names its source, license and changes at the top.
   - no scripts in a prerendered page but tex8web's (tex8web-head.js and tex8web-page.js), no MathJax errors, no macros MathJax doesn't know, no `\widehat` or `\widetilde` as narrow as `\hat` or `\tilde`;
   - the table of contents beside the text, not in it (a list of figures stays), each entry's number in its box, and each heading's label holding its entry's number, with one space after it, which the stylesheet sizes; test-generic's measured spacing, label space and title size; test-report's table of contents (with its title, beside the text, the list of figures before it still in the text) and its measured indents, number widths and chapter sizes; and test-russian's and test-greek's, without a heading, titled `\contentsname` in its own letters;
   - each enumitem list with its own lengths;
+  - in `test-fonts.tex`, the text in its own font after font commands the PDF keeps in a group (a `\contentsname` in small capitals);
   - in `test.tex`, what tex8web.js makes of the math through MathJax's internals (delimiter sizes, an align's rows);
   - in `test-color.tex`, the dark-mode colors of `\textcolor`, `\colorbox`, `\fcolorbox`, listings and math (a `\rule` too), the math's own, mixed, complemented and xcolor-only colors (also those its options define, and the models HTML, cmyk and Gray), and colortbl's `\rowcolor` and `\cellcolor`;
   - in `test-color-math.tex`, colors in math in a document without colortbl (whose MathJax extension loads the color one);

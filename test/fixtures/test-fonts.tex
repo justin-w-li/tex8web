@@ -1,0 +1,10 @@
+% A test for tex8web: font commands that the PDF keeps in a group, which
+% the page keeps there too: a \contentsname's (a template's, centered in
+% small capitals).
+\documentclass{article}
+\renewcommand\contentsname{\hspace*{\fill}\normalfont\scshape Table of Contents\hspace*{\fill}}
+\begin{document}
+\tableofcontents
+\section{Introduction}
+The text, in its own font.
+\end{document}
