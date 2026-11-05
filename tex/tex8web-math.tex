@@ -60,7 +60,8 @@
 
 % amsmath's displays, which tex4ht passes to MathJax as they are, except:
 % - MathJax has no \intertext: split the alignment there, giving MathJax
-%   the parts, and typeset the text between them here, as text. Each part
+%   the parts, and typeset the text between them here, as text, in a group
+%   (amsmath sets it in a \vbox, so its font commands end with it). Each part
 %   starts with \webalignment{n}, n numbering the split alignments, and
 %   tex8web.js gives the parts of one alignment the same columns. (Each
 %   part of an alignat gets its number of columns)
@@ -99,7 +100,7 @@
     \tl_set:Nn \l__web_before_tl {#2}
     \regex_replace_once:nnN { \c{\\} \s* \Z } {} \l__web_before_tl
     \tl_if_blank:VF \l__web_before_tl { \exp_args:Nno \__web_part:nn {#1} {\l__web_before_tl} }
-    \HCode{<span~class="tex8web-intertext">} #3 \HCode{</span>}
+    \HCode{<span~class="tex8web-intertext">} \group_begin: #3 \group_end: \HCode{</span>}
     \tl_if_blank:nF {#4} { \__web_alignment:nn {#1} {#4} }
 }
 

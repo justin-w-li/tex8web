@@ -84,6 +84,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - MathJax errors, macros MathJax doesn't know, and the sizes `tex8web.js` sets;
   - the table of contents beside the text, with its numbers and indents;
   - colors in dark mode, indexes, enumitem's lengths, alt text;
+  - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`);
   - speech for every formula, links and files in place, unique ids, and only publishable files.
 
   It also builds `test-generic` for MathJax in the browser. `node test/run.mjs <name>` builds and checks one document.

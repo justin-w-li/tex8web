@@ -1,0 +1,18 @@
+% A test for tex8web: font commands that the PDF keeps in a group, which
+% the page keeps there too: a \contentsname's (a template's, centered in
+% small capitals), and an \intertext's.
+\documentclass{article}
+\usepackage{amsmath}
+\renewcommand\contentsname{\hspace*{\fill}\normalfont\scshape Table of Contents\hspace*{\fill}}
+\begin{document}
+\tableofcontents
+\section{Introduction}
+The text, in its own font.
+\begin{align*}
+    a &= b \\
+    \intertext{A note, \itshape partly in italics.}
+    c &= d \\
+    \intertext{Another note.}
+    e &= f
+\end{align*}
+\end{document}

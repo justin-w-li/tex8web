@@ -13,7 +13,9 @@
 % - two build elements, for the HTML passes, which remove them: the PDF
 %   (\WebPDF) and the \WebMathMacros definitions; and \contentsname,
 %   typeset, so that tex4ht writes its letters (babel's are font commands,
-%   \CYRS, of which \text_purify:n knows only Latin's)
+%   \CYRS, of which \text_purify:n knows only Latin's), in a group: the
+%   head is written as the document starts, so a \contentsname's font
+%   commands (\scshape) would set the whole text
 % \WebPDF{path}: an icon linking to the document's PDF; tex8web.mk4
 % copies the file (path from the document's directory) next to the page
 \setbox\z@\hbox{\everymath{}$\xdef\web@exscale{\web@ratio{\fontdimen6\textfont3}}$}
@@ -31,7 +33,7 @@
     \__web_escape:N \l__web_build_tl
     \HCode{<script~type="text/x-tex8web-build"~data-pdf="\tl_to_str:N \g__web_pdf_tl">
         \l__web_build_tl</script><script~type="text/x-tex8web-contents">}
-    \contentsname
+    \group_begin: \contentsname \group_end:
     \HCode{</script>\Hnewline}
 }
 \tl_new:N \l__web_build_tl
