@@ -35,6 +35,14 @@ return {
       .. "--tex8web-section-style: normal; }"), "lmroman10-regular.woff2 lmsans10-regular.woff2")
   end,
 
+  ["assets.faces: a table of contents' entries in their level's font"] = function()
+    local entries = '<span class="chapterToc">A</span><span class="subsectionToc">B</span>'
+    equal(faces(entries, ""), "lmroman10-bold.woff2 lmroman10-regular.woff2")
+    equal(faces(entries, ":root { --tex8web-toc-chapter-weight: normal;\n --tex8web-toc-subsection-style: italic;"
+      .. "\n --tex8web-toc-subsection-family: var(--tex8web-sans); }"),
+      "lmroman10-regular.woff2 lmsans10-oblique.woff2")
+  end,
+
   ["assets.faces: not the math, which MathJax sets"] = function()
     equal(faces('<h3 class="sectionHead"><span class="mathjax-inline">\\(x\\)</span></h3>', ""),
       "lmroman10-regular.woff2")

@@ -273,6 +273,20 @@
 
 % --- layout -----------------------------------------------------------------
 
+% the current font's size, family, weight, style and variant as CSS, set
+% globally for after the box it's tried out in
+\newcommand\web@readfont{%
+    \xdef\web@size{\f@size pt}%
+    \gdef\web@family{inherit}%
+    \web@iffont\f@family\sfdefault{\gdef\web@family{var(--tex8web-sans)}}%
+    \web@iffont\f@family\ttdefault{\gdef\web@family{var(--tex8web-mono)}}%
+    \xdef\web@weight{\if b\expandafter\@car\f@series\@nil bold\else normal\fi}%
+    \gdef\web@style{normal}%
+    \web@iffont\f@shape\itdefault{\gdef\web@style{italic}}%
+    \web@iffont\f@shape\sldefault{\gdef\web@style{italic}}%
+    \gdef\web@variant{normal}%
+    \web@iffont\f@shape\scdefault{\gdef\web@variant{small-caps}}}
+
 % headings as much larger than the text as in the PDF (in the standard
 % classes' sizes), and a column as wide as the PDF's, in ems of the text.
 % With titlesec, a heading's size, family, weight, style and alignment are
@@ -312,16 +326,7 @@
                     \gdef\web@labelsep{0.5em}%
                 \fi\fi\fi
             \fi
-            \xdef\web@size{\f@size pt}%
-            \gdef\web@family{inherit}%
-            \web@iffont\f@family\sfdefault{\gdef\web@family{var(--tex8web-sans)}}%
-            \web@iffont\f@family\ttdefault{\gdef\web@family{var(--tex8web-mono)}}%
-            \xdef\web@weight{\if b\expandafter\@car\f@series\@nil bold\else normal\fi}%
-            \gdef\web@style{normal}%
-            \web@iffont\f@shape\itdefault{\gdef\web@style{italic}}%
-            \web@iffont\f@shape\sldefault{\gdef\web@style{italic}}%
-            \gdef\web@variant{normal}%
-            \web@iffont\f@shape\scdefault{\gdef\web@variant{small-caps}}}%
+            \web@readfont}%
         % (by the commands in the format: tex4ht's \centering leaves the
         % line's skips alone, latex.4ht)
         \gdef\web@align{left}%
@@ -398,6 +403,30 @@
 \fi
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
+% With tocloft, each level's entries in the font of its \cft<level>font,
+% tried out as a heading's is, and its size as a multiple of the text's.
+% (tex4ht's own entries don't use it, so the class's fonts are in
+% tex/tex8web-text.tex. The lists of figures and tables stay in the text's
+% font)
+\newcommand\web@tocfont[2]{% tocloft's name, level
+    \ifcsname cft#1font\endcsname
+        \begingroup
+            \setbox0\vbox{\csname cft#1font\endcsname\web@readfont}%
+        \endgroup
+        \web@Css{:root { --tex8web-toc-#2-size: \web@ratio\web@size;
+            --tex8web-toc-#2-family: \web@family; --tex8web-toc-#2-weight: \web@weight;
+            --tex8web-toc-#2-style: \web@style; --tex8web-toc-#2-variant: \web@variant; }}%
+    \fi
+}
+\ifdefined\cftsecnumwidth
+    \web@tocfont{part}{part}
+    \web@tocfont{chap}{chapter}
+    \web@tocfont{sec}{section}
+    \web@tocfont{subsec}{subsection}
+    \web@tocfont{subsubsec}{subsubsection}
+    \web@tocfont{para}{paragraph}
+    \web@tocfont{subpara}{subparagraph}
+\fi
 \web@Css{:root { --tex8web-textwidth: \web@em\web@textwidth; }}
 % \WebLikePDF: the PDF's text size, leading, paragraph indent and space,
 % and justified, hyphenated text (css/tex8web.css), in place of the page's

@@ -44,10 +44,11 @@ local function custom(css, name)
 end
 
 -- text in tex4ht's classes for sans-serif fonts (css/tex8web.css), or
--- headings in sans-serif (tex8web-page.tex, in the document's stylesheet)
+-- headings and contents' entries in sans-serif (tex8web-page.tex, in the
+-- document's stylesheet)
 local function uses_sans(document, context)
   local css = assert(files.read(context.dir .. "/" .. context.input .. ".css"))
-  local found = css:find("%-%-tex8web%-%a+%-family: var%(%-%-tex8web%-sans%)") ~= nil
+  local found = css:find("%-%-tex8web%-[%a-]+%-family: var%(%-%-tex8web%-sans%)") ~= nil
   document:traverse_elements(function(el)
     local class = el:get_attribute("class") or ""
     found = found or class:find("%-lmss") or class:find("^cmss") or class:find("^ecss")
@@ -72,15 +73,23 @@ function M.faces(document, css)
     kbd = {family = "system"}, samp = {family = "system"},
   }
   local classes = {titleHead = {bold = false}, id = {bold = true}, ["tex8web-toc-title"] = {bold = true}}
-  for _, level in ipairs({"section", "subsection", "subsubsection", "paragraph", "subparagraph"}) do
-    local family = custom(css, level .. "-family") or ""
-    local face = {bold = (custom(css, level .. "-weight") or "bold") == "bold",
-      italic = (custom(css, level .. "-style") or "normal") == "italic",
+  -- (what the stylesheet sets, from its --tex8web-<prefix>-weight and so on)
+  local function font_of(prefix, bold)
+    local family = custom(css, prefix .. "-family") or ""
+    return {bold = (custom(css, prefix .. "-weight") or bold) == "bold",
+      italic = (custom(css, prefix .. "-style") or "normal") == "italic",
       family = family:find("sans") and "sans" or family:find("mono") and "mono" or nil}
-    classes[level .. "Head"], classes["like" .. level .. "Head"] = face, face
   end
-  local toc = {bold = (custom(css, "toc-section-weight") or "normal") == "bold"}
-  classes.sectionToc, classes.likesectionToc = toc, toc
+  for _, level in ipairs({"section", "subsection", "subsubsection", "paragraph", "subparagraph"}) do
+    local font = font_of(level, "bold")
+    classes[level .. "Head"], classes["like" .. level .. "Head"] = font, font
+  end
+  -- (entries are bold without tocloft only for chapters)
+  for _, level in ipairs({"part", "chapter", "section", "subsection", "subsubsection", "paragraph", "subparagraph"}) do
+    local font = font_of("toc-" .. level, level == "chapter" and "bold" or "normal")
+    classes[level .. "Toc"], classes["like" .. level .. "Toc"] = font, font
+  end
+  classes.appendixToc = classes.chapterToc
   for class, rule in css:gmatch("%.([%w-]+%-%d[%w-]*)%s*(%b{})") do
     local face = classes[class] or {}
     for property, value in rule:gmatch("([%w-]+)%s*:%s*([^;}]+)") do

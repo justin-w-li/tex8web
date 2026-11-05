@@ -491,6 +491,35 @@ const spaced = `(() => {
   });
 })()`;
 
+// the table of contents' entries in tocloft's fonts (css/tex8web.css), each
+// level's as the browser computes it, with JavaScript off, when every
+// entry is shown: the size and indent as multiples of the contents' own
+const entryFonts = `(() => {
+  const base = parseFloat(getComputedStyle(document.querySelector('.tableofcontents')).fontSize);
+  return Object.fromEntries([...document.querySelectorAll('.tableofcontents > span')].map(entry => {
+    const style = getComputedStyle(entry);
+    return [entry.className, { size: +(parseFloat(style.fontSize) / base).toFixed(2),
+      indent: +(parseFloat(style.marginLeft) / base).toFixed(2), family: style.fontFamily,
+      weight: style.fontWeight, style: style.fontStyle, variant: style.fontVariantCaps }];
+  }));
+})()`;
+// (the part's \Large\scshape; chapters' \sffamily\bfseries; sections'
+// \itshape; subsections' \bfseries; subsubsections' \large\sffamily, whose
+// indent is still the 3.8em that TeX measures; paragraphs' \ttfamily;
+// subparagraphs' \slshape)
+const roman = /Latin Modern Roman/, sans = /Latin Modern Sans/, mono = /Latin Modern Mono/;
+const tocFonts = {
+  'test-tocloft': {
+    partToc: { size: 1.44, family: roman, weight: '400', style: 'normal', variant: 'small-caps' },
+    chapterToc: { size: 1, family: sans, weight: '700', style: 'normal', variant: 'normal' },
+    sectionToc: { size: 1, family: roman, weight: '400', style: 'italic', variant: 'normal' },
+    subsectionToc: { size: 1, indent: 3.8, family: roman, weight: '700', style: 'normal', variant: 'normal' },
+    subsubsectionToc: { size: 1.2, indent: 3.8, family: sans, weight: '400', style: 'normal', variant: 'normal' },
+    paragraphToc: { size: 1, family: mono, weight: '400', style: 'normal', variant: 'normal' },
+    subparagraphToc: { size: 1, family: roman, weight: '400', style: 'italic', variant: 'normal' },
+  },
+};
+
 const docs = documents().filter(d => !only.length || only.includes(d.name));
 // each document built twice, prerendered (html) and for the browser
 // (fallback), a few builds at a time, the largest first; a document is
@@ -532,6 +561,15 @@ async function compare(chrome, doc, ok) {
       if (file !== typeset) {
         for (const [id, gap, want] of await page.evaluate(spaced)) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
         if (await page.evaluate(themeShown)) problems.push(`${html}: the theme button shown with JavaScript off`);
+        const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
+        for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
+          for (const [key, value] of Object.entries(want)) {
+            const got = entries[level]?.[key];
+            if (!(value instanceof RegExp ? value.test(got) : got === value)) {
+              problems.push(`${html}: .${level} ${key} is ${got}, not ${value}`);
+            }
+          }
+        }
       }
       shots.push(await page.screens());
       await page.close();

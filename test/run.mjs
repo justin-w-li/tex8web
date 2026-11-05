@@ -38,7 +38,8 @@ if (!only.length) {
 // label in a bold font's ems, a title's own size, and framed's space
 // around its box (\topsep); report's table of contents, its sections
 // indented from its chapters, and its chapter's title and label; the
-// abstract's leading, \small's 12pt over the text's 13.6pt
+// abstract's leading, \small's 12pt over the text's 13.6pt; tocloft's font
+// for each level of the table of contents
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
@@ -55,6 +56,14 @@ const measured = {
   'test-likepdf': { '--tex8web-pdf-size': '10.95pt', '--tex8web-pdf-leading': '1.242',
     '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em', '--tex8web-justify': 'justify',
     '--tex8web-hyphens': 'auto' },
+  // (tocloft's \cft<level>font: \Large\scshape; \sffamily\bfseries; \itshape;
+  // \bfseries; \large\sffamily; \ttfamily; \slshape)
+  'test-tocloft': { '--tex8web-toc-part-size': '1.44', '--tex8web-toc-part-variant': 'small-caps',
+    '--tex8web-toc-chapter-family': 'var(--tex8web-sans)', '--tex8web-toc-chapter-weight': 'bold',
+    '--tex8web-toc-section-style': 'italic', '--tex8web-toc-section-weight': 'normal',
+    '--tex8web-toc-subsection-weight': 'bold', '--tex8web-toc-subsubsection-size': '1.2',
+    '--tex8web-toc-subsubsection-family': 'var(--tex8web-sans)',
+    '--tex8web-toc-paragraph-family': 'var(--tex8web-mono)', '--tex8web-toc-subparagraph-style': 'italic' },
 };
 
 // what tex8web.js makes of some of test.tex's math through MathJax's
@@ -313,6 +322,9 @@ const preloads = {
   'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmroman10-bolditalic',
     'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'b', 'c', 'mi', 'v', 'lo', 'so', 's3', 's4', 'brk']
       .map(font => `mathjax/mjx-tex-${font}`)],
+  // (the table of contents' sans-serif, bold and italic entries)
+  'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
+    'lmsans10-regular', 'lmsans10-bold'],
 };
 
 // what's wrong with a built page: its log, the page and the files with it
