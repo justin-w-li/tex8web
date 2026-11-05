@@ -176,13 +176,17 @@ end
 -- tex4ht's colors, in its stylesheet (\colorbox's and \fcolorbox's, soul's
 -- highlights) and in style attributes (\textcolor's, listings'), in dark
 -- mode at another lightness, as tcolorbox's (tex8web-boxes.tex); black text
--- and rules in the text's color
+-- and rules in the text's color. (Without xcolor, tex4ht writes rgb(r,g,b):
+-- html4.4ht's \Configure{HColor:rgb} and its gray and cmyk ones)
 local dark = {color = "max(l, 1 - l)", background = "min(l, 1.24 - l)", border = "max(l, 0.62)"}
 local black = {color = "var(--tex8web-text)", border = "currentColor"}
 function M.colors_in_dark_mode(css)
   return (css:gsub("%f[%w-]([%a-]+)(%s*:%s*)([^;{}]*)", function(property, colon, value)
     local kind = property:match("^%a+")
     if not dark[kind] or value:find("light-dark", 1, true) then return end
+    value = value:gsub("rgb%((%d+),(%d+),(%d+)%)", function(r, g, b)
+      return ("#%02X%02X%02X"):format(r, g, b)
+    end)
     return property .. colon .. value:gsub("#%x%x%x%x%x%x%f[^%w]", function(hex)
       if hex == "#000000" and black[kind] then return black[kind] end
       return ("light-dark(%s, oklch(from %s %s c h))"):format(hex, hex, dark[kind])
