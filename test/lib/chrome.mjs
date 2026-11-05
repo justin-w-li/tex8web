@@ -64,7 +64,7 @@ export async function launch() {
     }
   };
   process.on('exit', cleanup);
-  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(1));
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(1));
 
   // (up to 30s: a first start, beside builds using every core, is slow)
   let port;
