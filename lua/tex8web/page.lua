@@ -222,15 +222,16 @@ local function abstract_text(document)
   return text
 end
 
--- og:title and og:type, and from the abstract, if there is one, the
--- description
+-- og:title (if the title isn't empty) and og:type, and from the abstract,
+-- if there is one, the description
 function M.meta_tags(document)
   local head = document:query_selector("head")[1]
   local title = document:query_selector("title")[1]
   local function add(attribute, name, content)
     head:add_child_node(head:create_element("meta", {[attribute] = name, content = content}))
   end
-  if title then add("property", "og:title", trim(title:get_text())) end
+  local title_text = title and trim(title:get_text()) or ""
+  if title_text ~= "" then add("property", "og:title", title_text) end
   add("property", "og:type", "article")
   local description = abstract_text(document)
   if description and description ~= "" then
