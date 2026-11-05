@@ -110,17 +110,27 @@
 % as xcolor does); and whether xcolor came before colortbl, which doesn't
 % load it, but colortbl.4ht does, after the document's colors that the color
 % package made, which xcolor can't read (for colortbl's cells only: math
-% gets only the colors recorded here)
+% gets only the colors recorded here). The options dvipsnames, svgnames and
+% x11names define their colors as xcolor loads, before its hook below, so
+% the wrapper goes in as their files are read
 \ExplSyntaxOn
 \clist_new:N \g__web_colors_clist
 \bool_new:N \g__web_xcolor_bool
+\bool_new:N \g__web_record_bool
 \AddToHook { package/xcolor/before }
     { \@ifpackageloaded { colortbl } { } { \bool_gset_true:N \g__web_xcolor_bool } }
-\AddToHook{package/xcolor/after}{
-    \cs_set_eq:NN \__web_definecolor:w \XC@definecolor
-    \cs_gset:Npn \XC@definecolor [ #1 ] #2 {
-        \clist_gput_right:Ne \g__web_colors_clist {#2}
-        \__web_definecolor:w [ #1 ] {#2}
-    }
+\cs_new_protected:Npn \__web_record_colors: {
+    \bool_if:NF \g__web_record_bool
+        {
+            \bool_gset_true:N \g__web_record_bool
+            \cs_gset_eq:NN \__web_definecolor:w \XC@definecolor
+            \cs_gset:Npn \XC@definecolor [ ##1 ] ##2 {
+                \clist_gput_right:Ne \g__web_colors_clist {##2}
+                \__web_definecolor:w [ ##1 ] {##2}
+            }
+        }
 }
+\AddToHook { package/xcolor/after } { \__web_record_colors: }
+\clist_map_inline:nn { dvipsnam.def, svgnam.def, x11nam.def }
+    { \AddToHook { file/#1/before } { \__web_record_colors: } }
 \ExplSyntaxOff
