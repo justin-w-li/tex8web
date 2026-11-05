@@ -33,7 +33,7 @@
     \__web_escape:N \l__web_build_tl
     \HCode{<script~type="text/x-tex8web-build"~data-pdf="\tl_to_str:N \g__web_pdf_tl">
         \l__web_build_tl</script><script~type="text/x-tex8web-contents">}
-    \group_begin: \contentsname \group_end:
+    \group_begin: \cs_if_exist_use:N \contentsname \group_end:
     \HCode{</script>\Hnewline}
 }
 \tl_new:N \l__web_build_tl
@@ -348,12 +348,12 @@
 % The abstract's leading as in the PDF, a fraction of the text's: tex4ht
 % sets \small as a span, which leaves the paragraph's own line height at the
 % text's. (The class's \abstract sets the size)
-\AtBeginDocument{%
+\AtBeginDocument{\ifdefined\abstract
     \let\web@abstract\abstract
     \renewcommand\abstract{%
         \dimen@\baselineskip
         \web@abstract
         \web@Css{:root { --tex8web-abstract-leading:
-            \strip@pt\dimexpr\baselineskip*65536/\dimen@\relax; }}}}
+            \strip@pt\dimexpr\baselineskip*65536/\dimen@\relax; }}}\fi}
 
 \makeatother

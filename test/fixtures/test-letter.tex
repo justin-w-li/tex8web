@@ -1,0 +1,12 @@
+% A test for tex8web: a class without \abstract or \contentsname, which
+% tex8web must not assume (the checks are the build's own).
+\documentclass{letter}
+\signature{Someone}
+\address{A street\\ A town}
+\begin{document}
+\begin{letter}{Another\\ Elsewhere}
+\opening{Dear Another,}
+A letter with math, $x^2 + y^2 = z^2$.
+\closing{Yours,}
+\end{letter}
+\end{document}
