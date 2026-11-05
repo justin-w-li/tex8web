@@ -80,6 +80,13 @@ const pictures = {
     /<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.45\)'/],
 };
 
+// the title of a page without \maketitle: \title's text, as \maketitle
+// gives it (without the \thanks), for the tab and the link preview
+const titles = {
+  'test-title': [/<title>Notes on Groups\s+and Rings<\/title>/,
+    /<meta content='Notes on Groups\s+and Rings' property='og:title' \/>/],
+};
+
 // minipages and subfigures, two in one row, each with its share of the
 // PDF's text width and its position
 const minipages = {
@@ -264,6 +271,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of pictures[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);
+  }
+  for (const pattern of titles[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} as the page's title`);
   }
   if (preloads[doc.name]) {
     const found = [...html.matchAll(/<link [^>]*rel='preload'[^>]*>/g)]

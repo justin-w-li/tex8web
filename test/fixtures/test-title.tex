@@ -1,0 +1,10 @@
+% A test for tex8web's page title in a document without \maketitle: the
+% <title> and og:title come from \title, as \maketitle gives them, without
+% its formatting or its \thanks.
+\documentclass{article}
+\title{Notes on \emph{Groups}\\ and Rings\thanks{A note on the title.}}
+\author{Someone}
+\begin{document}
+\section{A section}
+Some text.
+\end{document}

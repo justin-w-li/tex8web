@@ -16,6 +16,22 @@
     {\HCode{<p>}\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
     {\HCode{</p>}}
 
+% the page's title without \maketitle: the \title's text, as tex4ht writes
+% it for the <title> when \maketitle runs (article.4ht, html4.4ht: \a:mktl,
+% the first argument of \Configure{maketitle}, run here with its markup
+% dropped). A config's own \Configure{TITLE+} still wins
+\web@needs{a:mktl}
+\newif\ifweb@titled
+\def\web@notitle{\@latex@error{No \noexpand\title given}\@ehc}% the kernel's \@title
+\AddToHook{cmd/maketitle/before}{\global\web@titledtrue}
+\AtEndDocument{%
+    \ifweb@titled\else\ifx\@title\web@notitle\else
+        \begingroup
+            \let\HCode\@gobble \let\EndP\relax \let\IgnorePar\relax
+            \csname a:mktl\endcsname
+        \endgroup
+    \fi\fi}
+
 % --- links ------------------------------------------------------------------
 
 \@ifpackageloaded{hyperref}{%

@@ -184,7 +184,6 @@ Each item says what goes wrong and, where there is one, what to do.
 - **Minipages.** A minipage inside a paragraph's text breaks the paragraph around it. `\centering` in a minipage is followed only in a figure. Two minipages, each in its own `\fbox`, stack.
 - **Pictures' heights.** Only `\includegraphics`'s `width` is followed. With `height`, the picture keeps its proportions at a size that isn't the PDF's.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
-- **A page's title** comes from `\maketitle`. Without it the page's `<title>` is empty. Set one in your config with `\Configure{TITLE+}{...}`, as `examples/custom/custom.cfg` does.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.
 - **imakeidx's `program`** isn't followed: makeindex always runs. Its `splitindex` option isn't supported.
