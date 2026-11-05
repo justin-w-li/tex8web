@@ -50,6 +50,11 @@ const measured = {
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
     '--tex8web-toc-section-skip': '0em', '--tex8web-toc-section-weight': 'normal',
     '--tex8web-chapter-size': '2.488em', '--tex8web-chapter-label-size': '0.8336em' },
+  // (\WebLikePDF in an 11pt document: its size, \baselineskip 13.6pt,
+  // \parindent 17pt and \parskip 0pt)
+  'test-likepdf': { '--tex8web-pdf-size': '10.95pt', '--tex8web-pdf-leading': '1.242',
+    '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em', '--tex8web-justify': 'justify',
+    '--tex8web-hyphens': 'auto' },
 };
 
 // what tex8web.js makes of some of test.tex's math through MathJax's

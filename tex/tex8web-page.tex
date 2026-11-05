@@ -345,6 +345,14 @@
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
 \web@Css{:root { --tex8web-textwidth: \web@em\web@textwidth; }}
+% \WebLikePDF: the PDF's text size, leading, paragraph indent and space,
+% and justified, hyphenated text (css/tex8web.css), in place of the page's
+% own. (A config runs it as the document starts, at its normal size)
+\newcommand\WebLikePDF{%
+    \web@Css{:root { --tex8web-pdf-size: \f@size pt;
+        --tex8web-pdf-leading: \web@ratio\baselineskip;
+        --tex8web-parindent: \web@em\parindent; --tex8web-parskip: \web@em\parskip;
+        --tex8web-justify: justify; --tex8web-hyphens: auto; }}}
 % The abstract's leading as in the PDF, a fraction of the text's: tex4ht
 % sets \small as a span, which leaves the paragraph's own line height at the
 % text's. (The class's \abstract sets the size)

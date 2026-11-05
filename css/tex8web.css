@@ -77,7 +77,18 @@ div.newtheorem .head { font-weight: normal; }
    everything else in proportion: headings as much larger than the text as
    in the PDF; MathJax sets math as large as the text around it, and tex4ht
    sizes other fonts relative to the text */
-html body { font-size: 12pt; }
+html body { font-size: var(--tex8web-pdf-size, 12pt); }
+/* \WebLikePDF (tex8web-page.tex) sets the PDF's text size above, and its
+   leading, paragraphs and justification here. Text is justified and
+   hyphenated only on a wide screen, and not in the margin's notes: in a
+   narrow column, a formula that can't break leaves wide gaps. Hyphenation
+   follows the root's lang, which tex4ht takes from babel */
+html body { line-height: var(--tex8web-pdf-leading, normal); }
+p.indent { text-indent: var(--tex8web-parindent, 0); }
+p + p { margin-top: var(--tex8web-parskip, 1em); }
+@media (--tex8web-wide) {
+    html body { text-align: var(--tex8web-justify, start); hyphens: var(--tex8web-hyphens, manual); } }
+:is(.tex8web-toc, .tex8web-sidenote, .tex8web-controls) { text-align: start; hyphens: manual; }
 h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
 /* (a \thanks is a footnote in the PDF, upright; html4.4ht sets it in italic) */
 div.thanks { font-style: normal; }
@@ -541,8 +552,10 @@ dd.enumerate-enumitem { margin-left: 0; }
 .tex8web-sidenote p { margin: 0; text-indent: 0; }
 /* (in place of tex4ht's p + p, p + div and p + pre, which notes come
    between; :is, to outweigh its p { margin-top: 0 }) */
-:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(p, div, pre) {
+:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div, pre) {
     margin-top: 1em; }
+:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + p {
+    margin-top: var(--tex8web-parskip, 1em); }
 @media (--tex8web-wide) {
     .tex8web-sidenote { float: right; clear: right; position: relative;
         width: var(--tex8web-margin); margin: 0 calc(-1 * var(--tex8web-gap) - var(--tex8web-margin)) 0.75em 0;

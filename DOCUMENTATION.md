@@ -91,6 +91,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 | `\WebColor{name}{light}{dark}` | your config writes HTML or CSS of its own and needs a color that follows dark mode |
 | `\WebTerm\cs` | your document marks the terms it defines with a one-argument command, and you want the contents filter to find them |
 | `\WebPDF{path}` | you publish the PDF beside the page and want an icon that links to it |
+| `\WebLikePDF` | you want the text set as in the PDF: its size and line spacing, indented paragraphs, and justified text |
 | `\Css{...}` | you want a style of your own, or to change one of tex8web's |
 
 **`\WebMathMacros`** gives MathJax its own definitions, which take precedence over the document's. Write them in MathJax's TeX. You need it for:
@@ -101,6 +102,8 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 **`\WebColor`** makes the CSS variable `--name` from two colors: the first in light mode, the second in dark mode.
 
 **`\WebTerm\cs`** makes what `\cs` sets in the text a term that the filter finds. Its id is `term-` followed by its text. Inside a heading or a theorem's note, the term is found as that heading or theorem. Give each command to `\WebTerm` once.
+
+**`\WebLikePDF`** gives up the page's own reading defaults for the PDF's. The text takes the PDF's size, and the column, in ems, follows it. Lines are spaced as TeX spaces them, and paragraphs are indented with the PDF's space between them. On a wide screen the text is justified and hyphenated. A narrow screen stays ragged right, where a formula that can't break would leave wide gaps.
 
 **`\WebPDF`** copies the PDF next to the page. Its path is relative to the document. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`.
 
@@ -152,17 +155,18 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 ## Differences from the PDF
 
-These are deliberate:
+These are deliberate. A config's [`\WebLikePDF`](#your-own-config) follows the PDF in the first four.
 
 - The text is 12pt, larger than most PDFs, and everything else is in proportion. The column is as wide as the PDF's in ems.
+- Line spacing is the browser's, a little looser than TeX's.
 - Paragraphs are separated by space instead of indented.
+- The text is ragged right, not justified and hyphenated.
 - A picture keeps its size as a narrower screen reflows the text. It shrinks only once the column is narrower than the picture.
 - A picture given a `width` and a `height` without `keepaspectratio` keeps its proportions instead of being squashed.
 - Minipages and subfigures that share a line in the PDF stay side by side at their PDF widths. On a narrow screen they wrap.
 - Display math that doesn't fit scrolls sideways. On a narrow screen, so does a wide table or verbatim block.
 - The table of contents has no page numbers or dot leaders.
 - An index is in one column. Its numbers count the `\index` commands in order, since the page has no page numbers.
-- Line spacing is the browser's, a little looser than TeX's.
 - Dark mode has its own palette.
 
 ## Known limitations
