@@ -4,7 +4,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { build, documents, expected, pool, root, testDir } from './lib/build.mjs';
+import { build, documents, expected, largestFirst, pool, root, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 const only = process.argv.slice(2);
@@ -307,10 +307,8 @@ function check(doc, result, out, aux) {
 }
 
 const docs = documents().filter(doc => !only.length || only.includes(doc.name));
-const size = doc => statSync(join(doc.dir, doc.tex)).size;
-// each document built and checked, two at a time, the largest first, so
-// that the longest build doesn't hold up the end
-const jobs = [...docs].sort((a, b) => size(b) - size(a)).map(doc => async () => {
+// each document built and checked, a few at a time
+const jobs = largestFirst(docs).map(doc => async () => {
   const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
   const result = await build(doc, out, aux, { TEX8WEB_MATHML: '1' });
   report(doc.name, check(doc, result, out, aux));
@@ -332,7 +330,7 @@ if (!only.length) jobs.push(async () => {
   report(`${doc.name} (MathJax in the browser)`, problems);
 });
 
-await pool(jobs, 2, job => job());
+await pool(jobs, workers, job => job());
 
 console.log(failures ? `\n${failures} failed` : '\nall passed');
 process.exit(failures ? 1 : 0);
