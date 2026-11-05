@@ -1,6 +1,6 @@
 % A test for tex8web's table of contents with tocloft: each level in the
-% font of its \cft<level>font (a part in small capitals, chapters in sans
-% serif bold, sections in italics, subsections in bold, subsubsections in a
+% font of its \cft<level>font (a part in small capitals, chapters in
+% italics, sections in italics, subsections in bold, subsubsections in a
 % larger sans serif, paragraphs in typewriter, subparagraphs slanted).
 \documentclass{report}
 \usepackage{tocloft}
@@ -14,7 +14,7 @@
 \setlength{\cftsubparaindent}{3.8em}
 \setlength{\cftsubparanumwidth}{0em}
 \renewcommand{\cftpartfont}{\Large\scshape}
-\renewcommand{\cftchapfont}{\sffamily\bfseries}
+\renewcommand{\cftchapfont}{\normalfont\itshape}
 \renewcommand{\cftsecfont}{\itshape}
 \renewcommand{\cftsubsecfont}{\bfseries}
 \renewcommand{\cftsubsubsecfont}{\large\sffamily}

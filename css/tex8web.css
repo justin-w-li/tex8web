@@ -302,12 +302,16 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
 .tableofcontents > br { display: none; }
 /* (not html4.4ht's double line height for chapters, which stood for the
    space above them; nor its part's title larger than the part's number,
-   html4.4ht sizing both the entry and its link) */
+   html4.4ht sizing both the entry and its link; nor its bold links, which
+   would keep a title bold when tocloft's font isn't) */
+/* Lengths in an entry are in the text's ems, as TeX's are, so they are
+   divided by the entry's size, a multiple of the text's */
 .chapterToc, .likechapterToc, .appendixToc {
     margin-top: calc(var(--tex8web-toc-chapter-skip) / 2 / var(--tex8web-toc-scale)); }
 :is(.chapterToc, .likechapterToc, .appendixToc), :is(.chapterToc, .likechapterToc, .appendixToc) a {
     line-height: inherit; }
 :is(.partToc, .likepartToc) a { font-size: inherit; }
+:is(.partToc, .likepartToc, .chapterToc, .likechapterToc, .appendixToc) a { font-weight: inherit; }
 .sectionToc, .likesectionToc { margin-top: calc(var(--tex8web-toc-section-skip) / 2 / var(--tex8web-toc-scale)); }
 .subsectionToc, .likesubsectionToc {
     margin-top: calc(var(--tex8web-toc-subsection-skip) / 2 / var(--tex8web-toc-scale)); }
@@ -323,58 +327,57 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
 .paragraphToc .tocnumber { min-width: calc(var(--tex8web-toc-paragraph-number) / var(--tex8web-toc-scale)); }
 .subparagraphToc { margin-left: calc(var(--tex8web-toc-subparagraph-indent) / var(--tex8web-toc-scale)); }
 .subparagraphToc .tocnumber { min-width: calc(var(--tex8web-toc-subparagraph-number) / var(--tex8web-toc-scale)); }
-/* each level's font: tocloft's, or without it, the class's (bold chapters).
-   Lengths in the entry are in the text's ems, as TeX's are, so they are
-   divided by the entry's size, a multiple of the text's */
+/* each level's font: tocloft's, or without it, html4.4ht's (bold parts at
+   110%, bold chapters) */
 .partToc, .likepartToc {
-    --tex8web-toc-scale: var(--tex8web-toc-part-size, 1);
+    --tex8web-toc-scale: var(--tex8web-toc-part-size, 1.1);
     font-size: calc(var(--tex8web-toc-scale) * 1em);
-    font-family: var(--tex8web-toc-part-family, inherit);
-    font-weight: var(--tex8web-toc-part-weight, inherit);
-    font-style: var(--tex8web-toc-part-style, inherit);
-    font-variant: var(--tex8web-toc-part-variant, inherit); }
+    font-family: var(--tex8web-toc-part-family);
+    font-weight: var(--tex8web-toc-part-weight, bold);
+    font-style: var(--tex8web-toc-part-style);
+    font-variant: var(--tex8web-toc-part-variant); }
 .chapterToc, .likechapterToc, .appendixToc {
     --tex8web-toc-scale: var(--tex8web-toc-chapter-size, 1);
     font-size: calc(var(--tex8web-toc-scale) * 1em);
-    font-family: var(--tex8web-toc-chapter-family, inherit);
+    font-family: var(--tex8web-toc-chapter-family);
     font-weight: var(--tex8web-toc-chapter-weight, bold);
-    font-style: var(--tex8web-toc-chapter-style, inherit);
-    font-variant: var(--tex8web-toc-chapter-variant, inherit); }
+    font-style: var(--tex8web-toc-chapter-style);
+    font-variant: var(--tex8web-toc-chapter-variant); }
 .sectionToc, .likesectionToc {
     --tex8web-toc-scale: var(--tex8web-toc-section-size, 1);
     font-size: calc(var(--tex8web-toc-scale) * 1em);
-    font-family: var(--tex8web-toc-section-family, inherit);
+    font-family: var(--tex8web-toc-section-family);
     font-weight: var(--tex8web-toc-section-weight, normal);
-    font-style: var(--tex8web-toc-section-style, inherit);
-    font-variant: var(--tex8web-toc-section-variant, inherit); }
+    font-style: var(--tex8web-toc-section-style);
+    font-variant: var(--tex8web-toc-section-variant); }
 .subsectionToc, .likesubsectionToc {
     --tex8web-toc-scale: var(--tex8web-toc-subsection-size, 1);
     font-size: calc(var(--tex8web-toc-scale) * 1em);
-    font-family: var(--tex8web-toc-subsection-family, inherit);
-    font-weight: var(--tex8web-toc-subsection-weight, inherit);
-    font-style: var(--tex8web-toc-subsection-style, inherit);
-    font-variant: var(--tex8web-toc-subsection-variant, inherit); }
+    font-family: var(--tex8web-toc-subsection-family);
+    font-weight: var(--tex8web-toc-subsection-weight);
+    font-style: var(--tex8web-toc-subsection-style);
+    font-variant: var(--tex8web-toc-subsection-variant); }
 .subsubsectionToc, .likesubsubsectionToc {
     --tex8web-toc-scale: var(--tex8web-toc-subsubsection-size, 1);
     font-size: calc(var(--tex8web-toc-scale) * 1em);
-    font-family: var(--tex8web-toc-subsubsection-family, inherit);
-    font-weight: var(--tex8web-toc-subsubsection-weight, inherit);
-    font-style: var(--tex8web-toc-subsubsection-style, inherit);
-    font-variant: var(--tex8web-toc-subsubsection-variant, inherit); }
+    font-family: var(--tex8web-toc-subsubsection-family);
+    font-weight: var(--tex8web-toc-subsubsection-weight);
+    font-style: var(--tex8web-toc-subsubsection-style);
+    font-variant: var(--tex8web-toc-subsubsection-variant); }
 .paragraphToc, .likeparagraphToc {
     --tex8web-toc-scale: var(--tex8web-toc-paragraph-size, 1);
     font-size: calc(var(--tex8web-toc-scale) * 1em);
-    font-family: var(--tex8web-toc-paragraph-family, inherit);
-    font-weight: var(--tex8web-toc-paragraph-weight, inherit);
-    font-style: var(--tex8web-toc-paragraph-style, inherit);
-    font-variant: var(--tex8web-toc-paragraph-variant, inherit); }
+    font-family: var(--tex8web-toc-paragraph-family);
+    font-weight: var(--tex8web-toc-paragraph-weight);
+    font-style: var(--tex8web-toc-paragraph-style);
+    font-variant: var(--tex8web-toc-paragraph-variant); }
 .subparagraphToc, .likesubparagraphToc {
     --tex8web-toc-scale: var(--tex8web-toc-subparagraph-size, 1);
     font-size: calc(var(--tex8web-toc-scale) * 1em);
-    font-family: var(--tex8web-toc-subparagraph-family, inherit);
-    font-weight: var(--tex8web-toc-subparagraph-weight, inherit);
-    font-style: var(--tex8web-toc-subparagraph-style, inherit);
-    font-variant: var(--tex8web-toc-subparagraph-variant, inherit); }
+    font-family: var(--tex8web-toc-subparagraph-family);
+    font-weight: var(--tex8web-toc-subparagraph-weight);
+    font-style: var(--tex8web-toc-subparagraph-style);
+    font-variant: var(--tex8web-toc-subparagraph-variant); }
 .tocnumber { display: inline-block; }
 /* (an entry without a number starts where the number would, as in the
    PDF) */

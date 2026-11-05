@@ -491,32 +491,46 @@ const spaced = `(() => {
   });
 })()`;
 
-// the table of contents' entries in tocloft's fonts (css/tex8web.css), each
+// the table of contents' entries in their fonts (css/tex8web.css), each
 // level's as the browser computes it, with JavaScript off, when every
-// entry is shown: the size and indent as multiples of the contents' own
+// entry is shown: sizes and the indent as multiples of the contents' own,
+// and the weight of the entry's link and number, which html4.4ht's rules
+// for the link can override
 const entryFonts = `(() => {
   const base = parseFloat(getComputedStyle(document.querySelector('.tableofcontents')).fontSize);
   return Object.fromEntries([...document.querySelectorAll('.tableofcontents > span')].map(entry => {
     const style = getComputedStyle(entry);
+    const link = entry.querySelector('a') && getComputedStyle(entry.querySelector('a'));
+    const number = entry.querySelector('.tocnumber') && getComputedStyle(entry.querySelector('.tocnumber'));
     return [entry.className, { size: +(parseFloat(style.fontSize) / base).toFixed(2),
       indent: +(parseFloat(style.marginLeft) / base).toFixed(2), family: style.fontFamily,
-      weight: style.fontWeight, style: style.fontStyle, variant: style.fontVariantCaps }];
+      weight: style.fontWeight, style: style.fontStyle, variant: style.fontVariantCaps,
+      linkSize: link && +(parseFloat(link.fontSize) / base).toFixed(2), linkWeight: link?.fontWeight,
+      numberWeight: number?.fontWeight }];
   }));
 })()`;
-// (the part's \Large\scshape; chapters' \sffamily\bfseries; sections'
-// \itshape; subsections' \bfseries; subsubsections' \large\sffamily, whose
-// indent is still the 3.8em that TeX measures; paragraphs' \ttfamily;
-// subparagraphs' \slshape)
+// (with tocloft, test-tocloft's: the part's \Large\scshape; chapters'
+// \normalfont\itshape; sections' \itshape; subsections' \bfseries;
+// subsubsections' \large\sffamily, whose indent is still the 3.8em that TeX
+// measures; paragraphs' \ttfamily; subparagraphs' \slshape. Without it,
+// html4.4ht's: a part bold at 110%, a chapter bold)
 const roman = /Latin Modern Roman/, sans = /Latin Modern Sans/, mono = /Latin Modern Mono/;
 const tocFonts = {
   'test-tocloft': {
-    partToc: { size: 1.44, family: roman, weight: '400', style: 'normal', variant: 'small-caps' },
-    chapterToc: { size: 1, family: sans, weight: '700', style: 'normal', variant: 'normal' },
+    partToc: { size: 1.44, linkSize: 1.44, family: roman, weight: '400', linkWeight: '400', style: 'normal',
+      variant: 'small-caps' },
+    chapterToc: { size: 1, family: roman, weight: '400', linkWeight: '400', numberWeight: '400', style: 'italic',
+      variant: 'normal' },
     sectionToc: { size: 1, family: roman, weight: '400', style: 'italic', variant: 'normal' },
     subsectionToc: { size: 1, indent: 3.8, family: roman, weight: '700', style: 'normal', variant: 'normal' },
     subsubsectionToc: { size: 1.2, indent: 3.8, family: sans, weight: '400', style: 'normal', variant: 'normal' },
     paragraphToc: { size: 1, family: mono, weight: '400', style: 'normal', variant: 'normal' },
     subparagraphToc: { size: 1, family: roman, weight: '400', style: 'italic', variant: 'normal' },
+  },
+  'test-report': {
+    partToc: { size: 1.1, linkSize: 1.1, family: roman, weight: '700', linkWeight: '700', style: 'normal' },
+    chapterToc: { size: 1, family: roman, weight: '700', linkWeight: '700', numberWeight: '700' },
+    sectionToc: { size: 1, weight: '400', linkWeight: '400' },
   },
 };
 

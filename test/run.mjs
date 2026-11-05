@@ -56,10 +56,10 @@ const measured = {
   'test-likepdf': { '--tex8web-pdf-size': '10.95pt', '--tex8web-pdf-leading': '1.242',
     '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em', '--tex8web-justify': 'justify',
     '--tex8web-hyphens': 'auto' },
-  // (tocloft's \cft<level>font: \Large\scshape; \sffamily\bfseries; \itshape;
+  // (tocloft's \cft<level>font: \Large\scshape; \normalfont\itshape; \itshape;
   // \bfseries; \large\sffamily; \ttfamily; \slshape)
   'test-tocloft': { '--tex8web-toc-part-size': '1.44', '--tex8web-toc-part-variant': 'small-caps',
-    '--tex8web-toc-chapter-family': 'var(--tex8web-sans)', '--tex8web-toc-chapter-weight': 'bold',
+    '--tex8web-toc-chapter-style': 'italic', '--tex8web-toc-chapter-weight': 'normal',
     '--tex8web-toc-section-style': 'italic', '--tex8web-toc-section-weight': 'normal',
     '--tex8web-toc-subsection-weight': 'bold', '--tex8web-toc-subsubsection-size': '1.2',
     '--tex8web-toc-subsubsection-family': 'var(--tex8web-sans)',
@@ -324,7 +324,7 @@ const preloads = {
       .map(font => `mathjax/mjx-tex-${font}`)],
   // (the table of contents' sans-serif, bold and italic entries)
   'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
-    'lmsans10-regular', 'lmsans10-bold'],
+    'lmsans10-regular'],
 };
 
 // what's wrong with a built page: its log, the page and the files with it

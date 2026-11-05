@@ -59,9 +59,10 @@ end
 -- the faces of Latin Modern the page's text is set in, by the rules that
 -- set its font: tex4ht's for its font classes (.ec-lmbx-10 bold,
 -- .ec-lmro-10 oblique, which is the italic), css/tex8web.css's for their
--- families and for headings (in the fonts tex8web-page.tex gives them in
--- the stylesheet, css), and the browser's for other elements. A set of
--- font files, with Roman's regular face, which the page's controls use
+-- families, for headings and for the contents' entries (in the fonts
+-- tex8web-page.tex gives them in the stylesheet, css), and the browser's
+-- for other elements. A set of font files, with Roman's regular face,
+-- which the page's controls use
 function M.faces(document, css)
   -- (each rule a face, of what it sets: bold, italic and the family, mono
   -- and sans in Latin Modern, or system for the browser's monospace)
@@ -74,9 +75,9 @@ function M.faces(document, css)
   }
   local classes = {titleHead = {bold = false}, id = {bold = true}, ["tex8web-toc-title"] = {bold = true}}
   -- (what the stylesheet sets, from its --tex8web-<prefix>-weight and so on)
-  local function font_of(prefix, bold)
+  local function font_of(prefix, default_weight)
     local family = custom(css, prefix .. "-family") or ""
-    return {bold = (custom(css, prefix .. "-weight") or bold) == "bold",
+    return {bold = (custom(css, prefix .. "-weight") or default_weight) == "bold",
       italic = (custom(css, prefix .. "-style") or "normal") == "italic",
       family = family:find("sans") and "sans" or family:find("mono") and "mono" or nil}
   end
@@ -84,9 +85,10 @@ function M.faces(document, css)
     local font = font_of(level, "bold")
     classes[level .. "Head"], classes["like" .. level .. "Head"] = font, font
   end
-  -- (entries are bold without tocloft only for chapters)
+  -- (entries are bold without tocloft only for parts and chapters, as in
+  -- css/tex8web.css)
   for _, level in ipairs({"part", "chapter", "section", "subsection", "subsubsection", "paragraph", "subparagraph"}) do
-    local font = font_of("toc-" .. level, level == "chapter" and "bold" or "normal")
+    local font = font_of("toc-" .. level, (level == "part" or level == "chapter") and "bold" or "normal")
     classes[level .. "Toc"], classes["like" .. level .. "Toc"] = font, font
   end
   classes.appendixToc = classes.chapterToc

@@ -33,6 +33,7 @@ A page goes through four stages.
 - Equations get TeX's own numbers, so they agree with `\eqref`.
 - Alignments are split at `\intertext`. `js/tex8web.js` later gives the parts the same columns, so they line up as one alignment.
 - TeX measures the document: its text width, heading sizes, theorem and list spacing, and link colors. The measurements reach the stylesheet as `--tex8web-*` custom properties. The stylesheet, `css/tex8web.css`, holds every static rule.
+- With tocloft, `\web@tocfont` reads each level's `\cft<level>font` as a heading's font is read. `lua/tex8web/assets.lua` predicts the faces those fonts need, to copy and preload them.
 - `tex/tex8web-hooks.sty` loads before the preamble. It keeps what tex4ht would discard, such as titlesec's formats and tcolorbox's options. Its `\web@needs` warns when tex4ht or a package no longer has a command tex8web patches. The tests treat that warning as a failure.
 
 ### 2. HTML passes
@@ -82,7 +83,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
 - **`npm test`** runs the Lua unit tests in `test/unit/`, then builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`. A fixture with its own `<name>.cfg` is built with it. Each page is checked for:
   - TeX errors, build warnings, and tex8web's warning that tex4ht or a package changed;
   - MathJax errors, macros MathJax doesn't know, the sizes `tex8web.js` sets, and no `NaN` in any style;
-  - the table of contents beside the text, with its numbers and indents, and each level's font with tocloft (`test-tocloft.tex`; `test:visual` checks them as the browser computes them);
+  - the table of contents beside the text, with its numbers and indents, and each level's font, with tocloft and without it (`test-tocloft.tex` and `test-report.tex`, whose computed fonts `test:visual` checks);
   - colors in dark mode, `\color` as a declaration (`test-declared.tex`), indexes, enumitem's lengths, alt text, each example's title, the title of a page without \maketitle, and pictures' sizes (also with the graphics package, and after angle);
   - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`);
   - speech for every formula, links and files in place, unique ids, and only publishable files.
