@@ -315,17 +315,29 @@ const permalinks = {
   ],
 };
 
-// amsthm's \qedhere: in a display, its box is the display's tag at the right
-// (MathJax's \square, c25FB) and no box follows the display; a proof
-// without it keeps its own box after the display
+// amsthm's QED box. After text, in a display's last line or on a list item,
+// it is a right-floated span of MathJax's \square (c25FB), as big as the
+// PDF's. With \qedhere in a display it is the display's tag at the right
+// and no box follows; a proof without \qedhere keeps its own box
 const inProof = title => `>${title}\\.<\\/span>(?:(?!<\\/div>)[^])*`;
+const box = "<span class='tex8web-qed'><mjx-container[^>]*><mjx-math[^>]*><mjx-c class='mjx-c25FB";
 const tagged = title => new RegExp(`${inProof(title)}<mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FB(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/p>\\s*<\\/div>`);
 const qed = {
   'test-qedhere': [
     ...['Bracket', 'Star', 'Align star', 'Gather star', 'Numbered', 'Numbered align'].map(tagged),
-    new RegExp(`${inProof('Display, no qedhere')}<\\/mjx-container><\\/span>\\s*□\\s*<\\/p>`),
-    // (once each, in the six tags)
-    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){6}$/,
+    new RegExp(`${inProof('Plain')}${box}`),
+    new RegExp(`${inProof('Display, no qedhere')}<\\/mjx-container><\\/span>\\s*${box}`),
+    new RegExp(`${inProof('Text')}${box}`),
+    new RegExp(`${inProof('List')}<dd[^>]*>Two\\.\\s*${box}`),
+    // (ten squares: six tags, four boxes)
+    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){10}$/,
+  ],
+  // a document's own \qedsymbol, set as it is, after text and in a tag
+  'test-qedsymbol': [
+    new RegExp(`${inProof('After text')}<span class='tex8web-qed'><mjx-container[^>]*><mjx-math[^>]*><mjx-c class='mjx-c25FC`),
+    new RegExp(`${inProof('In a display')}<mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FC(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/p>\\s*<\\/div>`),
+    /^(?:(?!mjx-c25FC)[^])*(?:mjx-c25FC(?:(?!mjx-c25FC)[^])*){2}$/,
+    /^(?![^]*mjx-c25FB)/,
   ],
 };
 

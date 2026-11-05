@@ -1,0 +1,14 @@
+% A test for tex8web: a document's own \qedsymbol, after text and in a
+% display's tag.
+\documentclass{article}
+\usepackage{amsmath,amsthm}
+\renewcommand{\qedsymbol}{$\blacksquare$}
+\begin{document}
+\begin{proof}[After text]
+Ends in text.
+\end{proof}
+\begin{proof}[In a display]
+Ends in a display.
+\[ a = b \qedhere \]
+\end{proof}
+\end{document}

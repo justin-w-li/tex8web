@@ -156,6 +156,28 @@
   {}
 \ExplSyntaxOff
 
+% amsthm's \qed puts \qedsymbol at the right of the line with an \hfill, which
+% tex4ht turns into spaces. Put it in a span that css/tex8web.css floats
+% right. amsthm's own \openbox is drawn with rules and comes out as a small
+% glyph of whatever font has one: MathJax's \square, as in a display's
+% \qedhere, is the size of the PDF's. A \qedsymbol of the document's own is
+% set as it is. tex4ht's \qedsymbol would draw either as a picture or glyph
+% of its own; \o:qedsymbol: (amsthm.4ht) is the definition it started from
+\def\web@square{\(\square\)}
+\def\web@openbox{\openbox}
+\@ifpackageloaded{amsthm}
+  {
+    \web@needs{o:qedsymbol:}
+    \DeclareRobustCommand\qed{%
+        \ifmmode \mathqed \else
+            \leavevmode\unskip\HCode{<span class="tex8web-qed">}%
+            \expandafter\ifx\csname o:qedsymbol:\endcsname\web@openbox
+                \web@square \else \csname o:qedsymbol:\endcsname \fi
+            \HCode{</span>}%
+        \fi}
+  }
+  {}
+
 % --- terms ------------------------------------------------------------------
 
 % \WebTerm\cs: what \cs{...} sets is a term, which the contents' filter finds
