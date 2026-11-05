@@ -1,5 +1,5 @@
-// Headless Chrome over the DevTools protocol, for test:visual and shots.mjs. The
-// profile directory is removed however the process ends.
+// Headless Chrome over the DevTools protocol, for test:visual and
+// shots.mjs. The profile directory is removed however the process ends.
 //   const chrome = await launch();
 //   const page = await chrome.open('file:///…/page.html', { javascript: false });
 //   await page.evaluate('document.title'); await page.screenshot(y, height);
