@@ -1,0 +1,42 @@
+#!/bin/sh
+# Builds a LaTeX document's web page with tex8web:
+#   tex8web [-c config] [-d out] [-B aux] [make4ht options] document.tex
+# The page goes to out (default: build/html beside the document) and
+# tex4ht's files to aux, relative to the document (default: build/tex4ht).
+# make4ht reads -B as a Lua pattern, so a - in an absolute path breaks it.
+# make4ht runs in the document's directory, where its pictures, \WebPDF
+# and bibliography are found.
+set -e
+
+self=$0
+while [ -L "$self" ]; do
+  link=$(readlink "$self")
+  case $link in /*) self=$link ;; *) self=$(dirname "$self")/$link ;; esac
+done
+root=$(cd "$(dirname "$self")/.." && pwd -P)
+
+absolute() { case $1 in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
+usage="usage: tex8web [-c config] [-d out] [-B aux] [make4ht options] document.tex"
+
+config=$root/tex8web.cfg out=build/html aux=build/tex4ht document=
+count=$#
+while [ "$count" -gt 0 ]; do
+  arg=$1; shift; count=$((count - 1))
+  case $arg in
+    -c|-d|-B)
+      [ "$count" -gt 0 ] || { echo "$usage" >&2; exit 2; }
+      value=$1; shift; count=$((count - 1))
+      case $arg in
+        -c) config=$(absolute "$value") ;;
+        -d) out=$(absolute "$value") ;;
+        -B) aux=$value ;;
+      esac ;;
+    *)
+      # the last argument is the document; the others go to make4ht
+      if [ "$count" -eq 0 ]; then document=$arg; else set -- "$@" "$arg"; fi ;;
+  esac
+done
+[ -f "$document" ] || { echo "$usage" >&2; exit 2; }
+
+cd "$(dirname "$document")"
+exec make4ht -u -c "$config" -e "$root/tex8web.mk4" -B "$aux" -d "$out" "$@" "$(basename "$document")"

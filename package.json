@@ -13,6 +13,9 @@
   "engines": {
     "node": ">=22"
   },
+  "bin": {
+    "tex8web": "bin/tex8web"
+  },
   "scripts": {
     "test": "node test/run.mjs",
     "test:visual": "node test/visual.mjs",
