@@ -113,12 +113,17 @@ const pageChecks = [
     const math = count(html, /<mjx-container/g), mathml = count(html, /<mjx-assistive-mml/g);
     return mathml && math !== mathml ? [`${math} formulas, ${mathml} with MathML for screen readers`] : [];
   },
-  // (prerendering's speech, on the formula's container, and none of the
-  // semantic enrichment it comes from, which would add elements)
+  // (prerendering's speech, on the formula's container, or the formula
+  // hidden if it has no character to say but in a \phantom; and none of
+  // the semantic enrichment speech comes from, which would add elements)
   function speech(html) {
-    const formulas = [...html.matchAll(/<mjx-container([^>]*)>(<mjx-math[^>]*>)?/g)];
-    const unnamed = formulas.filter(([, container, math]) => !/ role=['"]math['"]/.test(container)
-      || !/ aria-label=['"][^'"]/.test(container) || !/ aria-hidden=['"]true['"]/.test(math ?? '')).length;
+    const formulas = [...html.matchAll(/<mjx-container([^>]*)>(<mjx-math[^>]*>)?([^]*?)<\/mjx-container>/g)];
+    const named = (container, math) => / role=['"]math['"]/.test(container)
+      && / aria-label=['"][^'"]/.test(container) && / aria-hidden=['"]true['"]/.test(math ?? '');
+    const silent = (container, inside) => / aria-hidden=['"]true['"]/.test(container)
+      && !/<mjx-c\b/.test(inside.replace(/<mjx-mphantom[^]*?<\/mjx-mphantom>/g, ''));
+    const unnamed = formulas.filter(([, container, math, inside]) => !named(container, math)
+      && !silent(container, inside)).length;
     return [...(unnamed ? [`${unnamed} of ${formulas.length} formulas without speech for screen readers`] : []),
       ...(/ data-(semantic|speech)-/.test(html) ? ["MathJax's semantic enrichment in the page"] : [])];
   },
