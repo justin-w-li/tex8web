@@ -14,9 +14,11 @@ on:
 permissions:
   contents: read
 
+# (a newer push to a pull request replaces its run; on main, each push's
+# run finishes, deploy included)
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   LANG: C.UTF-8
@@ -87,6 +89,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: site
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       pages: write
       id-token: write

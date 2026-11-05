@@ -13,6 +13,11 @@ local function trim(s)
   return s:match("^%s*(.-)%s*$")
 end
 
+-- an element's text on one line, as TeX may have broken it over several
+local function text_of(element)
+  return trim((element:get_text():gsub("%s+", " ")))
+end
+
 -- tex8web-page.tex's build elements, for the later passes: the PDF
 -- (context.pdf), the \WebMathMacros definitions (context.macros), the
 -- colors for math (context.colors) and \contentsname (context.contents) as
@@ -24,9 +29,8 @@ function M.build_data(document, context)
   context.pdf = pdf ~= "" and pdf or nil
   context.macros = element:get_text()
   element:remove_node()
-  -- (on as many lines as TeX broke it into)
   local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]
-  context.contents = trim((name:get_text():gsub("%s+", " ")))
+  context.contents = text_of(name)
   name:remove_node()
   local colors = document:query_selector("script[type='text/x-tex8web-colors']")[1]
   context.colors = colors:get_text()
@@ -137,14 +141,14 @@ local function contents(document, body, title)
   if not list then return end
   local heading = dom.previous_element(list)
   if heading and dom.has_class(heading, "^like%a*Head$") then
-    title = trim((heading:get_text():gsub("%s+", " ")))
+    title = text_of(heading)
     heading:remove_node()
   end
   local content = list:get_parent()
   local box = dom.has_class(content, "^tcolorbox%-content$") and content:get_parent()
   if box and #dom.elements(content) == 1 then
     local box_title = box:query_selector(".tcolorbox-title")[1]
-    if box_title then title = trim((box_title:get_text():gsub("%s+", " "))) end
+    if box_title then title = text_of(box_title) end
     box:remove_node()
   else
     list:remove_node()

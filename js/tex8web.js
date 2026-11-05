@@ -339,8 +339,7 @@ if (typeof document !== 'undefined') {
   // (the extensions set the paths only if they aren't set; page.lua gives
   // this script MathJax's version)
   const version = document.currentScript.dataset.mathjax;
-  const loader = data.mathjax.loader = data.mathjax.loader || {};
-  const paths = loader.paths = loader.paths || {};
+  const paths = data.mathjax.loader.paths = data.mathjax.loader.paths || {};
   for (const name of ['bbm', 'bboldx', 'dsfont', 'mhchem']) {
     paths[`mathjax-${name}-extension`] = `https://cdn.jsdelivr.net/npm/@mathjax/mathjax-${name}-font-extension@${version}`;
   }

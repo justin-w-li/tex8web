@@ -7,6 +7,7 @@
 # make4ht runs in the document's directory, where its pictures, \WebPDF
 # and bibliography are found.
 set -e
+unset CDPATH
 
 self=$0
 while [ -L "$self" ]; do
@@ -15,7 +16,7 @@ while [ -L "$self" ]; do
 done
 root=$(cd "$(dirname "$self")/.." && pwd -P)
 
-absolute() { case $1 in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
+absolute() { case $1 in /*) printf '%s\n' "$1" ;; *) printf '%s\n' "$PWD/$1" ;; esac; }
 usage="usage: tex8web [-c config] [-d out] [-B aux] [make4ht options] document.tex"
 
 config=$root/tex8web.cfg out=build/html aux=build/tex4ht document=
@@ -37,6 +38,11 @@ while [ "$count" -gt 0 ]; do
   esac
 done
 [ -f "$document" ] || { echo "$usage" >&2; exit 2; }
+# (tex4ht takes the config's path apart at spaces, and the default config
+# is in tex8web's directory)
+case $config in *" "*)
+  echo "tex8web: tex4ht can't read a config whose path has a space: $config" >&2; exit 2 ;;
+esac
 
 cd "$(dirname "$document")"
 exec make4ht -u -c "$config" -e "$root/tex8web.mk4" -B "$aux" -d "$out" "$@" "$(basename "$document")"
