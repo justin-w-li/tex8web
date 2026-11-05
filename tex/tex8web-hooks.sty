@@ -114,8 +114,15 @@
 \ExplSyntaxOn
 \clist_new:N \g__web_colors_clist
 \bool_new:N \g__web_xcolor_bool
+% (xcolor's table option requires colortbl again, when xcolor is done, which
+% makes tex4ht input colortbl-hooks.4ht a second time, and its \newcommand
+% fail: colortbl-hooks.4ht is only for the first time)
 \AddToHook { package/xcolor/before }
-    { \@ifpackageloaded { colortbl } { } { \bool_gset_true:N \g__web_xcolor_bool } }
+    {
+        \@ifpackageloaded { colortbl }
+            { \cs_undefine:c { package:hooks:colortbl.sty } }
+            { \bool_gset_true:N \g__web_xcolor_bool }
+    }
 \AddToHook{package/xcolor/after}{
     \cs_set_eq:NN \__web_definecolor:w \XC@definecolor
     \cs_gset:Npn \XC@definecolor [ #1 ] #2 {

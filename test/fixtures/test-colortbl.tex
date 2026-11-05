@@ -1,0 +1,37 @@
+% A test for tex8web: table colors as the PDF has them. xcolor's
+% \rowcolors (the table option) gives alternating rows a background;
+% colortbl loaded before xcolor, as some documents do; \cellcolor,
+% \rowcolor (also in HTML model) and \columncolor, and a \multicolumn
+% in a colored row.
+\documentclass{article}
+\usepackage{colortbl}
+\usepackage[table]{xcolor}
+\definecolor{ink}{RGB}{200,0,100}
+\begin{document}
+{\rowcolors{1}{red!10}{blue!10}
+\begin{tabular}{ll}
+a & b \\
+c & d \\
+e & f \\
+\end{tabular}}
+
+{\rowcolors{2}{}{green!10}
+\begin{tabular}{l}
+h \\ i \\ j \\ k \\ l \\
+\end{tabular}}
+
+\begin{tabular}{>{\columncolor{green!20}}ll}
+one & two \\
+three & four \\
+\end{tabular}
+
+\begin{tabular}{ll}
+\rowcolor[HTML]{DDEEFF} five & \textcolor{ink}{six} \\
+\cellcolor{ink!25} seven & eight \\
+\end{tabular}
+
+\begin{tabular}{cc}
+\multicolumn{2}{c}{\cellcolor{ink!25}head} \\
+\rowcolor{green!25}\multicolumn{2}{c}{x} \\
+\end{tabular}
+\end{document}

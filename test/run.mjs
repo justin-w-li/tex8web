@@ -153,6 +153,20 @@ const colors = {
     new RegExp(`#TBL-1-3-2\\{ background-color:${lightDark('#37FF9B', 'min\\(l, 1\\.24 - l\\)')}\\}`),
     /<pre class='lstlisting'[^>]*>(?:(?!<\/pre>)[^])*<span style='color:var\(--tex8web-text\)'>/,
   ],
+  // table colors as the PDF has them (the document loads colortbl before
+  // xcolor's table option, which the build errors on without the fix):
+  // \rowcolors' alternating rows, from the row it starts at, then
+  // \columncolor, \rowcolor[HTML], \cellcolor, and a \rowcolor on a
+  // \multicolumn's row
+  'test-colortbl': [
+    ...[['1-1', 'FFE5E5'], ['1-2', 'E5E5FF'], ['1-3', 'FFE5E5'], ['2-2', 'E5FFE5'], ['2-4', 'E5FFE5'],
+      ['4-1', 'DDEEFF'], ['5-2', 'BFFFBF']].map(([row, hex]) =>
+      new RegExp(`#TBL-${row}- td\\{ background-color:${lightDark(`#${hex}`, 'min\\(l, 1\\.24 - l\\)')}\\}`)),
+    ...[['3-1-1', 'CCFFCC'], ['3-2-1', 'CCFFCC'], ['4-2-1', 'F1BFD8'], ['5-1-1', 'F1BFD8']].map(([cell, hex]) =>
+      new RegExp(`#TBL-${cell}\\{ background-color:${lightDark(`#${hex}`, 'min\\(l, 1\\.24 - l\\)')}\\}`)),
+    // (\rowcolors{2}{}{...} leaves the first row and every odd one without)
+    /^(?![^]*#TBL-2-(?:1|3|5)- td)/,
+  ],
 };
 
 // a term (\WebTerm), with its id for the contents' filter

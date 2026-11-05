@@ -154,6 +154,27 @@
                 \web@Css { \# TBL- \TableNo - #3 { ~ #1 : \# \l__web_hex_tl } }
             }
         \cs_generate_variant:Nn \__web_cell_color:nnn { nVn }
+        \cs_if_exist:NT \a:rowcolors
+            {
+                % new array runs a row's hooks (which colortbl's \rowcolors uses), and
+                % old array's \everycr, that xcolor.4ht used, from its own \halign; tex4ht
+                % builds another, so call it as tex4ht starts a row (\halignTR) instead
+                % (html4.4ht's \Configure{rowcolors} also never draws the color)
+                \cs_new_protected:Npn \__web_row_color:n #1
+                    { \add:color { background-color } {#1} { \HRow - ~ td } }
+                \Configure { rowcolors } { \__web_row_color:n }
+                \cs_new_protected:Npn \__web_row_colors:
+                    {
+                        \cs_if_exist:NT \@rowc@lors
+                            {
+                                \group_begin:
+                                    \cs_set_eq:NN \o:noalign: \use:n
+                                    \@rowc@lors
+                                \group_end:
+                            }
+                    }
+                \append:def \halignTR { \__web_row_colors: }
+            }
     }
 \ExplSyntaxOff
 % links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
