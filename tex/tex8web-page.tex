@@ -370,9 +370,13 @@
 \newcommand\web@iffont[3]{%
     \edef\web@a{#1}\edef\web@b{#2}\ifx\web@a\web@b#3\fi}
 % (and the title in the size its text starts with, \title{\Large ..}, as
-% in \maketitle's {\LARGE \@title})
+% in \maketitle's {\LARGE \@title}; \in@ is given the text as characters,
+% as a group in it, \title{{\color{blue} ..}}, would end \in@'s own
+% definition early and typeset the rest before <title>)
 \long\def\web@titlefirst#1#2\@nil{%
-    \in@{#1}{\tiny\scriptsize\footnotesize\small\normalsize\large\Large\LARGE\huge\Huge}%
+    \edef\web@a{\noexpand\in@{\detokenize{#1}}%
+        {\detokenize{\tiny\scriptsize\footnotesize\small\normalsize\large\Large\LARGE\huge\Huge}}}%
+    \web@a
     \ifin@\def\web@titlesize{#1}\else\let\web@titlesize\@empty\fi}
 \ifdefined\@title\expandafter\web@titlefirst\@title\@empty\@nil\else\let\web@titlesize\@empty\fi
 \web@headsize{title}{\LARGE\web@titlesize}
