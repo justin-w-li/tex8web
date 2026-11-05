@@ -30,6 +30,34 @@ function tex8web(config, tex) {
     }
   }
 
+  // \color[model]{values}: MathJax's color extension knows the models rgb,
+  // RGB and gray; give it xcolor's HTML, Gray, cmy and cmyk, converted to
+  // RGB as xcolor does (internal: the extension's ColorModel, whose
+  // models are private to it, and its TexError)
+  const decimal = max => v => /^(\d+(\.\d*)?|\.\d+)$/.test(v) && v <= max;
+  const colorModels = {
+    HTML: {count: 1, valid: v => /^[0-9A-Fa-f]{6}$/.test(v),
+      rgb: ([hex]) => [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)},
+    Gray: {count: 1, valid: decimal(15), rgb: ([g]) => [g / 15, g / 15, g / 15]},
+    cmy: {count: 3, valid: decimal(1), rgb: ([c, m, y]) => [1 - c, 1 - m, 1 - y]},
+    cmyk: {count: 4, valid: decimal(1), rgb: ([c, m, y, k]) => [c, m, y].map(x => 1 - Math.min(1, +x + +k))},
+  };
+  function addColorModels() {
+    const {ColorModel} = MathJax._.input.tex.color.ColorUtil;
+    const {TexError} = MathJax._.input.tex.TexError;
+    const normalizeColor = ColorModel.prototype.normalizeColor;
+    ColorModel.prototype.normalizeColor = function (model, value) {
+      const spec = colorModels[model];
+      if (!spec) return normalizeColor.call(this, model, value);
+      const values = value.trim().split(/\s*,\s*/);
+      if (values.length !== spec.count || !values.every(spec.valid)) {
+        throw new TexError('BadColorValue', 'Invalid color values for the %1 model', model);
+      }
+      const bytes = spec.rgb(values).map(x => Math.round(255 * x).toString(16).padStart(2, '0'));
+      return '#' + bytes.join('');
+    };
+  }
+
   // MathJax's default space between rows (in its ems, in which 1pt is
   // 0.1em), and TeX's struts and space, for each environment (the
   // environments tex8web-math.tex numbers are listed there)
@@ -275,6 +303,7 @@ function tex8web(config, tex) {
   startup.ready = function () {
     sizeBigDelimiters();
     if (ready) ready(); else MathJax.startup.defaultReady();
+    addColorModels();
     TEXCLASS = MathJax._.core.MmlTree.MmlNode.TEXCLASS;
     const input = MathJax.startup.document.inputJax.find(jax => jax.name === 'TeX');
     markEnvironments(input.parseOptions);

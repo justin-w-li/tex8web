@@ -19,24 +19,38 @@ local fallbacks = {
 -- MathJax names colors as CSS and dvips do, and has no xcolor. The math's
 -- colors it would get wrong are given as \definecolor lines: the document's
 -- own and xcolor's, and mixes like red!50!black, from the "name hex" pairs
--- tex8web-page.tex wrote (colors MathJax has right are left out)
+-- tex8web-page.tex wrote, as rgb fractions (colors MathJax has right are left out)
 local css = {red = "FF0000", blue = "0000FF", cyan = "00FFFF", magenta = "FF00FF",
   yellow = "FFFF00", black = "000000", white = "FFFFFF", gray = "808080"}
 
--- the {r, g, b} of an xcolor expression (name!p!name!p!name, mixed from the
--- left, a last p alone with white), or nothing if it has a name not known
+local function complement(color)
+  return {1 - color[1], 1 - color[2], 1 - color[3]}
+end
+
+-- the {r, g, b}, each from 0 to 1 and unrounded, of an xcolor expression
+-- (name!p!name!p!name, mixed from the left, a last p alone with white; a
+-- minus before a name takes its complement in RGB, before the first the
+-- whole's), or nothing if it has a name not known. As xcolor does, a share
+-- outside 0 to 100 extrapolates, and only the result is held to 0 to 1
 local function evaluate(expression, known)
   local parts = {}
   for part in (expression .. "!"):gmatch("(.-)!") do parts[#parts + 1] = part end
-  local color = known[parts[1]]
+  local minuses, name = parts[1]:match("^(-*)(.*)")
+  local color, flip = known[name], #minuses % 2 == 1
   for i = 2, #parts, 2 do
     local share = tonumber(parts[i])
-    local other = parts[i + 1] and known[parts[i + 1]] or not parts[i + 1] and {255, 255, 255}
+    local other = {1, 1, 1}
+    if parts[i + 1] then
+      minuses, name = parts[i + 1]:match("^(-*)(.*)")
+      other = known[name]
+      if other and #minuses % 2 == 1 then other = complement(other) end
+    end
     if not (color and share and other) then return end
     local mixed = {}
     for c = 1, 3 do mixed[c] = (share * color[c] + (100 - share) * other[c]) / 100 end
     color = mixed
   end
+  if color and flip then color = complement(color) end
   return color
 end
 
@@ -50,10 +64,16 @@ local function colors_named(text, names)
   for name in text:gmatch("\\fcolorbox%s*{([^{}]*)}") do names[name] = true end
 end
 
+-- as xcolor rounds a fraction to a byte, in TeX's units of 1/65536
+local function byte(fraction)
+  local scaled = math.floor(fraction * 65536 + 0.5)
+  return math.max(0, math.min(255, math.floor(scaled * 255 / 65536 + 0.5)))
+end
+
 local function color_definitions(texts, pairs_text)
   local known = {}
-  for name, hex in pairs_text:gmatch("(%S+) (%x%x%x%x%x%x)") do
-    known[name] = {tonumber(hex:sub(1, 2), 16), tonumber(hex:sub(3, 4), 16), tonumber(hex:sub(5, 6), 16)}
+  for name, r, g, b in pairs_text:gmatch("(%S+) ([%d.-]+),([%d.-]+),([%d.-]+)") do
+    known[name] = {tonumber(r), tonumber(g), tonumber(b)}
   end
   local names = {}
   for _, text in ipairs(texts) do colors_named(text, names) end
@@ -61,7 +81,7 @@ local function color_definitions(texts, pairs_text)
   for name in pairs(names) do
     local color = evaluate(name, known)
     if color then
-      local r, g, b = math.floor(color[1] + 0.5), math.floor(color[2] + 0.5), math.floor(color[3] + 0.5)
+      local r, g, b = byte(color[1]), byte(color[2]), byte(color[3])
       if css[name] ~= string.format("%02X%02X%02X", r, g, b) then
         defs[#defs + 1] = string.format("\\definecolor{%s}{RGB}{%d,%d,%d}", name, r, g, b)
       end
