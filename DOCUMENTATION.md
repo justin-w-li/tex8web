@@ -14,27 +14,28 @@ This is the guide to building pages and configuring them. For how tex8web works 
 path/to/tex8web/bin/tex8web document.tex
 ```
 
-This builds `build/html/document.html` next to the document, and keeps tex4ht's working files in `build/tex4ht/`. To run it as `tex8web` from anywhere, run `npm link` in tex8web's directory, or put `bin/` on your `PATH`.
+This builds `build/html/document.html` next to the document. tex4ht's working files and logs stay in `build/tex4ht/`; look there when a build fails. To run it as `tex8web` from anywhere, run `npm link` in tex8web's directory, or put `bin/` on your `PATH`.
 
 The options:
 
 - **`-c config`** builds with your own config instead of `tex8web.cfg`. See [Your own config](#your-own-config).
-- **`-d out`** puts the page in `out/` instead.
+- **`-d out`** puts the page in `out/` instead, a path relative to where you run the command.
 - **`-B aux`** puts tex4ht's working files in `aux/`, a path relative to the document. Keep `-` out of it; see [Known limitations](#known-limitations).
-- **`-m draft`** runs LaTeX once and skips the bibliography and index. It is quicker while you work on a document.
-- Any other option is passed to make4ht.
+- **`-m draft`** runs LaTeX once and skips the bibliography and index. It is quicker while you work, but references and citations may show as ??.
+- Any other option is passed to make4ht. The document comes last.
 
 The output folder holds the page and everything it uses:
 - `document.html` and its stylesheets;
 - the pictures, and the PDF if you link it with `\WebPDF`;
 - `fonts/`: Latin Modern, MathJax's fonts, and `LICENSE.txt`, which covers them;
-- `tex8web-head.js` and `tex8web-page.js`, the page's controls.
+- `tex8web-head.js` and `tex8web-page.js`, the page's controls;
+- without Node, `tex8web.js` instead of MathJax's fonts.
 
-The paths are relative, so you can publish the folder as it is. Its fonts contain only the characters the document uses, so each document needs its own folder.
+The paths are relative, so you can publish the folder as it is. With Node, its fonts contain only the characters the document uses, so each document needs its own folder. The page is `document.html`, not `index.html`, so link to it by name. On GitHub Pages, for example, that is `https://you.github.io/repo/document.html`.
 
-**Bibliographies and indexes.** tex8web runs bibtex or biber when the document has a bibliography. It runs makeindex for each index the document prints, makeidx's or each of imakeidx's, with its style file. Style files are found next to the document and on `INDEXSTYLE`.
+**Bibliographies and indexes.** tex8web runs bibtex or biber when the document has a bibliography. It runs makeindex for each index the document prints, from makeidx or imakeidx. Each index uses its own style file. Style files are found next to the document and on `INDEXSTYLE`.
 
-**Without Node.** Node typesets the math when you build. If `npm ci` hasn't been run, the build warns, and the page loads MathJax from jsDelivr instead. It then needs the network to show its math. Set `TEX8WEB_NO_PRERENDER=1` to choose this on purpose.
+**Without Node.** Node typesets the math when you build. If `npm ci` hasn't been run, the build warns, and the page loads MathJax from jsDelivr instead. It then needs the network to show its math. Set `TEX8WEB_NO_PRERENDER` to any value to choose this on purpose.
 
 **Without the wrapper.** `bin/tex8web` runs this command in the document's directory:
 
@@ -48,7 +49,7 @@ Pass both files every time: `tex8web.mk4` tells TeX where to find what `tex8web.
 
 ## Your own config
 
-Most documents need no config of their own. tex8web reads what it needs from the document: its macros, colors, theorem styles, lists, headings (titlesec), table of contents (tocloft) and boxes (tcolorbox).
+Most documents need no config of their own. tex8web reads what it needs from the document: its macros, colors, theorem styles and lists. It also reads titlesec's headings, tocloft's table of contents and tcolorbox's boxes.
 
 Write a config when:
 - the build ends with a warning about macros MathJax can't read;
@@ -95,15 +96,15 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 **`\WebMathMacros`** gives MathJax its own definitions, which take precedence over the document's. Write them in MathJax's TeX. You need it for:
 - the macros the build's warning names, such as those built with `\mathpalette`, `\scalebox` or internal `@` macros;
 - xparse commands with arguments other than `m` and a leading `O{}`;
-- macros the build can't see: those defined in loops, by your own commands, or in files the document `\input`s. The build reads only the document and the local packages it loads.
+- macros the build can't see, because they are defined in loops, by your own commands, or in `\input` files. The build reads only the document and the local packages it loads.
 
 **`\WebColor`** makes the CSS variable `--name` from two colors: the first in light mode, the second in dark mode.
 
 **`\WebTerm\cs`** makes what `\cs` sets in the text a term that the filter finds. Its id is `term-` followed by its text. Inside a heading or a theorem's note, the term is found as that heading or theorem. Give each command to `\WebTerm` once.
 
-**`\WebPDF`** copies the PDF next to the page. Its path is relative to the document.
+**`\WebPDF`** copies the PDF next to the page. Its path is relative to the document. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`.
 
-**`\Css`** adds a style after tex8web's own. tex8web's styles are in `css/tex8web.css`. The document's measurements are custom properties that you can set again:
+**`\Css`** adds a style after tex8web's own. Write `#` as `\#` and `%` as `\%` inside it. tex8web's styles are in `css/tex8web.css`. The document's measurements are custom properties that you can set again:
 
 | Property | What it sets |
 | --- | --- |
@@ -125,7 +126,7 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 **Controls.** Small icons sit at the top left: the table of contents, the PDF (with `\WebPDF`), light or dark, and a link to tex8web. On a narrow screen they form a bar across the top. The bar names the section being read, and hides while the reader scrolls down.
 
-**Theme.** The page follows the reader's light or dark setting until they choose one with the button. Their choice is kept in the browser, under `localStorage` key `tex8web-theme`, for every tex8web page on the site. A site can also set `data-theme="light"` or `"dark"` on the root element. Light mode uses the PDF's colors. In dark mode, the document's colors keep their hue: dark text becomes light, and light backgrounds become dark. TikZ pictures are inverted.
+**Theme.** The page follows the reader's light or dark setting until they choose one with the button. Their choice is kept in the browser, under `localStorage` key `tex8web-theme`, for every tex8web page on the site. A site can set a default with `data-theme="light"` or `"dark"` on the root element; the reader's choice still wins. Light mode uses the PDF's colors. In dark mode, the document's colors keep their hue: dark text becomes light, and light backgrounds become dark. TikZ pictures are inverted.
 
 **Table of contents.** `\tableofcontents` moves out of the text. On a wide screen it sits beside the text; on a narrow one it opens as a drawer. It marks the section being read and shows the entries under it. Its indents and number widths come from tocloft or the class. A `\listoffigures` or `\listoftables` stays in the text.
 
@@ -133,13 +134,13 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 **Headings** keep the PDF's sizes and the space after their numbers. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
 
-**Footnotes** sit beside the paragraph, list or theorem that holds their mark on a wide screen, and below it on a narrow one. A footnote in a table, figure, box or formula stays at the end of the page.
+**Footnotes.** On a wide screen, a footnote sits beside the paragraph, list or theorem with its mark. On a narrow screen, it sits below. A footnote in a table, figure, box or formula stays at the end of the page.
 
 **Previews.** Pointing at a reference, citation, footnote mark or section link shows what it points to in a card. The keyboard shows it too. On a touch screen, the first tap shows it and the second follows the link.
 
 **Pictures.** Clicking a picture in a figure or a display, or any picture much taller than a line, opens it over the page. There the reader can zoom with the wheel, a pinch or a double-click, and drag it. Escape or a click beside it closes it.
 
-**Links.** Each heading, numbered theorem, and tcolorbox with a title and a number or label has a `#` link to it in the margin, shown on hover. On a narrow screen, the heading or theorem's head is the link.
+**Links.** Headings and numbered theorems have a `#` link in the margin, shown on hover. So does a titled tcolorbox with a number or label. On a narrow screen, the heading or theorem's head is the link.
 
 **Printing** gives the document alone, in light mode's colors, without the controls or the table of contents. Footnotes follow their paragraphs. The PDF is still the better copy to print: its page breaks and numbers are TeX's.
 
@@ -167,7 +168,7 @@ These are deliberate:
 
 Each item says what goes wrong and, where there is one, what to do.
 
-- **`-B` with a `-` in its path.** make4ht reads the `-B` directory as a Lua pattern, so a `-` sends files to the wrong place. Keep `-B` relative to the document; `bin/tex8web` does.
+- **`-B` with a `-` in its path.** make4ht reads the `-B` directory as a Lua pattern, so a `-` anywhere in its path sends files to the wrong place. Keep `-` out of it, and keep it relative to the document, as `bin/tex8web`'s default `build/tex4ht` is.
 - **Macros MathJax can't read** show in red. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
 - **`\color` as a declaration**, as in `{\color{blue} text}`, is lost. `\textcolor{blue}{text}` works.
 - **`\qedhere`.** The QED box follows the display instead of sitting at the right margin.
@@ -175,7 +176,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **A TikZ picture in display math**, such as a `tikzcd`, is drawn as a picture together with the rest of that display's math.
 - **Delimiters and radicals** can differ slightly in size, since MathJax picks them from its own font.
 - **tcolorbox.** Boxes get their colors, rules, corners, shadow, spacing and title. What a skin draws with TikZ, such as overlays and shadings, comes out as a plain frame. Pictures in side-by-side listing boxes aren't converted. If a fragile command in a box's title breaks the build, `\robustify` it in your config.
-- **Colors in math.** A color whose name is passed to a macro as an argument isn't converted, nor is one defined inside a group. The models `hsb`, `Hsb`, `tHsb` and `wave` aren't supported. A color redefined later in the document has its last value everywhere in math.
+- **Colors in math.** A color passed to a macro by name isn't converted. Neither is a color defined inside a group. The models `hsb`, `Hsb`, `tHsb` and `wave` aren't supported. A color redefined later in the document has its last value everywhere in math.
 - **Table colors.** With colortbl but not xcolor, `\textcolor` of the document's own colors is lost: load xcolor first. In a table with `\hline`, `\rowcolors` alternates wrongly.
 - **Minipages.** A minipage inside a paragraph's text breaks the paragraph around it. `\centering` in a minipage is followed only in a figure. Two minipages, each in its own `\fbox`, stack.
 - **Pictures' heights.** Only `\includegraphics`'s `width` is followed. With `height`, the picture keeps its proportions at a size that isn't the PDF's.

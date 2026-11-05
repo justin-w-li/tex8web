@@ -68,7 +68,7 @@ MathJax's TeX input differs from TeX in a few sizes. `js/tex8web.js` sets them a
 
 - **No assistive MathML.** MathJax adds a hidden MathML copy of each formula. On a long page it is a quarter of the markup, and most of a phone's layout time. `TEX8WEB_MATHML=1` keeps it; the tests set it and check the math through it.
 - **Speech instead.** Each formula is `role="math"` with its speech as an `aria-label`. The speech comes from MathJax's semantic enrichment, which changes the math itself. So the page is typeset twice: the second typesetting gives the speech and is then dropped.
-- **Fewer elements.** Wrappers whose box is only their children's are removed, such as one-character tokens and `mjx-mrow` in left-aligned math. A long document goes from 67,000 elements to 40,000. A phone restyles the page as it scrolls, in time that grows with that count. test:visual checks that the page still looks like MathJax's own output.
+- **Fewer elements.** Wrappers that add nothing to their children's box are removed, such as one-character tokens and `mjx-mrow` in left-aligned math. A long document goes from 67,000 elements to 40,000. A phone restyles the page as it scrolls, in time that grows with that count. test:visual checks that the page still looks like MathJax's own output.
 - **Preloaded fonts.** Without preloads, the browser fetches each font when it first needs it, then lays out the page again.
 - **Subset fonts.** MathJax's and Latin Modern's fonts are cut to the document's characters with [subset-font](https://github.com/papandreou/subset-font). A long page's fonts go from about 380 KB to 140 KB.
 - **No clipping.** MathJax clips each character to its box. In Safari that gives each character its own layer, which makes scrolling slow. The stylesheet removes the clip.
@@ -86,7 +86,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - colors in dark mode, indexes, enumitem's lengths, alt text;
   - speech for every formula, links and files in place, unique ids, and only publishable files.
 
-  `node test/run.mjs <name>` builds and checks one document.
+  It also builds `test-generic` for MathJax in the browser. `node test/run.mjs <name>` builds and checks one document.
 - **`npm run test:visual`** needs Chrome and the network. It builds each document twice, prerendered and for MathJax in the browser, and compares the two in headless Chrome, screen by screen. It also drives the page's controls: the picture viewer by mouse and touch, the narrow screen's bar, the theme, the contents filter and printing. Run it after changing the math path or `js/tex8web-page.js`, and before merging.
 - **`node test/check.mjs <html dir> [make4ht log] [TeX log]`** runs the generic page checks on any build.
 - **`node test/diff.mjs <old> <new>`** says what changed between two builds of a page: the sections, formulas and stylesheet lines. A rebuild that shouldn't change a page prints `unchanged`.
@@ -94,7 +94,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
 
 **Known gaps.** `test/expected.json` lists the problems a document is allowed, each with its reason. Make each entry as specific as the message it allows.
 
-**CI.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm test` and `npm run test:visual` on every push to main and every pull request. It uses TeX Live's Docker image, pinned by digest. From main, it builds the examples and their PDFs and publishes them to GitHub Pages.
+**CI.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm test` and `npm run test:visual` on every push to main and every pull request. It uses TeX Live's Docker image, pinned by digest. It also builds the examples and their PDFs, and on main publishes them to GitHub Pages.
 
 **The README's screenshot** is `.github/screenshot.png`. To redo it:
 1. Build the `custom` example and its PDF with `npm run examples`.

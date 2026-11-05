@@ -1,6 +1,6 @@
 # tex8web
 
-tex8web turns a LaTeX document into a web page that looks like its PDF. It is a configuration for [make4ht](https://ctan.org/pkg/make4ht), which comes with TeX Live, and your document needs no changes. MathJax typesets the math when you build, so the page is plain HTML and CSS. It works offline and reads without JavaScript.
+tex8web turns a LaTeX document into a web page that looks like its PDF. It is a configuration for [make4ht](https://ctan.org/pkg/make4ht), which comes with TeX Live. Most documents need no changes. MathJax typesets the math when you build, so the page is plain HTML and CSS. It works offline and reads without JavaScript.
 
 **[See the examples](https://justin-w-li.github.io/tex8web/)**, each next to its PDF.
 
@@ -17,11 +17,11 @@ tex8web turns a LaTeX document into a web page that looks like its PDF. It is a 
 
 ## Compared with other tools
 
-Plain make4ht gives tex4ht's default page. pandoc and LaTeXML parse LaTeX on their own, so a package they don't support loses its output. lwarp needs changes to the document. tex8web runs TeX itself on the unchanged document through tex4ht, and only then styles the result to match the PDF.
+Plain make4ht gives tex4ht's default page, which looks little like the PDF. pandoc reads LaTeX itself and keeps only what it understands. LaTeXML emulates TeX, and needs a binding for each package to do well. lwarp loads its own package in the preamble. tex8web runs real TeX through tex4ht, then styles the result after the PDF's own measurements.
 
 ## Install
 
-You need TeX Live 2026 and Node 22 or later, on macOS or Linux.
+You need TeX Live with make4ht (tested with TeX Live 2026) and Node 22 or later, on macOS or Linux.
 
 ```sh
 git clone https://github.com/justin-w-li/tex8web.git
@@ -43,7 +43,7 @@ Most documents need nothing more. If the build warns about macros MathJax can't 
 
 ## Examples
 
-[`examples/`](examples) has four documents from the Overleaf gallery, each under CC BY 4.0, with its source named at its top:
+[`examples/`](examples) has four documents from the Overleaf gallery. Each is under CC BY 4.0 and names its source at the top.
 
 - `basic`: a short article with a figure, a table and a bibliography;
 - `footnotes`: a law review article, heavy with footnotes;
