@@ -166,6 +166,15 @@ return {
     equal(body(d), [[<p>a raw</p><p>After.</p>]])
   end,
 
+  ["text.colors: a box used twice, both colored; a table float in the text's color"] = function()
+    local d = parse([[<p><span class="tex8web-color" data-id="1" data-color="#00FF00"></span>saved<span class="tex8web-color-end" data-id="1"></span> and ]]
+      .. [[<span class="tex8web-color" data-id="1" data-color="#00FF00"></span>saved<span class="tex8web-color-end" data-id="1"></span></p>]]
+      .. [[<span class="tex8web-color" data-id="2" data-color="#FF0000"></span><div class="table"><figure class="float">T</figure></div><p>Red.<span class="tex8web-color-end" data-id="2"></span></p>]])
+    text.colors(d)
+    equal(body(d), [[<p><span style='color:#00FF00;'>saved</span> and <span style='color:#00FF00;'>saved</span></p>]]
+      .. [[<div class='table'><figure class='float'>T</figure></div><p><span style='color:#FF0000;'>Red.</span></p>]])
+  end,
+
   ["text.colors: none in the page's title or in listings, and no paragraph left for a mark"] = function()
     local d = parse([[<p><span class="tex8web-color" data-id="2" data-color="#FF0000"></span></p><p class="indent">Red.<span class="tex8web-color-end" data-id="2"></span></p>]]
       .. [[<pre class="lstlisting"><span class="tex8web-color" data-id="3" data-color="#0000FF"></span><span style="color:#0000FF">if</span><span class="tex8web-color-end" data-id="3"></span> x</pre>]],

@@ -261,8 +261,8 @@ end
 -- between takes the color: a block wholly between them on itself, and each
 -- run of inline content in a span. Inner colors go first and win: a block
 -- keeps a color it has. tcolorbox's boxes keep their own colors, a float
--- the text's (LaTeX's \@xfloat sets \normalcolor) and listings' tokens
--- html4.4ht's. tex4ht's link text isn't a group, as hyperref's is in the
+-- the text's (LaTeX's \@xfloat sets \normalcolor; tex4ht's table float is
+-- a div.table) and listings' tokens html4.4ht's. tex4ht's link text isn't a group, as hyperref's is in the
 -- PDF, so a color set in a link ends with it
 local blocks = {p = true, div = true, ul = true, ol = true, li = true, dl = true, dt = true,
   dd = true, h1 = true, h2 = true, h3 = true, h4 = true, h5 = true, h6 = true, table = true,
@@ -280,6 +280,7 @@ end
 
 local function own_color(el)
   return dom.has_class(el, "^tcolorbox") or el:get_element_name() == "figure"
+    or dom.has_class(el, "^table$")
 end
 
 local function index(node)
@@ -355,28 +356,32 @@ function M.colors(document)
   walk(document:query_selector("html")[1])
   local function start(from, to)
     if not dom.closest(from, function(el) return el == body end)
-        or dom.closest(from, function(el) return dom.has_class(el, "^lstlisting") end) then
+        or dom.closest(from, function(el) return dom.has_class(el, "^lst") end) then
       return
     end
     local link = dom.closest(from, is_named("a"))
     if link and to and not dom.closest(to, function(el) return el == link end) then to = nil end
     color(from, to, to and body or link or body, from:get_attribute("data-color"))
   end
-  -- (an end before its start, as a box copied after its group ended has,
-  -- ends nothing)
+  -- (a box used twice has its marks twice; one copied after its group
+  -- ended has its end first, and colors nothing)
   for _, mark in ipairs(marks) do
     local id = mark:get_attribute("data-id")
-    if not dom.has_class(mark, "^tex8web%-color$") then
-      if starts[id] then start(starts[id], mark) end
-      starts[id] = false
+    if dom.has_class(mark, "^tex8web%-color$") then
+      if starts[id] == nil or starts[id] == "closed" then
+        starts[id] = mark
+        open[#open + 1] = mark
+      end
     elseif starts[id] == nil then
-      starts[id] = mark
-      open[#open + 1] = mark
+      starts[id] = false
+    elseif starts[id] then
+      start(starts[id], mark)
+      starts[id] = "closed"
     end
   end
   for k = #open, 1, -1 do
     local from = open[k]
-    if starts[from:get_attribute("data-id")] then start(from) end
+    if starts[from:get_attribute("data-id")] == from then start(from) end
   end
   -- (a mark set between paragraphs can be alone in one)
   for _, mark in ipairs(marks) do
