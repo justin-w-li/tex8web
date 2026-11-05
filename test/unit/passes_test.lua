@@ -178,6 +178,13 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(d:query_selector("a.tex8web-control")[1]:get_attribute("href"), "https://github.com/justin-w-li/tex8web")
   end,
 
+  ["page.controls: a title on several lines, as TeX broke it, on one"] = function()
+    local d = parse([[<h3 class="likesectionHead">Table of]] .. "\n" .. [[Contents</h3>]]
+      .. [[<div class="tableofcontents"><span class="sectionToc"><a href="#intro">Intro</a></span></div>]])
+    page.controls(d, {contents = "Contents"})
+    equal(d:query_selector("button.tex8web-contents")[1]:get_attribute("aria-label"), "Table of Contents")
+  end,
+
   ["page.controls: the table of contents, not a list of figures before it"] = function()
     local d = parse([[<h3 class="likesectionHead">List of Figures</h3>]]
       .. [[<div class="tableofcontents"><span class="lofToc">1 <a href="#f">F</a></span></div>]]

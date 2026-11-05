@@ -137,14 +137,14 @@ local function contents(document, body, title)
   if not list then return end
   local heading = dom.previous_element(list)
   if heading and dom.has_class(heading, "^like%a*Head$") then
-    title = trim(heading:get_text())
+    title = trim((heading:get_text():gsub("%s+", " ")))
     heading:remove_node()
   end
   local content = list:get_parent()
   local box = dom.has_class(content, "^tcolorbox%-content$") and content:get_parent()
   if box and #dom.elements(content) == 1 then
     local box_title = box:query_selector(".tcolorbox-title")[1]
-    if box_title then title = trim(box_title:get_text()) end
+    if box_title then title = trim((box_title:get_text():gsub("%s+", " "))) end
     box:remove_node()
   else
     list:remove_node()
