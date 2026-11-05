@@ -31,6 +31,22 @@ function tex8web(config, tex) {
     }
   }
 
+  // each table row as high as MathJax means it to be: it adds the rule
+  // below a row to the row's height, and the last row has none (internal:
+  // the table wrapper's rLines, one short), so that row's height is NaN,
+  // which Node writes as NaNem and a browser ignores, keeping any height
+  // the row had from an earlier rendering
+  function fixRowHeights() {
+    const Mtable = MathJax._.output.chtml.Wrappers.mtable.ChtmlMtable.prototype;
+    const updateRowHeights = Mtable.updateRowHeights;
+    Mtable.updateRowHeights = function () {
+      const lines = this.rLines;
+      this.rLines = [...lines, 0];
+      updateRowHeights.call(this);
+      this.rLines = lines;
+    };
+  }
+
   // \color[model]{values}: MathJax's color extension knows the models rgb,
   // RGB and gray; give it xcolor's HTML, Gray, cmy and cmyk, converted to
   // RGB as xcolor does, once it has loaded (internal: the extension's
@@ -305,6 +321,7 @@ function tex8web(config, tex) {
   const ready = startup.ready;
   startup.ready = function () {
     sizeBigDelimiters();
+    fixRowHeights();
     if (ready) ready(); else MathJax.startup.defaultReady();
     TEXCLASS = MathJax._.core.MmlTree.MmlNode.TEXCLASS;
     const input = MathJax.startup.document.inputJax.find(jax => jax.name === 'TeX');

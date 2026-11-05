@@ -60,6 +60,11 @@ const pageChecks = [
       .some(([, list]) => /class=['"]\w*(?:part|chapter|section|paragraph)Toc['"]/.test(list))
       ? ['a table of contents in the text, not beside it'] : [];
   },
+  // (MathJax's arithmetic gone wrong, which a browser ignores)
+  function nanStyles(html) {
+    const n = count(html, /style=['"][^'"]*NaN/g);
+    return n ? [`${n} styles with NaN in them`] : [];
+  },
   function tocFilter(html) {
     return toc(html) && !/<input[^>]*class=['"]tex8web-toc-filter['"]/.test(toc(html))
       ? ['a table of contents without its filter'] : [];

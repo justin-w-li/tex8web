@@ -1,9 +1,10 @@
 // npm run test:visual: each test document and example, prerendered, against
 // the same page typeset by MathJax in the browser, compared screen by
 // screen with JavaScript off (needs Chrome, and the network for MathJax).
-// The two should be identical; differing screens are saved, as
+// The two should be identical (the browser's MathJax measuring as Node's
+// estimates); differing screens are saved, as
 // <screen>-browser.png and <screen>-prerendered.png, in
-// build/test/<document>/visual/. In both, the columns of an alignment
+// build/visual/<document>/visual/. In both, the columns of an alignment
 // should line up across its \intertext. And the prerendered page's closer
 // view of pictures should work with the mouse and a finger, the page be no
 // wider than a phone's screen, its bar there come and go as it scrolls,
@@ -12,10 +13,9 @@
 // math character be clipped.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { availableParallelism } from 'node:os';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build, documents, expected, pool, testDir } from './lib/build.mjs';
+import { build, documents, largestFirst, pool, testDir, workers } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
 
 const only = process.argv.slice(2);
@@ -26,7 +26,10 @@ const screen = 900;
 // without what tex8web-page.js changed, which isn't MathJax's
 const typesetPage = `(async () => {
   // (MathJax's script, from the network, may not have run yet)
-  while (!MathJax.startup.promise) await new Promise(resolve => setTimeout(resolve, 100));
+  for (let t = 0; !MathJax.startup.promise; t += 100) {
+    if (t > 30000) throw new Error("MathJax didn't load in 30s (offline?)");
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
   await MathJax.startup.promise;
   await MathJax.startup.document.lazyTypesetAll?.();
   const css = [...document.styleSheets].filter(s => s.ownerNode?.id?.startsWith('MJX'))
@@ -44,6 +47,35 @@ const typesetPage = `(async () => {
   style.textContent = css;
   html.querySelector('head').append(style);
   return '<!DOCTYPE html>' + html.outerHTML;
+})()`;
+
+// MathJax in the browser measuring as MathJax in Node does, which can't
+// measure but estimates: text in math that MathJax has no glyphs for (as
+// \text's in a \colorbox), the font's size, which lengths in pt convert by,
+// and the room for a formula. So the two pages compare exactly, checking
+// all prerendering does but measure. Run before the page's scripts, it
+// sets the measures once the adaptor exists, at pageReady (internal: the
+// lite adaptor's nodeSize, and its nodeBBox of nothing)
+const nodeMeasures = `(() => {
+  const cjk = new RegExp(["[","\\u1100-\\u115f","\\u2329\\u232a","\\u2e80-\\u303e","\\u3040-\\u3247","\\u3250-\\u4dbf",
+    "\\u4e00-\\ua4c6","\\ua960-\\ua97c","\\uac00-\\ud7a3","\\uf900-\\ufaff","\\ufe10-\\ufe19","\\ufe30-\\ufe6b",
+    "\\uff01-\\uff60\\uffe0-\\uffe6","\\u{1b000}-\\u{1b001}","\\u{1f200}-\\u{1f251}","\\u{20000}-\\u{3fffd}","]"].join(""), "gu");
+  let config;
+  Object.defineProperty(window, 'MathJax', { configurable: true, get: () => config, set(value) {
+    config = value;
+    const startup = value?.startup;
+    if (!startup) return;
+    const pageReady = startup.pageReady;
+    startup.pageReady = function () {
+      const adaptor = MathJax.startup.adaptor;
+      adaptor.nodeSize = node => {
+        const text = adaptor.textContent(node), other = Array.from(text.replace(cjk, '')).length;
+        return [Array.from(text).length - other + other * 0.6, 0.8];
+      };
+      adaptor.nodeBBox = () => ({ left: 0, right: 0, top: 0, bottom: 0 });
+      return pageReady ? pageReady.call(this) : MathJax.startup.defaultPageReady();
+    };
+  } });
 })()`;
 
 // the alignments split at an \intertext whose columns don't line up across
@@ -251,11 +283,13 @@ async function touching(chrome, file) {
     await sleep(300);
     const opened = await state();
     if (!opened.open) problems.push('a picture tapped: no viewer');
+    // (the two taps within the 300ms tex8web-page.js allows a double tap,
+    // and the zoom waited for, however slow a loaded machine is)
     await page.tap(200, 400);
     await sleep(80);
     await page.tap(200, 400);
-    await sleep(800);
-    const zoomed = await state();
+    let zoomed;
+    for (let t = 0; t < 3000 && !((zoomed = await state()).laid > 2 * opened.laid); t += 100) await sleep(100);
     if (!(zoomed.laid > 2 * opened.laid)) problems.push(`a double tap: zoom ${zoomed.laid}, from ${opened.laid}`);
     await page.resize(800, 400);
     await sleep(300);
@@ -357,19 +391,14 @@ async function naming(chrome, file) {
   return problems;
 }
 
-// on a phone's screen, how much wider than it the page is: nothing should
-// be (a display too wide scrolls on its own)
-async function overflow(chrome, file) {
+// on a phone's screen: the page no wider than it (a display too wide
+// scrolls on its own); and the controls' bar (tex8web-page.js) away
+// scrolling down, back scrolling up, but not for a pixel or two the other way
+async function phone(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
+  const problems = [];
   const [width, room] = await page.evaluate('[document.documentElement.scrollWidth, document.documentElement.clientWidth]');
-  await page.close();
-  return width > room ? [`${width - room}px wider than a screen ${room}px wide`] : [];
-}
-
-// on a phone's screen, the controls' bar (tex8web-page.js): away scrolling
-// down, back scrolling up, but not for a pixel or two the other way
-async function bar(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
+  if (width > room) problems.push(`${width - room}px wider than a screen ${room}px wide`);
   const away = await page.evaluate(`(async () => {
     const away = [];
     if (document.documentElement.scrollHeight < 1600) return away;
@@ -381,25 +410,25 @@ async function bar(chrome, file) {
     return away;
   })()`);
   await page.close();
-  return away.length && away.join() !== 'true,true,true,false,false'
-    ? [`the bar away ${away.join(', ')} scrolling to 300, 600, 597, 560 and 563px`] : [];
+  if (away.length && away.join() !== 'true,true,true,false,false') {
+    problems.push(`the bar away ${away.join(', ')} scrolling to 300, 600, 597, 560 and 563px`);
+  }
+  return problems;
 }
 
-// the theme button: hidden with JavaScript off, as it needs
-// tex8web-page.js, but there before that runs, with the other controls (a
-// long page is drawn well before its deferred scripts run)
+// the theme button: hidden with JavaScript off (checked in compare(), on
+// the page compared), as it needs tex8web-page.js, but there before that
+// runs, with the other controls (a long page is drawn well before its
+// deferred scripts run)
+const themeShown = `document.querySelector('.tex8web-theme').checkVisibility()`;
 async function themed(chrome, file) {
   const early = file.replace(/\.html$/, '.early.html');
   writeFileSync(early, readFileSync(file, 'utf8').replace(/<script [^>]*src='tex8web-page\.js'[^>]*><\/script>/, ''));
-  const problems = [];
-  for (const [url, javascript] of [[file, false], [early, true]]) {
-    const page = await chrome.open(pathToFileURL(url).href, { javascript });
-    const shown = await page.evaluate(`document.querySelector('.tex8web-theme').checkVisibility()`);
-    await page.close();
-    if (shown !== javascript) problems.push(`the theme button ${shown ? 'shown' : 'hidden'} with JavaScript ${javascript ? 'on, before tex8web-page.js runs' : 'off'}`);
-  }
+  const page = await chrome.open(pathToFileURL(early).href);
+  const shown = await page.evaluate(themeShown);
+  await page.close();
   rmSync(early);
-  return problems;
+  return shown ? [] : ['the theme button hidden with JavaScript on, before tex8web-page.js runs'];
 }
 
 // printed (css/tex8web.css), from a wide screen in dark mode (the system's
@@ -437,83 +466,77 @@ async function printed(chrome, file) {
 }
 
 // math characters with a clip (css/tex8web.css): there should be none
-async function clipped(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
-  const n = await page.evaluate(`[...document.querySelectorAll('mjx-c')]
-    .filter(c => getComputedStyle(c).clipPath !== 'none').length`);
-  await page.close();
-  return n ? [`${n} math characters clipped`] : [];
-}
+const clipped = `[...document.querySelectorAll('mjx-c')].filter(c => getComputedStyle(c).clipPath !== 'none').length`;
 
 // just under a heading (css/tex8web.css): a theorem or list only the
 // heading's space below it, as LaTeX adds no \topsep there; a framed box
 // framed's space more, as far as titlesec's space below (in the text's
 // ems) adds to it
-async function spaced(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
-  const wrong = await page.evaluate(`(() => {
-    const em = parseFloat(getComputedStyle(document.body).fontSize);
-    const length = name => (parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0) * em;
-    return [...document.querySelectorAll('h3, h4, h5')].flatMap(h => {
-      // (past an empty paragraph, which tex4ht may open before a list)
-      let next = h.nextElementSibling;
-      if (next?.matches('p') && !next.textContent.trim() && next.nextElementSibling) next = next.nextElementSibling;
-      const below = parseFloat(getComputedStyle(h).marginBottom);
-      const level = h.className.match(/((?:sub)*section)Head/i)?.[1].toLowerCase();
-      let want;
-      if (next?.matches('.newtheorem, ol, ul, dl')) want = below;
-      else if (next?.matches('.framedenv')) {
-        want = Math.max(below, length('--tex8web-' + level + '-after-text') + length('--tex8web-framed-sep'));
-      } else return [];
-      const gap = next.getBoundingClientRect().top - h.getBoundingClientRect().bottom;
-      return Math.abs(gap - want) > 0.5 ? [[h.id, gap.toFixed(1), want.toFixed(1)]] : [];
-    });
-  })()`);
-  await page.close();
-  return wrong.map(([id, gap, want]) => `#${id}: what follows it ${gap}px below, not ${want}px`);
-}
-
-async function screens(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { javascript: false, height: screen });
-  const height = await page.evaluate('document.documentElement.scrollHeight');
-  const shots = [];
-  for (let y = 0; y < height; y += screen) shots.push(await page.screenshot(y, Math.min(screen, height - y)));
-  await page.close();
-  return shots;
-}
+const spaced = `(() => {
+  const em = parseFloat(getComputedStyle(document.body).fontSize);
+  const length = name => (parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0) * em;
+  return [...document.querySelectorAll('h3, h4, h5')].flatMap(h => {
+    // (past an empty paragraph, which tex4ht may open before a list)
+    let next = h.nextElementSibling;
+    if (next?.matches('p') && !next.textContent.trim() && next.nextElementSibling) next = next.nextElementSibling;
+    const below = parseFloat(getComputedStyle(h).marginBottom);
+    const level = h.className.match(/((?:sub)*section)Head/i)?.[1].toLowerCase();
+    let want;
+    if (next?.matches('.newtheorem, ol, ul, dl')) want = below;
+    else if (next?.matches('.framedenv')) {
+      want = Math.max(below, length('--tex8web-' + level + '-after-text') + length('--tex8web-framed-sep'));
+    } else return [];
+    const gap = next.getBoundingClientRect().top - h.getBoundingClientRect().bottom;
+    return Math.abs(gap - want) > 0.5 ? [[h.id, gap.toFixed(1), want.toFixed(1)]] : [];
+  });
+})()`;
 
 const docs = documents().filter(d => !only.length || only.includes(d.name));
 // each document built twice, prerendered (html) and for the browser
-// (fallback), a few builds at a time (a build runs mostly on one core)
+// (fallback), a few builds at a time, the largest first; a document is
+// compared as soon as both its builds are done
 const variants = [['html', 'aux', { TEX8WEB_MATHML: '1' }], ['fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
-const codes = await pool(docs.flatMap(doc => variants.map(variant => [doc, ...variant])),
-  Math.max(2, availableParallelism() >> 1),
-  async ([doc, out, aux, env]) => (await build(doc, join(testDir(doc), out), join(testDir(doc), aux), env)).code);
+const builds = largestFirst(docs).flatMap(doc => variants.map(([out, aux, env]) => ({ doc, out, aux, env, ...Promise.withResolvers() })));
+pool(builds, workers, async ({ doc, out, aux, env, resolve }) => {
+  resolve((await build(doc, join(testDir(doc, 'visual'), out), join(testDir(doc, 'visual'), aux), env)).code);
+});
+const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).map(b => b.promise))).every(code => code === 0);
 
 // a document's two pages compared: its report's lines, and whether it failed
-async function compare(chrome, doc, built) {
-  const dir = testDir(doc);
+async function compare(chrome, doc, ok) {
+  const dir = testDir(doc, 'visual');
   const [pre, browser] = [join(dir, 'html'), join(dir, 'fallback')];
   const visual = join(dir, 'visual');
   rmSync(visual, { recursive: true, force: true });
   // (the build's own problems are npm test's; this needs only the pages)
-  if (!built && !existsSync(join(pre, `${doc.tex.replace(/\.tex$/, '')}.html`))) {
+  if (!ok && !existsSync(join(pre, `${doc.tex.replace(/\.tex$/, '')}.html`))) {
     return { lines: [`not ok - ${doc.name}`, '    build failed'], failed: true };
   }
-  const problems = [], layout = [];
+  const problems = [];
   for (const html of readdirSync(pre).filter(f => f.endsWith('.html'))) {
-    const page = await chrome.open(pathToFileURL(join(browser, html)).href);
+    const page = await chrome.open(pathToFileURL(join(browser, html)).href, { before: nodeMeasures });
     const typeset = join(browser, html.replace(/\.html$/, '.typeset.html'));
     writeFileSync(typeset, await page.evaluate(typesetPage));
     await page.close();
+    // each page as compared, JavaScript off: what only reads it, then its
+    // screens (whose capture beyond the window resizes it)
+    const shots = [];
     for (const file of [typeset, join(pre, html)]) {
-      const page = await chrome.open(pathToFileURL(file).href, { javascript: false });
+      const page = await chrome.open(pathToFileURL(file).href, { javascript: false, height: screen });
+      const name = relative(dir, file);
       for (const [text, a, b] of await page.evaluate(misaligned)) {
-        layout.push(`${relative(dir, file)}: columns at ${a.join(', ')} before "${text}", ${b.join(', ')} after`);
+        problems.push(`${name}: columns at ${a.join(', ')} before "${text}", ${b.join(', ')} after`);
       }
+      const n = await page.evaluate(clipped);
+      if (n) problems.push(`${name}: ${n} math characters clipped`);
+      if (file !== typeset) {
+        for (const [id, gap, want] of await page.evaluate(spaced)) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
+        if (await page.evaluate(themeShown)) problems.push(`${html}: the theme button shown with JavaScript off`);
+      }
+      shots.push(await page.screens());
       await page.close();
     }
-    const [a, b] = [await screens(chrome, typeset), await screens(chrome, join(pre, html))];
+    const [a, b] = shots;
     if (a.length !== b.length) problems.push(`${html}: ${a.length} screens in the browser, ${b.length} prerendered`);
     const differing = [];
     a.forEach((shot, i) => {
@@ -525,34 +548,25 @@ async function compare(chrome, doc, built) {
       if (b[i]) writeFileSync(join(visual, `${name}-prerendered.png`), Buffer.from(b[i], 'base64'));
     });
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
-    layout.push(...(await viewing(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    layout.push(...(await overflow(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    layout.push(...(await bar(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    layout.push(...(await themed(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    layout.push(...(await printed(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    layout.push(...(await spaced(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    for (const file of [typeset, join(pre, html)]) {
-      layout.push(...(await clipped(chrome, file)).map(p => `${relative(dir, file)}: ${p}`));
+    for (const check of [viewing, phone, themed, printed, filtering, naming, touching]) {
+      problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     }
-    layout.push(...(await filtering(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    layout.push(...(await naming(chrome, join(pre, html))).map(p => `${html}: ${p}`));
-    layout.push(...(await touching(chrome, join(pre, html))).map(p => `${html}: ${p}`));
   }
-  const known = expected[doc.name]?.visual;
-  if (problems.length && known && !layout.length) {
-    return { lines: [`ok - ${doc.name} # known: ${known}`, ...problems.map(p => `    ${p}`)], failed: false };
-  }
-  problems.unshift(...layout);
   return { lines: [`${problems.length ? 'not ok' : 'ok'} - ${doc.name}`, ...problems.map(p => `    ${p}`)],
     failed: problems.length > 0 };
 }
 
-// then the documents in Chrome, one at a time: with several tabs at once,
-// headless Chrome sometimes draws a screen garbled
+// the documents in Chrome as their builds finish, one at a time: with
+// several tabs at once, headless Chrome sometimes draws a screen garbled
 const chrome = await launch();
 let failures = 0;
-for (const [i, doc] of docs.entries()) {
-  const { lines, failed } = await compare(chrome, doc, codes[2 * i] === 0 && codes[2 * i + 1] === 0);
+const waiting = new Map(docs.map(doc => [doc, built(doc).then(ok => [doc, ok])]));
+while (waiting.size) {
+  const [doc, ok] = await Promise.race(waiting.values());
+  waiting.delete(doc);
+  // (a page that can't be read fails, not the whole run)
+  const { lines, failed } = await compare(chrome, doc, ok)
+    .catch(error => ({ lines: [`not ok - ${doc.name}`, `    ${error.message}`], failed: true }));
   console.log(lines.join('\n'));
   failures += failed ? 1 : 0;
 }

@@ -175,6 +175,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **enumitem.** Labels are right-aligned and hang into the margin. `align=left`, `wide` and `itemindent` aren't followed.
 - **A TikZ picture in display math**, such as a `tikzcd`, is drawn as a picture together with the rest of that display's math.
 - **Delimiters and radicals** can differ slightly in size, since MathJax picks them from its own font.
+- **Prerendered math is laid out by estimates** where a browser would measure, such as text in math that MathJax has no glyphs for. A box can come out a pixel or so off.
 - **tcolorbox.** Boxes get their colors, rules, corners, shadow, spacing and title. What a skin draws with TikZ, such as overlays and shadings, comes out as a plain frame. Pictures in side-by-side listing boxes aren't converted. If a fragile command in a box's title breaks the build, `\robustify` it in your config.
 - **Colors in math.** A color passed to a macro by name isn't converted. Neither is a color defined inside a group. The models `hsb`, `Hsb`, `tHsb` and `wave` aren't supported. A color redefined later in the document has its last value everywhere in math.
 - **Table colors.** With colortbl but not xcolor, `\textcolor` of the document's own colors is lost: load xcolor first. In a table with `\hline`, `\rowcolors` alternates wrongly.

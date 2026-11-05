@@ -1,19 +1,8 @@
 {
-  "test-color": {
-    "visual": "\\colorbox's and \\fcolorbox's boxes in math are 1.4px wider in the browser, which measures the text mode inside them that MathJax only estimates in Node"
-  },
-  "test": {
-    "visual": "from section 3 on, some displays are up to 0.06px taller in the browser, which measures some text MathJax only estimates in Node"
-  },
   "examples/complex": {
-    "why": "tex4ht doesn't convert the pictures in its side-by-side code boxes (tcolorbox listings), and MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat, \\Sum and its relatives)",
+    "why": "MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat and \\passtonextarg)",
     "allow": [
-      "make4ht exited with 1",
-      "x.svg doesn't exist",
-      ": missing main",
-      "left undefined for MathJax, which can't read their definitions: \\cvc",
-      "macros MathJax doesn't know: "
-    ],
-    "visual": "from its first numbered display on, formulas are up to 0.02px taller in the browser, which measures some text MathJax only estimates in Node; across the page the screens shift by a few pixels"
+      "left undefined for MathJax, which can't read their definitions: \\cvc"
+    ]
   }
 }
