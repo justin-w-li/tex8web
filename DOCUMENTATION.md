@@ -172,6 +172,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **A space in tex8web's path or in a config's path.** tex4ht can't read such a config, so `bin/tex8web` stops. Move tex8web or the config to a path without spaces.
 - **Macros MathJax can't read** show in red. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
 - **`\color` as a declaration**, as in `{\color{blue} text}`, is lost. `\textcolor{blue}{text}` works.
+- **tocloft's entry fonts**, such as `\cftsecfont`, aren't followed. The table of contents' entries are in the text's font.
 - **`\qedhere`.** The QED box follows the display instead of sitting at the right margin.
 - **enumitem.** Labels are right-aligned and hang into the margin. `align=left`, `wide` and `itemindent` aren't followed.
 - **A TikZ picture in display math**, such as a `tikzcd`, is drawn as a picture together with the rest of that display's math.
@@ -183,6 +184,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **Minipages.** A minipage inside a paragraph's text breaks the paragraph around it. `\centering` in a minipage is followed only in a figure. Two minipages, each in its own `\fbox`, stack.
 - **Pictures' heights.** Only `\includegraphics`'s `width` is followed. With `height`, the picture keeps its proportions at a size that isn't the PDF's.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
+- **A page's title** comes from `\maketitle`. Without it the page's `<title>` is empty. Set one in your config with `\Configure{TITLE+}{...}`, as `examples/custom/custom.cfg` does.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.
 - **imakeidx's `program`** isn't followed: makeindex always runs. Its `splitindex` option isn't supported.
