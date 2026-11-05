@@ -23,10 +23,11 @@ const config = globalThis.tex8web(data.mathjax, data.tex);
 // everything at once, but no menu (it needs the browser); and no MathML for
 // screen readers unless TEX8WEB_MATHML is set (the tests check the math by
 // it): a hidden copy of every formula, it is a quarter of a long page and
-// most of the time a phone takes to lay the page out
+// most of the time a phone takes to lay the page out. Screen readers get
+// MathJax's speech instead (a11y/speech, below)
 const mathml = Boolean(process.env.TEX8WEB_MATHML);
 config.loader.load = config.loader.load.filter(name => name !== 'ui/lazy')
-  .concat('adaptors/liteDOM', mathml ? ['a11y/assistive-mml'] : []);
+  .concat('adaptors/liteDOM', 'a11y/speech', mathml ? ['a11y/assistive-mml'] : []);
 config.loader.paths = { mathjax: 'mathjax' };
 config.loader.require = require;
 // (the components add options for the menu, which isn't loaded, and MathJax
@@ -44,6 +45,25 @@ require('mathjax/tex-chtml.js');
 await MathJax.startup.promise;
 
 const adaptor = MathJax.startup.adaptor;
+// each formula's speech, as MathJax's menu would give it, for screen readers:
+// its container named by it (role math, which may be named), and what's
+// inside hidden from them, which they would read too. From a document of
+// its own, since the semantic enrichment speech needs changes the math
+// (an invisible function application after Δ in Δ(S), say), and adds a
+// tenth more elements
+MathJax.texReset();
+Object.assign(MathJax.config.options, { enableEnrichment: true, enableSpeech: true });
+const spoken = MathJax.startup.getDocument(html);
+await spoken.renderPromise();
+const items = [...MathJax.startup.document.math];
+[...spoken.math].forEach(({ math, outputData: { speech } }, i) => {
+  const { typesetRoot: container } = items[i];
+  if (math !== items[i].math) throw new Error(`speech for "${math}" found for "${items[i].math}"`);
+  if (!speech) return;
+  adaptor.setAttribute(container, 'role', 'math');
+  adaptor.setAttribute(container, 'aria-label', speech);
+  adaptor.setAttribute(adaptor.tags(container, 'mjx-math')[0], 'aria-hidden', 'true');
+});
 const document = MathJax.startup.document.document;
 const root = adaptor.root(document);
 // what was there for MathJax in the browser (data-tex8web-browser): its

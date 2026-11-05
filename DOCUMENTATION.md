@@ -30,6 +30,7 @@ A page goes through four stages:
    - the columns of an alignment split at `\intertext`, each as wide as in the widest part. These parts aren't left for MathJax to typeset as they scroll into view.
 4. **Prerendering** (`js/prerender.mjs`). MathJax typesets the page in Node, configured as it would be in the browser, and the page keeps the result.
    - It leaves out the MathML MathJax adds for screen readers, a hidden copy of each formula that is a quarter of a long page and most of what a phone takes to lay it out. `TEX8WEB_MATHML=1` keeps it, as the tests do: they check the math by it.
+   - Screen readers get MathJax's speech instead, the words its menu would read aloud: each formula is `role="math"`, named by its speech (an `aria-label`), with what's inside it hidden from them. MathJax works the speech out from its semantic enrichment of the math, which changes the math itself (an invisible function application after the Δ of Δ(S), say) and adds a tenth more elements; so a second typesetting of the page, which it then drops, gives each formula its speech, and the page keeps the first. On a long page of notes this adds no element, about a tenth to the HTML (30 KB compressed) and 13 seconds to the build.
    - It leaves out the elements of MathJax's output whose box is just their children's, side by side: a token of one character (its `mjx-c` stays), a script of one character, the wrappers (`mjx-TeXAtom`, `mjx-msub` and its relatives, `mjx-mrow`) in math lined up on the left, and tex4ht's `span.mathjax-inline` around inline math. Most of a long page's elements are MathJax's, and a phone's browser restyles the page as it scrolls in time that grows with them: a long page of notes goes from 67,000 elements to 40,000. The page looks the same, which test:visual checks against MathJax's own output in the browser; only the markup differs from MathJax's. One difference comes from make4ht: it pulls the space between bold or italic text and inline math into the bold or italic span when the math is in tex4ht's span, which prerendering leaves out, so there the space is upright, as in TeX.
    - It preloads the fonts the math uses. Without that, a browser fetches each font as it first lays out text in it, and lays out the whole page again as the font arrives: on a phone, three times a quarter of a second for a long page's first load.
    - It cuts the fonts, MathJax's and Latin Modern's, down to the characters of the document's pages and styles, with Latin-1 and the hyphen and ellipsis a browser may draw itself, using [subset-font](https://github.com/papandreou/subset-font) (HarfBuzz). The fonts a long page loads are a third the size, about 380 KB down to 140 KB, and look the same. Without prerendering, the page gets the fonts whole.
@@ -132,7 +133,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 - **Without JavaScript** the page still reads: the table of contents shows every entry (and as a drawer, stays open until dismissed), the theme follows the system, and on a wide screen the table of contents can't be hidden.
 - **Links:** each heading has a `#` link to it in the margin, shown on hover, and so has each numbered theorem (LaTeX's own, amsthm's, thmtools', ntheorem's, mdframed's `\newmdtheoremenv`) and each tcolorbox box with a title that is numbered (`\newtcbtheorem`'s numbered form, a box with a counter) or has a `label`, the link leading where a `\ref` to it does. Unnumbered theorems and boxes have none, nor do boxes without a title. A narrow screen has no room for it, so there the heading, theorem's head or box's title is the link (links inside it still work; a theorem's head that wraps is a link only as far across as its last line).
 - **Link previews** get the title, and the abstract as the description, if the document has one.
-- **Screen readers** get each formula as MathML only when MathJax typesets it in the browser, which also adds speech and braille in its menu, or when the page is built with `TEX8WEB_MATHML=1`. An image's alt text is graphicx's `alt` key, or empty, which they skip.
+- **Screen readers** get each formula as words, MathJax's speech for it (in English, in its ClearSpeak style): "the fraction with numerator 1 and denominator 1 minus gamma". When MathJax typesets in the browser, they get MathML instead, and its menu adds speech and braille. An image's alt text is graphicx's `alt` key, or empty, which they skip.
 
 ## Differences from the PDF
 
@@ -168,6 +169,8 @@ These are deliberate:
 - **The page's own controls** are labelled in English ("Link here", "View as PDF", "Theme", the filter's placeholder and "No matches"), whatever the document's language; the table of contents' title follows the document.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX (sidenotes, margin figures, letterspacing), need a config of their own.
 - **The theme button, while a long page loads,** shows with the other controls but does nothing until `tex8web-page.js` runs, which as a deferred script waits for the whole page to be read in.
+- **Speech for math** is MathJax's, in English whatever the document's language, and reads some notation as other notation would be: `\mid` as "divides", a superscript on a superscript as "the pi-th sub theta-th power".
+- **The browser's find in page** finds a formula's characters one at a time (`Q` finds 𝑄, and `π` finds 𝜋), but not a run of them, such as `Δ(S)`: MathJax sets each character in a box of its own.
 
 ## Examples
 
@@ -193,6 +196,7 @@ Each `main.tex` names its source, license and changes at the top.
   - in `test-color.tex`, the dark-mode colors of `\textcolor`, `\colorbox`, `\fcolorbox`, listings and math (a `\rule` too);
   - in `test-index.tex`, the index: its entries, a subentry, a page range and a "see", each number linking back to its `\index`, an entry indexed three times in a row with three numbers rather than a range, and numbers in an entry's text left as they are; in `test-imakeidx.tex`, imakeidx's main index and a named one, with its title and style file;
   - MathML for every formula (the tests build with `TEX8WEB_MATHML=1`);
+  - on a prerendered page, every formula named by its speech, and none of the semantic enrichment it comes from;
   - every link and file in place, and no id repeated;
   - no image with tex4ht's made-up alt text (PIC, [Picture]);
   - nothing but published files in the output.
