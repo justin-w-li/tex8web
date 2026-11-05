@@ -339,6 +339,37 @@ const qed = {
     /^(?:(?!mjx-c25FC)[^])*(?:mjx-c25FC(?:(?!mjx-c25FC)[^])*){2}$/,
     /^(?![^]*mjx-c25FB)/,
   ],
+  // the \qedsymbol in force where the box is set: amsthm's (a square),
+  // thmtools' qed= (a diamond), an environment's (a triangle), one set in
+  // the text (a black square), each after text and in a display's tag
+  'test-qedlate': [
+    ...[['Plain', '25FB'], ['Remark', '22C4'], ['Example', '25B3'], ['Changed', '25FC']].flatMap(([word, code]) => [
+      new RegExp(`${word} text\\.(?:(?!<\\/div>)[^])*<span class='tex8web-qed'><mjx-container[^>]*><mjx-math[^>]*><mjx-c class='mjx-c${code}`),
+      new RegExp(`${word} display\\.(?:(?!<\\/div>)[^])*<mjx-labels(?:(?!<\\/div>)[^])*mjx-c${code}(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/(?:p|div)>`),
+    ]),
+  ],
+  // \qedhere in a row with a \label, a \tag, a nested environment or text
+  // in a display, twice, or outside a proof; and a proof ending in a list
+  'test-qedrow': [
+    ...['Label', 'Label align', 'No tag align', 'Aligned', 'Text'].map(tagged),
+    // (a \tag of the row's own keeps the box on the proof, below the display)
+    new RegExp(`${inProof('Tag')}<\\/mjx-container><\\/span>\\s*${box}`),
+    // (the second \qedhere finds no box)
+    new RegExp(`${inProof('Twice')}mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FB(?:(?!<\\/div>)[^])*B\\.\\s*<span class='mathjax-block'>(?:(?!mjx-labels)(?!<\\/div>)[^])*<\\/p>`),
+    // (outside a proof, \qedhere takes no number: the equation after the
+    // alignment is the sixth, as it is in the PDF)
+    /and \(<a href='#[^']+'>6<!--/,
+    /<\/(?:ul|dl)>\s*<div class='tex8web-qed-line'><span class='tex8web-qed'><mjx-container/,
+    // (eight squares: six tags, the box after the \tag and the one after the list)
+    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){8}$/,
+  ],
+  // equation* through the walker: a \ref to its \label leads to the
+  // section, and the three relations of the page's math, one in the split's
+  // second column, are spaced
+  'test-equationstar': [
+    /See <a href='#s'>1</,
+    /^(?:(?!mjx-c class='mjx-c3D' space)[^])*(?:mjx-c class='mjx-c3D' space='4'(?:(?!mjx-c class='mjx-c3D' space)[^])*){3}$/,
+  ],
 };
 
 // the fonts preloaded, and no others: the faces of the text (bold

@@ -279,9 +279,10 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
 .tex8web-tcb-inline > .tcolorbox-content { display: block; }
 /* a proof's QED box, at the right of its last line as amsthm's \hfill has it,
    or of the line below when the last has no room (a quad away from the text);
-   the paragraph contains it, for a box alone on a line after a display */
-.tex8web-qed { float: right; margin-inline-start: 1em; }
-:is(p, dd, li, div):has(> .tex8web-qed) { display: flow-root; }
+   its paragraph, or the block it has after a list, contains it, for a box
+   alone on a line after a display */
+.tex8web-qed { float: right; float: inline-end; margin-inline-start: 1em; }
+p:has(> .tex8web-qed), .tex8web-qed-line { display: flow-root; }
 /* what follows an \hfill in an after upper (a proof's square) */
 .tex8web-hfill { float: right; }
 /* framed's, as far from the text as in the PDF (tex8web-text.tex). Under

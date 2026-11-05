@@ -1,0 +1,40 @@
+% A test for tex8web: the \qedsymbol in force where the box is set, whether
+% a proof ends in text or in a display: amsthm's, thmtools' qed= for a
+% theorem style, one an environment sets, and one set in the text. An
+% earlier proof keeps its own.
+\documentclass{article}
+\usepackage{amsmath,amsthm,thmtools}
+\declaretheorem[qed=$\diamond$]{remark}
+\newenvironment{example}
+  {\pushQED{\qed}\renewcommand{\qedsymbol}{$\triangle$}\par}{\popQED\par}
+\begin{document}
+\begin{proof}
+Plain text.
+\end{proof}
+\begin{proof}
+Plain display.
+\[ a = b \qedhere \]
+\end{proof}
+\begin{remark}
+Remark text.
+\end{remark}
+\begin{remark}
+Remark display.
+\[ a = b \qedhere \]
+\end{remark}
+\begin{example}
+Example text.
+\end{example}
+\begin{example}
+Example display.
+\[ a = b \qedhere \]
+\end{example}
+\renewcommand{\qedsymbol}{$\blacksquare$}
+\begin{proof}
+Changed text.
+\end{proof}
+\begin{proof}
+Changed display.
+\[ a = b \qedhere \]
+\end{proof}
+\end{document}

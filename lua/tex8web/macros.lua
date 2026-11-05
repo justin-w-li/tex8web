@@ -14,7 +14,6 @@ local M = {}
 local fallbacks = {
   ["\\bm"] = "\\newcommand{\\bm}[1]{\\boldsymbol{#1}}",
   ["\\qedhere"] = "\\newcommand{\\qedhere}{}",
-  ["\\qedsymbol"] = "\\newcommand{\\qedsymbol}{$\\square$}",
 }
 
 -- MathJax names colors as CSS and dvips do, and has no xcolor. The math's

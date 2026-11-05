@@ -1,0 +1,44 @@
+% A test for tex8web: amsthm's \qedhere where the display has more of its
+% own: a \label, a \tag, a nested environment, text; a second \qedhere or
+% one outside a proof; and a proof that ends in a list.
+\documentclass{article}
+\usepackage{amsmath,amsthm}
+\begin{document}
+\begin{proof}[Label]
+A.
+\begin{equation}\label{eq:a} a = b \qedhere \end{equation}
+\end{proof}
+\begin{proof}[Tag]
+A.
+\begin{equation*} a = b \tag{x} \qedhere \end{equation*}
+\end{proof}
+\begin{proof}[Label align]
+A.
+\begin{align} a &= b \\ c &= d \label{eq:b} \qedhere \end{align}
+\end{proof}
+\begin{proof}[No tag align]
+A.
+\begin{align} a &= b \\ c &= d \notag \qedhere \end{align}
+\end{proof}
+\begin{proof}[Aligned]
+A.
+\[ \begin{aligned} a &= b \\ c &= d \qedhere \end{aligned} \]
+\end{proof}
+\begin{proof}[Text]
+A.
+\[ a = b \quad \text{done} \qedhere \]
+\end{proof}
+\begin{proof}[Twice]
+A.
+\[ a = b \qedhere \]
+B.
+\[ c = d \qedhere \]
+\end{proof}
+Outside a proof, no box and no number lost:
+\begin{align} a &= b \\ c &= d \qedhere \end{align}
+\begin{equation}\label{eq:e} e = f \end{equation}
+See \eqref{eq:a}, \eqref{eq:b} and \eqref{eq:e}.
+\begin{proof}[List]
+\begin{itemize}\item One.\end{itemize}
+\end{proof}
+\end{document}
