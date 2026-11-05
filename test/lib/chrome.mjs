@@ -50,11 +50,16 @@ export async function launch() {
   // (Chrome won't run as root, as in a container, with its sandbox)
   const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars',
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
-    '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' });
+    '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore', detached: true });
   const cleanup = () => {
-    try { proc.kill('SIGKILL'); } catch {}
-    // (Chrome's helpers may still be writing into the profile as they die)
-    rmSync(profile, { recursive: true, force: true, maxRetries: 10 });
+    // (the whole group: on Linux, Chrome's helpers outlive it otherwise and
+    // keep writing into the profile)
+    try { process.kill(-proc.pid, 'SIGKILL'); } catch {}
+    try {
+      rmSync(profile, { recursive: true, force: true, maxRetries: 10 });
+    } catch (e) {
+      console.error(`tex8web: Chrome's profile ${profile} is left behind (${e.code})`);
+    }
   };
   process.on('exit', cleanup);
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(1));
