@@ -108,37 +108,72 @@ return {
     equal(d:query_selector("aside")[1]:get_attribute("class"), "footnotetext tex8web-sidenote")
   end,
 
-  ["text.colors: a declaration's color in spans, nested, and black as the text's"] = function()
-    local d = parse([[<p>A <span class="tex8web-color" data-color="#FF0000"></span>red<span class="tex8web-color-end"></span> word, ]]
-      .. [[<span class="tex8web-color" data-color="#FF0000"></span>Red, <span class="cmti-10"><span class="tex8web-color" data-color="var(--tex8web-text)"></span>black,<span class="tex8web-color-end"></span></span> red<span class="tex8web-color-end"></span>, after</p>]])
+  ["text.colors: a declaration's color in spans, nested"] = function()
+    local d = parse([[<p>A <span class="tex8web-color" data-id="1" data-color="#FF0000"></span>red<span class="tex8web-color-end" data-id="1"></span> word, ]]
+      .. [[<span class="tex8web-color" data-id="2" data-color="#FF0000"></span>Red, <span class="cmti-10"><span class="tex8web-color" data-id="3" data-color="#000000"></span>black,<span class="tex8web-color-end" data-id="3"></span></span> red<span class="tex8web-color-end" data-id="2"></span>, after</p>]])
     text.colors(d)
     equal(body(d), [[<p>A <span style='color:#FF0000;'>red</span> word, ]]
-      .. [[<span style='color:#FF0000;'>Red, <span class='cmti-10'><span style='color:var(--tex8web-text);'>black,</span></span> red</span>, after</p>]])
+      .. [[<span style='color:#FF0000;'>Red, <span class='cmti-10'><span style='color:#000000;'>black,</span></span> red</span>, after</p>]])
   end,
 
-  ["text.colors: across paragraphs, a block on itself, not into a tcolorbox"] = function()
-    local d = parse([[<span class="tex8web-color" data-color="#0A7828"></span>]] .. "\n"
+  ["text.colors: across paragraphs, a block on itself, not into a tcolorbox or a float"] = function()
+    local d = parse([[<span class="tex8web-color" data-id="1" data-color="#0A7828"></span>]] .. "\n"
       .. [[<p style="margin: 0">First.</p>]] .. "\n" .. [[<ul><li>One.</li></ul><div class="tcolorbox"><p>Box.</p></div>]]
-      .. [[<p>Second.<span class="tex8web-color-end"></span></p><p>After.</p>]])
+      .. [[<figure class="figure"><p>Float.</p></figure><p>Second.<span class="tex8web-color-end" data-id="1"></span></p><p>After.</p>]])
     text.colors(d)
     equal(body(d), "\n" .. [[<p style='margin: 0; color:#0A7828;'>First.</p>]] .. "\n"
       .. [[<ul style='color:#0A7828;'><li>One.</li></ul><div class='tcolorbox'><p>Box.</p></div>]]
-      .. [[<p><span style='color:#0A7828;'>Second.</span></p><p>After.</p>]])
+      .. [[<figure class='figure'><p>Float.</p></figure><p><span style='color:#0A7828;'>Second.</span></p><p>After.</p>]])
+  end,
+
+  ["text.colors: an inner color wins on a block, also inside a color left open"] = function()
+    local d = parse([[<p><span class="tex8web-color" data-id="1" data-color="#FF0000"></span>Red.</p>]]
+      .. [[<span class="tex8web-color" data-id="2" data-color="#0000FF"></span><ul><li>b</li></ul><span class="tex8web-color-end" data-id="2"></span>]]
+      .. [[<p>more<span class="tex8web-color-end" data-id="1"></span></p>]]
+      .. [[<span class="tex8web-color" data-id="3" data-color="#00FF00"></span><span class="tex8web-color" data-id="4" data-color="#0000FF"></span>]]
+      .. [[<ul><li>c</li></ul><span class="tex8web-color-end" data-id="4"></span><p>green</p>]])
+    text.colors(d)
+    equal(body(d), [[<p><span style='color:#FF0000;'>Red.</span></p><ul style='color:#0000FF;'><li>b</li></ul>]]
+      .. [[<p><span style='color:#FF0000;'>more</span></p><ul style='color:#0000FF;'><li>c</li></ul><p style='color:#00FF00;'>green</p>]])
+  end,
+
+  ["text.colors: a color set in a tcolorbox, whose end tex4ht puts after the box"] = function()
+    local d = parse([[<div class="tcolorbox"><div class="tcolorbox-content"><p><span class="tex8web-color" data-id="1" data-color="#FF0000"></span>text</p></div></div>]]
+      .. [[<span class="tex8web-color-end" data-id="1"></span><p>After.</p>]])
+    text.colors(d)
+    equal(body(d), [[<div class='tcolorbox'><div class='tcolorbox-content'><p><span style='color:#FF0000;'>text</span></p></div></div><p>After.</p>]])
+  end,
+
+  ["text.colors: no span for a ~ alone between minipages"] = function()
+    local d = parse([[<span class="tex8web-color" data-id="1" data-color="#FF0000"></span><div class="minipage">a</div>]]
+      .. "\u{A0}" .. [[<div class="minipage">b</div><span class="tex8web-color-end" data-id="1"></span>]])
+    text.colors(d)
+    equal(body(d), [[<div class='minipage' style='color:#FF0000;'>a</div>]] .. "\u{A0}"
+      .. [[<div class='minipage' style='color:#FF0000;'>b</div>]])
   end,
 
   ["text.colors: a color set in a link ends with it; one left open, with the page"] = function()
-    local d = parse([[<p><a href="#h"><span class="tex8web-color" data-color="#FF0000"></span>linked</a> after.<span class="tex8web-color-end"></span></p>]]
-      .. [[<p>Black <span class="tex8web-color" data-color="#0000FF"></span>blue</p><p>Blue.</p>]])
+    local d = parse([[<p><a href="#h"><span class="tex8web-color" data-id="1" data-color="#FF0000"></span>linked</a> after.<span class="tex8web-color-end" data-id="1"></span></p>]]
+      .. [[<p>Black <span class="tex8web-color" data-id="2" data-color="#0000FF"></span>blue</p><p>Blue.</p>]])
     text.colors(d)
     equal(body(d), [[<p><a href='#h'><span style='color:#FF0000;'>linked</span></a> after.</p>]]
       .. [[<p>Black <span style='color:#0000FF;'>blue</span></p><p style='color:#0000FF;'>Blue.</p>]])
   end,
 
-  ["text.colors: none in the page's title"] = function()
-    local d = parse("<p>Text</p>", [[<span class="tex8web-color" data-color="#FF0000"></span>]])
+  ["text.colors: an end before its start ends nothing, and colors nothing"] = function()
+    local d = parse([[<p>a<span class="tex8web-color-end" data-id="1"></span> <span class="tex8web-color" data-id="1" data-color="#FF0000"></span>raw</p><p>After.</p>]])
     text.colors(d)
-    equal(#d:query_selector("span"), 0)
-    equal(body(d), "<p>Text</p>")
+    equal(body(d), [[<p>a raw</p><p>After.</p>]])
+  end,
+
+  ["text.colors: none in the page's title or in listings, and no paragraph left for a mark"] = function()
+    local d = parse([[<p><span class="tex8web-color" data-id="2" data-color="#FF0000"></span></p><p class="indent">Red.<span class="tex8web-color-end" data-id="2"></span></p>]]
+      .. [[<pre class="lstlisting"><span class="tex8web-color" data-id="3" data-color="#0000FF"></span><span style="color:#0000FF">if</span><span class="tex8web-color-end" data-id="3"></span> x</pre>]],
+      [[<span class="tex8web-color" data-id="1" data-color="#FF0000"></span>]])
+    text.colors(d)
+    equal(#d:query_selector("head span"), 0)
+    equal(body(d), [[<p class='indent'><span style='color:#FF0000;'>Red.</span></p>]]
+      .. [[<pre class='lstlisting'><span style='color:#0000FF'>if</span> x</pre>]])
   end,
 
   ["page.build_data: the PDF, \\contentsname and the macros, and the elements removed"] = function()

@@ -11,8 +11,9 @@ function M.theorem_spacing(document)
       return el:get_element_name() == "div" and dom.has_class(el, "%f[%w-]newtheorem%f[^%w-]")
     end)
     if div then
-      div:set_attribute("style", "margin-top: " .. mark:get_attribute("data-before")
-        .. "; margin-bottom: " .. mark:get_attribute("data-after"))
+      -- (after the color text.colors may have given it)
+      div:set_attribute("style", (div:get_attribute("style") or "") .. "margin-top: "
+        .. mark:get_attribute("data-before") .. "; margin-bottom: " .. mark:get_attribute("data-after"))
     end
     mark:remove_node()
   end
@@ -254,110 +255,136 @@ function M.sidenotes(document)
   if #dom.elements(list) == 0 then list:remove_node() end
 end
 
--- \color as a declaration ({\color{red} text}): tex8web-page.tex marks where
--- it is set (span.tex8web-color, the color in data-color) and where its group
--- ends (span.tex8web-color-end). What lies between takes the color: a block
--- wholly between them on itself, the rest in a span around each run of
--- inline content. tcolorbox's boxes keep their own colors, as in the PDF.
--- tex4ht's link text isn't a group, as hyperref's is in the PDF, so a color
--- set in a link ends with it
+-- \color as a declaration ({\color{red} text}): tex8web-page.tex marks
+-- where it is set (span.tex8web-color, with the color) and where its group
+-- ends (span.tex8web-color-end), each pair with its own id. What lies
+-- between takes the color: a block wholly between them on itself, and each
+-- run of inline content in a span. Inner colors go first and win: a block
+-- keeps a color it has. tcolorbox's boxes keep their own colors, a float
+-- the text's (LaTeX's \@xfloat sets \normalcolor) and listings' tokens
+-- html4.4ht's. tex4ht's link text isn't a group, as hyperref's is in the
+-- PDF, so a color set in a link ends with it
 local blocks = {p = true, div = true, ul = true, ol = true, li = true, dl = true, dt = true,
   dd = true, h1 = true, h2 = true, h3 = true, h4 = true, h5 = true, h6 = true, table = true,
-  tr = true, td = true, th = true, figure = true, figcaption = true, aside = true,
-  blockquote = true, pre = true, center = true}
+  caption = true, colgroup = true, col = true, thead = true, tbody = true, tr = true, td = true,
+  th = true, figure = true, figcaption = true, aside = true, blockquote = true, pre = true,
+  section = true, hr = true}
+
+local function is_named(name)
+  return function(el) return el:get_element_name() == name end
+end
 
 local function is_mark(node)
-  return dom.has_class(node, "^tex8web%-color")
+  return dom.has_class(node, "^tex8web%-color$") or dom.has_class(node, "^tex8web%-color%-end$")
 end
 
--- each node under root, numbered where it opens and where it closes
-local function number(root)
-  local open, close, n = {}, {}, 0
-  local function walk(node)
-    n = n + 1
-    open[node] = n
-    if node:is_element() then
-      for _, child in ipairs(node:get_children()) do walk(child) end
-    end
-    n = n + 1
-    close[node] = n
+local function own_color(el)
+  return dom.has_class(el, "^tcolorbox") or el:get_element_name() == "figure"
+end
+
+local function index(node)
+  for i, child in ipairs(node:get_parent():get_children()) do
+    if child == node then return i end
   end
-  walk(root)
-  return open, close
 end
 
-local function color(root, from, to, value)
-  local open, close = number(root)
-  local s, e = open[from], to and open[to] or close[root]
-  local function visit(el)
-    local out, run = {}, nil
-    for _, node in ipairs(el:get_children()) do
-      local inside = open[node] > s and close[node] < e
-      local block = node:is_element() and blocks[node:get_element_name()]
-      if inside and not block and (run or node:is_element() and not is_mark(node)
-          or node:is_text() and node:get_text():find("%S")) then
-        if not run then
-          run = el:create_element("span", {style = "color:" .. value .. ";"})
-          out[#out + 1] = run
-        end
-        run:add_child_node(node)
-      else
-        run = nil
-        out[#out + 1] = node
-        if node:is_element() and not dom.has_class(node, "^tcolorbox") then
-          if inside then
-            local style = node:get_attribute("style")
-            node:set_attribute("style", (style and style:gsub(";?%s*$", "; ") or "")
-              .. "color:" .. value .. ";")
-          elseif close[node] > s and open[node] < e then
-            visit(node)
-          end
-        end
+-- parent's children i to j, all between the marks
+local function paint(parent, i, j, value)
+  local children, out, run = parent:get_children(), {}, nil
+  for k, node in ipairs(children) do
+    local block = node:is_element() and blocks[node:get_element_name()]
+    if k < i or k > j or block then
+      run = nil
+      out[#out + 1] = node
+      local style = node:is_element() and node:get_attribute("style") or ""
+      if k >= i and k <= j and not own_color(node) and not style:find("%f[%w-]color:") then
+        node:set_attribute("style", (style:gsub(";?%s*$", "; ", 1):gsub("^; $", ""))
+          .. "color:" .. value .. ";")
       end
+    -- (a run starts at what shows: not at a mark, nor a space or ~)
+    elseif run or node:is_element() and not is_mark(node)
+        or node:is_text() and node:get_text():gsub("\u{A0}", " "):find("%S") then
+      if not run then
+        run = parent:create_element("span", {style = "color:" .. value .. ";"})
+        out[#out + 1] = run
+      end
+      run:add_child_node(node)
+    else
+      out[#out + 1] = node
     end
-    dom.set_children(el, out)
   end
-  visit(root)
+  dom.set_children(parent, out)
 end
 
-local function within(node, el)
-  return dom.closest(node, function(x) return x == el end) ~= nil
-end
-
-local function color_from(from, to, body)
-  local value = from:get_attribute("data-color")
-  if not within(from, body) then return end
-  local link = dom.closest(from, function(el) return el:get_element_name() == "a" end)
-  if link and not (to and within(to, link)) then return color(link, from, nil, value) end
-  local root = to and from:get_parent() or body
-  while to and not within(to, root) do root = root:get_parent() end
-  color(root, from, to, value)
+-- from from to to (or to the end of limit, without it): the nodes after
+-- from up to the child of the ancestor they share, those before to up to
+-- it, and the children of that ancestor between the two
+local function color(from, to, limit, value)
+  local holds, up = {}, to
+  while up do
+    holds[up] = true
+    up = up:get_parent()
+  end
+  local node = from
+  while node:get_parent() ~= limit and not holds[node:get_parent()] do
+    local parent = node:get_parent()
+    paint(parent, index(node) + 1, #parent:get_children(), value)
+    node = parent
+  end
+  local parent = node:get_parent()
+  if not to then return paint(parent, index(node) + 1, #parent:get_children(), value) end
+  local last, n = to, to
+  while last:get_parent() ~= parent do last = last:get_parent() end
+  while n ~= last do
+    local up = n:get_parent()
+    paint(up, 1, index(n) - 1, value)
+    n = up
+  end
+  paint(parent, index(node) + 1, index(last) - 1, value)
 end
 
 function M.colors(document)
   local body = document:query_selector("body")[1]
-  local marks, starts = {}, {}
+  local marks, starts, open = {}, {}, {}
   local function walk(el)
     for _, node in ipairs(dom.elements(el)) do
       if is_mark(node) then marks[#marks + 1] = node else walk(node) end
     end
   end
-  -- (and in the page's <title>, which takes no color)
+  -- (also in the page's <title>, which takes no color)
   walk(document:query_selector("html")[1])
+  local function start(from, to)
+    if not dom.closest(from, function(el) return el == body end)
+        or dom.closest(from, function(el) return dom.has_class(el, "^lstlisting") end) then
+      return
+    end
+    local link = dom.closest(from, is_named("a"))
+    if link and to and not dom.closest(to, function(el) return el == link end) then to = nil end
+    color(from, to, to and body or link or body, from:get_attribute("data-color"))
+  end
+  -- (an end before its start, as a box copied after its group ended has,
+  -- ends nothing)
   for _, mark in ipairs(marks) do
-    if dom.has_class(mark, "^tex8web%-color$") then
-      starts[#starts + 1] = mark
-    elseif #starts > 0 then
-      color_from(table.remove(starts), mark, body)
+    local id = mark:get_attribute("data-id")
+    if not dom.has_class(mark, "^tex8web%-color$") then
+      if starts[id] then start(starts[id], mark) end
+      starts[id] = false
+    elseif starts[id] == nil then
+      starts[id] = mark
+      open[#open + 1] = mark
     end
   end
-  for _, from in ipairs(starts) do color_from(from, nil, body) end
-  -- (a mark set between paragraphs is alone in a paragraph of its own)
+  for k = #open, 1, -1 do
+    local from = open[k]
+    if starts[from:get_attribute("data-id")] then start(from) end
+  end
+  -- (a mark set between paragraphs can be alone in one)
   for _, mark in ipairs(marks) do
     local parent = mark:get_parent()
     mark:remove_node()
     if parent:get_element_name() == "p" and not parent:get_attribute("class")
-        and #dom.elements(parent) == 0 and not parent:get_text():find("%S") then
+        and not parent:get_attribute("id") and #dom.elements(parent) == 0
+        and not parent:get_text():find("%S") then
       parent:remove_node()
     end
   end

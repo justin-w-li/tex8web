@@ -100,17 +100,18 @@
     \exp_args:Ne \__web_hex_pad:n { \int_to_Hex:n { \fp_eval:n { round(255*(#1)) } } }
 }
 \cs_new:Npn \__web_hex_pad:n #1 { \int_compare:nNnT { \tl_count:n {#1} } = 1 {0} #1 }
-% \color as a declaration ({\color{red} text}), which html4.4ht drops (its
-% \a:color, tex4ht's hook in \color, is empty): a mark where the color is
-% set and one where its group ends, which text.lua's colors turns into
-% spans. The color is read once it is set (\set@color), as xcolor's
-% \color{red!50!black} goes through \a:color twice. tcolorbox's own colors
-% (tcbcol...) are its box's, which tex8web-boxes.tex sets, a link's
-% (hyperref's \HyColor@UseColor) the stylesheet's, and a \colorbox's
-% background (its \color@b@x, color.4ht's) html4.4ht's. Black is the page's
-% text color
+% \color as a declaration ({\color{red} text}), which html4.4ht drops: its
+% \a:color, tex4ht's hook in \color, is empty. Instead, a mark where the
+% color is set and one with the same id where its group ends, which
+% text.lua's colors turns into spans. The color is read once it is set
+% (\set@color), as xcolor's \color{red!50!black} goes through \a:color
+% twice. Some colors aren't the text's. tcolorbox's own (tcbcol...) are its
+% box's, which tex8web-boxes.tex sets. A link's is the stylesheet's
+% (hyperref's \HyColor@UseColor). A \colorbox's background is html4.4ht's
+% (color.4ht's \color@b@x)
 \bool_new:N \l__web_declared_bool
 \bool_new:N \l__web_own_bool
+\int_new:N \g__web_declared_int
 \tl_new:N \l__web_declared_tl
 \cs_new_protected:Npn \__web_declared:n #1 {
     \bool_lazy_or:nnF { \l__web_own_bool } { \str_if_eq_p:ee { \str_range:nnn {#1} {1} {6} } { tcbcol } }
@@ -125,15 +126,16 @@
     \bool_if:NT \l__web_declared_bool {
         \bool_set_false:N \l__web_declared_bool
         \web@hex{.}\l__web_declared_tl
-        \str_if_eq:VnTF \l__web_declared_tl {000000}
-            { \tl_set:Nn \l__web_declared_tl { var(--tex8web-text) } }
-            { \tl_put_left:Nn \l__web_declared_tl {\#} }
+        \int_gincr:N \g__web_declared_int
         % (\Tg doesn't leave vertical mode, which \HCode would)
-        \Tg<span~class="tex8web-color"~data-color="\l__web_declared_tl"/>
-        \group_insert_after:N \__web_declared_end:
+        \Tg<span~class="tex8web-color"~data-id="\int_use:N \g__web_declared_int"
+            ~data-color="\#\l__web_declared_tl"/>
+        \cs_gset:cpe { __web_declared_ \int_use:N \g__web_declared_int : } {
+            \exp_not:N \Tg <span~class="tex8web-color-end"~data-id="\int_use:N \g__web_declared_int"/>
+        }
+        \exp_args:Nc \group_insert_after:N { __web_declared_ \int_use:N \g__web_declared_int : }
     }
 }
-\cs_new_protected:Npn \__web_declared_end: { \Tg<span~class="tex8web-color-end"/> }
 \cs_if_exist:NT \a:color {
     \Configure{color}{\__web_declared:n}
     \cs_set_eq:NN \__web_set_color: \set@color

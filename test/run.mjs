@@ -216,6 +216,16 @@ const colors = {
     `<span class='cmr-8'>In the text’s color.</span></p></aside>`,
     `and <a href='https://example.com'>a link</a>, by <a href='#x1-1001r1'>${text('#008080', 'theorem')}`,
     `In the box’s colors, ${text('#FF0000', 'and red')}.</p>`,
+    // (an inner color on a block wins; a color set at a box's start, whose
+    // group tex4ht ends after the box; a theorem and minipages wholly in a
+    // color; a float, which LaTeX sets in the text's color; a box copied
+    // after its group ended, which colors nothing after it)
+    `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <ul class='itemize1' style='color:${dark('#0000FF')};'>`,
+    `<div class='newtheorem' style='color:${dark('#FF0000')};margin-top:`,
+    `<p class='noindent' style='color:${dark('#FF0000')};'>Red from the box’s start.</p>`,
+    `<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c' style='--tex8web-share: 0.4; color:${dark('#FF0000')};'>`,
+    `<figure class='figure' id='x1-10051'>`,
+    `<p class='indent'>   Black at the end.`,
   ].map(html => new RegExp(html.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))),
   // table colors as the PDF has them (the document loads colortbl before
   // xcolor's table option, which the build errors on without the fix):

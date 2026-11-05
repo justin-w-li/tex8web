@@ -43,4 +43,18 @@ and \href{https://example.com}{a link}, by \cref{thm}.
 
 {\color{blue} Before a box.\par}
 \begin{tcolorbox}[title=A box]In the box's colors, {\color{red} and red}.\end{tcolorbox}
+
+{\color{red} Red. {\color{blue}\begin{itemize}\item Blue.\end{itemize}} Red again.}
+
+{\color{red}\begin{theorem}A red theorem whole.\end{theorem}}
+
+\begin{tcolorbox}\color{red} Red from the box's start.\end{tcolorbox}
+
+{\color{red}\noindent\begin{minipage}{0.4\linewidth}Left.\end{minipage}~\begin{minipage}{0.4\linewidth}Right.\end{minipage}}
+
+{\color{red} Before a float.\begin{figure}[h]A float in the text's color.\caption{Black.}\end{figure} After it.}
+
+\setbox0\hbox{\color{red} raw}\copy0{} and \box0{} copied.
+
+Black at the end.
 \end{document}
