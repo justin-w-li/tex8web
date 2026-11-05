@@ -128,7 +128,9 @@ const contents = {
 
 // colors in dark mode, at another lightness (a light-dark() of the color),
 // and black text in the page's text color: \textcolor's, \colorbox's and
-// \fcolorbox's (in the stylesheet), listings', and in math (a \rule too)
+// \fcolorbox's (in the stylesheet), listings', and in math (a \rule too);
+// and the colors of math and table cells as xcolor has them: a document's
+// own (ink), a \colorlet (ember), a mix, and green, which CSS has darker
 const lightDark = (color, l) => `light-dark\\(${color}, oklch\\(from ${color} ${l} c h\\)\\)`;
 const colors = {
   'test-color': [
@@ -141,7 +143,37 @@ const colors = {
     new RegExp(`<mjx-mpadded style='background-color: ${lightDark('yellow', 'min\\(l, 1\\.24 - l\\)')};'>`),
     new RegExp(`<mjx-mpadded [^>]*style='border: \\S+ solid ${lightDark('blue', 'max\\(l, 0\\.62\\)')};`),
     /<mjx-mspace style='background-color: var\(--tex8web-text\);/,
+    // (ink, red!50!black, green, ember, red!50!yellow in a macro)
+    ...['#c80064', '#800000', '#00ff00', '#640032', '#ff8000'].map(hex =>
+      new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
+    // (gray!50, ink!50!yellow!50, -ink, -red!50!black; Apricot, Blue!50, Azure3; HTML, cmyk, Gray)
+    ...['#bfbfbf', '#f1bf98', '#37ff9b', '#80ffff', '#ffad7a', '#8080ff', '#c1cdcd', '#3366cc', '#803399', '#888888'].map(hex =>
+      new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
+    new RegExp(`#TBL-1-1- td\\{ background-color:${lightDark('#FFFFB2', 'min\\(l, 1\\.24 - l\\)')}\\}`),
+    new RegExp(`#TBL-1-2-1\\{ background-color:${lightDark('#F1BFD8', 'min\\(l, 1\\.24 - l\\)')}\\}`),
+    // (a complement, which tex4ht gives no rule)
+    new RegExp(`#TBL-1-3- td\\{ background-color:${lightDark('#37FF9B', 'min\\(l, 1\\.24 - l\\)')}\\}`),
+    new RegExp(`#TBL-1-3-2\\{ background-color:${lightDark('#37FF9B', 'min\\(l, 1\\.24 - l\\)')}\\}`),
     /<pre class='lstlisting'[^>]*>(?:(?!<\/pre>)[^])*<span style='color:var\(--tex8web-text\)'>/,
+  ],
+  // table colors as the PDF has them (the document loads colortbl before
+  // xcolor's table option, which the build errors on without the fix):
+  // \rowcolors' alternating rows, from the row it starts at, then
+  // \columncolor, \rowcolor[HTML], \cellcolor, and a \rowcolor on a
+  // \multicolumn's row
+  // (xcolor without colortbl, whose extension would bring MathJax's color
+  // extension with it: a document's color, one \colorlet names, a model)
+  'test-color-math': ['#c80064', '#00ff00', '#3366cc'].map(hex =>
+    new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
+  'test-colortbl': [
+    // (\rowcolors' on the rows, under the cells' colors)
+    ...[['1-1-', 'FFE5E5'], ['1-2-', 'E5E5FF'], ['1-3-', 'FFE5E5'], ['2-2-', 'E5FFE5'], ['2-4-', 'E5FFE5'],
+      ['6-1-', 'FFE5E5'], ['6-2-', 'E5E5FF'], ['4-1- td', 'DDEEFF'], ['5-2- td', 'BFFFBF'], ['6-2- td', '00FF00'],
+      ['3-1-1', 'CCFFCC'], ['3-2-1', 'CCFFCC'], ['4-2-1', 'F1BFD8'], ['5-1-1', 'F1BFD8'], ['6-1-2', 'FFFF00']]
+      .map(([selector, hex]) =>
+        new RegExp(`#TBL-${selector}\\{ background-color:${lightDark(`#${hex}`, 'min\\(l, 1\\.24 - l\\)')}\\}`)),
+    // (\rowcolors{2}{}{...} leaves the first row and every odd one without)
+    /^(?![^]*#TBL-2-(?:1|3|5)-\{)/,
   ],
 };
 

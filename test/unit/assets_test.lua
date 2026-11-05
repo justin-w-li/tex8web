@@ -44,12 +44,13 @@ return {
       "span#colorbox1{background-color:#FFFFB2;}\n#colorbox2{border: solid 1px #0000FF;}\n"
       .. "pre#fancyvrb1 { color: #000000; }\n#colorbox3{border: solid 1px #000000;}\n"
       .. ":root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); }\na:hover{color:currentColor}\n"
-      .. ".x{color: light-dark(#111111, #EEEEEE)}"),
+      .. ".x{color: light-dark(#111111, #EEEEEE)}\n #TBL-1-2-1{ background-color:rgb(199,0,99)}"),
       "span#colorbox1{background-color:light-dark(#FFFFB2, oklch(from #FFFFB2 min(l, 1.24 - l) c h));}\n"
       .. "#colorbox2{border: solid 1px light-dark(#0000FF, oklch(from #0000FF max(l, 0.62) c h));}\n"
       .. "pre#fancyvrb1 { color: var(--tex8web-text); }\n#colorbox3{border: solid 1px currentColor;}\n"
       .. ":root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); }\na:hover{color:currentColor}\n"
-      .. ".x{color: light-dark(#111111, #EEEEEE)}")
+      .. ".x{color: light-dark(#111111, #EEEEEE)}\n"
+      .. " #TBL-1-2-1{ background-color:light-dark(#C70063, oklch(from #C70063 min(l, 1.24 - l) c h))}")
   end,
   ["assets.inline_colors: \\textcolor's and listings' spans"] = function()
     local document = dom.html_parse("<html><body><span style='color:#000080;'>a</span>"

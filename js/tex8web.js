@@ -14,6 +14,7 @@
 // is why MathJax's version is pinned (package.json).
 function tex8web(config, tex) {
   const startup = config.startup = config.startup || {};
+  const loader = config.loader = config.loader || {};
 
   // \big and co.: delimiters of TeX's sizes (MathJax asks for 1.2em and up,
   // just above the glyph it has for \big, which then comes out a size larger)
@@ -28,6 +29,35 @@ function tex8web(config, tex) {
         if (token) token._args[1] = size * factor;
       }
     }
+  }
+
+  // \color[model]{values}: MathJax's color extension knows the models rgb,
+  // RGB and gray; give it xcolor's HTML, Gray, cmy and cmyk, converted to
+  // RGB as xcolor does, once it has loaded (internal: the extension's
+  // ColorModel, whose models are private to it, and its TexError)
+  const decimal = max => v => /^(\d+(\.\d*)?|\.\d+)$/.test(v) && v <= max;
+  const colorModels = {
+    HTML: {count: 1, valid: v => /^[0-9A-Fa-f]{6}$/.test(v),
+      rgb: ([hex]) => [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)},
+    Gray: {count: 1, valid: decimal(15), rgb: ([g]) => [g / 15, g / 15, g / 15]},
+    cmy: {count: 3, valid: decimal(1), rgb: ([c, m, y]) => [1 - c, 1 - m, 1 - y]},
+    cmyk: {count: 4, valid: decimal(1), rgb: ([c, m, y, k]) => [c, m, y].map(x => 1 - Math.min(1, +x + +k))},
+  };
+  loader['[tex]/color'] = {...loader['[tex]/color'], ready: addColorModels};
+  function addColorModels() {
+    const {ColorModel} = MathJax._.input.tex.color.ColorUtil;
+    const TexError = MathJax._.input.tex.TexError.default;
+    const normalizeColor = ColorModel.prototype.normalizeColor;
+    ColorModel.prototype.normalizeColor = function (model, value) {
+      const spec = colorModels[model];
+      if (!spec) return normalizeColor.call(this, model, value);
+      const values = value.trim().split(/\s*,\s*/);
+      if (values.length !== spec.count || !values.every(spec.valid)) {
+        throw new TexError('BadColorValue', 'Invalid color values for the %1 model', model);
+      }
+      const bytes = spec.rgb(values).map(x => Math.round(255 * x).toString(16).padStart(2, '0'));
+      return '#' + bytes.join('');
+    };
   }
 
   // MathJax's default space between rows (in its ems, in which 1pt is
@@ -261,12 +291,13 @@ function tex8web(config, tex) {
   // macros.lua's definitions (the page's #tex8web-macros, as text), given
   // to MathJax before any math, which ui/lazy may typeset in any order
   // (internal: ui/lazy compiles math without a node, as tex2mml's is, at
-  // once). A TeX error in one leaves the ones after it undefined
+  // once), and as a promise, as a \definecolor loads the color extension.
+  // A TeX error in one leaves the ones after it undefined
   const pageReady = startup.pageReady;
-  startup.pageReady = function () {
+  startup.pageReady = async function () {
     const doc = MathJax.startup.document;
     const [macros] = doc.adaptor.getElements(['#tex8web-macros'], doc.document);
-    const mml = macros ? MathJax.tex2mml(doc.adaptor.textContent(macros)) : '';
+    const mml = macros ? await MathJax.tex2mmlPromise(doc.adaptor.textContent(macros)) : '';
     if (mml.includes('<merror')) console.warn('tex8web: a TeX error in a macro definition:', mml);
     return pageReady ? pageReady() : MathJax.startup.defaultPageReady();
   };

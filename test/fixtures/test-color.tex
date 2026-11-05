@@ -1,16 +1,35 @@
 % A test for tex8web: colors in dark mode. \textcolor, \colorbox's and
 % \fcolorbox's, listings' and those in math each get another lightness in
 % dark mode (a light-dark() of the color); black text is the page's text
-% color.
+% color. Colors in math and table cells as the PDF has them: a document's
+% own, an xcolor mix and complement, xcolor's names that CSS gives other
+% values and those its options define, and the models MathJax lacks; and
+% colortbl's \rowcolor and \cellcolor.
 \documentclass{article}
-\usepackage{xcolor}
+\usepackage[dvipsnames,svgnames,x11names]{xcolor}
 \usepackage{listings}
+\usepackage{colortbl}
 \definecolor{navy}{RGB}{0,0,128}
+\definecolor{ink}{RGB}{200,0,100}
+\colorlet{ember}{ink!50!black}
+\newcommand{\warm}[1]{\textcolor{red!50!yellow}{#1}}
 \begin{document}
 Plain, \textcolor{navy}{navy}, \textcolor{black}{black},
 \colorbox{yellow!30}{on yellow} and \fcolorbox{blue}{green!10}{framed}.
 In math, $a + \textcolor{red}{b} + {\color{black} c}$ and
 \[ \colorbox{yellow}{$x$} + \fcolorbox{blue}{white}{$y$} + \rule{1em}{1pt}. \]
+In math, $\textcolor{ink}{a} + \textcolor{red!50!black}{b} + \textcolor{green}{c} + \textcolor{ember}{d} + \warm{e}$.
+Mixes and complements as xcolor rounds and takes them:
+$\textcolor{gray!50}{a} + \textcolor{ink!50!yellow!50}{b} + \textcolor{-ink}{c} + \textcolor{-red!50!black}{d}$.
+Names of the options: $\textcolor{Apricot}{e} + \textcolor{Blue!50}{f} + \textcolor{Azure3}{g}$.
+Models: $\textcolor[HTML]{3366CC}{h} + \textcolor[cmyk]{0.2,0.5,0.1,0.3}{i} + \textcolor[Gray]{8}{j}$.
+
+\begin{tabular}{ll}
+\rowcolor{yellow!30} one & two \\
+\cellcolor{ink!25} three & four \\
+\rowcolor{-ink} five & \cellcolor{-ink} six \\
+\end{tabular}
+
 \begin{lstlisting}
 \begin{document}
 \end{lstlisting}

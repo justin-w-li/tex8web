@@ -111,13 +111,15 @@ return {
     local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf">\newcommand{\x}{x}</script>]]
       .. [[<script type="text/x-tex8web-contents">
 Table des
-matières </script>]])
+matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.39216 </script>]])
     local context = {}
     page.build_data(d, context)
-    equal(context, {pdf = "build/doc.pdf", contents = "Table des matières", macros = "\\newcommand{\\x}{x}"})
+    equal(context, {pdf = "build/doc.pdf", contents = "Table des matières", macros = "\\newcommand{\\x}{x}",
+      colors = "ink 0.78432,0,0.39216 "})
     equal(#d:query_selector("script"), 0)
     local e = parse("", [[<script type="text/x-tex8web-build" data-pdf=""></script>]]
-      .. [[<script type="text/x-tex8web-contents">Contents</script>]])
+      .. [[<script type="text/x-tex8web-contents">Contents</script>]]
+      .. [[<script type="text/x-tex8web-colors"></script>]])
     local none = {}
     page.build_data(e, none)
     equal(none.pdf, nil)
@@ -253,6 +255,30 @@ matières </script>]])
     check(not definitions:find("unused", 1, true), definitions)
     check(not definitions:find("\\bad", 1, true), definitions)
     check(logged[1]:find("\\bad (uses \\mathpalette)", 1, true), logged[1])
+  end,
+
+  ["macros.define: colors MathJax lacks (a document's, xcolor's, a mix), not those it has"] = function()
+    local tex = tmpfile([[\newcommand{\warm}[1]{\textcolor{ink!50!yellow}{#1}}]])
+    local d = parse([[<span class="mathjax-inline">\(\textcolor{ink}{a}\textcolor{red}{b}\textcolor{green}{c}]]
+      .. [[\textcolor{red!50}{d}\fcolorbox{black}{teal}{e}\warm{f}\textcolor{nope!50}{g}\)</span>]]
+      .. [[<span class="mathjax-inline">\(\textcolor{gray!50}{h}\textcolor{ink!50!yellow!50}{i}\textcolor{-ink}{j}]]
+      .. [[\textcolor{-red!50!black}{k}\textcolor{red!50!-blue}{l}\textcolor{--ink}{m}\textcolor{red!150!black}{n}\textcolor{red!150}{o}\)</span>]])
+    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216 red 1,0,0 black 0,0,0 green 0,1,0 "
+      .. "teal 0,0.5,0.5 yellow 1,1,0 gray 0.5,0.5,0.5 blue 0,0,1 "})
+    os.remove(tex)
+    local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
+    for _, line in ipairs({"\\definecolor{ink}{RGB}{200,0,100}", "\\definecolor{green}{RGB}{0,255,0}",
+        "\\definecolor{teal}{RGB}{0,128,128}", "\\definecolor{red!50}{RGB}{255,128,128}",
+        "\\definecolor{ink!50!yellow}{RGB}{228,128,50}",
+        -- (as xcolor has them: mixed unrounded, a complement of the whole, a share past 100 held at the end)
+        "\\definecolor{gray!50}{RGB}{191,191,191}", "\\definecolor{ink!50!yellow!50}{RGB}{241,191,152}",
+        "\\definecolor{-ink}{RGB}{55,255,155}", "\\definecolor{-red!50!black}{RGB}{128,255,255}",
+        "\\definecolor{red!50!-blue}{RGB}{255,128,0}", "\\definecolor{--ink}{RGB}{200,0,100}",
+        "\\definecolor{red!150!black}{RGB}{255,0,0}", "\\definecolor{red!150}{RGB}{255,0,0}"}) do
+      check(definitions:find(line, 1, true), line .. " in " .. definitions)
+    end
+    check(not definitions:find("{red}", 1, true) and not definitions:find("{black}", 1, true), definitions)
+    check(not definitions:find("nope", 1, true), definitions)
   end,
 
   ["page.meta_tags: an abstract without spaces cut at 197 characters"] = function()

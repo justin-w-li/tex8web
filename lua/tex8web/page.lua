@@ -14,8 +14,9 @@ local function trim(s)
 end
 
 -- tex8web-page.tex's build elements, for the later passes: the PDF
--- (context.pdf) and the \WebMathMacros definitions (context.macros), and
--- \contentsname (context.contents) as tex4ht writes it
+-- (context.pdf), the \WebMathMacros definitions (context.macros), the
+-- colors for math (context.colors) and \contentsname (context.contents) as
+-- tex4ht writes it
 function M.build_data(document, context)
   local element = document:query_selector("script[type='text/x-tex8web-build']")[1]
   if not element then return end
@@ -27,6 +28,9 @@ function M.build_data(document, context)
   local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]
   context.contents = trim((name:get_text():gsub("%s+", " ")))
   name:remove_node()
+  local colors = document:query_selector("script[type='text/x-tex8web-colors']")[1]
+  context.colors = colors:get_text()
+  colors:remove_node()
 end
 
 local function permalink(el, id)

@@ -95,6 +95,92 @@
     \exp_args:Ne \__web_hex_pad:n { \int_to_Hex:n { \fp_eval:n { round(255*(#1)) } } }
 }
 \cs_new:Npn \__web_hex_pad:n #1 { \int_compare:nNnT { \tl_count:n {#1} } = 1 {0} #1 }
+% the colors MathJax's math can name, for macros.lua to give it (it has no
+% xcolor): "name r,g,b" (fractions as xcolor has them, which macros.lua mixes
+% and rounds once) for each the document defines and each of xcolor's own
+% (which mixes like red!50!black start from), as the page ends
+\clist_const:Nn \c__web_colors_clist
+    { black, blue, brown, cyan, darkgray, gray, green, lightgray, lime, magenta,
+      olive, orange, pink, purple, red, teal, violet, white, yellow }
+\tl_new:N \l__web_colors_tl
+\tl_new:N \l__web_rgb_tl
+\cs_new_protected:Npn \__web_colors_element: {
+    \tl_clear:N \l__web_colors_tl
+    \cs_if_exist:NT \@ifundefinedcolor
+        {
+            \clist_map_inline:Nn \c__web_colors_clist { \__web_color:n {##1} }
+            \clist_map_inline:Nn \g__web_colors_clist { \__web_color:n {##1} }
+        }
+    \HCode{<script~type="text/x-tex8web-colors">\l__web_colors_tl</script>}
+}
+\cs_new_protected:Npn \__web_color:n #1 {
+    \@ifundefinedcolor {#1} {}
+        {
+            \extractcolorspecs {#1} \web@model \web@spec
+            \convertcolorspec \web@model \web@spec {rgb} \l__web_rgb_tl
+            \tl_put_right:Ne \l__web_colors_tl { \tl_to_str:n {#1} ~ \l__web_rgb_tl ~ }
+        }
+}
+\AtEndDocument{\__web_colors_element:}
+% colortbl's colors (\cellcolor, \rowcolor, \columncolor): tex4ht (colortbl.4ht
+% and html4.4ht's \add:color) writes the cell's rule with its own conversion,
+% which gives names xcolor and dvips have beyond CSS's a wrong rgb(), and
+% truncates the rest, off the page's hex colors that dark mode follows. Use
+% \web@hex for a color xcolor knows, a name or an expression; the cell colors
+% tex4ht makes itself (tblcol-1, a color with a model) stay as they are
+\cs_if_exist:NT \add:color
+    {
+        \cs_set_eq:NN \__web_add_color:nnn \add:color
+        \tl_new:N \l__web_cell_tl
+        \cs_set_protected:Npn \add:color #1 #2 #3
+            {
+                \tl_set:Ne \l__web_cell_tl {#2}
+                \bool_if:NTF \g__web_xcolor_bool
+                    {
+                        \tl_if_in:NnTF \l__web_cell_tl { ! }
+                            { \__web_cell_color:nVn {#1} \l__web_cell_tl {#3} }
+                            {
+                                \tl_if_head_eq_charcode:VNTF \l__web_cell_tl -
+                                    { \__web_cell_color:nVn {#1} \l__web_cell_tl {#3} }
+                                    {
+                                        \exp_args:NV \@ifundefinedcolor \l__web_cell_tl
+                                            { \__web_add_color:nnn {#1} {#2} {#3} }
+                                            { \__web_cell_color:nVn {#1} \l__web_cell_tl {#3} }
+                                    }
+                            }
+                    }
+                    { \__web_add_color:nnn {#1} {#2} {#3} }
+            }
+        \cs_new_protected:Npn \__web_cell_color:nnn #1 #2 #3
+            {
+                \web@hex {#2} \l__web_hex_tl
+                \web@Css { \# TBL- \TableNo - #3 { ~ #1 : \# \l__web_hex_tl } }
+            }
+        \cs_generate_variant:Nn \__web_cell_color:nnn { nVn }
+        \cs_if_exist:NT \a:rowcolors
+            {
+                % new array runs a row's hooks (which colortbl's \rowcolors uses), and
+                % old array's \everycr, that xcolor.4ht used, from its own \halign; tex4ht
+                % builds another, so call it as tex4ht starts a row (\halignTR) instead
+                % (html4.4ht's \Configure{rowcolors} also never draws the color). The
+                % color goes on the row, under a \rowcolor's or \cellcolor's on its
+                % cells, as in the PDF; and without \rowcolors' commands for each row
+                % ([\hline]), which can't run there
+                \cs_new_protected:Npn \__web_row_color:n #1
+                    { \add:color { background-color } {#1} { \HRow - } }
+                \Configure { rowcolors } { \__web_row_color:n }
+                \cs_set_eq:NN \__web_rowcolors:w \rowc@l@rs
+                \cs_set:Npn \rowc@l@rs [ #1 ] { \__web_rowcolors:w [ ] }
+                \cs_new_protected:Npn \__web_row_colors:
+                    {
+                        \group_begin:
+                            \cs_set_eq:NN \o:noalign: \use:n
+                            \@rowc@lors
+                        \group_end:
+                    }
+                \append:def \halignTR { \__web_row_colors: }
+            }
+    }
 \ExplSyntaxOff
 % links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
 % and the links keep the color of the text. tex4ht turns colorlinks on

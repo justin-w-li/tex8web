@@ -103,3 +103,49 @@
 \def\web@needs#1{\ifcsname#1\endcsname\else\web@outdated{\@backslashchar#1}\fi}
 \def\web@outdated#1{\PackageWarningNoLine{tex8web}{#1 has changed or gone,
     and tex8web needs updating for it}}
+
+% xcolor: the names of the colors the document defines (\definecolor,
+% \colorlet, \providecolor and the sets all log the name with \XC@logdef,
+% expanded), once each, for tex8web-page.tex to give MathJax their values;
+% and whether xcolor came before colortbl, which doesn't load it, but
+% colortbl.4ht does, after the document's colors that the color package
+% made, which xcolor can't read (for colortbl's cells). The options
+% dvipsnames, svgnames and x11names define their colors as xcolor loads,
+% before its hook below, so the wrapper goes in as their files are read
+% (which the color package's dvips driver also reads, before xcolor)
+\ExplSyntaxOn
+\clist_new:N \g__web_colors_clist
+\bool_new:N \g__web_xcolor_bool
+% (xcolor's table option requires colortbl again, when xcolor is done, which
+% makes tex4ht input colortbl-hooks.4ht a second time, and its \newcommand
+% fail: colortbl-hooks.4ht is only for the first time)
+\AddToHook { package/xcolor/before }
+    {
+        \@ifpackageloaded { colortbl }
+            { \cs_undefine:c { package:hooks:colortbl.sty } }
+            { \bool_gset_true:N \g__web_xcolor_bool }
+    }
+\bool_new:N \g__web_record_bool
+\cs_new_protected:Npn \__web_record_colors: {
+    \bool_lazy_or:nnF { \g__web_record_bool } { ! \cs_if_exist_p:N \XC@logdef }
+        {
+            \bool_gset_true:N \g__web_record_bool
+            \cs_gset_eq:NN \__web_logdef:n \XC@logdef
+            \cs_gset:Npn \XC@logdef ##1 {
+                \__web_note_color:e {##1}
+                \__web_logdef:n {##1}
+            }
+        }
+}
+\cs_new_protected:Npn \__web_note_color:n #1 {
+    \cs_if_exist:cF { __web_color_ #1 : }
+        {
+            \cs_gset:cpn { __web_color_ #1 : } { }
+            \clist_gput_right:Nn \g__web_colors_clist {#1}
+        }
+}
+\cs_generate_variant:Nn \__web_note_color:n { e }
+\AddToHook { package/xcolor/after } { \__web_record_colors: }
+\clist_map_inline:nn { dvipsnam.def, svgnam.def, x11nam.def }
+    { \AddToHook { file/#1/before } { \__web_record_colors: } }
+\ExplSyntaxOff
