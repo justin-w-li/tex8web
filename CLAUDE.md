@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-tex8web turns LaTeX documents into static web pages that look like their PDF and read well on any screen, with almost no extra work from someone used to writing TeX. It is not a textbook platform. A change belongs here if it brings the page closer to the PDF or makes it easier to read; "we could" is not a reason. README.md says what tex8web does and DOCUMENTATION.md how (architecture, files, tests, limitations). Read them before any non-trivial change.
+tex8web turns LaTeX documents into static web pages that look like their PDF and read well on any screen, with almost no extra work from someone used to writing TeX. It is not a textbook platform. A change belongs here if it brings the page closer to the PDF or makes it easier to read; "we could" is not a reason. README.md says what tex8web does, DOCUMENTATION.md how to use it (configs, behavior, limitations), and CONTRIBUTING.md how it works (architecture, tests, files, releases). Read them before any non-trivial change.
 
 ## Product
 
@@ -75,5 +75,5 @@ Docs, comments and commit messages are read by strangers.
   - `npm test`, then commit; batch several tweaks per commit;
   - run `npm run test:visual` and the full rebuild once, at the end of a batch.
 - **Keep the docs true.**
-  - `DOCUMENTATION.md` changes when behavior, files or limitations do.
+  - `DOCUMENTATION.md` changes when behavior or limitations do, and `CONTRIBUTING.md` when internals, tests or files do.
   - Known gaps go in `test/expected.json`.
