@@ -226,7 +226,7 @@ const colors = {
     `<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c' style='--tex8web-share: 0.4; color:${dark('#FF0000')};'>`,
     `<figure class='figure' id='x1-10051'>`,
     `<p class='indent'>   Black at the end.`,
-  ].map(html => new RegExp(html.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))),
+  ].map(html => new RegExp(html.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).concat(/<head>\s*<title>Colors<\/title>/),
   // table colors as the PDF has them (the document loads colortbl before
   // xcolor's table option, which the build errors on without the fix):
   // \rowcolors' alternating rows, from the row it starts at, then
