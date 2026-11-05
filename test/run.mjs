@@ -71,9 +71,16 @@ const typeset = {
   ],
 };
 
-// pictures sized by \includegraphics[width=..]: a share of the PDF's text
-// width, which holds as a narrower screen reflows the text
+// pictures sized by \includegraphics's width, scale or height: a share of
+// the PDF's text width, which holds as a narrower screen reflows the text
+const share = (alt, fraction) => new RegExp(`<img alt='${alt}' [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${fraction.replace('.', '\\.')}\\)'`);
 const pictures = {
+  // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
+  // times its size, 96pt high so 128pt wide, 100pt by 40pt with
+  // keepaspectratio and without, which never squashes it; and one
+  // without a size, as tex4ht writes it)
+  'test-graphics': [share('width', '0.2899'), share('scale', '0.2793'), share('height', '0.371'),
+    share('both', '0.2899'), share('fitted', '0.1546'), /<img alt='bare' (?:(?!style=)[^>])*\/>/],
   'examples/basic': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.25\)'/],
   // (in minipages, whose \textwidth is their own)
   'test': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.225\)'/,

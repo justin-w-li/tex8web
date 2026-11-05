@@ -157,6 +157,7 @@ These are deliberate:
 - The text is 12pt, larger than most PDFs, and everything else is in proportion. The column is as wide as the PDF's in ems.
 - Paragraphs are separated by space instead of indented.
 - A picture keeps its size as a narrower screen reflows the text. It shrinks only once the column is narrower than the picture.
+- A picture given a `width` and a `height` without `keepaspectratio` keeps its proportions instead of being squashed.
 - Minipages and subfigures that share a line in the PDF stay side by side at their PDF widths. On a narrow screen they wrap.
 - Display math that doesn't fit scrolls sideways. On a narrow screen, so does a wide table or verbatim block.
 - The table of contents has no page numbers or dot leaders.
@@ -182,7 +183,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **Colors in math.** A color passed to a macro by name isn't converted. Neither is a color defined inside a group. The models `hsb`, `Hsb`, `tHsb` and `wave` aren't supported. A color redefined later in the document has its last value everywhere in math.
 - **Table colors.** With colortbl but not xcolor, `\textcolor` of the document's own colors is lost: load xcolor first. In a table with `\hline`, `\rowcolors` alternates wrongly.
 - **Minipages.** A minipage inside a paragraph's text breaks the paragraph around it. `\centering` in a minipage is followed only in a figure. Two minipages, each in its own `\fbox`, stack.
-- **Pictures' heights.** Only `\includegraphics`'s `width` is followed. With `height`, the picture keeps its proportions at a size that isn't the PDF's.
+- **`scale` and `height` without a `.xbb` file.** tex4ht reads a bitmap's or PDF's size from a `.xbb` file beside it. Without one, a picture with `scale` or `height` isn't at the PDF's size. Make the file with `extractbb -x picture.png`.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.

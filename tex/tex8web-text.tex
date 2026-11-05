@@ -344,21 +344,38 @@
 \Configure{GraphicsAlt}{}
 \Configure{Picture-alt}{}
 
-% \includegraphics[width=..] keeps its size beside the text, as a fraction of
+% \includegraphics keeps the PDF's width beside the text, as a fraction of
 % the PDF's text width, and shrinks only with a column narrower than it
-% (img's max-width); other sizes as tex4ht writes them. (\web@textwidth, as
-% a minipage, and so a tcolorbox or subfigure, sets \textwidth to its own)
+% (img's max-width). The width is the one graphicx works out from width,
+% height and scale; only a width is written, so that a height never
+% squashes the picture. A picture with none of the three, or whose
+% natural size tex4ht doesn't know (no .xbb file beside a bitmap, \noBoundingBox
+% in graphics.4ht), is left to tex4ht, unless the width alone is asked for,
+% or with a height that squashes. (\web@textwidth, as a minipage, and so a
+% tcolorbox or subfigure, sets \textwidth to its own)
 \ExplSyntaxOn
 \cs_if_exist:NT \Gin@req@width
   {
     \web@needs{a:Gin-dim}
     \cs_set_eq:Nc \__web_gin_dim: { a:Gin-dim }
     \Configure{Gin-dim}{%
-        \expandafter\ifx\csname Gin:ewidth\endcsname\Gin@exclamation
-            \__web_gin_dim:
-        \else
-            style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\web@textwidth,4)})"
-        \fi
+        \bool_if:nTF
+          {
+            ! (
+              \tl_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
+              \tl_if_eq_p:NN \Gin:eheight \Gin@exclamation &&
+              \str_if_eq_p:Vn \Gin@scalex { 1 }
+            ) &&
+            (
+              \tl_if_eq_p:NN \noBoundingBox \UnDefined ||
+              (
+                ! \tl_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
+                ( \tl_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_eq_p:NN \ifGin@iso \iffalse )
+              )
+            )
+          }
+          { style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\web@textwidth,4)})" }
+          { \__web_gin_dim: }
     }
   }
 
