@@ -127,9 +127,10 @@ const contents = {
 };
 
 // the text in its own font, after font commands the PDF keeps in a group:
-// a \contentsname in small capitals
+// a \contentsname in small capitals, and an \intertext in italics
 const fonts = {
-  'test-fonts': [/<p class='noindent'>The text, in its own font\.\s*<\/p>/],
+  'test-fonts': [/<p class='noindent'>The text, in its own font\./,
+    /<span class='tex8web-intertext'>Another note\.\s*<\/span>/],
 };
 
 // colors in dark mode, at another lightness (a light-dark() of the color),
