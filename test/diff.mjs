@@ -3,12 +3,15 @@
 // difference is), the lines of its stylesheets, and the files added,
 // removed or changed. Sections with the same first difference are listed
 // together. Left out: fonts/, which tex8web copies unchanged, and the PDF,
-// whose dates differ in every build. Fails if anything changed.
+// whose dates differ in every build. Exits 1 if anything changed, 2 if it
+// couldn't compare.
 //   node test/diff.mjs <old html directory> <new html directory>
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
 
 const [before, after] = process.argv.slice(2);
+// (a failure isn't a change)
+process.on('uncaughtException', error => { console.error(error); process.exit(2); });
 
 function files(dir) {
   return readdirSync(dir, { recursive: true })
@@ -115,4 +118,4 @@ for (const file of new Set([...old, ...now])) {
   else if (ext === '.css') out.push(...diffLines(a.toString(), b.toString()));
 }
 console.log(out.length ? out.join('\n') : 'unchanged');
-process.exit(out.length ? 1 : 0);
+process.exitCode = out.length ? 1 : 0;

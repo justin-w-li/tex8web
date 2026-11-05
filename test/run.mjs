@@ -2,7 +2,7 @@
 // with make4ht and checked. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build, documents, expected, largestFirst, pool, root, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -297,8 +297,9 @@ function check(doc, result, out, aux) {
   // (prerender.mjs cuts Latin Modern down to the document's characters;
   // test:visual checks that the page looks the same)
   const font = join(out, 'fonts/lmroman10-regular.woff2');
-  if (html.includes('<mjx-container') && statSync(font, { throwIfNoEntry: false })?.size >= statSync(join(root, 'fonts/lmroman10-regular.woff2')).size) {
-    problems.push('Latin Modern Roman not cut down to the page\'s characters');
+  const size = statSync(font, { throwIfNoEntry: false })?.size;
+  if (html.includes('<mjx-container') && !(size < statSync(join(root, 'fonts/lmroman10-regular.woff2')).size)) {
+    problems.push(`Latin Modern Roman ${size ? 'not cut down to the page\'s characters' : 'missing'}`);
   }
   if (!existsSync(join(out, 'fonts/LICENSE.txt'))) problems.push('no fonts/LICENSE.txt with the fonts');
   // (checkOutput checks that every formula has it, once one does)
@@ -314,6 +315,7 @@ const docs = documents().filter(doc => !only.length || only.includes(doc.name));
 const jobs = largestFirst(docs).map(doc => async () => {
   const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
   const result = await build(doc, out, aux, { TEX8WEB_MATHML: '1' });
+  mkdirSync(testDir(doc), { recursive: true });
   writeFileSync(join(testDir(doc), 'make4ht.log'), result.log);
   report(doc.name, check(doc, result, out, aux));
 });

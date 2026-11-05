@@ -4,12 +4,13 @@
 //   node test/shots.mjs <out> <page.html | html directory>
 //     writes <page>-<width>-<scheme>-<n>.png into out
 //   node test/shots.mjs <out> <old html directory> <new html directory>
-//     compares the same pages of two builds screen by screen, writes the
-//     screens that differ as <page>-<width>-<scheme>-<n>-old.png and -new.png,
-//     and fails if any do
+//     compares the pages of two builds screen by screen, writes the screens
+//     that differ as <page>-<width>-<scheme>-<n>-old.png and -new.png, and
+//     exits 1 if any do or a page is in only one build (2 if it couldn't
+//     compare)
 // The PDF's page beside them: pdftoppm -png -r 100 -f <n> -l <n> -singlefile
 // <pdf> <out>/pdf
-import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { launch } from './lib/chrome.mjs';
@@ -20,16 +21,26 @@ if (!out || !builds.length || builds.length > 2) {
   process.exit(2);
 }
 const windows = [[1400, 900], [390, 844]];
+// (a failure isn't a difference)
+process.on('uncaughtException', error => { console.error(error); process.exit(2); });
 const pages = path => statSync(path).isDirectory()
   ? readdirSync(path).filter(f => /^[^.]+\.html$/.test(f)).map(f => join(path, f)) : [resolve(path)];
 const save = (name, shot) => writeFileSync(join(out, `${name}.png`), Buffer.from(shot, 'base64'));
 mkdirSync(out, { recursive: true });
 
+// the pages of the one build, or those of either of two
+const names = new Set(builds.flatMap(build => pages(build).map(page => basename(page))));
 const chrome = await launch();
 let differ = false;
 try {
-  for (const page of pages(builds[0])) {
+  for (const page of builds.length === 1 ? pages(builds[0]) : [...names].map(name => join(builds[0], name))) {
     const name = basename(page, '.html');
+    const only = builds.filter(build => !existsSync(join(build, basename(page))));
+    if (builds.length === 2 && only.length) {
+      console.log(`${name}: only in ${builds.find(build => !only.includes(build))}`);
+      differ = true;
+      continue;
+    }
     for (const [width, height] of windows) {
       for (const colorScheme of ['light', 'dark']) {
         const shots = [];
@@ -39,15 +50,16 @@ try {
           await tab.close();
         }
         const label = `${name}-${width}-${colorScheme}`;
+        const n = i => String(i).padStart(3, '0');
         if (shots.length === 1) {
-          shots[0].forEach((shot, i) => save(`${label}-${i}`, shot));
+          shots[0].forEach((shot, i) => save(`${label}-${n(i)}`, shot));
           continue;
         }
         const [a, b] = shots;
         const differing = [...Array(Math.max(a.length, b.length)).keys()].filter(i => a[i] !== b[i]);
         for (const i of differing) {
-          if (a[i]) save(`${label}-${i}-old`, a[i]);
-          if (b[i]) save(`${label}-${i}-new`, b[i]);
+          if (a[i]) save(`${label}-${n(i)}-old`, a[i]);
+          if (b[i]) save(`${label}-${n(i)}-new`, b[i]);
         }
         differ ||= differing.length > 0;
         console.log(`${label}: ${differing.length ? `screens ${differing.join(', ')} of ${b.length} differ`
@@ -58,4 +70,4 @@ try {
 } finally {
   chrome.close();
 }
-process.exit(differ ? 1 : 0);
+process.exitCode = differ ? 1 : 0;

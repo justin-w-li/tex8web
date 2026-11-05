@@ -1,8 +1,8 @@
 // npm run test:visual: each test document and example, prerendered, against
 // the same page typeset by MathJax in the browser, compared screen by
 // screen with JavaScript off (needs Chrome, and the network for MathJax).
-// The two should be identical (the browser's MathJax measures text as
-// Node's estimates it); differing screens are saved, as
+// The two should be identical (the browser's MathJax measuring as Node's
+// estimates); differing screens are saved, as
 // <screen>-browser.png and <screen>-prerendered.png, in
 // build/visual/<document>/visual/. In both, the columns of an alignment
 // should line up across its \intertext. And the prerendered page's closer
@@ -49,11 +49,13 @@ const typesetPage = `(async () => {
   return '<!DOCTYPE html>' + html.outerHTML;
 })()`;
 
-// MathJax in the browser measuring text as MathJax in Node estimates it
-// (text in math that MathJax has no glyphs for, as \text's in a \colorbox):
-// so that the two pages can be compared exactly. Run before the page's
-// scripts, it sets the measures once the adaptor exists, at pageReady
-// (internal: the lite adaptor's nodeSize, and its nodeBBox of nothing)
+// MathJax in the browser measuring as MathJax in Node does, which can't
+// measure but estimates: text in math that MathJax has no glyphs for (as
+// \text's in a \colorbox), the font's size, which lengths in pt convert by,
+// and the room for a formula. So the two pages compare exactly, checking
+// all prerendering does but measure. Run before the page's scripts, it
+// sets the measures once the adaptor exists, at pageReady (internal: the
+// lite adaptor's nodeSize, and its nodeBBox of nothing)
 const nodeMeasures = `(() => {
   const cjk = new RegExp(["[","\\u1100-\\u115f","\\u2329\\u232a","\\u2e80-\\u303e","\\u3040-\\u3247","\\u3250-\\u4dbf",
     "\\u4e00-\\ua4c6","\\ua960-\\ua97c","\\uac00-\\ud7a3","\\uf900-\\ufaff","\\ufe10-\\ufe19","\\ufe30-\\ufe6b",
@@ -62,8 +64,7 @@ const nodeMeasures = `(() => {
   Object.defineProperty(window, 'MathJax', { configurable: true, get: () => config, set(value) {
     config = value;
     const startup = value?.startup;
-    if (!startup || startup.tex8webMeasures) return;
-    startup.tex8webMeasures = true;
+    if (!startup) return;
     const pageReady = startup.pageReady;
     startup.pageReady = function () {
       const adaptor = MathJax.startup.adaptor;

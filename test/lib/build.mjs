@@ -46,10 +46,11 @@ export const workers = Math.min(4, Math.max(2, availableParallelism() >> 1));
 
 // builds running, each in a process group of its own (so that one that
 // hangs is killed with what it started: LaTeX, Node, dvisvgm), which Ctrl-C
-// doesn't reach: killed as this process ends
+// doesn't reach: killed as this process ends, unless it is killed outright
 const running = new Set();
-process.on('exit', () => running.forEach(pid => { try { process.kill(-pid, 'SIGKILL'); } catch {} }));
-for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(1));
+const kill = pid => { try { process.kill(-pid, 'SIGKILL'); } catch {} };
+process.on('exit', () => running.forEach(kill));
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(1));
 // a build taking longer has hung (the longest test build takes under a
 // minute)
 const deadline = 300;
@@ -77,7 +78,7 @@ export async function build(doc, out, aux, env = {}) {
     let log = '';
     const timer = setTimeout(() => {
       log += `\n[FATAL] make4ht timed out after ${deadline}s, at: ${log.trim().split('\n').pop()}\n`;
-      process.kill(-child.pid, 'SIGKILL');
+      kill(child.pid);
     }, deadline * 1000);
     child.stdout.on('data', d => log += d);
     child.stderr.on('data', d => log += d);
