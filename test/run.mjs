@@ -192,6 +192,9 @@ const fonts = {
     /<span class='tex8web-latex'>L<span class='tex8web-a'>A<\/span><span class='tex8web-tex'>T<span class='tex8web-e'>E<\/span>X<\/span><\/span>/],
   'test-fonts': [/<p class='noindent'>The text, in its own font\./,
     /<span class='tex8web-intertext'>Another note\.\s*<\/span>/],
+  // (a title in the font a redefined \maketitle sets, in a heading at the
+  // text's size)
+  'test-titlefont': [/<h1 class='titleHead'><span\s+class='bchb7t-x-x-240'>A title in its own font<\/span><\/h1>/],
 };
 
 // colors in dark mode, at another lightness (a light-dark() of the color),
@@ -500,6 +503,7 @@ const families = {
     '[class*="-ntx-"] { font-family: "TeX Gyre Termes"; }'],
   // (its title's \fontfamily{bch})
   'examples/complex': ['[class*="-XCharter"] { font-family: "XCharter"; }'],
+  'test-titlefont': ['[class^="bch"], [class*="-bch"]', ':root { --tex8web-title-size: 1em; }'],
 };
 
 // what's wrong with a built page: its log, the page and the files with it

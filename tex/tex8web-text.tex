@@ -16,6 +16,23 @@
     {\HCode{<p>}\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
     {\HCode{</p>}}
 
+% the title in the font that a document's or class's \maketitle sets it in,
+% where that isn't the standard title's \LARGE. tex4ht drops the title's
+% fonts (\NoFonts in html4.4ht's \Configure{maketitle}). Here the heading
+% is at the text's size, and tex4ht's spans set the title's. (A class
+% without \maketitle, letter, has no \a:ttl)
+\ifcsname a:ttl\endcsname
+    \expandafter\let\expandafter\web@ttl\csname a:ttl\endcsname
+    \expandafter\def\csname a:ttl\endcsname{%
+        \edef\web@a{\f@family/\f@series/\f@shape/\f@size}%
+        \begingroup\normalfont\LARGE\xdef\web@b{\f@family/\f@series/\f@shape/\f@size}\endgroup
+        \ifx\web@a\web@b\else
+            \let\NoFonts\relax \let\EndNoFonts\relax
+            \web@Css{:root { --tex8web-title-size: 1em; }}%
+        \fi
+        \web@ttl}
+\fi
+
 % the page's title without \maketitle: the \title's text, written as for
 % \maketitle's <title> (\a:mktl is the first argument of its
 % \Configure{maketitle}, run here without its markup). A config's own

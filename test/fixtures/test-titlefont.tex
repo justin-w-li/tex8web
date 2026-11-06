@@ -1,0 +1,13 @@
+% A test for tex8web: a \maketitle that the document redefines, with its
+% title in bold Charter at 24pt. The page shows the title in that font and
+% size, as the PDF does, not in the standard title's.
+\documentclass{article}
+\makeatletter
+\renewcommand\maketitle{{\centering
+    \fontfamily{bch}\fontsize{24}{28}\bfseries\selectfont\@title\par}}
+\makeatother
+\title{A title in its own font}
+\begin{document}
+\maketitle
+Some text.
+\end{document}

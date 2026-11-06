@@ -151,7 +151,7 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 **Fonts.** The text is in the PDF's font when it is Latin Modern, LaTeX's own, Charter, or one of the standard PostScript fonts: Times, Palatino, Helvetica, Courier, Bookman, New Century Schoolbook or Avant Garde. These come from packages such as `mathptmx`, `txfonts`, `newtxtext`, `mathpazo`, `pxfonts`, `newpxtext`, `helvet`, `charter`, `XCharter` and TeX Gyre's own. The standard fonts are set in TeX Gyre's versions of them, and Charter in XCharter, which the build takes from TeX Live. This holds also for a font chosen in the text, such as `\fontfamily{bch}`. Other fonts are shown in Latin Modern. A document whose text is in its sans-serif font, with `\familydefault`, has a sans-serif page. The math is in MathJax's TeX font, like Computer Modern. Where the PDF's math is in Times, Palatino or New Century Schoolbook, it is in MathJax's TeX Gyre font for it: Termes, Pagella or Schola. That is with `mathptmx`, `newtxmath`, `txfonts`, `mathpazo`, `newpxmath`, `pxfonts` or `fouriernc`. With `newtxmath`'s option for another font, the math stays in the TeX font, except `nc`, which is New Century Schoolbook.
 
-**Headings** keep the PDF's sizes, the space above and below them, and the space after their numbers. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
+**Headings** keep the PDF's sizes, the space above and below them, and the space after their numbers. A title keeps the font and size that a document's or class's own `\maketitle` sets it in, rather than `--tex8web-title-size`. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
 
 **Lists** keep the PDF's labels, as TeX sets them, and each list's indent and spacing.
 
@@ -229,7 +229,6 @@ Each item says what goes wrong and, where there is one, what to do.
 - **A size after `angle`,** as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`**, aren't followed. The picture is at its natural size. Put the size before `angle`, or leave `scale` out.
 - **`trim` and `viewport`.** The page shows the whole picture at the width of the part that is kept.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
-- **A title's own font.** tex4ht writes the `\maketitle` title without its fonts. So a `\maketitle` of the document's own that sets the title in another family or in bold shows it in the text's font. The author and date keep theirs.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.
 - **imakeidx's `program`** isn't followed: makeindex always runs. Its `splitindex` option isn't supported.
