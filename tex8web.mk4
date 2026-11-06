@@ -89,6 +89,7 @@ Make:match("html$", function(filename, par)
   assets.stylesheet(context)
   if not prerender.run(context, filename) then
     assets.add(root .. "/js/tex8web.js", context.dir .. "/tex8web.js")
+    assets.originals(context)
   end
   return status
 end)

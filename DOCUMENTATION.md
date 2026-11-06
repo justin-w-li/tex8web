@@ -37,7 +37,7 @@ The paths are relative, so you can publish the folder as it is. With Node, its f
 
 **Bibliographies and indexes.** tex8web runs bibtex or biber when the document has a bibliography. It runs makeindex for each index the document prints, from makeidx or imakeidx. Each index uses its own style file. Style files are found next to the document and on `INDEXSTYLE`.
 
-**Without Node.** Node typesets the math when you build. If `npm ci` hasn't been run, the build warns, and the page loads MathJax from jsDelivr instead. It then needs the network to show its math, and its text is in Latin Modern whatever the document's font. Set `TEX8WEB_NO_PRERENDER` to any value to choose this on purpose.
+**Without Node.** Node typesets the math when you build. If `npm ci` hasn't been run, the build warns, and the page loads MathJax from jsDelivr instead. It then needs the network to show its math, and its fonts are whole rather than cut down. Set `TEX8WEB_NO_PRERENDER` to any value to choose this on purpose.
 
 **Without the wrapper.** `bin/tex8web` runs this command in the document's directory:
 

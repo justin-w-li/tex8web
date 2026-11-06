@@ -52,17 +52,17 @@ local roman_classes = {"-lmr", "-lmb", "-lmcsc", "cmr", "cmbx", "cmti", "cmsl", 
   "ecti", "ecsl", "eccc"}
 
 -- the page's fonts for roman, sans-serif and typewriter text, each a TeX
--- Gyre font's name, its files' (texgyretermes-bold.woff2) and the start of
+-- Gyre font's name, its files' (texgyretermes-bold) and the start of
 -- tex4ht's classes for it, where the document's family (tex8web-page.tex's
--- build element) has one. prerender.mjs makes the files, so there are none
--- without it. And which role the text itself is in (\familydefault)
+-- build element) has one; and which role the text itself is in
+-- (\familydefault)
 local function roles_of(context)
   local families = context.families or {}
   local roles = {body = "roman"}
   for _, role in ipairs({"mono", "sans", "roman"}) do
     if families[role] and families[role] == families.body then roles.body = role end
     local font = gyre[families[role] or ""]
-    if font and prerender.available(context) then
+    if font then
       local file = "texgyre" .. font.name
       if kpse.find_file(file .. "-regular.otf", "opentype fonts") then
         roles[role] = {name = "TeX Gyre " .. font.name:gsub("^%l", string.upper), file = file,
@@ -94,7 +94,8 @@ local function matches(class, starts)
   end
 end
 
--- the stylesheet's rules for those fonts: each TeX Gyre font's faces, the
+-- the stylesheet's rules for those fonts: each TeX Gyre font's faces (cut
+-- down as WOFF2 by prerender.mjs, or else whole, M.originals), the
 -- roles' custom properties (css/tex8web.css), the text's role, and tex4ht's
 -- classes for each font in its role (its htf files call Times monospace).
 -- With the text in sans-serif, Latin Modern's roman classes in roman
@@ -106,9 +107,10 @@ local function font_css(roles)
     local font = roles[role]
     if font then
       for _, shape in ipairs(shapes) do
-        css[#css + 1] = ('@font-face { font-family: "%s";%s%s src: url("fonts/%s-%s.woff2") format("woff2"); }')
-          :format(font.name, shape:find("bold") and " font-weight: bold;" or "",
-            shape:find("italic") and " font-style: italic;" or "", font.file, shape)
+        local file = font.file .. "-" .. shape
+        css[#css + 1] = ('@font-face { font-family: "%s";%s%s src: url("fonts/%s.woff2") format("woff2"),'
+          .. ' url("fonts/%s.otf") format("opentype"); }'):format(font.name, shape:find("bold") and
+            " font-weight: bold;" or "", shape:find("italic") and " font-style: italic;" or "", file, file)
       end
       css[#css + 1] = (':root { --tex8web-%s: "%s", %s; }'):format(role, font.name, stacks[role])
       css[#css + 1] = ("%s { font-family: var(--tex8web-%s); }"):format(selector(font.classes), role)
@@ -284,7 +286,7 @@ function M.copy(document, context)
   end
   for _, role in ipairs({"roman", "sans", "mono"}) do
     for _, shape in ipairs(shapes) do
-      if roles[role] then preload(roles[role].file .. "-" .. shape .. ".woff2") end
+      if roles[role] and prerender.available(context) then preload(roles[role].file .. "-" .. shape .. ".woff2") end
     end
   end
   for _, img in ipairs(document:query_selector("img")) do
@@ -292,6 +294,18 @@ function M.copy(document, context)
     if src ~= "" and not src:match("^%a+:") and not exists(context.dir .. "/" .. src)
         and exists(src) then
       M.add(src, context.dir .. "/" .. src)
+    end
+  end
+end
+
+-- TeX Gyre's fonts whole, from TeX Live, for a page that prerender.mjs
+-- didn't cut them down for
+function M.originals(context)
+  local roles = roles_of(context)
+  for _, role in ipairs({"roman", "sans", "mono"}) do
+    for _, shape in ipairs(shapes) do
+      local file = roles[role] and roles[role].file .. "-" .. shape .. ".otf"
+      if file then M.add(kpse.find_file(file, "opentype fonts"), context.dir .. "/fonts/" .. file) end
     end
   end
 end

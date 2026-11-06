@@ -446,7 +446,7 @@ const preloads = {
 // its role, and tex4ht's classes for them; sans-serif for the text, when
 // \familydefault is
 const families = {
-  'test-times': ['@font-face { font-family: "TeX Gyre Termes"; src: url("fonts/texgyretermes-regular.woff2") format("woff2"); }',
+  'test-times': ['@font-face { font-family: "TeX Gyre Termes"; src: url("fonts/texgyretermes-regular.woff2") format("woff2"), url("fonts/texgyretermes-regular.otf") format("opentype"); }',
     ':root { --tex8web-roman: "TeX Gyre Termes", "Latin Modern Roman", serif; }',
     ':root { --tex8web-sans: "TeX Gyre Heros", "Latin Modern Sans", sans-serif; }',
     ':root { --tex8web-mono: "TeX Gyre Cursor", "Latin Modern Mono", monospace; }',
