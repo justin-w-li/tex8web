@@ -9,6 +9,7 @@ tex8web turns a LaTeX document into a web page that looks like its PDF. It is a 
 ## What the page does
 
 - Its fonts, headings, theorems, lists and boxes match the PDF.
+- Its text is set for a screen: larger, ragged right, with space between paragraphs. One line in a config sets it as the PDF does.
 - The table of contents sits beside the text, follows your place, and can be searched.
 - Footnotes sit beside their paragraph.
 - Pointing at a reference shows what it points to.

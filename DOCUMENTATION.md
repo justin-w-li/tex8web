@@ -54,7 +54,9 @@ Most documents need no config of their own. tex8web reads what it needs from the
 Write a config when:
 - the build ends with a warning about macros MathJax can't read;
 - your document needs a style of its own on the web;
-- you want a link to the PDF.
+- you want a link to the PDF;
+- your document marks its terms with a command of its own, for the contents filter to find;
+- you want the text set as in the PDF.
 
 A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-core.tex}`. Pass it with `-c`. For worked examples, see `examples/custom/custom.cfg` and `examples/complex/complex.cfg`.
 
@@ -101,9 +103,9 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 
 **`\WebColor`** makes the CSS variable `--name` from two colors: the first in light mode, the second in dark mode.
 
-**`\WebTerm\cs`** makes what `\cs` sets in the text a term that the filter finds. Its id is `term-` followed by its text. Inside a heading or a theorem's note, the term is found as that heading or theorem. Give each command to `\WebTerm` once.
+**`\WebTerm\cs`** makes what `\cs` sets in the text a term that the filter finds. Its id is `term-` followed by its text in lower case, with a hyphen for each run of spaces or punctuation, and without its math: `\term{Convex set}` gets `term-convex-set`. Inside a heading or a theorem's note, the term is found as that heading or theorem. Give each command to `\WebTerm` once.
 
-**`\WebLikePDF`** gives up the page's own reading defaults for the PDF's. The text takes the PDF's size, and the column, in ems, follows it. Lines are spaced as TeX spaces them, and paragraphs are indented with the PDF's space between them. On a wide screen the text is justified and hyphenated. A narrow screen stays ragged right, where a formula that can't break would leave wide gaps.
+**`\WebLikePDF`** replaces the page's [reading defaults](#reading-defaults) with the PDF's. The text takes the PDF's size, and the column, which is measured in ems, follows it. Lines are spaced as TeX spaces them. Paragraphs are indented as in the PDF, with its space between them, usually none. On a wide screen the text is justified and hyphenated. A narrow screen stays ragged right, where a formula that can't break would leave wide gaps.
 
 **`\WebPDF`** copies the PDF next to the page. Its path is relative to the document. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`.
 
@@ -132,13 +134,13 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 **Theme.** The page follows the reader's light or dark setting until they choose one with the button. Their choice is kept in the browser, under `localStorage` key `tex8web-theme`, for every tex8web page on the site. A site can set a default with `data-theme="light"` or `"dark"` on the root element; the reader's choice still wins. Light mode uses the PDF's colors. In dark mode, the document's colors keep their hue: dark text becomes light, and light backgrounds become dark. TikZ pictures are inverted.
 
-**Table of contents.** `\tableofcontents` moves out of the text. On a wide screen it sits beside the text; on a narrow one it opens as a drawer. It marks the section being read and shows the entries under it. Its indents, number widths and fonts come from tocloft or the class: with tocloft, each level is in the font of its `\cft<level>font`, such as `\cftsecfont`. A color in that font isn't followed. A `\listoffigures` or `\listoftables` stays in the text.
+**Table of contents.** `\tableofcontents` moves out of the text. On a wide screen it sits beside the text; on a narrow one it opens as a drawer. It marks the section being read. It always lists the sections and the levels above them, but only the subsections of the section being read. Its indents, number widths and fonts come from tocloft or the class: with tocloft, each level is in the font of its `\cft<level>font`, such as `\cftsecfont`. A color in that font isn't followed. A `\listoffigures` or `\listoftables` stays in the text.
 
 **Finding.** A field at the top of the table of contents finds headings, numbered theorems and boxes, and terms (`\WebTerm`) as the reader types. Case, accents and math styles don't matter, and a Greek letter is found by its TeX name (`sigma` finds σ). The arrow keys and Enter choose a result.
 
 **Headings** keep the PDF's sizes and the space after their numbers. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
 
-**Footnotes.** On a wide screen, a footnote sits beside the paragraph, list or theorem with its mark. On a narrow screen, it sits below. A footnote in a table, figure, box or formula stays at the end of the page.
+**Footnotes.** On a wide screen, a footnote sits beside the paragraph, list or theorem with its mark. On a narrow screen, it sits below that paragraph, list or theorem. A footnote in a table, figure, box or formula stays at the end of the page.
 
 **Previews.** Pointing at a reference, citation, footnote mark or section link shows what it points to in a card. The keyboard shows it too. On a touch screen, the first tap shows it and the second follows the link.
 
@@ -156,19 +158,35 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 ## Differences from the PDF
 
-These are deliberate. A config's [`\WebLikePDF`](#your-own-config) follows the PDF in the first four.
+These are deliberate. They fall into three groups.
+
+### Reading defaults
+
+The page sets its text for a screen. A config's [`\WebLikePDF`](#your-own-config) sets it as the PDF does instead.
 
 - The text is 12pt, larger than most PDFs, and everything else is in proportion. The column is as wide as the PDF's in ems.
 - Line spacing is the browser's, a little looser than TeX's.
 - Paragraphs are separated by space instead of indented.
 - The text is ragged right, not justified and hyphenated.
-- A picture keeps its size as a narrower screen reflows the text. It shrinks only once the column is narrower than the picture.
+
+### Choices for the web
+
+These have no switch: each helps reading without changing what the document says.
+
+- The table of contents and the footnotes sit beside the text, not where the PDF puts them. See [On the page](#on-the-page).
+- Without hyperref's `colorlinks`, links are in the text's color. The PDF draws boxes around them, which only a PDF viewer shows.
 - A picture given a `width` and a `height` without `keepaspectratio` keeps its proportions instead of being squashed.
+- Dark mode has its own palette.
+
+### What a page can't do as a PDF does
+
+A page has no pages and no fixed width.
+
+- A picture keeps its size as a narrower screen reflows the text. It shrinks only once the column is narrower than the picture.
 - Minipages and subfigures that share a line in the PDF stay side by side at their PDF widths. On a narrow screen they wrap.
 - Display math that doesn't fit scrolls sideways. On a narrow screen, so does a wide table or verbatim block.
 - The table of contents has no page numbers or dot leaders.
-- An index is in one column. Its numbers count the `\index` commands in order, since the page has no page numbers.
-- Dark mode has its own palette.
+- An index is in one column. Its numbers count the `\index` commands in order, in place of page numbers.
 
 ## Known limitations
 
@@ -177,7 +195,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **`-B` with a `-` in its path.** make4ht reads the `-B` directory as a Lua pattern, so a `-` anywhere in its path sends files to the wrong place. Keep `-` out of it, and keep it relative to the document, as `bin/tex8web`'s default `build/tex4ht` is.
 - **A space in tex8web's path or in a config's path.** tex4ht can't read such a config, so `bin/tex8web` stops. Move tex8web or the config to a path without spaces.
 - **Macros MathJax can't read** show in red. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
-- **`\color` for the whole document**, in the preamble or in `\AtBeginDocument`, isn't followed. Neither is `\normalcolor` in a colored group.
+- **`\color` for the whole document**, in the preamble or in `\AtBeginDocument`, isn't followed. A `\normalcolor` inside a colored group doesn't bring back the text's color.
 - **tocloft's fonts for lists of figures and tables**, `\cftfigfont` and `\cfttabfont`, aren't followed. Those lists stay in the text's font.
 - **The QED box** of an amsthm proof sits at the right, in a display's tag after `\qedhere` as in the PDF. Not followed: with a `\tag` of the display's own the proof ends with its box below the display, as it does after `$$ $$` and `displaymath`; in `multline` the box goes under the number, not at the end of the last line. A `\qedsymbol` that isn't math or text MathJax can read, such as `\ensuremath{...}`, shows in red in a display.
 - **enumitem.** Labels are right-aligned and hang into the margin. `align=left`, `wide` and `itemindent` aren't followed.
@@ -185,11 +203,11 @@ Each item says what goes wrong and, where there is one, what to do.
 - **Delimiters and radicals** can differ slightly in size, since MathJax picks them from its own font.
 - **Prerendered math is laid out by estimates** where a browser would measure, such as text in math that MathJax has no glyphs for. A box can come out a pixel or so off.
 - **tcolorbox.** Boxes get their colors, rules, corners, shadow, spacing and title. What a skin draws with TikZ, such as overlays and shadings, comes out as a plain frame. Pictures in side-by-side listing boxes aren't converted. If a fragile command in a box's title breaks the build, `\robustify` it in your config.
-- **Colors in math.** A color passed to a macro by name isn't converted. Neither is a color defined inside a group. The models `hsb`, `Hsb`, `tHsb` and `wave` aren't supported. A color redefined later in the document has its last value everywhere in math.
-- **Table colors.** With colortbl but not xcolor, `\textcolor` of the document's own colors is lost: load xcolor first. In a table with `\hline`, `\rowcolors` alternates wrongly.
-- **Minipages.** A minipage inside a paragraph's text breaks the paragraph around it. `\centering` in a minipage is followed only in a figure. Two minipages, each in its own `\fbox`, stack.
-- **A picture's size without its `.xbb` file.** tex4ht reads a bitmap's or PDF's size from a `.xbb` file beside it. Without one, a picture with `scale`, `height`, or `width` and `height` with `keepaspectratio` isn't at the PDF's size. Make the file with `extractbb -x picture.png`.
-- **A size after `angle`,** as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`**, aren't followed. The picture is at tex4ht's size. Put the size before `angle`, or leave `scale` out.
+- **Colors in math.** A color named only in a macro's argument, as in `\hl{ink}{x}` where `\hl` calls `\colorbox`, isn't given to MathJax. Neither is a color defined inside a group. The models `hsb`, `Hsb`, `tHsb` and `wave` aren't supported. A color redefined later in the document has its last value everywhere in math.
+- **Table colors.** With colortbl but not xcolor, `\textcolor` of the document's own colors is lost, as tex4ht loads xcolor after the document defines them. Load xcolor yourself, before the colors are defined. In a table with `\hline`, `\rowcolors` alternates wrongly.
+- **Minipages.** A minipage inside a paragraph's text breaks the paragraph around it. `\centering` in a minipage is followed only in a figure. Two minipages, each in its own `\fbox`, sit one above the other instead of side by side.
+- **A picture's size without its `.xbb` file.** tex4ht reads a bitmap's or PDF's size from a `.xbb` file beside it. Without one, a picture sized by `scale` or `height`, or by `width` and `height` with `keepaspectratio`, isn't at the PDF's size. Make the file with `extractbb -x picture.png`.
+- **A size after `angle`,** as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`**, aren't followed. The picture is at its natural size. Put the size before `angle`, or leave `scale` out.
 - **`trim` and `viewport`.** The page shows the whole picture at the width of the part that is kept.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
