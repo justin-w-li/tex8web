@@ -276,6 +276,7 @@
 % \qedsymbol in force now, as the text sets it (\web@qed@choose,
 % tex8web-text.tex)
 \int_new:N \g__web_qed_int
+\@ifpackageloaded{amsthm}{ \web@needs{QED@stack} }{}
 \cs_new_protected:Npn \__web_qedhere: {
     \cs_if_exist:NT \QED@stack {
         \tl_if_empty:NF \QED@stack

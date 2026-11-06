@@ -450,7 +450,7 @@
     \web@needs{enit@prelist}%
     \def\web@newlist#1{\web@configurelist{#1}{enumitem-#1}
         {\ifcase\enit@type ol\or ul\else dl\fi}}%
-    \Configure{enumitemnewlist}{\expandafter\web@newlist\expandafter{\a:enumitemenv}}%
+    \Configure{enumitemnewlist}{\web@needs{a:enumitemenv}\expandafter\web@newlist\expandafter{\a:enumitemenv}}%
 }{}
 \catcode58 12
 
@@ -492,6 +492,8 @@
 % picture)
 \catcode58 11
 \ifdefined\texfourht@tikz@begin
+    \web@needs{n:pgfsys@beginpicture:}%
+    \web@needs{o:pgfsys@beginpicture:}%
     \def\n:pgfsys@beginpicture:{%
         \Configure{Picture-alt}{}\protect\csname nested:math\endcsname
         \def\EndPicture{}\o:pgfsys@beginpicture:}

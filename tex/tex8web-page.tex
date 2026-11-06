@@ -331,6 +331,7 @@
         \global\let\web@spacing\relax
         \global\let\web@labelsep\relax
         \ifcsname ttls@#1\endcsname
+            \web@needs{ttl@assign}%
             \expandafter\expandafter\expandafter\web@titlespacing\csname ttls@#1\endcsname
         \else
             \web@startsection{#1}%
@@ -398,8 +399,10 @@
 % {after}{style}, which tex4ht keeps as \no@<name> (latex.4ht): the space
 % above (whose sign only says whether the text after is indented) and
 % below, read in the text's font, as LaTeX reads them. Not for a run-in
-% heading, whose space below is negative
+% heading, whose space below is negative. (tex4ht keeps one for each
+% heading with a counter)
 \def\web@startsection#1{%
+    \ifcsname c@#1\endcsname\web@needs{no@#1}\fi
     \edef\web@a{\noexpand\in@{\detokenize{macro:->\@startsection}}%
         {\expandafter\meaning\csname no@#1\endcsname}}%
     \web@a
