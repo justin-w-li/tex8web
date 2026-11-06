@@ -48,6 +48,11 @@ const typesetPage = `(async () => {
   html.querySelector('.tex8web-where')?.setAttribute('hidden', 'hidden');
   html.querySelectorAll('[aria-current]').forEach(n => n.removeAttribute('aria-current'));
   html.querySelectorAll('.tex8web-open').forEach(n => n.classList.remove('tex8web-open'));
+  html.querySelectorAll('.tex8web-scrolls').forEach(n => {
+    n.classList.remove('tex8web-scrolls');
+    n.style.removeProperty('--tex8web-hidden-left');
+    n.style.removeProperty('--tex8web-hidden-right');
+  });
   html.querySelectorAll('script, style[id^=MJX]').forEach(n => n.remove());
   const style = document.createElement('style');
   style.textContent = css;
