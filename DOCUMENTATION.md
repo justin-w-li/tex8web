@@ -184,7 +184,7 @@ A page has no pages and no fixed width.
 
 - A picture keeps its size as a narrower screen reflows the text. It shrinks only once the column is narrower than the picture.
 - Minipages and subfigures that share a line in the PDF stay side by side at their PDF widths. On a narrow screen they wrap.
-- Display math that doesn't fit scrolls sideways. On a narrow screen, so does a wide table or verbatim block. Each fades out at an edge where more of it is hidden.
+- Display math that doesn't fit scrolls sideways. On a narrow screen, so does a wide table or verbatim block. With JavaScript on, each fades out at an edge where more of it is hidden.
 - The table of contents has no page numbers or dot leaders.
 - An index is in one column. Its numbers count the `\index` commands in order, in place of page numbers.
 

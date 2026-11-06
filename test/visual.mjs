@@ -427,16 +427,35 @@ async function phone(chrome, file) {
 // fades halfway; in the middle, both; 20px from its end, the right
 // halfway; at its end, only the left. Nothing that doesn't scroll is
 // masked: one that fits, one that stops scrolling at its end on a wider
-// screen or in print, and one the keyboard has focused. test.tex has a
-// display that scrolls there
+// screen or in print, and one the keyboard has focused. A display copied
+// into a preview card fades as it scrolls there. test.tex has a display
+// that scrolls on a phone
 async function edges(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
   const frame = 'new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))';
+  // (a display's copy in a preview card, which may be wider than the text)
+  const cards = await page.evaluate(`(() => {
+    const links = document.querySelectorAll('a[href*="#"]:not(.tex8web-permalink, #tex8web-toc a, .tex8web-preview a)');
+    let wrong = 0;
+    for (const a of links) {
+      a.focus({ focusVisible: true });
+      for (const d of document.querySelectorAll('.tex8web-preview mjx-container[display]')) {
+        const hidden = d.scrollWidth - d.clientWidth, style = getComputedStyle(d);
+        const edge = 2.5 * parseFloat(style.fontSize);
+        const want = hidden > 0 ? \`-\${edge}px 0px, -\${Math.min(hidden, edge)}px 0px\` : 'none';
+        if ((style.maskImage === 'none' ? 'none' : style.maskPosition) !== want) wrong++;
+      }
+      a.blur();
+    }
+    return wrong;
+  })()`);
+  const problems = cards ? [`${cards} displays in preview cards with a fade that doesn't match their scroll`] : [];
   const index = await page.evaluate(`[...document.querySelectorAll('mjx-container[display]')]
     .findIndex(d => d.scrollWidth - d.clientWidth > 200)`);
   if (index < 0) {
     await page.close();
-    return file.endsWith('/test.html') ? ['no display that scrolls on a phone, for its fade'] : [];
+    if (file.endsWith('/test.html')) problems.push('no display that scrolls on a phone, for its fade');
+    return problems;
   }
   const display = `document.querySelectorAll('mjx-container[display]')[${index}]`;
   const mask = async scroll => {
@@ -448,16 +467,16 @@ async function edges(chrome, file) {
     parseFloat(getComputedStyle(${display}).fontSize)]`);
   const edge = 2.5 * size, half = edge / 2;
   const want = [[0, -edge, -edge], [half, -half, -edge], [100, 0, -edge], [range - half, 0, -half], [range, 0, 0]];
-  const problems = [];
   for (const [scroll, left, right] of want) {
     const positions = `${left}px 0px, ${right}px 0px`.replace(/-0px/g, '0px');
     const got = await mask(scroll);
     if (got !== positions) problems.push(`a display that scrolls, scrolled ${scroll}px: mask ${got}, not ${positions}`);
   }
   const masked = `[...document.querySelectorAll('mjx-container[display], div.tabular, pre')]
-    .filter(d => d.scrollWidth <= d.clientWidth && getComputedStyle(d).maskImage !== 'none').length`;
+    .filter(d => (d.scrollWidth <= d.clientWidth || getComputedStyle(d).overflowX === 'visible')
+      && getComputedStyle(d).maskImage !== 'none').length`;
   const fits = await page.evaluate(masked);
-  if (fits) problems.push(`${fits} displays, tabulars or verbatims that fit, masked`);
+  if (fits) problems.push(`${fits} displays, tabulars or verbatims that don't scroll, masked`);
   await page.evaluate(`${display}.focus({ focusVisible: true })`);
   if (await mask() !== 'none') problems.push('a display that scrolls, focused: masked, hiding the focus ring');
   await page.evaluate(`${display}.blur()`);

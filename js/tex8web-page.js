@@ -202,22 +202,33 @@
   }
 
   // what scrolls sideways fades out at an edge where more of it is hidden
-  // (css/tex8web.css): marked, and how much is hidden on each side set,
-  // whenever the page's layout changes and as it scrolls. Only what scrolls
-  // listens, through one listener, so scrolling down the page costs nothing
+  // (css/tex8web.css). Each such element is marked, with how much is hidden
+  // on each side. That is set again when the layout changes, and as the
+  // element scrolls, by a listener of its own: scrolling the page runs none
+  const scrolling = 'mjx-container[display], div.tabular, pre';
+  const listening = new WeakSet();
+  function fade(element) {
+    const hidden = element.scrollWidth - element.clientWidth;
+    // (a wide screen's tabular or verbatim doesn't scroll but runs into the
+    // margin, which a mask would cut off)
+    const scrolls = hidden > 0 && getComputedStyle(element).overflowX !== 'visible';
+    element.classList.toggle('tex8web-scrolls', scrolls);
+    if (!scrolls) return;
+    element.style.setProperty('--tex8web-hidden-left', `${element.scrollLeft}px`);
+    element.style.setProperty('--tex8web-hidden-right', `${hidden - element.scrollLeft}px`);
+    if (listening.has(element)) return;
+    listening.add(element);
+    element.addEventListener('scroll', () => fade(element), { passive: true });
+  }
+
   function edges() {
-    const scrollers = [...document.querySelectorAll('mjx-container[display], div.tabular, pre')];
-    const mark = element => {
-      const hidden = element.scrollWidth - element.clientWidth;
-      element.classList.toggle('tex8web-scrolls', hidden > 0);
-      if (hidden <= 0) return;
-      element.style.setProperty('--tex8web-hidden-left', `${element.scrollLeft}px`);
-      element.style.setProperty('--tex8web-hidden-right', `${hidden - element.scrollLeft}px`);
-    };
-    if (scrollers.length) new ResizeObserver(() => scrollers.forEach(mark)).observe(document.body);
-    document.addEventListener('scroll', event => {
-      if (event.target.classList?.contains('tex8web-scrolls')) mark(event.target);
-    }, { capture: true, passive: true });
+    const elements = [...document.querySelectorAll(scrolling)];
+    if (!elements.length) return;
+    const all = () => elements.forEach(fade);
+    new ResizeObserver(all).observe(document.body);
+    // (fonts that arrive late change the math's width, but not always the
+    // page's size)
+    document.fonts.addEventListener('loadingdone', all);
   }
 
   // the table of contents: the entry of the section being read (the last
@@ -459,6 +470,8 @@
       card.replaceChildren(...previewOf(a).map(copyOf));
       card.style.left = card.style.top = '0';
       card.showPopover();
+      // (a copy keeps its original's fade, though the card may be wider)
+      card.querySelectorAll(scrolling).forEach(fade);
       const link = a.getBoundingClientRect(), width = card.offsetWidth, height = card.offsetHeight;
       const below = link.bottom + 6 + height <= innerHeight || link.top - 6 - height < 0;
       // (from the link, but over the text: past the body's right edge by 16px

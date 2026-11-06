@@ -205,13 +205,13 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 @media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }
 /* What scrolls sideways fades out at an edge where more of it is hidden.
    Each edge has its own mask, a fade from that edge, moved out of the box
-   until --tex8web-edge or less is hidden beyond it. tex8web-page.js marks
-   what scrolls and sets how much is hidden on each side, as it scrolls:
-   CSS scroll timelines did this too, but Safari then restyled the page on
-   every frame of scrolling. The amounts are registered so as not to be
-   inherited, so that setting them restyles one element and not the math
-   inside it. A keyboard's focus ring, which a mask would hide, shows
-   instead of the fade */
+   until --tex8web-edge or less is hidden beyond it: so the fade shortens
+   as the end nears. tex8web-page.js marks what scrolls and sets how much
+   is hidden on each side. (CSS scroll timelines could do it alone, but
+   Safari then restyled the page on every frame of its scrolling.) The
+   amounts aren't inherited, so that setting them restyles one element and
+   not the math inside it. A keyboard's focus ring, which a mask would hide,
+   shows instead of the fade */
 :root { --tex8web-edge: 2.5em; }
 @property --tex8web-hidden-left { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @property --tex8web-hidden-right { syntax: '<length>'; inherits: false; initial-value: 0px; }
@@ -703,7 +703,8 @@ dd.enumerate-enumitem { margin-left: 0; }
         display: none !important; }
     html body { margin-block: 0; padding-inline: 0; }
     .tex8web-sidenote { top: auto !important; }
-    mjx-container[display], div.tabular, pre { overflow: visible !important; mask-image: none; }
+    mjx-container[display], div.tabular, pre { overflow: visible !important; }
+    .tex8web-scrolls { mask-image: none; }
     .tcolorbox, mjx-container[display], figure, div.table, table { break-inside: avoid; }
     h1, h2, h3, h4, h5, h6 { break-after: avoid; }
 }
