@@ -18,20 +18,46 @@ local fallbacks = {
 
 -- MathJax names colors as CSS and dvips do, and has no xcolor. The math's
 -- colors it would get wrong are given as \definecolor lines: the document's
--- own and xcolor's, and mixes like red!50!black, from the "name r,g,b" rgb
--- fractions tex8web-page.tex wrote (colors MathJax has right are left out)
+-- own and xcolor's, and mixes like red!50!black, from the values
+-- tex8web-page.tex wrote, "name v,v,v" (colors MathJax has right are left
+-- out). A color is in xcolor's model for it: gray (one value), rgb (three)
+-- or cmyk (four)
 local css = {red = "FF0000", blue = "0000FF", cyan = "00FFFF", magenta = "FF00FF",
   yellow = "FFFF00", black = "000000", white = "FFFFFF", gray = "808080"}
 
+-- as xcolor converts: cmyk to rgb held at 0, and rgb to cmyk with its
+-- default undercolor removal and black generation (\adjustUCRBG)
+local function rgb(color)
+  if #color == 1 then return {color[1], color[1], color[1]} end
+  if #color == 3 then return color end
+  local k = color[4]
+  return {1 - math.min(1, color[1] + k), 1 - math.min(1, color[2] + k), 1 - math.min(1, color[3] + k)}
+end
+
+local function convert(color, n)
+  if #color == n then return color end
+  if n == 3 then return rgb(color) end
+  if #color == 1 then return {0, 0, 0, 1 - color[1]} end
+  local r, g, b = table.unpack(rgb(color))
+  local k = math.min(1 - r, 1 - g, 1 - b)
+  return {1 - r - k, 1 - g - k, 1 - b - k, k}
+end
+
+-- (xcolor takes a cmyk color's complement through cmy)
 local function complement(color)
-  return {1 - color[1], 1 - color[2], 1 - color[3]}
+  if #color == 4 then return convert(complement(rgb(color)), 4) end
+  local flipped = {}
+  for i, x in ipairs(color) do flipped[i] = 1 - x end
+  return flipped
 end
 
 -- the {r, g, b}, each from 0 to 1 and unrounded, of an xcolor expression
 -- (name!p!name!p!name, mixed from the left, a last p alone with white; a
--- minus before a name takes its complement in RGB, before the first the
--- whole's), or nothing if it has a name not known. As xcolor does, a share
--- outside 0 to 100 extrapolates, and only the result is held to 0 to 1
+-- minus before a name takes its complement, before the first the
+-- whole's), or nothing if it has a name not known. As xcolor does, a mix
+-- is in the first color's model, or the second's if the first is gray, or
+-- if its share is 0. A share outside 0 to 100 extrapolates, and only the
+-- result is held to 0 to 1
 local function evaluate(expression, known)
   local parts = {}
   for part in (expression .. "!"):gmatch("(.-)!") do parts[#parts + 1] = part end
@@ -39,29 +65,24 @@ local function evaluate(expression, known)
   local color, flip = known[name], #minuses % 2 == 1
   for i = 2, #parts, 2 do
     local share = tonumber(parts[i])
-    local other = {1, 1, 1}
+    local other = {1}
     if parts[i + 1] then
       minuses, name = parts[i + 1]:match("^(-*)(.*)")
       other = known[name]
       if other and #minuses % 2 == 1 then other = complement(other) end
     end
     if not (color and share and other) then return end
-    local mixed = {}
-    for c = 1, 3 do mixed[c] = (share * color[c] + (100 - share) * other[c]) / 100 end
-    color = mixed
+    if share == 0 then
+      color = other
+    else
+      if #color == 1 then color = convert(color, #other) else other = convert(other, #color) end
+      local mixed = {}
+      for c = 1, #color do mixed[c] = (share * color[c] + (100 - share) * other[c]) / 100 end
+      color = mixed
+    end
   end
   if color and flip then color = complement(color) end
-  return color
-end
-
--- the colors a piece of math source names, with \color, \textcolor,
--- \pagecolor, \colorbox and \fcolorbox
-local function colors_named(text, names)
-  for _, command in ipairs({"color", "textcolor", "pagecolor", "colorbox"}) do
-    for name in text:gmatch("\\" .. command .. "%s*{([^{}]*)}") do names[name] = true end
-  end
-  for name in text:gmatch("\\fcolorbox%s*{[^{}]*}%s*{([^{}]*)}") do names[name] = true end
-  for name in text:gmatch("\\fcolorbox%s*{([^{}]*)}") do names[name] = true end
+  return color and rgb(color)
 end
 
 -- as xcolor rounds a fraction to a byte, in TeX's units of 1/65536
@@ -70,13 +91,19 @@ local function byte(fraction)
   return math.max(0, math.min(255, math.floor(scaled * 255 / 65536 + 0.5)))
 end
 
-local function color_definitions(texts, pairs_text)
+-- the colors the math may name: each word in braces, as a color command's
+-- argument or a macro's that passes it to one
+local function color_definitions(texts, values_text)
   local known = {}
-  for name, r, g, b in pairs_text:gmatch("(%S+) ([%d.-]+),([%d.-]+),([%d.-]+)") do
-    known[name] = {tonumber(r), tonumber(g), tonumber(b)}
+  for name, values in values_text:gmatch("(%S+) (%S+)") do
+    local color = {}
+    for value in values:gmatch("[^,]+") do color[#color + 1] = tonumber(value) end
+    known[name] = color
   end
   local names = {}
-  for _, text in ipairs(texts) do colors_named(text, names) end
+  for _, text in ipairs(texts) do
+    for name in text:gmatch("{([^{}]*)}") do names[name] = true end
+  end
   local defs = {}
   for name in pairs(names) do
     local color = evaluate(name, known)

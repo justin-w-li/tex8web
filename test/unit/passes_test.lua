@@ -410,6 +410,34 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     check(not definitions:find("nope", 1, true), definitions)
   end,
 
+  ["macros.define: mixes in the first color's model, as xcolor does"] = function()
+    local d = parse([[<span class="mathjax-inline">\(\textcolor{olive!50}{a}\textcolor{BrickRed!30}{b}]]
+      .. [[\textcolor{Mahogany!40!Goldenrod}{c}\textcolor{-BrickRed!40}{d}\textcolor{gray!50!BrickRed}{e}]]
+      .. [[\textcolor{red!50!olive}{f}\textcolor{olive!50!-red}{g}\textcolor{gray!0!BrickRed!50}{h}\)</span>]])
+    local tex = tmpfile("")
+    macros.define(d, {tex_file = tex, colors = "olive 0,0,1,0.5 BrickRed 0,0.89,0.94,0.28 "
+      .. "Mahogany 0,0.85,0.87,0.35 Goldenrod 0,0.10,0.84,0 gray 0.5 red 1,0,0 "})
+    os.remove(tex)
+    local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
+    -- (each as xcolor has it: \convertcolorspec to HTML)
+    for _, line in ipairs({"\\definecolor{olive!50}{RGB}{191,191,64}", "\\definecolor{BrickRed!30}{RGB}{234,165,162}",
+        "\\definecolor{Mahogany!40!Goldenrod}{RGB}{219,117,2}", "\\definecolor{-BrickRed!40}{RGB}{29,119,124}",
+        "\\definecolor{gray!50!BrickRed}{RGB}{156,42,36}", "\\definecolor{red!50!olive}{RGB}{191,64,0}",
+        "\\definecolor{olive!50!-red}{RGB}{64,191,64}", "\\definecolor{gray!0!BrickRed!50}{RGB}{219,106,99}"}) do
+      check(definitions:find(line, 1, true), line .. " in " .. definitions)
+    end
+  end,
+
+  ["macros.define: a color a macro of the math names, given as its argument"] = function()
+    local tex = tmpfile([[\newcommand\hl[2]{\textcolor{#1}{#2}}]])
+    local d = parse([[<span class="mathjax-inline">\(\hl{ink}{x} + \hl{ink!50}{y}\)</span>]])
+    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216 "})
+    os.remove(tex)
+    local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
+    check(definitions:find("\\definecolor{ink}{RGB}{200,0,100}", 1, true), definitions)
+    check(definitions:find("\\definecolor{ink!50}{RGB}{228,128,177}", 1, true), definitions)
+  end,
+
   ["page.meta_tags: an abstract without spaces cut at 197 characters"] = function()
     local d = parse([[<div class="abstract"><p>]] .. string.rep("字", 250) .. [[</p></div>]])
     page.meta_tags(d)

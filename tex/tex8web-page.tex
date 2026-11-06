@@ -164,14 +164,15 @@
     }
 }
 % the colors MathJax's math can name, for macros.lua to give it (it has no
-% xcolor): "name r,g,b" (fractions as xcolor has them, which macros.lua mixes
+% xcolor): "name v,v,v" (values as xcolor has them, which macros.lua mixes
 % and rounds once) for each the document defines and each of xcolor's own
-% (which mixes like red!50!black start from), as the page ends
+% (which mixes like red!50!black start from), as the page ends. xcolor
+% mixes in a color's model, so gray and cmyk ones keep theirs; the rest,
+% which mix as rgb does, are in rgb
 \clist_const:Nn \c__web_colors_clist
     { black, blue, brown, cyan, darkgray, gray, green, lightgray, lime, magenta,
       olive, orange, pink, purple, red, teal, violet, white, yellow }
 \tl_new:N \l__web_colors_tl
-\tl_new:N \l__web_rgb_tl
 \cs_new_protected:Npn \__web_colors_element: {
     \tl_clear:N \l__web_colors_tl
     \cs_if_exist:NT \@ifundefinedcolor
@@ -185,8 +186,9 @@
     \@ifundefinedcolor {#1} {}
         {
             \extractcolorspecs {#1} \web@model \web@spec
-            \convertcolorspec \web@model \web@spec {rgb} \l__web_rgb_tl
-            \tl_put_right:Ne \l__web_colors_tl { \tl_to_str:n {#1} ~ \l__web_rgb_tl ~ }
+            \str_case_e:nnF { \web@model } { {gray} {} {cmyk} {} }
+                { \convertcolorspec \web@model \web@spec {rgb} \web@spec }
+            \tl_put_right:Ne \l__web_colors_tl { \tl_to_str:n {#1} ~ \web@spec \c_space_tl }
         }
 }
 \AtEndDocument{\__web_colors_element:}

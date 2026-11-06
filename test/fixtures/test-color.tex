@@ -2,8 +2,9 @@
 % \fcolorbox's, listings' and those in math each get another lightness in
 % dark mode (a light-dark() of the color); black text is the page's text
 % color. Colors in math and table cells as the PDF has them: a document's
-% own, an xcolor mix and complement, xcolor's names that CSS gives other
-% values and those its options define, and the models MathJax lacks; and
+% own, an xcolor mix and complement, mixes in CMYK, xcolor's names that CSS
+% gives other values and those its options define, one a macro is given,
+% and the models MathJax lacks; and
 % colortbl's \rowcolor and \cellcolor.
 \documentclass{article}
 \usepackage[dvipsnames,svgnames,x11names]{xcolor}
@@ -13,6 +14,7 @@
 \definecolor{ink}{RGB}{200,0,100}
 \colorlet{ember}{ink!50!black}
 \newcommand{\warm}[1]{\textcolor{red!50!yellow}{#1}}
+\newcommand{\hl}[2]{\textcolor{#1}{#2}}
 \begin{document}
 Plain, \textcolor{navy}{navy}, \textcolor{black}{black},
 \colorbox{yellow!30}{on yellow} and \fcolorbox{blue}{green!10}{framed}.
@@ -22,6 +24,9 @@ In math, $\textcolor{ink}{a} + \textcolor{red!50!black}{b} + \textcolor{green}{c
 Mixes and complements as xcolor rounds and takes them:
 $\textcolor{gray!50}{a} + \textcolor{ink!50!yellow!50}{b} + \textcolor{-ink}{c} + \textcolor{-red!50!black}{d}$.
 Names of the options: $\textcolor{Apricot}{e} + \textcolor{Blue!50}{f} + \textcolor{Azure3}{g}$.
+Mixed in CMYK, the first color's model:
+$\textcolor{olive!50}{k} + \textcolor{BrickRed!30}{l} + \textcolor{Mahogany!40!Goldenrod}{m} + \textcolor{-BrickRed!40}{n}$.
+A color a macro is given: $\hl{BrickRed}{o}$.
 Models: $\textcolor[HTML]{3366CC}{h} + \textcolor[cmyk]{0.2,0.5,0.1,0.3}{i} + \textcolor[Gray]{8}{j}$.
 
 \begin{tabular}{ll}

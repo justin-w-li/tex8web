@@ -230,8 +230,12 @@ const colors = {
     // (ink, red!50!black, green, ember, red!50!yellow in a macro)
     ...['#c80064', '#800000', '#00ff00', '#640032', '#ff8000'].map(hex =>
       new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
-    // (gray!50, ink!50!yellow!50, -ink, -red!50!black; Apricot, Blue!50, Azure3; HTML, cmyk, Gray)
-    ...['#bfbfbf', '#f1bf98', '#37ff9b', '#80ffff', '#ffad7a', '#8080ff', '#c1cdcd', '#3366cc', '#803399', '#888888'].map(hex =>
+    // (gray!50, ink!50!yellow!50, -ink, -red!50!black; Apricot, Blue!50, Azure3; HTML, cmyk, Gray;
+    // in CMYK as xcolor has them, olive!50, BrickRed!30, Mahogany!40!Goldenrod (svgnames' rgb one),
+    // -BrickRed!40;
+    // BrickRed, given to a macro)
+    ...['#bfbfbf', '#f1bf98', '#37ff9b', '#80ffff', '#ffad7a', '#8080ff', '#c1cdcd', '#3366cc', '#803399', '#888888',
+      '#bfbf40', '#eaa5a2', '#c54f00', '#1d777c', '#b80000'].map(hex =>
       new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
     new RegExp(`#TBL-1-1- td\\{ background-color:${lightDark('#FFFFB2', 'min\\(l, 1\\.24 - l\\)')}\\}`),
     new RegExp(`#TBL-1-2-1\\{ background-color:${lightDark('#F1BFD8', 'min\\(l, 1\\.24 - l\\)')}\\}`),

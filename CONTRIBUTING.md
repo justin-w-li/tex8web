@@ -48,7 +48,9 @@ The bridge also handles colors. MathJax knows only CSS's and dvips's color names
 - xcolor's names that CSS gives other values, such as `green` and `orange`;
 - mixes and complements, such as `red!50!black` and `-ink`.
 
-`tex8web-hooks.sty` records each color as xcolor defines it. TeX writes the values at the end of the document. `macros.lua` mixes them in RGB as xcolor does, and rounds once. `tex8web.js` adds the color models MathJax lacks: `HTML`, `Gray`, `cmy` and `cmyk`.
+It looks for them in every word in braces in the math, so it also finds a color named in a macro's argument.
+
+`tex8web-hooks.sty` records each color as xcolor defines it. TeX writes the values at the end of the document, in the color's model: gray, CMYK or RGB. `macros.lua` mixes them in the model xcolor would, converts as xcolor does, and rounds once. `tex8web.js` adds the color models MathJax lacks: `HTML`, `Gray`, `cmy` and `cmyk`.
 
 **Indexes** (`index.lua`). makeindex gets each `\index`'s count in place of a page number. The counts start at 1000001, so that no number in an entry's text is taken for one. Each count becomes a link back to its `\index`, shown counted from 1. makeindex runs with `-r`, so consecutive counts stay separate. imakeidx runs nothing under tex4ht, so `tex8web-hooks.sty` records the command it would run in the `.aux`.
 
