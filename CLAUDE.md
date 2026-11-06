@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-tex8web turns LaTeX documents into static web pages that look like their PDF and read well on any screen, with almost no extra work from someone used to writing TeX. It is not a textbook platform. A change belongs here if it brings the page closer to the PDF or makes it easier to read; "we could" is not a reason. README.md says what tex8web does, DOCUMENTATION.md how to use it (configs, behavior, limitations), and CONTRIBUTING.md how it works (architecture, tests, files, releases). Read them before any non-trivial change.
+tex8web turns LaTeX documents into static web pages that look like their PDF and read well on any screen, with almost no extra work from someone used to writing TeX. It is not a textbook platform. A change belongs here if it brings the page closer to the PDF or makes it easier to read; "we could" is not a reason. README.md says what tex8web does, DOCUMENTATION.md how to use it (configs, behavior, limitations), and CONTRIBUTING.md how it works (architecture, tests, files, releases). Before a non-trivial change, read the parts that cover it: CONTRIBUTING's "How it works" and "Files" for internals, DOCUMENTATION for what a writer or reader sees.
 
 ## Product
 
@@ -67,11 +67,11 @@ Docs, comments and commit messages are read by strangers.
   - `npm test` passes.
   - `npm run test:visual` passes when the change touches the math path, where MathJax in Node and in the browser can diverge: `js/tex8web.js`, `js/prerender.mjs`, `tex/tex8web-math.tex`, the MathJax configuration in `tex/tex8web-page.tex`, `lua/tex8web/macros.lua`, `preamble.lua` and `source.lua`, the scripts in `page.lua`, and MathJax's version in `package.json`. Also when it touches `js/tex8web-page.js` or the stylesheet's picture viewer, whose mouse, touch and phone-width checks run only there. Otherwise, at the end of a batch and before merging.
   - A bug fix gets a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
-  - Visual changes are checked in headless Chrome screenshots, wide and narrow, light and dark, next to the PDF: `node test/shots.mjs`, which also compares two builds. Extend it rather than writing a script of your own.
+  - Visual changes are checked in headless Chrome screenshots, wide and narrow, light and dark, next to the PDF: `node test/shots.mjs`, which also compares two builds, shoots just one element's band (`--clip`), and prints a measurement (`--eval`). Extend it rather than writing a script of your own.
 - **Review at milestones.** At each milestone, or more often for risky changes, a fresh senior-engineer subagent with no context reviews the diff for correctness and cleanliness. Give it the diff and the files, not your conclusions. Fix what's warranted, and report what you didn't fix and why.
 - **Match the process to the change.** The full cycle above (milestones, review, every check) is for features and for changes to TeX, Lua or MathJax internals. A small UI tweak (a CSS value, a timing, a comment, a few lines of JS) gets a light loop instead:
   - no reviewer, and no rebuild of every document per iteration;
-  - verify the tweak itself: one targeted headless-Chrome measurement or screenshot, rebuilding only the page that shows it (a small test document, `node test/run.mjs <name>`; a change to `js/tex8web-page.js` alone can be copied next to a built page);
+  - verify the tweak itself: one targeted measurement or screenshot (`shots.mjs --eval` or `--clip`), rebuilding only the page that shows it (a small test document, `node test/run.mjs <name>`; a change to `js/tex8web-page.js` alone can be copied next to a built page);
   - `npm test`, then commit; batch several tweaks per commit;
   - run `npm run test:visual` and the full rebuild once, at the end of a batch.
 - **Keep the docs true.**

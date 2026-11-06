@@ -93,6 +93,8 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
 - **`npm run examples`** builds each example's PDF and page into `examples/<name>/build/`. It fails if either is missing.
 - **`node test/shots.mjs <out> <page or html dir>`** takes the screenshots a visual change is checked with: each page whole, 1400 and 390 pixels wide, light and dark. Set them beside the PDF's page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
 - **`node test/shots.mjs <out> <old dir> <new dir>`** compares two builds that way, screen by screen. It saves the screens that differ and fails if any do.
+- **`--clip <selector>`**, before either, shoots only the band of the page holding the first element the selector matches.
+- **`node test/shots.mjs --eval <expression> <page or html dir>`** prints the expression's value on each page, at both widths and in both schemes, as JSON. It measures one thing, such as an element's box or computed style, without a script of your own.
 - **`node test/diff.mjs <old> <new>`** says what changed in the HTML between two builds: the sections, formulas and stylesheet lines. It prints `unchanged`, or fails.
 - **`node test/check.mjs <html dir> [make4ht log] [TeX log]`** runs the generic page checks on any build.
 - **`test/checklist.md`** is the checklist for comparing `test.tex`'s page with its PDF by eye.
