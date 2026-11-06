@@ -7,6 +7,7 @@
 // they use into fonts/mathjax/, next to the page; it prints their paths, for
 // tex8web.mk4 to list with the output. Those fonts and Latin Modern's
 // (assets.lua) are cut down to the characters the document has.
+import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
@@ -285,6 +286,17 @@ const latinModern = new URL('../fonts/', import.meta.url);
 for (const name of readdirSync(latinModern).filter(name => name.endsWith('.woff2'))) {
   const path = join(dir, 'fonts', name);
   if (existsSync(path)) fonts.push([new URL(name, latinModern), path]);
+}
+// (and TeX Gyre's, those the page's stylesheet names (assets.lua), from
+// TeX Live)
+for (const name of new Set([...read(/\.css$/).matchAll(/url\("fonts\/(texgyre\w+-\w+)\.woff2"\)/g)]
+  .map(match => match[1]))) {
+  const source = spawnSync('kpsewhich', [`${name}.otf`], { encoding: 'utf8' }).stdout.trim();
+  const path = join(dir, 'fonts', `${name}.woff2`);
+  if (source) {
+    fonts.push([source, path]);
+    files.push(path);
+  }
 }
 const chars = [...new Set(text)].join('');
 // (MathJax's fonts state their license, the SIL Open Font License, in

@@ -434,6 +434,24 @@ const preloads = {
   // (the table of contents' sans-serif, bold and italic entries)
   'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
     'lmsans10-regular'],
+  // (in Times, Helvetica and Courier: TeX Gyre's faces, Latin Modern's for
+  // the controls)
+  'test-times': ['lmroman10-regular', 'texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic',
+    'texgyreheros-regular', 'texgyrecursor-regular', 'mathjax/mjx-tex-zero', 'mathjax/mjx-tex-n'],
+  // (the text in sans-serif)
+  'test-sans': ['lmroman10-regular', 'lmsans10-regular', 'lmsans10-bold', 'lmsans10-oblique'],
+};
+
+// the text's fonts: TeX Gyre's for Times, Helvetica and Courier, each in
+// its role, and tex4ht's classes for them; sans-serif for the text, when
+// \familydefault is
+const families = {
+  'test-times': ['@font-face { font-family: "TeX Gyre Termes"; src: url("fonts/texgyretermes-regular.woff2") format("woff2"); }',
+    ':root { --tex8web-roman: "TeX Gyre Termes", "Latin Modern Roman", serif; }',
+    ':root { --tex8web-sans: "TeX Gyre Heros", "Latin Modern Sans", sans-serif; }',
+    ':root { --tex8web-mono: "TeX Gyre Cursor", "Latin Modern Mono", monospace; }',
+    '[class^="phv"], [class*="-phv"] { font-family: var(--tex8web-sans); }'],
+  'test-sans': ['html body { font-family: var(--tex8web-sans); }'],
 };
 
 // what's wrong with a built page: its log, the page and the files with it
@@ -474,6 +492,14 @@ function check(doc, result, out, aux) {
       .map(([link]) => link.match(/href='fonts\/([^']+)\.woff2'/)?.[1]).sort().join(' ');
     const wanted = [...preloads[doc.name]].sort().join(' ');
     if (found !== wanted) problems.push(`fonts preloaded: ${found}, not ${wanted}`);
+  }
+  for (const rule of families[doc.name] ?? []) {
+    if (!styles.includes(rule)) problems.push(`no ${rule} among the font rules`);
+  }
+  // (prerender.mjs makes TeX Gyre's, cut down)
+  for (const [, font] of styles.matchAll(/url\("fonts\/(texgyre[\w-]+\.woff2)"\)/g)) {
+    const size = statSync(join(out, 'fonts', font), { throwIfNoEntry: false })?.size;
+    if (!(size < 60000)) problems.push(`fonts/${font} ${size ? 'not cut down' : 'missing'}`);
   }
   for (const pattern of minipages[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);

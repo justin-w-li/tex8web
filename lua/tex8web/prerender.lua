@@ -14,19 +14,29 @@ function M.mathjax_version(root)
   return assert(files.read(root .. "/package.json")):match('"mathjax":%s*"([^"]+)"')
 end
 
+local function installed(context)
+  return lfs.attributes(context.root .. "/node_modules/mathjax") ~= nil
+    and lfs.attributes(context.root .. "/node_modules/subset-font") ~= nil
+end
+
+-- whether M.run will try
+function M.available(context)
+  return not os.getenv("TEX8WEB_NO_PRERENDER") and installed(context)
+end
+
 -- typesets the page's math; false if it couldn't, and the page needs
 -- MathJax in the browser
 function M.run(context, filename)
   if os.getenv("TEX8WEB_NO_PRERENDER") then return false end
-  if lfs.attributes(context.root .. "/node_modules/mathjax") == nil
-      or lfs.attributes(context.root .. "/node_modules/subset-font") == nil then
+  if not installed(context) then
     log:warning("math left for MathJax in the browser, from jsDelivr; run npm ci in "
       .. context.root .. " to typeset it here")
     return false
   end
   local node = io.popen("node " .. files.quote(context.root .. "/js/prerender.mjs") .. " "
     .. files.quote(filename))
-  -- (it prints the files it made: MathJax's styles and fonts)
+  -- (it prints the files it made: MathJax's styles and fonts, and TeX
+  -- Gyre's)
   local made = {}
   for path in node:lines() do made[#made + 1] = path end
   if not node:close() then

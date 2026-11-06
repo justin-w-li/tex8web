@@ -6,6 +6,13 @@ TeX Live's lm package. Copyright 2003, 2009 B. Jackowski and J. M. Nowacki
 below, a variant of the LaTeX Project Public License. The complete fonts:
 https://ctan.org/pkg/lm
 
+TeX Gyre (texgyre*), version 2.004, for a document set in Times,
+Palatino, Helvetica, Courier or another of the fonts it has equivalents
+for, from TeX Live's tex-gyre package. Copyright 2006, 2009 for TeX Gyre
+extensions by B. Jackowski and J. M. Nowacki (on behalf of TeX users
+groups). Released under the GUST Font License, below. The complete
+fonts: https://ctan.org/pkg/tex-gyre
+
 MathJax's fonts (mathjax/mjx-*), version 4.1.3, from the npm packages
 @mathjax/mathjax-tex-font and its extensions for bbm, bboldx, dsfont and
 mhchem. Copyright MathJax, Inc. and the authors each font names.
@@ -15,7 +22,8 @@ https://github.com/mathjax/MathJax-fonts
 
 Changes: tex8web converted Latin Modern from OpenType to WOFF2 with
 fontTools, and, on a page whose math it typesets, cut each font down to
-the characters of the page's document with HarfBuzz (subset-font).
+the characters of the page's document with HarfBuzz (subset-font). It
+converts TeX Gyre's fonts to WOFF2 and cuts them down the same way.
 
 ============================================================================
 

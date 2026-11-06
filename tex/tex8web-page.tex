@@ -11,8 +11,9 @@
 %   from the document, in ems of its body font, for MathJax's sizes (see
 %   tex8web.js). page.lua adds the scripts that read it
 % - two build elements, for the HTML passes, which remove them. The first
-%   holds the PDF (\WebPDF), the page above (\WebUp) and the
-%   \WebMathMacros definitions. The second holds \contentsname,
+%   holds the PDF (\WebPDF), the page above (\WebUp), the font families
+%   of the text and of roman, sans-serif and typewriter text (assets.lua)
+%   and the \WebMathMacros definitions. The second holds \contentsname,
 %   typeset, so that tex4ht writes its letters (babel's are font commands,
 %   \CYRS, of which \text_purify:n knows only Latin's), in a group: the
 %   head is written as the document starts, so a \contentsname's font
@@ -43,7 +44,8 @@
     \__web_text:NN \l__web_build_tl \g__web_macros_tl
     \__web_text:NN \l__web_pdf_tl \g__web_pdf_tl
     \__web_text:NN \l__web_up_tl \g__web_up_tl
-    \HCode{<script~type="text/x-tex8web-build"~data-pdf="\l__web_pdf_tl"~data-up="\l__web_up_tl">
+    \HCode{<script~type="text/x-tex8web-build"~data-pdf="\l__web_pdf_tl"~data-up="\l__web_up_tl"\c_space_tl
+        data-fonts="\familydefault\c_space_tl\rmdefault\c_space_tl\sfdefault\c_space_tl\ttdefault">
         \l__web_build_tl</script><script~type="text/x-tex8web-contents">}
     \group_begin: \cs_if_exist_use:N \contentsname \group_end:
     \HCode{</script>\Hnewline}

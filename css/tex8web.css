@@ -60,9 +60,11 @@ a.url, a[href*="://"]:not(.tex8web-control), a[href^="mailto:"] { color: var(--t
     src: url("fonts/lmsans10-oblique.woff2") format("woff2"); }
 @font-face { font-family: "Latin Modern Sans"; font-weight: bold; font-style: italic;
     src: url("fonts/lmsans10-boldoblique.woff2") format("woff2"); }
-:root { --tex8web-sans: "Latin Modern Sans", sans-serif;
+/* (or TeX Gyre's, for a document in Times or another font it has, which
+   assets.lua sets after these) */
+:root { --tex8web-roman: "Latin Modern Roman", serif; --tex8web-sans: "Latin Modern Sans", sans-serif;
     --tex8web-mono: "Latin Modern Mono", monospace; }
-html body { font-family: "Latin Modern Roman", serif; }
+html body { font-family: var(--tex8web-roman); }
 /* typewriter and sans-serif text, in tex4ht's class names for Latin Modern
    and for Computer Modern (without lmodern) */
 [class*="-lmtt"], [class^="cmtt-"], [class^="ectt-"] { font-family: var(--tex8web-mono); }

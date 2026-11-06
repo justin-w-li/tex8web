@@ -29,7 +29,7 @@ The options:
 The output folder holds the page and everything it uses:
 - `document.html` and its stylesheets;
 - the pictures, and the PDF if you link it with `-p` or `\WebPDF`;
-- `fonts/`: Latin Modern, MathJax's fonts, and `LICENSE.txt`, which covers them;
+- `fonts/`: Latin Modern or TeX Gyre, MathJax's fonts, and `LICENSE.txt`, which covers them;
 - `tex8web-head.js` and `tex8web-page.js`, the page's controls;
 - without Node, `tex8web.js` instead of MathJax's fonts.
 
@@ -37,7 +37,7 @@ The paths are relative, so you can publish the folder as it is. With Node, its f
 
 **Bibliographies and indexes.** tex8web runs bibtex or biber when the document has a bibliography. It runs makeindex for each index the document prints, from makeidx or imakeidx. Each index uses its own style file. Style files are found next to the document and on `INDEXSTYLE`.
 
-**Without Node.** Node typesets the math when you build. If `npm ci` hasn't been run, the build warns, and the page loads MathJax from jsDelivr instead. It then needs the network to show its math. Set `TEX8WEB_NO_PRERENDER` to any value to choose this on purpose.
+**Without Node.** Node typesets the math when you build. If `npm ci` hasn't been run, the build warns, and the page loads MathJax from jsDelivr instead. It then needs the network to show its math, and its text is in Latin Modern whatever the document's font. Set `TEX8WEB_NO_PRERENDER` to any value to choose this on purpose.
 
 **Without the wrapper.** `bin/tex8web` runs this command in the document's directory:
 
@@ -132,7 +132,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 | `--tex8web-toc-<level>-indent`, `--tex8web-toc-<level>-number` | the table of contents' indents and number widths |
 | `--tex8web-toc-<level>-family`, `-weight`, `-style`, `-variant`, `-size` | an entry's font, with tocloft; the size is a multiple of the text's |
 | `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url` | the page's colors |
-| `--tex8web-sans`, `--tex8web-mono` | the sans-serif and typewriter fonts |
+| `--tex8web-roman`, `--tex8web-sans`, `--tex8web-mono` | the roman, sans-serif and typewriter fonts |
 | `--tcb-*` | a tcolorbox's frame, colors and spacing, on the box's element |
 
 In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not (--tex8web-wide)` a narrow one.
@@ -148,6 +148,8 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 **Table of contents.** `\tableofcontents` moves out of the text. On a wide screen it sits beside the text; on a narrow one it opens as a drawer. It marks the section being read. It always lists the sections and the levels above them, but only the subsections of the section being read. Its indents, number widths and fonts come from tocloft or the class: with tocloft, each level is in the font of its `\cft<level>font`, such as `\cftsecfont`. A color in that font isn't followed. A `\listoffigures` or `\listoftables` stays in the text.
 
 **Finding.** A field at the top of the table of contents finds headings, numbered theorems and boxes, and terms (`\WebTerm`) as the reader types. Case, accents and math styles don't matter, and a Greek letter is found by its TeX name (`sigma` finds σ). The arrow keys and Enter choose a result.
+
+**Fonts.** The text is in the PDF's font when it is Latin Modern, LaTeX's own, or one of the standard PostScript fonts: Times, Palatino, Helvetica, Courier, Bookman, New Century Schoolbook or Avant Garde, from packages such as `mathptmx`, `newtx`, `mathpazo`, `helvet` and TeX Gyre's own. Those are set in TeX Gyre's versions of them. A document whose text is in its sans-serif font, with `\familydefault`, has a sans-serif page. The math is in MathJax's TeX font.
 
 **Headings** keep the PDF's sizes, the space above and below them, and the space after their numbers. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
 

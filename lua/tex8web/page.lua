@@ -32,6 +32,8 @@ function M.build_data(document, context)
   local up = os.getenv("TEX8WEB_UP") or ""
   if up == "" then up = element:get_attribute("data-up") end
   context.up = up ~= "" and up or nil
+  local body, roman, sans, mono = (element:get_attribute("data-fonts") or ""):match("(%S+) (%S+) (%S+) (%S+)")
+  context.families = {body = body, roman = roman, sans = sans, mono = mono}
   context.macros = element:get_text()
   element:remove_node()
   local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]

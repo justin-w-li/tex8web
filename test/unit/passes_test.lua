@@ -192,15 +192,15 @@ return {
       .. [[<pre class='lstlisting'><span style='color:#0000FF'>if</span> x</pre>]])
   end,
 
-  ["page.build_data: the PDF, \\contentsname and the macros, and the elements removed"] = function()
-    local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf">\newcommand{\x}{x}</script>]]
+  ["page.build_data: the PDF, the fonts, \\contentsname and the macros, and the elements removed"] = function()
+    local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf" data-fonts="phv ptm phv pcr">\newcommand{\x}{x}</script>]]
       .. [[<script type="text/x-tex8web-contents">
 Table des
 matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.39216 </script>]])
     local context = {}
     page.build_data(d, context)
     equal(context, {pdf = "build/doc.pdf", contents = "Table des matières", macros = "\\newcommand{\\x}{x}",
-      colors = "ink 0.78432,0,0.39216 "})
+      colors = "ink 0.78432,0,0.39216 ", families = {body = "phv", roman = "ptm", sans = "phv", mono = "pcr"}})
     equal(#d:query_selector("script"), 0)
     local e = parse("", [[<script type="text/x-tex8web-build" data-pdf=""></script>]]
       .. [[<script type="text/x-tex8web-contents">Contents</script>]]
