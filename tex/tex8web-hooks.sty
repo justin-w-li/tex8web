@@ -105,7 +105,8 @@
     \expandafter\def\csname KV@Hyp@hidelinks\endcsname{\gdef\web@hidelinks{}\web@hidelinks@kv}%
 }
 
-% \@title as the class leaves it without a \title, for tex8web-text.tex
+% \@title before any \title (the kernel's error), for tex8web-text.tex to
+% tell whether the document has one
 \let\web@notitle\@title
 
 % \web@needs{name}: a warning, which npm test fails on, unless \<name>,
@@ -116,15 +117,17 @@
 \def\web@outdated#1{\PackageWarningNoLine{tex8web}{#1 has changed or gone,
     and tex8web needs updating for it}}
 
-% xcolor: the names of the colors the document defines (\definecolor,
-% \colorlet, \providecolor and the sets all log the name with \XC@logdef,
-% expanded), once each, for tex8web-page.tex to give MathJax their values;
-% and whether xcolor came before colortbl, which doesn't load it, but
-% colortbl.4ht does, after the document's colors that the color package
-% made, which xcolor can't read (for colortbl's cells). The options
-% dvipsnames, svgnames and x11names define their colors as xcolor loads,
-% before its hook below, so the wrapper goes in as their files are read
-% (which the color package's dvips driver also reads, before xcolor)
+% xcolor: the names of the colors the document defines, once each, for
+% tex8web-page.tex to give MathJax their values. \definecolor, \colorlet,
+% \providecolor and the color sets all log the name, expanded, with
+% \XC@logdef. The options dvipsnames, svgnames and x11names define their
+% colors while xcolor loads, before its hook below. So the wrapper also goes
+% in as their files are read. (The color package's dvips driver reads
+% dvipsnam.def too, before xcolor defines \XC@logdef)
+% \g__web_xcolor_bool: whether xcolor came before colortbl, for colortbl's
+% cells. colortbl doesn't load xcolor, but colortbl.4ht does. It loads it
+% after the color package has made the document's colors, which xcolor
+% then can't read.
 \ExplSyntaxOn
 \clist_new:N \g__web_colors_clist
 \bool_new:N \g__web_xcolor_bool

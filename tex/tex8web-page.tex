@@ -200,12 +200,13 @@
         }
 }
 \AtEndDocument{\__web_colors_element:}
-% colortbl's colors (\cellcolor, \rowcolor, \columncolor): tex4ht (colortbl.4ht
-% and html4.4ht's \add:color) writes the cell's rule with its own conversion,
-% which gives names xcolor and dvips have beyond CSS's a wrong rgb(), and
-% truncates the rest, off the page's hex colors that dark mode follows. Use
-% \web@hex for a color xcolor knows, a name or an expression; the cell colors
-% tex4ht makes itself (tblcol-1, a color with a model) stay as they are
+% colortbl's colors: \cellcolor, \rowcolor and \columncolor. tex4ht writes
+% the cell's rule with its own conversion (colortbl.4ht and html4.4ht's
+% \add:color). It gives a wrong rgb() for a name xcolor or dvips has and
+% CSS lacks, and truncates other colors. Either way the cell misses the
+% page's hex colors, which dark mode follows. So a color xcolor knows, a
+% name or an expression, goes through \web@hex. The colors tex4ht makes
+% itself, such as tblcol-1 or a color with a model, stay as they are.
 \@ifpackageloaded{colortbl}{\web@needs{add:color}}{}
 \cs_if_exist:NT \add:color
     {
@@ -243,13 +244,14 @@
                 \web@needs{@rowc@lors}
                 \web@needs{halignTR}
                 \web@needs{o:noalign:}
-                % new array runs a row's hooks (which colortbl's \rowcolors uses), and
-                % old array's \everycr, that xcolor.4ht used, from its own \halign; tex4ht
-                % builds another, so call it as tex4ht starts a row (\halignTR) instead
-                % (html4.4ht's \Configure{rowcolors} also never draws the color). The
-                % color goes on the row, under a \rowcolor's or \cellcolor's on its
-                % cells, as in the PDF; and without \rowcolors' commands for each row
-                % ([\hline]), which can't run there
+                % \rowcolors colors a row from array's row hooks. They run in
+                % array's own \halign, as old array's \everycr, which xcolor.4ht
+                % uses, did. tex4ht builds another \halign, so the color is set
+                % as tex4ht starts a row, in \halignTR. (html4.4ht's
+                % \Configure{rowcolors} never draws it) The color goes on the row,
+                % under a \rowcolor or \cellcolor on its cells, as in the PDF.
+                % \rowcolors' commands for each row, such as [\hline], are
+                % dropped: they can't run there.
                 \cs_new_protected:Npn \__web_row_color:n #1
                     { \add:color { background-color } {#1} { \HRow - } }
                 \Configure { rowcolors } { \__web_row_color:n }
