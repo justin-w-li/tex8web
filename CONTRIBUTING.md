@@ -99,6 +99,10 @@ Each script's header comment says what it checks. CLAUDE.md says when to run whi
 
 Each build's log is kept in `build/test/<document>/make4ht.log`.
 
+**Build slots.** Sessions and checkouts that run tests at once would otherwise swap, as each tool sizes its builds for a machine of its own. So every make4ht or latexmk build, and every Chrome the tests launch, holds one of a pool of lock files in `$TMPDIR/tex8web-slots` while it runs (`test/lib/slots.mjs`). A process that waits for a slot says so after 10 seconds. The pool has one slot for each 4 GB of memory, or `TEX8WEB_SLOTS` of them. Without `lockf` (Linux) there are no slots. The idle and total limits of a build start once it holds its slot, and a killed process gives its slot back. `rebuild.sh` takes the same slots.
+
+**Reused builds.** A build is kept with a stamp of what it was made from: tex8web's sources, the document's directory, the command and the `TEX8WEB_*` environment. `npm test`, `test:visual` and `test:page` build each document with the same environment into `build/test/<document>/html`, so the later ones reuse the earlier one's build, and say so. Any change to the sources, the document or the environment builds again, and a build that failed is never reused. To force a build, remove the document's directory in `build/test`.
+
 **A change that shouldn't show.** Build the pages before and after it, then run `diff.mjs` on the two builds. If the HTML changed, run `shots.mjs` on them too, and look at every screen it saves.
 
 **Known gaps.** `test/expected.json` lists the problems a document is allowed, each with its reason. Make each entry as specific as the message it allows. An entry that no longer matches anything fails, until it's taken out. `rebuild.sh` has no allowances: a note whose make4ht log says it parsed a page as HTML fails there, and the fix belongs in tex8web.

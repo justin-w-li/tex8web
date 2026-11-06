@@ -443,9 +443,9 @@ const seenTypes = `addEventListener('pagereveal', event => setTimeout(() => {
 async function navigating(chrome, [example, index]) {
   const site = join(testDir(example, 'page'), 'site');
   rmSync(site, { recursive: true, force: true });
-  cpSync(join(testDir(index, 'page'), 'html'), site, { recursive: true });
+  cpSync(join(testDir(index), 'html'), site, { recursive: true });
   renameSync(join(site, `${index.name}.html`), join(site, 'index.html'));
-  cpSync(join(testDir(example, 'page'), 'html'), join(site, 'example'), { recursive: true });
+  cpSync(join(testDir(example), 'html'), join(site, 'example'), { recursive: true });
   const server = createServer((request, response) => {
     const file = join(site, decodeURIComponent(new URL(request.url, 'http://localhost').pathname)
       .replace(/\/$/, '/index.html'));
@@ -508,12 +508,13 @@ if (unknown.length) {
 const names = process.argv.length > 2 ? process.argv.slice(2) : Object.keys(checks);
 const wanted = [...new Set(names.flatMap(name => checks[name][0]))];
 const docs = new Map(select(wanted).map(doc => [doc.name, doc]));
-const pageFile = doc => join(testDir(doc, 'page'), 'html', doc.tex.replace(/\.tex$/, '.html'));
+const pageFile = doc => join(testDir(doc), 'html', doc.tex.replace(/\.tex$/, '.html'));
 
 // the fixtures built, prerendered, before any check runs: a build slows the
-// machine, and a check that waits for a state would take longer
+// machine, and a check that waits for a state would take longer. They are
+// npm test's builds, reused if it has just made them
 const built = new Map(await pool([...docs.values()], workers, async doc => {
-  const code = (await build(doc, join(testDir(doc, 'page'), 'html'), join(testDir(doc, 'page'), 'aux'), { TEX8WEB_MATHML: '1' })).code;
+  const code = (await build(doc, join(testDir(doc), 'html'), join(testDir(doc), 'aux'), { TEX8WEB_MATHML: '1' })).code;
   return [doc.name, code === 0];
 }));
 

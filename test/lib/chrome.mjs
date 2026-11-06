@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
 import { constants, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { takeSlot } from './slots.mjs';
 
 const candidates = [
   process.env.CHROME,
@@ -58,6 +59,8 @@ async function connect(url) {
 export async function launch() {
   const binary = candidates.find(existsSync);
   if (!binary) throw new Error('no Chrome found; set CHROME to its executable');
+  // (a Chrome holds a build slot like a build does, until it is closed)
+  const release = await takeSlot();
   const profile = mkdtempSync(join(tmpdir(), 'tex8webchrome'));
   // (Chrome won't run as root, as in a container, with its sandbox)
   const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars',
@@ -77,6 +80,7 @@ export async function launch() {
     } catch (e) {
       console.error(`tex8web: Chrome's profile ${profile} is left behind (${e.code})`);
     }
+    release();
   };
   process.on('exit', cleanup);
   // (128 plus the signal, as a shell reports it: shots.mjs's callers read 1

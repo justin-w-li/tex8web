@@ -52,7 +52,8 @@ test('a signal ends the process with 128 plus its number, and the profile is rem
       `import { launch } from './test/lib/chrome.mjs'; await launch(); process.kill(process.pid, 'SIGTERM'); await new Promise(() => {});`],
     { cwd: join(here, '..'), env: { ...process.env, TMPDIR: temp }, encoding: 'utf8' });
     assert.equal(result.status, 143);
-    assert.deepEqual(readdirSync(temp), []);
+    // (the build slots are there too)
+    assert.deepEqual(readdirSync(temp).filter(name => name.startsWith('tex8webchrome')), []);
   } finally {
     rmSync(temp, { recursive: true });
   }

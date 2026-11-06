@@ -9,8 +9,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build, largestFirst, pool, select, strayKeys, testDir, workers } from './lib/build.mjs';
+import { build, largestFirst, pool, root, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
+import { slotCount } from './lib/slots.mjs';
 
 const only = process.argv.slice(2);
 const screen = 900;
@@ -217,11 +218,14 @@ const tocFonts = {
 const docs = select(only).filter(doc => !['test-split', 'test-cutat'].includes(doc.name));
 // each document built twice, prerendered (html) and for the browser
 // (fallback), a few builds at a time, the largest first; a document is
-// compared as soon as both its builds are done
-const variants = [['html', 'aux', { TEX8WEB_MATHML: '1' }], ['fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
-const builds = largestFirst(docs).flatMap(doc => variants.map(([out, aux, env]) => ({ doc, out, aux, env, ...Promise.withResolvers() })));
-pool(builds, workers, async ({ doc, out, aux, env, resolve }) => {
-  resolve((await build(doc, join(testDir(doc, 'visual'), out), join(testDir(doc, 'visual'), aux), env)).code);
+// compared as soon as both its builds are done. The prerendered build is
+// npm test's, reused if it has just made it
+const variants = [[testDir, 'html', 'aux', { TEX8WEB_MATHML: '1' }],
+  [doc => testDir(doc, 'visual'), 'fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
+const builds = largestFirst(docs).flatMap(doc => variants.map(([dir, out, aux, env]) =>
+  ({ doc, dir: dir(doc), out, aux, env, ...Promise.withResolvers() })));
+const building = pool(builds, workers, async ({ doc, dir, out, aux, env, resolve }) => {
+  resolve((await build(doc, join(dir, out), join(dir, aux), env)).code);
 });
 const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).map(b => b.promise))).every(code => code === 0);
 
@@ -232,7 +236,7 @@ const ran = { spaced: 0, misaligned: 0, sidenotes: 0 };
 // a document's two pages compared: its report's lines, and whether it failed
 async function compare(chrome, doc, ok) {
   const dir = testDir(doc, 'visual');
-  const [pre, browser] = [join(dir, 'html'), join(dir, 'fallback')];
+  const [pre, browser] = [join(testDir(doc), 'html'), join(dir, 'fallback')];
   const visual = join(dir, 'visual');
   rmSync(visual, { recursive: true, force: true });
   // (the build's own problems are npm test's; this needs only the pages)
@@ -256,7 +260,7 @@ async function compare(chrome, doc, ok) {
     const shots = [];
     for (const file of [typeset, join(pre, html)]) {
       shots.push(await chrome.withPage(pathToFileURL(file).href, { javascript: false, height: screen }, async page => {
-        const name = relative(dir, file);
+        const name = relative(join(root, 'build'), file);
         const aligned = await page.evaluate(misaligned);
         if (file !== typeset) ran.misaligned += aligned.checked;
         for (const [text, a, b] of aligned.wrong) {
@@ -310,6 +314,8 @@ async function compare(chrome, doc, ok) {
 
 // the documents in Chrome as their builds finish, one at a time: with
 // several tabs at once, headless Chrome sometimes draws a screen garbled
+// (with one slot, after the builds: a Chrome holding it would starve them)
+if (slotCount() < 2) await building;
 const chrome = await launch();
 let failures = 0;
 const waiting = new Map(docs.map(doc => [doc, built(doc).then(ok => [doc, ok])]));

@@ -1,0 +1,86 @@
+// A pool of build slots shared by every checkout and session on the machine.
+// Each make4ht or latexmk build, and each Chrome the tests launch, holds one
+// slot while it runs, as every tool sizing its own parallelism as if it had
+// the machine to itself leaves it swapping. A slot is a lock file in
+// $TMPDIR/tex8web-slots, taken with lockf; rebuild.sh takes the same ones.
+import { spawn } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
+import { tmpdir, totalmem } from 'node:os';
+import { join } from 'node:path';
+
+// TEX8WEB_SLOTS, else one slot for each 4 GB of memory (a build and its
+// Chrome or MathJax take about that), and at least one
+export const slotCount = () => Number(process.env.TEX8WEB_SLOTS) || Math.max(1, Math.floor(totalmem() / 2 ** 32));
+const dir = () => join(tmpdir(), 'tex8web-slots');
+const sleep = ms => new Promise(done => setTimeout(done, ms));
+
+// Holds an exclusive lock on file until the release function it resolves to
+// is called, or this process ends, however it ends: lockf runs a shell that
+// stops when its stdin closes. Resolves to null if wait is false and the
+// lock is held by another
+function hold(file, wait) {
+  return new Promise((done, fail) => {
+    const child = spawn('lockf', ['-k', ...wait ? [] : ['-t', '0'], file, 'sh', '-c', 'echo held; cat >/dev/null'],
+      { stdio: ['pipe', 'pipe', 'ignore'] });
+    let held = false;
+    child.on('error', fail);
+    child.stdin.on('error', () => {});
+    child.stdout.once('data', () => {
+      held = true;
+      // (so that a holder never released doesn't keep this process running)
+      child.unref();
+      child.stdin.unref();
+      child.stdout.unref();
+      done(() => child.stdin.end());
+    });
+    child.on('close', code => {
+      // (75, EX_TEMPFAIL: the lock is busy)
+      if (!held) code === 75 ? done(null) : fail(new Error(`lockf ${file} exited with ${code}`));
+    });
+  });
+}
+
+// where lockf is missing (Linux), there are no locks: a note, once
+let noted = false;
+const without = error => {
+  if (error.code !== 'ENOENT') throw error;
+  if (!noted) console.error('tex8web: no lockf, so no build slots and no shared build outputs; running without');
+  noted = true;
+  return () => {};
+};
+
+// waits for one of the slots; resolves to the function that gives it back.
+// Says so, once, when that takes more than 10 s
+export async function takeSlot() {
+  mkdirSync(dir(), { recursive: true });
+  const start = Date.now();
+  let told = false;
+  for (;;) {
+    for (let i = 0; i < slotCount(); i++) {
+      try {
+        const release = await hold(join(dir(), String(i)), false);
+        if (release) return release;
+      } catch (error) {
+        return without(error);
+      }
+    }
+    if (!told && Date.now() - start > 10000) {
+      console.error(`tex8web: waiting for one of ${slotCount()} build slots, all busy (TEX8WEB_SLOTS sets how many)`);
+      told = true;
+    }
+    await sleep(1000);
+  }
+}
+
+// f(), holding a slot
+export async function withSlot(f) {
+  const release = await takeSlot();
+  try {
+    return await f();
+  } finally {
+    release();
+  }
+}
+
+// waits for the lock on file; resolves to the function that gives it back
+export const lock = file => hold(file, true).catch(without);

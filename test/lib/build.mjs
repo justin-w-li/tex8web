@@ -1,10 +1,12 @@
 // Building the test documents and examples with make4ht, for the tests and
 // for npm run examples.
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { availableParallelism, constants } from 'node:os';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { lock, withSlot } from './slots.mjs';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -63,8 +65,9 @@ export function strayKeys(...tables) {
 export const largestFirst = docs => docs.map(doc => [doc, statSync(join(doc.dir, doc.tex)).size])
   .sort((a, b) => b[1] - a[1]).map(([doc]) => doc);
 
-// builds at once: a build runs mostly on one core, and four leave the rest
-// of the machine to other work (a laptop's performance cores are often four)
+// builds at once from one tool: a build runs mostly on one core, and four
+// leave the rest of the machine to other work (a laptop's performance cores
+// are often four). The slots limit all the tools together
 export const workers = Math.min(4, Math.max(2, availableParallelism() >> 1));
 
 // commands running, each in a process group of its own (so that one that
@@ -79,9 +82,14 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => p
 // runs a command, killing its process group if it prints nothing for idle
 // seconds, or runs for total: it has hung. A loaded machine slows a build
 // without silencing it for long, so the idle limit is the tight one. The
-// total limit stops one that loops while printing. Resolves to
-// { code, log }, the log being stdout and stderr in order
-export function run(command, args, { idle = 180, total = 900, ...options } = {}) {
+// total limit stops one that loops while printing. With slot, the command
+// holds a build slot (slots.mjs) from when it starts, and waiting for the
+// slot isn't timed. Resolves to { code, log }, the log being stdout and
+// stderr in order
+export const run = (command, args, { slot = false, ...options } = {}) =>
+  slot ? withSlot(() => execute(command, args, options)) : execute(command, args, options);
+
+function execute(command, args, { idle = 180, total = 900, ...options }) {
   return new Promise(done => {
     const child = spawn(command, args, { ...options, detached: true });
     running.add(child.pid);
@@ -106,15 +114,65 @@ export function run(command, args, { idle = 180, total = 900, ...options } = {})
   });
 }
 
+// a hash of the files under the paths (relative to base): their names and
+// contents, leaving out dotfiles and build directories, which hold outputs
+function hashFiles(base, paths) {
+  const hash = createHash('sha256');
+  const add = file => hash.update(`${relative(base, file)}\0${statSync(file).size}\0`).update(readFileSync(file));
+  const walk = path => {
+    if (!statSync(path).isDirectory()) return add(path);
+    for (const name of readdirSync(path).sort()) if (name !== 'build' && !name.startsWith('.')) walk(join(path, name));
+  };
+  for (const path of paths) if (existsSync(join(base, path))) walk(join(base, path));
+  return hash.digest('hex');
+}
+
+// what bin/tex8web reads of tex8web's own
+const sources = ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'package.json', 'package-lock.json'];
+export const sourceHash = base => hashFiles(base, sources);
+
+// what a build is made from, as a hash: tex8web's sources, the document's
+// directory, the command and the environment variables the build reads. The
+// files themselves, not the commit, so that an edit not yet committed, or a
+// file git doesn't know, is part of it
+let tex8webHash;
+function stamp(doc, args, env) {
+  const vars = Object.entries({ ...process.env, ...env }).filter(([name]) => /^(TEX8WEB_(?!SLOTS)|TEXINPUTS$|TEXMF)/.test(name)).sort();
+  return createHash('sha256').update(JSON.stringify([tex8webHash ??= sourceHash(root), hashFiles(doc.dir, ['']), args, vars])).digest('hex');
+}
+
 // runs bin/tex8web on a document, with the page in out and tex4ht's files
 // in aux (both absolute). make4ht reads the -B directory as a Lua pattern
 // when it copies to -d, so it is passed relative to the document, where
-// characters like - in the path above don't matter
+// characters like - in the path above don't matter.
+// The build is kept with a stamp of what it was made from (out.stamp) and
+// its log (out.log), and a later build from the same stamp is not run: it
+// resolves to { code: 0, log, reused: true }. A build that failed leaves no
+// stamp. One at a time for each out, so that tools running at once share it
 export async function build(doc, out, aux, env = {}) {
+  mkdirSync(dirname(out), { recursive: true });
+  const release = await lock(`${out}.lock`);
+  try {
+    return await buildHere(doc, out, aux, env);
+  } finally {
+    release();
+  }
+}
+
+async function buildHere(doc, out, aux, env) {
   // the PDF the page links, if it isn't built yet: with -p, unless the
   // config links it with \WebPDF, which keeps that tested
   const own = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];
   const pdf = own ?? doc.pdf;
+  const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
+    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], doc.tex];
+  const wanted = stamp(doc, args, env);
+  const kept = { stamp: `${out}.stamp`, log: `${out}.log` };
+  if (existsSync(kept.stamp) && readFileSync(kept.stamp, 'utf8') === wanted && existsSync(out) && existsSync(aux)) {
+    console.log(`reusing ${doc.name}'s ${basename(out)} build: nothing it is made from has changed`);
+    return { code: 0, log: readFileSync(kept.log, 'utf8'), reused: true };
+  }
+  rmSync(kept.stamp, { force: true });
   if (pdf && !existsSync(join(doc.dir, pdf))) {
     const { code, log } = await latexmk(doc, dirname(pdf));
     if (code !== 0) return { code, log: `latexmk exited with ${code}\n${log}` };
@@ -123,9 +181,13 @@ export async function build(doc, out, aux, env = {}) {
   rmSync(aux, { recursive: true, force: true });
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
-  const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
-    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], doc.tex];
-  return run(join(root, 'bin/tex8web'), args, { cwd: doc.dir, env: { ...process.env, ...env } });
+  const result = await run(join(root, 'bin/tex8web'), args,
+    { cwd: doc.dir, env: { ...process.env, ...env }, slot: true });
+  if (result.code === 0) {
+    writeFileSync(kept.log, result.log);
+    writeFileSync(kept.stamp, wanted);
+  }
+  return result;
 }
 
 // builds a document's PDF in outdir (relative to it) with latexmk: its exit
@@ -136,7 +198,7 @@ export function latexmk(doc, outdir) {
   const key = join(doc.dir, outdir, doc.tex);
   if (!pdfs.has(key)) {
     pdfs.set(key, run('latexmk', ['-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex],
-      { cwd: doc.dir }));
+      { cwd: doc.dir, slot: true }));
   }
   return pdfs.get(key);
 }
