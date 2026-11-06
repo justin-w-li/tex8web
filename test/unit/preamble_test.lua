@@ -114,6 +114,35 @@ return {
     equal(definitions["\\P"].def, "\\newcommand{\\P}{\\mathrm{P}}")
   end,
 
+  ["read: a \\usepackage whose brace never closes ends"] = function()
+    local definitions, packages = read("\\newcommand{\\a}{a}\\verb|\\usepackage{| text")
+    equal(packages, {})
+    equal(definitions["\\a"].def, "\\newcommand{\\a}{a}")
+    read("\\usepackage{x")
+    read("\\input{x")
+    read("\\usepackage[x")
+  end,
+
+  ["document: a file input twice is read twice, a package once, and a cycle ends"] = function()
+    local dir = os.tmpname()
+    os.remove(dir)
+    lfs.mkdir(dir)
+    local function write(name, text)
+      local f = assert(io.open(dir .. "/" .. name, "w"))
+      f:write(text)
+      f:close()
+    end
+    write("defs.tex", "\\newcommand{\\x}{1}\\input{" .. dir .. "/defs}")
+    write("pkg.sty", "\\newcommand{\\y}{1}")
+    write("main.tex", "\\input{" .. dir .. "/defs}\\renewcommand{\\x}{2}\\input{" .. dir .. "/defs}\n"
+      .. "\\usepackage{" .. dir .. "/pkg}\\renewcommand{\\y}{2}\\usepackage{" .. dir .. "/pkg}")
+    local definitions = preamble.document(dir .. "/main.tex")
+    for _, name in ipairs({"defs.tex", "pkg.sty", "main.tex"}) do os.remove(dir .. "/" .. name) end
+    lfs.rmdir(dir)
+    equal(definitions["\\x"].def, "\\newcommand{\\x}{1}")
+    equal(definitions["\\y"].def, "\\newcommand{\\y}{2}")
+  end,
+
   ["document follows \\input and \\include, and skips a missing file"] = function()
     local dir = os.tmpname()
     os.remove(dir)

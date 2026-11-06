@@ -174,8 +174,9 @@ local function loads(command, s, i)
   local names = {}
   if command == "usepackage" or command == "RequirePackage" then
     local _, j = optional(s, i)
-    local list
-    list, i = argument(s, j or i)
+    local list, after = argument(s, j or i)
+    -- (a brace that never closes: the rest of the source is its text)
+    i = after or #s + 1
     for name in (list or ""):gmatch("[^,%s]+") do names[#names + 1] = name .. ".sty" end
   elseif command == "input" or command == "include" or command == "InputIfFileExists" then
     local j = skip_space(s, i)
@@ -199,7 +200,8 @@ end
 -- so that the last wins (except a \providecommand's, which keeps one
 -- already made); and the files it loads, which may hold more: its local
 -- packages and what it \inputs or \includes. load, if given, is called
--- with each at the place it loads, before the definitions after it
+-- with each and the command that loads it, at the place it loads, before
+-- the definitions after it
 function M.read(s, definitions, load)
   s = strip_comments(s)
   local i, loaded = 1, {}
@@ -224,7 +226,7 @@ function M.read(s, definitions, load)
       i = after
       for _, name in ipairs(names) do
         loaded[#loaded + 1] = name
-        if load then load(name) end
+        if load then load(name, command) end
       end
     end
   end
@@ -233,13 +235,20 @@ end
 
 -- the definitions in the document, the local packages it loads and the
 -- files it inputs, in the order TeX reads them: each file where it is
--- loaded, once
+-- loaded, a package once and an \input file each time, but not inside
+-- itself
 function M.document(tex_file)
-  local definitions, seen = {}, {}
-  local function visit(path)
-    local s = not seen[path] and files.read(path)
-    seen[path] = true
-    if s then M.read(s, definitions, visit) end
+  local definitions, packages, reading = {}, {}, {}
+  local function visit(path, command)
+    if command == "usepackage" or command == "RequirePackage" then
+      if packages[path] then return end
+      packages[path] = true
+    end
+    local s = not reading[path] and files.read(path)
+    if not s then return end
+    reading[path] = true
+    M.read(s, definitions, visit)
+    reading[path] = nil
   end
   visit(tex_file)
   return definitions
