@@ -37,11 +37,11 @@ end
 -- the fonts in TeX Live that a page shows for the fonts a document may set
 -- its text in: TeX Gyre's equivalents of Times (times, mathptmx, txfonts,
 -- newtx), Palatino (palatino, mathpazo, pxfonts, newpx), Helvetica
--- (helvet), Courier and the other standard PostScript fonts, with TeX
--- Gyre's own packages; and XCharter for Charter (charter, XCharter). Each
--- with its name, the font families it shows, how tex4ht's classes for
--- them start or go on (ptmri7t-, ec-qtmr-10, ntx-Italic-tlf-t1-), from the
--- fonts' file names, and its files
+-- (helvet), Courier and the other standard PostScript fonts (fouriernc's
+-- fnc too), with TeX Gyre's own packages; and XCharter for Charter
+-- (charter, XCharter). Each with its name, the font families it shows,
+-- how tex4ht's classes for them start or go on (ptmri7t-, ec-qtmr-10,
+-- ntx-Italic-tlf-t1-), from the fonts' file names, and its files
 local known = {
   gyre("termes", {"ptm", "qtm", "txr", "ntxtlf", "ntxlf", "ntxosf", "ntxtosf"},
     {"ptm", "qtm", "txr", "txb", "txi", "ntx-"}),
@@ -50,7 +50,7 @@ local known = {
   gyre("heros", {"phv", "qhv"}),
   gyre("cursor", {"pcr", "qcr"}),
   gyre("bonum", {"pbk", "qbk"}),
-  gyre("schola", {"pnc", "qcs"}),
+  gyre("schola", {"pnc", "qcs", "fnc"}, {"pnc", "qcs"}),
   gyre("adventor", {"pag", "qag"}),
   {name = "XCharter", families = {"bch", "XCharter-TLF", "XCharter-LF", "XCharter-OsF", "XCharter-TOsF"},
     classes = {"bch", "XCharter"}, files = {regular = "XCharter-Roman", bold = "XCharter-Bold",

@@ -104,11 +104,12 @@ const pageChecks = [
   },
   // (in a formula's MathML, \hat and \tilde aren't stretchy; their
   // glyph is the one without a size, and TeX's wide ones are the next
-  // three)
+  // three, in any of MathJax's fonts: TEX-S3, GP-S3, of the accent or, in
+  // TeX Gyre's, of the combining accent)
   function wideAccents(html) {
     for (const [formula] of html.matchAll(/<mjx-container[^]*?<\/mjx-container>/g)) {
       const wide = formula.match(/<mo(?![^>]*stretchy=['"]false)[^>]*>[\^~]<\/mo>/g) || [];
-      const sized = formula.match(/mjx-c(?:2C6|2DC) TEX-(?:SO|LO|S3)\b/g) || [];
+      const sized = formula.match(/mjx-c(?:2C6|2DC|302|303) [A-Z]+-(?:SO|LO|S3)\b/g) || [];
       if (sized.length < wide.length) return ["a \\widehat or \\widetilde narrower or wider than TeX's"];
     }
     return [];

@@ -1,0 +1,11 @@
+% A test for tex8web: a document in Palatino with its math (mathpazo), whose
+% page sets the math in MathJax's Pagella, also with the fonts of bbm,
+% dsfont, bboldx and mhchem, and a \widehat of the size TeX's would be.
+\documentclass{article}
+\usepackage{mathpazo}
+\usepackage{bbm,dsfont,bboldx}
+\usepackage[version=4]{mhchem}
+\begin{document}
+Math in Palatino, $\int_0^1 x^2\,dx = \frac{1}{3}$ and $\alpha + \beta$, with
+$\mathbbm{1}_A$, $\mathds{R}$, $\mathbb{Z}$, $\widehat{xy}$ and $\ce{H2O}$.
+\end{document}

@@ -463,13 +463,22 @@ const preloads = {
   'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
     'lmsans10-regular'],
   // (in Times, Helvetica and Courier: TeX Gyre's faces, for the controls
-  // too, as for the text in sans-serif)
+  // too, as for the text in sans-serif; and MathJax's Termes, as the math
+  // is in Times)
   'test-times': ['texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic',
-    'texgyreheros-regular', 'texgyrecursor-regular', 'mathjax/mjx-tex-zero', 'mathjax/mjx-tex-n'],
+    'texgyreheros-regular', 'texgyrecursor-regular', 'mathjax/mjx-gt-zero', 'mathjax/mjx-gt-n'],
   'test-sans': ['lmroman10-regular', 'lmsans10-regular', 'lmsans10-bold', 'lmsans10-oblique'],
-  'test-newtx': ['texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic', 'texgyreheros-regular'],
-  // (XCharter's, and TeX Gyre's Termes for a passage in Times)
-  'test-charter': ['XCharter-Roman', 'XCharter-Bold', 'XCharter-Italic', 'texgyretermes-regular'],
+  'test-newtx': ['texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic', 'texgyreheros-regular',
+    'mathjax/mjx-gt-zero', 'mathjax/mjx-gt-n'],
+  // (XCharter's, and TeX Gyre's Termes for a passage in Times; MathJax's
+  // TeX font, as the math is in Computer Modern)
+  'test-charter': ['XCharter-Roman', 'XCharter-Bold', 'XCharter-Italic', 'texgyretermes-regular',
+    'mathjax/mjx-tex-zero', 'mathjax/mjx-tex-n'],
+  // (MathJax's Pagella and Schola, and the fonts of bbm, dsfont and
+  // bboldx in Pagella)
+  'test-pagella': ['texgyrepagella-regular', ...['gp-zero', 'gp-brk', 'gp-n', 'gp-so', 'gp-s3', 'mb-bn', 'mb-bb', 'md-dr']
+    .map(font => `mathjax/mjx-${font}`)],
+  'test-schola': ['texgyreschola-regular', ...['zero', 'brk', 'n', 'so'].map(font => `mathjax/mjx-gs-${font}`)],
 };
 
 // the text's fonts: TeX Gyre's for Times, Helvetica and Courier, and

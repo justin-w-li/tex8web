@@ -1,9 +1,12 @@
 % A test for tex8web: a document in newtx's Times, whose fonts tex4ht names
 % after their files (ntx-Italic-tlf-t1), and TeX Gyre's Heros for its
-% sans-serif, which the page is set in.
+% sans-serif, which the page is set in; its math in Times too (newtxmath),
+% in MathJax's Termes.
 \documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage{newtxtext}
+\usepackage{newtxmath}
 \begin{document}
-Text in Times, \emph{in italics}, \textbf{in bold} and \textsf{in Heros}.
+Text in Times, \emph{in italics}, \textbf{in bold} and \textsf{in Heros},
+with $x^2$ in math.
 \end{document}

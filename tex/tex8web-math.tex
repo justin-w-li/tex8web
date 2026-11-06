@@ -12,9 +12,10 @@
 %   \relax, which MathJax doesn't have (macros often end in it)
 % - MathJax's Computer Modern font (its default, New Computer Modern, is
 %   heavier than the PDF, and its Latin Modern misplaces accents on Greek
-%   letters); display math that doesn't fit scrolls; math at the size of
-%   the text, as TeX does (rather than matching x-heights, which comes out a
-%   bit small)
+%   letters), or its TeX Gyre font for math the PDF sets in Times, Palatino
+%   or New Century Schoolbook (\web@mathfont); display math that doesn't
+%   fit scrolls; math at the size of the text, as TeX does (rather than
+%   matching x-heights, which comes out a bit small)
 % - for speed, when MathJax typesets in the browser: math typeset as it
 %   scrolls into view (ui/lazy), and no speech or braille (MathJax's
 %   semantic enrichment for them took 90% of the time, 20s for a long
@@ -33,6 +34,15 @@
         {\edef\web@extensions{\web@extensions, "\web@package"}%
          \edef\web@load{\web@load, "[tex]/\web@package"}}{}%
 }
+% (newtxmath's options for other fonts turn \iftx@ntxmath off; nc is New
+% Century Schoolbook)
+\def\web@mathfont{tex}
+\@for\web@package:=mathptmx,txfonts\do{\@ifpackageloaded\web@package{\def\web@mathfont{termes}}{}}
+\@for\web@package:=mathpazo,pxfonts,newpxmath\do{\@ifpackageloaded\web@package{\def\web@mathfont{pagella}}{}}
+\@ifpackageloaded{fouriernc}{\def\web@mathfont{schola}}{}
+\@ifpackageloaded{newtxmath}{%
+    \iftx@ntxmath\def\web@mathfont{termes}\fi
+    \iftx@nc\def\web@mathfont{schola}\fi}{}
 \edef\web@mathjax{{
     "loader": {"load": ["ui/lazy", \web@load]},
     "options": {"menuOptions": {"settings": {"enrich": false, "speech": false,
@@ -42,7 +52,7 @@
     "tex": {"tags": "none", "packages": {"[+]": [\web@extensions]},
         "macros": {"colon": "\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}",
             "relax": ""}},
-    "output": {"font": "mathjax-tex", "displayOverflow": "scroll",
+    "output": {"font": "mathjax-\web@mathfont", "displayOverflow": "scroll",
         "matchFontHeight": false}}}
 % \WebMathMacros{definitions}: macros for MathJax, in place of the
 % document's own (which macros.lua reads from its preamble and styles), for

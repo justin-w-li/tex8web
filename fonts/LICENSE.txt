@@ -28,6 +28,16 @@ Released under the Apache License 2.0, below; the TeX fonts also under
 the SIL Open Font License 1.1, below. The complete fonts:
 https://github.com/mathjax/MathJax-fonts
 
+MathJax's TeX Gyre math fonts (mathjax/mjx-gt-*, mjx-gp-*, mjx-gs-*),
+version 4.1.3, for math the document sets in Times, Palatino or New
+Century Schoolbook, from the npm packages @mathjax/mathjax-termes-font,
+@mathjax/mathjax-pagella-font and @mathjax/mathjax-schola-font.
+Copyright MathJax, Inc.; originally TeX Gyre Termes, Pagella and Schola
+Math, copyright 2012-2014 B. Jackowski, P. Strzelczyk and P. Pianowski
+(on behalf of TeX users groups). Released under the Apache License 2.0
+and the GUST Font License, both below. The complete fonts:
+https://github.com/mathjax/MathJax-fonts
+
 Changes: tex8web converted Latin Modern from OpenType to WOFF2 with
 fontTools, and, on a page whose math it typesets, cut each font down to
 the characters of the page's document with HarfBuzz (subset-font). It

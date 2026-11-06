@@ -143,7 +143,9 @@ function flatten(node) {
 // which would win over the font of a character now among them: its rule is
 // narrowed below, and the math left as it is if MathJax has changed it)
 const style = adaptor.tags(adaptor.head(document), 'style').find(s => adaptor.getAttribute(s, 'id') === 'MJX-CHTML-styles');
-const breakable = 'mjx-container[jax="CHTML"] > mjx-math.TEX-N[breakable] > * {';
+// (the font's classes start with its prefix: TEX-N, or GT-N in Termes)
+const prefix = MathJax.startup.output.font.cssFontPrefix;
+const breakable = `mjx-container[jax="CHTML"] > mjx-math.${prefix}-N[breakable] > * {`;
 const mathjaxCss = adaptor.textContent(style);
 const flat = mathjaxCss.includes(breakable) || !adaptor.tags(root, 'mjx-math').some(math => has(math, 'breakable'));
 if (!flat) console.error(`MathJax: no "${breakable}" in its styles; prerender.mjs needs updating`);
@@ -248,7 +250,7 @@ const breaks = adaptor.tags(root, 'mjx-break').length > 0
   || adaptor.tags(root, 'mjx-linestack').some(stack => has(stack, 'breakable'));
 for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: url\("([^"]+)"\)/g)) {
   const name = family.slice('MJX-'.length);
-  if (classes.has(name) || (name === 'TEX-ZERO' && classes.size) || (name === 'BRK' && breaks)) {
+  if (classes.has(name) || (name === `${prefix}-ZERO` && classes.size) || (name === 'BRK' && breaks)) {
     adaptor.insert(adaptor.node('link', { rel: 'preload', as: 'font', type: 'font/woff2', crossorigin: '',
       href: url }), stylesheet);
   }
