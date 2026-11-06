@@ -2,10 +2,10 @@
 // a wide screen, the controls' bar on a narrow screen, smooth scrolling to
 // links, footnotes lined up with their marks, the table of contents
 // following the section being read, previews of what a link on the page
-// leads to, and a closer view of pictures. page.lua and text.lua build
-// what this works on (and tex8web-head.js marks <html> tex8web-js before
-// the page is drawn), and the page reads fine without it
-// (css/tex8web.css).
+// leads to, a closer view of pictures, and a fade at the edge of what
+// scrolls sideways. page.lua and text.lua build what this works on (and
+// tex8web-head.js marks <html> tex8web-js before the page is drawn), and
+// the page reads fine without it (css/tex8web.css).
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
@@ -199,6 +199,25 @@
       });
     };
     if (notes.length) new ResizeObserver(place).observe(document.body);
+  }
+
+  // what scrolls sideways fades out at an edge where more of it is hidden
+  // (css/tex8web.css): marked, and how much is hidden on each side set,
+  // whenever the page's layout changes and as it scrolls. Only what scrolls
+  // listens, through one listener, so scrolling down the page costs nothing
+  function edges() {
+    const scrollers = [...document.querySelectorAll('mjx-container[display], div.tabular, pre')];
+    const mark = element => {
+      const hidden = element.scrollWidth - element.clientWidth;
+      element.classList.toggle('tex8web-scrolls', hidden > 0);
+      if (hidden <= 0) return;
+      element.style.setProperty('--tex8web-hidden-left', `${element.scrollLeft}px`);
+      element.style.setProperty('--tex8web-hidden-right', `${hidden - element.scrollLeft}px`);
+    };
+    if (scrollers.length) new ResizeObserver(() => scrollers.forEach(mark)).observe(document.body);
+    document.addEventListener('scroll', event => {
+      if (event.target.classList?.contains('tex8web-scrolls')) mark(event.target);
+    }, { capture: true, passive: true });
   }
 
   // the table of contents: the entry of the section being read (the last
@@ -725,6 +744,7 @@
   bar();
   smooth();
   sidenotes();
+  edges();
   contents();
   filter();
   previews();

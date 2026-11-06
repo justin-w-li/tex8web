@@ -203,40 +203,25 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 /* a tabular or verbatim too wide for a narrow screen scrolls on its own,
    as a display too wide does, rather than widening the page */
 @media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }
-/* What scrolls fades out at an edge where more of it is hidden. Each edge
-   has its own mask, a fade from that edge, moved out of the box until the
-   scroll is within --tex8web-edge of that end. One mask for both would
-   need its gradient's stops animated, which a scroll timeline can't do for
-   a gradient. So the two positions are custom properties, registered so
-   that they animate. The masks themselves come only from an animation: no
-   scroll, no active timeline, no mask. That animation ends a pixel past
-   the scroll's end, since Chrome keeps a finished one's effect once the
-   element stops scrolling. A keyboard's focus ring, which a mask would
-   hide, shows instead of the fade. The fade follows the scroll position,
-   so it isn't motion to reduce */
+/* What scrolls sideways fades out at an edge where more of it is hidden.
+   Each edge has its own mask, a fade from that edge, moved out of the box
+   until --tex8web-edge or less is hidden beyond it. tex8web-page.js marks
+   what scrolls and sets how much is hidden on each side, as it scrolls:
+   CSS scroll timelines did this too, but Safari then restyled the page on
+   every frame of scrolling. The amounts are registered so as not to be
+   inherited, so that setting them restyles one element and not the math
+   inside it. A keyboard's focus ring, which a mask would hide, shows
+   instead of the fade */
 :root { --tex8web-edge: 2.5em; }
-@property --tex8web-edge-left { syntax: '<length>'; inherits: false; initial-value: 0px; }
-@property --tex8web-edge-right { syntax: '<length>'; inherits: false; initial-value: 0px; }
-@keyframes tex8web-edges {
-    from, to {
-        mask-image: linear-gradient(to right, transparent, #000 var(--tex8web-edge)),
-            linear-gradient(to left, transparent, #000 var(--tex8web-edge));
-        mask-size: calc(100% + var(--tex8web-edge)) 100%; mask-repeat: no-repeat;
-        mask-composite: intersect; }
-}
-@keyframes tex8web-edge-left {
-    from { --tex8web-edge-left: calc(-1 * var(--tex8web-edge)); } to { --tex8web-edge-left: 0px; } }
-@keyframes tex8web-edge-right {
-    from { --tex8web-edge-right: calc(-1 * var(--tex8web-edge)); } to { --tex8web-edge-right: 0px; } }
-@supports (animation-timeline: scroll()) {
-    mjx-container[display], div.tabular, pre {
-        animation: tex8web-edges linear both, tex8web-edge-left linear both, tex8web-edge-right linear both;
-        animation-timeline: scroll(self inline);
-        animation-range: 0% calc(100% + 1px), 0px var(--tex8web-edge),
-            calc(100% - var(--tex8web-edge)) 100%;
-        mask-position: var(--tex8web-edge-left) 0, var(--tex8web-edge-right) 0; }
-    :is(mjx-container[display], div.tabular, pre):focus-visible { animation: none; }
-}
+@property --tex8web-hidden-left { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --tex8web-hidden-right { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.tex8web-scrolls {
+    mask-image: linear-gradient(to right, transparent, #000 var(--tex8web-edge)),
+        linear-gradient(to left, transparent, #000 var(--tex8web-edge));
+    mask-size: calc(100% + var(--tex8web-edge)) 100%; mask-repeat: no-repeat; mask-composite: intersect;
+    mask-position: calc(min(var(--tex8web-hidden-left), var(--tex8web-edge)) - var(--tex8web-edge)) 0,
+        calc(-1 * min(var(--tex8web-hidden-right), var(--tex8web-edge))) 0; }
+.tex8web-scrolls:focus-visible { mask-image: none; }
 /* MathJax clips each character to its box, hiding the tall line box of its
    ZERO font, which only a selection shows (output/chtml.ts). Safari gives
    each clipped element a layer, and painting a long page as it scrolls
@@ -718,7 +703,7 @@ dd.enumerate-enumitem { margin-left: 0; }
         display: none !important; }
     html body { margin-block: 0; padding-inline: 0; }
     .tex8web-sidenote { top: auto !important; }
-    mjx-container[display], div.tabular, pre { overflow: visible !important; }
+    mjx-container[display], div.tabular, pre { overflow: visible !important; mask-image: none; }
     .tcolorbox, mjx-container[display], figure, div.table, table { break-inside: avoid; }
     h1, h2, h3, h4, h5, h6 { break-after: avoid; }
 }
