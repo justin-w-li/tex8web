@@ -13,6 +13,14 @@ extensions by B. Jackowski and J. M. Nowacki (on behalf of TeX users
 groups). Released under the GUST Font License, below. The complete
 fonts: https://ctan.org/pkg/tex-gyre
 
+XCharter (XCharter-*), version 1.26, for a document set in Charter, from
+TeX Live's xcharter package. An extension of Bitstream Charter by Andrey
+V. Panov and Michael Sharpe: copyright 1989-1992 Bitstream Inc.;
+portions copyright 2009-2012 Andrey Panov, 2013-2024 Michael Sharpe.
+Free fonts under the terms of Bitstream's license, below. BITSTREAM
+CHARTER is a registered trademark of Bitstream Inc. The complete fonts:
+https://ctan.org/pkg/xcharter
+
 MathJax's fonts (mathjax/mjx-*), version 4.1.3, from the npm packages
 @mathjax/mathjax-tex-font and its extensions for bbm, bboldx, dsfont and
 mhchem. Copyright MathJax, Inc. and the authors each font names.
@@ -23,7 +31,8 @@ https://github.com/mathjax/MathJax-fonts
 Changes: tex8web converted Latin Modern from OpenType to WOFF2 with
 fontTools, and, on a page whose math it typesets, cut each font down to
 the characters of the page's document with HarfBuzz (subset-font). It
-converts TeX Gyre's fonts to WOFF2 and cuts them down the same way.
+converts TeX Gyre's and XCharter's fonts to WOFF2 and cuts them down the
+same way.
 
 ============================================================================
 
@@ -349,3 +358,18 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+============================================================================
+
+Bitstream Charter's license, as XCharter's README reproduces it
+
+(c) Copyright 1989-1992, Bitstream Inc., Cambridge, MA.
+
+You are hereby granted permission under all Bitstream propriety rights
+to use, copy, modify, sublicense, sell, and redistribute the 4
+Bitstream Charter (r) Type 1 outline fonts for any purpose and without
+restriction; provided, that this notice is left intact on all copies
+of such fonts and that Bitstream's trademark is acknowledged as shown
+below on all unmodified copies of the 4 Charter Type 1 fonts.
+
+  BITSTREAM CHARTER is a registered trademark of Bitstream Inc.

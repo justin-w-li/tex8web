@@ -52,7 +52,7 @@ The bridge also handles colors. MathJax knows only CSS's and dvips's color names
 
 **Indexes** (`index.lua`). makeindex gets each `\index`'s count in place of a page number. The counts start at 1000001, so that no number in an entry's text is taken for one. Each count becomes a link back to its `\index`, shown counted from 1. makeindex runs with `-r`, so consecutive counts stay separate. imakeidx runs nothing under tex4ht, so `tex8web-hooks.sty` records the command it would run in the `.aux`.
 
-**The other passes** color the text a `\color` declaration sets, fix spacing, put what follows an `\hfill` at the right, add links to headings and theorems, and add meta tags and the page's controls. They copy what the page needs next to it, and preload the faces its text uses: Latin Modern's, or TeX Gyre's for a document in Times and the like, by the families the build element names.
+**The other passes** color the text a `\color` declaration sets, fix spacing, put what follows an `\hfill` at the right, add links to headings and theorems, and add meta tags and the page's controls. They copy what the page needs next to it, and preload the faces its text uses: Latin Modern's, or TeX Live's for a document in Times, Charter and the like. Those are found by the families the build element names, and by the font classes in the page.
 
 ### 3. MathJax's sizes
 
@@ -71,7 +71,7 @@ MathJax's TeX input differs from TeX in a few sizes. `js/tex8web.js` sets them a
 - **Speech instead.** Each formula is `role="math"` with its speech as an `aria-label`. The speech comes from MathJax's semantic enrichment, which changes the math itself. So the page is typeset twice: the second typesetting gives the speech and is then dropped. That typesetting also adjusts the math for the speech rule engine, which would say "normal Gamma" for Γ and "raised to the down tack power" for `^\top`.
 - **Fewer elements.** Wrappers that add nothing to their children's box are removed, such as one-character tokens and `mjx-mrow` in left-aligned math. A long document goes from 67,000 elements to 40,000. A phone restyles the page as it scrolls, in time that grows with that count. test:visual checks that the page still looks like MathJax's own output.
 - **Preloaded fonts.** Without preloads, the browser fetches each font when it first needs it, then lays out the page again.
-- **Subset fonts.** MathJax's, Latin Modern's and TeX Gyre's fonts are cut to the document's characters with [subset-font](https://github.com/papandreou/subset-font). A long page's fonts go from about 380 KB to 140 KB.
+- **Subset fonts.** MathJax's, Latin Modern's, TeX Gyre's and XCharter's fonts are cut to the document's characters with [subset-font](https://github.com/papandreou/subset-font). A long page's fonts go from about 380 KB to 140 KB.
 - **No clipping.** MathJax clips each character to its box. In Safari that gives each character its own layer, which makes scrolling slow. The stylesheet removes the clip.
 
 Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped. The page then loads MathJax from jsDelivr and typesets the math in the browser.
@@ -85,7 +85,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - MathJax errors, macros MathJax doesn't know, the sizes `tex8web.js` sets, and no `NaN` in any style;
   - the table of contents beside the text, with its numbers and indents, and each level's font, with tocloft and without it (`test-tocloft.tex` and `test-report.tex`, whose computed fonts `test:visual` checks);
   - colors in dark mode, `\color` as a declaration (`test-declared.tex`), indexes, each list's lengths, alt text, each example's title and its link to the PDF beside it, the title of a page without `\maketitle`, and pictures' sizes (also with the graphics package, and after angle);
-  - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`), and the text in TeX Gyre for Times, Helvetica and Courier (`test-times.tex`, `test-newtx.tex`) or in sans-serif (`test-sans.tex`);
+  - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`), the text in TeX Gyre for Times, Helvetica and Courier (`test-times.tex`, `test-newtx.tex`), in XCharter for Charter and for a font chosen in the text (`test-charter.tex`), or in sans-serif (`test-sans.tex`);
   - what follows an `\hfill` at the right of its line, and nothing where the `\hfill` is in a box, a label or leaders (`test-hfill.tex`);
   - an article as LaTeX's standard classes set it (`test-article.tex`): lists with TeX's labels, the space around headings, the abstract's margins, a footnote's leading, the bibliography, a `\tikz` picture's crop and the fonts after it, and the LaTeX logo;
   - speech for every formula, links and files in place, unique ids, and only publishable files.

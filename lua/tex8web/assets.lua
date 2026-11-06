@@ -25,55 +25,98 @@ local sans_fonts = {
   "lmsans10-boldoblique.woff2",
 }
 
--- TeX Gyre's equivalents, in TeX Live, of the fonts a document may set its
--- text in, by font family: Times (times, mathptmx, txfonts, newtx),
--- Palatino (palatino, mathpazo, pxfonts, newpx), Helvetica (helvet),
--- Courier, the other standard PostScript fonts, and TeX Gyre's own
--- packages. With each, how tex4ht's classes for its fonts start or go on
--- (ptmri7t-, ec-qtmr-10, ntx-Italic-tlf-t1-), from the fonts' file names
-local gyre = {}
-for name, families in pairs({
-  termes = {ptm = {"ptm"}, qtm = {"qtm"}, txr = {"txr", "txb", "txi"},
-    ntxtlf = {"ntx-"}, ntxlf = {"ntx-"}, ntxosf = {"ntx-"}, ntxtosf = {"ntx-"}},
-  pagella = {ppl = {"ppl"}, pplx = {"ppl"}, pplj = {"ppl"}, qpl = {"qpl"}, pxr = {"pxr", "pxb", "pxi"},
-    zpltlf = {"zpl-"}, zpllf = {"zpl-"}, zplosf = {"zpl-"}, zpltosf = {"zpl-"}},
-  heros = {phv = {"phv"}, qhv = {"qhv"}},
-  cursor = {pcr = {"pcr"}, qcr = {"qcr"}},
-  bonum = {pbk = {"pbk"}, qbk = {"qbk"}},
-  schola = {pnc = {"pnc"}, qcs = {"qcs"}},
-  adventor = {pag = {"pag"}, qag = {"qag"}},
-}) do
-  for family, classes in pairs(families) do gyre[family] = {name = name, classes = classes} end
-end
 local shapes = {"regular", "bold", "italic", "bolditalic"}
+
+local function gyre(name, families, classes)
+  local files = {}
+  for _, shape in ipairs(shapes) do files[shape] = "texgyre" .. name .. "-" .. shape end
+  return {name = "TeX Gyre " .. name:gsub("^%l", string.upper), families = families,
+    classes = classes or families, files = files}
+end
+
+-- the fonts in TeX Live that a page shows for the fonts a document may set
+-- its text in: TeX Gyre's equivalents of Times (times, mathptmx, txfonts,
+-- newtx), Palatino (palatino, mathpazo, pxfonts, newpx), Helvetica
+-- (helvet), Courier and the other standard PostScript fonts, with TeX
+-- Gyre's own packages; and XCharter for Charter (charter, XCharter). Each
+-- with its name, the font families it shows, how tex4ht's classes for
+-- them start or go on (ptmri7t-, ec-qtmr-10, ntx-Italic-tlf-t1-), from the
+-- fonts' file names, and its files
+local known = {
+  gyre("termes", {"ptm", "qtm", "txr", "ntxtlf", "ntxlf", "ntxosf", "ntxtosf"},
+    {"ptm", "qtm", "txr", "txb", "txi", "ntx-"}),
+  gyre("pagella", {"ppl", "pplx", "pplj", "qpl", "pxr", "zpltlf", "zpllf", "zplosf", "zpltosf"},
+    {"ppl", "qpl", "pxr", "pxb", "pxi", "zpl-"}),
+  gyre("heros", {"phv", "qhv"}),
+  gyre("cursor", {"pcr", "qcr"}),
+  gyre("bonum", {"pbk", "qbk"}),
+  gyre("schola", {"pnc", "qcs"}),
+  gyre("adventor", {"pag", "qag"}),
+  {name = "XCharter", families = {"bch", "XCharter-TLF", "XCharter-LF", "XCharter-OsF", "XCharter-TOsF"},
+    classes = {"bch", "XCharter"}, files = {regular = "XCharter-Roman", bold = "XCharter-Bold",
+    italic = "XCharter-Italic", bolditalic = "XCharter-BoldItalic"}},
+}
+local by_family = {}
+for _, font in ipairs(known) do
+  for _, family in ipairs(font.families) do by_family[family] = font end
+end
 -- (Latin Modern's and Computer Modern's roman, for a document whose text
 -- is in another role: \textrm, \textbf)
 local roman_classes = {"-lmr", "-lmb", "-lmcsc", "cmr", "cmbx", "cmti", "cmsl", "cmcsc", "ecrm", "ecbx",
   "ecti", "ecsl", "eccc"}
 
--- the page's fonts for roman, sans-serif and typewriter text, each a TeX
--- Gyre font's name, its files' (texgyretermes-bold) and the start of
--- tex4ht's classes for it, where the document's family (tex8web-page.tex's
--- build element) has one; and which role the text itself is in
--- (\familydefault)
-local function roles_of(context)
+local function installed(font)
+  local file = font.files.regular .. ".otf"
+  if kpse.find_file(file, "opentype fonts") then return true end
+  log:warning(file .. " not found in TeX Live: the page shows Latin Modern for " .. font.name)
+end
+
+-- whether class is one of starts' (as selector has it)
+local function matches(class, starts)
+  for _, start in ipairs(starts) do
+    start = start:gsub("^%-", ""):gsub("%-", "%%-")
+    if class:find("^" .. start) or class:find("%-" .. start) then return true end
+  end
+end
+
+-- the page's fonts (known) for roman, sans-serif and typewriter text, where
+-- the document's family (tex8web-page.tex's build element) has one; which
+-- role the text itself is in (\familydefault); and the others whose
+-- classes the page has, from a family chosen in the text (\fontfamily)
+local function roles_of(context, document)
   local families = context.families or {}
-  local roles = {body = "roman"}
+  local roles = {body = "roman", others = {}}
   for _, role in ipairs({"mono", "sans", "roman"}) do
     if families[role] and families[role] == families.body then roles.body = role end
-    local font = gyre[families[role] or ""]
-    if font then
-      local file = "texgyre" .. font.name
-      if kpse.find_file(file .. "-regular.otf", "opentype fonts") then
-        roles[role] = {name = "TeX Gyre " .. font.name:gsub("^%l", string.upper), file = file,
-          classes = font.classes}
-      else
-        log:warning(file .. "-regular.otf not found: install TeX Live's tex-gyre for the page to be in "
-          .. "the document's font")
+    local font = by_family[families[role] or ""]
+    if font and installed(font) then roles[role] = font end
+  end
+  -- (tex4ht's font classes: ptmr7t-, ec-qtmr-10)
+  local classes = {}
+  document:traverse_elements(function(el)
+    for class in (el:get_attribute("class") or ""):gmatch("%S+") do
+      if class:find("%-$") or class:find("%-%d") then classes[#classes + 1] = class end
+    end
+  end)
+  for _, font in ipairs(known) do
+    if font ~= roles.roman and font ~= roles.sans and font ~= roles.mono then
+      for _, class in ipairs(classes) do
+        if matches(class, font.classes) then
+          if installed(font) then roles.others[#roles.others + 1] = font end
+          break
+        end
       end
     end
   end
   return roles
+end
+
+-- the fonts of roles: their roles', then the others
+local function fonts_of(roles)
+  local list = {}
+  for _, role in ipairs({"roman", "sans", "mono"}) do list[#list + 1] = roles[role] end
+  for _, font in ipairs(roles.others) do list[#list + 1] = font end
+  return list
 end
 
 -- a CSS selector of the classes that start with one of starts or have it
@@ -86,35 +129,34 @@ local function selector(starts)
   return table.concat(each, ", ")
 end
 
--- whether class is one of starts' (as selector has it)
-local function matches(class, starts)
-  for _, start in ipairs(starts) do
-    start = start:gsub("^%-", ""):gsub("%-", "%%-")
-    if class:find("^" .. start) or class:find("%-" .. start) then return true end
-  end
-end
-
--- the stylesheet's rules for those fonts: each TeX Gyre font's faces (cut
--- down as WOFF2 by prerender.mjs, or else whole, M.originals), the
--- roles' custom properties (css/tex8web.css), the text's role, and tex4ht's
--- classes for each font in its role (its htf files call Times monospace).
--- With the text in sans-serif, Latin Modern's roman classes in roman
+-- the stylesheet's rules for those fonts: each font's faces (cut down as
+-- WOFF2 by prerender.mjs, or else whole, M.originals), the roles' custom
+-- properties (css/tex8web.css), the text's role, and tex4ht's classes for
+-- each font in its role (its htf files call Times monospace) or in its
+-- own. With the text in sans-serif, Latin Modern's roman classes in roman
 local function font_css(roles)
   local css = {}
   local stacks = {roman = '"Latin Modern Roman", serif', sans = '"Latin Modern Sans", sans-serif',
     mono = '"Latin Modern Mono", monospace'}
+  local function faces(font)
+    for _, shape in ipairs(shapes) do
+      local file = font.files[shape]
+      css[#css + 1] = ('@font-face { font-family: "%s";%s%s src: url("fonts/%s.woff2") format("woff2"),'
+        .. ' url("fonts/%s.otf") format("opentype"); }'):format(font.name, shape:find("bold") and
+          " font-weight: bold;" or "", shape:find("italic") and " font-style: italic;" or "", file, file)
+    end
+  end
   for _, role in ipairs({"roman", "sans", "mono"}) do
     local font = roles[role]
     if font then
-      for _, shape in ipairs(shapes) do
-        local file = font.file .. "-" .. shape
-        css[#css + 1] = ('@font-face { font-family: "%s";%s%s src: url("fonts/%s.woff2") format("woff2"),'
-          .. ' url("fonts/%s.otf") format("opentype"); }'):format(font.name, shape:find("bold") and
-            " font-weight: bold;" or "", shape:find("italic") and " font-style: italic;" or "", file, file)
-      end
+      faces(font)
       css[#css + 1] = (':root { --tex8web-%s: "%s", %s; }'):format(role, font.name, stacks[role])
       css[#css + 1] = ("%s { font-family: var(--tex8web-%s); }"):format(selector(font.classes), role)
     end
+  end
+  for _, font in ipairs(roles.others) do
+    faces(font)
+    css[#css + 1] = ('%s { font-family: "%s"; }'):format(selector(font.classes), font.name)
   end
   if roles.body ~= "roman" then
     css[#css + 1] = ("html body { font-family: var(--tex8web-%s); }"):format(roles.body)
@@ -160,10 +202,11 @@ end
 -- .ec-lmro-10 oblique, which is the italic), css/tex8web.css's for their
 -- families, for headings and for the contents' entries (in the fonts
 -- tex8web-page.tex gives them in the stylesheet, css), and the browser's
--- for other elements; or TeX Gyre's, for a role in it (roles_of). A set of
--- font files, with the text's regular face, which the page's controls use
+-- for other elements; or another font's (roles_of), for a role in it or a
+-- class of it. A set of font files, with the text's regular face, which
+-- the page's controls use
 function M.faces(document, css, roles)
-  roles = roles or {body = "roman"}
+  roles = roles or {body = "roman", others = {}}
   -- (each rule a face, of what it sets: bold, italic and the family, mono
   -- and sans in Latin Modern, or system for the browser's monospace)
   local rules = {
@@ -211,18 +254,22 @@ function M.faces(document, css, roles)
     elseif class:find("%-lmss") or class:find("^cmss") or class:find("^ecss") then face.family = "sans"
     elseif class:find("^ptmr7t%-") then face.family = nil end
   end
-  -- (a class of a font in a role, as font_css has it)
+  -- (a class of a font in a role, or of another in roman, as font_css has
+  -- it)
   local function role_of(class)
     for _, role in ipairs({"roman", "sans", "mono"}) do
       if roles[role] and matches(class, roles[role].classes) then return role end
+    end
+    for _, font in ipairs(roles.others) do
+      if matches(class, font.classes) then return "roman", font end
     end
     if roles.body ~= "roman" and matches(class, roman_classes) then return "roman" end
   end
   local function file(face)
     if face.family == "system" then return end
     local shape = face.bold and (face.italic and "bolditalic" or "bold") or face.italic and "italic" or "regular"
-    local font = roles[face.family or "roman"]
-    if font then return font.file .. "-" .. shape .. ".woff2" end
+    local font = not face.family and face.font or roles[face.family or "roman"]
+    if font then return font.files[shape] .. ".woff2" end
     if face.family == "mono" then return "lmmono10-regular.woff2" end
     if face.family == "sans" then return "lmsans10-" .. shape:gsub("italic", "oblique") .. ".woff2" end
     return "lmroman10-" .. shape .. ".woff2"
@@ -241,8 +288,8 @@ function M.faces(document, css, roles)
     for class in (el:get_attribute("class") or ""):gmatch("%S+") do
       if class:find("^mathjax%-") then return end
       apply(classes[class])
-      local role = role_of(class)
-      if role then face.family = role ~= "roman" and role or nil end
+      local role, font = role_of(class)
+      if role then face.family, face.font = role ~= "roman" and role or nil, font end
     end
     for _, child in ipairs(el:get_children()) do
       if child:is_element() and not ({script = true, style = true})[child:get_element_name()] then
@@ -267,7 +314,8 @@ function M.copy(document, context)
   -- (their copyright, licenses and changes, which the licenses ask a copy
   -- to come with)
   add_font("LICENSE.txt")
-  local roles = roles_of(context)
+  local roles = roles_of(context, document)
+  context.roles = roles
   local sans = uses_sans(document, context, roles)
   if sans then
     for _, font in ipairs(sans_fonts) do add_font(font) end
@@ -284,10 +332,8 @@ function M.copy(document, context)
   if sans then
     for _, font in ipairs(sans_fonts) do preload(font) end
   end
-  for _, role in ipairs({"roman", "sans", "mono"}) do
-    for _, shape in ipairs(shapes) do
-      if roles[role] and prerender.available(context) then preload(roles[role].file .. "-" .. shape .. ".woff2") end
-    end
+  for _, font in ipairs(prerender.available(context) and fonts_of(roles) or {}) do
+    for _, shape in ipairs(shapes) do preload(font.files[shape] .. ".woff2") end
   end
   for _, img in ipairs(document:query_selector("img")) do
     local src = img:get_attribute("src") or ""
@@ -298,14 +344,13 @@ function M.copy(document, context)
   end
 end
 
--- TeX Gyre's fonts whole, from TeX Live, for a page that prerender.mjs
--- didn't cut them down for
+-- the fonts of context.roles (M.copy's) whole, from TeX Live, for a page
+-- that prerender.mjs didn't cut them down for
 function M.originals(context)
-  local roles = roles_of(context)
-  for _, role in ipairs({"roman", "sans", "mono"}) do
+  for _, font in ipairs(fonts_of(context.roles)) do
     for _, shape in ipairs(shapes) do
-      local file = roles[role] and roles[role].file .. "-" .. shape .. ".otf"
-      if file then M.add(kpse.find_file(file, "opentype fonts"), context.dir .. "/fonts/" .. file) end
+      local file = font.files[shape] .. ".otf"
+      M.add(kpse.find_file(file, "opentype fonts"), context.dir .. "/fonts/" .. file)
     end
   end
 end
@@ -380,7 +425,7 @@ function M.stylesheet(context)
   local i, j = css:find("/* tex8web.css */", 1, true)
   if not i then return end
   css = css:sub(1, i - 1) .. assert(files.read(context.root .. "/css/tex8web.css"))
-    .. font_css(roles_of(context)) .. css:sub(j + 1)
+    .. font_css(context.roles) .. css:sub(j + 1)
   local f = assert(io.open(path, "w"))
   f:write(M.wide_screens(M.colors_in_dark_mode(M.rules_in_text_color(css))))
   f:close()

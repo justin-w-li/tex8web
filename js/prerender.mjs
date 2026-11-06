@@ -287,10 +287,10 @@ for (const name of readdirSync(latinModern).filter(name => name.endsWith('.woff2
   const path = join(dir, 'fonts', name);
   if (existsSync(path)) fonts.push([new URL(name, latinModern), path]);
 }
-// (and TeX Gyre's, those the page's stylesheet names (assets.lua), from
-// TeX Live)
-for (const name of new Set([...read(/\.css$/).matchAll(/url\("fonts\/(texgyre\w+-\w+)\.woff2"\)/g)]
-  .map(match => match[1]))) {
+// (and TeX Live's, those the page's stylesheet names with their OpenType
+// files (assets.lua): TeX Gyre's, XCharter)
+const opentype = /url\("fonts\/([\w-]+)\.woff2"\) format\("woff2"\), url\("fonts\/\1\.otf"\)/g;
+for (const name of new Set([...read(/\.css$/).matchAll(opentype)].map(match => match[1]))) {
   const source = spawnSync('kpsewhich', [`${name}.otf`], { encoding: 'utf8' }).stdout?.trim();
   const path = join(dir, 'fonts', `${name}.woff2`);
   if (source) {

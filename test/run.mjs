@@ -468,21 +468,29 @@ const preloads = {
     'texgyreheros-regular', 'texgyrecursor-regular', 'mathjax/mjx-tex-zero', 'mathjax/mjx-tex-n'],
   'test-sans': ['lmroman10-regular', 'lmsans10-regular', 'lmsans10-bold', 'lmsans10-oblique'],
   'test-newtx': ['texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic', 'texgyreheros-regular'],
+  // (XCharter's, and TeX Gyre's Termes for a passage in Times)
+  'test-charter': ['XCharter-Roman', 'XCharter-Bold', 'XCharter-Italic', 'texgyretermes-regular'],
 };
 
-// the text's fonts: TeX Gyre's for Times, Helvetica and Courier, each in
-// its role, and tex4ht's classes for them; sans-serif for the text, when
+// the text's fonts: TeX Gyre's for Times, Helvetica and Courier, and
+// XCharter for Charter, each in its role, and tex4ht's classes for them; a
+// font chosen in the text in its own; sans-serif for the text, when
 // \familydefault is
 const families = {
   'test-times': ['@font-face { font-family: "TeX Gyre Termes"; src: url("fonts/texgyretermes-regular.woff2") format("woff2"), url("fonts/texgyretermes-regular.otf") format("opentype"); }',
     ':root { --tex8web-roman: "TeX Gyre Termes", "Latin Modern Roman", serif; }',
     ':root { --tex8web-sans: "TeX Gyre Heros", "Latin Modern Sans", sans-serif; }',
     ':root { --tex8web-mono: "TeX Gyre Cursor", "Latin Modern Mono", monospace; }',
-    '[class^="phv"], [class*="-phv"] { font-family: var(--tex8web-sans); }'],
+    '[class^="phv"], [class*="-phv"], [class^="qhv"], [class*="-qhv"] { font-family: var(--tex8web-sans); }'],
   'test-sans': ['html body { font-family: var(--tex8web-sans); }',
     '[class^="cmr"], [class*="-cmr"]'],
   'test-newtx': ['[class^="ntx-"], [class*="-ntx-"] { font-family: var(--tex8web-roman); }',
     '[class^="qhv"], [class*="-qhv"] { font-family: var(--tex8web-sans); }'],
+  'test-charter': [':root { --tex8web-roman: "XCharter", "Latin Modern Roman", serif; }',
+    '[class^="bch"], [class*="-bch"], [class^="XCharter"], [class*="-XCharter"] { font-family: var(--tex8web-roman); }',
+    '[class*="-ntx-"] { font-family: "TeX Gyre Termes"; }'],
+  // (its title's \fontfamily{bch})
+  'examples/complex': ['[class*="-XCharter"] { font-family: "XCharter"; }'],
 };
 
 // what's wrong with a built page: its log, the page and the files with it
@@ -527,8 +535,8 @@ function check(doc, result, out, aux) {
   for (const rule of families[doc.name] ?? []) {
     if (!styles.includes(rule)) problems.push(`no ${rule} among the font rules`);
   }
-  // (prerender.mjs makes TeX Gyre's, cut down)
-  for (const [, font] of styles.matchAll(/url\("fonts\/(texgyre[\w-]+\.woff2)"\)/g)) {
+  // (prerender.mjs makes TeX Live's, cut down)
+  for (const [, font] of styles.matchAll(/url\("fonts\/([\w-]+\.woff2)"\) format\("woff2"\), url/g)) {
     const size = statSync(join(out, 'fonts', font), { throwIfNoEntry: false })?.size;
     if (!(size < 60000)) problems.push(`fonts/${font} ${size ? 'not cut down' : 'missing'}`);
   }

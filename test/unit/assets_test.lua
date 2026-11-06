@@ -45,10 +45,18 @@ return {
   end,
 
   ["assets.faces: TeX Gyre's, for a font in a role, by its classes; roman in a sans-serif text"] = function()
-    local roles = {body = "sans", roman = {file = "texgyretermes", classes = {"ntx-"}}}
+    local roles = {body = "sans", others = {},
+      roman = {files = {bold = "texgyretermes-bold", italic = "texgyretermes-italic"}, classes = {"ntx-"}}}
     equal(faces('<p>a <span class="ntx-Italic-tlf-t1-">b</span> <span class="ec-lmbx-10">c</span></p>',
       ".ntx-Italic-tlf-t1-{font-style: italic; font-name: 'ntx', serif}\n.ec-lmbx-10{ font-weight: bold;}\n", roles),
       "lmsans10-regular.woff2 texgyretermes-bold.woff2 texgyretermes-italic.woff2")
+  end,
+
+  ["assets.faces: another font's, for its classes; Latin Modern's for a family inside them"] = function()
+    local roles = {body = "roman", others = {{files = {bold = "XCharter-Bold"}, classes = {"bch"}}}}
+    equal(faces('<p>a <span class="bchb8t-">b <span class="ec-lmss-10">c</span></span></p>',
+      ".bchb8t-{font-weight: bold;}\n.ec-lmss-10{}\n", roles),
+      "XCharter-Bold.woff2 lmroman10-regular.woff2 lmsans10-bold.woff2")
   end,
 
   ["assets.faces: not the math, which MathJax sets"] = function()

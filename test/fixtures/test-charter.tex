@@ -1,0 +1,9 @@
+% A test for tex8web: a document in XCharter, the charter package's Charter
+% extended, with a passage in Times chosen in the text (\fontfamily), whose
+% page shows them in XCharter and TeX Gyre's Termes.
+\documentclass{article}
+\usepackage{XCharter}
+\begin{document}
+Text in XCharter, \emph{in italics}, \textbf{in bold},
+{\fontfamily{bch}\selectfont in Charter} and {\fontfamily{qtm}\selectfont in Termes}.
+\end{document}
