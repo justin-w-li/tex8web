@@ -42,7 +42,8 @@
 }
 % a class for <html>, for a switch the stylesheet's rules read
 \clist_new:N \g__web_classes_clist
-\cs_new_protected:Npn \web@htmlclass #1 { \clist_gput_right:Nn \g__web_classes_clist {#1} }
+\cs_new_protected:Npn \web@htmlclass #1
+    { \clist_if_in:NnF \g__web_classes_clist {#1} { \clist_gput_right:Nn \g__web_classes_clist {#1} } }
 \cs_new_protected:Npn \__web_build_element: {
     \__web_text:NN \l__web_build_tl \g__web_macros_tl
     \__web_text:NN \l__web_pdf_tl \g__web_pdf_tl
@@ -406,9 +407,10 @@
 % above (whose sign only says whether the text after is indented) and
 % below, read in the text's font, as LaTeX reads them. Not for a run-in
 % heading, whose space below is negative. (tex4ht keeps one for each
-% heading with a counter)
+% heading of a class it has a .4ht for, which makes \<name> its \rdef:sec)
 \def\web@startsection#1{%
-    \ifcsname c@#1\endcsname\web@needs{no@#1}\fi
+    \edef\web@a{\expandafter\noexpand\csname rdef:sec\endcsname{#1}}%
+    \expandafter\ifx\csname#1\endcsname\web@a\web@needs{no@#1}\fi
     \edef\web@a{\noexpand\in@{\detokenize{macro:->\@startsection}}%
         {\expandafter\meaning\csname no@#1\endcsname}}%
     \web@a

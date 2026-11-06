@@ -64,6 +64,7 @@ const measured = {
   'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235',
     '--tex8web-link': 'light-dark(#FF0000, var(--tex8web-link-dark))' },
   'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, var(--tex8web-url-dark))' },
+  'test-tocentry': { '--tex8web-toc-chapter-skip': '1em' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
@@ -273,7 +274,7 @@ const colors = {
     `<span class='cmbx-10'>Theorem 1.</span>  </span>${text('#FF0000', "<span class='cmti-10'>A red theorem.</span>\n")}</p>`,
     `<p class='noindent' style='color:${dark('#0000FF')};'>Centered in blue.</p>`,
     `<p class='noindent'>${text('#0000FF', 'In a minipage.\n')}`,
-    `<ul class='tex8web-list itemize' style='${list}color:${dark('#FF0000')};'>`,
+    `<ul class='tex8web-list itemize' role='list' style='${list}color:${dark('#FF0000')};'>`,
     // (an item's label in a color set in the item before it)
     `</div></li><li style='color:${dark('#FF0000')};'><span aria-hidden='true' class='tex8web-label'>`,
     `<span class='cmr-8'>In the text’s color.</span></p></aside>`,
@@ -285,7 +286,7 @@ const colors = {
     // after its group ended, which colors nothing after it; a color never
     // closed, which leaves the footnotes in the text's color, as LaTeX's
     // \@makecol does, also one test:visual finds in the abstract it colors)
-    `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <ul class='tex8web-list itemize' style='${list}color:${dark('#0000FF')};'>`,
+    `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <ul class='tex8web-list itemize' role='list' style='${list}color:${dark('#0000FF')};'>`,
     `<div class='newtheorem' style='color:${dark('#FF0000')}; margin-top:`,
     `<p class='noindent' style='color:${dark('#FF0000')};'>Red from the box’s start.</p>`,
     `<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c' style='--tex8web-share: 0.4; color:${dark('#FF0000')};'>`,
@@ -316,18 +317,19 @@ const colors = {
 };
 
 // lists as LaTeX sets them: each label as TeX typesets it (article's bullet
-// and dash, an \item's own, enumerate's (a)), hidden from screen readers,
-// which name a list's items themselves, and each list with its own
-// lengths. Also a citation in biblatex's form, a link within the page, and
-// the bibliography's heading once in the contents, where the document adds
-// it.
-const item = label => `<li><span aria-hidden='true' class='tex8web-label'>\\s*${label}\\s*<\\/span><div>\\s*<!--[^>]*--><p class='noindent'>`;
+// and dash, an \item's own, enumerate's (a)), and each list with its own
+// lengths. Screen readers skip itemize's own bullets, which say nothing,
+// and read every other label; role='list' keeps VoiceOver reading a list
+// whose items show no marker. Also a citation in biblatex's form, a link
+// within the page, and the bibliography's heading once in the contents,
+// where the document adds it.
+const item = (label, hidden) => `<li><span ${hidden ? "aria-hidden='true' " : ''}class='tex8web-label'>\\s*${label}\\s*<\\/span><div>\\s*<!--[^>]*--><p class='noindent'>`;
 const lists = {
   'test-article': [
-    new RegExp(`<ul class='tex8web-list itemize' style='--tex8web-list-topsep: 0\\.8em; --tex8web-list-itemsep: 0\\.8em; --tex8web-list-indent: 2\\.5em; --tex8web-list-labelsep: 0\\.5em'>${item('•')}One,`),
-    new RegExp(`<ul class='tex8web-list itemize' style='[^']*--tex8web-list-indent: 2\\.2em;[^']*'>${item("<span class='[^']+'>–<\\/span>")}inside\\.`),
+    new RegExp(`<ul class='tex8web-list itemize' role='list' style='--tex8web-list-topsep: 0\\.8em; --tex8web-list-itemsep: 0\\.8em; --tex8web-list-indent: 2\\.5em; --tex8web-list-labelsep: 0\\.5em'>${item('•', true)}One,`),
+    new RegExp(`<ul class='tex8web-list itemize' role='list' style='[^']*--tex8web-list-indent: 2\\.2em;[^']*'>${item("<span class='[^']+'>–<\\/span>", true)}inside\\.`),
     new RegExp(`${item("<mjx-container aria-label='star'[^]*?")}A label of its own\\.`),
-    new RegExp(`<ol class='tex8web-list enumerate' [^>]*>${item('1\\.')}First,`),
+    new RegExp(`<ol class='tex8web-list enumerate' role='list' [^>]*>${item('1\\.')}First,`),
     new RegExp(`${item('\\(a\\)')}inside\\.`),
   ],
   // (an item's paragraphs, each a paragraph of its own; enumitem's
@@ -340,7 +342,7 @@ const lists = {
     /^(?![^]*<a href='main\.html)/,
     /<nav (?:(?!<\/nav>)[^])*>References<(?:(?!<\/nav>|>References<)[^])*<\/nav>/,
     // (with Latin Modern in T1, a bullet that is \textbullet's •)
-    new RegExp(`${item('•')}<a href='https:\\/\\/castel\\.dev\\/'>`),
+    new RegExp(`${item('•', true)}<a href='https:\\/\\/castel\\.dev\\/'>`),
   ],
 };
 
@@ -352,7 +354,8 @@ const tikz = { 'test-article': 'test-article0x.svg' };
 // only its text in the heading's id and contents entry
 const terms = {
   'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
-  'test-term': [/<h3 class='sectionHead' id='the-group-law'>/, /<a href='#the-group-law' id='[^']*'>The <span class='cmbx-10'>group\s*<\/span>\s*law<\/a>/],
+  'test-term': [/<h3 class='sectionHead' id='the-group-law'>/, /<a href='#the-group-law' id='[^']*'>The <span class='cmbx-10'>group\s*<\/span>\s*law<\/a>/,
+    /<h3 class='sectionHead' id='the-ring-law'>/, /<a href='#the-ring-law' id='[^']*'>The <span class='cmbx-10'>ring\s*<\/span>\s*law<\/a>/],
 };
 
 // links at the heads of numbered theorems and the titles of numbered or
@@ -574,9 +577,9 @@ function check(doc, result, out, aux) {
   }
   // (each abstract's, which are the same)
   if (styles.split('--tex8web-abstract-leading:').length > 2) problems.push("the abstract's leading set twice");
-  // (html4.4ht's rules for the paragraphs in an <li>, which would space
-  // and indent an item's text unlike LaTeX's)
-  if (/^li /m.test(styles)) problems.push("html4.4ht's rules for <li> in the stylesheet");
+  // (html4.4ht's rules for the paragraphs in an <li>, which other packages'
+  // lists, such as paralist's, need)
+  if (styles && !/^li p:last-child/m.test(styles)) problems.push("no html4.4ht's rules for <li>");
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
   const classes = html.match(/<html[^>]*\sclass='([^']*)'/)?.[1] ?? '';

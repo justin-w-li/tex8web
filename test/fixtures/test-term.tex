@@ -1,9 +1,13 @@
 % A test for tex8web's terms (\WebTerm, in test-term.cfg) in a heading,
-% whose id and contents entry have only the term's text.
+% whose id and contents entry have only the term's text; also for a robust
+% command's.
 \documentclass{article}
 \newcommand{\term}[1]{\textbf{#1}}
+\NewDocumentCommand\defn{m}{\textbf{#1}}
 \begin{document}
 \tableofcontents
 \section{The \term{group} law}
 A \term{group} is a set with an operation.
+\section{The \defn{ring} law}
+A \defn{ring} has two.
 \end{document}

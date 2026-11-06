@@ -261,13 +261,17 @@
 % MathJax as source, \cs is the bridge's. Written to a file, as a heading
 % is to the contents, it is only what \cs sets: the span would give the
 % heading's id (make4ht's sectionid) the letters of its TeX, and its entry
-% in the contents a term the filter would find
+% in the contents a term the filter would find. (A robust \cs's copy is
+% written as its own name, \webterm<cs>: one of letters only, which reads
+% back as one name and which sectionid leaves out of the id)
 \NewDocumentCommand\WebTerm{m}{%
-    \expandafter\NewCommandCopy\csname web@term@\string#1\endcsname#1%
-    \expandafter\def\csname web@termspan@\string#1\endcsname##1{\leavevmode
-        \HCode{<span class="tex8web-term">}\csname web@term@\string#1\endcsname{##1}\HCode{</span>}}%
-    \edef#1{\noexpand\web@term{\expandafter\noexpand\csname web@term@\string#1\endcsname}%
-        {\expandafter\noexpand\csname web@termspan@\string#1\endcsname}}%
+    \edef\web@a{\expandafter\@gobble\string#1}%
+    \expandafter\NewCommandCopy\csname webterm\web@a\endcsname#1%
+    \expandafter\edef\csname web@termspan@\web@a\endcsname##1{\noexpand\leavevmode
+        \noexpand\HCode{<span class="tex8web-term">}%
+        \expandafter\noexpand\csname webterm\web@a\endcsname{##1}\noexpand\HCode{</span>}}%
+    \edef#1{\noexpand\web@term{\expandafter\noexpand\csname webterm\web@a\endcsname}%
+        {\expandafter\noexpand\csname web@termspan@\web@a\endcsname}}%
 }
 \def\web@term{\ifx\protect\@typeset@protect\expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi}
 
@@ -315,12 +319,13 @@
     % each level's indent, number width, space above and weight: article's,
     % unless the class's \l@<level>, typeset in a box that's thrown away,
     % shows its own. The space above is the last skip as the entry's
-    % paragraph starts; and as the entry's text starts, \@tempdima is the
-    % number's width and \leftskip the indent and that, as \@dottedtocline
-    % and the standard classes' hand-written levels set them (a class that
-    % sets neither, as titletoc's entries, keeps article's). (tex4ht has a
-    % \@dottedtocline of its own, article.4ht and report.4ht; and a font
-    % loaded here would renumber those of the page's pictures)
+    % paragraph starts, not as a \makebox in it starts another. As the
+    % entry's text starts, \@tempdima is the number's width and \leftskip
+    % the indent and that, as \@dottedtocline and the standard classes'
+    % hand-written levels set them. A class that sets neither, as titletoc's
+    % entries, keeps article's. (tex4ht has a \@dottedtocline of its own,
+    % article.4ht and report.4ht; and a font loaded here would renumber
+    % those of the page's pictures)
     \def\web@tocmeasure#1#2#3#4#5{%
         \web@tocset{#1}{indent}{\the\dimexpr#2}\web@tocset{#1}{number}{\the\dimexpr#3}%
         \web@tocset{#1}{skip}{\the\dimexpr#4}\web@tocset{#1}{weight}{#5}%
@@ -328,7 +333,7 @@
         \ifdefined\@tocline\else\ifcsname l@#1\endcsname\begingroup
             \c@tocdepth\@M \everypar{}\let\selectfont\relax
             \web@tocset{#1}{skip}{0pt}\web@tocset{#1}{weight}{normal}%
-            \def\leavevmode{\web@tocset{#1}{skip}{\the\dimexpr\lastskip}\unhbox\voidb@x}%
+            \def\leavevmode{\ifvmode\web@tocset{#1}{skip}{\the\dimexpr\lastskip}\fi\unhbox\voidb@x}%
             \def\bfseries{\web@tocset{#1}{weight}{bold}}%
             \def\@dottedtocline##1##2##3##4##5{\leavevmode
                 \leftskip##2\relax \@tempdima##3\relax \advance\leftskip\@tempdima ##4}%
@@ -398,25 +403,37 @@
 % \newlist: html4.4ht's grid of labels and items (as enumitem has it), each
 % label as TeX typesets it rather than the browser's, with each list's own
 % lengths, set by the first \item, where tex4ht opens the list (latex.4ht).
-% A list is a ul or an ol, whose label screen readers skip, since they
-% name the items themselves; or, for enumitem's description kind, a dl.
+% A list is a ul or an ol; or, for enumitem's description kind, a dl.
+% Screen readers skip a ul's own label, a bullet, which says nothing, and
+% read any other. (WebKit reads a list whose items show no marker as no
+% list, unless its role says so)
 % #3 gives its element as the list opens: tex4ht opens it in \everypar,
 % maybe in a group, so the element and the item's end are kept globally.
 % (tex4ht's names need : a letter)
 \catcode58 11
-\def\web@item@ul{<li><span class="tex8web-label" aria-hidden="true">}
+\def\web@role@ul{ role="list"}
+\def\web@item@ul{<li><span class="tex8web-label"\web@ownlabel>}
 \def\web@label@ul{</span><div\Hnewline>}
 \def\web@end@ul{</div></li>}
-\let\web@item@ol\web@item@ul \let\web@label@ol\web@label@ul \let\web@end@ol\web@end@ul
+\let\web@role@ol\web@role@ul
+\def\web@item@ol{<li><span class="tex8web-label">}
+\let\web@label@ol\web@label@ul \let\web@end@ol\web@end@ul
+\let\web@role@dl\empty
 \def\web@item@dl{<div><dt>}
 \def\web@label@dl{</dt><dd\Hnewline>}
 \def\web@end@dl{</dd></div>}
 \let\web@listtag\empty
+% (whether an \item has the list's own label: LaTeX's \@item clears
+% \if@noitemarg as it starts, before tex4ht opens the item)
+\let\web@ownlabel\empty
+\let\web@item\@item
+\def\@item{\if@noitemarg\gdef\web@ownlabel{ aria-hidden="true"}%
+    \else\global\let\web@ownlabel\empty\fi \web@item}
 \def\web@configurelist#1#2#3{%
     \ConfigureList{#1}
         {\EndP\PushMacro\web@listtag \xdef\web@listtag{#3}%
          \edef\web@list{\noexpand\HCode{<\web@listtag\space\noexpand\a:LRdir
-             class="tex8web-list #2"
+             class="tex8web-list #2"\csname web@role@\web@listtag\endcsname
              style="--tex8web-list-topsep: \web@em\topsep;
              --tex8web-list-itemsep: \web@em{\dimexpr\itemsep+\parsep\relax};
              --tex8web-list-indent: \web@em\leftmargin;
@@ -440,8 +457,9 @@
 \web@configurelist{enumerate}{enumerate}{ol}
 \@ifpackageloaded{enumitem}{%
     % (html4.4ht's own names the list last made, not this one. enumitem's
-    % \enit@type, which \enit@prelist sets, is 0 for its enumerate kind,
-    % 1 for itemize, 2 for description)
+    % \enit@type is 0 for its enumerate kind, 1 for itemize, 2 for
+    % description. It exists only once a list is made, so the guard checks
+    % the name of its setter, \enit@prelist)
     \web@needs{enit@prelist}%
     \def\web@newlist#1{\web@configurelist{#1}{enumitem-#1}
         {\ifcase\enit@type ol\or ul\else dl\fi}}%

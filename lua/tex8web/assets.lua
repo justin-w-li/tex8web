@@ -409,14 +409,12 @@ function M.wide_screens(css)
 end
 
 -- css/tex8web.css, where tex8web-core.tex marks its place in the document's
--- stylesheet. Without html4.4ht's rules for the paragraphs in an <li>,
--- which would space and indent a list item's text unlike LaTeX's
--- (tex8web-text.tex's lists)
+-- stylesheet
 function M.stylesheet(context)
   local path = context.dir .. "/" .. context.input .. ".css"
   local css = assert(files.read(path))
   local i, j = assert(css:find("/* tex8web.css */", 1, true))
-  css = css:sub(1, i - 1):gsub("\nli [^\n]*", "") .. assert(files.read(context.root .. "/css/tex8web.css"))
+  css = css:sub(1, i - 1) .. assert(files.read(context.root .. "/css/tex8web.css"))
     .. font_css(context.roles) .. css:sub(j + 1)
   local f = assert(io.open(path, "w"))
   f:write(M.wide_screens(M.colors_in_dark_mode(M.rules_in_text_color(css))))

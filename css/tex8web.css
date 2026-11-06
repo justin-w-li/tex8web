@@ -490,6 +490,10 @@ p:has(.tex8web-hfill) { display: flow-root; }
 .tex8web-list > * + * { margin-top: var(--tex8web-list-itemsep); }
 .tex8web-list > * > :first-child { justify-self: end; white-space: nowrap; }
 .tex8web-list > * > :last-child { margin-left: 0; }
+/* (html4.4ht's rules for an li's paragraphs, which other packages' lists
+   keep, would space and indent an item's text unlike LaTeX's) */
+.tex8web-list > li > div:last-child, .tex8web-list > li > div > p:last-child { margin-bottom: 0; }
+.tex8web-list > li > div > p.indent { text-indent: var(--tex8web-parindent, 0); }
 /* (LaTeX adds the larger of a list's space below and the next item's) */
 .tex8web-list > * > :last-child > .tex8web-list:last-child { margin-bottom: 0; }
 /* (an item in a preview, tex8web-page.js's, without its list's marker) */
