@@ -293,25 +293,24 @@
 \web@toc{subsubsection}
 \web@toc{paragraph}
 \web@toc{subparagraph}
+% (each value, of a level and a name, as \web@toc@<level>@<name>)
+\def\web@tocset#1#2#3{\expandafter\xdef\csname web@toc@#1@#2\endcsname{#3}}
+\def\web@tocget#1#2{\csname web@toc@#1@#2\endcsname}
+\def\web@toctop{section}
+\ifdefined\c@chapter\def\web@toctop{chapter}\fi
 \ifdefined\cftsecnumwidth
-    \ifdefined\c@chapter\let\web@topindent\cftchapindent\else\let\web@topindent\cftsecindent\fi
-    \def\web@tocindent#1{\web@em{\dimexpr#1-\web@topindent\relax}}%
-    \web@Css{:root { --tex8web-toc-section-number: \web@em\cftsecnumwidth;
-        --tex8web-toc-subsection-indent: \web@tocindent\cftsubsecindent;
-        --tex8web-toc-subsection-number: \web@em\cftsubsecnumwidth;
-        --tex8web-toc-subsubsection-indent: \web@tocindent\cftsubsubsecindent;
-        --tex8web-toc-subsubsection-number: \web@em\cftsubsubsecnumwidth;
-        --tex8web-toc-paragraph-indent: \web@tocindent\cftparaindent;
-        --tex8web-toc-paragraph-number: \web@em\cftparanumwidth;
-        --tex8web-toc-subparagraph-indent: \web@tocindent\cftsubparaindent;
-        --tex8web-toc-subparagraph-number: \web@em\cftsubparanumwidth;
-        --tex8web-toc-section-skip: \web@em\cftbeforesecskip;
-        --tex8web-toc-subsection-skip: \web@em\cftbeforesubsecskip; }}
-    \ifdefined\c@chapter
-        \web@Css{:root { --tex8web-toc-chapter-number: \web@em\cftchapnumwidth;
-            --tex8web-toc-section-indent: \web@tocindent\cftsecindent;
-            --tex8web-toc-chapter-skip: \web@em\cftbeforechapskip; }}
-    \fi
+    % tocloft's indent, number width and space above, for a level and
+    % tocloft's name for it
+    \def\web@tocloft#1#2{%
+        \web@tocset{#1}{indent}{\the\csname cft#2indent\endcsname}%
+        \web@tocset{#1}{number}{\the\csname cft#2numwidth\endcsname}%
+        \web@tocset{#1}{skip}{\the\dimexpr\csname cftbefore#2skip\endcsname}}
+    \ifdefined\c@chapter\web@tocloft{chapter}{chap}\fi
+    \web@tocloft{section}{sec}
+    \web@tocloft{subsection}{subsec}
+    \web@tocloft{subsubsection}{subsubsec}
+    \web@tocloft{paragraph}{para}
+    \web@tocloft{subparagraph}{subpara}
 \else
     % each level's indent, number width, space above and weight: article's,
     % unless the class's \l@<level>, typeset in a box that's thrown away,
@@ -322,8 +321,6 @@
     % sets neither, as titletoc's entries, keeps article's). (tex4ht has a
     % \@dottedtocline of its own, article.4ht and report.4ht; and a font
     % loaded here would renumber those of the page's pictures)
-    \def\web@tocset#1#2#3{\expandafter\xdef\csname web@toc@#1@#2\endcsname{#3}}
-    \def\web@tocget#1#2{\csname web@toc@#1@#2\endcsname}
     \def\web@tocmeasure#1#2#3#4#5{%
         \web@tocset{#1}{indent}{\the\dimexpr#2}\web@tocset{#1}{number}{\the\dimexpr#3}%
         \web@tocset{#1}{skip}{\the\dimexpr#4}\web@tocset{#1}{weight}{#5}%
@@ -341,35 +338,33 @@
             \@tempdima-\maxdimen \leftskip\z@
             \setbox\z@\vbox{\csname l@#1\endcsname{\web@tocentry}{}}%
         \endgroup\fi\fi}
-    \def\web@tocindent#1{\web@em{\dimexpr\web@tocget{#1}{indent}-\web@tocget\web@toctop{indent}\relax}}
-    \def\web@toctop{section}
-    \ifdefined\c@chapter
-        \def\web@toctop{chapter}%
-        \web@tocmeasure{chapter}{0pt}{1.5em}{1em}{bold}%
-    \fi
+    \ifdefined\c@chapter\web@tocmeasure{chapter}{0pt}{1.5em}{1em}{bold}\fi
     \web@tocmeasure{section}{0pt}{1.5em}{1em}{bold}
     \web@tocmeasure{subsection}{1.5em}{2.3em}{0pt}{normal}
     \web@tocmeasure{subsubsection}{3.8em}{3.2em}{0pt}{normal}
     \web@tocmeasure{paragraph}{7em}{4.1em}{0pt}{normal}
     \web@tocmeasure{subparagraph}{10em}{5em}{0pt}{normal}
-    \web@Css{:root { --tex8web-toc-section-number: \web@em{\web@tocget{section}{number}};
-        --tex8web-toc-subsection-indent: \web@tocindent{subsection};
-        --tex8web-toc-subsection-number: \web@em{\web@tocget{subsection}{number}};
-        --tex8web-toc-subsubsection-indent: \web@tocindent{subsubsection};
-        --tex8web-toc-subsubsection-number: \web@em{\web@tocget{subsubsection}{number}};
-        --tex8web-toc-paragraph-indent: \web@tocindent{paragraph};
-        --tex8web-toc-paragraph-number: \web@em{\web@tocget{paragraph}{number}};
-        --tex8web-toc-subparagraph-indent: \web@tocindent{subparagraph};
-        --tex8web-toc-subparagraph-number: \web@em{\web@tocget{subparagraph}{number}};
-        --tex8web-toc-section-skip: \web@em{\web@tocget{section}{skip}};
-        --tex8web-toc-subsection-skip: \web@em{\web@tocget{subsection}{skip}};
-        --tex8web-toc-section-weight: \web@tocget{section}{weight}; }}
+    \web@Css{:root { --tex8web-toc-section-weight: \web@tocget{section}{weight}; }}
     \ifdefined\c@chapter
-        \web@Css{:root { --tex8web-toc-chapter-number: \web@em{\web@tocget{chapter}{number}};
-            --tex8web-toc-section-indent: \web@tocindent{section};
-            --tex8web-toc-chapter-skip: \web@em{\web@tocget{chapter}{skip}};
-            --tex8web-toc-chapter-weight: \web@tocget{chapter}{weight}; }}
+        \web@Css{:root { --tex8web-toc-chapter-weight: \web@tocget{chapter}{weight}; }}
     \fi
+\fi
+\def\web@tocindent#1{\web@em{\dimexpr\web@tocget{#1}{indent}-\web@tocget\web@toctop{indent}\relax}}
+\web@Css{:root { --tex8web-toc-section-number: \web@em{\web@tocget{section}{number}};
+    --tex8web-toc-subsection-indent: \web@tocindent{subsection};
+    --tex8web-toc-subsection-number: \web@em{\web@tocget{subsection}{number}};
+    --tex8web-toc-subsubsection-indent: \web@tocindent{subsubsection};
+    --tex8web-toc-subsubsection-number: \web@em{\web@tocget{subsubsection}{number}};
+    --tex8web-toc-paragraph-indent: \web@tocindent{paragraph};
+    --tex8web-toc-paragraph-number: \web@em{\web@tocget{paragraph}{number}};
+    --tex8web-toc-subparagraph-indent: \web@tocindent{subparagraph};
+    --tex8web-toc-subparagraph-number: \web@em{\web@tocget{subparagraph}{number}};
+    --tex8web-toc-section-skip: \web@em{\web@tocget{section}{skip}};
+    --tex8web-toc-subsection-skip: \web@em{\web@tocget{subsection}{skip}}; }}
+\ifdefined\c@chapter
+    \web@Css{:root { --tex8web-toc-chapter-number: \web@em{\web@tocget{chapter}{number}};
+        --tex8web-toc-section-indent: \web@tocindent{section};
+        --tex8web-toc-chapter-skip: \web@em{\web@tocget{chapter}{skip}}; }}
 \fi
 
 % a table of contents a document makes with \@starttoc{toc} itself (in a box,
