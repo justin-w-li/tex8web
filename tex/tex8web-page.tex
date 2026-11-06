@@ -312,6 +312,8 @@
         \global\let\web@labelsep\relax
         \ifcsname ttls@#1\endcsname
             \expandafter\expandafter\expandafter\web@titlespacing\csname ttls@#1\endcsname
+        \else
+            \web@startsection{#1}%
         \fi
         \setbox0\vbox{\web@font
             \ifx\web@spacing\relax\else
@@ -372,6 +374,26 @@
     \edef\web@after{\the\dimexpr\@tempskipa}%
     \edef\web@aftertext{\web@em\web@after}%
     \global\let\web@spacing\@empty}
+% without titlesec, the class's \@startsection{name}{level}{indent}{before}
+% {after}{style}, which tex4ht keeps as \no@<name> (latex.4ht): the space
+% above (whose sign only says whether the text after is indented) and
+% below, read in the text's font, as LaTeX reads them. Not for a run-in
+% heading, whose space below is negative
+\def\web@startsection#1{%
+    \edef\web@a{\noexpand\in@{\detokenize{macro:->\@startsection}}%
+        {\expandafter\meaning\csname no@#1\endcsname}}%
+    \web@a
+    \ifin@\expandafter\expandafter\expandafter\web@startsectionskips\csname no@#1\endcsname\fi}
+\def\web@startsectionskips#1#2#3#4#5#6#7{%
+    \@tempskipa#5\relax
+    \ifdim\@tempskipa<\z@ \@tempskipa-\@tempskipa \fi
+    \@tempskipb#6\relax
+    \ifdim\@tempskipb>\z@
+        \edef\web@before{\the\dimexpr\@tempskipa}%
+        \edef\web@after{\the\dimexpr\@tempskipb}%
+        \edef\web@aftertext{\web@em\web@after}%
+        \global\let\web@spacing\@empty
+    \fi}
 % #2 if the heading's format (\web@font) holds the command #1
 \newcommand\web@formathas[2]{%
     \def\web@a{\in@#1}\expandafter\web@a\expandafter{\web@font}\ifin@#2\fi}
@@ -441,15 +463,29 @@
         --tex8web-pdf-leading: \web@ratio\baselineskip;
         --tex8web-parindent: \web@em\parindent; --tex8web-parskip: \web@em\parskip;
         --tex8web-justify: justify; --tex8web-hyphens: auto; }}}
+% A footnote's leading as in the PDF, as the abstract's below
+\begingroup
+    \dimen@\baselineskip
+    \footnotesize
+    \web@Css{:root { --tex8web-footnote-leading:
+        \strip@pt\dimexpr\baselineskip*65536/\dimen@\relax; }}
+\endgroup
 % The abstract's leading as in the PDF, a fraction of the text's: tex4ht
 % sets \small as a span, which leaves the paragraph's own line height at the
-% text's. (The class's \abstract sets the size)
+% text's. And its margins, in ems of the text, when it is a list, as
+% article's quotation is. (The class's \abstract sets the size)
 \AtBeginDocument{\ifdefined\abstract
     \let\web@abstract\abstract
     \renewcommand\abstract{%
         \dimen@\baselineskip
+        \edef\web@a{\f@size pt}%
         \web@abstract
         \web@Css{:root { --tex8web-abstract-leading:
-            \strip@pt\dimexpr\baselineskip*65536/\dimen@\relax; }}}\fi}
+            \strip@pt\dimexpr\baselineskip*65536/\dimen@\relax; }}%
+        \ifnum\@listdepth>\z@
+            \web@Css{:root {
+                --tex8web-abstract-left: \strip@pt\dimexpr\leftmargin*65536/\dimexpr\web@a\relax\relax em;
+                --tex8web-abstract-right: \strip@pt\dimexpr\rightmargin*65536/\dimexpr\web@a\relax\relax em; }}%
+        \fi}\fi}
 
 \makeatother

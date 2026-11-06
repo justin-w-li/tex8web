@@ -1,0 +1,43 @@
+% A test of tex8web on an article as LaTeX's standard classes set it, with no
+% package for its layout: the abstract, headings, lists, a figure's caption,
+% a footnote, an inline TikZ picture, the LaTeX logo and a bibliography.
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{hyperref}
+\title{An article}
+\author{Someone}
+\begin{document}
+\maketitle
+\begin{abstract}
+A short abstract.
+\end{abstract}
+\section{Lists}
+Text with a footnote.\footnote{A note, \emph{emphasized}.}
+\begin{itemize}
+    \item One,
+    \begin{itemize}
+        \item inside.
+    \end{itemize}
+    \item[$\star$] A label of its own.
+\end{itemize}
+\begin{enumerate}
+    \item First,
+    \begin{enumerate}
+        \item inside.
+    \end{enumerate}
+\end{enumerate}
+\begin{description}
+    \item[Term] A description long enough to run onto a second line, which
+    \LaTeX\ indents by the list's left margin, as it does every item.
+\end{description}
+\subsection{Pictures}
+A ball \tikz{\fill (0,0) circle (0.5);} in the text, as cited in \cite{book}.
+\begin{figure}
+    \centering
+    \rule{1cm}{1cm}
+    \caption{A square.}
+\end{figure}
+\begin{thebibliography}{9}
+\bibitem{book} A.~Author. \emph{A Book}. 2000.
+\end{thebibliography}
+\end{document}

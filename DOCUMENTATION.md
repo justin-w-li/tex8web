@@ -117,8 +117,12 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 | `--tex8web-margin`, `--tex8web-gap` | the side columns' width and the gap around them, in `em` or `rem`. A screen is "wide" when the text and both columns fit. |
 | `--tex8web-title-size`, `--tex8web-section-size`, … `--tex8web-subparagraph-size` | heading sizes; with chapters, also `--tex8web-part-size` and `--tex8web-chapter-size` |
 | `--tex8web-<heading>-labelsep` | the space after a heading's number |
-| `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align`, `-before`, `-after` | a heading's font and spacing, with titlesec |
-| `--tex8web-list-sep`, `--tex8web-item-sep` | list spacing; enumitem's lists have their own `--tex8web-enumitem-*` |
+| `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | a heading's font, with titlesec |
+| `--tex8web-<heading>-before`, `-after` | the space above and below a heading, from titlesec or the class |
+| `--tex8web-list-sep`, `--tex8web-item-sep`, `--tex8web-leftmargin` | a description's spacing and indent; other lists have their own `--tex8web-list-*` on their element |
+| `--tex8web-bibitem-sep`, `--tex8web-biblabelsep` | the bibliography's space between entries, and after their labels |
+| `--tex8web-footnote-leading`, `--tex8web-abstract-leading` | the line spacing of footnotes and the abstract, as a multiple of the text's |
+| `--tex8web-abstract-left`, `--tex8web-abstract-right` | the abstract's margins |
 | `--tex8web-framed-sep` | the space above and below framed's boxes |
 | `--tex8web-toc-<level>-indent`, `--tex8web-toc-<level>-number` | the table of contents' indents and number widths |
 | `--tex8web-toc-<level>-family`, `-weight`, `-style`, `-variant`, `-size` | an entry's font, with tocloft; the size is a multiple of the text's |
@@ -138,7 +142,9 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 **Finding.** A field at the top of the table of contents finds headings, numbered theorems and boxes, and terms (`\WebTerm`) as the reader types. Case, accents and math styles don't matter, and a Greek letter is found by its TeX name (`sigma` finds σ). The arrow keys and Enter choose a result.
 
-**Headings** keep the PDF's sizes and the space after their numbers. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
+**Headings** keep the PDF's sizes, the space above and below them, and the space after their numbers. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
+
+**Lists** keep the PDF's labels, as TeX sets them, and each list's indent and spacing.
 
 **Footnotes.** On a wide screen, a footnote sits beside the paragraph, list or theorem with its mark. On a narrow screen, it sits below that paragraph, list or theorem. A footnote in a table, figure, box or formula stays at the end of the page.
 
@@ -198,7 +204,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **`\color` for the whole document**, in the preamble or in `\AtBeginDocument`, isn't followed. A `\normalcolor` inside a colored group doesn't bring back the text's color.
 - **tocloft's fonts for lists of figures and tables**, `\cftfigfont` and `\cfttabfont`, aren't followed. Those lists stay in the text's font.
 - **The QED box** of an amsthm proof sits at the right, in a display's tag after `\qedhere` as in the PDF. Not followed: with a `\tag` of the display's own the proof ends with its box below the display, as it does after `$$ $$` and `displaymath`; in `multline` the box goes under the number, not at the end of the last line. A `\qedsymbol` that isn't math or text MathJax can read, such as `\ensuremath{...}`, shows in red in a display.
-- **enumitem.** Labels are right-aligned and hang into the margin. `align=left`, `wide` and `itemindent` aren't followed.
+- **enumitem.** `align=left`, `wide` and `itemindent` aren't followed: labels are right-aligned and hang into the margin, as LaTeX's own are.
 - **A TikZ picture in display math**, such as a `tikzcd`, is drawn as a picture together with the rest of that display's math.
 - **Delimiters and radicals** can differ slightly in size, since MathJax picks them from its own font.
 - **Prerendered math is laid out by estimates** where a browser would measure, such as text in math that MathJax has no glyphs for. A box can come out a pixel or so off.

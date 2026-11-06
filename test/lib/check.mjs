@@ -149,8 +149,8 @@ const pageChecks = [
     for (const [, id] of html.matchAll(/ id=['"]([^'"]+)['"]/g)) (seen.has(id) ? repeated : seen).add(id);
     return repeated.size ? [`repeated ids: ${[...repeated].slice(0, 5).join(', ')}`] : [];
   },
-  function enumitemLengths(html) {
-    return /<dl(?![^>]*style=)[^>]*class=['"]enumerate-enumitem/.test(html) ? ['an enumitem list without its lengths'] : [];
+  function listLengths(html) {
+    return /<dl(?![^>]*style=)[^>]*class=['"]tex8web-list/.test(html) ? ['a list without its lengths'] : [];
   },
   // (tex4ht's made-up alt text, which a screen reader would read)
   function altText(html) {

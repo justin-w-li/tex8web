@@ -59,6 +59,15 @@ const measured = {
   'test-likepdf': { '--tex8web-pdf-size': '10.95pt', '--tex8web-pdf-leading': '1.242',
     '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em', '--tex8web-justify': 'justify',
     '--tex8web-hyphens': 'auto' },
+  // (an article without titlesec: its \@startsection's space around a
+  // section, 3.5ex and 2.3ex of the text, and a subsection, 3.25ex and
+  // 1.5ex, in the heading's ems; the abstract's quotation's margins; and
+  // \footnotesize's leading, 9.5pt over 12pt)
+  'test-article': { '--tex8web-section-before': '1.0465em', '--tex8web-section-after': '0.6877em',
+    '--tex8web-subsection-before': '1.16609em', '--tex8web-subsection-after': '0.5382em',
+    '--tex8web-abstract-left': '2.5em', '--tex8web-abstract-right': '2.5em',
+    '--tex8web-footnote-leading': '0.79167', '--tex8web-biblabelsep': '0.5em',
+    '--tex8web-leftmargin': '2.5em' },
   // (tocloft's \cft<level>font: \Large\scshape; \normalfont\itshape; \itshape;
   // \bfseries; \large\sffamily; \ttfamily; \slshape)
   'test-tocloft': { '--tex8web-toc-part-size': '1.44', '--tex8web-toc-part-variant': 'small-caps',
@@ -175,6 +184,10 @@ const contents = {
 // the text in its own font, after font commands the PDF keeps in a group:
 // a \contentsname in small capitals, and an \intertext in italics
 const fonts = {
+  // (and after a \tikz picture, a footnote's emphasis; the LaTeX logo's
+  // letters, each where the stylesheet moves it)
+  'test-article': [/<span class='cmti-8'>emphasized<\/span>/,
+    /<span class='tex8web-latex'>L<span class='tex8web-a'>A<\/span><span class='tex8web-tex'>T<span class='tex8web-e'>E<\/span>X<\/span><\/span>/],
   'test-fonts': [/<p class='noindent'>The text, in its own font\./,
     /<span class='tex8web-intertext'>Another note\.\s*<\/span>/],
 };
@@ -187,6 +200,8 @@ const fonts = {
 const lightDark = (color, l) => `light-dark\\(${color}, oklch\\(from ${color} ${l} c h\\)\\)`;
 const dark = hex => `light-dark(${hex}, oklch(from ${hex} max(l, 1 - l) c h))`;
 const text = (hex, html) => `<span style='color:${dark(hex)};'>${html}</span>`;
+// (a list's own lengths, before its color)
+const list = '--tex8web-list-topsep: 0.8em; --tex8web-list-itemsep: 0.8em; --tex8web-list-indent: 2.5em; --tex8web-list-labelsep: 0.5em; ';
 const colors = {
   'test-color': [
     new RegExp(`<span style='color:${lightDark('#000080', 'max\\(l, 1 - l\\)')};'>navy</span>`),
@@ -232,7 +247,7 @@ const colors = {
     `<span class='cmbx-10'>Theorem 1.</span>  </span>${text('#FF0000', "<span class='cmti-10'>A red theorem.</span>\n")}</p>`,
     `<p class='noindent' style='color:${dark('#0000FF')};'>Centered in blue.</p>`,
     `<p class='noindent'>${text('#0000FF', 'In a minipage.\n')}`,
-    `<ul class='itemize1' style='color:${dark('#FF0000')};'>`,
+    `<dl class='tex8web-list itemize' style='${list}color:${dark('#FF0000')};'>`,
     `<span class='cmr-8'>In the text’s color.</span></p></aside>`,
     `and <a href='https://example.com'>a link</a>, by <a href='#x1-1001r1'>${text('#008080', 'theorem')}`,
     `In the box’s colors, ${text('#FF0000', 'and red')}.</p>`,
@@ -240,7 +255,7 @@ const colors = {
     // group tex4ht ends after the box; a theorem and minipages wholly in a
     // color; a float, which LaTeX sets in the text's color; a box copied
     // after its group ended, which colors nothing after it)
-    `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <ul class='itemize1' style='color:${dark('#0000FF')};'>`,
+    `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <dl class='tex8web-list itemize' style='${list}color:${dark('#0000FF')};'>`,
     `<div class='newtheorem' style='color:${dark('#FF0000')};margin-top:`,
     `<p class='noindent' style='color:${dark('#FF0000')};'>Red from the box’s start.</p>`,
     `<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c' style='--tex8web-share: 0.4; color:${dark('#FF0000')};'>`,
@@ -267,6 +282,34 @@ const colors = {
     /^(?![^]*#TBL-2-(?:1|3|5)-\{)/,
   ],
 };
+
+// lists as LaTeX sets them, each label as TeX typesets it (article's
+// bullet and dash, \item's own, enumerate's (a)) and each list with its
+// own lengths; a citation in biblatex's form, a link within the page; and
+// the bibliography's heading once in the contents, where the document
+// adds it
+const lists = {
+  'test-article': [
+    /<dl class='tex8web-list itemize' style='--tex8web-list-topsep: 0\.8em; --tex8web-list-itemsep: 0\.8em; --tex8web-list-indent: 2\.5em; --tex8web-list-labelsep: 0\.5em'><dt>\s*• <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>One,/,
+    /<dl class='tex8web-list itemize' style='[^']*--tex8web-list-indent: 2\.2em;[^']*'><dt>\s*<span class='[^']+'>–<\/span> <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>inside\./,
+    /<dt>\s*<mjx-container aria-label='star'[^]*?<\/dt><dd>\s*<!--[^>]*--><p class='noindent'>A label of its own\./,
+    /<dl class='tex8web-list enumerate' [^>]*><dt>\s*1\. <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>First,/,
+    /<dt>\s*\(a\) <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>inside\./,
+  ],
+  // (an item's paragraphs, each a paragraph of its own)
+  'test': [/<p class='noindent'>Bullet with a second paragraph\.\s*<\/p><!--[^>]*--><p class='noindent'>The second paragraph\./],
+  'examples/complex': [
+    /see \[<a id='[^']*'><\/a><a id='[^']*'><\/a><a href='#X0-evanchen'>1<\/a>/,
+    /^(?![^]*<a href='main\.html)/,
+    /<nav (?:(?!<\/nav>)[^])*>References<(?:(?!<\/nav>|>References<)[^])*<\/nav>/,
+    // (with Latin Modern in T1, a bullet that is \textbullet's •)
+    /<dt>\s*• <\/dt><dd>\s*<!--[^>]*--><p class='noindent'><a href='https:\/\/castel\.dev\/'>/,
+  ],
+};
+
+// a \tikz picture as wide as what it draws: a circle at its origin, which
+// tex4ht's SVG (dvisvgm's, scaled 1.4) centers on it
+const tikz = { 'test-article': 'test-article0x.svg' };
 
 // a term (\WebTerm), with its id for the contents' filter
 const terms = {
@@ -335,7 +378,7 @@ const qed = {
     new RegExp(`${inProof('Plain')}${box}`),
     new RegExp(`${inProof('Display, no qedhere')}<\\/mjx-container><\\/span>\\s*${box}`),
     new RegExp(`${inProof('Text')}${box}`),
-    new RegExp(`${inProof('List')}<dd[^>]*>Two\\.\\s*${box}`),
+    new RegExp(`${inProof('List')}<dd[^>]*>\\s*(?:<!--[^>]*--><p[^>]*>)?Two\\.\\s*${box}`),
     // (ten squares: six tags, four boxes)
     /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){10}$/,
   ],
@@ -444,6 +487,15 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of qed[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} around the QED boxes`);
+  }
+  for (const pattern of lists[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the lists`);
+  }
+  if (tikz[doc.name]) {
+    const svg = existsSync(join(out, tikz[doc.name])) ? readFileSync(join(out, tikz[doc.name]), 'utf8') : '';
+    const [x, , width] = (svg.match(/viewBox='([^']*)'/)?.[1] ?? '').split(' ').map(Number);
+    const at = 1.4 * Number(svg.match(/translate\(([^,]+),/)?.[1]);
+    if (!(Math.abs(x + width / 2 - at) < 0.1)) problems.push(`${tikz[doc.name]} isn't centered on its circle`);
   }
   for (const pattern of terms[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the terms`);

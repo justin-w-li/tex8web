@@ -62,6 +62,30 @@
     \HLet\@@@setcref\web@setcref
 }{}
 
+% --- logos ------------------------------------------------------------------
+
+% \TeX and \LaTeX as LaTeX draws them, with letters raised, lowered and kerned
+% in css/tex8web.css, rather than html4.4ht's plain words; still the words in
+% a picture, where there's no markup, and written as themselves into the
+% table of contents. (html4.4ht's own markup, its fancylogo option, starts no
+% paragraph)
+\catcode58 11
+\protected\def\TeX{\ifx\EndPicture\:UnDef
+    \leavevmode\HCode{<span class="tex8web-tex">}T\HCode{<span
+    class="tex8web-e">}E\HCode{</span>}X\HCode{</span>}\else TeX\fi}
+\protected\def\LaTeX{\ifx\EndPicture\:UnDef
+    \leavevmode\HCode{<span class="tex8web-latex">}L\HCode{<span
+    class="tex8web-a">}A\HCode{</span>}\TeX\HCode{</span>}\else LaTeX\fi}
+\catcode58 12
+
+% --- bibliography -----------------------------------------------------------
+
+% biblatex's heading in the table of contents only where the PDF has it, when
+% the heading asks (heading=bibintoc) or the document adds it: biblatex.4ht
+% (\bibSecConfigure) makes its \section* a \section without a number, which
+% tex4ht lists
+\ifdefined\bibSecConfigure \let\bibSecConfigure\relax \fi
+
 % --- headings ---------------------------------------------------------------
 
 % a heading's number as titlesec's \titleformat labels it (\thesection.,
@@ -319,34 +343,49 @@
 % --- lists ------------------------------------------------------------------
 
 % LaTeX's spacing of a list: \topsep around it, \itemsep and \parsep between
-% items (see css/tex8web.css)
+% items, and its left margin (see css/tex8web.css), for the lists that don't
+% have their own; and the bibliography's, biblatex's if it has its own
 \begingroup\@listi
     \web@Css{:root { --tex8web-list-sep: \web@em\topsep;
-        --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax}; }}
+        --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax};
+        --tex8web-leftmargin: \web@em\leftmargin;
+        --tex8web-biblabelsep: \web@em{\ifdefined\biblabelsep\biblabelsep\else\labelsep\fi};
+        --tex8web-bibitem-sep: \web@em{\dimexpr\ifdefined\bibitemsep\bibitemsep+\bibparsep
+            \else\itemsep+\parsep\fi\relax}; }}
 \endgroup
 
-% enumitem's enumerate, and its lists made with \newlist: html4.4ht's grid of
-% labels and items, with each list's own lengths, set by the first \item,
-% where tex4ht opens the list (latex.4ht). (tex4ht's names need : a letter)
+% itemize and enumerate as LaTeX sets them, and enumitem's lists made with
+% \newlist: html4.4ht's grid of labels and items (as enumitem has it), each
+% label as TeX typesets it rather than the browser's, with each list's own
+% lengths, set by the first \item, where tex4ht opens the list (latex.4ht).
+% (tex4ht's names need : a letter)
 \catcode58 11
+\def\web@configurelist#1#2{%
+    \ConfigureList{#1}
+        {\EndP\edef\web@list{\noexpand\HCode{<dl \noexpand\a:LRdir
+             class="tex8web-list #2"
+             style="--tex8web-list-topsep: \web@em\topsep;
+             --tex8web-list-itemsep: \web@em{\dimexpr\itemsep+\parsep\relax};
+             --tex8web-list-indent: \web@em\leftmargin;
+             --tex8web-list-labelsep: \web@em\labelsep">}}\web@list
+         \PushMacro\end:itm \global\let\end:itm=\empty}
+        {\PopMacro\end:itm \global\let\end:itm \end:itm
+         \EndP\HCode{</dd></dl>}\ShowPar}
+        {\end:itm \global\def\end:itm{\EndP\Tg</dd>}\HCode{<dt>}\bgroup}
+        {\egroup\EndP\HCode{</dt><dd\Hnewline>}\par\ShowPar}}
+% (\textbullet as LaTeX draws it, •: tex4ht's Latin Modern TS1 font,
+% lm-ts1.htf, gives it as ∙, the smaller bullet operator. A picture keeps
+% the font's)
+\ifcsname TS1\string\textbullet\endcsname
+    \expandafter\let\expandafter\web@textbullet\csname TS1\string\textbullet\endcsname
+    \expandafter\def\csname TS1\string\textbullet\endcsname{%
+        \ifx\EndPicture\:UnDef\HCode{&\#x2022;}\else\web@textbullet\fi}
+\fi
+\web@configurelist{itemize}{itemize}
+\web@configurelist{enumerate}{enumerate}
 \@ifpackageloaded{enumitem}{%
-    \def\web@enumitem#1#2{%
-        \ConfigureList{#1}
-            {\EndP\edef\web@list{\noexpand\HCode{<dl \noexpand\a:LRdir
-                 class="enumerate-enumitem#2"
-                 style="--tex8web-enumitem-topsep: \web@em\topsep;
-                 --tex8web-enumitem-itemsep: \web@em{\dimexpr\itemsep+\parsep\relax};
-                 --tex8web-enumitem-indent: \web@em\leftmargin;
-                 --tex8web-enumitem-labelsep: \web@em\labelsep">}}\web@list
-             \PushMacro\end:itm \global\let\end:itm=\empty}
-            {\PopMacro\end:itm \global\let\end:itm \end:itm
-             \EndP\HCode{</dd></dl>}\ShowPar}
-            {\end:itm \global\def\end:itm{\EndP\Tg</dd>}\HCode{<dt
-                 class="enumerate-enumitem#2">}\bgroup \bf}
-            {\egroup\EndP\HCode{</dt><dd\Hnewline class="enumerate-enumitem">}}}%
-    \web@enumitem{enumerate}{}%
     % (html4.4ht's own names the list last made, not this one)
-    \def\web@newlist#1{\web@enumitem{#1}{ enumitem-#1}}%
+    \def\web@newlist#1{\web@configurelist{#1}{enumitem-#1}}%
     \Configure{enumitemnewlist}{\expandafter\web@newlist\expandafter{\a:enumitemenv}}%
 }{}
 \catcode58 12
@@ -378,6 +417,22 @@
 % [Picture] (html4.4ht), are read aloud by screen readers
 \Configure{GraphicsAlt}{}
 \Configure{Picture-alt}{}
+
+% \tikz's pictures, and the fonts after them: pgfsys-dvisvgm4ht.def starts a
+% picture (\Picture+) in \pgfsys@beginpicture too, so that what pgf typesets
+% into its box is set as a picture's. Outside a tikzpicture environment's own
+% picture, pgf's group ends before that picture does, so it never ends: its
+% \NoFonts (tex4ht.sty) holds for the rest of the page, and the next picture
+% is cut short at the right. Instead, tex4ht is only told it is in a picture
+% (\EndPicture), until the group ends. (The version \HLet runs outside a
+% picture)
+\catcode58 11
+\ifdefined\texfourht@tikz@begin
+    \def\n:pgfsys@beginpicture:{%
+        \Configure{Picture-alt}{}\protect\csname nested:math\endcsname
+        \def\EndPicture{}\o:pgfsys@beginpicture:}
+\fi
+\catcode58 12
 
 % \includegraphics keeps the PDF's width beside the text, as a fraction of
 % the PDF's text width, and shrinks only with a column narrower than it

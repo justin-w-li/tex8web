@@ -74,6 +74,12 @@ html body { font-family: "Latin Modern Roman", serif; }
    after it */
 .tex8web-nbsp { letter-spacing: -0.167em; }
 .tex8web-nowrap { white-space: nowrap; }
+/* \TeX and \LaTeX (tex8web-text.tex), as LaTeX's \TeX and \LaTeX kern and
+   move their letters: the E down half an ex, the A in \sf@size (7 of 10)
+   with its top at the T's */
+.tex8web-tex, .tex8web-latex { white-space: nowrap; }
+.tex8web-e { position: relative; top: 0.216em; margin-inline: -0.1667em -0.125em; }
+.tex8web-a { font-size: 0.7em; position: relative; top: -0.293em; margin-inline: -0.514em -0.214em; }
 /* a theorem's head in the fonts TeX set it in, which tex4ht marks span by
    span ("Theorem 1" bold, the note after it not): not all in bold, as
    tex4ht's html4.4ht has it */
@@ -100,8 +106,12 @@ p + p { margin-top: var(--tex8web-parskip, 1em); }
 h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
 /* (a \thanks is a footnote in the PDF, upright; html4.4ht sets it in italic) */
 div.thanks { font-style: normal; }
-/* (lh in line-height is the parent's, so this is a fraction of the text's) */
+/* (lh in line-height is the parent's, so this is a fraction of the text's;
+   the margins are the list's that the class sets it in, in place of
+   html4.4ht's) */
 .abstract p { line-height: calc(var(--tex8web-abstract-leading, 1) * 1lh); }
+section.abstract { margin-inline: 0; }
+.abstract p { margin-inline: var(--tex8web-abstract-left, 0) var(--tex8web-abstract-right, 0); }
 /* (a part's and a chapter's label, "Chapter 1", above the title in a size of
    its own; an article's parts aren't measured, and keep the browser's
    size) */
@@ -121,9 +131,10 @@ div.thanks { font-style: normal; }
     font-family: var(--tex8web-subsubsection-family, inherit);
     font-weight: var(--tex8web-subsubsection-weight, bold);
     font-style: var(--tex8web-subsubsection-style, normal); }
-/* (titlesec's, with the space above and below a heading, by default the
-   browser's (h3, h4, h5); :where, so that a class's own wins, such as
-   amsart's centered sections in html4.4ht) */
+/* (titlesec's, with the space above and below a heading, its own or the
+   class's (tex8web-page.tex), otherwise the browser's (h3, h4, h5); :where,
+   so that a class's own wins, such as amsart's centered sections in
+   html4.4ht) */
 :where(.sectionHead, .likesectionHead) { font-variant: var(--tex8web-section-variant, normal);
     text-align: var(--tex8web-section-align, left);
     margin-block: var(--tex8web-section-before, 1em) var(--tex8web-section-after, 1em); }
@@ -139,8 +150,8 @@ div.thanks { font-style: normal; }
    over a theorem's inline margin, text.lua's; text.lua also takes out the
    empty paragraph before a list there) */
 :is(.sectionHead, .likesectionHead, .subsectionHead, .likesubsectionHead, .subsubsectionHead,
-    .likesubsubsectionHead) + :is(div.newtheorem, ol.enumerate1, ul.itemize1, dl.description,
-    dl.enumerate-enumitem, dl.thebibliography) { margin-top: 0 !important; }
+    .likesubsubsectionHead) + :is(div.newtheorem, dl.tex8web-list, dl.description,
+    dl.thebibliography) { margin-top: 0 !important; }
 /* (run into their paragraph, unless titlesec puts them on a line of their
    own, by default with the space below them that a paragraph has) */
 .paragraphHead, .likeparagraphHead { display: var(--tex8web-paragraph-display, inline);
@@ -182,6 +193,13 @@ figure.figure { margin-block: 1.75em; }
 /* floats (a figure, a table) aren't indented in LaTeX, as browsers indent
    a <figure> */
 figure { margin-inline: 0; }
+/* a caption as LaTeX's \@makecaption sets it: centered while it fits on a
+   line, otherwise a paragraph as wide as the text; its label in the
+   caption's font (html4.4ht's is bold, which caption's labelfont=bf
+   already gives in a span of its own) */
+:is(figcaption, div).caption { width: fit-content; margin-inline: auto; text-align: start;
+    text-indent: 0; }
+:is(figcaption, div).caption span.id { font-weight: normal; }
 /* minipages and subfigures side by side while the column has room, each
    as wide as in the PDF (--tex8web-share of the text, tex8web-text.tex),
    spread along the line as by \hfill, the usual space between them (but
@@ -421,28 +439,38 @@ span.tcolorbox > .tcolorbox-title { display: block; }
 
 /* --- lists ------------------------------------------------------------- */
 
-/* spaced as LaTeX spaces a list: \topsep around it, \itemsep and \parsep
-   between items. tex4ht numbers enumerate with the browser's counters; the
-   inner levels get LaTeX's labels, (a), i. and A. A description's term
-   runs into its text */
-ol.enumerate1, ul.itemize1, dl.description { margin-block: var(--tex8web-list-sep); }
-li.enumerate + li.enumerate, li.itemize + li.itemize { margin-top: var(--tex8web-item-sep); }
-ol.enumerate2 > li::marker { content: "(" counter(list-item, lower-alpha) ") "; }
-ol.enumerate3 > li::marker { content: counter(list-item, lower-roman) ". "; }
-ol.enumerate4 > li::marker { content: counter(list-item, upper-alpha) ". "; }
-dl.description > dt { float: left; clear: left; margin-right: 0.5em; }
-dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
-/* enumitem's enumerate, a grid of labels and items in tex4ht, with each
-   list's own lengths (tex8web-text.tex): a label is on one line, as in
-   TeX's box, and sticks out to the left if wider than its column; an
-   item is no wider than its column (minmax), so that a display too wide
-   for it scrolls, as elsewhere, rather than widening the page */
-dl.enumerate-enumitem { margin-block: var(--tex8web-enumitem-topsep);
-    row-gap: var(--tex8web-enumitem-itemsep); column-gap: var(--tex8web-enumitem-labelsep);
-    grid-template-columns: calc(var(--tex8web-enumitem-indent) - var(--tex8web-enumitem-labelsep))
+/* lists as LaTeX sets them (tex8web-text.tex): a grid of labels and items,
+   with each list's own lengths. A label is on one line, as in TeX's box,
+   right-aligned \labelsep before its item, and sticks out to the left if
+   wider than its column; an item is no wider than its column (minmax), so
+   that a display too wide for it scrolls, as elsewhere, rather than
+   widening the page */
+dl.tex8web-list { display: grid; margin-block: var(--tex8web-list-topsep);
+    row-gap: var(--tex8web-list-itemsep); column-gap: var(--tex8web-list-labelsep);
+    grid-template-columns: calc(var(--tex8web-list-indent) - var(--tex8web-list-labelsep))
         minmax(0, 1fr); }
-dt.enumerate-enumitem { justify-self: end; white-space: nowrap; }
-dd.enumerate-enumitem { margin-left: 0; }
+dl.tex8web-list > dt { justify-self: end; white-space: nowrap; }
+dl.tex8web-list > dd { margin-left: 0; }
+/* (LaTeX adds the larger of a list's space below and the next item's) */
+dl.tex8web-list > dd > dl.tex8web-list:last-child { margin-bottom: 0; }
+/* a description's term runs into its text, which is indented after its
+   first line, spaced as LaTeX spaces a list: \topsep around it, \itemsep
+   and \parsep between items */
+dl.description { margin-block: var(--tex8web-list-sep); padding-left: var(--tex8web-leftmargin); }
+dl.description > dt { float: left; clear: left; margin-right: 0.5em;
+    margin-left: calc(-1 * var(--tex8web-leftmargin)); }
+dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
+
+/* a bibliography as LaTeX's list sets it: each label right-aligned in a
+   column as wide as the widest, the entries \labelsep (biblatex's
+   \biblabelsep) after it, \itemsep and \parsep apart (biblatex's own);
+   the same in tex4ht's two forms, a <dl> in a <section> and biblatex's */
+:is(.thebibliography > dl, dl.thebibliography) { display: grid; grid-auto-flow: row;
+    grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--tex8web-biblabelsep);
+    row-gap: var(--tex8web-bibitem-sep); }
+:is(.thebibliography > dl, dl.thebibliography) > dt { grid-column: 1; justify-self: end;
+    float: none; margin: 0; }
+:is(.thebibliography > dl, dl.thebibliography) > dd { grid-column: 2; margin: 0; }
 
 /* --- links to the page (page.lua) -------------------------------------- */
 
@@ -642,6 +670,10 @@ dd.enumerate-enumitem { margin-left: 0; }
 .tex8web-sidenote { margin-block: 0.5em 1em; padding-inline-start: 0.75em;
     border-inline-start: 2px solid color-mix(in srgb, currentColor 20%, transparent); }
 .tex8web-sidenote p { margin: 0; text-indent: 0; }
+/* (in \footnotesize's leading, as the abstract's; and a raised mark, here
+   or in the text, doesn't push its line away from the one above) */
+aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1lh); }
+.footnote-mark sup { line-height: 0; }
 /* (in place of tex4ht's p + p, p + div and p + pre, which notes come
    between; :is, to outweigh its p { margin-top: 0 }) */
 :where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div, pre) {
