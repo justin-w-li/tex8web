@@ -18,8 +18,9 @@
 }
 \web@othercatcodes 33,34,39,58,59,60,61,62,63,96,\relax,
 
-% a length as a multiple of the body font size, and in ems of it
-\newcommand\web@ratio[1]{\strip@pt\dimexpr#1*65536/\dimexpr\f@size pt\relax\relax}
+% a length as a multiple of another, of the body font size, and in ems of it
+\newcommand\web@over[2]{\strip@pt\dimexpr#1*65536/\dimexpr#2\relax\relax}
+\newcommand\web@ratio[1]{\web@over{#1}{\f@size pt}}
 \newcommand\web@em[1]{\web@ratio{#1}em}
 % the text width as the document begins (the config runs after every
 % \begin{document} hook, geometry's included)

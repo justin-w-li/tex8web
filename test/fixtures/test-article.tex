@@ -1,5 +1,5 @@
 % A test of tex8web on an article as LaTeX's standard classes set it, with no
-% package for its layout: the abstract, headings, lists, a figure's caption,
+% package for its layout: two abstracts, headings, lists, a figure's caption,
 % a footnote, an inline TikZ picture, the LaTeX logo and a bibliography.
 \documentclass{article}
 \usepackage{tikz}
@@ -10,6 +10,9 @@
 \maketitle
 \begin{abstract}
 A short abstract.
+\end{abstract}
+\begin{abstract}
+A second, as in another language.
 \end{abstract}
 \section{Lists}
 Text with a footnote.\footnote{A note, \emph{emphasized}.}

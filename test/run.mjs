@@ -572,6 +572,8 @@ function check(doc, result, out, aux) {
   for (const [property, value] of Object.entries(measured[doc.name] ?? {})) {
     if (!styles.includes(`${property}: ${value};`)) problems.push(`${property} isn't ${value}`);
   }
+  // (each abstract's, which are the same)
+  if (styles.split('--tex8web-abstract-leading:').length > 2) problems.push("the abstract's leading set twice");
   // (html4.4ht's rules for the paragraphs in an <li>, which would space
   // and indent an item's text unlike LaTeX's)
   if (/^li /m.test(styles)) problems.push("html4.4ht's rules for <li> in the stylesheet");

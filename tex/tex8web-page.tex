@@ -507,25 +507,27 @@
 \begingroup
     \dimen@\baselineskip
     \footnotesize
-    \web@Css{:root { --tex8web-footnote-leading:
-        \strip@pt\dimexpr\baselineskip*65536/\dimen@\relax; }}
+    \web@Css{:root { --tex8web-footnote-leading: \web@over\baselineskip\dimen@; }}
 \endgroup
 % The abstract's leading as in the PDF, a fraction of the text's: tex4ht
 % sets \small as a span, which leaves the paragraph's own line height at the
 % text's. And its margins, in ems of the text, when it is a list, as
-% article's quotation is. (The class's \abstract sets the size)
-\AtBeginDocument{\ifdefined\abstract
+% article's quotation is. (The class's \abstract sets the size; a second
+% abstract is set as the first)
+\ifdefined\abstract
     \let\web@abstract\abstract
     \renewcommand\abstract{%
         \dimen@\baselineskip
         \edef\web@a{\f@size pt}%
         \web@abstract
-        \web@Css{:root { --tex8web-abstract-leading:
-            \strip@pt\dimexpr\baselineskip*65536/\dimen@\relax; }}%
-        \ifnum\@listdepth>\z@
-            \web@Css{:root {
-                --tex8web-abstract-left: \strip@pt\dimexpr\leftmargin*65536/\dimexpr\web@a\relax\relax em;
-                --tex8web-abstract-right: \strip@pt\dimexpr\rightmargin*65536/\dimexpr\web@a\relax\relax em; }}%
-        \fi}\fi}
+        \ifdefined\web@abstractset\else
+            \global\let\web@abstractset\relax
+            \web@Css{:root { --tex8web-abstract-leading: \web@over\baselineskip\dimen@; }}%
+            \ifnum\@listdepth>\z@
+                \web@Css{:root { --tex8web-abstract-left: \web@over\leftmargin\web@a em;
+                    --tex8web-abstract-right: \web@over\rightmargin\web@a em; }}%
+            \fi
+        \fi}
+\fi
 
 \makeatother

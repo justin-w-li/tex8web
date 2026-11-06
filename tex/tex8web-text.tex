@@ -517,19 +517,13 @@
     \Configure{Gin-dim}{%
         \bool_if:nTF
           {
-            ! (
-              \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
-              \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation &&
-              \str_if_eq_p:Vn \Gin@scalex { 1 }
+            (
+              ! \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation ||
+              ! \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation ||
+              ! \str_if_eq_p:Vn \Gin@scalex { 1 }
             ) &&
-            ! (
-              ! \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
-              ! \cs_if_exist_p:N \Gin@@ewidth
-            ) &&
-            ! (
-              ! \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation &&
-              ! \cs_if_exist_p:N \Gin@@eheight
-            ) &&
+            ( \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation || \cs_if_exist_p:N \Gin@@ewidth ) &&
+            ( \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_exist_p:N \Gin@@eheight ) &&
             (
               \cs_if_eq_p:NN \noBoundingBox \UnDefined ||
               (
