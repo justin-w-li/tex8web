@@ -97,6 +97,12 @@ return {
       .. [[<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c'>D</div></div><div class='minipage-like'>E</div>]])
   end,
 
+  ["text.minipages: not a div that tex8web didn't write"] = function()
+    local d = parse([[<div class="subfigure">A</div><div class="subfigure">B</div><div class="minipage">C</div>]])
+    text.minipages(d)
+    equal(#d:query_selector("div.tex8web-minipages"), 0)
+  end,
+
   ["text.sidenotes: each footnote after its block, in order, unless in a box"] = function()
     local function mark(n) return ([[<span class="footnote-mark"><a href="#fnNx0" id="fnNx0-bk">N</a></span>]]):gsub("N", n) end
     local function note(n, text)

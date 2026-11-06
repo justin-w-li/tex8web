@@ -168,12 +168,41 @@ function readers.let(s, i)
   return name, "\\let" .. name .. target, target, j
 end
 
--- the definitions in a source file: name -> {def, body}; and the files
--- it loads that may hold more: its local packages, then what it \inputs
--- or \includes
-function M.read(s, definitions)
+-- the files a \usepackage, \RequirePackage, \input, \include or
+-- \InputIfFileExists at i loads, and the index after it
+local function loads(command, s, i)
+  local names = {}
+  if command == "usepackage" or command == "RequirePackage" then
+    local _, j = optional(s, i)
+    local list
+    list, i = argument(s, j or i)
+    for name in (list or ""):gmatch("[^,%s]+") do names[#names + 1] = name .. ".sty" end
+  elseif command == "input" or command == "include" or command == "InputIfFileExists" then
+    local j = skip_space(s, i)
+    local name, after
+    if s:sub(j, j) == "{" then
+      name, after = group(s, j)
+    elseif command == "input" and j > i then
+      name, after = s:match("^([^%s{}\\]+)()", j)
+    end
+    if name then
+      i = after
+      name = trim(name)
+      -- TeX adds .tex to a name without an extension
+      names[1] = name:match("[^/]*%.[^/]*$") and name or name .. ".tex"
+    end
+  end
+  return names, i
+end
+
+-- the definitions in a source file: name -> {def, body}, read in order,
+-- so that the last wins (except a \providecommand's, which keeps one
+-- already made); and the files it loads, which may hold more: its local
+-- packages and what it \inputs or \includes. load, if given, is called
+-- with each at the place it loads, before the definitions after it
+function M.read(s, definitions, load)
   s = strip_comments(s)
-  local i = 1
+  local i, loaded = 1, {}
   while true do
     local start, stop, command, star = s:find("\\(%a+)(%*?)", i)
     if not start then break end
@@ -182,46 +211,35 @@ function M.read(s, definitions)
     if reader then
       local ok, name, def, body, after, why = pcall(reader, s, i, star)
       if ok and name and (def or why) then
-        definitions[name] = {def = def, body = body, problem = why}
+        local provide = command == "providecommand" or command == "ProvideDocumentCommand"
+        if not (provide and definitions[name]) then
+          definitions[name] = {def = def, body = body, problem = why}
+        end
         i = after
       elseif not ok and log then
         log:debug("couldn't read \\" .. command .. ": " .. tostring(name))
       end
+    else
+      local names, after = loads(command, s, i)
+      i = after
+      for _, name in ipairs(names) do
+        loaded[#loaded + 1] = name
+        if load then load(name) end
+      end
     end
-  end
-  local packages = {}
-  for _, command in ipairs({"usepackage", "RequirePackage"}) do
-    for list in s:gmatch("\\" .. command .. "%s*(%b{})") do packages[#packages + 1] = list end
-    for list in s:gmatch("\\" .. command .. "%s*%b[]%s*(%b{})") do packages[#packages + 1] = list end
-  end
-  local loaded = {}
-  for _, list in ipairs(packages) do
-    for name in list:sub(2, -2):gmatch("[^,%s]+") do loaded[#loaded + 1] = name .. ".sty" end
-  end
-  local inputs = {}
-  for _, command in ipairs({"input", "include", "InputIfFileExists"}) do
-    for name in s:gmatch("\\" .. command .. "%s*{([^}]*)}") do inputs[#inputs + 1] = trim(name) end
-  end
-  for name in s:gmatch("\\input%s+([^%s{}\\]+)") do inputs[#inputs + 1] = name end
-  for _, name in ipairs(inputs) do
-    -- TeX adds .tex to a name without an extension
-    loaded[#loaded + 1] = name:match("[^/]*%.[^/]*$") and name or name .. ".tex"
   end
   return loaded
 end
 
 -- the definitions in the document, the local packages it loads and the
--- files it inputs. As in TeX, a file's own definitions come after those of
--- the files it loads, which is right while it loads them before it defines
+-- files it inputs, in the order TeX reads them: each file where it is
+-- loaded, once
 function M.document(tex_file)
   local definitions, seen = {}, {}
   local function visit(path)
     local s = not seen[path] and files.read(path)
     seen[path] = true
-    if not s then return end
-    local own = {}
-    for _, file in ipairs(M.read(s, own)) do visit(file) end
-    for name, definition in pairs(own) do definitions[name] = definition end
+    if s then M.read(s, definitions, visit) end
   end
   visit(tex_file)
   return definitions

@@ -50,7 +50,7 @@ end
 Make:match("4idx$", function() return false end)
 
 -- each pass is function(document, context), in this order. What the order
--- still depends on: page.build_data first (it fills context and removes
+-- depends on: page.build_data first (it fills context and removes
 -- its scripts); text.colors before the passes that look at what lies
 -- between elements (its marks are elements until it removes them); and
 -- assets.copy last (it reads the finished page)

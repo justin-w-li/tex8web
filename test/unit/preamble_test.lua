@@ -93,6 +93,27 @@ return {
     equal(definitions["\\S"].def, "\\newcommand{\\S}{\\mathbf{S}}")
   end,
 
+  ["document: \\providecommand keeps a package's definition, a later \\renewcommand in an input beats the preamble's"] = function()
+    local dir = os.tmpname()
+    os.remove(dir)
+    lfs.mkdir(dir)
+    local function write(name, text)
+      local f = assert(io.open(dir .. "/" .. name, "w"))
+      f:write(text)
+      f:close()
+    end
+    write("mysty.sty", "\\newcommand{\\E}{\\mathbb{E}}")
+    write("chapter.tex", "\\renewcommand{\\P}{\\mathrm{P}}")
+    write("main.tex", "\\usepackage{" .. dir .. "/mysty}\\providecommand{\\E}{E}\\providecommand{\\Q}{Q}\n"
+      .. "\\newcommand{\\P}{\\mathbb{P}}\n\\input{" .. dir .. "/chapter}")
+    local definitions = preamble.document(dir .. "/main.tex")
+    for _, name in ipairs({"mysty.sty", "chapter.tex", "main.tex"}) do os.remove(dir .. "/" .. name) end
+    lfs.rmdir(dir)
+    equal(definitions["\\E"].def, "\\newcommand{\\E}{\\mathbb{E}}")
+    equal(definitions["\\Q"].def, "\\newcommand{\\Q}{Q}")
+    equal(definitions["\\P"].def, "\\newcommand{\\P}{\\mathrm{P}}")
+  end,
+
   ["document follows \\input and \\include, and skips a missing file"] = function()
     local dir = os.tmpname()
     os.remove(dir)

@@ -10,8 +10,6 @@ function M.closest(el, predicate)
   end
 end
 
--- whether one of el's classes is name, starts with prefix or matches a Lua
--- pattern (as a whole class)
 local function any_class(el, matches)
   if not el:is_element() then return false end
   for class in (el:get_attribute("class") or ""):gmatch("%S+") do
@@ -20,14 +18,17 @@ local function any_class(el, matches)
   return false
 end
 
+-- whether one of el's classes is name
 function M.has_class(el, name)
   return any_class(el, function(class) return class == name end)
 end
 
+-- whether one of el's classes starts with prefix
 function M.class_starts(el, prefix)
   return any_class(el, function(class) return class:sub(1, #prefix) == prefix end)
 end
 
+-- whether one of el's classes, as a whole, matches a Lua pattern
 function M.class_matches(el, pattern)
   return any_class(el, function(class) return class:match("^" .. pattern .. "$") ~= nil end)
 end

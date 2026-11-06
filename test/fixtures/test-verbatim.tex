@@ -1,0 +1,17 @@
+% A test for tex8web: a ~ in the text is a narrowed no-break space, and the
+% spaces in verbatim text, alltt and \verbatiminput are left as they are.
+\documentclass{article}
+\usepackage{alltt,verbatim}
+\begin{document}
+Plain~text.
+
+\begin{verbatim}
+p  q   r
+\end{verbatim}
+
+\begin{alltt}
+x  =  1   \emph{two}  three
+\end{alltt}
+
+\verbatiminput{test-verbatim.txt}
+\end{document}

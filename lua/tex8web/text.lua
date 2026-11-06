@@ -151,6 +151,7 @@ end
 local function is_verbatim(el)
   local name = el:get_element_name()
   return name == "pre" or name == "code" or dom.has_class(el, "lstlisting")
+    or dom.has_class(el, "verbatiminput") or dom.has_class(el, "alltt")
 end
 
 local function is_nbsp(node)
@@ -160,7 +161,7 @@ end
 -- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
 -- as wide as a space; mark each so the CSS can narrow it. A browser still
 -- breaks the line between one and the math after it (Lemma~$1$), so wrap the
--- two together. Verbatim text and listings keep theirs as they are
+-- two together. Verbatim text, alltt and listings keep theirs as they are
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)
     local class = el:get_attribute("class")
@@ -194,7 +195,7 @@ end
 -- One that begins a paragraph (tex8web-par) starts a new line
 local function is_minipage(node)
   return node:is_element() and node:get_element_name() == "div"
-    and (dom.has_class(node, "minipage") or dom.has_class(node, "subfigure"))
+    and dom.class_starts(node, "tex8web-minipage-")
 end
 
 -- (~ between two is a space too)

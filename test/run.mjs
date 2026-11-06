@@ -455,6 +455,13 @@ const hfill = {
   'examples/custom': [/<span class='tex8web-hfill'><mjx-container/],
 };
 
+// the spaces of verbatim text, alltt and \verbatiminput, which keep the
+// font's width: only the ~ in the text is narrowed
+const verbatim = {
+  'test-verbatim': [/^(?:(?!tex8web-nbsp)[^])*Plain<span class='tex8web-nbsp'>(?:(?!tex8web-nbsp)[^])*$/,
+    /<div class='alltt'>/, /<div class='verbatiminput'>/, /<pre class='verbatim'/],
+};
+
 // the fonts preloaded, and no others: the faces of the text (bold
 // headings, italic, \texttt; but not \verb, in the browser's monospace)
 // and MathJax's that the math uses
@@ -576,6 +583,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of hfill[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} after an \\hfill`);
+  }
+  for (const pattern of verbatim[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the verbatim text`);
   }
   if (tikz[doc.name]) {
     const svg = existsSync(join(out, tikz[doc.name])) ? readFileSync(join(out, tikz[doc.name]), 'utf8') : '';

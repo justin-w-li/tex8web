@@ -40,7 +40,7 @@ A page goes through four stages.
 
 `tex8web.mk4` runs bibtex or biber and makeindex, then the passes in `lua/tex8web/`.
 
-**The macro bridge** (`macros.lua`, `preamble.lua`). MathJax never sees the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document, the local packages it loads, and the files they `\input` or `\include`. A file's own definitions win over those of the files it loads before them, as in TeX. It translates them for MathJax. The page gets only the macros its math uses, so templates and the rest of the source are never published.
+**The macro bridge** (`macros.lua`, `preamble.lua`). MathJax never sees the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document, the local packages it loads, and the files they `\input` or `\include`. It reads them in the order TeX does, each file where it is loaded, so the last definition wins, except that a `\providecommand` keeps one already made. It translates them for MathJax. The page gets only the macros its math uses, so templates and the rest of the source are never published.
 
 The bridge also handles colors. MathJax knows only CSS's and dvips's color names. The bridge gives it, as `\definecolor` lines:
 - the document's own colors, from `\definecolor` and `\colorlet`;
@@ -86,7 +86,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - the table of contents beside the text, with its numbers and indents, and each level's font, with tocloft and without it (`test-tocloft.tex` and `test-report.tex`, whose computed fonts `test:visual` checks);
   - colors in dark mode, `\color` as a declaration (`test-declared.tex`), indexes, each list's lengths, alt text, each example's title and its link to the PDF beside it, the title of a page without `\maketitle`, and pictures' sizes (also with the graphics package, and after angle);
   - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`), the text in TeX Gyre for Times, Helvetica and Courier (`test-times.tex`, `test-newtx.tex`), in XCharter for Charter and for a font chosen in the text (`test-charter.tex`), or in sans-serif (`test-sans.tex`); a title in the font a redefined `\maketitle` sets (`test-titlefont.tex`); the math in MathJax's Termes, Pagella or Schola for the PDF's in Times, Palatino or New Century Schoolbook (`test-times.tex`, `test-newtx.tex`, `test-pagella.tex` with bbm's, dsfont's and bboldx's fonts, `test-schola.tex`), and in its TeX font otherwise (`test-charter.tex`);
-  - what follows an `\hfill` at the right of its line, and nothing where the `\hfill` is in a box, a label or leaders (`test-hfill.tex`);
+  - what follows an `\hfill` at the right of its line, and nothing where the `\hfill` is in a box, a label or leaders (`test-hfill.tex`); the spaces of verbatim text, alltt and `\verbatiminput` left alone, and only a `~` narrowed (`test-verbatim.tex`);
   - an article as LaTeX's standard classes set it (`test-article.tex`): lists with TeX's labels, the space around headings, the abstract's margins, a footnote's leading, the bibliography, a `\tikz` picture's crop and the fonts after it, and the LaTeX logo;
   - speech for every formula, links and files in place, unique ids, and only publishable files.
 
@@ -103,7 +103,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
 
 **A change that shouldn't show.** Build the pages before and after it, then run `diff.mjs` on the two builds. If the HTML changed, run `shots.mjs` on them too, and look at every screen it saves.
 
-**Known gaps.** `test/expected.json` lists the problems a document is allowed, each with its reason. Make each entry as specific as the message it allows. An entry that no longer matches anything fails, until it's taken out.
+**Known gaps.** `test/expected.json` lists the problems a document is allowed, each with its reason. Make each entry as specific as the message it allows. An entry that no longer matches anything fails, until it's taken out. `rebuild.sh` has no allowances: a note whose make4ht log says it parsed a page as HTML fails there, and the fix belongs in tex8web.
 
 **CI.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm test` and `npm run test:visual` on every push to main and every pull request. It uses TeX Live's Docker image, pinned by digest. It also builds the examples' site, and on main publishes it to GitHub Pages.
 
