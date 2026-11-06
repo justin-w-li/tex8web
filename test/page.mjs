@@ -10,7 +10,7 @@ import { cpSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } fro
 import { createServer } from 'node:http';
 import { extname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build, documents, pool, testDir, workers } from './lib/build.mjs';
+import { build, pool, select, testDir, workers } from './lib/build.mjs';
 import { launch, until } from './lib/chrome.mjs';
 
 // every animation and transition on the page finished
@@ -115,20 +115,24 @@ async function viewing(chrome, file) {
     const out = await wheel(dragged, 100, 8, 'the wheel turned back');
     // a double-click on the picture, where the drag left it: the point stays
     // under the pointer all the way (css/tex8web.css eases it), in one
-    // motion. That is a transition, paused at a quarter, a half and three
-    // quarters of it, all within one evaluation so that the picture isn't laid
-    // out again between them
+    // motion. That is a transition, which is paused at a quarter, a half and
+    // three quarters of it as it starts, so that the picture isn't laid out
+    // again between them
     const q = out.at.map((a, i) => Math.round(a + out.size[i] / 2));
+    await page.evaluate(`(() => {
+      const plate = document.querySelector('.tex8web-plate');
+      window.eased = null;
+      plate.addEventListener('transitionrun', event => {
+        if (event.propertyName !== 'transform' || window.eased) return;
+        const motion = plate.getAnimations().find(a => a.transitionProperty === 'transform');
+        motion.pause();
+        const duration = motion.effect.getComputedTiming().duration;
+        window.eased = [0.25, 0.5, 0.75].map(part => { motion.currentTime = part * duration; return ${viewState}; });
+      });
+    })()`);
     await click(...q);
     await click(...q, 2);
-    const eased = await page.evaluate(`(() => {
-      const plate = document.querySelector('.tex8web-plate');
-      const motion = plate.getAnimations().find(a => a.transitionProperty === 'transform');
-      if (!motion) return null;
-      motion.pause();
-      const duration = motion.effect.getComputedTiming().duration;
-      return [0.25, 0.5, 0.75].map(part => { motion.currentTime = part * duration; return ${viewState}; });
-    })()`);
+    const eased = await until(() => page.evaluate('window.eased'));
     if (!eased) problems.push('a double-click: no motion to zoom in');
     else {
       for (const now of eased) zoomed(now, out, zoom(now), 'during a double-click', q);
@@ -210,6 +214,7 @@ async function touching(chrome, file) {
     await page.resize(800, 400);
     await page.frame();
     const turned = await until(state, s => s.view[0] === 800);
+    if (!turned) return ['turned: the window never became 800px wide'];
     if (turned.middle.some((m, i) => !(Math.abs(m - zoomed.middle[i]) < 0.002))) {
       problems.push(`turned: the picture at ${turned.middle.join(', ')} of it in the middle, not ${zoomed.middle.join(', ')}`);
     }
@@ -403,28 +408,22 @@ async function fading(chrome, file) {
   });
 }
 
-// the theme button: hidden with JavaScript off, as it needs
-// tex8web-page.js, but there before that runs, with the other controls (a
-// long page is drawn well before its deferred scripts run)
-const themeShown = `document.querySelector('.tex8web-theme').checkVisibility()`;
+// the theme button there before tex8web-page.js runs, with the other controls
+// (a long page is drawn well before its deferred scripts run). With
+// JavaScript off it is hidden, which visual.mjs checks on every page
 async function themed(chrome, file) {
-  const problems = [];
-  if (await chrome.withPage(pathToFileURL(file).href, { javascript: false }, page => page.evaluate(themeShown))) {
-    problems.push('the theme button shown with JavaScript off');
-  }
   const early = file.replace(/\.html$/, '.early.html');
   const html = readFileSync(file, 'utf8');
   const without = html.replace(/<script [^>]*src='tex8web-page\.js'[^>]*><\/script>/, '');
-  if (without === html) return [...problems, "no script for tex8web-page.js to leave out"];
+  if (without === html) return ['no script for tex8web-page.js to leave out'];
   writeFileSync(early, without);
   try {
-    if (!await chrome.withPage(pathToFileURL(early).href, {}, page => page.evaluate(themeShown))) {
-      problems.push('the theme button hidden with JavaScript on, before tex8web-page.js runs');
-    }
+    const shown = await chrome.withPage(pathToFileURL(early).href, {},
+      page => page.evaluate(`document.querySelector('.tex8web-theme').checkVisibility()`));
+    return shown ? [] : ['the theme button hidden with JavaScript on, before tex8web-page.js runs'];
   } finally {
     rmSync(early);
   }
-  return problems;
 }
 
 // from one page of a site to another, served over HTTP as a file has no
@@ -508,8 +507,7 @@ if (unknown.length) {
 }
 const names = process.argv.length > 2 ? process.argv.slice(2) : Object.keys(checks);
 const wanted = [...new Set(names.flatMap(name => checks[name][0]))];
-const all = documents();
-const docs = new Map(wanted.map(name => [name, all.find(doc => doc.name === name)]));
+const docs = new Map(select(wanted).map(doc => [doc.name, doc]));
 const pageFile = doc => join(testDir(doc, 'page'), 'html', doc.tex.replace(/\.tex$/, '.html'));
 
 // the fixtures built, prerendered, before any check runs: a build slows the

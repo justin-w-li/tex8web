@@ -8,7 +8,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build, largestFirst, pool, select, testDir, workers } from './lib/build.mjs';
+import { build, largestFirst, pool, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
 
 const only = process.argv.slice(2);
@@ -242,7 +242,8 @@ async function compare(chrome, doc, ok) {
     const bare = join(browser, html.replace(/\.html$/, '.bare.html'));
     writeFileSync(bare, copy);
     const typeset = join(browser, html.replace(/\.html$/, '.typeset.html'));
-    writeFileSync(typeset, await chrome.withPage(pathToFileURL(bare).href, { before: nodeMeasures }, page => page.evaluate(typesetPage)));
+    writeFileSync(typeset, await chrome.withPage(pathToFileURL(bare).href, { before: nodeMeasures }, page => page.evaluate(typesetPage))
+      .finally(() => rmSync(bare)));
     // each page as compared, JavaScript off: what only reads it, then its
     // screens (whose capture beyond the window resizes it)
     const shots = [];
@@ -257,6 +258,10 @@ async function compare(chrome, doc, ok) {
         const n = await page.evaluate(clipped);
         if (n) problems.push(`${name}: ${n} math characters clipped`);
         if (file !== typeset) {
+          // (it needs tex8web-page.js, which isn't running)
+          if (await page.evaluate(`document.querySelector('.tex8web-theme').checkVisibility()`)) {
+            problems.push(`${html}: the theme button shown with JavaScript off`);
+          }
           const under = await page.evaluate(spaced);
           ran.spaced += under.checked;
           for (const [id, gap, want] of under.wrong) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
@@ -308,9 +313,10 @@ while (waiting.size) {
   failures += failed ? 1 : 0;
 }
 // (with all the documents: a subset may lack what a check looks for)
-const never = only.length ? [] : Object.entries(ran).filter(([, count]) => !count).map(([name]) => name);
-for (const name of never) console.log(`not ok - no document for the ${name} check to check`);
-failures += never.length;
+const never = only.length ? [] : Object.entries(ran).filter(([, count]) => !count).map(([name]) => `no document for the ${name} check to check`);
+const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
+for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);
+failures += never.length + stray.length;
 chrome.close();
 console.log(failures ? `\n${failures} failed` : '\nall passed');
 process.exit(failures ? 1 : 0);

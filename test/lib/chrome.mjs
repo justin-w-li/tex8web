@@ -20,12 +20,13 @@ const sleep = ms => new Promise(done => setTimeout(done, ms));
 // read() until wanted(its value) holds: that value, or null after ms. For
 // a state the page reaches, rather than a wait for a time
 export async function until(read, wanted = Boolean, ms = 5000) {
-  for (let t = 0; t < ms; t += 50) {
+  const end = Date.now() + ms;
+  for (;;) {
     const value = await read();
     if (wanted(value)) return value;
+    if (Date.now() >= end) return null;
     await sleep(50);
   }
-  return null;
 }
 
 // a DevTools connection: send(method, params) -> result, failing if Chrome
@@ -96,122 +97,126 @@ export async function launch() {
   const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
   const browser = await connect(version.webSocketDebuggerUrl);
 
+  async function attach(targetId, url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before }) {
+    const page = await connect(`ws://127.0.0.1:${port}/devtools/page/${targetId}`);
+    await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
+    if (!javascript) await page.send('Emulation.setScriptExecutionDisabled', { value: true });
+    await page.send('Page.enable');
+    // (a script to run before the page's own)
+    if (before) await page.send('Page.addScriptToEvaluateOnNewDocument', { source: before });
+    await page.send('Page.navigate', { url });
+    const evaluate = async expression => {
+      const r = await page.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+      if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
+      return r.result.value;
+    };
+    // loaded, and its fonts: one is fetched only once layout needs it
+    // (hence the offsetHeight), which may be after the load event
+    let loaded = false;
+    for (let i = 0; i < 300 && !loaded; i++) {
+      loaded = await evaluate(`document.readyState === 'complete'
+        && document.documentElement.offsetHeight >= 0 && document.fonts.status === 'loaded'`);
+      if (!loaded) await sleep(100);
+    }
+    if (!loaded) throw new Error(`${url}: not loaded in 30s`);
+    const failed = await evaluate(`[...document.fonts].filter(f => f.status === 'error').map(f => f.family)`);
+    if (failed.length) throw new Error(`${url}: fonts not loaded: ${failed.join(', ')}`);
+    // two frames, for what scripts do once the page is in (as the sidenotes'
+    // ResizeObserver, a frame later) or after a resize
+    const frame = () => evaluate('new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))');
+    if (javascript) await frame();
+    const capture = async (y, h) => (await page.send('Page.captureScreenshot', { format: 'png',
+      captureBeyondViewport: true, clip: { x: 0, y, width, height: h, scale: 1 } })).data;
+    // a PNG (base64) of the page from y down, h high, once two captures in
+    // a row agree: the first of a part beyond the window can miss what
+    // Chrome hasn't painted there yet, such as a display
+    const screenshot = async (y, h) => {
+      let last;
+      for (let i = 0; i < 4; i++) {
+        const shot = await capture(y, h);
+        if (shot === last) return shot;
+        last = shot;
+      }
+      throw new Error(`${url}: the screen at ${y}px keeps changing`);
+    };
+    let touch = false;
+    return {
+      evaluate,
+      frame,
+      screenshot,
+      // the whole page, a window's height at a time
+      async screens() {
+        const total = await evaluate('document.documentElement.scrollHeight');
+        const shots = [];
+        for (let y = 0; y < total; y += height) {
+          shots.push(await screenshot(y, Math.min(height, total - y)));
+        }
+        return shots;
+      },
+      // the mouse at x, y in the window: type is pressed, moved (with the
+      // left button held), released or wheel; extra is more of DevTools'
+      // Input.dispatchMouseEvent (clickCount, deltaY)
+      async mouse(type, x, y, extra = {}) {
+        await page.send('Input.dispatchMouseEvent', { type: `mouse${type[0].toUpperCase()}${type.slice(1)}`,
+          x, y, button: type === 'wheel' ? 'none' : 'left', buttons: ['pressed', 'moved'].includes(type) ? 1 : 0,
+          clickCount: 1, deltaX: 0, deltaY: 0, ...extra });
+      },
+      // a key pressed and let go: key and keyCode as in a KeyboardEvent
+      // ('Escape', 27)
+      async press(key, keyCode) {
+        for (const type of ['keyDown', 'keyUp']) {
+          await page.send('Input.dispatchKeyEvent', { type, key, code: key, windowsVirtualKeyCode: keyCode });
+        }
+      },
+      // a finger's tap at x, y (a touch screen from the first on)
+      async tap(x, y) {
+        if (!touch) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+        touch = true;
+        await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+        await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      },
+      // the window's size changed, as turning a phone changes it
+      async resize(w, h) {
+        await page.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
+      },
+      // the page as on another medium ('print')
+      async media(type) {
+        await page.send('Emulation.setEmulatedMedia', { media: type,
+          features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
+      },
+      async close() {
+        page.close();
+        await browser.send('Target.closeTarget', { targetId });
+      },
+    };
+  }
+
+  const open = async (url, options = {}) => {
+    const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
+    // (a tab left open garbles the screenshots of the next)
+    try {
+      return await attach(targetId, url, options);
+    } catch (error) {
+      await browser.send('Target.closeTarget', { targetId }).catch(() => {});
+      throw error;
+    }
+  };
+  // f(tab), with the tab closed after it, however it ends
+  const withPage = async (url, options, f) => {
+    const tab = await open(url, options);
+    try {
+      return await f(tab);
+    } finally {
+      await tab.close();
+    }
+  };
+
   return {
-    async open(url, options = {}) {
-      const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
-      // (a tab left open garbles the screenshots of the next)
-      try {
-        return await this.attach(targetId, url, options);
-      } catch (error) {
-        await browser.send('Target.closeTarget', { targetId }).catch(() => {});
-        throw error;
-      }
-    },
-    // f(tab), with the tab closed after it, however it ends
-    async withPage(url, options, f) {
-      const tab = await this.open(url, options);
-      try {
-        return await f(tab);
-      } finally {
-        await tab.close();
-      }
-    },
+    open,
+    withPage,
     async tabs() {
       return (await browser.send('Target.getTargets')).targetInfos.filter(t => t.type === 'page').length;
-    },
-    async attach(targetId, url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before }) {
-      const page = await connect(`ws://127.0.0.1:${port}/devtools/page/${targetId}`);
-      await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
-      await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
-      if (!javascript) await page.send('Emulation.setScriptExecutionDisabled', { value: true });
-      await page.send('Page.enable');
-      // (a script to run before the page's own)
-      if (before) await page.send('Page.addScriptToEvaluateOnNewDocument', { source: before });
-      await page.send('Page.navigate', { url });
-      const evaluate = async expression => {
-        const r = await page.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
-        if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
-        return r.result.value;
-      };
-      // loaded, and its fonts: one is fetched only once layout needs it
-      // (hence the offsetHeight), which may be after the load event
-      let loaded = false;
-      for (let i = 0; i < 300 && !loaded; i++) {
-        loaded = await evaluate(`document.readyState === 'complete'
-          && document.documentElement.offsetHeight >= 0 && document.fonts.status === 'loaded'`);
-        if (!loaded) await sleep(100);
-      }
-      if (!loaded) throw new Error(`${url}: not loaded in 30s`);
-      const failed = await evaluate(`[...document.fonts].filter(f => f.status === 'error').map(f => f.family)`);
-      if (failed.length) throw new Error(`${url}: fonts not loaded: ${failed.join(', ')}`);
-      // two frames, for what scripts do once the page is in (as the sidenotes'
-      // ResizeObserver, a frame later) or after a resize
-      const frame = () => evaluate('new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))');
-      if (javascript) await frame();
-      const capture = async (y, h) => (await page.send('Page.captureScreenshot', { format: 'png',
-        captureBeyondViewport: true, clip: { x: 0, y, width, height: h, scale: 1 } })).data;
-      // a PNG (base64) of the page from y down, h high, once two captures in
-      // a row agree: the first of a part beyond the window can miss what
-      // Chrome hasn't painted there yet, such as a display
-      const screenshot = async (y, h) => {
-        let last;
-        for (let i = 0; i < 4; i++) {
-          const shot = await capture(y, h);
-          if (shot === last) return shot;
-          last = shot;
-        }
-        throw new Error(`${url}: the screen at ${y}px keeps changing`);
-      };
-      let touch = false;
-      return {
-        evaluate,
-        frame,
-        screenshot,
-        // the whole page, a window's height at a time
-        async screens() {
-          const total = await evaluate('document.documentElement.scrollHeight');
-          const shots = [];
-          for (let y = 0; y < total; y += height) {
-            shots.push(await screenshot(y, Math.min(height, total - y)));
-          }
-          return shots;
-        },
-        // the mouse at x, y in the window: type is pressed, moved (with the
-        // left button held), released or wheel; extra is more of DevTools'
-        // Input.dispatchMouseEvent (clickCount, deltaY)
-        async mouse(type, x, y, extra = {}) {
-          await page.send('Input.dispatchMouseEvent', { type: `mouse${type[0].toUpperCase()}${type.slice(1)}`,
-            x, y, button: type === 'wheel' ? 'none' : 'left', buttons: ['pressed', 'moved'].includes(type) ? 1 : 0,
-            clickCount: 1, deltaX: 0, deltaY: 0, ...extra });
-        },
-        // a key pressed and let go: key and keyCode as in a KeyboardEvent
-        // ('Escape', 27)
-        async press(key, keyCode) {
-          for (const type of ['keyDown', 'keyUp']) {
-            await page.send('Input.dispatchKeyEvent', { type, key, code: key, windowsVirtualKeyCode: keyCode });
-          }
-        },
-        // a finger's tap at x, y (a touch screen from the first on)
-        async tap(x, y) {
-          if (!touch) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true });
-          touch = true;
-          await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
-          await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-        },
-        // the window's size changed, as turning a phone changes it
-        async resize(w, h) {
-          await page.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
-        },
-        // the page as on another medium ('print')
-        async media(type) {
-          await page.send('Emulation.setEmulatedMedia', { media: type,
-            features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
-        },
-        async close() {
-          page.close();
-          await browser.send('Target.closeTarget', { targetId });
-        },
-      };
     },
     close() {
       browser.close();

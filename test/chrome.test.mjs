@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { launch } from './lib/chrome.mjs';
+import { launch, until } from './lib/chrome.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dir = mkdtempSync(join(tmpdir(), 'tex8webchromepages'));
@@ -20,16 +20,19 @@ after(() => { chrome.close(); rmSync(dir, { recursive: true }); });
 const broken = () => write('broken.html', `<style>@font-face { font-family: x; src: url(missing.woff2); }
   p { font-family: x; }</style><p>text</p>`);
 
+// (the tab is gone a moment after closeTarget answers)
+const closed = async tabs => assert.equal(await until(() => chrome.tabs(), n => n === tabs), tabs);
+
 test('a tab that fails to open is closed', async () => {
   const tabs = await chrome.tabs();
   await assert.rejects(chrome.open(broken()), /fonts not loaded/);
-  assert.equal(await chrome.tabs(), tabs);
+  await closed(tabs);
 });
 
 test('withPage closes its tab when the check throws', async () => {
   const tabs = await chrome.tabs();
   await assert.rejects(chrome.withPage(write('plain.html', '<p>text</p>'), {}, () => { throw new Error('check failed'); }), /check failed/);
-  assert.equal(await chrome.tabs(), tabs);
+  await closed(tabs);
 });
 
 test('a screen that keeps changing is an error, a still one is a picture', async () => {

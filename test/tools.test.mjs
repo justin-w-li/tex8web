@@ -7,7 +7,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { run } from './lib/build.mjs';
+import { run, strayKeys } from './lib/build.mjs';
+import { until } from './lib/chrome.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const node = (...args) => spawnSync(process.execPath, args, { cwd: join(here, '..'), encoding: 'utf8' });
@@ -41,11 +42,22 @@ test('a command that prints nothing for the deadline is killed with what it star
   assert.notEqual(code, 0);
   assert.match(log, /\[FATAL\] sh printed nothing for 0\.5s/);
   const child = Number(log.split('\n')[0]);
-  await new Promise(done => setTimeout(done, 100));
-  assert.throws(() => process.kill(child, 0), { code: 'ESRCH' });
+  // (a killed process may be a zombie for a moment, which kill(pid, 0) finds)
+  const gone = () => { try { process.kill(child, 0); return false; } catch (e) { return e.code === 'ESRCH'; } };
+  assert.ok(await until(gone, Boolean, 5000), `process ${child} still running`);
 });
 
-test('a command that keeps printing is not stopped by the deadline', async () => {
-  const { code } = await run('sh', ['-c', 'for i in 1 2 3 4 5 6; do echo $i; sleep 0.2; done'], { idle: 0.5 });
+test('a command that keeps printing is not stopped by the idle deadline', async () => {
+  const { code } = await run('sh', ['-c', 'for i in 1 2 3 4 5 6; do echo $i; sleep 0.5; done'], { idle: 2 });
   assert.equal(code, 0);
+});
+
+test('a command that prints forever is stopped by the total deadline', async () => {
+  const { code, log } = await run('sh', ['-c', 'while :; do echo x; sleep 0.05; done'], { idle: 5, total: 0.5 });
+  assert.notEqual(code, 0);
+  assert.match(log, /\[FATAL\] sh ran over 0\.5s/);
+});
+
+test('a table keyed by a document that does not exist is found', () => {
+  assert.deepEqual(strayKeys({ test: 1, 'test-generic (MathJax in the browser)': 1 }, { 'no-such-document': 1 }), ['no-such-document']);
 });

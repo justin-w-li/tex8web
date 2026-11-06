@@ -5,7 +5,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { build, expected, largestFirst, pool, root, select, testDir, workers } from './lib/build.mjs';
+import { build, expected, largestFirst, pool, root, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 const only = process.argv.slice(2);
@@ -600,11 +600,8 @@ function check(doc, result, out, aux) {
     ...checkOutput(out)];
 }
 
-// (a table keyed by a document that isn't there checks nothing)
 if (!only.length) {
-  const names = new Set(docs.map(doc => doc.name));
-  const stray = [measured, preloads, families, tikz, ...patterns.map(([table]) => table)]
-    .flatMap(table => Object.keys(table)).filter(name => !names.has(name));
+  const stray = strayKeys(measured, preloads, families, tikz, expected, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

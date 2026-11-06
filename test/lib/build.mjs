@@ -50,6 +50,14 @@ export function select(names) {
   return names.length ? all.filter(doc => names.includes(doc.name)) : all;
 }
 
+// the keys of tables of per-document checks that match no document: a table
+// keyed by a document that isn't there checks nothing. A key may have
+// a parenthesis after the name, as run.mjs's second build of a document
+export function strayKeys(...tables) {
+  const names = new Set(documents().map(doc => doc.name));
+  return tables.flatMap(table => Object.keys(table)).filter(key => !names.has(key.replace(/ \(.*\)$/, '')));
+}
+
 // the documents largest first, so that the longest build doesn't hold up
 // the end
 export const largestFirst = docs => docs.map(doc => [doc, statSync(join(doc.dir, doc.tex)).size])
@@ -69,25 +77,29 @@ process.on('exit', () => running.forEach(kill));
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(128 + constants.signals[signal]));
 
 // runs a command, killing its process group if it prints nothing for idle
-// seconds: it has hung. A loaded machine slows a build without silencing
-// it for long, where a limit on the total time would fail a slow one.
-// Resolves to { code, log }, the log being stdout and stderr in order
-export function run(command, args, { idle = 180, ...options } = {}) {
+// seconds, or runs for total: it has hung. A loaded machine slows a build
+// without silencing it for long, so the idle limit is the tight one. The
+// total limit stops one that loops while printing. Resolves to
+// { code, log }, the log being stdout and stderr in order
+export function run(command, args, { idle = 180, total = 900, ...options } = {}) {
   return new Promise(done => {
     const child = spawn(command, args, { ...options, detached: true });
     running.add(child.pid);
     let log = '', timer;
+    const stop = why => {
+      log += `\n[FATAL] ${command} ${why}, at: ${log.trim().split('\n').pop()}\n`;
+      kill(child.pid);
+    };
+    const limit = setTimeout(() => stop(`ran over ${total}s`), total * 1000);
     const watch = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        log += `\n[FATAL] ${command} printed nothing for ${idle}s, at: ${log.trim().split('\n').pop()}\n`;
-        kill(child.pid);
-      }, idle * 1000);
+      timer = setTimeout(() => stop(`printed nothing for ${idle}s`), idle * 1000);
     };
     watch();
     for (const stream of [child.stdout, child.stderr]) stream.on('data', d => { log += d; watch(); });
     child.on('close', code => {
       clearTimeout(timer);
+      clearTimeout(limit);
       running.delete(child.pid);
       done({ code, log: log.replace(/\x1b\[[0-9;]*m/g, '') });
     });
@@ -104,8 +116,8 @@ export async function build(doc, out, aux, env = {}) {
   const own = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];
   const pdf = own ?? doc.pdf;
   if (pdf && !existsSync(join(doc.dir, pdf))) {
-    const code = await latexmk(doc, dirname(pdf));
-    if (code !== 0) return { code, log: `latexmk exited with ${code}` };
+    const { code, log } = await latexmk(doc, dirname(pdf));
+    if (code !== 0) return { code, log: `latexmk exited with ${code}\n${log}` };
   }
   rmSync(out, { recursive: true, force: true });
   rmSync(aux, { recursive: true, force: true });
@@ -117,14 +129,14 @@ export async function build(doc, out, aux, env = {}) {
 }
 
 // builds a document's PDF in outdir (relative to it) with latexmk: its exit
-// code. Once for each PDF, as both of a document's test builds may want it
+// code and log. Once for each PDF, as both of a document's test builds may want it
 // at once
 const pdfs = new Map();
 export function latexmk(doc, outdir) {
   const key = join(doc.dir, outdir, doc.tex);
   if (!pdfs.has(key)) {
     pdfs.set(key, run('latexmk', ['-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex],
-      { cwd: doc.dir }).then(({ code }) => code));
+      { cwd: doc.dir }));
   }
   return pdfs.get(key);
 }
