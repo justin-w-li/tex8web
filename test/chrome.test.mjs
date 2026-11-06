@@ -1,0 +1,56 @@
+// Tests of lib/chrome.mjs, which need Chrome, run by npm run test:visual:
+// node --test test/chrome.test.mjs
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { after, before, test } from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { launch } from './lib/chrome.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const dir = mkdtempSync(join(tmpdir(), 'tex8webchromepages'));
+const write = (name, html) => pathToFileURL((writeFileSync(join(dir, name), html), join(dir, name))).href;
+let chrome;
+before(async () => { chrome = await launch(); });
+after(() => { chrome.close(); rmSync(dir, { recursive: true }); });
+
+// a font that doesn't load makes open() fail
+const broken = () => write('broken.html', `<style>@font-face { font-family: x; src: url(missing.woff2); }
+  p { font-family: x; }</style><p>text</p>`);
+
+test('a tab that fails to open is closed', async () => {
+  const tabs = await chrome.tabs();
+  await assert.rejects(chrome.open(broken()), /fonts not loaded/);
+  assert.equal(await chrome.tabs(), tabs);
+});
+
+test('withPage closes its tab when the check throws', async () => {
+  const tabs = await chrome.tabs();
+  await assert.rejects(chrome.withPage(write('plain.html', '<p>text</p>'), {}, () => { throw new Error('check failed'); }), /check failed/);
+  assert.equal(await chrome.tabs(), tabs);
+});
+
+test('a screen that keeps changing is an error, a still one is a picture', async () => {
+  const still = await chrome.open(write('still.html', '<p>text</p>'));
+  assert.ok((await still.screenshot(0, 100)).length > 0);
+  await still.close();
+  const moving = await chrome.open(write('moving.html', `<p>text</p><script>let n = 0;
+    (function change() { document.body.style.background = \`rgb(\${n++ % 256}, 0, 0)\`; requestAnimationFrame(change); })();</script>`));
+  await assert.rejects(moving.screenshot(0, 100), /keeps changing/);
+  await moving.close();
+});
+
+test('a signal ends the process with 128 plus its number, and the profile is removed', () => {
+  const temp = mkdtempSync(join(tmpdir(), 'tex8webchromesignal'));
+  try {
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e',
+      `import { launch } from './test/lib/chrome.mjs'; await launch(); process.kill(process.pid, 'SIGTERM'); await new Promise(() => {});`],
+    { cwd: join(here, '..'), env: { ...process.env, TMPDIR: temp }, encoding: 'utf8' });
+    assert.equal(result.status, 143);
+    assert.deepEqual(readdirSync(temp), []);
+  } finally {
+    rmSync(temp, { recursive: true });
+  }
+});

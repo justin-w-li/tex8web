@@ -1,13 +1,15 @@
-// npm test: the Lua unit tests, then every test document and example built
-// with make4ht and checked. Pages go to build/test/<document>/html.
+// npm test: the Lua unit tests and the tools' tests, then every test
+// document and example built with make4ht and checked. Pages go to
+// build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { build, documents, expected, largestFirst, pool, root, testDir, workers } from './lib/build.mjs';
+import { build, expected, largestFirst, pool, root, select, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 const only = process.argv.slice(2);
+const docs = select(only);
 let failures = 0;
 
 // problems test/expected.json lists for a document (allow: substrings of
@@ -29,17 +31,22 @@ if (!only.length) {
   const unit = spawnSync('texlua', [join(root, 'test/unit/run.lua')], { encoding: 'utf8' });
   process.stdout.write(unit.stdout + unit.stderr);
   failures += unit.status === 0 ? 0 : 1;
+  const tools = spawnSync(process.execPath, ['--test', join(root, 'test/tools.test.mjs')], { encoding: 'utf8' });
+  process.stdout.write(tools.stdout + tools.stderr);
+  failures += tools.status === 0 ? 0 : 1;
 }
 
 // --- builds ----------------------------------------------------------------
 
-// what tex8web measures in a document, where a test document sets it:
-// titlesec's spacing in its *n form, a \titleformat's space after the
-// label in a bold font's ems, a title's own size, and framed's space
-// around its box (\topsep); report's table of contents, its sections
-// indented from its chapters, and its chapter's title and label; the
-// abstract's leading, \small's 12pt over the text's 13.6pt; tocloft's font
-// for each level of the table of contents
+// what tex8web measures in a document, as custom properties in its
+// stylesheet. Each test document sets what it measures:
+// - titlesec's spacing in its *n form, and a \titleformat's space after the
+//   label, in the bold font's ems;
+// - a title's own size, and framed's space around its box (\topsep);
+// - report's contents, with sections indented from chapters, and a chapter's
+//   title and label;
+// - the abstract's leading, \small's 12pt over the text's 13.6pt;
+// - tocloft's font for each level of the contents.
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
@@ -78,11 +85,13 @@ const measured = {
     '--tex8web-toc-paragraph-family': 'var(--tex8web-mono)', '--tex8web-toc-subparagraph-style': 'italic' },
 };
 
-// what tex8web.js makes of some of test.tex's math through MathJax's
-// internals, which a new MathJax must keep: \bigl( to \Biggl\langle in
-// TeX's four sizes, scaled to the 10pt extension font in an 11pt document;
-// a big bar a little taller; a large operator scaled around it; an align's
-// rows on TeX's struts, \jot apart; inline math broken after a relation
+// what tex8web.js makes of test.tex's math through MathJax's internals,
+// which a new MathJax must keep:
+// - \bigl( to \Biggl\langle in TeX's four sizes, scaled to the 10pt
+//   extension font in an 11pt document;
+// - a big bar a little taller, and a large operator scaled around it;
+// - an align's rows on TeX's struts, \jot apart;
+// - inline math broken after a relation.
 const typeset = {
   'test': [
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 TEX-SO'>\(/,
@@ -167,9 +176,9 @@ const index = {
 };
 
 // the table of contents beside the text, under the document's title (a link
-// to the top), titled by its heading, with
-// chapters' numbers in their boxes; the list of figures before it left in
-// the text; and one without a heading titled \contentsname, in its letters
+// to the top). It is titled by its heading, or by \contentsname in the
+// document's letters, and has chapters' numbers in their boxes. A list of
+// figures before it stays in the text.
 const titled = name => [new RegExp(`<button aria-label='${name}' class='tex8web-control tex8web-contents'[^>]* title='${name}'`),
   new RegExp(`<p class='tex8web-toc-title' id='tex8web-toc-title'>${name}</p>`)];
 const contents = {
@@ -197,11 +206,11 @@ const fonts = {
   'test-titlefont': [/<h1 class='titleHead'><span\s+class='bchb7t-x-x-240'>A title in its own font<\/span><\/h1>/],
 };
 
-// colors in dark mode, at another lightness (a light-dark() of the color),
-// and black text in the page's text color: \textcolor's, \colorbox's and
-// \fcolorbox's (in the stylesheet), listings', and in math (a \rule too);
-// and the colors of math and table cells as xcolor has them: a document's
-// own (ink), a \colorlet (ember), a mix, and green, which CSS has darker
+// colors in dark mode: at another lightness, as a light-dark() of the
+// color, and black text in the page's text color. That holds for
+// \textcolor, \colorbox, \fcolorbox, listings and math, a \rule too.
+// Math and table cells have the colors xcolor gives them: a document's own
+// (ink), a \colorlet (ember), a mix, and green, which CSS has darker.
 const lightDark = (color, l) => `light-dark\\(${color}, oklch\\(from ${color} ${l} c h\\)\\)`;
 const dark = hex => `light-dark(${hex}, oklch(from ${hex} max(l, 1 - l) c h))`;
 const text = (hex, html) => `<span style='color:${dark(hex)};'>${html}</span>`;
@@ -266,7 +275,7 @@ const colors = {
     `<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c' style='--tex8web-share: 0.4; color:${dark('#FF0000')};'>`,
     `<figure class='figure' id='x1-10051'>`,
     `<p class='indent'>   Black at the end.`,
-  ].map(html => new RegExp(html.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).concat(/<head>\s*<title>Colors<\/title>/),
+  ].map(html => new RegExp(html.replace(/\s+/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).concat(/<head>\s*<title>Colors<\/title>/),
   // table colors as the PDF has them (the document loads colortbl before
   // xcolor's table option, which the build errors on without the fix):
   // \rowcolors' alternating rows, from the row it starts at, then
@@ -288,11 +297,11 @@ const colors = {
   ],
 };
 
-// lists as LaTeX sets them, each label as TeX typesets it (article's
-// bullet and dash, \item's own, enumerate's (a)) and each list with its
-// own lengths; a citation in biblatex's form, a link within the page; and
-// the bibliography's heading once in the contents, where the document
-// adds it
+// lists as LaTeX sets them: each label as TeX typesets it (article's bullet
+// and dash, an \item's own, enumerate's (a)) and each list with its own
+// lengths. Also a citation in biblatex's form, a link within the page, and
+// the bibliography's heading once in the contents, where the document adds
+// it.
 const lists = {
   'test-article': [
     /<dl class='tex8web-list itemize' style='--tex8web-list-topsep: 0\.8em; --tex8web-list-itemsep: 0\.8em; --tex8web-list-indent: 2\.5em; --tex8web-list-labelsep: 0\.5em'><dt>\s*• <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>One,/,
@@ -427,12 +436,12 @@ const qed = {
   ],
 };
 
-// what follows an \hfill in a paragraph, in a span the stylesheet floats
-// right: up to the end of the paragraph or of its line (\\), after the
-// last \hfill of a line, in a list item, a centered paragraph, a figure,
-// a paragraph cell and a proof (before its QED box); none in a box, a
-// label, a cell of one line, \dotfill and \hrulefill, or before \break,
-// and no mark left
+// what follows an \hfill, in a span the stylesheet floats right. It runs to
+// the end of the paragraph or of the line (\\), after the last \hfill of
+// a line. It is found in a list item, a centered paragraph, a figure, a
+// paragraph cell, and a proof before its QED box. Nothing is moved in a
+// box, a label, a cell of one line, \dotfill, \hrulefill, or before
+// \break, and no mark is left.
 const hfill = {
   'test-hfill': [
     /<p class='noindent'>Name\s+<span class='tex8web-hfill'>Date/,
@@ -491,10 +500,10 @@ const preloads = {
   'test-schola': ['texgyreschola-regular', ...['zero', 'brk', 'n', 'so'].map(font => `mathjax/mjx-gs-${font}`)],
 };
 
-// the text's fonts: TeX Gyre's for Times, Helvetica and Courier, and
-// XCharter for Charter, each in its role, and tex4ht's classes for them; a
-// font chosen in the text in its own; sans-serif for the text, when
-// \familydefault is
+// the text's fonts, each in its role, with tex4ht's classes for them: TeX
+// Gyre's for Times, Helvetica and Courier, and XCharter for Charter. A font
+// chosen in the text keeps its own, and the text is in sans-serif when
+// \familydefault is.
 const families = {
   'test-times': ['@font-face { font-family: "TeX Gyre Termes"; src: url("fonts/texgyretermes-regular.woff2") format("woff2"), url("fonts/texgyretermes-regular.otf") format("opentype"); }',
     ':root { --tex8web-roman: "TeX Gyre Termes", "Latin Modern Roman", serif; }',
@@ -512,6 +521,16 @@ const families = {
   'examples/complex': ['[class*="-XCharter"] { font-family: "XCharter"; }'],
   'test-titlefont': ['[class^="bch"], [class*="-bch"]', ':root { --tex8web-title-size: 1em; }'],
 };
+
+// the patterns each table holds, matched against the page (and its
+// stylesheet, for the colors), each with how a failure reads
+const patterns = [
+  [typeset, 'in the typeset math'], [speech, 'in the speech'], [pictures, 'among the pictures'],
+  [titles, "as the page's title"], [minipages, 'among the minipages'], [index, 'in the index'],
+  [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
+  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
+  [permalinks, 'among the links'],
+];
 
 // what's wrong with a built page: its log, the page and the files with it
 function check(doc, result, out, aux) {
@@ -534,17 +553,12 @@ function check(doc, result, out, aux) {
   // (with -p, or custom.cfg's \WebPDF)
   if (doc.pdf && !(html.includes("href='main.pdf'") && existsSync(join(out, 'main.pdf')))) problems.push('no link to the PDF beside it');
   if (doc.up && !html.includes(`class='tex8web-control tex8web-up' href='${doc.up}'`)) problems.push('no link up to the index');
-  for (const pattern of typeset[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the typeset math`);
-  }
-  for (const pattern of speech[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the speech`);
-  }
-  for (const pattern of pictures[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the pictures`);
-  }
-  for (const pattern of titles[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} as the page's title`);
+  // (the page's whitespace is tex4ht's indentation, which the patterns don't pin)
+  const flat = html.replace(/\s+/g, ' ');
+  for (const [table, what, withStyles] of patterns) {
+    for (const pattern of table[doc.name] ?? []) {
+      if (!pattern.test(withStyles ? flat + styles : flat)) problems.push(`no ${pattern.source} ${what}`);
+    }
   }
   if (preloads[doc.name]) {
     const found = [...html.matchAll(/<link [^>]*rel='preload'[^>]*>/g)]
@@ -560,44 +574,11 @@ function check(doc, result, out, aux) {
     const size = statSync(join(out, 'fonts', font), { throwIfNoEntry: false })?.size;
     if (!(size < 60000)) problems.push(`fonts/${font} ${size ? 'not cut down' : 'missing'}`);
   }
-  for (const pattern of minipages[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the minipages`);
-  }
-  for (const pattern of index[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the index`);
-  }
-  for (const pattern of contents[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the page`);
-  }
-  for (const pattern of fonts[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the text's own font`);
-  }
-  for (const pattern of colors[doc.name] ?? []) {
-    if (!pattern.test(html + styles)) problems.push(`no ${pattern.source} among the colors`);
-  }
-  for (const pattern of qed[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} around the QED boxes`);
-  }
-  for (const pattern of lists[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the lists`);
-  }
-  for (const pattern of hfill[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} after an \\hfill`);
-  }
-  for (const pattern of verbatim[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} in the verbatim text`);
-  }
   if (tikz[doc.name]) {
     const svg = existsSync(join(out, tikz[doc.name])) ? readFileSync(join(out, tikz[doc.name]), 'utf8') : '';
     const [x, , width] = (svg.match(/viewBox='([^']*)'/)?.[1] ?? '').split(' ').map(Number);
     const at = 1.4 * Number(svg.match(/translate\(([^,]+),/)?.[1]);
     if (!(Math.abs(x + width / 2 - at) < 0.1)) problems.push(`${tikz[doc.name]} isn't centered on its circle`);
-  }
-  for (const pattern of terms[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the terms`);
-  }
-  for (const pattern of permalinks[doc.name] ?? []) {
-    if (!pattern.test(html)) problems.push(`no ${pattern.source} among the links`);
   }
   // (prerender.mjs leaves out a token of one character)
   if (/<mjx-m[ion](?: (?:space|size)='[^']*')*><mjx-c class='[^']*'>[^<]*<\/mjx-c><\/mjx-m[ion]>/.test(html)) {
@@ -619,7 +600,14 @@ function check(doc, result, out, aux) {
     ...checkOutput(out)];
 }
 
-const docs = documents().filter(doc => !only.length || only.includes(doc.name));
+// (a table keyed by a document that isn't there checks nothing)
+if (!only.length) {
+  const names = new Set(docs.map(doc => doc.name));
+  const stray = [measured, preloads, families, tikz, ...patterns.map(([table]) => table)]
+    .flatMap(table => Object.keys(table)).filter(name => !names.has(name));
+  report('the documents the tables name', stray.map(name => `no document ${name}`));
+}
+
 // each document built and checked, a few at a time
 const jobs = largestFirst(docs).map(doc => async () => {
   const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
@@ -643,6 +631,7 @@ if (!only.length) jobs.push(async () => {
   }
   if (!existsSync(join(out, 'tex8web.js'))) problems.push('no tex8web.js next to the page');
   if (html.includes('<mjx-container')) problems.push('math typeset at build time');
+  problems.push(...checkLog(result.log));
   report(`${doc.name} (MathJax in the browser)`, problems);
 });
 

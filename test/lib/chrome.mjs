@@ -5,7 +5,7 @@
 //   await page.evaluate('document.title'); await page.screenshot(y, height);
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { constants, tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const candidates = [
@@ -16,6 +16,17 @@ const candidates = [
 ].filter(Boolean);
 
 const sleep = ms => new Promise(done => setTimeout(done, ms));
+
+// read() until wanted(its value) holds: that value, or null after ms. For
+// a state the page reaches, rather than a wait for a time
+export async function until(read, wanted = Boolean, ms = 5000) {
+  for (let t = 0; t < ms; t += 50) {
+    const value = await read();
+    if (wanted(value)) return value;
+    await sleep(50);
+  }
+  return null;
+}
 
 // a DevTools connection: send(method, params) -> result, failing if Chrome
 // doesn't answer in two minutes (it has crashed)
@@ -52,7 +63,10 @@ export async function launch() {
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'],
     { stdio: ['ignore', 'ignore', openSync(`${profile}.log`, 'w')], detached: true });
+  let cleaned = false;
   const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
     // (the whole group: on Linux, Chrome's helpers outlive it otherwise and
     // keep writing into the profile)
     try { process.kill(-proc.pid, 'SIGKILL'); } catch {}
@@ -64,7 +78,9 @@ export async function launch() {
     }
   };
   process.on('exit', cleanup);
-  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(1));
+  // (128 plus the signal, as a shell reports it: shots.mjs's callers read 1
+  // as "screens differ")
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(128 + constants.signals[signal]));
 
   // (up to 30s: a first start, beside builds using every core, is slow)
   let port;
@@ -81,8 +97,29 @@ export async function launch() {
   const browser = await connect(version.webSocketDebuggerUrl);
 
   return {
-    async open(url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before } = {}) {
+    async open(url, options = {}) {
       const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
+      // (a tab left open garbles the screenshots of the next)
+      try {
+        return await this.attach(targetId, url, options);
+      } catch (error) {
+        await browser.send('Target.closeTarget', { targetId }).catch(() => {});
+        throw error;
+      }
+    },
+    // f(tab), with the tab closed after it, however it ends
+    async withPage(url, options, f) {
+      const tab = await this.open(url, options);
+      try {
+        return await f(tab);
+      } finally {
+        await tab.close();
+      }
+    },
+    async tabs() {
+      return (await browser.send('Target.getTargets')).targetInfos.filter(t => t.type === 'page').length;
+    },
+    async attach(targetId, url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before }) {
       const page = await connect(`ws://127.0.0.1:${port}/devtools/page/${targetId}`);
       await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
       await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
@@ -107,24 +144,34 @@ export async function launch() {
       if (!loaded) throw new Error(`${url}: not loaded in 30s`);
       const failed = await evaluate(`[...document.fonts].filter(f => f.status === 'error').map(f => f.family)`);
       if (failed.length) throw new Error(`${url}: fonts not loaded: ${failed.join(', ')}`);
-      // (what scripts lay out once the page is in, as the sidenotes'
-      // ResizeObserver, a frame later)
-      if (javascript) await evaluate('new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))');
-      // a PNG (base64) of the page from y down, h high
-      const screenshot = async (y, h) => (await page.send('Page.captureScreenshot', { format: 'png',
+      // two frames, for what scripts do once the page is in (as the sidenotes'
+      // ResizeObserver, a frame later) or after a resize
+      const frame = () => evaluate('new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))');
+      if (javascript) await frame();
+      const capture = async (y, h) => (await page.send('Page.captureScreenshot', { format: 'png',
         captureBeyondViewport: true, clip: { x: 0, y, width, height: h, scale: 1 } })).data;
+      // a PNG (base64) of the page from y down, h high, once two captures in
+      // a row agree: the first of a part beyond the window can miss what
+      // Chrome hasn't painted there yet, such as a display
+      const screenshot = async (y, h) => {
+        let last;
+        for (let i = 0; i < 4; i++) {
+          const shot = await capture(y, h);
+          if (shot === last) return shot;
+          last = shot;
+        }
+        throw new Error(`${url}: the screen at ${y}px keeps changing`);
+      };
       let touch = false;
       return {
         evaluate,
+        frame,
         screenshot,
         // the whole page, a window's height at a time
         async screens() {
           const total = await evaluate('document.documentElement.scrollHeight');
           const shots = [];
           for (let y = 0; y < total; y += height) {
-            // (twice: the first capture of a part beyond the window can
-            // miss what Chrome hasn't painted there yet, such as a display)
-            await screenshot(y, Math.min(height, total - y));
             shots.push(await screenshot(y, Math.min(height, total - y)));
           }
           return shots;

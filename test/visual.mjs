@@ -1,32 +1,23 @@
-// npm run test:visual: each test document and example, prerendered, against
-// the same page typeset by MathJax in the browser, compared screen by
-// screen with JavaScript off (needs Chrome, and the network for MathJax).
-// The two should be identical (the browser's MathJax measuring as Node's
-// estimates); differing screens are saved, as
-// <screen>-browser.png and <screen>-prerendered.png, in
-// build/visual/<document>/visual/. In both, the columns of an alignment
-// should line up across its \intertext. And the prerendered page's closer
-// view of pictures should work with the mouse and a finger, the page be no
-// wider than a phone's screen, a display that scrolls there fade at the
-// edge where more is hidden, its bar there come and go as it scrolls,
-// its theme button be there before tex8web-page.js runs, a theorem, list
-// or framed box under a heading as far below it as in the PDF, and no
-// math character be clipped. Going from a page to an example and up again
-// should slide forward, then back, and go back in history.
+// npm run test:visual: each test document and example, prerendered, compared
+// screen by screen with the same page typeset by MathJax in the browser,
+// JavaScript off in both, and checked for alignments that line up across an
+// \intertext, math characters not clipped, headings spaced as in LaTeX, the
+// contents' fonts, printing and a page that fits a phone; it needs Chrome and
+// the network, and saves the screens that differ in build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { createServer } from 'node:http';
-import { extname, join, relative } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build, documents, largestFirst, pool, testDir, workers } from './lib/build.mjs';
+import { build, largestFirst, pool, select, testDir, workers } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
 
 const only = process.argv.slice(2);
 const screen = 900;
 
 // the browser's typeset page as it stands, without its scripts and with
-// MathJax's styles (which it adds through the CSSOM) written out; and
-// without what tex8web-page.js changed, which isn't MathJax's
+// MathJax's styles (which it adds through the CSSOM) written out. The page
+// is a copy without tex8web-page.js, so that only MathJax and
+// tex8web-head.js, whose class on <html> is taken off, have changed it
 const typesetPage = `(async () => {
   // (MathJax's script, from the network, may not have run yet)
   for (let t = 0; !MathJax.startup.promise; t += 100) {
@@ -45,16 +36,6 @@ const typesetPage = `(async () => {
   const html = document.documentElement.cloneNode(true);
   html.classList.remove('tex8web-js');
   if (!html.classList.length) html.removeAttribute('class');
-  html.querySelector('.tex8web-toc-results')?.remove();
-  html.querySelector('.tex8web-where')?.replaceChildren();
-  html.querySelector('.tex8web-where')?.setAttribute('hidden', 'hidden');
-  html.querySelectorAll('[aria-current]').forEach(n => n.removeAttribute('aria-current'));
-  html.querySelectorAll('.tex8web-open').forEach(n => n.classList.remove('tex8web-open'));
-  html.querySelectorAll('.tex8web-scrolls').forEach(n => {
-    n.classList.remove('tex8web-scrolls');
-    n.style.removeProperty('--tex8web-hidden-left');
-    n.style.removeProperty('--tex8web-hidden-right');
-  });
   html.querySelectorAll('script, style[id^=MJX]').forEach(n => n.remove());
   const style = document.createElement('style');
   style.textContent = css;
@@ -103,513 +84,55 @@ const misaligned = `(() => {
     return [...row.querySelectorAll(':scope > mjx-mtd')].map(td => Math.round(td.getBoundingClientRect().left * 2) / 2);
   };
   const all = [...document.querySelectorAll('mjx-container[display]')];
-  return [...document.querySelectorAll('.tex8web-intertext')].map(text => {
+  const found = [...document.querySelectorAll('.tex8web-intertext')].map(text => {
     const before = all.filter(c => c.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).pop();
     const after = all.find(c => c.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_PRECEDING);
     return before && after && [text.textContent.trim().slice(0, 30), edges(before), edges(after)];
-  }).filter(found => found && found[1].join() !== found[2].join());
+  }).filter(Boolean);
+  return { checked: found.length, wrong: found.filter(f => f[1].join() !== f[2].join()) };
 })()`;
-
-// the closer view of pictures (tex8web-page.js), with the mouse: which
-// pictures open it, and on the first, that it fits the screen, that the
-// wheel and a double-click zoom around the pointer (the latter in one
-// motion), that the picture is dragged, but not off the middle of the
-// screen, and laid out again when the zoom stops, and that it closes
-async function viewing(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href);
-  const problems = [];
-  const sleep = ms => new Promise(done => setTimeout(done, ms));
-  const click = async (x, y, count = 1) => {
-    await page.mouse('pressed', x, y, { clickCount: count });
-    await page.mouse('released', x, y, { clickCount: count });
-  };
-  const state = () => page.evaluate(`(() => {
-    const cover = document.querySelector('.tex8web-viewer'), img = cover.querySelector('img');
-    const box = img.getBoundingClientRect(), plate = img.parentElement.getBoundingClientRect();
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    return { open: cover.matches(':popover-open'), laid: Number(img.parentElement.style.getPropertyValue('--tex8web-zoom')), width: img.offsetWidth,
-      at: [box.left, box.top], size: [box.width, box.height], plate: [plate.left, plate.top, plate.width, plate.height],
-      view: [innerWidth, innerHeight], natural: img.naturalWidth, svg: /\.svg$/i.test(img.getAttribute('src')),
-      room: [innerWidth, innerHeight].map(n => n - 2 * Math.max(rem, 0.04 * Math.min(innerWidth, innerHeight)) - rem) };
-  })()`);
-  // where the plate should be, from where it would be: anywhere the
-  // picture still covers the middle of the screen
-  const placed = (s, at) => at.map((a, i) => Math.min(s.view[i] / 2, Math.max(s.view[i] / 2 - s.plate[2 + i], a)));
-  const off = (s, want) => Math.max(...want.slice(0, 2).map((w, i) => Math.abs(s.plate[i] - w)));
-  // the state once it is as wanted (or null, after a second)
-  const until = async wanted => {
-    for (let t = 0; t < 1000; t += 50) {
-      const s = await state();
-      if (wanted(s)) return s;
-      await sleep(50);
-    }
-    return null;
-  };
-  // (a picture in a figure or display math opens it; an icon in the text,
-  // up to one and a half times as tall, doesn't)
-  const wrong = await page.evaluate(`[...document.querySelectorAll('img:not(.tex8web-viewer img, a img)')]
-    .filter(img => img.closest('figure, .mathjax-block') ? !img.classList.contains('tex8web-zoomable')
-      : img.classList.contains('tex8web-zoomable') && img.offsetHeight <= 1.5 * parseFloat(getComputedStyle(img).fontSize))
-    .map(img => img.getAttribute('src'))`);
-  if (wrong.length) problems.push(`opening the viewer or not, wrongly: ${wrong.join(', ')}`);
-  const at = await page.evaluate(`(() => {
-    const img = document.querySelector('.tex8web-zoomable');
-    if (!img) return null;
-    img.scrollIntoView({ block: 'center' });
-    const box = img.getBoundingClientRect();
-    return [box.left + box.width / 2, box.top + box.height / 2];
-  })()`);
-  if (!at) {
-    await page.close();
-    return problems;
-  }
-  await click(...at);
-  await sleep(100);
-  // as large as the screen allows (zoom 1), or a picture of pixels at its
-  // own size if smaller (home)
-  const fit = await state();
-  const fitted = Math.min(fit.room[0], fit.room[1] * fit.size[0] / fit.size[1]);
-  const home = fit.svg ? 1 : Math.min(1, fit.natural / fitted);
-  const zoom = s => s.size[0] / fitted;
-  const centered = s => s.view.map((v, i) => (v - s.plate[2 + i]) / 2);
-  if (!fit.open) problems.push('a picture clicked: no viewer');
-  else if (Math.abs(zoom(fit) - home) > 0.001 || !(off(fit, centered(fit)) <= 0.5)) {
-    problems.push(`the viewer's picture ${fit.size.join('x')} at ${fit.at.join(', ')}, for ${fit.room.join('x')} (${fit.natural}px wide)`);
-  }
-  const p = [Math.round(fit.at[0] + 0.3 * fit.size[0]), Math.round(fit.at[1] + 0.3 * fit.size[1])];
-  // the plate zoomed to z around q, from s
-  const zoomed = (now, s, z, what, q = p) => {
-    const want = placed(now, s.plate.slice(0, 2).map((a, i) => q[i] - (q[i] - a) * z / zoom(s)));
-    if (Math.abs(zoom(now) - z) > 0.001 || !(off(now, want) <= 0.5)) {
-      problems.push(`${what}: zoom ${zoom(now).toFixed(3)} (not ${z.toFixed(3)}), at ${now.plate.slice(0, 2).join(', ')} (not ${want.join(', ')})`);
-    }
-  };
-  // (a notch at a time, as each may be kept to the middle of the screen)
-  const wheel = async (s, deltaY, notches, what) => {
-    for (let i = 0; i < notches; i++) {
-      await page.mouse('wheel', ...p, { deltaY });
-      await sleep(50);
-      const now = await state();
-      zoomed(now, s, Math.min(4, Math.max(home / 2, zoom(s) * Math.exp(-deltaY * 0.002))), what);
-      s = now;
-    }
-    return s;
-  };
-  const wheeled = await wheel(fit, -100, 3, 'the wheel turned');
-  // once the zoom has stopped, laid out again, where it was
-  const settled = await until(s => Math.abs(s.laid - zoom(s)) < 0.001);
-  if (!settled || Math.abs(settled.width - settled.size[0]) > 0.5
-    || Math.abs(settled.size[0] - wheeled.size[0]) > 0.5
-    || !(Math.max(...settled.at.map((at, i) => Math.abs(at - wheeled.at[i]))) <= 0.5)) {
-    problems.push(`the wheel stopped: ${settled ? `${settled.width}px wide laid out, ${settled.size[0]}px shown at ${settled.at.join(', ')}` : 'not laid out again'}, from ${wheeled.size[0]}px at ${wheeled.at.join(', ')}`);
-  }
-  // (far enough to reach the middle of the screen)
-  await page.mouse('pressed', ...p);
-  for (let i = 1; i <= 8; i++) await page.mouse('moved', p[0] + 100 * i, p[1] + 100 * i);
-  await page.mouse('released', p[0] + 800, p[1] + 800);
-  await sleep(100);
-  const dragged = await state();
-  const want = placed(dragged, wheeled.plate.slice(0, 2).map(a => a + 800));
-  if (Math.abs(zoom(dragged) - zoom(wheeled)) > 0.001 || !(off(dragged, want) <= 0.5)) {
-    problems.push(`dragged by 800px: zoom ${zoom(dragged)}, at ${dragged.plate.slice(0, 2).join(', ')} (not ${want.join(', ')})`);
-  }
-  // (past where it started, to half that)
-  const out = await wheel(dragged, 100, 8, 'the wheel turned back');
-  // a double-click on the picture, where the drag left it: the point stays
-  // under the pointer all the way (css/tex8web.css eases it), in one motion
-  const q = out.at.map((a, i) => Math.round(a + out.size[i] / 2));
-  await click(...q);
-  await click(...q, 2);
-  let between = false;
-  for (let t = 0; t < 400; t += 40) {
-    const now = await state();
-    between ||= zoom(now) > 1.01 * home && zoom(now) < 2.49 * home;
-    zoomed(now, out, zoom(now), 'during a double-click', q);
-    await sleep(40);
-  }
-  if (!between) problems.push('a double-click: no zoom between where it started and 2.5 times that on the way');
-  const zoomedIn = await until(s => Math.abs(s.laid - 2.5 * home) < 0.001);
-  if (zoomedIn) zoomed(zoomedIn, out, 2.5 * home, 'a double-click', q);
-  else problems.push(`a double-click: not at zoom ${2.5 * home}`);
-  await click(...q);
-  await click(...q, 2);
-  const back = await until(s => Math.abs(s.laid - home) < 0.001);
-  if (!back || !(off(back, centered(back)) <= 0.5)) {
-    problems.push(`a second double-click: ${back ? `at ${back.plate.slice(0, 2).join(', ')}` : `not at zoom ${home}`}`);
-  }
-  // (from beside the picture to beside it, the picture moving along: a
-  // drag, not a click beside it; then a click beside it)
-  await page.mouse('pressed', 2, 2);
-  for (let i = 1; i <= 4; i++) await page.mouse('moved', 2 + 10 * i, 2 + 10 * i);
-  await page.mouse('released', 42, 42);
-  await sleep(100);
-  const beside = await state();
-  if (beside.at[0] <= 42 && beside.at[1] <= 42) problems.push('a drag beside the picture: ended on it');
-  else if (!beside.open) problems.push('a drag ending beside the picture closed the viewer');
-  // (the keyboard stays off the page behind)
-  const focused = await page.evaluate('document.activeElement.outerHTML.slice(0, 80)');
-  await page.press('Tab', 9);
-  await sleep(100);
-  if (await page.evaluate('document.activeElement.outerHTML.slice(0, 80)') !== focused) problems.push('Tab: the focus behind the viewer moved');
-  await page.press('Escape', 27);
-  await sleep(300);
-  if ((await state()).open) problems.push('Escape: the viewer still open');
-  await click(...at);
-  await sleep(100);
-  if (!(await state()).open) problems.push('a picture clicked again: no viewer');
-  // (fading out still open, in the top layer: Safari would draw it under
-  // the page's bar, or, on iOS, not at all)
-  await click(2, 2);
-  await sleep(50);
-  const fading = await page.evaluate(`(() => {
-    const cover = document.querySelector('.tex8web-viewer');
-    return cover.matches(':popover-open') && Number(getComputedStyle(cover).opacity);
-  })()`);
-  if (!(fading > 0 && fading < 1)) problems.push(`a click beside the picture: no fade out (${fading})`);
-  await sleep(250);
-  if ((await state()).open) problems.push('a click beside the picture: the viewer still open');
-  await page.close();
-  return problems;
-}
-
-// the closer view with a finger, on a phone's screen: a double tap zooms
-// in (Safari on iOS sends no dblclick), and turning the phone keeps the
-// point at the middle of the screen where it was in the picture
-async function touching(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { width: 400, height: 800 });
-  const problems = [];
-  const sleep = ms => new Promise(done => setTimeout(done, ms));
-  const state = () => page.evaluate(`(() => {
-    const cover = document.querySelector('.tex8web-viewer'), img = cover.querySelector('img'), box = img.getBoundingClientRect();
-    return { open: cover.matches(':popover-open'), laid: Number(img.parentElement.style.getPropertyValue('--tex8web-zoom')),
-      middle: [(innerWidth / 2 - box.left) / box.width, (innerHeight / 2 - box.top) / box.height] };
-  })()`);
-  const at = await page.evaluate(`(() => {
-    const img = document.querySelector('.tex8web-zoomable');
-    if (!img) return null;
-    img.scrollIntoView({ block: 'center' });
-    const box = img.getBoundingClientRect();
-    return [box.left + box.width / 2, box.top + box.height / 2];
-  })()`);
-  if (at) {
-    await page.tap(...at);
-    await sleep(300);
-    const opened = await state();
-    if (!opened.open) problems.push('a picture tapped: no viewer');
-    // (the two taps within the 300ms tex8web-page.js allows a double tap,
-    // and the zoom waited for, however slow a loaded machine is)
-    await page.tap(200, 400);
-    await sleep(80);
-    await page.tap(200, 400);
-    let zoomed;
-    for (let t = 0; t < 3000 && !((zoomed = await state()).laid > 2 * opened.laid); t += 100) await sleep(100);
-    if (!(zoomed.laid > 2 * opened.laid)) problems.push(`a double tap: zoom ${zoomed.laid}, from ${opened.laid}`);
-    await page.resize(800, 400);
-    await sleep(300);
-    const turned = await state();
-    if (turned.middle.some((m, i) => !(Math.abs(m - zoomed.middle[i]) < 0.002))) {
-      problems.push(`turned: the picture at ${turned.middle.join(', ')} of it in the middle, not ${zoomed.middle.join(', ')}`);
-    }
-  }
-  await page.close();
-  return problems;
-}
-
-// the contents' filter: a named theorem found by its head (or a numbered
-// box by its title), first among what matches, and Enter going to it;
-// then, among the many with an e, down twice and up once choosing the
-// second, which Enter goes to; and test.tex's ε-ball found by \epsilon,
-// its ε typeset
-async function filtering(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { width: 1600 });
-  const problems = [];
-  const sleep = ms => new Promise(done => setTimeout(done, ms));
-  const head = await page.evaluate(`(() => {
-    const input = document.querySelector('.tex8web-toc-filter');
-    const head = [...document.querySelectorAll('.newtheorem .head, .tcolorbox-title')]
-      .find(h => h.querySelector(':scope > .tex8web-permalink')
-        && (h.matches('.tcolorbox-title') || /\\(.+\\)/.test(h.textContent)));
-    if (!input) return document.getElementById('tex8web-toc') && 'none';
-    if (!head) return null;
-    input.focus();
-    input.value = head.textContent.replace('#', '').replace(/\\.\\s*$/, '');
-    input.dispatchEvent(new Event('input'));
-    return head.querySelector('.tex8web-permalink').hash;
-  })()`);
-  if (head === 'none') problems.push('filter: none beside the table of contents');
-  else if (head) {
-    const first = await page.evaluate(`document.querySelector('.tex8web-toc-results a')?.hash`);
-    if (first !== head) problems.push(`filter: ${first} first, not the theorem ${head}`);
-    await page.press('Enter', 13);
-    await sleep(100);
-    if (await page.evaluate('location.hash') !== head) problems.push(`filter: Enter went to ${await page.evaluate('location.hash')}, not ${head}`);
-    const second = await page.evaluate(`(() => {
-      const input = document.querySelector('.tex8web-toc-filter');
-      input.focus();
-      input.value = 'e';
-      input.dispatchEvent(new Event('input'));
-      return document.querySelectorAll('.tex8web-toc-results a')[1]?.hash;
-    })()`);
-    if (second) {
-      for (const [key, code] of [['ArrowDown', 40], ['ArrowDown', 40], ['ArrowUp', 38], ['Enter', 13]]) await page.press(key, code);
-      await sleep(100);
-      if (await page.evaluate('location.hash') !== second) problems.push(`filter: arrows and Enter went to ${await page.evaluate('location.hash')}, not ${second}`);
-    }
-    const ball = await page.evaluate(`(() => {
-      if (!document.getElementById('term-ball')) return null;
-      const input = document.querySelector('.tex8web-toc-filter');
-      input.value = '\\\\epsilon ball';
-      input.dispatchEvent(new Event('input'));
-      const a = document.querySelector('.tex8web-toc-results a');
-      return [a?.hash, !!a?.querySelector('mjx-container')];
-    })()`);
-    if (ball && (ball[0] !== '#term-ball' || !ball[1])) problems.push(`filter: \\epsilon ball found ${ball[0]}, ${ball[1] ? '' : 'not '}typeset`);
-  }
-  await page.close();
-  return problems;
-}
-
-// on a phone's screen, the bar naming the section being read: nothing
-// before the first heading, then a section halfway down scrolled just above
-// the top quarter, where the page starts naming it (higher, a short section
-// would bring the next heading above that line too), unless the page is too
-// short to scroll it there; and tapped, opening the table of contents
-async function naming(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
-  const problems = [];
-  const [before, want, got, opened] = await page.evaluate(`new Promise(done => {
-    const where = document.querySelector('.tex8web-where');
-    const links = [...document.querySelectorAll('#tex8web-toc .tableofcontents a')];
-    const a = links[links.length >> 1];
-    if (!a) return done([]);
-    const shown = () => where.hidden ? '' : where.textContent.replace(/\\s+/g, ' ').trim();
-    const first = document.getElementById(decodeURIComponent(links[0].hash.slice(1)));
-    const before = first.getBoundingClientRect().top > innerHeight / 4 ? shown() : '';
-    const el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
-    scrollTo(0, scrollY + el.getBoundingClientRect().top - (innerHeight / 4 - 10));
-    if (el.getBoundingClientRect().top > innerHeight / 4) return done([]);
-    const copy = a.cloneNode(true);
-    copy.querySelectorAll('mjx-assistive-mml').forEach(n => n.remove());
-    setTimeout(() => {
-      const got = shown();
-      where.click();
-      done([before, copy.textContent.replace(/\\s+/g, ' ').trim(), got,
-        document.getElementById('tex8web-toc').matches(':popover-open')]);
-    }, 300);
-  })`);
-  await page.close();
-  if (want === undefined) return problems;
-  if (before) problems.push(`bar: "${before}" before the first heading`);
-  if (!got.endsWith(want)) problems.push(`bar: "${got}", not the section "${want}"`);
-  if (!opened) problems.push('bar: tapped, no table of contents');
-  return problems;
-}
-
-// on a phone's screen: the page no wider than it (a display too wide
-// scrolls on its own); and the controls' bar (tex8web-page.js) away
-// scrolling down, back scrolling up, but not for a pixel or two the other way
-async function phone(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
-  const problems = [];
-  const [width, room] = await page.evaluate('[document.documentElement.scrollWidth, document.documentElement.clientWidth]');
-  if (width > room) problems.push(`${width - room}px wider than a screen ${room}px wide`);
-  const away = await page.evaluate(`(async () => {
-    const away = [];
-    if (document.documentElement.scrollHeight < 1600) return away;
-    for (const y of [300, 600, 597, 560, 563]) {
-      scrollTo(0, y);
-      await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
-      away.push(document.querySelector('.tex8web-controls').classList.contains('tex8web-away'));
-    }
-    return away;
-  })()`);
-  await page.close();
-  if (away.length && away.join() !== 'true,true,true,false,false') {
-    problems.push(`the bar away ${away.join(', ')} scrolling to 300, 600, 597, 560 and 563px`);
-  }
-  return problems;
-}
-
-// the fade of a display that scrolls on a phone's screen, by its two masks'
-// positions. At its start, only the right edge fades; 20px in, the left
-// fades halfway; in the middle, both; 20px from its end, the right
-// halfway; at its end, only the left. Nothing that doesn't scroll is
-// masked: one that fits, one that stops scrolling at its end on a wider
-// screen or in print, and one the keyboard has focused. A display copied
-// into a preview card fades as it scrolls there. test.tex has a display
-// that scrolls on a phone
-async function edges(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
-  const frame = 'new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))';
-  // (a display's copy in a preview card, which may be wider than the text)
-  const cards = await page.evaluate(`(() => {
-    const links = document.querySelectorAll('a[href*="#"]:not(.tex8web-permalink, #tex8web-toc a, .tex8web-preview a)');
-    let wrong = 0;
-    for (const a of links) {
-      a.focus({ focusVisible: true });
-      for (const d of document.querySelectorAll('.tex8web-preview mjx-container[display]')) {
-        const hidden = d.scrollWidth - d.clientWidth, style = getComputedStyle(d);
-        const edge = 2.5 * parseFloat(style.fontSize);
-        const want = hidden > 0 ? \`-\${edge}px 0px, -\${Math.min(hidden, edge)}px 0px\` : 'none';
-        if ((style.maskImage === 'none' ? 'none' : style.maskPosition) !== want) wrong++;
-      }
-      a.blur();
-    }
-    return wrong;
-  })()`);
-  const problems = cards ? [`${cards} displays in preview cards with a fade that doesn't match their scroll`] : [];
-  const index = await page.evaluate(`[...document.querySelectorAll('mjx-container[display]')]
-    .findIndex(d => d.scrollWidth - d.clientWidth > 200)`);
-  if (index < 0) {
-    await page.close();
-    if (file.endsWith('/test.html')) problems.push('no display that scrolls on a phone, for its fade');
-    return problems;
-  }
-  const display = `document.querySelectorAll('mjx-container[display]')[${index}]`;
-  const mask = async scroll => {
-    if (scroll !== undefined) await page.evaluate(`${display}.scrollLeft = ${scroll}`);
-    await page.evaluate(frame);
-    return page.evaluate(`(s => s.maskImage === 'none' ? 'none' : s.maskPosition)(getComputedStyle(${display}))`);
-  };
-  const [range, size] = await page.evaluate(`[${display}.scrollWidth - ${display}.clientWidth,
-    parseFloat(getComputedStyle(${display}).fontSize)]`);
-  const edge = 2.5 * size, half = edge / 2;
-  const want = [[0, -edge, -edge], [half, -half, -edge], [100, 0, -edge], [range - half, 0, -half], [range, 0, 0]];
-  for (const [scroll, left, right] of want) {
-    const positions = `${left}px 0px, ${right}px 0px`.replace(/-0px/g, '0px');
-    const got = await mask(scroll);
-    if (got !== positions) problems.push(`a display that scrolls, scrolled ${scroll}px: mask ${got}, not ${positions}`);
-  }
-  const masked = `[...document.querySelectorAll('mjx-container[display], div.tabular, pre')]
-    .filter(d => (d.scrollWidth <= d.clientWidth || getComputedStyle(d).overflowX === 'visible')
-      && getComputedStyle(d).maskImage !== 'none').length`;
-  const fits = await page.evaluate(masked);
-  if (fits) problems.push(`${fits} displays, tabulars or verbatims that don't scroll, masked`);
-  await page.evaluate(`${display}.focus({ focusVisible: true })`);
-  if (await mask() !== 'none') problems.push('a display that scrolls, focused: masked, hiding the focus ring');
-  await page.evaluate(`${display}.blur()`);
-  const ends = `for (const d of document.querySelectorAll('mjx-container[display], div.tabular, pre')) d.scrollLeft = d.scrollWidth`;
-  await page.evaluate(ends);
-  await page.evaluate(frame);
-  await page.resize(1600, 900);
-  await page.evaluate(frame);
-  const wide = await page.evaluate(masked);
-  if (wide) problems.push(`${wide} displays, tabulars or verbatims scrolled to their end, then fitting a wider screen, masked`);
-  await page.resize(390, 844);
-  await page.evaluate(ends);
-  await page.evaluate(frame);
-  await page.media('print');
-  await page.evaluate(frame);
-  const printed = await page.evaluate(masked);
-  if (printed) problems.push(`${printed} displays, tabulars or verbatims scrolled to their end, then printed, masked`);
-  await page.close();
-  return problems;
-}
-
-// the theme button: hidden with JavaScript off (checked in compare(), on
-// the page compared), as it needs tex8web-page.js, but there before that
-// runs, with the other controls (a long page is drawn well before its
-// deferred scripts run)
-const themeShown = `document.querySelector('.tex8web-theme').checkVisibility()`;
-async function themed(chrome, file) {
-  const early = file.replace(/\.html$/, '.early.html');
-  writeFileSync(early, readFileSync(file, 'utf8').replace(/<script [^>]*src='tex8web-page\.js'[^>]*><\/script>/, ''));
-  const page = await chrome.open(pathToFileURL(early).href);
-  const shown = await page.evaluate(themeShown);
-  await page.close();
-  rmSync(early);
-  return shown ? [] : ['the theme button hidden with JavaScript on, before tex8web-page.js runs'];
-}
-
-// from one page of a site to another, served over HTTP as a file has no
-// origin to share: from another page, as the site's index at /, to an
-// example (which links up to ../index.html, the same page), then up again. The first change runs
-// css/tex8web.css's view transition forward and the second back
-// (tex8web-head.js), and the up link goes back in history rather than to a
-// new entry (tex8web-page.js)
-const served = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2' };
-// (each page's transition, once tex8web-head.js, which listens after this,
-// has named it)
-const seenTypes = `addEventListener('pagereveal', event => setTimeout(() => {
-  const types = event.viewTransition ? [...event.viewTransition.types].join() || 'untyped' : 'none';
-  const seen = JSON.parse(sessionStorage.getItem('seen') ?? '[]');
-  sessionStorage.setItem('seen', JSON.stringify([...seen, types]));
-}));`;
-async function navigating(chrome, example, index) {
-  const site = join(testDir(example, 'visual'), 'site');
-  rmSync(site, { recursive: true, force: true });
-  cpSync(join(testDir(index, 'visual'), 'html'), site, { recursive: true });
-  renameSync(join(site, `${index.name}.html`), join(site, 'index.html'));
-  cpSync(join(testDir(example, 'visual'), 'html'), join(site, 'example'), { recursive: true });
-  const server = createServer((request, response) => {
-    const file = join(site, decodeURIComponent(new URL(request.url, 'http://localhost').pathname)
-      .replace(/\/$/, '/index.html'));
-    if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return response.writeHead(404).end();
-    response.writeHead(200, { 'content-type': served[extname(file)] ?? 'application/octet-stream' })
-      .end(readFileSync(file));
-  });
-  await new Promise(done => server.listen(0, '127.0.0.1', done));
-  const page = await chrome.open(`http://127.0.0.1:${server.address().port}/`, { before: seenTypes });
-  // at a page, its transition (the nth) seen and over; the page's evaluate
-  // fails while the next page loads
-  const arrive = async (path, n) => {
-    for (let t = 0; t < 10000; t += 100) {
-      if (await page.evaluate(`location.pathname === '${path}' && document.readyState === 'complete'
-        && JSON.parse(sessionStorage.getItem('seen') ?? '[]').length === ${n}
-        && !document.documentElement.matches(':active-view-transition')`).catch(() => false)) return;
-      await new Promise(done => setTimeout(done, 100));
-    }
-    throw new Error(`not at ${path} in 10s`);
-  };
-  const problems = [];
-  try {
-    await arrive('/', 1);
-    await page.evaluate(`location.href = 'example/main.html'`);
-    await arrive('/example/main.html', 2);
-    await page.evaluate(`document.querySelector('.tex8web-up').click()`);
-    await arrive('/', 3);
-    const [seen, entry] = await page.evaluate(`[JSON.parse(sessionStorage.getItem('seen')), navigation.currentEntry.index]`);
-    if (seen.join(' ') !== 'none tex8web-forward tex8web-back') problems.push(`view transitions ${seen.join(', ')}`);
-    if (entry !== 0) problems.push(`the up link went to history's entry ${entry}, not back to 0`);
-  } finally {
-    await page.close();
-    server.close();
-  }
-  return problems.map(p => `going to an example and up: ${p}`);
-}
 
 // printed (css/tex8web.css), from a wide screen in dark mode (the system's
 // and the reader's): light mode's colors and pictures, and none of the
 // page's own controls; then on a sheet of paper (Letter inside Chrome's
 // margins), footnotes after their paragraph and nothing cut off on the right
 async function printed(chrome, file) {
-  const page = await chrome.open(pathToFileURL(file).href, { width: 1600, colorScheme: 'dark' });
-  await page.media('print');
-  const wrong = await page.evaluate(`(() => {
-    document.documentElement.dataset.theme = 'dark';
-    const wrong = [], body = getComputedStyle(document.body);
-    if (body.backgroundColor !== 'rgb(255, 255, 255)' || body.color !== 'rgb(0, 0, 0)') {
-      wrong.push(\`text \${body.color} on \${body.backgroundColor}\`);
-    }
-    const shown = [...document.querySelectorAll('.tex8web-controls, .tex8web-toc, .tex8web-permalink')]
-      .filter(el => el.checkVisibility());
-    if (shown.length) wrong.push(\`\${shown.length} of the controls, contents and # links shown\`);
-    const inverted = [...document.images].filter(img => getComputedStyle(img).filter !== 'none');
-    if (inverted.length) wrong.push(\`\${inverted.length} pictures inverted\`);
-    return wrong;
-  })()`);
-  await page.resize(740, 900);
-  wrong.push(...await page.evaluate(`(() => {
-    const wrong = [];
-    const beside = [...document.querySelectorAll('.tex8web-sidenote')].filter(el => getComputedStyle(el).float !== 'none');
-    if (beside.length) wrong.push(\`\${beside.length} footnotes beside the text\`);
-    const cut = [...document.querySelectorAll('mjx-container[display], div.tabular, pre')]
-      .filter(el => getComputedStyle(el).overflowX !== 'visible');
-    if (cut.length) wrong.push(\`\${cut.length} displays, tabulars or verbatims that scroll\`);
-    return wrong;
-  })()`));
-  await page.close();
-  return wrong.map(w => `printed: ${w}`);
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, colorScheme: 'dark' }, async page => {
+    await page.media('print');
+    const wrong = await page.evaluate(`(() => {
+      document.documentElement.dataset.theme = 'dark';
+      const wrong = [], body = getComputedStyle(document.body);
+      if (body.backgroundColor !== 'rgb(255, 255, 255)' || body.color !== 'rgb(0, 0, 0)') {
+        wrong.push(\`text \${body.color} on \${body.backgroundColor}\`);
+      }
+      const shown = [...document.querySelectorAll('.tex8web-controls, .tex8web-toc, .tex8web-permalink')]
+        .filter(el => el.checkVisibility());
+      if (shown.length) wrong.push(\`\${shown.length} of the controls, contents and # links shown\`);
+      const inverted = [...document.images].filter(img => getComputedStyle(img).filter !== 'none');
+      if (inverted.length) wrong.push(\`\${inverted.length} pictures inverted\`);
+      return wrong;
+    })()`);
+    await page.resize(740, 900);
+    wrong.push(...await page.evaluate(`(() => {
+      const wrong = [];
+      const beside = [...document.querySelectorAll('.tex8web-sidenote')].filter(el => getComputedStyle(el).float !== 'none');
+      if (beside.length) wrong.push(\`\${beside.length} footnotes beside the text\`);
+      const cut = [...document.querySelectorAll('mjx-container[display], div.tabular, pre')]
+        .filter(el => getComputedStyle(el).overflowX !== 'visible');
+      if (cut.length) wrong.push(\`\${cut.length} displays, tabulars or verbatims that scroll\`);
+      return wrong;
+    })()`));
+    return wrong.map(w => `printed: ${w}`);
+  });
+}
+
+// the page no wider than a phone's screen (a display too wide scrolls on
+// its own)
+async function fits(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 390, height: 844 }, async page => {
+    const [width, room] = await page.evaluate('[document.documentElement.scrollWidth, document.documentElement.clientWidth]');
+    return width > room ? [`${width - room}px wider than a screen ${room}px wide`] : [];
+  });
 }
 
 // math characters with a clip (css/tex8web.css): there should be none
@@ -622,7 +145,8 @@ const clipped = `[...document.querySelectorAll('mjx-c')].filter(c => getComputed
 const spaced = `(() => {
   const em = parseFloat(getComputedStyle(document.body).fontSize);
   const length = name => (parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0) * em;
-  return [...document.querySelectorAll('h3, h4, h5')].flatMap(h => {
+  let checked = 0;
+  const wrong = [...document.querySelectorAll('h3, h4, h5')].flatMap(h => {
     // (past an empty paragraph, which tex4ht may open before a list)
     let next = h.nextElementSibling;
     if (next?.matches('p') && !next.textContent.trim() && next.nextElementSibling) next = next.nextElementSibling;
@@ -633,9 +157,11 @@ const spaced = `(() => {
     else if (next?.matches('.framedenv')) {
       want = Math.max(below, length('--tex8web-' + level + '-after-text') + length('--tex8web-framed-sep'));
     } else return [];
+    checked++;
     const gap = next.getBoundingClientRect().top - h.getBoundingClientRect().bottom;
     return Math.abs(gap - want) > 0.5 ? [[h.id, gap.toFixed(1), want.toFixed(1)]] : [];
   });
+  return { checked, wrong };
 })()`;
 
 // the table of contents' entries in their fonts (css/tex8web.css), each
@@ -681,7 +207,7 @@ const tocFonts = {
   },
 };
 
-const docs = documents().filter(d => !only.length || only.includes(d.name));
+const docs = select(only);
 // each document built twice, prerendered (html) and for the browser
 // (fallback), a few builds at a time, the largest first; a document is
 // compared as soon as both its builds are done
@@ -691,6 +217,10 @@ pool(builds, workers, async ({ doc, out, aux, env, resolve }) => {
   resolve((await build(doc, join(testDir(doc, 'visual'), out), join(testDir(doc, 'visual'), aux), env)).code);
 });
 const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).map(b => b.promise))).every(code => code === 0);
+
+// how many times each check had something to check, over the whole run:
+// one that never did has checked nothing
+const ran = { spaced: 0, misaligned: 0 };
 
 // a document's two pages compared: its report's lines, and whether it failed
 async function compare(chrome, doc, ok) {
@@ -704,36 +234,44 @@ async function compare(chrome, doc, ok) {
   }
   const problems = [];
   for (const html of readdirSync(pre).filter(f => f.endsWith('.html'))) {
-    const page = await chrome.open(pathToFileURL(join(browser, html)).href, { before: nodeMeasures });
+    // (the copy without tex8web-page.js, which would change the page after
+    // MathJax has)
+    const source = readFileSync(join(browser, html), 'utf8');
+    const copy = source.replace(/<script [^>]*src='tex8web-page\.js'[^>]*><\/script>/, '');
+    if (copy === source) problems.push(`${html}: no script for tex8web-page.js to leave out`);
+    const bare = join(browser, html.replace(/\.html$/, '.bare.html'));
+    writeFileSync(bare, copy);
     const typeset = join(browser, html.replace(/\.html$/, '.typeset.html'));
-    writeFileSync(typeset, await page.evaluate(typesetPage));
-    await page.close();
+    writeFileSync(typeset, await chrome.withPage(pathToFileURL(bare).href, { before: nodeMeasures }, page => page.evaluate(typesetPage)));
     // each page as compared, JavaScript off: what only reads it, then its
     // screens (whose capture beyond the window resizes it)
     const shots = [];
     for (const file of [typeset, join(pre, html)]) {
-      const page = await chrome.open(pathToFileURL(file).href, { javascript: false, height: screen });
-      const name = relative(dir, file);
-      for (const [text, a, b] of await page.evaluate(misaligned)) {
-        problems.push(`${name}: columns at ${a.join(', ')} before "${text}", ${b.join(', ')} after`);
-      }
-      const n = await page.evaluate(clipped);
-      if (n) problems.push(`${name}: ${n} math characters clipped`);
-      if (file !== typeset) {
-        for (const [id, gap, want] of await page.evaluate(spaced)) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
-        if (await page.evaluate(themeShown)) problems.push(`${html}: the theme button shown with JavaScript off`);
-        const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
-        for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
-          for (const [key, value] of Object.entries(want)) {
-            const got = entries[level]?.[key];
-            if (!(value instanceof RegExp ? value.test(got) : got === value)) {
-              problems.push(`${html}: .${level} ${key} is ${got}, not ${value}`);
+      shots.push(await chrome.withPage(pathToFileURL(file).href, { javascript: false, height: screen }, async page => {
+        const name = relative(dir, file);
+        const aligned = await page.evaluate(misaligned);
+        if (file !== typeset) ran.misaligned += aligned.checked;
+        for (const [text, a, b] of aligned.wrong) {
+          problems.push(`${name}: columns at ${a.join(', ')} before "${text}", ${b.join(', ')} after`);
+        }
+        const n = await page.evaluate(clipped);
+        if (n) problems.push(`${name}: ${n} math characters clipped`);
+        if (file !== typeset) {
+          const under = await page.evaluate(spaced);
+          ran.spaced += under.checked;
+          for (const [id, gap, want] of under.wrong) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
+          const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
+          for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
+            for (const [key, value] of Object.entries(want)) {
+              const got = entries[level]?.[key];
+              if (!(value instanceof RegExp ? value.test(got) : got === value)) {
+                problems.push(`${html}: .${level} ${key} is ${got}, not ${value}`);
+              }
             }
           }
         }
-      }
-      shots.push(await page.screens());
-      await page.close();
+        return page.screens();
+      }));
     }
     const [a, b] = shots;
     if (a.length !== b.length) problems.push(`${html}: ${a.length} screens in the browser, ${b.length} prerendered`);
@@ -747,7 +285,7 @@ async function compare(chrome, doc, ok) {
       if (b[i]) writeFileSync(join(visual, `${name}-prerendered.png`), Buffer.from(b[i], 'base64'));
     });
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
-    for (const check of [viewing, phone, edges, themed, printed, filtering, naming, touching]) {
+    for (const check of [printed, fits]) {
       problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     }
   }
@@ -769,13 +307,10 @@ while (waiting.size) {
   console.log(lines.join('\n'));
   failures += failed ? 1 : 0;
 }
-// (once the two documents' builds are done, as they are once compared)
-const [example, index] = ['examples/basic', 'test-generic'].map(name => docs.find(doc => doc.name === name));
-if (example && index) {
-  const problems = await navigating(chrome, example, index).catch(error => [error.message]);
-  console.log([`${problems.length ? 'not ok' : 'ok'} - navigation`, ...problems.map(p => `    ${p}`)].join('\n'));
-  failures += problems.length ? 1 : 0;
-}
+// (with all the documents: a subset may lack what a check looks for)
+const never = only.length ? [] : Object.entries(ran).filter(([, count]) => !count).map(([name]) => name);
+for (const name of never) console.log(`not ok - no document for the ${name} check to check`);
+failures += never.length;
 chrome.close();
 console.log(failures ? `\n${failures} failed` : '\nall passed');
 process.exit(failures ? 1 : 0);

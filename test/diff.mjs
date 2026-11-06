@@ -2,9 +2,10 @@
 // that differ (with how many of their formulas, and where the first
 // difference is), the lines of its stylesheets, and the files added,
 // removed or changed. Sections with the same first difference are listed
-// together. Left out: fonts/, which tex8web copies unchanged, and the PDF,
-// whose dates differ in every build. Exits 1 if anything changed, 2 if it
-// couldn't compare.
+// together. Left out: the PDF, whose dates differ in every build. The
+// fonts are compared like the other files: they are cut down to each
+// document's characters, the same way in every build. Exits 1 if anything
+// changed, 2 if it couldn't compare.
 //   node test/diff.mjs <old html directory> <new html directory>
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join } from 'node:path';
@@ -15,7 +16,7 @@ process.on('uncaughtException', error => { console.error(error); process.exit(2)
 
 function files(dir) {
   return readdirSync(dir, { recursive: true })
-    .filter(f => !/^fonts(\/|$)/.test(f) && extname(f) !== '.pdf' && statSync(join(dir, f)).isFile()).sort();
+    .filter(f => extname(f) !== '.pdf' && statSync(join(dir, f)).isFile()).sort();
 }
 
 // a page's sections, each from a heading with an id (and the start of the

@@ -45,8 +45,6 @@ async function band(tab, url) {
     return box && { y: Math.floor(box.top + scrollY), h: Math.ceil(box.height) };
   })()`);
   if (!box) throw new Error(`${url}: nothing matches ${clip}`);
-  // (twice, as in screens())
-  await tab.screenshot(box.y, box.h);
   return [await tab.screenshot(box.y, box.h)];
 }
 
@@ -69,10 +67,10 @@ try {
         const shots = [];
         for (const file of [page, ...builds.slice(1).map(dir => join(dir, basename(page)))]) {
           const url = pathToFileURL(file).href;
-          const tab = await chrome.open(url, { width, height, colorScheme });
-          if (expression !== undefined) console.log(`${label}: ${JSON.stringify(await tab.evaluate(expression))}`);
-          else shots.push(clip ? await band(tab, url) : await tab.screens());
-          await tab.close();
+          await chrome.withPage(url, { width, height, colorScheme }, async tab => {
+            if (expression !== undefined) console.log(`${label}: ${JSON.stringify(await tab.evaluate(expression))}`);
+            else shots.push(clip ? await band(tab, url) : await tab.screens());
+          });
         }
         if (expression !== undefined) continue;
         const n = i => String(i).padStart(3, '0');

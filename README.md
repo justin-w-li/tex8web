@@ -30,7 +30,7 @@ cd tex8web
 npm ci
 ```
 
-Node only typesets the math at build time. Without it, the page loads MathJax from jsDelivr and needs the network.
+Node only typesets the math at build time. [DOCUMENTATION.md](DOCUMENTATION.md) says what happens without it ("Without Node").
 
 ## Use
 

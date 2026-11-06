@@ -2,7 +2,7 @@
 // for npm run examples.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
-import { availableParallelism } from 'node:os';
+import { availableParallelism, constants } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,6 +38,18 @@ export function documents() {
   return docs;
 }
 
+// the documents named on the command line, or all of them. A name that
+// matches none is an error: it would otherwise pass having checked nothing
+export function select(names) {
+  const all = documents();
+  const unknown = names.filter(name => !all.some(doc => doc.name === name));
+  if (unknown.length) {
+    console.error(`no document named ${unknown.join(', ')}; the documents are ${all.map(doc => doc.name).join(', ')}`);
+    process.exit(2);
+  }
+  return names.length ? all.filter(doc => names.includes(doc.name)) : all;
+}
+
 // the documents largest first, so that the longest build doesn't hold up
 // the end
 export const largestFirst = docs => docs.map(doc => [doc, statSync(join(doc.dir, doc.tex)).size])
@@ -47,16 +59,40 @@ export const largestFirst = docs => docs.map(doc => [doc, statSync(join(doc.dir,
 // of the machine to other work (a laptop's performance cores are often four)
 export const workers = Math.min(4, Math.max(2, availableParallelism() >> 1));
 
-// builds running, each in a process group of its own (so that one that
+// commands running, each in a process group of its own (so that one that
 // hangs is killed with what it started: LaTeX, Node, dvisvgm), which Ctrl-C
 // doesn't reach: killed as this process ends, unless it is killed outright
 const running = new Set();
 const kill = pid => { try { process.kill(-pid, 'SIGKILL'); } catch {} };
 process.on('exit', () => running.forEach(kill));
-for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(1));
-// a build taking longer has hung (the longest test build takes under a
-// minute)
-const deadline = 300;
+// (128 plus the signal, as a shell reports it)
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(128 + constants.signals[signal]));
+
+// runs a command, killing its process group if it prints nothing for idle
+// seconds: it has hung. A loaded machine slows a build without silencing
+// it for long, where a limit on the total time would fail a slow one.
+// Resolves to { code, log }, the log being stdout and stderr in order
+export function run(command, args, { idle = 180, ...options } = {}) {
+  return new Promise(done => {
+    const child = spawn(command, args, { ...options, detached: true });
+    running.add(child.pid);
+    let log = '', timer;
+    const watch = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        log += `\n[FATAL] ${command} printed nothing for ${idle}s, at: ${log.trim().split('\n').pop()}\n`;
+        kill(child.pid);
+      }, idle * 1000);
+    };
+    watch();
+    for (const stream of [child.stdout, child.stderr]) stream.on('data', d => { log += d; watch(); });
+    child.on('close', code => {
+      clearTimeout(timer);
+      running.delete(child.pid);
+      done({ code, log: log.replace(/\x1b\[[0-9;]*m/g, '') });
+    });
+  });
+}
 
 // runs bin/tex8web on a document, with the page in out and tex4ht's files
 // in aux (both absolute). make4ht reads the -B directory as a Lua pattern
@@ -77,22 +113,7 @@ export async function build(doc, out, aux, env = {}) {
   mkdirSync(aux, { recursive: true });
   const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
     ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], doc.tex];
-  return new Promise(done => {
-    const child = spawn(join(root, 'bin/tex8web'), args, { cwd: doc.dir, env: { ...process.env, ...env }, detached: true });
-    running.add(child.pid);
-    let log = '';
-    const timer = setTimeout(() => {
-      log += `\n[FATAL] make4ht timed out after ${deadline}s, at: ${log.trim().split('\n').pop()}\n`;
-      kill(child.pid);
-    }, deadline * 1000);
-    child.stdout.on('data', d => log += d);
-    child.stderr.on('data', d => log += d);
-    child.on('close', code => {
-      clearTimeout(timer);
-      running.delete(child.pid);
-      done({ code, log: log.replace(/\x1b\[[0-9;]*m/g, '') });
-    });
-  });
+  return run(join(root, 'bin/tex8web'), args, { cwd: doc.dir, env: { ...process.env, ...env } });
 }
 
 // builds a document's PDF in outdir (relative to it) with latexmk: its exit
@@ -102,8 +123,8 @@ const pdfs = new Map();
 export function latexmk(doc, outdir) {
   const key = join(doc.dir, outdir, doc.tex);
   if (!pdfs.has(key)) {
-    pdfs.set(key, new Promise(done => spawn('latexmk', ['-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex],
-      { cwd: doc.dir, stdio: 'ignore' }).on('close', done)));
+    pdfs.set(key, run('latexmk', ['-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex],
+      { cwd: doc.dir }).then(({ code }) => code));
   }
   return pdfs.get(key);
 }

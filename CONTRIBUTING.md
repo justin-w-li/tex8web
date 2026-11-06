@@ -74,32 +74,26 @@ MathJax's TeX input differs from TeX in a few sizes. `js/tex8web.js` sets them a
 - **Subset fonts.** MathJax's, Latin Modern's, TeX Gyre's and XCharter's fonts are cut to the document's characters with [subset-font](https://github.com/papandreou/subset-font). A long page's fonts go from about 380 KB to 140 KB.
 - **No clipping.** MathJax clips each character to its box. In Safari that gives each character its own layer, which makes scrolling slow. The stylesheet removes the clip.
 
-Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped. The page then loads MathJax from jsDelivr and typesets the math in the browser.
+Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped. [DOCUMENTATION.md](DOCUMENTATION.md) says what the page does then ("Without Node").
 
 `tex8web.js` relies on MathJax's internals, so MathJax's version is pinned in `package.json`.
 
 ## Testing
 
-- **`npm test`** runs the Lua unit tests in `test/unit/`, then builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`. A fixture with its own `<name>.cfg` is built with it. Each page is checked for:
-  - TeX errors, build warnings (also make4ht's note that tex4ht wrote HTML its XML parser rejected), and tex8web's warning that tex4ht or a package changed;
-  - MathJax errors, macros MathJax doesn't know, the sizes `tex8web.js` sets, and no `NaN` in any style;
-  - the table of contents beside the text, with its numbers and indents, and each level's font, with tocloft and without it (`test-tocloft.tex` and `test-report.tex`, whose computed fonts `test:visual` checks);
-  - colors in dark mode, `\color` as a declaration (`test-declared.tex`), indexes, each list's lengths, alt text, each example's title and its link to the PDF beside it, the title of a page without `\maketitle`, and pictures' sizes (also with the graphics package, and after angle);
-  - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`), the text in TeX Gyre for Times, Helvetica and Courier (`test-times.tex`, `test-newtx.tex`), in XCharter for Charter and for a font chosen in the text (`test-charter.tex`), or in sans-serif (`test-sans.tex`); a title in the font a redefined `\maketitle` sets (`test-titlefont.tex`); the math in MathJax's Termes, Pagella or Schola for the PDF's in Times, Palatino or New Century Schoolbook (`test-times.tex`, `test-newtx.tex`, `test-pagella.tex` with bbm's, dsfont's and bboldx's fonts, `test-schola.tex`), and in its TeX font otherwise (`test-charter.tex`);
-  - what follows an `\hfill` at the right of its line, and nothing where the `\hfill` is in a box, a label or leaders (`test-hfill.tex`); the spaces of verbatim text, alltt and `\verbatiminput` left alone, and only a `~` narrowed (`test-verbatim.tex`);
-  - an article as LaTeX's standard classes set it (`test-article.tex`): lists with TeX's labels, the space around headings, the abstract's margins, a footnote's leading, the bibliography, a `\tikz` picture's crop and the fonts after it, and the LaTeX logo;
-  - speech for every formula, links and files in place, unique ids, and only publishable files.
+Each script's header comment says what it checks. CLAUDE.md says when to run which.
 
-  It also builds `test-generic` for MathJax in the browser. Each build's log is kept in `build/test/<document>/make4ht.log`. A build still running after five minutes has hung, and is stopped. `node test/run.mjs <name>` builds and checks one document.
-- **`npm run test:visual`** needs Chrome and the network, and takes under two minutes. It builds each document twice into `build/visual/<document>/`, prerendered and for MathJax in the browser. It compares the two in headless Chrome, screen by screen, and they must be identical. Differing screens are saved in `build/visual/<document>/visual/`. It also drives the page's controls: the picture viewer by mouse and touch, the narrow screen's bar, the fade of a display that scrolls, the theme, the contents filter and printing. And it goes from a page to an example and up again, over HTTP, checking each view transition's direction and that the up link went back in history. Run it after changing the math path or `js/tex8web-page.js`, and before merging.
-- **`npm run examples`** builds each example's PDF and page into `examples/<name>/build/`. It then builds the published site in `build/site/`: the index, `examples/index.tex`, with each example beside it. The examples link up to the index, so open them from there. It fails if a page or PDF is missing, or if the index links to a file the site lacks.
-- **`node test/shots.mjs <out> <page or html dir>`** takes the screenshots a visual change is checked with: each page whole, 1400 and 390 pixels wide, light and dark. Set them beside the PDF's page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
-- **`node test/shots.mjs <out> <old dir> <new dir>`** compares two builds that way, screen by screen. It saves the screens that differ and fails if any do.
-- **`--clip <selector>`**, before either, shoots only the band of the page holding the first element the selector matches.
-- **`node test/shots.mjs --eval <expression> <page or html dir>`** prints the expression's value on each page, at both widths and in both schemes, as JSON. It measures one thing, such as an element's box or computed style, without a script of your own.
-- **`node test/diff.mjs <old> <new>`** says what changed in the HTML between two builds: the sections, formulas and stylesheet lines. It prints `unchanged`, or fails.
+- **`npm test`** runs `test/unit/` (Lua), `test/tools.test.mjs` and `test/run.mjs`. The last builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`, and checks each page. `node test/run.mjs <name>` builds one.
+- **`npm run test:visual`** needs Chrome and the network. It runs `test/visual.mjs`, `test/page.mjs` and `test/chrome.test.mjs`.
+  - `visual.mjs` compares each page, prerendered and typeset by MathJax in the browser, screen by screen.
+  - `page.mjs` drives the page's script on the fixtures that have each feature. `npm run test:page` runs it alone.
+  - `chrome.test.mjs` tests `test/lib/chrome.mjs`.
+- **`npm run examples`** builds each example's PDF and page into `examples/<name>/build/`, and the published site in `build/site/`.
+- **`node test/shots.mjs`** takes the screenshots a visual change is checked with, compares two builds, shoots one element's band (`--clip`) and prints a measurement (`--eval`). Set its screenshots beside the PDF's page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
+- **`node test/diff.mjs <old> <new>`** says what changed in the HTML between two builds.
 - **`node test/check.mjs <html dir> [make4ht log] [TeX log]`** runs the generic page checks on any build.
 - **`test/checklist.md`** is the checklist for comparing `test.tex`'s page with its PDF by eye.
+
+Each build's log is kept in `build/test/<document>/make4ht.log`.
 
 **A change that shouldn't show.** Build the pages before and after it, then run `diff.mjs` on the two builds. If the HTML changed, run `shots.mjs` on them too, and look at every screen it saves.
 
@@ -161,5 +155,5 @@ Open an issue with:
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which goes with every page |
 | `examples/` | the examples, and `index.tex`, the published site's index |
-| `test/` | `run.mjs`, `visual.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, `lib/` |
+| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `tools.test.mjs`, `chrome.test.mjs`, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, `lib/` |
 | `.github/workflows/ci.yml` | CI and the published examples |
