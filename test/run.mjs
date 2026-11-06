@@ -45,7 +45,10 @@ const measured = {
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
     '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
   // (and test.cfg's \WebColor, from an xcolor expression and an RGB color)
-  'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235' },
+  // (links unmarked: colored with colorlinks, hidden with hidelinks)
+  'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235',
+    '--tex8web-link-line': 'none' },
+  'test-hidelinks': { '--tex8web-link-line': 'none' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
@@ -393,6 +396,10 @@ function check(doc, result, out, aux) {
   const styles = existsSync(css) ? readFileSync(css, 'utf8') : '';
   for (const [property, value] of Object.entries(measured[doc.name] ?? {})) {
     if (!styles.includes(`${property}: ${value};`)) problems.push(`${property} isn't ${value}`);
+  }
+  // (hyperref's boxed links, which the page underlines)
+  if (doc.name === 'test-generic' && styles.includes('--tex8web-link-line:')) {
+    problems.push("hyperref's boxed links aren't underlined");
   }
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';

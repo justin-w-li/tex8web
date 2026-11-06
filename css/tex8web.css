@@ -20,9 +20,15 @@ html body { color-scheme: inherit; }
    being read */
 :root { --tex8web-highlight: light-dark(#EAECF6, #3B3533); }
 html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
-/* links: hyperref's colors with colorlinks (tex8web-page.tex); otherwise
-   the color of the text, as the PDF draws boxes */
+/* links: hyperref's colors with colorlinks (tex8web-page.tex). Otherwise
+   the color of the text, with a faint underline where the PDF draws boxes
+   around them; none with hidelinks (--tex8web-link-line). The contents,
+   the controls and the # links are the page's, not the document's; a
+   footnote's raised mark, underlined, reads as a stray rule */
 a { color: var(--tex8web-link, inherit); text-decoration: none; }
+a[href] { text-decoration: var(--tex8web-link-line, underline); text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+:is(.tex8web-toc, .tex8web-controls, .footnote-mark) a, a.tex8web-permalink { text-decoration: none; }
 a[href^="#X"] { color: var(--tex8web-cite, inherit); }
 a.url, a[href^="mailto:"] { color: var(--tex8web-url, inherit); }
 /* pictures tex4ht generates (TikZ) are black line art; inverted in dark

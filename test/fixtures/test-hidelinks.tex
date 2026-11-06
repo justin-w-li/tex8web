@@ -1,0 +1,8 @@
+% A test for tex8web: hyperref's hidelinks, whose links the page leaves
+% unmarked as the PDF does (the checks are in test/run.mjs).
+\documentclass{article}
+\usepackage[hidelinks]{hyperref}
+\begin{document}
+\section{A section}\label{s}
+See Section~\ref{s} and \url{https://example.com}.
+\end{document}

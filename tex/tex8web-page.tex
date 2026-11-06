@@ -235,9 +235,10 @@
     }
 \ExplSyntaxOff
 % links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
-% and the links keep the color of the text. tex4ht turns colorlinks on
-% itself, so count it as the document's when its hyperref options name it,
-% or its link colors aren't hyperref's defaults
+% and the links keep the color of the text, underlined (css/tex8web.css).
+% Colored links and hidelinks' need no underline. tex4ht turns colorlinks
+% on itself, so count it as the document's when its hyperref options name
+% it, or its link colors aren't hyperref's defaults
 \ExplSyntaxOn
 \bool_new:N \l__web_colorlinks_bool
 \cs_new_protected:Npn \web@linkcolors {
@@ -262,6 +263,10 @@
             \WebColor{tex8web-cite}{\@citecolor}{tex8web-cite-dark}
             \WebColor{tex8web-url}{\@urlcolor}{tex8web-url-dark}
         }
+    \bool_lazy_or:nnT
+        { \bool_lazy_and_p:nn { \legacy_if_p:n { Hy@colorlinks } } { \l__web_colorlinks_bool } }
+        { \cs_if_exist_p:N \web@hidelinks }
+        { \web@Css{:root~{~--tex8web-link-line:~none;~}} }
 }
 \ExplSyntaxOff
 \@ifpackageloaded{hyperref}{\web@linkcolors}{}

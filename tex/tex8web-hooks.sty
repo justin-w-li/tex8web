@@ -96,6 +96,15 @@
         tex8web index: \imki@program\imki@options#1.idx}}%
 }
 
+% hyperref's hidelinks, whose links tex8web-page.tex leaves unmarked: as a
+% package option, or later in \hypersetup (kvoptions' \KV@Hyp@hidelinks).
+% Its colors and \@pdfborder can't tell: they are the same without it
+\AddToHook{package/hyperref/after}{%
+    \@ifpackagewith{hyperref}{hidelinks}{\gdef\web@hidelinks{}}{}%
+    \expandafter\let\expandafter\web@hidelinks@kv\csname KV@Hyp@hidelinks\endcsname
+    \expandafter\def\csname KV@Hyp@hidelinks\endcsname{\gdef\web@hidelinks{}\web@hidelinks@kv}%
+}
+
 % \@title as the class leaves it without a \title, for tex8web-text.tex
 \let\web@notitle\@title
 

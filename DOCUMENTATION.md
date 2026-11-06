@@ -174,7 +174,7 @@ The page sets its text for a screen. A config's [`\WebLikePDF`](#your-own-config
 These have no switch: each helps reading without changing what the document says.
 
 - The table of contents and the footnotes sit beside the text, not where the PDF puts them. See [On the page](#on-the-page).
-- Without hyperref's `colorlinks`, links are in the text's color. The PDF draws boxes around them, which only a PDF viewer shows.
+- Without hyperref's `colorlinks`, a link is in the text's color with a faint underline, where the PDF draws a box around it. With `hidelinks`, links are unmarked, as in the PDF.
 - A picture given a `width` and a `height` without `keepaspectratio` keeps its proportions instead of being squashed.
 - Dark mode has its own palette.
 
