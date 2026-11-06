@@ -353,9 +353,13 @@ async function hiding(chrome, file) {
     await page.resize(390, 844);
     await page.frame();
     const narrowed = await page.evaluate(`[document.querySelector('.tex8web-controls').classList.contains('tex8web-away'),
-      document.documentElement.className]`);
+      document.getAnimations().map(a => a.transitionProperty).join()]`);
     if (!narrowed[0]) problems.push('the bar not away after a wide window narrowed, scrolled down');
-    if (narrowed[1].includes('tex8web-narrowing')) problems.push(`the page marked "${narrowed[1]}" after a wide window narrowed`);
+    if (narrowed[1]) problems.push(`moving (${narrowed[1]}) as a wide window narrowed`);
+    await page.resize(1600, 900);
+    await page.frame();
+    const widened = await page.evaluate(`document.getAnimations().map(a => a.transitionProperty).join()`);
+    if (widened) problems.push(`moving (${widened}) as a narrow window widened`);
     return problems;
   });
 }
@@ -452,7 +456,9 @@ async function themed(chrome, file) {
 
 // the closer view from the keyboard: a picture takes the focus, Enter or
 // Space opens the view with the focus inside it, and closing it, by Escape,
-// gives the focus back to the picture
+// gives the focus back to the picture (which the popover does itself, so
+// this can't tell the page's own focus() from that). Space, which pages
+// down, doesn't open it again after the picture was clicked, or with Shift
 async function keying(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, {}, async page => {
     const problems = [];
@@ -477,6 +483,21 @@ async function keying(chrome, file) {
         && document.activeElement === document.querySelector('.tex8web-zoomable')`));
       if (!back) problems.push(`Escape after ${name}: the focus not back on the picture`);
     }
+    // (clicked open, clicked closed beside the picture, the focus back on it)
+    const [x, y] = await page.evaluate(zoomableAt);
+    for (const type of ['pressed', 'released']) await page.mouse(type, x, y);
+    if (!await until(state, s => s.open)) return [...problems, 'a picture clicked: no viewer'];
+    for (const type of ['pressed', 'released']) await page.mouse(type, 2, 2);
+    if (!await until(state, s => !s.open)) return [...problems, 'a click beside the picture: the viewer still open'];
+    await page.press(' ', 32);
+    await page.frame();
+    if ((await state()).open) problems.push('Space after a click on the picture opened the viewer again');
+    await focus();
+    await page.press('Enter', 13, 8);
+    await page.frame();
+    if ((await state()).open) problems.push('Shift-Enter on a picture opened the viewer');
+    await page.press('Enter', 13);
+    if (!await until(state, s => s.open)) problems.push('Enter on a picture after a click: no viewer');
     return problems;
   });
 }

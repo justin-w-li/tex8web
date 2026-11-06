@@ -163,8 +163,18 @@
         last = scrollY;
       }
     }, { passive: true });
+    // (the layouts switch at once as a window crosses the breakpoint: the
+    // column of contents would slide away as a drawer, the bar in)
+    const toc = document.getElementById('tex8web-toc');
     addEventListener('resize', () => {
       const now = layout();
+      if (now !== was) {
+        for (const el of [toc, controls]) {
+          if (!el) continue;
+          el.style.transition = 'none';
+          requestAnimationFrame(() => requestAnimationFrame(() => { el.style.transition = ''; }));
+        }
+      }
       if (now === 'wide') controls.classList.remove('tex8web-away');
       else if (was === 'wide') controls.classList.toggle('tex8web-away', !top());
       was = now;
@@ -466,6 +476,11 @@
     copy.querySelectorAll('.tex8web-permalink').forEach(child => child.remove());
     copy.classList.remove('tex8web-sidenote');
     copy.style.top = '';
+    // (a picture's, which opens the viewer; the copy has no listeners)
+    copy.querySelectorAll('[tabindex][role="button"]').forEach(child => {
+      child.removeAttribute('tabindex');
+      child.removeAttribute('role');
+    });
     return copy;
   }
 
@@ -629,10 +644,13 @@
       go(to, px - (px - x) * to / zoom, py - (py - y) * to / zoom, ease);
     };
     const center = ease => go(home, (innerWidth - fitted[0] * home) / 2, (innerHeight - fitted[1] * home) / 2, ease);
-    let opener;
-    const open = img => {
+    // (closing gives the focus back to the picture, as the popover does; but
+    // after a click it would put a focus ring on it, and Space, which pages
+    // down, would open it again: so only after the keyboard opened it)
+    let clicked;
+    const open = (img, byKey) => {
       const box = img.getBoundingClientRect();
-      opener = img;
+      clicked = byKey ? null : img;
       // (the same src, which tex8web-page.tex's rule for TikZ pictures in
       // dark mode picks out)
       picture.setAttribute('src', img.getAttribute('src'));
@@ -658,9 +676,11 @@
       img.setAttribute('role', 'button');
       img.addEventListener('click', () => open(img));
       img.addEventListener('keydown', event => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
+        // (not Space after a click, which pages down, or with a modifier)
+        if ((event.key !== 'Enter' && event.key !== ' ') || event.shiftKey || event.ctrlKey
+          || event.altKey || event.metaKey || !img.matches(':focus-visible')) return;
         event.preventDefault();
-        open(img);
+        open(img, true);
       });
     };
     for (const img of document.images) {
@@ -762,7 +782,7 @@
       setTimeout(() => {
         cover.hidePopover();
         cover.classList.remove('tex8web-closing');
-        opener.focus({ preventScroll: true });
+        clicked?.blur();
       }, 1000 * parseFloat(getComputedStyle(cover).transitionDuration));
     };
     const twice = event => {

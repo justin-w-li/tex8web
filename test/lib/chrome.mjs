@@ -167,10 +167,10 @@ export async function launch() {
           clickCount: 1, deltaX: 0, deltaY: 0, ...extra });
       },
       // a key pressed and let go: key and keyCode as in a KeyboardEvent
-      // ('Escape', 27)
-      async press(key, keyCode) {
+      // ('Escape', 27), with DevTools' modifiers (8 for Shift)
+      async press(key, keyCode, modifiers = 0) {
         for (const type of ['keyDown', 'keyUp']) {
-          await page.send('Input.dispatchKeyEvent', { type, key, code: key, windowsVirtualKeyCode: keyCode });
+          await page.send('Input.dispatchKeyEvent', { type, key, code: key, windowsVirtualKeyCode: keyCode, modifiers });
         }
       },
       // a finger's tap at x, y (a touch screen from the first on)
