@@ -18,7 +18,7 @@ html body { color-scheme: inherit; }
 :root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); --tex8web-text: light-dark(#000000, #E3E3E3); }
 /* what a link leads to, and the table of contents' entry for the section
    being read */
-:root { --tex8web-highlight: light-dark(#EAECF6, #3B3533); }
+:root { --tex8web-highlight: light-dark(#EAECF6, #4A4232); }
 html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
 /* links: hyperref's colors with colorlinks (tex8web-page.tex). Otherwise
    the color of the text, with a faint underline where the PDF draws boxes
@@ -628,6 +628,11 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 .tex8web-toc a { color: inherit; hyphens: manual; }
 .tex8web-toc a[aria-current] { border-radius: 0.2em;
     background-color: var(--tex8web-highlight); }
+/* (under the mouse, tinted as the controls are) */
+@media (hover: hover) {
+    .tex8web-toc a:not([aria-current]):hover { border-radius: 0.2em;
+        background-color: color-mix(in srgb, currentColor 8%, transparent); }
+}
 /* the filter (tex8web-page.js): a field, and what matches in place of the
    entries, the one chosen (which Enter follows) marked while the field has
    focus */
