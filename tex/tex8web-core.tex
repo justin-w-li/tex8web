@@ -32,11 +32,11 @@
 \Css{/* tex8web.css */}
 \makeatother
 
-% tex4ht's split options (1 to 7, or splitat=n) write a page per section,
-% and the build makes one page
+% tex4ht's split options (1 to 7, or splitat= with a level name) write a
+% page per section, and the build makes one page
 \ExplSyntaxOn
 \msg_new:nnn { tex8web } { split }
-    { tex8web~makes~one~page~per~document;~remove~tex4ht's~split~option~(a~number~in~\token_to_str:N \Preamble) }
+    { tex8web~makes~one~page~per~document;~remove~tex4ht's~split~option~(a~number~or~splitat=~in~\token_to_str:N \Preamble) }
 \clist_map_inline:nn { 1, 2, 3, 4, 5, 6, 7 }
     { \:CheckOption {#1} \if:Option \msg_fatal:nn { tex8web } { split } \fi }
 \ExplSyntaxOff

@@ -25,7 +25,13 @@ end
 -- (context.colors) and \contentsname (context.contents) as tex4ht writes it
 function M.build_data(document, context)
   local element = document:query_selector("script[type='text/x-tex8web-build']")[1]
-  if not element then return end
+  local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]
+  local colors = document:query_selector("script[type='text/x-tex8web-colors']")[1]
+  -- (tex8web-page.tex writes all three in the one page; a page without
+  -- them is one tex4ht split off, as a config's \CutAt does)
+  if not (element and name and colors) then
+    error("tex8web makes one page per document; remove \\CutAt or the split option")
+  end
   local pdf = os.getenv("TEX8WEB_PDF") or ""
   if pdf == "" then pdf = element:get_attribute("data-pdf") end
   context.pdf = pdf ~= "" and pdf or nil
@@ -36,10 +42,8 @@ function M.build_data(document, context)
   context.families = {body = body, roman = roman, sans = sans, mono = mono}
   context.macros = element:get_text()
   element:remove_node()
-  local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]
   context.contents = text_of(name)
   name:remove_node()
-  local colors = document:query_selector("script[type='text/x-tex8web-colors']")[1]
   context.colors = colors:get_text()
   colors:remove_node()
 end

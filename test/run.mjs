@@ -617,13 +617,14 @@ if (!only.length) {
 }
 
 // each document built and checked, a few at a time
+const refused = new Set(['test-split', 'test-cutat']);
 const jobs = largestFirst(docs).map(doc => async () => {
   const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
   const result = await build(doc, out, aux, { TEX8WEB_MATHML: '1' });
   mkdirSync(testDir(doc), { recursive: true });
   writeFileSync(join(testDir(doc), 'make4ht.log'), result.log);
-  // (tex8web refuses a document built with tex4ht's split option)
-  if (doc.name === 'test-split') {
+  // (tex8web refuses a document that tex4ht splits into pages)
+  if (refused.has(doc.name)) {
     return report(doc.name, result.code !== 0 && /one page per document/.test(result.log) ? [] : ['the split option was not refused']);
   }
   report(doc.name, check(doc, result, out, aux));

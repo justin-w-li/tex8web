@@ -38,6 +38,9 @@ test('a tag the formulas leave unused may differ', () => {
 test('a page without scripts or math needs no rules', () => {
   assert.deepEqual(readRules('', []).problems, []);
 });
+test('a script with another property', () => {
+  assert.match(problems(css.replace('mjx-script {\n', 'mjx-script {\n  margin-left: 1px;\n'))[0], /^mjx-script has margin-left/);
+});
 test('a script whose padding is not in ems', () => {
   assert.match(problems(css.replace('.05em', '1px'))[0], /padding-right/);
 });

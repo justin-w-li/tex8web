@@ -80,7 +80,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
 
 `tex8web.js` relies on MathJax's internals, so MathJax's version is pinned in `package.json`.
 
-A document has one page. A tex4ht split option (a number in `\Preamble`, or `splitat=`) stops the build in `tex/tex8web-core.tex`, and `test/fixtures/test-split.tex` checks that.
+A document has one page. A tex4ht split option (a number or `splitat=` in `\Preamble`) stops the build in `tex/tex8web-core.tex`. A config's `\CutAt` stops it in `page.build_data`, which finds the page without tex8web's build elements. `test-split.tex` and `test-cutat.tex` check both.
 
 ## Testing
 

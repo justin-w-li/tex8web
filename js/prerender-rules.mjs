@@ -11,7 +11,7 @@ const sizeNames = ['s', 'ss', 'Tn', 'sm', 'lg', 'Lg', 'LG', 'hg', 'HG'];
 
 // the declarations of the rule for exactly this selector, or undefined
 function rule(css, selector) {
-  const body = css.match(new RegExp(`(?:^|\\n)${selector.replace(/[.*+?^${}()|[\]\\"]/g, '\\$&')} \\{([^}]*)\\}`))?.[1];
+  const body = css.match(new RegExp(`(?:^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\{([^}]*)\\}`))?.[1];
   return body && Object.fromEntries(body.split(';').map(part => part.split(/:(.*)/s).map(s => s.trim()))
     .filter(([name]) => name));
 }
@@ -36,6 +36,9 @@ export function readRules(css, used) {
   }
   if (used.includes('mjx-math')) expect('mjx-math', { 'line-height': '0', 'text-align': 'left' });
   const script = used.includes('mjx-script') ? expect('mjx-script', { display: 'inline-block' }) : {};
+  // (the pass deletes the script's element, so no other property may be lost)
+  const extra = Object.keys(script).filter(name => !['display', 'padding-left', 'padding-right'].includes(name));
+  if (extra.length) problems.push(`mjx-script has ${extra.join(', ')}, besides display and padding`);
   const padding = {};
   for (const side of used.includes('mjx-script') ? ['left', 'right'] : []) {
     const value = script[`padding-${side}`]?.match(/^(\d*\.?\d+)em$/);

@@ -60,8 +60,6 @@ for (const node of [...adaptor.tags(root, 'script'), ...adaptor.tags(root, 'div'
 // what its one character can take on itself (MathJax gives these tags
 // display: inline-block, and math has line-height 0), so the page looks the
 // same, as test:visual checks against MathJax's own output in the browser
-// (the values it assumes of MathJax's CSS, read from it below: the font
-// sizes an em in the element itself scales by, a script's padding)
 // (an element's attributes, but data-latex, which the page loses below)
 const attributes = node => adaptor.allAttributes(node).filter(({ name }) => !name.startsWith('data-latex'));
 const only = (node, names) => attributes(node).every(({ name }) => names.includes(name));
@@ -79,9 +77,10 @@ function token(node) {
 }
 
 // a script of one character: the character, raised or lowered itself, with
-// the script's padding (MathJax's CSS) and margin. Each in the script's ems, which the character's size makes
-// smaller: calc() keeps each length as it was, to round to the layout's
-// units on its own as before (the character's left padding is free)
+// the script's padding (MathJax's CSS) and margin. Each in the script's
+// ems, which the character's size makes smaller: calc() keeps each length
+// as it was, to round to the layout's units on its own as before (the
+// character's left padding is free)
 function script(node) {
   const [c, ...rest] = adaptor.childNodes(node);
   if (rest.length || !c || adaptor.kind(c) !== 'mjx-c' || !only(c, ['class', 'size'])
