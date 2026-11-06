@@ -1,0 +1,55 @@
+% A test for tex8web: what follows an \hfill in a paragraph at the right of
+% its line, as in the PDF; and the \hfill that does nothing on the page.
+\documentclass{article}
+\usepackage{amsmath,amsthm,graphicx}
+\begin{document}
+Name \hfill Date
+
+\hfill --- A. Author
+
+First line \hfill right of the first\\
+Second line \hfill right of the second\\
+Third line, with nothing at its right
+
+\textbf{Bold name \hfill bold date}
+
+A paragraph long enough to fill its first line and wrap onto a second one,
+which ends in a note at the right of that line. \hfill (a note)
+
+a \hfill b \hfill c
+
+\begin{enumerate}
+    \item $f(x)=|x|$ \hfill (not differentiable at $0$)
+    \item[\hfill x] A label of its own.
+\end{enumerate}
+
+\begin{description}
+    \item[Term \hfill] Its description \hfill at the right
+\end{description}
+
+\begin{center}
+    Centered left \hfill centered right
+\end{center}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=2cm]{test-picture.png}\hfill
+    \includegraphics[width=2cm]{test-picture.png}
+\end{figure}
+
+\begin{tabular}{|l|p{4cm}|}
+    \hline
+    in a cell \hfill c & in a paragraph cell \hfill p \\
+    \hline
+\end{tabular}
+
+Boxes: \mbox{in \hfill an mbox} and \makebox[4cm]{in \hfill a makebox}.
+
+Leaders: chapter \dotfill 5, and a rule \hrulefill\ here.
+
+Before a break \hfill\break after the break.
+
+\begin{proof}
+Ends in text \hfill (by a lemma)
+\end{proof}
+\end{document}

@@ -71,6 +71,18 @@ return {
       .. "<span class='mathjax-inline'>\\(1\\)</span></span> and a<span class='tex8web-nbsp'>\u{A0}</span>b</p>")
   end,
 
+  ["text.hfill: the rest of each line after its last \\hfill in a span, up to a <br>, a block or a display"] = function()
+    local mark = [[<span class="tex8web-hfill-mark"></span>]]
+    local d = parse("<p>Name " .. mark .. " Date</p>"
+      .. "<p>a " .. mark .. "b " .. mark .. " <b>c</b><br />d " .. mark .. " e<br />f</p>"
+      .. "<dd>g " .. mark .. " <br />h " .. mark .. " <div>i</div>j " .. mark
+      .. [[<span class="mathjax-block">\[x\]</span></dd>]])
+    text.hfill(d)
+    equal(body(d), "<p>Name <span class='tex8web-hfill'> Date</span></p>"
+      .. "<p>a b <span class='tex8web-hfill'> <b>c</b></span><br />d <span class='tex8web-hfill'> e</span><br />f</p>"
+      .. "<dd>g  <br />h  <div>i</div>j <span class='mathjax-block'>\\[x\\]</span></dd>")
+  end,
+
   ["text.minipages: each line of minipages and subfigures in a row, nested ones too, without \\noindent's empty paragraph"] = function()
     local d = parse([[<div class="minipage tex8web-par tex8web-minipage-t">A</div> <span class="tex8web-nbsp">]]
       .. "\u{A0}" .. [[</span><div class="subfigure tex8web-minipage-b">]]

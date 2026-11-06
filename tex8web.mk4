@@ -58,6 +58,7 @@ local passes = {
   text.heading_lists,
   text.same_page_links,
   text.label_space,
+  text.hfill,
   text.no_break_spaces,
   text.minipages,
   text.sidenotes,

@@ -52,7 +52,7 @@ The bridge also handles colors. MathJax knows only CSS's and dvips's color names
 
 **Indexes** (`index.lua`). makeindex gets each `\index`'s count in place of a page number. The counts start at 1000001, so that no number in an entry's text is taken for one. Each count becomes a link back to its `\index`, shown counted from 1. makeindex runs with `-r`, so consecutive counts stay separate. imakeidx runs nothing under tex4ht, so `tex8web-hooks.sty` records the command it would run in the `.aux`.
 
-**The other passes** color the text a `\color` declaration sets, fix spacing, add links to headings and theorems, and add meta tags and the page's controls. They copy what the page needs next to it, and preload the faces its text uses: Latin Modern's, or TeX Gyre's for a document in Times and the like, by the families the build element names.
+**The other passes** color the text a `\color` declaration sets, fix spacing, put what follows an `\hfill` at the right, add links to headings and theorems, and add meta tags and the page's controls. They copy what the page needs next to it, and preload the faces its text uses: Latin Modern's, or TeX Gyre's for a document in Times and the like, by the families the build element names.
 
 ### 3. MathJax's sizes
 
@@ -86,6 +86,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - the table of contents beside the text, with its numbers and indents, and each level's font, with tocloft and without it (`test-tocloft.tex` and `test-report.tex`, whose computed fonts `test:visual` checks);
   - colors in dark mode, `\color` as a declaration (`test-declared.tex`), indexes, each list's lengths, alt text, each example's title and its link to the PDF beside it, the title of a page without `\maketitle`, and pictures' sizes (also with the graphics package, and after angle);
   - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`), and the text in TeX Gyre for Times, Helvetica and Courier (`test-times.tex`, `test-newtx.tex`) or in sans-serif (`test-sans.tex`);
+  - what follows an `\hfill` at the right of its line, and nothing where the `\hfill` is in a box, a label or leaders (`test-hfill.tex`);
   - an article as LaTeX's standard classes set it (`test-article.tex`): lists with TeX's labels, the space around headings, the abstract's margins, a footnote's leading, the bibliography, a `\tikz` picture's crop and the fonts after it, and the LaTeX logo;
   - speech for every formula, links and files in place, unique ids, and only publishable files.
 
@@ -145,7 +146,7 @@ Open an issue with:
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, prerendering |
 | `tex/tex8web-core.tex` | loads the four modules below |
 | `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ in display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, framed's boxes, figures, `\WebTerm` |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill`, the table of contents, lists, framed's boxes, figures, `\WebTerm` |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard, and `\web@needs` |

@@ -411,4 +411,50 @@ function M.colors(document)
   end
 end
 
+-- what follows an \hfill at the right of its line, as in the PDF:
+-- tex8web-text.tex marks each \hfill in a paragraph (span.tex8web-hfill-mark).
+-- What follows the last mark on a line, up to a \\ (<br>), a block or a
+-- display, goes in a span css/tex8web.css floats right
+local function ends_line(node)
+  return node:is_element() and (node:get_element_name() == "br" or blocks[node:get_element_name()]
+    or is_math(node) and not dom.has_class(node, "^mathjax%-inline"))
+end
+
+local function shows(node)
+  return node:is_element() or node:is_text() and node:get_text():find("%S")
+end
+
+function M.hfill(document)
+  local parents, seen = {}, {}
+  for _, mark in ipairs(document:query_selector("span.tex8web-hfill-mark")) do
+    local parent = mark:get_parent()
+    if not seen[parent] then seen[parent], parents[#parents + 1] = true, parent end
+  end
+  for _, parent in ipairs(parents) do
+    -- (from: where out's part after the line's last mark starts)
+    local out, from = {}, nil
+    local function close()
+      local right, shown = from and {table.unpack(out, from)} or {}, false
+      for _, node in ipairs(right) do shown = shown or shows(node) end
+      if shown then
+        for k = #out, from, -1 do out[k] = nil end
+        local span = parent:create_element("span", {class = "tex8web-hfill"})
+        dom.set_children(span, right)
+        out[#out + 1] = span
+      end
+      from = nil
+    end
+    for _, node in ipairs(parent:get_children()) do
+      if dom.has_class(node, "^tex8web%-hfill%-mark$") then
+        from = #out + 1
+      else
+        if ends_line(node) then close() end
+        out[#out + 1] = node
+      end
+    end
+    close()
+    dom.set_children(parent, out)
+  end
+end
+
 return M

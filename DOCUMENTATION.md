@@ -155,6 +155,8 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 **Lists** keep the PDF's labels, as TeX sets them, and each list's indent and spacing.
 
+**`\hfill`** in a paragraph puts the rest of its line at the right, as in the PDF. When the line has no room for it, it goes to the right of the line below.
+
 **Footnotes.** On a wide screen, a footnote sits beside the paragraph, list or theorem with its mark. On a narrow screen, it sits below that paragraph, list or theorem. A footnote in a table, figure, box or formula stays at the end of the page.
 
 **Previews.** Pointing at a reference, citation, footnote mark or section link shows what it points to in a card. The keyboard shows it too. On a touch screen, the first tap shows it and the second follows the link.
@@ -213,6 +215,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **`\color` for the whole document**, in the preamble or in `\AtBeginDocument`, isn't followed. A `\normalcolor` inside a colored group doesn't bring back the text's color.
 - **tocloft's fonts for lists of figures and tables**, `\cftfigfont` and `\cfttabfont`, aren't followed. Those lists stay in the text's font.
 - **The QED box** of an amsthm proof sits at the right, in a display's tag after `\qedhere` as in the PDF. Not followed: with a `\tag` of the display's own the proof ends with its box below the display, as it does after `$$ $$` and `displaymath`; in `multline` the box goes under the number, not at the end of the last line. A `\qedsymbol` that isn't math or text MathJax can read, such as `\ensuremath{...}`, shows in red in a display.
+- **Several `\hfill`s on a line.** Only what follows the last one goes to the right; the parts before it stay together at the left. In a centered paragraph, an `\hfill` sends its other lines to the left too.
 - **enumitem.** `align=left`, `wide` and `itemindent` aren't followed: labels are right-aligned and hang into the margin, as LaTeX's own are.
 - **A TikZ picture in display math**, such as a `tikzcd`, is drawn as a picture together with the rest of that display's math.
 - **Safari after a swipe back.** Once a reader swipes back to a page, Safari no longer slides when they return to it from history, by the up icon or the back button. The page still comes back where they were.

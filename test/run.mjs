@@ -424,6 +424,34 @@ const qed = {
   ],
 };
 
+// what follows an \hfill in a paragraph, in a span the stylesheet floats
+// right: up to the end of the paragraph or of its line (\\), after the
+// last \hfill of a line, in a list item, a centered paragraph, a figure,
+// a paragraph cell and a proof (before its QED box); none in a box, a
+// label, a cell of one line, \dotfill and \hrulefill, or before \break,
+// and no mark left
+const hfill = {
+  'test-hfill': [
+    /<p class='noindent'>Name\s+<span class='tex8web-hfill'>Date/,
+    /<p class='indent'>\s*<span class='tex8web-hfill'>— A\./,
+    /First line\s+<span class='tex8web-hfill'>right of the\s+first<\/span><br class='newline' \/>Second line\s+<span class='tex8web-hfill'>right of the\s+second<\/span><br class='newline' \/>Third line/,
+    /<span class='cmbx-10'>Bold name\s*<\/span><span class='tex8web-hfill'><span class='cmbx-10'>bold\s+date/,
+    /that line\.\s+<span class='tex8web-hfill'>\(a\s+note\)/,
+    /a\s+b\s+<span class='tex8web-hfill'>c\s/,
+    /<\/mjx-container>\s+<span class='tex8web-hfill'>\(not differentiable at/,
+    /Its description\s+<span class='tex8web-hfill'>at the\s+right/,
+    /Centered left\s+<span class='tex8web-hfill'>centered right/,
+    /<figure class='figure'>(?:(?!<\/figure>)[^])*<img [^>]*\/>\s*<span class='tex8web-hfill'><img /,
+    /in a paragraph cell\s+<span class='tex8web-hfill'>p/,
+    /Ends in text\s+<span class='tex8web-hfill'>\(by a\s+lemma\)<span class='tex8web-qed'>/,
+    /^(?:(?!tex8web-hfill')[^])*(?:tex8web-hfill'(?:(?!tex8web-hfill')[^])*){13}$/,
+    /^(?![^]*tex8web-hfill-mark)/,
+  ],
+  'examples/complex': [/^(?:(?!\(not differentiable)[^])*(?:<span class='tex8web-hfill'>\(not differentiable(?:(?!\(not differentiable)[^])*){2}$/],
+  // (tcolorbox's after upper, tex8web-boxes.tex)
+  'examples/custom': [/<span class='tex8web-hfill'><mjx-container/],
+};
+
 // the fonts preloaded, and no others: the faces of the text (bold
 // headings, italic, \texttt; but not \verb, in the browser's monospace)
 // and MathJax's that the math uses
@@ -524,6 +552,9 @@ function check(doc, result, out, aux) {
   }
   for (const pattern of lists[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} among the lists`);
+  }
+  for (const pattern of hfill[doc.name] ?? []) {
+    if (!pattern.test(html)) problems.push(`no ${pattern.source} after an \\hfill`);
   }
   if (tikz[doc.name]) {
     const svg = existsSync(join(out, tikz[doc.name])) ? readFileSync(join(out, tikz[doc.name]), 'utf8') : '';

@@ -333,8 +333,14 @@ p:has(> .tex8web-qed), .tex8web-qed-line { display: flow-root; }
 /* a \tcbox in its line (tex8web-boxes.tex), on the text's baseline */
 span.tcolorbox { display: inline-block; margin-block: 0; vertical-align: baseline; }
 span.tcolorbox > .tcolorbox-title { display: block; }
-/* what follows an \hfill in an after upper (a proof's square) */
-.tex8web-hfill { float: right; }
+/* what follows an \hfill (tex8web-text.tex), at the right of its line as in
+   the PDF, or of the line below when the line has no room; a quad from the
+   text, as the QED box; its paragraph contains it, as the QED box's does */
+.tex8web-hfill { float: right; float: inline-end; margin-inline-start: 1em; text-align: end; }
+p:has(.tex8web-hfill) { display: flow-root; }
+/* (its fill outstretches \centering's, so the line's start is at the left,
+   in a center environment and in a figure, which tex4ht centers) */
+:is(div.center, figure) p:has(.tex8web-hfill) { text-align: start; }
 /* framed's, as far from the text as in the PDF (tex8web-text.tex). Under
    a titlesec heading, that and the heading's space below, not the larger:
    titlesec puts it with \vspace, which ends in \vskip\z@skip (source2e),
