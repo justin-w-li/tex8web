@@ -173,6 +173,8 @@ const index = {
 const titled = name => [new RegExp(`<button aria-label='${name}' class='tex8web-control tex8web-contents'[^>]* title='${name}'`),
   new RegExp(`<p class='tex8web-toc-title' id='tex8web-toc-title'>${name}</p>`)];
 const contents = {
+  // (and test.cfg's \WebUp, the first of the controls)
+  'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/'/],
   'test-russian': titled('Содержание'),
   'test-greek': titled('Περιεχόμενα'),
   'test-report': [
@@ -454,6 +456,7 @@ function check(doc, result, out, aux) {
   if (doc.name.startsWith('examples/') && !/<title>\s*\S/.test(html)) problems.push('no <title>');
   // (with -p, or custom.cfg's \WebPDF)
   if (doc.pdf && !(html.includes("href='main.pdf'") && existsSync(join(out, 'main.pdf')))) problems.push('no link to the PDF beside it');
+  if (doc.up && !html.includes(`class='tex8web-control tex8web-up' href='${doc.up}'`)) problems.push('no link up to the index');
   for (const pattern of typeset[doc.name] ?? []) {
     if (!pattern.test(html)) problems.push(`no ${pattern.source} in the typeset math`);
   }

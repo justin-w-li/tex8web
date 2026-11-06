@@ -90,7 +90,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - speech for every formula, links and files in place, unique ids, and only publishable files.
 
   It also builds `test-generic` for MathJax in the browser. Each build's log is kept in `build/test/<document>/make4ht.log`. A build still running after five minutes has hung, and is stopped. `node test/run.mjs <name>` builds and checks one document.
-- **`npm run test:visual`** needs Chrome and the network, and takes under two minutes. It builds each document twice into `build/visual/<document>/`, prerendered and for MathJax in the browser. It compares the two in headless Chrome, screen by screen, and they must be identical. Differing screens are saved in `build/visual/<document>/visual/`. It also drives the page's controls: the picture viewer by mouse and touch, the narrow screen's bar, the fade of a display that scrolls, the theme, the contents filter and printing. Run it after changing the math path or `js/tex8web-page.js`, and before merging.
+- **`npm run test:visual`** needs Chrome and the network, and takes under two minutes. It builds each document twice into `build/visual/<document>/`, prerendered and for MathJax in the browser. It compares the two in headless Chrome, screen by screen, and they must be identical. Differing screens are saved in `build/visual/<document>/visual/`. It also drives the page's controls: the picture viewer by mouse and touch, the narrow screen's bar, the fade of a display that scrolls, the theme, the contents filter and printing. And it goes from a page to an example and up again, over HTTP, checking each view transition's direction and that the up link went back in history. Run it after changing the math path or `js/tex8web-page.js`, and before merging.
 - **`npm run examples`** builds each example's PDF and page into `examples/<name>/build/`. It then builds the published site in `build/site/`: the index, `examples/index.tex`, with each example beside it. It fails if a page or PDF is missing, or if the index links to a file the site lacks.
 - **`node test/shots.mjs <out> <page or html dir>`** takes the screenshots a visual change is checked with: each page whole, 1400 and 390 pixels wide, light and dark. Set them beside the PDF's page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
 - **`node test/shots.mjs <out> <old dir> <new dir>`** compares two builds that way, screen by screen. It saves the screens that differ and fails if any do.
@@ -146,7 +146,7 @@ Open an issue with:
 | `tex/tex8web-core.tex` | loads the four modules below |
 | `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ in display math |
 | `tex/tex8web-text.tex` | links, cross-references, theorems, the table of contents, lists, framed's boxes, figures, `\WebTerm` |
-| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebColor`, `\color` as a declaration, the document's measurements and heading fonts |
+| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard, and `\web@needs` |
 | `css/tex8web.css` | the page's styles |
@@ -155,8 +155,8 @@ Open an issue with:
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, prerendering |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
 | `js/tex8web.js` | MathJax's sizes set as TeX's |
-| `js/tex8web-head.js` | the reader's theme and table of contents setting, applied before the page is drawn |
-| `js/tex8web-page.js` | the page's controls, footnotes, table of contents, previews and picture viewer |
+| `js/tex8web-head.js` | the reader's theme and table of contents setting, applied before the page is drawn, and the direction of the transition to the next page |
+| `js/tex8web-page.js` | the page's controls (the up link going back in history), footnotes, table of contents, previews and picture viewer |
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which goes with every page |
 | `examples/` | the examples, and `index.tex`, the published site's index |

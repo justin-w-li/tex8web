@@ -715,6 +715,26 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
    as the page reloads) */
 @media (prefers-reduced-motion: no-preference) { html.tex8web-smooth { scroll-behavior: smooth; } }
 
+/* following a link to another of the site's tex8web pages: the page moves
+   a little toward where the reader goes, forward to the left and back to
+   the page above to the right (tex8web-head.js names which), and fades
+   into the next. Browsers do this only between pages of one origin */
+@media (prefers-reduced-motion: no-preference) {
+    @view-transition { navigation: auto; }
+    :root:active-view-transition-type(tex8web-forward)::view-transition-old(root) {
+        animation: var(--tex8web-fade) ease-in both tex8web-to-left; }
+    :root:active-view-transition-type(tex8web-forward)::view-transition-new(root) {
+        animation: var(--tex8web-fade) ease-out both tex8web-from-right; }
+    :root:active-view-transition-type(tex8web-back)::view-transition-old(root) {
+        animation: var(--tex8web-fade) ease-in both tex8web-to-right; }
+    :root:active-view-transition-type(tex8web-back)::view-transition-new(root) {
+        animation: var(--tex8web-fade) ease-out both tex8web-from-left; }
+}
+@keyframes tex8web-to-left { to { opacity: 0; translate: -1.5rem; } }
+@keyframes tex8web-from-right { from { opacity: 0; translate: 1.5rem; } }
+@keyframes tex8web-to-right { to { opacity: 0; translate: 1.5rem; } }
+@keyframes tex8web-from-left { from { opacity: 0; translate: -1.5rem; } }
+
 /* --- print ------------------------------------------------------------- */
 
 /* printed, the page is the document, in light mode's colors (the reader's

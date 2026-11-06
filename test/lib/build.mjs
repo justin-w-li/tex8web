@@ -17,7 +17,8 @@ export const testDir = (doc, base = 'test') => join(root, 'build', base, doc.nam
 
 // test/fixtures/*.tex and examples/*/main.tex, each with its config: the
 // document's own <name>.cfg if it has one, otherwise tex8web.cfg. An
-// example links its PDF, which it is published with
+// example links its PDF, which it is published with, and the site's index
+// above it
 export function documents() {
   const docs = [];
   const fixtures = join(root, 'test/fixtures');
@@ -31,7 +32,8 @@ export function documents() {
     if (!existsSync(join(dir, 'main.tex'))) continue;
     const own = join(dir, `${name}.cfg`);
     docs.push({ name: `examples/${name}`, dir, tex: 'main.tex',
-      cfg: existsSync(own) ? own : join(root, 'tex8web.cfg'), pdf: 'build/pdf/main.pdf' });
+      cfg: existsSync(own) ? own : join(root, 'tex8web.cfg'), pdf: 'build/pdf/main.pdf',
+      up: '../index.html' });
   }
   return docs;
 }
@@ -74,7 +76,7 @@ export async function build(doc, out, aux, env = {}) {
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
   const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
-    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], doc.tex];
+    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], doc.tex];
   return new Promise(done => {
     const child = spawn(join(root, 'bin/tex8web'), args, { cwd: doc.dir, env: { ...process.env, ...env }, detached: true });
     running.add(child.pid);

@@ -11,17 +11,20 @@
 %   from the document, in ems of its body font, for MathJax's sizes (see
 %   tex8web.js). page.lua adds the scripts that read it
 % - two build elements, for the HTML passes, which remove them: the PDF
-%   (\WebPDF) and the \WebMathMacros definitions; and \contentsname,
+%   (\WebPDF), the page above (\WebUp) and the \WebMathMacros definitions; and \contentsname,
 %   typeset, so that tex4ht writes its letters (babel's are font commands,
 %   \CYRS, of which \text_purify:n knows only Latin's), in a group: the
 %   head is written as the document starts, so a \contentsname's font
 %   commands (\scshape) would set the whole text
 % \WebPDF{path}: an icon linking to the document's PDF; tex8web.mk4
 % copies the file (path from the document's directory) next to the page
+% \WebUp{url}: an icon linking to the page above this one on its site
 \setbox\z@\hbox{\everymath{}$\xdef\web@exscale{\web@ratio{\fontdimen6\textfont3}}$}
 \ExplSyntaxOn
 \tl_new:N \g__web_pdf_tl
 \NewDocumentCommand\WebPDF{m}{\tl_gset:Nn \g__web_pdf_tl {#1}}
+\tl_new:N \g__web_up_tl
+\NewDocumentCommand\WebUp{m}{\tl_gset:Nn \g__web_up_tl {#1}}
 \cs_new_protected:Npn \__web_escape:N #1 {
     \regex_replace_all:nnN { \x{26} } { &amp; } #1
     \regex_replace_all:nnN { \x{3C} } { &lt; } #1
@@ -31,7 +34,7 @@
     \tl_set:Ne \l__web_build_tl {\exp_args:NV \detokenize \g__web_macros_tl}
     \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } \l__web_build_tl
     \__web_escape:N \l__web_build_tl
-    \HCode{<script~type="text/x-tex8web-build"~data-pdf="\tl_to_str:N \g__web_pdf_tl">
+    \HCode{<script~type="text/x-tex8web-build"~data-pdf="\tl_to_str:N \g__web_pdf_tl"~data-up="\tl_to_str:N \g__web_up_tl">
         \l__web_build_tl</script><script~type="text/x-tex8web-contents">}
     \group_begin: \cs_if_exist_use:N \contentsname \group_end:
     \HCode{</script>\Hnewline}

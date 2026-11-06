@@ -1,11 +1,11 @@
-// tex8web's page in the browser: the theme button, the contents button on
-// a wide screen, the controls' bar on a narrow screen, smooth scrolling to
-// links, footnotes lined up with their marks, the table of contents
-// following the section being read, previews of what a link on the page
-// leads to, a closer view of pictures, and a fade at the edge of what
-// scrolls sideways. page.lua and text.lua build what this works on (and
-// tex8web-head.js marks <html> tex8web-js before the page is drawn), and
-// the page reads fine without it (css/tex8web.css).
+// tex8web's page in the browser: the up link, the theme button, the
+// contents button on a wide screen, the controls' bar on a narrow screen,
+// smooth scrolling to links, footnotes lined up with their marks, the table
+// of contents following the section being read, previews of what a link on
+// the page leads to, a closer view of pictures, and a fade at the edge of
+// what scrolls sideways. page.lua and text.lua build what this works on
+// (and tex8web-head.js marks <html> tex8web-js before the page is drawn),
+// and the page reads fine without it (css/tex8web.css).
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
@@ -50,6 +50,28 @@
     if (number) line.prepend(`${number} `);
     return line;
   };
+
+  // a page's address without its fragment, and a folder's index.html as the
+  // folder, as a server gives it
+  const page = url => url.split('#')[0].replace(/\/index\.html$/, '/');
+
+  // the up link goes back in history when the page before this one is the
+  // page above, which keeps the reader's place there (with the Navigation
+  // API; without it, the link loads the page)
+  function up() {
+    const a = document.querySelector('.tex8web-up');
+    if (!a || !window.navigation) return;
+    a.addEventListener('click', event => {
+      if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const here = page(location.href);
+      const before = navigation.entries().slice(0, navigation.currentEntry.index).reverse()
+        .find(entry => page(entry.url) !== here);
+      if (before && page(before.url) === page(a.href)) {
+        event.preventDefault();
+        navigation.traverseTo(before.key);
+      }
+    });
+  }
 
   // the theme: light or dark as the reader last chose, on any tex8web page
   // (a script in <head> applies it before the page is drawn), or else as
@@ -759,6 +781,7 @@
     cover.addEventListener('dblclick', event => { if (!touch) twice(event); });
   }
 
+  up();
   theme();
   column();
   bar();

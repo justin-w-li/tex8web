@@ -11,10 +11,12 @@
 // edge where more is hidden, its bar there come and go as it scrolls,
 // its theme button be there before tex8web-page.js runs, a theorem, list
 // or framed box under a heading as far below it as in the PDF, and no
-// math character be clipped.
+// math character be clipped. Going from a page to an example and up again
+// should slide forward, then back, and go back in history.
 //   node test/visual.mjs [document names...]
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { extname, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build, documents, largestFirst, pool, testDir, workers } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
@@ -519,6 +521,59 @@ async function themed(chrome, file) {
   return shown ? [] : ['the theme button hidden with JavaScript on, before tex8web-page.js runs'];
 }
 
+// from one page of a site to another, served over HTTP as a file has no
+// origin to share: from another page, as the site's index, to an example
+// (which links up to ../index.html), then up again. The first change runs
+// css/tex8web.css's view transition forward and the second back
+// (tex8web-head.js), and the up link goes back in history rather than to a
+// new entry (tex8web-page.js)
+const served = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2' };
+// (each page's transition, once tex8web-head.js, which listens after this,
+// has named it)
+const seenTypes = `addEventListener('pagereveal', event => setTimeout(() => {
+  const types = event.viewTransition ? [...event.viewTransition.types].join() || 'untyped' : 'none';
+  const seen = JSON.parse(sessionStorage.getItem('seen') ?? '[]');
+  sessionStorage.setItem('seen', JSON.stringify([...seen, types]));
+}));`;
+async function navigating(chrome, example, index) {
+  const site = join(testDir(example, 'visual'), 'site');
+  rmSync(site, { recursive: true, force: true });
+  cpSync(join(testDir(index, 'visual'), 'html'), site, { recursive: true });
+  renameSync(join(site, `${index.name}.html`), join(site, 'index.html'));
+  cpSync(join(testDir(example, 'visual'), 'html'), join(site, 'example'), { recursive: true });
+  const server = createServer((request, response) => {
+    const file = join(site, decodeURIComponent(new URL(request.url, 'http://localhost').pathname));
+    if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return response.writeHead(404).end();
+    response.writeHead(200, { 'content-type': served[extname(file)] ?? 'application/octet-stream' })
+      .end(readFileSync(file));
+  });
+  await new Promise(done => server.listen(0, '127.0.0.1', done));
+  const page = await chrome.open(`http://127.0.0.1:${server.address().port}/index.html`, { before: seenTypes });
+  // (the page's evaluate fails while the next page loads)
+  const arrive = async path => {
+    for (let t = 0; t < 10000; t += 100) {
+      if (await page.evaluate(`location.pathname === '${path}' && document.readyState === 'complete'`)
+        .catch(() => false)) return;
+      await new Promise(done => setTimeout(done, 100));
+    }
+    throw new Error(`not at ${path} in 10s`);
+  };
+  const problems = [];
+  try {
+    await page.evaluate(`location.href = 'example/main.html'`);
+    await arrive('/example/main.html');
+    await page.evaluate(`document.querySelector('.tex8web-up').click()`);
+    await arrive('/index.html');
+    const [seen, entry] = await page.evaluate(`[JSON.parse(sessionStorage.getItem('seen')), navigation.currentEntry.index]`);
+    if (seen.join(' ') !== 'none tex8web-forward tex8web-back') problems.push(`view transitions ${seen.join(', ')}`);
+    if (entry !== 0) problems.push(`the up link went to history's entry ${entry}, not back to 0`);
+  } finally {
+    await page.close();
+    server.close();
+  }
+  return problems.map(p => `going to an example and up: ${p}`);
+}
+
 // printed (css/tex8web.css), from a wide screen in dark mode (the system's
 // and the reader's): light mode's colors and pictures, and none of the
 // page's own controls; then on a sheet of paper (Letter inside Chrome's
@@ -709,6 +764,13 @@ while (waiting.size) {
     .catch(error => ({ lines: [`not ok - ${doc.name}`, `    ${error.message}`], failed: true }));
   console.log(lines.join('\n'));
   failures += failed ? 1 : 0;
+}
+// (with the pages compared above, which their builds are)
+const [example, index] = ['examples/basic', 'test-generic'].map(name => docs.find(doc => doc.name === name));
+if (example && index) {
+  const problems = await navigating(chrome, example, index).catch(error => [error.message]);
+  console.log([`${problems.length ? 'not ok' : 'ok'} - navigation`, ...problems.map(p => `    ${p}`)].join('\n'));
+  failures += problems.length ? 1 : 0;
 }
 chrome.close();
 console.log(failures ? `\n${failures} failed` : '\nall passed');

@@ -20,7 +20,8 @@ end
 
 -- tex8web-page.tex's build elements, for the later passes: the PDF
 -- (context.pdf: TEX8WEB_PDF, which tex8web's -p sets, or else \WebPDF's),
--- the \WebMathMacros definitions (context.macros), the colors for math
+-- the page above (context.up: TEX8WEB_UP, from -u, or else \WebUp's), the
+-- \WebMathMacros definitions (context.macros), the colors for math
 -- (context.colors) and \contentsname (context.contents) as tex4ht writes it
 function M.build_data(document, context)
   local element = document:query_selector("script[type='text/x-tex8web-build']")[1]
@@ -28,6 +29,9 @@ function M.build_data(document, context)
   local pdf = os.getenv("TEX8WEB_PDF") or ""
   if pdf == "" then pdf = element:get_attribute("data-pdf") end
   context.pdf = pdf ~= "" and pdf or nil
+  local up = os.getenv("TEX8WEB_UP") or ""
+  if up == "" then up = element:get_attribute("data-up") end
+  context.up = up ~= "" and up or nil
   context.macros = element:get_text()
   element:remove_node()
   local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]
@@ -99,6 +103,7 @@ end
 -- line icons for the controls (24 by 24, drawn with css/tex8web.css's
 -- stroke)
 local icons = {
+  up = '<path d="M19 12H5M11 6l-6 6 6 6"/>',
   contents = '<path d="M4 6h16M4 12h16M4 18h10"/>',
   pdf = '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>'
     .. '<path d="M14 3v5h5M9 13h6M9 17h4"/>',
@@ -172,16 +177,20 @@ local function contents(document, body, title)
   return nav, title
 end
 
--- the controls at the top left: the table of contents (as a drawer, on a
--- narrow screen; hidden or shown, on a wide one), the PDF (-p, \WebPDF),
--- copied next to the page, the theme, which needs tex8web-page.js, and
--- tex8web's repository, and on a narrow screen the section being read,
--- which tex8web-page.js fills in and which opens the table of contents
--- too; then the table of contents
+-- the controls at the top left: the page above (-u, \WebUp), the table
+-- of contents (as a drawer, on a narrow screen; hidden or shown, on a wide
+-- one), the PDF (-p, \WebPDF), copied next to the page, the theme, which
+-- needs tex8web-page.js, and tex8web's repository, and on a narrow screen
+-- the section being read, which tex8web-page.js fills in and which opens
+-- the table of contents too; then the table of contents
 function M.controls(document, context)
   local body = document:query_selector("body")[1]
   local controls = body:create_element("div", {class = "tex8web-controls"})
   local toc, title = contents(document, body, context.contents)
+  if context.up then
+    control(controls, "up", {class = "tex8web-control tex8web-up", href = context.up,
+      title = "Up", ["aria-label"] = "Up"})
+  end
   if toc then
     control(controls, "contents", {class = "tex8web-control tex8web-contents", type = "button",
       popovertarget = "tex8web-toc", title = title, ["aria-label"] = title})
