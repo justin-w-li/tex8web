@@ -1,0 +1,18 @@
+% A test for tex8web's table of contents with no section-level entry
+% before the first section: its subsections are shown while one of them
+% is being read. The first one has math in its title, and a display wider
+% than a phone's screen follows, for the page typeset in the browser (the
+% checks are in test/page.mjs).
+\documentclass{article}
+\newcommand\para{Some text to fill a line or two of the page, and a little more.\par}
+\newcommand\ten{\para\para\para\para\para\para\para\para\para\para}
+\begin{document}
+\tableofcontents
+\subsection{First $L^2$ lead}
+\[ a_1 + a_2 + a_3 + a_4 + a_5 + a_6 + a_7 + a_8 + a_9 + a_{10} + a_{11} + a_{12} + a_{13} + a_{14} + a_{15} + a_{16} + a_{17} + a_{18} + a_{19} + a_{20} \]
+\ten\ten\ten
+\subsection{Second lead}\ten\ten\ten
+\subsection{Third lead}\ten\ten\ten
+\section{First section}\ten\ten\ten
+\subsection{Under the first}\ten\ten\ten
+\end{document}

@@ -161,7 +161,7 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 **Previews.** Pointing at a reference, citation, footnote mark or section link shows what it points to in a card. The keyboard shows it too. On a touch screen, the first tap shows it and the second follows the link.
 
-**Pictures.** Clicking a picture in a figure or a display, or any picture much taller than a line, opens it over the page. There the reader can zoom with the wheel, a pinch or a double-click, and drag it. Escape or a click beside it closes it.
+**Pictures.** Clicking a picture in a figure or a display, or any picture much taller than a line, opens it over the page. There the reader can zoom with the wheel, a pinch or a double-click, and drag it. Escape or a click beside it closes it. A picture can also be reached with Tab and opened with Enter or Space, and closing it returns the focus to the picture.
 
 **Links.** Headings and numbered theorems have a `#` link in the margin, shown on hover. So does a titled tcolorbox with a number or label. On a narrow screen, the heading or theorem's head is the link.
 

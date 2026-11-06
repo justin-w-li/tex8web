@@ -12,17 +12,20 @@ try {
 } catch {}
 
 // the change from one of a site's tex8web pages to another (css/tex8web.css's
-// @view-transition): back when it's to the page above (\WebUp), or else
-// forward. The page left knows which, and tells the page it leads to
+// @view-transition): back when it's to the page above (\WebUp) or the
+// browser goes back in history, or else forward. The page left knows
+// which, and tells the page it leads to
 {
   // (as tex8web-page.js's)
   const page = url => url.split('#')[0].replace(/\/index\.html$/, '/');
   addEventListener('pageswap', event => {
-    const to = event.activation?.entry.url;
-    if (!event.viewTransition || !to) return;
+    const { entry, from, navigationType } = event.activation ?? {};
+    if (!event.viewTransition || !entry) return;
     const up = document.querySelector('.tex8web-up');
-    const type = up && page(to) === page(up.href) ? 'back' : 'forward';
-    try { sessionStorage.setItem('tex8web-transition', JSON.stringify({ to: page(to), type })); } catch {}
+    const back = up && page(entry.url) === page(up.href)
+      || navigationType === 'traverse' && entry.index < from?.index;
+    const to = page(entry.url), type = back ? 'back' : 'forward';
+    try { sessionStorage.setItem('tex8web-transition', JSON.stringify({ to, type })); } catch {}
   });
   addEventListener('pagereveal', event => {
     try {

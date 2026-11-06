@@ -269,7 +269,12 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
 .tex8web-zoomable:not(.tex8web-preview *) { cursor: zoom-in; }
 .tex8web-viewer { inset: 0; width: auto; height: auto; margin: 0; padding: 0; border: 0;
     overflow: hidden; color: inherit; background-color: rgb(0 0 0 / 0.6);
+    /* (the blur keeps the text around the picture from being read through
+       the cover) */
     backdrop-filter: blur(3px); touch-action: none; -webkit-user-select: none; user-select: none; }
+/* (it takes the focus as it opens, for the keyboard; a ring around the whole
+   screen says nothing) */
+.tex8web-viewer:focus { outline: none; }
 .tex8web-plate { --tex8web-room: calc(2 * max(1rem, 4vmin) + 1rem);
     --tex8web-fit: min(100vw - var(--tex8web-room),
         (100dvh - var(--tex8web-room)) * var(--tex8web-ratio));
@@ -584,19 +589,6 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
         .tex8web-controls { transition: transform var(--tex8web-fade), opacity var(--tex8web-fade); }
         .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
             transition: transform var(--tex8web-fade), opacity 0s var(--tex8web-fade); }
-        /* from a wide screen to a narrow one (tex8web-page.js): the column
-           of contents and the icons fade where they are on a wide screen
-           (as in the @media (--tex8web-wide) rules below, which these
-           follow), rather than slide away as the drawer and the bar
-           would */
-        .tex8web-narrowing .tex8web-toc:not(:popover-open) {
-            inset: var(--tex8web-column-inset); width: var(--tex8web-margin); height: auto;
-            padding: 0 0.5rem; border: 0; background: none; translate: none; opacity: 0;
-            transition: opacity var(--tex8web-fade), display var(--tex8web-fade) allow-discrete; }
-        .tex8web-narrowing .tex8web-where { display: none; }
-        .tex8web-narrowing .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
-            inset: var(--tex8web-icons-inset); padding: 0.125rem; border: 0;
-            border-radius: 0.5rem; transform: none; transition: opacity var(--tex8web-fade); }
     }
 }
 

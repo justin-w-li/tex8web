@@ -257,8 +257,9 @@ function M.meta_tags(document)
 end
 
 -- tex8web-head.js (the reader's theme, before the page is drawn, and the
--- transition from the page before) and tex8web-page.js (the theme button,
--- the table of contents' tracking);
+-- transition from the page before) and tex8web-page.js (the controls, the
+-- table of contents and its filter, previews, the picture viewer, the fade
+-- at an edge);
 -- and for MathJax in the browser, MathJax and tex8web.js, which configures
 -- it from tex8web-config (marked for prerender.mjs, which removes them)
 function M.scripts(document, context)
