@@ -291,7 +291,7 @@ for (const name of readdirSync(latinModern).filter(name => name.endsWith('.woff2
 // TeX Live)
 for (const name of new Set([...read(/\.css$/).matchAll(/url\("fonts\/(texgyre\w+-\w+)\.woff2"\)/g)]
   .map(match => match[1]))) {
-  const source = spawnSync('kpsewhich', [`${name}.otf`], { encoding: 'utf8' }).stdout.trim();
+  const source = spawnSync('kpsewhich', [`${name}.otf`], { encoding: 'utf8' }).stdout?.trim();
   const path = join(dir, 'fonts', `${name}.woff2`);
   if (source) {
     fonts.push([source, path]);

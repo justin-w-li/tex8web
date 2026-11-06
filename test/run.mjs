@@ -434,12 +434,12 @@ const preloads = {
   // (the table of contents' sans-serif, bold and italic entries)
   'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
     'lmsans10-regular'],
-  // (in Times, Helvetica and Courier: TeX Gyre's faces, Latin Modern's for
-  // the controls)
-  'test-times': ['lmroman10-regular', 'texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic',
+  // (in Times, Helvetica and Courier: TeX Gyre's faces, for the controls
+  // too, as for the text in sans-serif)
+  'test-times': ['texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic',
     'texgyreheros-regular', 'texgyrecursor-regular', 'mathjax/mjx-tex-zero', 'mathjax/mjx-tex-n'],
-  // (the text in sans-serif)
   'test-sans': ['lmroman10-regular', 'lmsans10-regular', 'lmsans10-bold', 'lmsans10-oblique'],
+  'test-newtx': ['texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic', 'texgyreheros-regular'],
 };
 
 // the text's fonts: TeX Gyre's for Times, Helvetica and Courier, each in
@@ -451,7 +451,10 @@ const families = {
     ':root { --tex8web-sans: "TeX Gyre Heros", "Latin Modern Sans", sans-serif; }',
     ':root { --tex8web-mono: "TeX Gyre Cursor", "Latin Modern Mono", monospace; }',
     '[class^="phv"], [class*="-phv"] { font-family: var(--tex8web-sans); }'],
-  'test-sans': ['html body { font-family: var(--tex8web-sans); }'],
+  'test-sans': ['html body { font-family: var(--tex8web-sans); }',
+    '[class^="cmr"], [class*="-cmr"]'],
+  'test-newtx': ['[class^="ntx-"], [class*="-ntx-"] { font-family: var(--tex8web-roman); }',
+    '[class^="qhv"], [class*="-qhv"] { font-family: var(--tex8web-sans); }'],
 };
 
 // what's wrong with a built page: its log, the page and the files with it

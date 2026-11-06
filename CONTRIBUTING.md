@@ -85,7 +85,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
   - MathJax errors, macros MathJax doesn't know, the sizes `tex8web.js` sets, and no `NaN` in any style;
   - the table of contents beside the text, with its numbers and indents, and each level's font, with tocloft and without it (`test-tocloft.tex` and `test-report.tex`, whose computed fonts `test:visual` checks);
   - colors in dark mode, `\color` as a declaration (`test-declared.tex`), indexes, each list's lengths, alt text, each example's title and its link to the PDF beside it, the title of a page without `\maketitle`, and pictures' sizes (also with the graphics package, and after angle);
-  - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`), and the text in TeX Gyre for Times, Helvetica and Courier (`test-times.tex`) or in sans-serif (`test-sans.tex`);
+  - text that keeps its own font after font commands the PDF keeps in a group (`test-fonts.tex`), and the text in TeX Gyre for Times, Helvetica and Courier (`test-times.tex`, `test-newtx.tex`) or in sans-serif (`test-sans.tex`);
   - an article as LaTeX's standard classes set it (`test-article.tex`): lists with TeX's labels, the space around headings, the abstract's margins, a footnote's leading, the bibliography, a `\tikz` picture's crop and the fonts after it, and the LaTeX logo;
   - speech for every formula, links and files in place, unique ids, and only publishable files.
 

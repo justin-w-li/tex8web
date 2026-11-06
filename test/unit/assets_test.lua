@@ -3,9 +3,10 @@ local dom = require "luaxml-domobject"
 local assets = require "tex8web.assets"
 
 -- the font files M.faces finds, in order
-local function faces(body, css)
+local function faces(body, css, roles)
   local found = {}
-  for font in pairs(assets.faces(dom.html_parse("<html><head></head><body>" .. body .. "</body></html>"), css)) do
+  for font in pairs(assets.faces(dom.html_parse("<html><head></head><body>" .. body .. "</body></html>"), css,
+      roles)) do
     found[#found + 1] = font
   end
   table.sort(found)
@@ -41,6 +42,13 @@ return {
     equal(faces(entries, ":root { --tex8web-toc-chapter-weight: normal;\n --tex8web-toc-subsection-style: italic;"
       .. "\n --tex8web-toc-subsection-family: var(--tex8web-sans); }"),
       "lmroman10-regular.woff2 lmsans10-oblique.woff2")
+  end,
+
+  ["assets.faces: TeX Gyre's, for a font in a role, by its classes; roman in a sans-serif text"] = function()
+    local roles = {body = "sans", roman = {file = "texgyretermes", classes = {"ntx-"}}}
+    equal(faces('<p>a <span class="ntx-Italic-tlf-t1-">b</span> <span class="ec-lmbx-10">c</span></p>',
+      ".ntx-Italic-tlf-t1-{font-style: italic; font-name: 'ntx', serif}\n.ec-lmbx-10{ font-weight: bold;}\n", roles),
+      "lmsans10-regular.woff2 texgyretermes-bold.woff2 texgyretermes-italic.woff2")
   end,
 
   ["assets.faces: not the math, which MathJax sets"] = function()
