@@ -302,8 +302,9 @@ end
 -- between takes the color: a block wholly between them on itself, and each
 -- run of inline content in a span. Inner colors go first and win: a block
 -- keeps a color it has. tcolorbox's boxes keep their own colors, a float
--- the text's (LaTeX's \@xfloat sets \normalcolor; tex4ht's table float is
--- a div.table) and listings' tokens html4.4ht's. tex4ht's link text isn't a group, as hyperref's is in the
+-- and the footnotes the text's (LaTeX's \@xfloat and \@makecol set
+-- \normalcolor; tex4ht's table float is a div.table) and listings' tokens
+-- html4.4ht's. tex4ht's link text isn't a group, as hyperref's is in the
 -- PDF, so a color set in a link ends with it
 local blocks = {p = true, div = true, ul = true, ol = true, li = true, dl = true, dt = true,
   dd = true, h1 = true, h2 = true, h3 = true, h4 = true, h5 = true, h6 = true, table = true,
@@ -317,7 +318,7 @@ end
 
 local function own_color(el)
   return dom.class_starts(el, "tcolorbox") or el:get_element_name() == "figure"
-    or dom.has_class(el, "table")
+    or dom.has_class(el, "table") or dom.has_class(el, "footnotes")
 end
 
 local function index(node)
