@@ -321,7 +321,7 @@
     \exp_after:wN \__web_AltlDisplay:w \l_tmpa_tl \]
 }
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
-        flalign, flalign*, multline } {
+        flalign, flalign*, multline, multline* } {
     \cs_if_exist:cT {#1} {
         \RenewDocumentEnvironment{#1}{+!b}{ \__web_display:nn {#1} {##1} }{}
     }

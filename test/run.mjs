@@ -406,13 +406,13 @@ const box = "<span class='tex8web-qed'><mjx-container[^>]*><mjx-math[^>]*><mjx-c
 const tagged = title => new RegExp(`${inProof(title)}<mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FB(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/p>\\s*<\\/div>`);
 const qed = {
   'test-qedhere': [
-    ...['Bracket', 'Star', 'Align star', 'Gather star', 'Numbered', 'Numbered align'].map(tagged),
+    ...['Bracket', 'Star', 'Align star', 'Gather star', 'Multline star', 'Numbered', 'Numbered align'].map(tagged),
     new RegExp(`${inProof('Plain')}${box}`),
     new RegExp(`${inProof('Display, no qedhere')}<\\/mjx-container><\\/span>\\s*${box}`),
     new RegExp(`${inProof('Text')}${box}`),
     new RegExp(`${inProof('List')}<\\/div><\\/li><li>[^]*?<div>\\s*(?:<!--[^>]*--><p[^>]*>)?Two\\.\\s*${box}`),
-    // (ten squares: six tags, four boxes)
-    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){10}$/,
+    // (eleven squares: seven tags, four boxes)
+    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){11}$/,
   ],
   // a document's own \qedsymbol, set as it is, after text and in a tag
   'test-qedsymbol': [
