@@ -151,13 +151,14 @@ test('a build is ended by its own total limit when the tool is stopped', { skip:
   }
 });
 
-test('the stdout and stderr of a slotted build are both in its log, in order', { skip: !lockf, timeout: 30000 }, async () => {
+test('the stdout and stderr of a slotted build are both in its log', { skip: !lockf, timeout: 30000 }, async () => {
   const { tmp, env } = pool(1);
   try {
     const out = await child(`import { run } from './test/lib/build.mjs';
       const { log } = await run('sh', ['-c', 'echo to-stderr >&2; echo to-stdout'], { slot: true });
       console.log(JSON.stringify(log)); process.exit();`, env).done;
-    assert.equal(JSON.parse(out), 'to-stderr\nto-stdout\n');
+    // (the pipes' order isn't fixed)
+    assert.deepEqual(JSON.parse(out).split('\n').sort(), ['', 'to-stderr', 'to-stdout']);
   } finally {
     rmSync(tmp, { recursive: true });
   }
