@@ -258,8 +258,8 @@
   // section's subsections shown, and on a narrow screen it's in the bar
   // (css/tex8web.css), once the first heading is read; as a drawer, it
   // closes on following a link. A chevron after each section with
-  // subsections shows or hides them, sliding; those the reader opens stay
-  // open as the page scrolls, which opens and closes the others at once
+  // subsections shows or hides them, sliding, until the section being read
+  // changes, which closes them at once
   function contents() {
     const toc = document.getElementById('tex8web-toc');
     if (!toc) return;
@@ -270,7 +270,6 @@
     const where = document.querySelector('.tex8web-where');
     const isSection = el => el.matches('.sectionToc, .likesectionToc, .chapterToc, .likechapterToc, .appendixToc, .partToc, .likepartToc');
     const motion = matchMedia('(prefers-reduced-motion: no-preference)');
-    const chosen = new Set();
     // (tex4ht's entries are siblings, between <br />s: a section's, then
     // its subsections')
     const under = section => {
@@ -334,8 +333,11 @@
       let section = current.a.closest('.tableofcontents > span');
       while (section?.previousElementSibling && !isSection(section)) section = section.previousElementSibling;
       if (section !== opened) {
-        if (opened && !chosen.has(opened)) show(opened, false);
+        opened?.classList.remove('tex8web-reading');
+        if (opened) show(opened, false);
+        toc.querySelectorAll('.tex8web-toc-more[aria-expanded="true"]').forEach(button => show(button.parentElement, false));
         show(section, true);
+        section.classList.add('tex8web-reading');
         opened = section;
       }
       // (not while the filter's results stand in for the entries)
@@ -358,10 +360,7 @@
     toc.addEventListener('click', event => {
       const button = event.target.closest('.tex8web-toc-more');
       if (button) {
-        const section = button.parentElement, opening = button.getAttribute('aria-expanded') !== 'true';
-        if (opening) chosen.add(section);
-        else chosen.delete(section);
-        show(section, opening, true);
+        show(button.parentElement, button.getAttribute('aria-expanded') !== 'true', true);
       }
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });

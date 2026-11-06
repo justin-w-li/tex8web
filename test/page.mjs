@@ -575,23 +575,23 @@ async function opening(chrome, file) {
 }
 
 // the contents' chevrons, by mouse: one on each section with subsections,
-// and the one being read open; another section opened slides open and stays
-// open as the page scrolls to it and on to a third, which opens at once,
-// without a slide, as the first closes; and closed again, as is the section being
-// read, which then stays closed while it's read
+// and the one being read open; another section opened slides open, and
+// closes at once, without a slide, as the page scrolls to a third, which
+// opens; and closed, the section being read stays closed while it's read,
+// its entry marked in place of its subsection's
 async function browsing(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
     const problems = [];
     const state = `[...document.querySelectorAll('#tex8web-toc .tex8web-toc-more')].map(button => {
       let shown = 0;
       for (let el = button.parentElement.nextElementSibling; el && !el.querySelector('.tex8web-toc-more')
-        && !/^(likesection|section)Toc$/.test(el.className); el = el.nextElementSibling) {
+        && !el.matches('.sectionToc, .likesectionToc'); el = el.nextElementSibling) {
         if (el.checkVisibility()) shown++;
       }
       return button.getAttribute('aria-expanded') === 'true' ? shown : -shown;
     })`;
     const sections = await page.evaluate(`[...document.querySelectorAll('#tex8web-toc .tableofcontents > span')]
-      .filter((el, i, all) => /^sectionToc$/.test(el.className) && /subsectionToc/.test(all[i + 1]?.className)).length`);
+      .filter((el, i, all) => el.matches('.sectionToc') && all[i + 1]?.matches('.subsectionToc')).length`);
     let now = await page.evaluate(state);
     if (sections < 3 || now.length !== sections) return [`${now.length} chevrons for ${sections} sections with subsections (3 at least wanted)`];
     if (!(now[0] > 0 && now.slice(1).every(n => n === 0))) problems.push(`at the top, the sections show ${now} subsections`);
@@ -608,24 +608,15 @@ async function browsing(chrome, file) {
     await finished(page);
     now = await page.evaluate(state);
     if (!(now[1] > 0)) problems.push(`the second section opened shows ${now[1]} subsections`);
-    const to = i => page.evaluate(`(() => {
-      const a = document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[${i}].parentElement.querySelector('a');
+    await page.evaluate(`(() => {
+      const a = document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[2].parentElement.querySelector('a');
       scrollTo(0, scrollY + document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top);
     })()`);
-    await to(1);
-    if (!await until(() => page.evaluate(`(() => {
-      let el = document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[1].parentElement;
-      do if (el.querySelector('[aria-current]')) return true;
-      while ((el = el.nextElementSibling) && !el.querySelector('.tex8web-toc-more'));
-      return false;
-    })()`))) problems.push('scrolled to the second section, none of its entries marked');
-    await to(2);
     now = await until(() => page.evaluate(state), n => n[2] > 0);
     if (!now) problems.push('scrolled to the third section, its subsections not shown');
     if (await page.evaluate('document.getAnimations().length')) problems.push('the page scrolled, a slide in the contents');
     now = await page.evaluate(state);
-    if (!(now[0] === 0 && now[1] > 0)) problems.push(`scrolled to the third section, the first two show ${now.slice(0, 2)} subsections`);
-    await click(1);
+    if (!(now[0] === 0 && now[1] === 0)) problems.push(`scrolled to the third section, the first two show ${now.slice(0, 2)} subsections`);
     await click(2);
     await finished(page);
     const read = await page.evaluate(`(() => {
@@ -640,7 +631,11 @@ async function browsing(chrome, file) {
       problems.push('scrolled to the third section\'s first subsection, its entry not marked');
     }
     now = await page.evaluate(state);
-    if (!(now[1] === 0 && now[2] === 0)) problems.push(`closed, the second and third sections show ${now.slice(1, 3)} subsections`);
+    if (now[2] !== 0) problems.push(`closed, the third section shows ${now[2]} subsections`);
+    const [section, reading] = await page.evaluate(`[document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[2]
+      .parentElement.querySelector('a'), document.querySelector('#tex8web-toc [aria-current]')]
+      .map(a => getComputedStyle(a).backgroundColor)`);
+    if (section !== reading) problems.push(`closed, the third section's entry in ${section}, not ${reading} as the one read`);
     return problems;
   });
 }
