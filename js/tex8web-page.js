@@ -207,24 +207,31 @@
   // element scrolls, by a listener of its own: scrolling the page runs none
   const scrolling = 'mjx-container[display], div.tabular, pre';
   const listening = new WeakSet();
-  function fade(element) {
-    const hidden = element.scrollWidth - element.clientWidth;
-    // (a wide screen's tabular or verbatim doesn't scroll but runs into the
-    // margin, which a mask would cut off)
-    const scrolls = hidden > 0 && getComputedStyle(element).overflowX !== 'visible';
-    element.classList.toggle('tex8web-scrolls', scrolls);
-    if (!scrolls) return;
-    element.style.setProperty('--tex8web-hidden-left', `${element.scrollLeft}px`);
-    element.style.setProperty('--tex8web-hidden-right', `${hidden - element.scrollLeft}px`);
-    if (listening.has(element)) return;
-    listening.add(element);
-    element.addEventListener('scroll', () => fade(element), { passive: true });
+  function fade(elements) {
+    // (all measured, then all marked: a mark between two measures would
+    // have the second restyle the page, a third of a second on a phone for
+    // a long page's displays. A wide screen's tabular or verbatim doesn't
+    // scroll but runs into the margin, which a mask would cut off)
+    const hidden = elements.map(element => {
+      const width = element.scrollWidth - element.clientWidth;
+      return width > 0 && getComputedStyle(element).overflowX !== 'visible' ? [width, element.scrollLeft] : null;
+    });
+    elements.forEach((element, i) => {
+      element.classList.toggle('tex8web-scrolls', Boolean(hidden[i]));
+      if (!hidden[i]) return;
+      const [width, left] = hidden[i];
+      element.style.setProperty('--tex8web-hidden-left', `${left}px`);
+      element.style.setProperty('--tex8web-hidden-right', `${width - left}px`);
+      if (listening.has(element)) return;
+      listening.add(element);
+      element.addEventListener('scroll', () => fade([element]), { passive: true });
+    });
   }
 
   function edges() {
     const elements = [...document.querySelectorAll(scrolling)];
     if (!elements.length) return;
-    const all = () => elements.forEach(fade);
+    const all = () => fade(elements);
     new ResizeObserver(all).observe(document.body);
     // (fonts that arrive late change the math's width, but not always the
     // page's size)
@@ -471,7 +478,7 @@
       card.style.left = card.style.top = '0';
       card.showPopover();
       // (a copy keeps its original's fade, though the card may be wider)
-      card.querySelectorAll(scrolling).forEach(fade);
+      fade([...card.querySelectorAll(scrolling)]);
       const link = a.getBoundingClientRect(), width = card.offsetWidth, height = card.offsetHeight;
       const below = link.bottom + 6 + height <= innerHeight || link.top - 6 - height < 0;
       // (from the link, but over the text: past the body's right edge by 16px
