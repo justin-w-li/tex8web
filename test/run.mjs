@@ -31,7 +31,7 @@ if (!only.length) {
   const unit = spawnSync('texlua', [join(root, 'test/unit/run.lua')], { encoding: 'utf8' });
   process.stdout.write(unit.stdout + unit.stderr);
   failures += unit.status === 0 ? 0 : 1;
-  const tools = spawnSync(process.execPath, ['--test', join(root, 'test/tools.test.mjs')], { encoding: 'utf8' });
+  const tools = spawnSync(process.execPath, ['--test', join(root, 'test/unit/prerender.test.mjs'), join(root, 'test/tools.test.mjs')], { encoding: 'utf8' });
   process.stdout.write(tools.stdout + tools.stderr);
   failures += tools.status === 0 ? 0 : 1;
 }

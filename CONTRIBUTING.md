@@ -86,7 +86,7 @@ A document has one page. A tex4ht split option (a number in `\Preamble`, or `spl
 
 Each script's header comment says what it checks. CLAUDE.md says when to run which.
 
-- **`npm test`** runs `test/unit/` (Lua), `test/tools.test.mjs` and `test/run.mjs`. The last builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`, and checks each page. `node test/run.mjs <name>` builds one.
+- **`npm test`** runs `test/unit/` (Lua), `test/unit/prerender.test.mjs`, `test/tools.test.mjs` and `test/run.mjs`. The last builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`, and checks each page. `node test/run.mjs <name>` builds one.
 - **`npm run test:visual`** needs Chrome and the network. It runs `test/visual.mjs`, `test/page.mjs` and `test/chrome.test.mjs`.
   - `visual.mjs` compares each page, prerendered and typeset by MathJax in the browser, screen by screen.
   - `page.mjs` drives the page's script on the fixtures that have each feature. `npm run test:page` runs it alone.
@@ -116,6 +116,12 @@ Each build's log is kept in `build/test/<document>/make4ht.log`.
 - `npm test`'s `typeset` checks, which cover the internals `tex8web.js` relies on;
 - `npm run test:visual`, which compares Node's MathJax with the browser's;
 - a rebuild of your own documents, compared with the last one.
+
+`js/prerender.mjs` also relies on:
+- `MmlTree`'s `TEXCLASS`, `postFilters` (the speech's adjustment of the math) and `walkTree`;
+- `outputData.speech` of each formula of the second typesetting;
+- that typesetting finding the same formulas, in the same order, as the first: it throws when the counts differ, and pairs them by position;
+- the CSS values `js/prerender-rules.mjs` reads: each removed tag's rule, `mjx-math`'s and `mjx-script`'s, and the sizes of `[size]`. When one differs, the pass is skipped and `npm test` fails with a line that starts with `MathJax:`.
 
 **TeX Live.** CI pins TeX Live's image by digest. To update, take the new digest of `texlive/texlive:latest` and confirm both test jobs pass. A warning from `\web@needs` means tex4ht or a package changed something tex8web patches.
 
@@ -156,7 +162,7 @@ Open an issue with:
 | `js/tex8web.js` | MathJax's sizes set as TeX's |
 | `js/tex8web-head.js` | the reader's theme and table of contents setting, applied before the page is drawn, and the direction of the transition to the next page |
 | `js/tex8web-page.js` | the page's controls (the up link going back in history), footnotes, table of contents, previews and picture viewer |
-| `js/prerender.mjs` | MathJax in Node |
+| `js/prerender.mjs`, `prerender-rules.mjs` | MathJax in Node, and the rules of its CSS that the pass removing elements relies on |
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which goes with every page |
 | `examples/` | the examples, and `index.tex`, the published site's index |
 | `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `tools.test.mjs`, `chrome.test.mjs`, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, `lib/` |

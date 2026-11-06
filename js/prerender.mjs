@@ -13,6 +13,7 @@ import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
 import { runInThisContext } from 'node:vm';
 import subsetFont from 'subset-font';
+import { readRules, tokens, wrappers } from './prerender-rules.mjs';
 
 const require = createRequire(import.meta.url);
 const file = process.argv[2];
@@ -59,10 +60,8 @@ for (const node of [...adaptor.tags(root, 'script'), ...adaptor.tags(root, 'div'
 // what its one character can take on itself (MathJax gives these tags
 // display: inline-block, and math has line-height 0), so the page looks the
 // same, as test:visual checks against MathJax's own output in the browser
-const tokens = ['mjx-mi', 'mjx-mo', 'mjx-mn'];
-const wrappers = ['mjx-TeXAtom', 'mjx-msub', 'mjx-msup', 'mjx-msubsup', 'mjx-mrow'];
-// (MathJax's font sizes, which an em in the element itself scales by)
-const sizes = { s: 0.707, ss: 0.5, Tn: 0.6, sm: 0.85, lg: 1.2, Lg: 1.44, LG: 1.73, hg: 2.07, HG: 2.49 };
+// (the values it assumes of MathJax's CSS, read from it below: the font
+// sizes an em in the element itself scales by, a script's padding)
 // (an element's attributes, but data-latex, which the page loses below)
 const attributes = node => adaptor.allAttributes(node).filter(({ name }) => !name.startsWith('data-latex'));
 const only = (node, names) => attributes(node).every(({ name }) => names.includes(name));
@@ -80,18 +79,17 @@ function token(node) {
 }
 
 // a script of one character: the character, raised or lowered itself, with
-// the script's padding (MathJax's CSS: .033em left, .05em right) and
-// margin. Each in the script's ems, which the character's size makes
+// the script's padding (MathJax's CSS) and margin. Each in the script's ems, which the character's size makes
 // smaller: calc() keeps each length as it was, to round to the layout's
 // units on its own as before (the character's left padding is free)
 function script(node) {
   const [c, ...rest] = adaptor.childNodes(node);
   if (rest.length || !c || adaptor.kind(c) !== 'mjx-c' || !only(c, ['class', 'size'])
       || !only(node, ['style'])) return;
-  const scale = has(c, 'size') ? sizes[adaptor.getAttribute(c, 'size')] : 1;
+  const scale = has(c, 'size') ? rules.sizes[adaptor.getAttribute(c, 'size')] : 1;
   if (!scale) return;
   const em = n => scale === 1 ? `${n}em` : `calc(${n}em / ${scale})`;
-  const style = { 'padding-left': em(0.033), 'margin-right': em(0.05) };
+  const style = { 'padding-left': em(rules.padding.left), 'margin-right': em(rules.padding.right) };
   for (const part of (adaptor.getAttribute(node, 'style') || '').split(';').filter(p => p.trim())) {
     const [, name, value] = part.match(/^\s*([\w-]+):\s*(-?[\d.]+)(?:em)?\s*$/) || [];
     if (!['vertical-align', 'margin-left'].includes(name)) return;
@@ -147,8 +145,14 @@ const style = adaptor.tags(adaptor.head(document), 'style').find(s => adaptor.ge
 const prefix = MathJax.startup.output.font.cssFontPrefix;
 const breakable = `mjx-container[jax="CHTML"] > mjx-math.${prefix}-N[breakable] > * {`;
 const mathjaxCss = adaptor.textContent(style);
-const flat = mathjaxCss.includes(breakable) || !adaptor.tags(root, 'mjx-math').some(math => has(math, 'breakable'));
-if (!flat) console.error(`MathJax: no "${breakable}" in its styles; prerender.mjs needs updating`);
+const rules = readRules(mathjaxCss, [...tokens, ...wrappers, 'mjx-math', 'mjx-script'].filter(tag => adaptor.tags(root, tag).length));
+if (!mathjaxCss.includes(breakable) && adaptor.tags(root, 'mjx-math').some(math => has(math, 'breakable'))) {
+  rules.problems.push(`no "${breakable}"`);
+}
+// (then the math is left as MathJax typeset it; npm test fails on a line
+// that starts with MathJax:)
+const flat = !rules.problems.length;
+for (const problem of rules.problems) console.error(`MathJax: ${problem} in its styles; prerender.mjs needs updating`);
 for (const math of flat ? adaptor.tags(root, 'mjx-math') : []) {
   for (const child of adaptor.childNodes(math)) if (isElement(child)) flatten(child);
 }
@@ -226,7 +230,11 @@ const spoken = MathJax.startup.getDocument(html);
 await spoken.renderPromise();
 tex.postFilters.remove(forSpeech);
 const items = [...MathJax.startup.document.math];
-[...spoken.math].forEach(({ outputData: { speech } }, i) => {
+const speeches = [...spoken.math];
+if (speeches.length !== items.length) {
+  throw new Error(`MathJax found ${speeches.length} formulas for the speech and ${items.length} in the page`);
+}
+speeches.forEach(({ outputData: { speech } }, i) => {
   const container = items[i].typesetRoot;
   if (!speech) return adaptor.setAttribute(container, 'aria-hidden', 'true');
   adaptor.setAttribute(container, 'role', 'math');
