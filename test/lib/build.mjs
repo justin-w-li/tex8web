@@ -1,12 +1,12 @@
 // Building the test documents and examples with make4ht, for the tests and
 // for npm run examples.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { availableParallelism, constants } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { lock, withSlot } from './slots.mjs';
+import { inSlots, lock, noLockf, released } from './slots.mjs';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -79,6 +79,9 @@ process.on('exit', () => running.forEach(kill));
 // (128 plus the signal, as a shell reports it)
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(128 + constants.signals[signal]));
 
+// what a slotted command prints when it holds its slot (see execute)
+const held = 'tex8web-slot-held';
+
 // runs a command, killing its process group if it prints nothing for idle
 // seconds, or runs for total: it has hung. A loaded machine slows a build
 // without silencing it for long, so the idle limit is the tight one. The
@@ -86,30 +89,52 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => p
 // holds a build slot (slots.mjs) from when it starts, and waiting for the
 // slot isn't timed. Resolves to { code, log }, the log being stdout and
 // stderr in order
-export const run = (command, args, { slot = false, ...options } = {}) =>
-  slot ? withSlot(() => execute(command, args, options)) : execute(command, args, options);
+export const run = (command, args, { slot = false, ...options } = {}) => slot && !noLockf()
+  ? inSlots(slotFile => execute(command, args, { ...options, slotFile })).finally(released)
+  : execute(command, args, options);
 
-function execute(command, args, { idle = 180, total = 900, ...options }) {
+// With slotFile, runs the command as a child of lockf, which holds the lock
+// on that file until the command has ended, even if this process is killed
+// outright and the command is not. The timers start when the command's
+// first line, held, says it has the lock. Resolves to null if the lock is
+// busy (75, EX_TEMPFAIL)
+function execute(command, args, { idle = 180, total = 900, slotFile, ...options }) {
   return new Promise(done => {
-    const child = spawn(command, args, { ...options, detached: true });
+    const child = slotFile
+      ? spawn('lockf', ['-k', '-t', '0', slotFile, 'sh', '-c', `echo ${held}; exec "$@"`, 'sh', command, ...args],
+        { ...options, detached: true })
+      : spawn(command, args, { ...options, detached: true });
     running.add(child.pid);
-    let log = '', timer;
+    let log = '', timer, limit, started = !slotFile;
     const stop = why => {
       log += `\n[FATAL] ${command} ${why}, at: ${log.trim().split('\n').pop()}\n`;
       kill(child.pid);
     };
-    const limit = setTimeout(() => stop(`ran over ${total}s`), total * 1000);
     const watch = () => {
       clearTimeout(timer);
       timer = setTimeout(() => stop(`printed nothing for ${idle}s`), idle * 1000);
     };
-    watch();
-    for (const stream of [child.stdout, child.stderr]) stream.on('data', d => { log += d; watch(); });
+    const start = () => {
+      started = true;
+      limit = setTimeout(() => stop(`ran over ${total}s`), total * 1000);
+      watch();
+    };
+    if (started) start();
+    for (const stream of [child.stdout, child.stderr]) {
+      stream.on('data', d => {
+        log += d;
+        if (started) return watch();
+        const at = log.indexOf(`${held}\n`);
+        if (at < 0) return;
+        log = log.slice(at + held.length + 1);
+        start();
+      });
+    }
     child.on('close', code => {
       clearTimeout(timer);
       clearTimeout(limit);
       running.delete(child.pid);
-      done({ code, log: log.replace(/\x1b\[[0-9;]*m/g, '') });
+      done(!started && code === 75 ? null : { code, log: log.replace(/\x1b\[[0-9;]*m/g, '') });
     });
   });
 }
@@ -131,14 +156,26 @@ function hashFiles(base, paths) {
 const sources = ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'package.json', 'package-lock.json'];
 export const sourceHash = base => hashFiles(base, sources);
 
-// what a build is made from, as a hash: tex8web's sources, the document's
-// directory, the command and the environment variables the build reads. The
-// files themselves, not the commit, so that an edit not yet committed, or a
-// file git doesn't know, is part of it
-let tex8webHash;
+// what a build is made from besides the document, as a hash: tex8web's
+// sources, and the tools it uses, which change its output when they change:
+// MathJax, if it is there to prerender with (lua/tex8web/prerender.lua), and
+// TeX Live
+let toolchain;
+function tools() {
+  if (toolchain) return toolchain;
+  let mathjax = null;
+  try { mathjax = JSON.parse(readFileSync(join(root, 'node_modules/mathjax/package.json'), 'utf8')).version; } catch {}
+  const tex = spawnSync('tex', ['--version'], { encoding: 'utf8' }).stdout?.split('\n')[0] ?? null;
+  return toolchain = JSON.stringify([sourceHash(root), mathjax, tex]);
+}
+
+// the whole stamp of a build: those, the document's directory, the command
+// and the environment variables the build reads. The files themselves, not
+// the commit, so that an edit not yet committed, or a file git doesn't know,
+// is part of it
 function stamp(doc, args, env) {
   const vars = Object.entries({ ...process.env, ...env }).filter(([name]) => /^(TEX8WEB_(?!SLOTS)|TEXINPUTS$|TEXMF)/.test(name)).sort();
-  return createHash('sha256').update(JSON.stringify([tex8webHash ??= sourceHash(root), hashFiles(doc.dir, ['']), args, vars])).digest('hex');
+  return createHash('sha256').update(JSON.stringify([tools(), hashFiles(doc.dir, ['']), args, vars])).digest('hex');
 }
 
 // runs bin/tex8web on a document, with the page in out and tex4ht's files

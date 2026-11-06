@@ -11,7 +11,6 @@ import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build, largestFirst, pool, root, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
-import { slotCount } from './lib/slots.mjs';
 
 const only = process.argv.slice(2);
 const screen = 900;
@@ -217,8 +216,7 @@ const tocFonts = {
 // (test-split and test-cutat are refused; npm test checks that)
 const docs = select(only).filter(doc => !['test-split', 'test-cutat'].includes(doc.name));
 // each document built twice, prerendered (html) and for the browser
-// (fallback), a few builds at a time, the largest first; a document is
-// compared as soon as both its builds are done. The prerendered build is
+// (fallback), a few builds at a time, the largest first. The prerendered build is
 // npm test's, reused if it has just made it
 const variants = [[testDir, 'html', 'aux', { TEX8WEB_MATHML: '1' }],
   [doc => testDir(doc, 'visual'), 'fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
@@ -312,10 +310,11 @@ async function compare(chrome, doc, ok) {
     failed: problems.length > 0 };
 }
 
-// the documents in Chrome as their builds finish, one at a time: with
-// several tabs at once, headless Chrome sometimes draws a screen garbled
-// (with one slot, after the builds: a Chrome holding it would starve them)
-if (slotCount() < 2) await building;
+// the documents in Chrome, one at a time: with several tabs at once,
+// headless Chrome sometimes draws a screen garbled
+// (after the builds: a Chrome holds a slot, and a tool that holds one while it
+// waits for a build to get another can wait for good)
+await building;
 const chrome = await launch();
 let failures = 0;
 const waiting = new Map(docs.map(doc => [doc, built(doc).then(ok => [doc, ok])]));

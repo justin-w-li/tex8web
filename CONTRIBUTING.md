@@ -99,9 +99,16 @@ Each script's header comment says what it checks. CLAUDE.md says when to run whi
 
 Each build's log is kept in `build/test/<document>/make4ht.log`.
 
-**Build slots.** Sessions and checkouts that run tests at once would otherwise swap, as each tool sizes its builds for a machine of its own. So every make4ht or latexmk build, and every Chrome the tests launch, holds one of a pool of lock files in `$TMPDIR/tex8web-slots` while it runs (`test/lib/slots.mjs`). A process that waits for a slot says so after 10 seconds. The pool has one slot for each 4 GB of memory, or `TEX8WEB_SLOTS` of them. Without `lockf` (Linux) there are no slots. The idle and total limits of a build start once it holds its slot, and a killed process gives its slot back. `rebuild.sh` takes the same slots.
+**Build slots.** Sessions and checkouts that run tests at once would otherwise swap, as each tool sizes its builds for a machine of its own. So every make4ht or latexmk build, and every Chrome the tests launch, holds one of a pool of lock files in `$TMPDIR/tex8web-slots` while it runs (`test/lib/slots.mjs`). The pool has one slot for each 4 GB of memory, or `TEX8WEB_SLOTS` of them, a whole number of 1 or more. A process that waits for a slot says so after 10 seconds, and one that has given a slot back waits a second before it takes another, so that the others get a turn. Without `lockf` (Linux) there are no slots. The idle and total limits of a build start once it holds its slot. A build keeps its slot until it ends, even if the tool that started it is killed. A tool that holds a slot never waits for a build that needs one, so `visual.mjs` builds before it launches Chrome. `rebuild.sh` takes the same slots.
 
-**Reused builds.** A build is kept with a stamp of what it was made from: tex8web's sources, the document's directory, the command and the `TEX8WEB_*` environment. `npm test`, `test:visual` and `test:page` build each document with the same environment into `build/test/<document>/html`, so the later ones reuse the earlier one's build, and say so. Any change to the sources, the document or the environment builds again, and a build that failed is never reused. To force a build, remove the document's directory in `build/test`.
+**Reused builds.** A build is kept with a stamp of what it was made from, in `build/test/<document>/html.stamp`. The stamp covers:
+- the files in tex8web's `bin`, `css`, `fonts`, `js`, `lua` and `tex` directories, `tex8web.cfg`, `tex8web.mk4`, `package.json` and `package-lock.json`, by content;
+- the files in the document's directory, by content;
+- the command's arguments, and the `TEX8WEB_*`, `TEXINPUTS` and `TEXMF*` environment variables, except `TEX8WEB_SLOTS`;
+- the version of `node_modules/mathjax`, or that it is missing;
+- the first line of `tex --version`.
+
+`npm test`, `test:visual` and `test:page` build each document with the same environment into `build/test/<document>/html`, so the later ones reuse the earlier one's build, and say so. A change to any of those builds again, and a build that failed is never reused. `test:page` works on a copy in `build/page`, as a reused build is read, never written. To force a build, remove `build/test/<document>`. `visual.mjs` builds its browser-typeset `fallback` page in `build/visual/<document>`, where it is not reused, and that directory has to go too.
 
 **A change that shouldn't show.** Build the pages before and after it, then run `diff.mjs` on the two builds. If the HTML changed, run `shots.mjs` on them too, and look at every screen it saves.
 

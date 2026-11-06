@@ -82,17 +82,18 @@ const pool = (slots) => {
 test('no more builds hold slots than there are slots', { skip: !lockf }, async () => {
   const { tmp, env } = pool(2);
   try {
-    const holder = `import { withSlot } from './test/lib/slots.mjs';
+    const holder = `import { takeSlot } from './test/lib/slots.mjs';
       import { appendFileSync } from 'node:fs';
-      await withSlot(async () => {
-        appendFileSync(process.env.LOG, '+\\n');
-        await new Promise(done => setTimeout(done, 400));
-        appendFileSync(process.env.LOG, '-\\n');
-      });`;
+      const release = await takeSlot();
+      appendFileSync(process.env.LOG, '+\\n');
+      await new Promise(done => setTimeout(done, 400));
+      appendFileSync(process.env.LOG, '-\\n');
+      release();`;
     await Promise.all(Array.from({ length: 6 }, () => child(holder, env).done));
     let now = 0, most = 0;
     for (const sign of readFileSync(env.LOG, 'utf8').trim().split('\n')) most = Math.max(most, now += sign === '+' ? 1 : -1);
-    assert.equal(most, 2);
+    // (at least one: starts a second apart on a loaded machine may not overlap)
+    assert.ok(most >= 1 && most <= 2, `${most} slots held at once`);
   } finally {
     rmSync(tmp, { recursive: true });
   }
@@ -110,6 +111,47 @@ test('a slot is free again once the process holding it is killed', { skip: !lock
     assert.match(await second.done, /took/);
   } finally {
     rmSync(tmp, { recursive: true });
+  }
+});
+
+test('a build keeps its slot if the tool that started it is killed outright', { skip: !lockf, timeout: 30000 }, async () => {
+  const { tmp, env } = pool(1);
+  try {
+    const tool = child(`import { run } from './test/lib/build.mjs';
+      run('sh', ['-c', 'echo building; sleep 4'], { slot: true });`, env);
+    // (the slot's lock file is there once the build has asked for it)
+    await until(() => existsSync(join(tmp, 'tex8web-slots/0')), Boolean, 10000);
+    await new Promise(done => setTimeout(done, 1000));
+    tool.kill('SIGKILL');
+    const busy = () => spawnSync('lockf', ['-k', '-t', '0', join(tmp, 'tex8web-slots/0'), 'true']).status === 75;
+    assert.ok(busy(), 'the slot is free while the build runs');
+    // (and free once it has ended)
+    assert.ok(await until(() => !busy(), Boolean, 10000), 'the slot is not free after the build');
+  } finally {
+    rmSync(tmp, { recursive: true });
+  }
+});
+
+test('a process that has given a slot back does not take one at once', { skip: !lockf, timeout: 30000 }, async () => {
+  const { tmp, env } = pool(1);
+  try {
+    const again = child(`import { takeSlot } from './test/lib/slots.mjs';
+      (await takeSlot())();
+      const start = Date.now();
+      (await takeSlot())();
+      console.log('waited', Date.now() - start); process.exit();`, env);
+    const waited = Number((await again.done).match(/waited (\d+)/)[1]);
+    assert.ok(waited >= 900, `took another after ${waited} ms`);
+  } finally {
+    rmSync(tmp, { recursive: true });
+  }
+});
+
+test('a number of slots that is not a number of slots is refused', async () => {
+  for (const slots of ['0', 'two', '1.5']) {
+    const result = await child(`import { takeSlot } from './test/lib/slots.mjs';
+      await takeSlot().catch(error => console.log(error.message)); process.exit();`, { TEX8WEB_SLOTS: slots }).done;
+    assert.match(result, /TEX8WEB_SLOTS is the number of build slots/);
   }
 });
 
