@@ -30,14 +30,15 @@ html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
 /* links: hyperref's colors with colorlinks (tex8web-page.tex), and these
    in dark mode. Otherwise the color of the text, with a faint underline
    where the PDF draws boxes around them; none with hidelinks
-   (--tex8web-link-line). The contents, the controls and the # links are
+   (.tex8web-plain-links). The contents, the controls and the # links are
    the page's, not the document's; a footnote's raised mark, underlined,
    reads as a stray rule */
 :root { --tex8web-link-dark: #6CB4FF; --tex8web-cite-dark: #5FD3A0; --tex8web-url-dark: #F27FB0; }
 a { color: var(--tex8web-link, inherit); text-decoration: none; }
-a[href] { text-decoration: var(--tex8web-link-line, underline); text-decoration-thickness: 1px;
+a[href] { text-decoration: underline; text-decoration-thickness: 1px;
     text-underline-offset: 0.15em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
-:is(.tex8web-toc, .tex8web-controls, .footnote-mark) a, a.tex8web-permalink { text-decoration: none; }
+:is(.tex8web-toc, .tex8web-controls, .footnote-mark, .tex8web-plain-links) a, a.tex8web-permalink {
+    text-decoration: none; }
 a[href^="#X"] { color: var(--tex8web-cite, inherit); }
 /* (hyperref's urlcolor is \href's too, to any other site; not the
    controls' link to tex8web's repository) */
@@ -112,7 +113,7 @@ html body { line-height: var(--tex8web-pdf-leading, normal); }
 p.indent { text-indent: var(--tex8web-parindent, 0); }
 p + p { margin-top: var(--tex8web-parskip, 1em); }
 @media (--tex8web-wide) {
-    html body { text-align: var(--tex8web-justify, start); hyphens: var(--tex8web-hyphens, manual); } }
+    .tex8web-like-pdf body { text-align: justify; hyphens: auto; } }
 :is(.tex8web-toc, .tex8web-sidenote, .tex8web-controls) { text-align: start; hyphens: manual; }
 h1.titleHead { font-size: var(--tex8web-title-size); font-weight: normal; }
 /* (a \thanks is a footnote in the PDF, upright; html4.4ht sets it in italic) */

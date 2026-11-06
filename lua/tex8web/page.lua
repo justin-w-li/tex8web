@@ -22,7 +22,8 @@ end
 -- (context.pdf: TEX8WEB_PDF, which tex8web's -p sets, or else \WebPDF's),
 -- the page above (context.up: TEX8WEB_UP, from -u, or else \WebUp's), the
 -- \WebMathMacros definitions (context.macros), the colors for math
--- (context.colors) and \contentsname (context.contents) as tex4ht writes it
+-- (context.colors) and \contentsname (context.contents) as tex4ht writes it.
+-- It also gives <html> its classes, which html5.4ht's tag has no hook for
 function M.build_data(document, context)
   local element = document:query_selector("script[type='text/x-tex8web-build']")[1]
   local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]
@@ -40,6 +41,8 @@ function M.build_data(document, context)
   context.up = up ~= "" and up or nil
   local body, roman, sans, mono = (element:get_attribute("data-fonts") or ""):match("(%S+) (%S+) (%S+) (%S+)")
   context.families = {body = body, roman = roman, sans = sans, mono = mono}
+  local classes = element:get_attribute("data-classes") or ""
+  if classes ~= "" then document:query_selector("html")[1]:set_attribute("class", classes) end
   context.macros = element:get_text()
   element:remove_node()
   context.contents = text_of(name)

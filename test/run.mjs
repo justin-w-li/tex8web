@@ -47,17 +47,23 @@ if (!only.length) {
 //   title and label;
 // - the abstract's leading, \small's 12pt over the text's 13.6pt;
 // - tocloft's font for each level of the contents.
+// <html>'s classes: \WebLikePDF's justified, hyphenated text, and links
+// not underlined, colored with colorlinks or hidden with hidelinks.
+// (Every other document has none: test-generic's boxed links underlined)
+const switched = {
+  'test': 'tex8web-plain-links', 'test-hidelinks': 'tex8web-plain-links',
+  'test-declared': 'tex8web-plain-links', 'examples/basic': 'tex8web-plain-links',
+  'examples/complex': 'tex8web-plain-links', 'test-likepdf': 'tex8web-like-pdf',
+};
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
     '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
   // (and test.cfg's \WebColor, from an xcolor expression and an RGB color)
-  // (links unmarked: colored with colorlinks, hidden with hidelinks; the
-  // link colors, also with only the color package, in the example)
+  // (the link colors, also with only the color package, in the example)
   'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235',
-    '--tex8web-link-line': 'none', '--tex8web-link': 'light-dark(#FF0000, var(--tex8web-link-dark))' },
+    '--tex8web-link': 'light-dark(#FF0000, var(--tex8web-link-dark))' },
   'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, var(--tex8web-url-dark))' },
-  'test-hidelinks': { '--tex8web-link-line': 'none' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
@@ -66,8 +72,7 @@ const measured = {
   // (\WebLikePDF in an 11pt document: its size, \baselineskip 13.6pt,
   // \parindent 17pt and \parskip 0pt)
   'test-likepdf': { '--tex8web-pdf-size': '10.95pt', '--tex8web-pdf-leading': '1.242',
-    '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em', '--tex8web-justify': 'justify',
-    '--tex8web-hyphens': 'auto' },
+    '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em' },
   // (an article without titlesec: its \@startsection's space around a
   // section, 3.5ex and 2.3ex of the text, and a subsection, 3.25ex and
   // 1.5ex, in the heading's ems; the abstract's quotation's margins; and
@@ -567,12 +572,10 @@ function check(doc, result, out, aux) {
   // (html4.4ht's rules for the paragraphs in an <li>, which would space
   // and indent an item's text unlike LaTeX's)
   if (/^li /m.test(styles)) problems.push("html4.4ht's rules for <li> in the stylesheet");
-  // (hyperref's boxed links, which the page underlines)
-  if (doc.name === 'test-generic' && styles.includes('--tex8web-link-line:')) {
-    problems.push("hyperref's boxed links aren't underlined");
-  }
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  const classes = html.match(/<html[^>]*\sclass='([^']*)'/)?.[1] ?? '';
+  if (classes !== (switched[doc.name] ?? '')) problems.push(`<html> has classes '${classes}'`);
   // (the examples are published: a browser's tab and link previews show it)
   if (doc.name.startsWith('examples/') && !/<title>\s*\S/.test(html)) problems.push('no <title>');
   // (with -p, or custom.cfg's \WebPDF)

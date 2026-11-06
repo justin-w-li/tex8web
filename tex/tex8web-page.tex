@@ -40,11 +40,15 @@
     \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } #1
     \__web_escape:N #1
 }
+% a class for <html>, for a switch the stylesheet's rules read
+\clist_new:N \g__web_classes_clist
+\cs_new_protected:Npn \web@htmlclass #1 { \clist_gput_right:Nn \g__web_classes_clist {#1} }
 \cs_new_protected:Npn \__web_build_element: {
     \__web_text:NN \l__web_build_tl \g__web_macros_tl
     \__web_text:NN \l__web_pdf_tl \g__web_pdf_tl
     \__web_text:NN \l__web_up_tl \g__web_up_tl
     \HCode{<script~type="text/x-tex8web-build"~data-pdf="\l__web_pdf_tl"~data-up="\l__web_up_tl"\c_space_tl
+        data-classes="\clist_use:Nn \g__web_classes_clist {~}"\c_space_tl
         data-fonts="\familydefault\c_space_tl\rmdefault\c_space_tl\sfdefault\c_space_tl\ttdefault">
         \l__web_build_tl</script><script~type="text/x-tex8web-contents">}
     \group_begin: \cs_if_exist_use:N \contentsname \group_end:
@@ -286,7 +290,7 @@
     \bool_lazy_or:nnT
         { \bool_lazy_and_p:nn { \legacy_if_p:n { Hy@colorlinks } } { \l__web_colorlinks_bool } }
         { \cs_if_exist_p:N \web@hidelinks }
-        { \web@Css{:root~{~--tex8web-link-line:~none;~}} }
+        { \web@htmlclass{tex8web-plain-links} }
 }
 \ExplSyntaxOff
 \@ifpackageloaded{hyperref}{\web@linkcolors}{}
@@ -497,8 +501,8 @@
 \newcommand\WebLikePDF{%
     \web@Css{:root { --tex8web-pdf-size: \f@size pt;
         --tex8web-pdf-leading: \web@ratio\baselineskip;
-        --tex8web-parindent: \web@em\parindent; --tex8web-parskip: \web@em\parskip;
-        --tex8web-justify: justify; --tex8web-hyphens: auto; }}}
+        --tex8web-parindent: \web@em\parindent; --tex8web-parskip: \web@em\parskip; }}%
+    \web@htmlclass{tex8web-like-pdf}}
 % A footnote's leading as in the PDF, as the abstract's below
 \begingroup
     \dimen@\baselineskip
