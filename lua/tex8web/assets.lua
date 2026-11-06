@@ -370,12 +370,12 @@ end
 -- mode at another lightness (css/tex8web.css's --tex8web-dark-*); black text
 -- and rules in the text's color. (Without xcolor, tex4ht writes rgb(r,g,b):
 -- html4.4ht's \Configure{HColor:rgb} and its gray and cmyk ones)
-local dark = {color = true, background = true, border = true}
+local kinds = {color = true, background = true, border = true}
 local black = {color = "var(--tex8web-text)", border = "currentColor"}
 function M.colors_in_dark_mode(css)
   return (css:gsub("%f[%w-]([%a-]+)(%s*:%s*)([^;{}]*)", function(property, colon, value)
     local kind = property:match("^%a+")
-    if not dark[kind] or value:find("light-dark", 1, true) then return end
+    if not kinds[kind] or value:find("light-dark", 1, true) then return end
     value = value:gsub("rgb%((%d+),(%d+),(%d+)%)", function(r, g, b)
       return ("#%02X%02X%02X"):format(r, g, b)
     end)

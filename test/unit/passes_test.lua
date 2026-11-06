@@ -413,17 +413,23 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
   ["macros.define: mixes in the first color's model, as xcolor does"] = function()
     local d = parse([[<span class="mathjax-inline">\(\textcolor{olive!50}{a}\textcolor{BrickRed!30}{b}]]
       .. [[\textcolor{Mahogany!40!Goldenrod}{c}\textcolor{-BrickRed!40}{d}\textcolor{gray!50!BrickRed}{e}]]
-      .. [[\textcolor{red!50!olive}{f}\textcolor{olive!50!-red}{g}\textcolor{gray!0!BrickRed!50}{h}\)</span>]])
+      .. [[\textcolor{red!50!olive}{f}\textcolor{olive!50!-red}{g}\textcolor{gray!0!BrickRed!50}{h}]]
+      .. [[\textcolor{black!-50!white!50!red}{i}\textcolor{gray!100!red!50!BrickRed}{j}]]
+      .. [[\textcolor{olive!-50!white!50!red}{k}\textcolor{BrickRed!150!-blue}{l}\textcolor{BrickRed!50!red!-60!blue}{m}\)</span>]])
     local tex = tmpfile("")
     macros.define(d, {tex_file = tex, colors = "olive 0,0,1,0.5 BrickRed 0,0.89,0.94,0.28 "
-      .. "Mahogany 0,0.85,0.87,0.35 Goldenrod 0,0.10,0.84,0 gray 0.5 red 1,0,0 "})
+      .. "Mahogany 0,0.85,0.87,0.35 Goldenrod 0,0.10,0.84,0 gray 0.5 red 1,0,0 black 0 white 1 blue 0,0,1 "})
     os.remove(tex)
     local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
-    -- (each as xcolor has it: \convertcolorspec to HTML)
+    -- (each as xcolor has it: \convertcolorspec to HTML; a converted value
+    -- held to 0 to 1, a share of 100 that keeps the first color's model)
     for _, line in ipairs({"\\definecolor{olive!50}{RGB}{191,191,64}", "\\definecolor{BrickRed!30}{RGB}{234,165,162}",
         "\\definecolor{Mahogany!40!Goldenrod}{RGB}{219,117,2}", "\\definecolor{-BrickRed!40}{RGB}{29,119,124}",
         "\\definecolor{gray!50!BrickRed}{RGB}{156,42,36}", "\\definecolor{red!50!olive}{RGB}{191,64,0}",
-        "\\definecolor{olive!50!-red}{RGB}{64,191,64}", "\\definecolor{gray!0!BrickRed!50}{RGB}{219,106,99}"}) do
+        "\\definecolor{olive!50!-red}{RGB}{64,191,64}", "\\definecolor{gray!0!BrickRed!50}{RGB}{219,106,99}",
+        "\\definecolor{black!-50!white!50!red}{RGB}{255,128,128}", "\\definecolor{gray!100!red!50!BrickRed}{RGB}{156,42,36}",
+        "\\definecolor{olive!-50!white!50!red}{RGB}{255,159,223}", "\\definecolor{BrickRed!150!-blue}{RGB}{148,0,0}",
+        "\\definecolor{BrickRed!50!red!-60!blue}{RGB}{0,13,255}"}) do
       check(definitions:find(line, 1, true), line .. " in " .. definitions)
     end
   end,

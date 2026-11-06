@@ -25,29 +25,33 @@ local fallbacks = {
 local css = {red = "FF0000", blue = "0000FF", cyan = "00FFFF", magenta = "FF00FF",
   yellow = "FFFF00", black = "000000", white = "FFFFFF", gray = "808080"}
 
--- as xcolor converts: cmyk to rgb held at 0, and rgb to cmyk with its
+-- as xcolor converts, each value held to 0 to 1: rgb to cmyk with its
 -- default undercolor removal and black generation (\adjustUCRBG)
+local function clamp(x)
+  return math.max(0, math.min(1, x))
+end
+
 local function rgb(color)
-  if #color == 1 then return {color[1], color[1], color[1]} end
+  if #color == 1 then return {clamp(color[1]), clamp(color[1]), clamp(color[1])} end
   if #color == 3 then return color end
   local k = color[4]
-  return {1 - math.min(1, color[1] + k), 1 - math.min(1, color[2] + k), 1 - math.min(1, color[3] + k)}
+  return {1 - clamp(color[1] + k), 1 - clamp(color[2] + k), 1 - clamp(color[3] + k)}
 end
 
 local function convert(color, n)
   if #color == n then return color end
   if n == 3 then return rgb(color) end
-  if #color == 1 then return {0, 0, 0, 1 - color[1]} end
-  local r, g, b = table.unpack(rgb(color))
-  local k = math.min(1 - r, 1 - g, 1 - b)
-  return {1 - r - k, 1 - g - k, 1 - b - k, k}
+  if #color == 1 then return {0, 0, 0, clamp(1 - color[1])} end
+  local c, m, y = clamp(1 - color[1]), clamp(1 - color[2]), clamp(1 - color[3])
+  local k = math.min(c, m, y)
+  return {c - k, m - k, y - k, k}
 end
 
 -- (xcolor takes a cmyk color's complement through cmy)
 local function complement(color)
   if #color == 4 then return convert(complement(rgb(color)), 4) end
   local flipped = {}
-  for i, x in ipairs(color) do flipped[i] = 1 - x end
+  for i, x in ipairs(color) do flipped[i] = clamp(1 - x) end
   return flipped
 end
 
@@ -56,8 +60,9 @@ end
 -- minus before a name takes its complement, before the first the
 -- whole's), or nothing if it has a name not known. As xcolor does, a mix
 -- is in the first color's model, or the second's if the first is gray, or
--- if its share is 0. A share outside 0 to 100 extrapolates, and only the
--- result is held to 0 to 1
+-- if its share is 0; a share of 100 keeps the first color. A share outside
+-- 0 to 100 extrapolates, and a value is held to 0 to 1 only as it is
+-- converted to another model
 local function evaluate(expression, known)
   local parts = {}
   for part in (expression .. "!"):gmatch("(.-)!") do parts[#parts + 1] = part end
@@ -74,7 +79,7 @@ local function evaluate(expression, known)
     if not (color and share and other) then return end
     if share == 0 then
       color = other
-    else
+    elseif share ~= 100 then
       if #color == 1 then color = convert(color, #other) else other = convert(other, #color) end
       local mixed = {}
       for c = 1, #color do mixed[c] = (share * color[c] + (100 - share) * other[c]) / 100 end

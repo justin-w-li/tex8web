@@ -277,14 +277,15 @@ const colors = {
     // color; a float, which LaTeX sets in the text's color; a box copied
     // after its group ended, which colors nothing after it; a color never
     // closed, which leaves the footnotes in the text's color, as LaTeX's
-    // \@makecol does)
+    // \@makecol does, also one test:visual finds in the abstract it colors)
     `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <dl class='tex8web-list itemize' style='${list}color:${dark('#0000FF')};'>`,
     `<div class='newtheorem' style='color:${dark('#FF0000')}; margin-top:`,
     `<p class='noindent' style='color:${dark('#FF0000')};'>Red from the box’s start.</p>`,
     `<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c' style='--tex8web-share: 0.4; color:${dark('#FF0000')};'>`,
     `<figure class='figure' id='x1-10051'>`,
     `<p class='indent'>   Black at the end, and a note in a table:`,
-    `<p class='indent' style='color:${dark('#FF00FF')};'>   Magenta to the end.\n</p>\n   <div class='footnotes'>`,
+    `<p class='indent' style='color:${dark('#FF00FF')};'>   Magenta to the end.\n</p>\n   <section class='abstract' role='doc-abstract' style='color:${dark('#FF00FF')};'>`,
+    `</section>\n   <div class='footnotes'>`,
   ].map(html => new RegExp(html.replace(/\s+/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).concat(/<head>\s*<title>Colors<\/title>/),
   // table colors as the PDF has them (the document loads colortbl before
   // xcolor's table option, which the build errors on without the fix):

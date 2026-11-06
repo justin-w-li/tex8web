@@ -1,9 +1,10 @@
 // npm run test:visual: each test document and example, prerendered, compared
 // screen by screen with the same page typeset by MathJax in the browser,
 // JavaScript off in both, and checked for alignments that line up across an
-// \intertext, math characters not clipped, headings spaced as in LaTeX, the
-// contents' fonts, printing and a page that fits a phone; it needs Chrome and
-// the network, and saves the screens that differ in build/visual/<document>/visual/.
+// \intertext, math characters not clipped, footnotes in the text's color,
+// headings spaced as in LaTeX, the contents' fonts, printing and a page that
+// fits a phone; it needs Chrome and the network, and saves the screens that
+// differ in build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -135,6 +136,11 @@ async function fits(chrome, file) {
   });
 }
 
+// footnotes beside the text not in the text's color: there should be none,
+// also in a block a \color colors (test-declared.tex)
+const offColor = `(notes => ({ checked: notes.length,
+  wrong: notes.filter(el => getComputedStyle(el).color !== getComputedStyle(document.body).color).length }))(
+  [...document.querySelectorAll('.tex8web-sidenote')])`;
 // math characters with a clip (css/tex8web.css): there should be none
 const clipped = `[...document.querySelectorAll('mjx-c')].filter(c => getComputedStyle(c).clipPath !== 'none').length`;
 
@@ -220,7 +226,7 @@ const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).
 
 // how many times each check had something to check, over the whole run:
 // one that never did has checked nothing
-const ran = { spaced: 0, misaligned: 0 };
+const ran = { spaced: 0, misaligned: 0, sidenotes: 0 };
 
 // a document's two pages compared: its report's lines, and whether it failed
 async function compare(chrome, doc, ok) {
@@ -257,6 +263,9 @@ async function compare(chrome, doc, ok) {
         }
         const n = await page.evaluate(clipped);
         if (n) problems.push(`${name}: ${n} math characters clipped`);
+        const notes = await page.evaluate(offColor);
+        if (file !== typeset) ran.sidenotes += notes.checked;
+        if (notes.wrong) problems.push(`${name}: ${notes.wrong} footnotes not in the text's color`);
         if (file !== typeset) {
           // (it needs tex8web-page.js, which isn't running)
           if (await page.evaluate(`document.querySelector('.tex8web-theme').checkVisibility()`)) {

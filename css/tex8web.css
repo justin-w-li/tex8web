@@ -688,8 +688,9 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 
 /* footnotes (text.lua), each after the paragraph that holds its mark; on a
    wide screen, beside it, where tex8web-page.js lines it up with the
-   mark */
-.tex8web-sidenote { margin-block: 0.5em 1em; padding-inline-start: 0.75em;
+   mark. In the text's color, as LaTeX sets them, also in a block a \color
+   colors */
+.tex8web-sidenote { color: var(--tex8web-text); margin-block: 0.5em 1em; padding-inline-start: 0.75em;
     border-inline-start: 2px solid color-mix(in srgb, currentColor 20%, transparent); }
 .tex8web-sidenote p { margin: 0; text-indent: 0; }
 /* (in \footnotesize's leading, as the abstract's; and a raised mark, here
