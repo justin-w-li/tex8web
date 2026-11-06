@@ -86,10 +86,12 @@ end
 local function roles_of(context, document)
   local families = context.families or {}
   local roles = {body = "roman", others = {}}
+  local chosen = {}
   for _, role in ipairs({"mono", "sans", "roman"}) do
     if families[role] and families[role] == families.body then roles.body = role end
     local font = by_family[families[role] or ""]
     if font and installed(font) then roles[role] = font end
+    if font then chosen[font] = true end
   end
   -- (tex4ht's font classes: ptmr7t-, ec-qtmr-10)
   local classes = {}
@@ -99,7 +101,7 @@ local function roles_of(context, document)
     end
   end)
   for _, font in ipairs(known) do
-    if font ~= roles.roman and font ~= roles.sans and font ~= roles.mono then
+    if not chosen[font] then
       for _, class in ipairs(classes) do
         if matches(class, font.classes) then
           if installed(font) then roles.others[#roles.others + 1] = font end

@@ -29,7 +29,7 @@ The options:
 The output folder holds the page and everything it uses:
 - `document.html` and its stylesheets;
 - the pictures, and the PDF if you link it with `-p` or `\WebPDF`;
-- `fonts/`: Latin Modern or TeX Gyre, MathJax's fonts, and `LICENSE.txt`, which covers them;
+- `fonts/`: Latin Modern, TeX Gyre or XCharter, MathJax's fonts, and `LICENSE.txt`, which covers them;
 - `tex8web-head.js` and `tex8web-page.js`, the page's controls;
 - without Node, `tex8web.js` instead of MathJax's fonts.
 
@@ -149,7 +149,7 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 **Finding.** A field at the top of the table of contents finds headings, numbered theorems and boxes, and terms (`\WebTerm`) as the reader types. Case, accents and math styles don't matter, and a Greek letter is found by its TeX name (`sigma` finds σ). The arrow keys and Enter choose a result.
 
-**Fonts.** The text is in the PDF's font when it is Latin Modern, LaTeX's own, Charter, or one of the standard PostScript fonts: Times, Palatino, Helvetica, Courier, Bookman, New Century Schoolbook or Avant Garde. These come from packages such as `mathptmx`, `txfonts`, `newtxtext`, `mathpazo`, `pxfonts`, `newpxtext`, `helvet`, `charter`, `XCharter` and TeX Gyre's own. The standard fonts are set in TeX Gyre's versions of them, and Charter in XCharter, which the build takes from TeX Live. This holds also for a font chosen in the text, such as `\fontfamily{bch}`. Other fonts are shown in Latin Modern. A document whose text is in its sans-serif font, with `\familydefault`, has a sans-serif page. The math is in MathJax's TeX font, like Computer Modern. Where the PDF's math is in Times, Palatino or New Century Schoolbook, it is in MathJax's TeX Gyre font for it: Termes, Pagella or Schola. That is with `mathptmx`, `newtxmath`, `txfonts`, `mathpazo`, `newpxmath`, `pxfonts` or `fouriernc`.
+**Fonts.** The text is in the PDF's font when it is Latin Modern, LaTeX's own, Charter, or one of the standard PostScript fonts: Times, Palatino, Helvetica, Courier, Bookman, New Century Schoolbook or Avant Garde. These come from packages such as `mathptmx`, `txfonts`, `newtxtext`, `mathpazo`, `pxfonts`, `newpxtext`, `helvet`, `charter`, `XCharter` and TeX Gyre's own. The standard fonts are set in TeX Gyre's versions of them, and Charter in XCharter, which the build takes from TeX Live. This holds also for a font chosen in the text, such as `\fontfamily{bch}`. Other fonts are shown in Latin Modern. A document whose text is in its sans-serif font, with `\familydefault`, has a sans-serif page. The math is in MathJax's TeX font, like Computer Modern. Where the PDF's math is in Times, Palatino or New Century Schoolbook, it is in MathJax's TeX Gyre font for it: Termes, Pagella or Schola. That is with `mathptmx`, `newtxmath`, `txfonts`, `mathpazo`, `newpxmath`, `pxfonts` or `fouriernc`. With `newtxmath`'s option for another font, the math stays in the TeX font, except `nc`, which is New Century Schoolbook.
 
 **Headings** keep the PDF's sizes, the space above and below them, and the space after their numbers. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
 
