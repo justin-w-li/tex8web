@@ -152,7 +152,11 @@
         \exp_args:Nc \group_insert_after:N { __web_declared_ \int_use:N \g__web_declared_int : }
     }
 }
+\@ifpackageloaded{color}{\web@needs{a:color}}{}
 \cs_if_exist:NT \a:color {
+    \web@needs{set@color}
+    \web@needs{color@b@x}
+    \@ifpackageloaded{hyperref}{\web@needs{HyColor@UseColor}}{}
     \Configure{color}{\__web_declared:n}
     \cs_set_eq:NN \__web_set_color: \set@color
     \cs_set:Npn \set@color { \__web_set_color: \__web_declared_mark: }
@@ -198,6 +202,7 @@
 % truncates the rest, off the page's hex colors that dark mode follows. Use
 % \web@hex for a color xcolor knows, a name or an expression; the cell colors
 % tex4ht makes itself (tblcol-1, a color with a model) stay as they are
+\@ifpackageloaded{colortbl}{\web@needs{add:color}}{}
 \cs_if_exist:NT \add:color
     {
         \cs_set_eq:NN \__web_add_color:nnn \add:color
@@ -227,8 +232,13 @@
                 \web@Css { \# TBL- \TableNo - #3 { ~ #1 : \# \l__web_hex_tl } }
             }
         \cs_generate_variant:Nn \__web_cell_color:nnn { nVn }
+        \cs_if_exist:NT \rowcolors { \web@needs{a:rowcolors} }
         \cs_if_exist:NT \a:rowcolors
             {
+                \web@needs{rowc@l@rs}
+                \web@needs{@rowc@lors}
+                \web@needs{halignTR}
+                \web@needs{o:noalign:}
                 % new array runs a row's hooks (which colortbl's \rowcolors uses), and
                 % old array's \everycr, that xcolor.4ht used, from its own \halign; tex4ht
                 % builds another, so call it as tex4ht starts a row (\halignTR) instead

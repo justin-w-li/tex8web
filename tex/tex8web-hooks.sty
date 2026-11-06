@@ -134,7 +134,10 @@
 \AddToHook { package/xcolor/before }
     {
         \@ifpackageloaded { colortbl }
-            { \cs_undefine:c { package:hooks:colortbl.sty } }
+            {
+                \web@needs { package:hooks:colortbl.sty }
+                \cs_undefine:c { package:hooks:colortbl.sty }
+            }
             { \bool_gset_true:N \g__web_xcolor_bool }
     }
 \bool_new:N \g__web_record_bool
@@ -157,7 +160,7 @@
         }
 }
 \cs_generate_variant:Nn \__web_note_color:n { e }
-\AddToHook { package/xcolor/after } { \__web_record_colors: }
+\AddToHook { package/xcolor/after } { \web@needs { XC@logdef } \__web_record_colors: }
 \clist_map_inline:nn { dvipsnam.def, svgnam.def, x11nam.def }
     { \AddToHook { file/#1/before } { \__web_record_colors: } }
 \ExplSyntaxOff
