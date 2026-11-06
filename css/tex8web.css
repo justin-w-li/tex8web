@@ -161,7 +161,7 @@ section.abstract { margin-inline: 0; }
    over a theorem's inline margin, text.lua's; text.lua also takes out the
    empty paragraph before a list there) */
 :is(.sectionHead, .likesectionHead, .subsectionHead, .likesubsectionHead, .subsubsectionHead,
-    .likesubsubsectionHead) + :is(div.newtheorem, dl.tex8web-list, dl.description,
+    .likesubsubsectionHead) + :is(div.newtheorem, .tex8web-list, dl.description,
     dl.thebibliography) { margin-top: 0 !important; }
 /* (run into their paragraph, unless titlesec puts them on a line of their
    own, by default with the space below them that a paragraph has) */
@@ -461,20 +461,24 @@ p:has(.tex8web-hfill) { display: flow-root; }
 
 /* --- lists ------------------------------------------------------------- */
 
-/* lists as LaTeX sets them (tex8web-text.tex): a grid of labels and items,
-   with each list's own lengths. A label is on one line, as in TeX's box,
-   right-aligned \labelsep before its item, and sticks out to the left if
-   wider than its column; an item is no wider than its column (minmax), so
-   that a display too wide for it scrolls, as elsewhere, rather than
-   widening the page */
-dl.tex8web-list { display: grid; margin-block: var(--tex8web-list-topsep);
-    row-gap: var(--tex8web-list-itemsep); column-gap: var(--tex8web-list-labelsep);
+/* lists as LaTeX sets them (tex8web-text.tex): each item a grid of its
+   label and text, with each list's own lengths. An item is an li, or a div
+   in a dl, its label its first child and its text its last. A label is on
+   one line, as in TeX's box, right-aligned \labelsep before its text, and
+   sticks out to the left if wider than its column. The text is no wider
+   than its column (minmax), so that a display too wide for it scrolls, as
+   elsewhere, rather than widening the page */
+.tex8web-list { margin-block: var(--tex8web-list-topsep); padding: 0; }
+.tex8web-list > * { display: grid; column-gap: var(--tex8web-list-labelsep);
     grid-template-columns: calc(var(--tex8web-list-indent) - var(--tex8web-list-labelsep))
         minmax(0, 1fr); }
-dl.tex8web-list > dt { justify-self: end; white-space: nowrap; }
-dl.tex8web-list > dd { margin-left: 0; }
+.tex8web-list > * + * { margin-top: var(--tex8web-list-itemsep); }
+.tex8web-list > * > :first-child { justify-self: end; white-space: nowrap; }
+.tex8web-list > * > :last-child { margin-left: 0; }
 /* (LaTeX adds the larger of a list's space below and the next item's) */
-dl.tex8web-list > dd > dl.tex8web-list:last-child { margin-bottom: 0; }
+.tex8web-list > * > :last-child > .tex8web-list:last-child { margin-bottom: 0; }
+/* (an item in a preview, tex8web-page.js's, without its list's marker) */
+.tex8web-preview > li { list-style: none; }
 /* a description's term runs into its text, which is indented after its
    first line, spaced as LaTeX spaces a list: \topsep around it, \itemsep
    and \parsep between items */

@@ -268,7 +268,9 @@ const colors = {
     `<span class='cmbx-10'>Theorem 1.</span>  </span>${text('#FF0000', "<span class='cmti-10'>A red theorem.</span>\n")}</p>`,
     `<p class='noindent' style='color:${dark('#0000FF')};'>Centered in blue.</p>`,
     `<p class='noindent'>${text('#0000FF', 'In a minipage.\n')}`,
-    `<dl class='tex8web-list itemize' style='${list}color:${dark('#FF0000')};'>`,
+    `<ul class='tex8web-list itemize' style='${list}color:${dark('#FF0000')};'>`,
+    // (an item's label in a color set in the item before it)
+    `</div></li><li style='color:${dark('#FF0000')};'><span aria-hidden='true' class='tex8web-label'>`,
     `<span class='cmr-8'>In the text’s color.</span></p></aside>`,
     `and <a href='https://example.com'>a link</a>, by <a href='#x1-1001r1'>${text('#008080', 'theorem')}`,
     `In the box’s colors, ${text('#FF0000', 'and red')}.</p>`,
@@ -278,7 +280,7 @@ const colors = {
     // after its group ended, which colors nothing after it; a color never
     // closed, which leaves the footnotes in the text's color, as LaTeX's
     // \@makecol does, also one test:visual finds in the abstract it colors)
-    `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <dl class='tex8web-list itemize' style='${list}color:${dark('#0000FF')};'>`,
+    `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <ul class='tex8web-list itemize' style='${list}color:${dark('#0000FF')};'>`,
     `<div class='newtheorem' style='color:${dark('#FF0000')}; margin-top:`,
     `<p class='noindent' style='color:${dark('#FF0000')};'>Red from the box’s start.</p>`,
     `<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c' style='--tex8web-share: 0.4; color:${dark('#FF0000')};'>`,
@@ -309,26 +311,31 @@ const colors = {
 };
 
 // lists as LaTeX sets them: each label as TeX typesets it (article's bullet
-// and dash, an \item's own, enumerate's (a)) and each list with its own
+// and dash, an \item's own, enumerate's (a)), hidden from screen readers,
+// which name a list's items themselves, and each list with its own
 // lengths. Also a citation in biblatex's form, a link within the page, and
 // the bibliography's heading once in the contents, where the document adds
 // it.
+const item = label => `<li><span aria-hidden='true' class='tex8web-label'>\\s*${label}\\s*<\\/span><div>\\s*<!--[^>]*--><p class='noindent'>`;
 const lists = {
   'test-article': [
-    /<dl class='tex8web-list itemize' style='--tex8web-list-topsep: 0\.8em; --tex8web-list-itemsep: 0\.8em; --tex8web-list-indent: 2\.5em; --tex8web-list-labelsep: 0\.5em'><dt>\s*• <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>One,/,
-    /<dl class='tex8web-list itemize' style='[^']*--tex8web-list-indent: 2\.2em;[^']*'><dt>\s*<span class='[^']+'>–<\/span> <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>inside\./,
-    /<dt>\s*<mjx-container aria-label='star'[^]*?<\/dt><dd>\s*<!--[^>]*--><p class='noindent'>A label of its own\./,
-    /<dl class='tex8web-list enumerate' [^>]*><dt>\s*1\. <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>First,/,
-    /<dt>\s*\(a\) <\/dt><dd>\s*<!--[^>]*--><p class='noindent'>inside\./,
+    new RegExp(`<ul class='tex8web-list itemize' style='--tex8web-list-topsep: 0\\.8em; --tex8web-list-itemsep: 0\\.8em; --tex8web-list-indent: 2\\.5em; --tex8web-list-labelsep: 0\\.5em'>${item('•')}One,`),
+    new RegExp(`<ul class='tex8web-list itemize' style='[^']*--tex8web-list-indent: 2\\.2em;[^']*'>${item("<span class='[^']+'>–<\\/span>")}inside\\.`),
+    new RegExp(`${item("<mjx-container aria-label='star'[^]*?")}A label of its own\\.`),
+    new RegExp(`<ol class='tex8web-list enumerate' [^>]*>${item('1\\.')}First,`),
+    new RegExp(`${item('\\(a\\)')}inside\\.`),
   ],
-  // (an item's paragraphs, each a paragraph of its own)
+  // (an item's paragraphs, each a paragraph of its own; enumitem's
+  // description kind as a description list, whose terms are read)
   'test': [/<p class='noindent'>Bullet with a second paragraph\.\s*<\/p><!--[^>]*--><p class='noindent'>The second paragraph\./],
+  'test-generic': [new RegExp(`<ol class='tex8web-list enumitem-steps' [^>]*>${item('Step 1\\.')}First\\.`),
+    /<dl class='tex8web-list enumitem-terms' [^>]*><div><dt>\s*<span class='cmbx-10'>Term<\/span>\s*<\/dt><dd>\s*<!--[^>]*--><p class='noindent'>A list of/],
   'examples/complex': [
     /see \[<a id='[^']*'><\/a><a id='[^']*'><\/a><a href='#X0-evanchen'>1<\/a>/,
     /^(?![^]*<a href='main\.html)/,
     /<nav (?:(?!<\/nav>)[^])*>References<(?:(?!<\/nav>|>References<)[^])*<\/nav>/,
     // (with Latin Modern in T1, a bullet that is \textbullet's •)
-    /<dt>\s*• <\/dt><dd>\s*<!--[^>]*--><p class='noindent'><a href='https:\/\/castel\.dev\/'>/,
+    new RegExp(`${item('•')}<a href='https:\\/\\/castel\\.dev\\/'>`),
   ],
 };
 
@@ -403,7 +410,7 @@ const qed = {
     new RegExp(`${inProof('Plain')}${box}`),
     new RegExp(`${inProof('Display, no qedhere')}<\\/mjx-container><\\/span>\\s*${box}`),
     new RegExp(`${inProof('Text')}${box}`),
-    new RegExp(`${inProof('List')}<dd[^>]*>\\s*(?:<!--[^>]*--><p[^>]*>)?Two\\.\\s*${box}`),
+    new RegExp(`${inProof('List')}<\\/div><\\/li><li>[^]*?<div>\\s*(?:<!--[^>]*--><p[^>]*>)?Two\\.\\s*${box}`),
     // (ten squares: six tags, four boxes)
     /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){10}$/,
   ],
@@ -434,7 +441,7 @@ const qed = {
     // (outside a proof, \qedhere takes no number: the equation after the
     // alignment is the sixth, as it is in the PDF)
     /and \(<a href='#[^']+'>6<!--/,
-    /<\/(?:ul|dl)>\s*<div class='tex8web-qed-line'><span class='tex8web-qed'><mjx-container/,
+    /<\/ul>\s*<div class='tex8web-qed-line'><span class='tex8web-qed'><mjx-container/,
     // (eight squares: six tags, the box after the \tag and the one after the list)
     /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){8}$/,
   ],
@@ -553,6 +560,9 @@ function check(doc, result, out, aux) {
   for (const [property, value] of Object.entries(measured[doc.name] ?? {})) {
     if (!styles.includes(`${property}: ${value};`)) problems.push(`${property} isn't ${value}`);
   }
+  // (html4.4ht's rules for the paragraphs in an <li>, which would space
+  // and indent an item's text unlike LaTeX's)
+  if (/^li /m.test(styles)) problems.push("html4.4ht's rules for <li> in the stylesheet");
   // (hyperref's boxed links, which the page underlines)
   if (doc.name === 'test-generic' && styles.includes('--tex8web-link-line:')) {
     problems.push("hyperref's boxed links aren't underlined");

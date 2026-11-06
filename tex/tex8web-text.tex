@@ -397,11 +397,24 @@
 % \newlist: html4.4ht's grid of labels and items (as enumitem has it), each
 % label as TeX typesets it rather than the browser's, with each list's own
 % lengths, set by the first \item, where tex4ht opens the list (latex.4ht).
+% A list is a ul or an ol, whose label screen readers skip, since they
+% name the items themselves; or, for enumitem's description kind, a dl.
+% #3 gives its element as the list opens: tex4ht opens it in \everypar,
+% maybe in a group, so the element and the item's end are kept globally.
 % (tex4ht's names need : a letter)
 \catcode58 11
-\def\web@configurelist#1#2{%
+\def\web@item@ul{<li><span class="tex8web-label" aria-hidden="true">}
+\def\web@label@ul{</span><div\Hnewline>}
+\def\web@end@ul{</div></li>}
+\let\web@item@ol\web@item@ul \let\web@label@ol\web@label@ul \let\web@end@ol\web@end@ul
+\def\web@item@dl{<div><dt>}
+\def\web@label@dl{</dt><dd\Hnewline>}
+\def\web@end@dl{</dd></div>}
+\let\web@listtag\empty
+\def\web@configurelist#1#2#3{%
     \ConfigureList{#1}
-        {\EndP\edef\web@list{\noexpand\HCode{<dl \noexpand\a:LRdir
+        {\EndP\PushMacro\web@listtag \xdef\web@listtag{#3}%
+         \edef\web@list{\noexpand\HCode{<\web@listtag\space\noexpand\a:LRdir
              class="tex8web-list #2"
              style="--tex8web-list-topsep: \web@em\topsep;
              --tex8web-list-itemsep: \web@em{\dimexpr\itemsep+\parsep\relax};
@@ -409,9 +422,11 @@
              --tex8web-list-labelsep: \web@em\labelsep">}}\web@list
          \PushMacro\end:itm \global\let\end:itm=\empty}
         {\PopMacro\end:itm \global\let\end:itm \end:itm
-         \EndP\HCode{</dd></dl>}\ShowPar}
-        {\end:itm \global\def\end:itm{\EndP\Tg</dd>}\HCode{<dt>}\bgroup}
-        {\egroup\EndP\HCode{</dt><dd\Hnewline>}\par\ShowPar}}
+         \EndP\HCode{\csname web@end@\web@listtag\endcsname</\web@listtag>}%
+         \PopMacro\web@listtag \global\let\web@listtag\web@listtag \ShowPar}
+        {\end:itm \global\def\end:itm{\EndP\HCode{\csname web@end@\web@listtag\endcsname}}%
+         \HCode{\csname web@item@\web@listtag\endcsname}\bgroup}
+        {\egroup\EndP\HCode{\csname web@label@\web@listtag\endcsname}\par\ShowPar}}
 % (\textbullet as LaTeX draws it, •: tex4ht's Latin Modern TS1 font,
 % lm-ts1.htf, gives it as ∙, the smaller bullet operator. A picture keeps
 % the font's)
@@ -420,11 +435,15 @@
     \expandafter\def\csname TS1\string\textbullet\endcsname{%
         \ifx\EndPicture\:UnDef\HCode{&\#x2022;}\else\web@textbullet\fi}
 \fi
-\web@configurelist{itemize}{itemize}
-\web@configurelist{enumerate}{enumerate}
+\web@configurelist{itemize}{itemize}{ul}
+\web@configurelist{enumerate}{enumerate}{ol}
 \@ifpackageloaded{enumitem}{%
-    % (html4.4ht's own names the list last made, not this one)
-    \def\web@newlist#1{\web@configurelist{#1}{enumitem-#1}}%
+    % (html4.4ht's own names the list last made, not this one. enumitem's
+    % \enit@type, which \enit@prelist sets, is 0 for its enumerate kind,
+    % 1 for itemize, 2 for description)
+    \web@needs{enit@prelist}%
+    \def\web@newlist#1{\web@configurelist{#1}{enumitem-#1}
+        {\ifcase\enit@type ol\or ul\else dl\fi}}%
     \Configure{enumitemnewlist}{\expandafter\web@newlist\expandafter{\a:enumitemenv}}%
 }{}
 \catcode58 12

@@ -1,12 +1,13 @@
 % A second test for tex8web: a document unlike test.tex, to check what
 % it handles without a config of its own. No xcolor, packages that MathJax has
 % as extensions, xparse macros, equation numbers by section, titling's
-% title with a \thanks, a table of contents with a macro of its own, a
-% list of enumitem's \newlist (with a display too wide for a phone), a
-% table and a verbatim too wide for a phone, titlesec's explicit headings,
-% labeled with \thetitle and spaced in titlesec's *n form, a title in a
-% size of its own, framed's boxes, a theorem and a list under headings, and
-% small capitals of an accented letter.
+% title with a \thanks, a table of contents with a macro of its own,
+% lists of enumitem's \newlist (one with a display too wide for a phone,
+% one of the description kind), a table and a verbatim too wide for a
+% phone, titlesec's explicit headings, labeled with \thetitle and spaced
+% in titlesec's *n form, a title in a size of its own, framed's boxes, a
+% theorem and a list under headings, and small capitals of an accented
+% letter.
 \documentclass{article}
 \usepackage{amsmath,amssymb,physics,braket,cancel,bbm}
 \usepackage{titling}
@@ -21,6 +22,7 @@
 \newcommand{\cond}[2]{#1 \,\middle|\, #2}
 \newlist{steps}{enumerate}{1}
 \setlist[steps]{label=Step \arabic*., leftmargin=*}
+\newlist{terms}{description}{1}
 \titleformat{\section}{\normalfont\Large\bfseries}{\thetitle.}{1em}{#1}
 \titlespacing*{\section}{0pt}{*4}{*1.5}
 \title{\Large Generic}
@@ -77,6 +79,9 @@ See \eqref{eq:a}, \eqref{eq:b} and \eqref{eq:c}, which should read (2.1),
     \item Third, with a display wider than a phone's screen:
     \[ a_1 + a_2 + a_3 + a_4 + a_5 + a_6 + a_7 + a_8 + a_9 + a_{10} + a_{11} + a_{12} + a_{13} + a_{14} = \sum_{i=1}^{14} a_i. \]
 \end{steps}
+\begin{terms}
+    \item[Term] A list of enumitem's description kind.
+\end{terms}
 A table wider than a phone's screen:
 \begin{center}
 \begin{tabular}{llllll}
