@@ -31,7 +31,12 @@ const typesetPage = `(async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   await MathJax.startup.promise;
-  await MathJax.startup.document.lazyTypesetAll?.();
+  const doc = MathJax.startup.document;
+  await doc.lazyTypesetAll?.();
+  // and the math ui/lazy took as it came into view, which lazyTypesetAll
+  // leaves to it: taken out of the page until typeset again, after any
+  // extension it needs has loaded (internal: ui/lazy's lazyPromise)
+  await doc.lazyPromise;
   const css = [...document.styleSheets].filter(s => s.ownerNode?.id?.startsWith('MJX'))
     .map(s => [...s.cssRules].map(r => r.cssText).join('\\n')).join('\\n');
   const html = document.documentElement.cloneNode(true);
