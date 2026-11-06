@@ -135,10 +135,10 @@ const pageChecks = [
   function links(html, page) {
     const problems = [];
     const ids = new Set([...html.matchAll(/ (?:id|name)=['"]([^'"]+)['"]/g)].map(m => m[1]));
-    for (const [, attribute, ref] of html.matchAll(/ (href|src)=['"]([^'"]+)['"]/g)) {
-      // (a link out of the page's folder goes to the site around it, as
-      // \WebUp's does)
-      if (/^[a-z]+:/i.test(ref) || attribute === 'href' && ref.startsWith('../')) continue;
+    // (but the up link's, to the site around the page)
+    const own = html.replace(/<a [^>]*class=['"]tex8web-control tex8web-up['"][^>]*>/, '');
+    for (const [, ref] of own.matchAll(/ (?:href|src)=['"]([^'"]+)['"]/g)) {
+      if (/^[a-z]+:/i.test(ref)) continue;
       const [path, anchor] = ref.split('#');
       if (path && !existsSync(join(dirname(page), decodeURI(path)))) problems.push(`missing ${path}`);
       if (!path && anchor && !ids.has(anchor)) problems.push(`no target for #${anchor}`);

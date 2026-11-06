@@ -10,8 +10,9 @@
 %   prerendering: MathJax's configuration (tex8web-math.tex), and lengths
 %   from the document, in ems of its body font, for MathJax's sizes (see
 %   tex8web.js). page.lua adds the scripts that read it
-% - two build elements, for the HTML passes, which remove them: the PDF
-%   (\WebPDF), the page above (\WebUp) and the \WebMathMacros definitions; and \contentsname,
+% - two build elements, for the HTML passes, which remove them. The first
+%   holds the PDF (\WebPDF), the page above (\WebUp) and the
+%   \WebMathMacros definitions. The second holds \contentsname,
 %   typeset, so that tex4ht writes its letters (babel's are font commands,
 %   \CYRS, of which \text_purify:n knows only Latin's), in a group: the
 %   head is written as the document starts, so a \contentsname's font
@@ -29,17 +30,27 @@
     \regex_replace_all:nnN { \x{26} } { &amp; } #1
     \regex_replace_all:nnN { \x{3C} } { &lt; } #1
     \regex_replace_all:nnN { \x{3E} } { &gt; } #1
+    \regex_replace_all:nnN { \x{22} } { &quot; } #1
+}
+% a token list as text for the page: a # as one (\detokenize doubles it),
+% and escaped
+\cs_new_protected:Npn \__web_text:NN #1 #2 {
+    \tl_set:Ne #1 {\exp_args:NV \detokenize #2}
+    \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } #1
+    \__web_escape:N #1
 }
 \cs_new_protected:Npn \__web_build_element: {
-    \tl_set:Ne \l__web_build_tl {\exp_args:NV \detokenize \g__web_macros_tl}
-    \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } \l__web_build_tl
-    \__web_escape:N \l__web_build_tl
-    \HCode{<script~type="text/x-tex8web-build"~data-pdf="\tl_to_str:N \g__web_pdf_tl"~data-up="\tl_to_str:N \g__web_up_tl">
+    \__web_text:NN \l__web_build_tl \g__web_macros_tl
+    \__web_text:NN \l__web_pdf_tl \g__web_pdf_tl
+    \__web_text:NN \l__web_up_tl \g__web_up_tl
+    \HCode{<script~type="text/x-tex8web-build"~data-pdf="\l__web_pdf_tl"~data-up="\l__web_up_tl">
         \l__web_build_tl</script><script~type="text/x-tex8web-contents">}
     \group_begin: \cs_if_exist_use:N \contentsname \group_end:
     \HCode{</script>\Hnewline}
 }
 \tl_new:N \l__web_build_tl
+\tl_new:N \l__web_pdf_tl
+\tl_new:N \l__web_up_tl
 \Configure{@HEAD}{}
 \Configure{@HEAD}{\HCode{<meta~charset="utf-8"~/>\Hnewline}}
 \Configure{@HEAD}{\HCode{<meta~name="viewport"~content="width=device-width,initial-scale=1"~/>\Hnewline}}

@@ -1,7 +1,7 @@
 -- The page around the text: what tex8web-page.tex hands on, links to
--- headings, theorems and boxes, the controls (contents, PDF, theme) and the table
--- of contents beside the text, meta tags for link previews, and the
--- scripts.
+-- headings, theorems and boxes, the controls (up, contents, PDF, theme)
+-- and the table of contents beside the text, meta tags for link previews,
+-- and the scripts.
 local assets = require "tex8web.assets"
 local dom = require "tex8web.dom"
 
@@ -254,8 +254,9 @@ function M.meta_tags(document)
   end
 end
 
--- tex8web-head.js (the reader's theme, before the page is drawn) and
--- tex8web-page.js (the theme button, the table of contents' tracking);
+-- tex8web-head.js (the reader's theme, before the page is drawn, and the
+-- transition from the page before) and tex8web-page.js (the theme button,
+-- the table of contents' tracking);
 -- and for MathJax in the browser, MathJax and tex8web.js, which configures
 -- it from tex8web-config (marked for prerender.mjs, which removes them)
 function M.scripts(document, context)

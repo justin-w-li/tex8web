@@ -15,6 +15,7 @@ try {
 // @view-transition): back when it's to the page above (\WebUp), or else
 // forward. The page left knows which, and tells the page it leads to
 {
+  // (as tex8web-page.js's)
   const page = url => url.split('#')[0].replace(/\/index\.html$/, '/');
   addEventListener('pageswap', event => {
     const to = event.activation?.entry.url;

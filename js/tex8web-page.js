@@ -52,7 +52,7 @@
   };
 
   // a page's address without its fragment, and a folder's index.html as the
-  // folder, as a server gives it
+  // folder, as a server gives it (as tex8web-head.js's)
   const page = url => url.split('#')[0].replace(/\/index\.html$/, '/');
 
   // the up link goes back in history when the page before this one is the
@@ -65,8 +65,8 @@
       if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const here = page(location.href);
       const before = navigation.entries().slice(0, navigation.currentEntry.index).reverse()
-        .find(entry => page(entry.url) !== here);
-      if (before && page(before.url) === page(a.href)) {
+        .find(entry => page(entry.url ?? '') !== here);
+      if (before?.url && page(before.url) === page(a.href)) {
         event.preventDefault();
         navigation.traverseTo(before.key);
       }

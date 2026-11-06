@@ -23,7 +23,9 @@ await pool(examples, workers, async doc => {
 const site = join(root, 'build/site');
 const index = { name: 'examples/index', dir: join(root, 'examples'), tex: 'index.tex', cfg: join(root, 'tex8web.cfg') };
 const { code } = await build(index, site, join(root, 'build/siteaux'));
-for (const doc of examples) cpSync(join(doc.dir, 'build/html'), join(site, basename(doc.dir)), { recursive: true });
+for (const doc of examples) {
+  if (existsSync(join(doc.dir, 'build/html'))) cpSync(join(doc.dir, 'build/html'), join(site, basename(doc.dir)), { recursive: true });
+}
 const page = join(site, 'index.html');
 const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
 const wrong = [...!html ? ['no index.html'] : [], ...code ? [`make4ht exited with ${code}`] : [],

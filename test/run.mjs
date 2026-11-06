@@ -173,8 +173,8 @@ const index = {
 const titled = name => [new RegExp(`<button aria-label='${name}' class='tex8web-control tex8web-contents'[^>]* title='${name}'`),
   new RegExp(`<p class='tex8web-toc-title' id='tex8web-toc-title'>${name}</p>`)];
 const contents = {
-  // (and test.cfg's \WebUp, the first of the controls)
-  'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/'/],
+  // (and test.cfg's \WebUp, the first of the controls, with its # and &)
+  'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/\?a=1&amp;b=2#top'/],
   'test-russian': titled('Содержание'),
   'test-greek': titled('Περιεχόμενα'),
   'test-report': [

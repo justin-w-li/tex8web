@@ -522,8 +522,8 @@ async function themed(chrome, file) {
 }
 
 // from one page of a site to another, served over HTTP as a file has no
-// origin to share: from another page, as the site's index, to an example
-// (which links up to ../index.html), then up again. The first change runs
+// origin to share: from another page, as the site's index at /, to an
+// example (which links up to ../index.html, the same page), then up again. The first change runs
 // css/tex8web.css's view transition forward and the second back
 // (tex8web-head.js), and the up link goes back in history rather than to a
 // new entry (tex8web-page.js)
@@ -542,28 +542,32 @@ async function navigating(chrome, example, index) {
   renameSync(join(site, `${index.name}.html`), join(site, 'index.html'));
   cpSync(join(testDir(example, 'visual'), 'html'), join(site, 'example'), { recursive: true });
   const server = createServer((request, response) => {
-    const file = join(site, decodeURIComponent(new URL(request.url, 'http://localhost').pathname));
+    const file = join(site, decodeURIComponent(new URL(request.url, 'http://localhost').pathname)
+      .replace(/\/$/, '/index.html'));
     if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return response.writeHead(404).end();
     response.writeHead(200, { 'content-type': served[extname(file)] ?? 'application/octet-stream' })
       .end(readFileSync(file));
   });
   await new Promise(done => server.listen(0, '127.0.0.1', done));
-  const page = await chrome.open(`http://127.0.0.1:${server.address().port}/index.html`, { before: seenTypes });
-  // (the page's evaluate fails while the next page loads)
-  const arrive = async path => {
+  const page = await chrome.open(`http://127.0.0.1:${server.address().port}/`, { before: seenTypes });
+  // at a page, its transition (the nth) seen and over; the page's evaluate
+  // fails while the next page loads
+  const arrive = async (path, n) => {
     for (let t = 0; t < 10000; t += 100) {
-      if (await page.evaluate(`location.pathname === '${path}' && document.readyState === 'complete'`)
-        .catch(() => false)) return;
+      if (await page.evaluate(`location.pathname === '${path}' && document.readyState === 'complete'
+        && JSON.parse(sessionStorage.getItem('seen') ?? '[]').length === ${n}
+        && !document.documentElement.matches(':active-view-transition')`).catch(() => false)) return;
       await new Promise(done => setTimeout(done, 100));
     }
     throw new Error(`not at ${path} in 10s`);
   };
   const problems = [];
   try {
+    await arrive('/', 1);
     await page.evaluate(`location.href = 'example/main.html'`);
-    await arrive('/example/main.html');
+    await arrive('/example/main.html', 2);
     await page.evaluate(`document.querySelector('.tex8web-up').click()`);
-    await arrive('/index.html');
+    await arrive('/', 3);
     const [seen, entry] = await page.evaluate(`[JSON.parse(sessionStorage.getItem('seen')), navigation.currentEntry.index]`);
     if (seen.join(' ') !== 'none tex8web-forward tex8web-back') problems.push(`view transitions ${seen.join(', ')}`);
     if (entry !== 0) problems.push(`the up link went to history's entry ${entry}, not back to 0`);
@@ -765,7 +769,7 @@ while (waiting.size) {
   console.log(lines.join('\n'));
   failures += failed ? 1 : 0;
 }
-// (with the pages compared above, which their builds are)
+// (once the two documents' builds are done, as they are once compared)
 const [example, index] = ['examples/basic', 'test-generic'].map(name => docs.find(doc => doc.name === name));
 if (example && index) {
   const problems = await navigating(chrome, example, index).catch(error => [error.message]);
