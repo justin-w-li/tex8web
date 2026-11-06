@@ -73,6 +73,26 @@ return {
     equal(files, {"a.tex", "b.tex", "d.txt", "dir/c.tex", "e.tex"})
   end,
 
+  ["document: a later definition in the main file beats one in a package it loaded earlier"] = function()
+    local dir = os.tmpname()
+    os.remove(dir)
+    lfs.mkdir(dir)
+    local function write(name, text)
+      local f = assert(io.open(dir .. "/" .. name, "w"))
+      f:write(text)
+      f:close()
+    end
+    write("mysty.sty", "\\newcommand{\\R}{\\mathbb{R}}\\newcommand{\\S}{s}")
+    write("defs.tex", "\\newcommand{\\S}{\\mathbf{S}}")
+    write("main.tex", "\\usepackage{" .. dir .. "/mysty}\\input{" .. dir .. "/defs}\n"
+      .. "\\renewcommand{\\R}{\\mathbf{R}}")
+    local definitions = preamble.document(dir .. "/main.tex")
+    for _, name in ipairs({"mysty.sty", "defs.tex", "main.tex"}) do os.remove(dir .. "/" .. name) end
+    lfs.rmdir(dir)
+    equal(definitions["\\R"].def, "\\newcommand{\\R}{\\mathbf{R}}")
+    equal(definitions["\\S"].def, "\\newcommand{\\S}{\\mathbf{S}}")
+  end,
+
   ["document follows \\input and \\include, and skips a missing file"] = function()
     local dir = os.tmpname()
     os.remove(dir)

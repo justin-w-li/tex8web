@@ -211,19 +211,19 @@ function M.read(s, definitions)
 end
 
 -- the definitions in the document, the local packages it loads and the
--- files it inputs
+-- files it inputs. As in TeX, a file's own definitions come after those of
+-- the files it loads, which is right while it loads them before it defines
 function M.document(tex_file)
-  local definitions, seen, queue = {}, {}, {tex_file}
-  while #queue > 0 do
-    local path = table.remove(queue, 1)
+  local definitions, seen = {}, {}
+  local function visit(path)
     local s = not seen[path] and files.read(path)
     seen[path] = true
-    if s then
-      for _, file in ipairs(M.read(s, definitions)) do
-        queue[#queue + 1] = file
-      end
-    end
+    if not s then return end
+    local own = {}
+    for _, file in ipairs(M.read(s, own)) do visit(file) end
+    for name, definition in pairs(own) do definitions[name] = definition end
   end
+  visit(tex_file)
   return definitions
 end
 
