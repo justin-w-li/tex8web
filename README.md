@@ -40,7 +40,7 @@ path/to/tex8web/bin/tex8web document.tex
 
 The page and everything it uses go to `build/html/` beside the document. The folder is ready to publish as it is.
 
-Most documents need nothing more. To link the page to the PDF, pass `-p build/pdf/document.pdf`. If the build warns about macros MathJax can't read, or you want a style of your own, write a short config: see [Your own config](DOCUMENTATION.md#your-own-config).
+Most documents need nothing more. To link the page to the PDF, build the PDF first and pass its path with [`-p`](DOCUMENTATION.md#building-a-page). If the build warns about macros MathJax can't read, or you want a style of your own, write a short config: see [Your own config](DOCUMENTATION.md#your-own-config).
 
 ## Examples
 

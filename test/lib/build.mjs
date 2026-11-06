@@ -74,7 +74,7 @@ export async function build(doc, out, aux, env = {}) {
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
   const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
-    ...!own && pdf ? ['-p', pdf] : [], doc.tex];
+    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], doc.tex];
   return new Promise(done => {
     const child = spawn(join(root, 'bin/tex8web'), args, { cwd: doc.dir, env: { ...process.env, ...env }, detached: true });
     running.add(child.pid);

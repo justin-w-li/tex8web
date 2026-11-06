@@ -25,7 +25,8 @@ end
 function M.build_data(document, context)
   local element = document:query_selector("script[type='text/x-tex8web-build']")[1]
   if not element then return end
-  local pdf = os.getenv("TEX8WEB_PDF") or element:get_attribute("data-pdf")
+  local pdf = os.getenv("TEX8WEB_PDF") or ""
+  if pdf == "" then pdf = element:get_attribute("data-pdf") end
   context.pdf = pdf ~= "" and pdf or nil
   context.macros = element:get_text()
   element:remove_node()

@@ -9,7 +9,8 @@
 # make4ht runs in the document's directory, where its pictures, \WebPDF
 # and bibliography are found.
 set -e
-unset CDPATH
+# (only -p sets TEX8WEB_PDF, so that one left in the shell links no stale PDF)
+unset CDPATH TEX8WEB_PDF
 
 self=$0
 while [ -L "$self" ]; do
@@ -41,6 +42,8 @@ while [ "$count" -gt 0 ]; do
   esac
 done
 [ -f "$document" ] || { echo "$usage" >&2; exit 2; }
+[ -z "$TEX8WEB_PDF" ] || [ -f "$TEX8WEB_PDF" ] ||
+  { echo "tex8web: no PDF at $TEX8WEB_PDF; build it first" >&2; exit 2; }
 # (tex4ht takes the config's path apart at spaces, and the default config
 # is in tex8web's directory)
 case $config in *" "*)

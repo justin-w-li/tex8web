@@ -21,7 +21,7 @@ The options:
 - **`-c config`** builds with your own config instead of `tex8web.cfg`. See [Your own config](#your-own-config).
 - **`-d out`** puts the page in `out/` instead, a path relative to where you run the command.
 - **`-B aux`** puts tex4ht's working files in `aux/`, a path relative to the document. Keep `-` out of it; see [Known limitations](#known-limitations).
-- **`-p pdf`** adds an icon that links to the document's PDF, and copies the PDF next to the page. The path is relative to where you run the command. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`. It takes the place of a config's [`\WebPDF`](#your-own-config).
+- **`-p pdf`** adds an icon that links to the document's PDF, and copies the PDF next to the page. The path is relative to where you run the command. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`. With a config's [`\WebPDF`](#your-own-config) too, `-p` wins.
 - **`-m draft`** runs LaTeX once and skips the bibliography and index. It is quicker while you work, but references and citations may show as ??.
 - Any other option is passed to make4ht. The document comes last.
 
@@ -44,7 +44,7 @@ The paths are relative, so you can publish the folder as it is. With Node, its f
 make4ht -u -c path/to/tex8web/tex8web.cfg -e path/to/tex8web/tex8web.mk4 -B build/tex4ht -d build/html document.tex
 ```
 
-Pass both files every time: `tex8web.mk4` tells TeX where to find what `tex8web.cfg` loads. If TeX stops with "tex8web-core.tex not found", the `-e` option is missing. The wrapper's `-p pdf` sets `TEX8WEB_PDF` to the PDF's absolute path.
+Pass both files every time: `tex8web.mk4` tells TeX where to find what `tex8web.cfg` loads. If TeX stops with "tex8web-core.tex not found", the `-e` option is missing. To link the PDF, set `TEX8WEB_PDF` to its path, absolute or relative to the document.
 
 **Platform.** The build runs Node, bibtex and makeindex through a POSIX shell, so it works on macOS and Linux, not Windows.
 
@@ -93,7 +93,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 | `\WebMathMacros{definitions}` | the build warns of "macro(s) left undefined for MathJax", or math shows in red |
 | `\WebColor{name}{light}{dark}` | your config writes HTML or CSS of its own and needs a color that follows dark mode |
 | `\WebTerm\cs` | your document marks the terms it defines with a one-argument command, and you want the contents filter to find them |
-| `\WebPDF{path}` | you publish the PDF beside the page and want an icon that links to it |
+| `\WebPDF{path}` | you always want the icon linking to the PDF, without passing `-p` |
 | `\WebLikePDF` | you want the text set as in the PDF: its size and line spacing, indented paragraphs, and justified text |
 | `\Css{...}` | you want a style of your own, or to change one of tex8web's |
 
