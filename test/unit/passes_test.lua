@@ -45,6 +45,13 @@ return {
       .. [[<h3>B</h3><p>Text</p><ol><li>b</li></ol><p> </p><dl><dt>c</dt></dl>]])
   end,
 
+  ["text.same_page_links: links to the page by its name within it"] = function()
+    local d = parse([[<a href="main.html#X0-key">1</a><a href="main.html" id="X0-"></a>]]
+      .. [[<a href="other.html#x">2</a><a href="#y">3</a>]])
+    text.same_page_links(d, {input = "main"})
+    equal(body(d), [[<a href='#X0-key'>1</a><a id='X0-'></a><a href='other.html#x'>2</a><a href='#y'>3</a>]])
+  end,
+
   ["text.label_space: one space between a heading's number and its title"] = function()
     local d = parse([[<h3 class="sectionHead"><span class="titlemark">1    </span> <a id="x1-1"></a>Title</h3>]]
       .. [[<p><span class="paragraphHead"><span class="titlemark"><span class="b">a    </span></span> <a id="x1-2"></a>Head</span> Text</p>]]

@@ -34,6 +34,22 @@ function M.heading_lists(document)
   end
 end
 
+-- links to the page by its file name, as biblatex.4ht writes citations
+-- (page.html#X0-key), as links within it, which the stylesheet's citation
+-- color and tex8web-page.js's previews look for (#X0-key); and no link on
+-- its anchor (page.html, around nothing)
+function M.same_page_links(document, context)
+  local page = context.input .. ".html"
+  for _, a in ipairs(document:query_selector("a[href]")) do
+    local href = a:get_attribute("href")
+    if href == page and #a:get_children() == 0 then
+      a:set_attribute("href", nil)
+    elseif href:sub(1, #page + 1) == page .. "#" then
+      a:set_attribute("href", href:sub(#page + 1))
+    end
+  end
+end
+
 -- the space between a heading's number and its title, as one space in a
 -- <span class="tex8web-labelsep">, which css/tex8web.css makes as wide as
 -- in the PDF: tex4ht writes it as spaces (and KOMA's as no-break spaces),
