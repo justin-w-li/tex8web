@@ -52,9 +52,11 @@ const measured = {
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
     '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
   // (and test.cfg's \WebColor, from an xcolor expression and an RGB color)
-  // (links unmarked: colored with colorlinks, hidden with hidelinks)
+  // (links unmarked: colored with colorlinks, hidden with hidelinks; the
+  // link colors, also with only the color package, in the example)
   'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235',
-    '--tex8web-link-line': 'none' },
+    '--tex8web-link-line': 'none', '--tex8web-link': 'light-dark(#FF0000, var(--tex8web-link-dark))' },
+  'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, var(--tex8web-url-dark))' },
   'test-hidelinks': { '--tex8web-link-line': 'none' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
@@ -211,37 +213,38 @@ const fonts = {
 // \textcolor, \colorbox, \fcolorbox, listings and math, a \rule too.
 // Math and table cells have the colors xcolor gives them: a document's own
 // (ink), a \colorlet (ember), a mix, and green, which CSS has darker.
-const lightDark = (color, l) => `light-dark\\(${color}, oklch\\(from ${color} ${l} c h\\)\\)`;
-const dark = hex => `light-dark(${hex}, oklch(from ${hex} max(l, 1 - l) c h))`;
+const lightDark = (color, property) =>
+  `light-dark\\(${color}, oklch\\(from ${color} var\\(--tex8web-dark-${property}\\) c h\\)\\)`;
+const dark = hex => `light-dark(${hex}, oklch(from ${hex} var(--tex8web-dark-color) c h))`;
 const text = (hex, html) => `<span style='color:${dark(hex)};'>${html}</span>`;
 // (a list's own lengths, before its color)
 const list = '--tex8web-list-topsep: 0.8em; --tex8web-list-itemsep: 0.8em; --tex8web-list-indent: 2.5em; --tex8web-list-labelsep: 0.5em; ';
 const colors = {
   'test-color': [
-    new RegExp(`<span style='color:${lightDark('#000080', 'max\\(l, 1 - l\\)')};'>navy</span>`),
+    new RegExp(`<span style='color:${lightDark('#000080', 'color')};'>navy</span>`),
     /<span style='color:var\(--tex8web-text\);'>black<\/span>/,
-    new RegExp(`#colorbox1\\{background-color:${lightDark('#FFFFB2', 'min\\(l, 1\\.24 - l\\)')};\\}`),
-    new RegExp(`#colorbox2\\{border: solid 1px ${lightDark('#0000FF', 'max\\(l, 0\\.62\\)')};\\}`),
-    new RegExp(`<mjx-mstyle style='color: ${lightDark('red', 'max\\(l, 1 - l\\)')};'>`),
+    new RegExp(`#colorbox1\\{background-color:${lightDark('#FFFFB2', 'background')};\\}`),
+    new RegExp(`#colorbox2\\{border: solid 1px ${lightDark('#0000FF', 'border')};\\}`),
+    new RegExp(`<mjx-mstyle style='color: ${lightDark('red', 'color')};'>`),
     /<mjx-mstyle style='color: var\(--tex8web-text\);'>/,
-    new RegExp(`<mjx-mpadded style='background-color: ${lightDark('yellow', 'min\\(l, 1\\.24 - l\\)')};'>`),
-    new RegExp(`<mjx-mpadded [^>]*style='border: \\S+ solid ${lightDark('blue', 'max\\(l, 0\\.62\\)')};`),
+    new RegExp(`<mjx-mpadded style='background-color: ${lightDark('yellow', 'background')};'>`),
+    new RegExp(`<mjx-mpadded [^>]*style='border: \\S+ solid ${lightDark('blue', 'border')};`),
     /<mjx-mspace style='background-color: var\(--tex8web-text\);/,
     // (ink, red!50!black, green, ember, red!50!yellow in a macro)
     ...['#c80064', '#800000', '#00ff00', '#640032', '#ff8000'].map(hex =>
-      new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
+      new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'color')};'>`)),
     // (gray!50, ink!50!yellow!50, -ink, -red!50!black; Apricot, Blue!50, Azure3; HTML, cmyk, Gray;
     // in CMYK as xcolor has them, olive!50, BrickRed!30, Mahogany!40!Goldenrod (svgnames' rgb one),
     // -BrickRed!40;
     // BrickRed, given to a macro)
     ...['#bfbfbf', '#f1bf98', '#37ff9b', '#80ffff', '#ffad7a', '#8080ff', '#c1cdcd', '#3366cc', '#803399', '#888888',
       '#bfbf40', '#eaa5a2', '#c54f00', '#1d777c', '#b80000'].map(hex =>
-      new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
-    new RegExp(`#TBL-1-1- td\\{ background-color:${lightDark('#FFFFB2', 'min\\(l, 1\\.24 - l\\)')}\\}`),
-    new RegExp(`#TBL-1-2-1\\{ background-color:${lightDark('#F1BFD8', 'min\\(l, 1\\.24 - l\\)')}\\}`),
+      new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'color')};'>`)),
+    new RegExp(`#TBL-1-1- td\\{ background-color:${lightDark('#FFFFB2', 'background')}\\}`),
+    new RegExp(`#TBL-1-2-1\\{ background-color:${lightDark('#F1BFD8', 'background')}\\}`),
     // (a complement, which tex4ht gives no rule)
-    new RegExp(`#TBL-1-3- td\\{ background-color:${lightDark('#37FF9B', 'min\\(l, 1\\.24 - l\\)')}\\}`),
-    new RegExp(`#TBL-1-3-2\\{ background-color:${lightDark('#37FF9B', 'min\\(l, 1\\.24 - l\\)')}\\}`),
+    new RegExp(`#TBL-1-3- td\\{ background-color:${lightDark('#37FF9B', 'background')}\\}`),
+    new RegExp(`#TBL-1-3-2\\{ background-color:${lightDark('#37FF9B', 'background')}\\}`),
     /<pre class='lstlisting'[^>]*>(?:(?!<\/pre>)[^])*<span style='color:var\(--tex8web-text\)'>/,
   ],
   // \color as a declaration: in spans that end with its group, a block
@@ -291,14 +294,14 @@ const colors = {
   // (xcolor without colortbl, whose extension would bring MathJax's color
   // extension with it: a document's color, one \colorlet names, a model)
   'test-color-math': ['#c80064', '#00ff00', '#3366cc'].map(hex =>
-    new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'max\\(l, 1 - l\\)')};'>`)),
+    new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'color')};'>`)),
   'test-colortbl': [
     // (\rowcolors' on the rows, under the cells' colors)
     ...[['1-1-', 'FFE5E5'], ['1-2-', 'E5E5FF'], ['1-3-', 'FFE5E5'], ['2-2-', 'E5FFE5'], ['2-4-', 'E5FFE5'],
       ['6-1-', 'FFE5E5'], ['6-2-', 'E5E5FF'], ['4-1- td', 'DDEEFF'], ['5-2- td', 'BFFFBF'], ['6-2- td', '00FF00'],
       ['3-1-1', 'CCFFCC'], ['3-2-1', 'CCFFCC'], ['4-2-1', 'F1BFD8'], ['5-1-1', 'F1BFD8'], ['6-1-2', 'FFFF00']]
       .map(([selector, hex]) =>
-        new RegExp(`#TBL-${selector}\\{ background-color:${lightDark(`#${hex}`, 'min\\(l, 1\\.24 - l\\)')}\\}`)),
+        new RegExp(`#TBL-${selector}\\{ background-color:${lightDark(`#${hex}`, 'background')}\\}`)),
     // (\rowcolors{2}{}{...} leaves the first row and every odd one without)
     /^(?![^]*#TBL-2-(?:1|3|5)-\{)/,
   ],

@@ -69,19 +69,19 @@ return {
       .. "pre#fancyvrb1 { color: #000000; }\n#colorbox3{border: solid 1px #000000;}\n"
       .. ":root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); }\na:hover{color:currentColor}\n"
       .. ".x{color: light-dark(#111111, #EEEEEE)}\n #TBL-1-2-1{ background-color:rgb(199,0,99)}"),
-      "span#colorbox1{background-color:light-dark(#FFFFB2, oklch(from #FFFFB2 min(l, 1.24 - l) c h));}\n"
-      .. "#colorbox2{border: solid 1px light-dark(#0000FF, oklch(from #0000FF max(l, 0.62) c h));}\n"
+      "span#colorbox1{background-color:light-dark(#FFFFB2, oklch(from #FFFFB2 var(--tex8web-dark-background) c h));}\n"
+      .. "#colorbox2{border: solid 1px light-dark(#0000FF, oklch(from #0000FF var(--tex8web-dark-border) c h));}\n"
       .. "pre#fancyvrb1 { color: var(--tex8web-text); }\n#colorbox3{border: solid 1px currentColor;}\n"
       .. ":root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); }\na:hover{color:currentColor}\n"
       .. ".x{color: light-dark(#111111, #EEEEEE)}\n"
-      .. " #TBL-1-2-1{ background-color:light-dark(#C70063, oklch(from #C70063 min(l, 1.24 - l) c h))}")
+      .. " #TBL-1-2-1{ background-color:light-dark(#C70063, oklch(from #C70063 var(--tex8web-dark-background) c h))}")
   end,
   ["assets.inline_colors: \\textcolor's and listings' spans"] = function()
     local document = dom.html_parse("<html><body><span style='color:#000080;'>a</span>"
       .. "<span style='color:#000000'>b</span><p>c</p></body></html>")
     assets.inline_colors(document)
     equal(document:query_selector("body")[1]:serialize(), "<body><span style='color:light-dark(#000080, "
-      .. "oklch(from #000080 max(l, 1 - l) c h));'>a</span><span style='color:var(--tex8web-text)'>b</span>"
+      .. "oklch(from #000080 var(--tex8web-dark-color) c h));'>a</span><span style='color:var(--tex8web-text)'>b</span>"
       .. "<p>c</p></body>")
   end,
   ["assets.rules_in_text_color: black borders only"] = function()

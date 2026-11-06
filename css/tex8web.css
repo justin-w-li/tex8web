@@ -16,15 +16,24 @@
    in the system's setting; html body: to win over tex4ht's body rules) */
 html body { color-scheme: inherit; }
 :root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); --tex8web-text: light-dark(#000000, #E3E3E3); }
+/* the document's colors in dark mode: the same hue at another lightness
+   (l, of oklch), which tex8web-boxes.tex, assets.lua and tex8web.js write
+   as oklch(from <color> var(--tex8web-dark-<property>) c h). Text is as
+   light as it was dark, backgrounds as dark as they were light, and
+   borders at least 0.62, so they show */
+:root { --tex8web-dark-color: max(l, 1 - l); --tex8web-dark-background: min(l, 1.24 - l);
+    --tex8web-dark-border: max(l, 0.62); }
 /* what a link leads to, and the table of contents' entry for the section
    being read */
 :root { --tex8web-highlight: light-dark(#EAECF6, #4A4232); }
 html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
-/* links: hyperref's colors with colorlinks (tex8web-page.tex). Otherwise
-   the color of the text, with a faint underline where the PDF draws boxes
-   around them; none with hidelinks (--tex8web-link-line). The contents,
-   the controls and the # links are the page's, not the document's; a
-   footnote's raised mark, underlined, reads as a stray rule */
+/* links: hyperref's colors with colorlinks (tex8web-page.tex), and these
+   in dark mode. Otherwise the color of the text, with a faint underline
+   where the PDF draws boxes around them; none with hidelinks
+   (--tex8web-link-line). The contents, the controls and the # links are
+   the page's, not the document's; a footnote's raised mark, underlined,
+   reads as a stray rule */
+:root { --tex8web-link-dark: #6CB4FF; --tex8web-cite-dark: #5FD3A0; --tex8web-url-dark: #F27FB0; }
 a { color: var(--tex8web-link, inherit); text-decoration: none; }
 a[href] { text-decoration: var(--tex8web-link-line, underline); text-decoration-thickness: 1px;
     text-underline-offset: 0.15em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }

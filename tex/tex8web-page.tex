@@ -262,8 +262,9 @@
             }
     }
 \ExplSyntaxOff
-% links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
-% and the links keep the color of the text, underlined (css/tex8web.css).
+% links: hyperref's colors with colorlinks, in light mode (the stylesheet
+% has the dark ones); otherwise the PDF draws boxes, and the links keep the
+% color of the text, underlined (css/tex8web.css).
 % Colored links and hidelinks' need no underline. tex4ht turns colorlinks
 % on itself, so count it as the document's when its hyperref options name
 % it, or its link colors aren't hyperref's defaults
@@ -276,20 +277,11 @@
         { \tl_if_in:cnT { @raw@opt@hyperref.sty } { colorlinks } { \bool_set_true:N \l__web_colorlinks_bool } }
     \bool_lazy_and:nnT { \legacy_if_p:n { Hy@colorlinks } } { \l__web_colorlinks_bool }
         {
-            \cs_if_exist:NTF \convertcolorspec
+            \clist_map_inline:nn { link, cite, url }
                 {
-                    \definecolor{tex8web-link-dark}{RGB}{108,180,255}
-                    \definecolor{tex8web-cite-dark}{RGB}{95,211,160}
-                    \definecolor{tex8web-url-dark}{RGB}{242,127,176}
+                    \exp_args:Nv \web@hex { @##1color } \l__web_hex_tl
+                    \web@Css { :root~{~--tex8web-##1:~light-dark(\#\l__web_hex_tl,~var(--tex8web-##1-dark));~} }
                 }
-                {
-                    \definecolor{tex8web-link-dark}{rgb}{0.4235,0.7059,1}
-                    \definecolor{tex8web-cite-dark}{rgb}{0.3725,0.8275,0.6275}
-                    \definecolor{tex8web-url-dark}{rgb}{0.949,0.498,0.6902}
-                }
-            \WebColor{tex8web-link}{\@linkcolor}{tex8web-link-dark}
-            \WebColor{tex8web-cite}{\@citecolor}{tex8web-cite-dark}
-            \WebColor{tex8web-url}{\@urlcolor}{tex8web-url-dark}
         }
     \bool_lazy_or:nnT
         { \bool_lazy_and_p:nn { \legacy_if_p:n { Hy@colorlinks } } { \l__web_colorlinks_bool } }

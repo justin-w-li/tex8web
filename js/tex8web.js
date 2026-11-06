@@ -147,10 +147,11 @@ function tex8web(config, tex) {
   }
 
   // colors (\color, \colorbox, \fcolorbox: mathcolor, mathbackground and
-  // a border in style) in dark mode at another lightness, as tcolorbox's
-  // (tex8web-boxes.tex); black text in the text's color
-  const lightDark = (color, l) => `light-dark(${color}, oklch(from ${color} ${l} c h))`;
-  const text = color => /^(black|#000000)$/i.test(color) ? 'var(--tex8web-text)' : lightDark(color, 'max(l, 1 - l)');
+  // a border in style) in dark mode at another lightness (css/tex8web.css's
+  // --tex8web-dark-*); black text in the text's color
+  const lightDark = (color, property) =>
+    `light-dark(${color}, oklch(from ${color} var(--tex8web-dark-${property}) c h))`;
+  const text = color => /^(black|#000000)$/i.test(color) ? 'var(--tex8web-text)' : lightDark(color, 'color');
   function darken(node) {
     const color = node.attributes.getExplicit('mathcolor');
     if (color) node.attributes.set('mathcolor', text(color));
@@ -158,12 +159,12 @@ function tex8web(config, tex) {
     const background = node.attributes.getExplicit('mathbackground');
     if (background) {
       node.attributes.set('mathbackground',
-        node.isKind('mspace') ? text(background) : lightDark(background, 'min(l, 1.24 - l)'));
+        node.isKind('mspace') ? text(background) : lightDark(background, 'background'));
     }
     const style = node.attributes.getExplicit('style');
     if (style?.startsWith('border: ')) {
       node.attributes.set('style', style.replace(/^(border: \S+ solid )([^;]+)/,
-        (_, border, color) => border + lightDark(color, 'max(l, 0.62)')));
+        (_, border, color) => border + lightDark(color, 'border')));
     }
   }
 

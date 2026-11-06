@@ -55,23 +55,22 @@
 % custom properties on the box's element, collected in \web@tcb@css (each
 % helper appends one or more):
 % - colors: a color in light mode, and in dark mode the same color at
-%   another lightness (l, of oklch): frames and lines at least 0.62, so they
-%   show; backgrounds dark as much as they were light; text light as much
-%   as it was dark, or the page's text color for black
+%   another lightness, css/tex8web.css's for a border, a background or
+%   text; the page's text color for black text
 \def\web@tcb@add#1{\xdef\web@tcb@css{\web@tcb@css#1}}
-\def\web@tcb@lightdark#1#2{light-dark(\##1, oklch(from \##1 #2 c h))}
-\def\web@tcb@color#1#2#3{% name, color, dark lightness
+\def\web@tcb@lightdark#1#2{light-dark(\##1, oklch(from \##1 var(--tex8web-dark-#2) c h))}
+\def\web@tcb@color#1#2#3{% name, color, the property it's for
     \web@hex{#2}\web@tcb@hex
     \web@tcb@add{--tcb-#1: \web@tcb@lightdark\web@tcb@hex{#3};}}
-\def\web@tcb@frame#1#2{\web@tcb@color{#1}{#2}{max(l, 0.62)}}
-\def\web@tcb@back#1#2{\web@tcb@color{#1}{#2}{min(l, 1.24 - l)}}
+\def\web@tcb@frame#1#2{\web@tcb@color{#1}{#2}{border}}
+\def\web@tcb@back#1#2{\web@tcb@color{#1}{#2}{background}}
 \def\web@tcb@black{000000}
 \def\web@tcb@text#1#2{%
     \web@hex{#2}\web@tcb@hex
     \ifx\web@tcb@hex\web@tcb@black
         \web@tcb@add{--tcb-#1: var(--tex8web-text);}%
     \else
-        \web@tcb@color{#1}{#2}{max(l, 1 - l)}%
+        \web@tcb@color{#1}{#2}{color}%
     \fi}
 \def\web@tcb@transparent#1{\web@tcb@add{--tcb-#1: transparent;}}
 % - lengths, in ems (of a glue, its natural length): four of them, for the
@@ -131,7 +130,7 @@
     \fi\fi
     \expandafter\web@hex\expandafter{\web@tcb@linecolor}\web@tcb@hex
     \web@tcb@add{--tcb-line-#1: \web@tcb@em{#2} solid
-        \web@tcb@lightdark\web@tcb@hex{max(l, 0.62)};}%
+        \web@tcb@lightdark\web@tcb@hex{border};}%
 }
 
 % the box's whole style, and its classes
