@@ -203,14 +203,17 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 /* a tabular or verbatim too wide for a narrow screen scrolls on its own,
    as a display too wide does, rather than widening the page */
 @media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }
-/* What scrolls fades out at an edge where more of it is hidden. Two masks
-   fade in from the left and right edges, each moved out of the box until
-   the scroll is within --tex8web-edge of that end. The masks are set only
-   by an animation, so that what doesn't scroll, its timeline inactive, has
-   none. That animation ends a pixel past the scroll's end: once finished,
-   Chrome keeps its effect after the element stops scrolling. A keyboard's
-   focus ring, which a mask would hide, shows instead of the fade. It
-   follows the scroll position, so it isn't motion to reduce */
+/* What scrolls fades out at an edge where more of it is hidden. Each edge
+   has its own mask, a fade from that edge, moved out of the box until the
+   scroll is within --tex8web-edge of that end. One mask for both would
+   need its gradient's stops animated, which a scroll timeline can't do for
+   a gradient. So the two positions are custom properties, registered so
+   that they animate. The masks themselves come only from an animation: no
+   scroll, no active timeline, no mask. That animation ends a pixel past
+   the scroll's end, since Chrome keeps a finished one's effect once the
+   element stops scrolling. A keyboard's focus ring, which a mask would
+   hide, shows instead of the fade. The fade follows the scroll position,
+   so it isn't motion to reduce */
 :root { --tex8web-edge: 2.5em; }
 @property --tex8web-edge-left { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @property --tex8web-edge-right { syntax: '<length>'; inherits: false; initial-value: 0px; }

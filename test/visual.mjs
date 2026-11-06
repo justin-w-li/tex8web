@@ -422,12 +422,13 @@ async function phone(chrome, file) {
   return problems;
 }
 
-// on a phone's screen, the fade of a display that scrolls (two masks, as
-// their positions say): at its start, the right edge's; 20px in, the left
-// edge's halfway; in the middle, both; at its end, the left edge's. None for
-// a display that fits, for one that stops scrolling at its end (a wider
-// screen, then printing), or for one the keyboard has focused. test.tex
-// has a display that scrolls there
+// the fade of a display that scrolls on a phone's screen, by its two masks'
+// positions. At its start, only the right edge fades; 20px in, the left
+// fades halfway; in the middle, both; 20px from its end, the right
+// halfway; at its end, only the left. Nothing that doesn't scroll is
+// masked: one that fits, one that stops scrolling at its end on a wider
+// screen or in print, and one the keyboard has focused. test.tex has a
+// display that scrolls there
 async function edges(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
   const frame = 'new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))';
@@ -443,35 +444,37 @@ async function edges(chrome, file) {
     await page.evaluate(frame);
     return page.evaluate(`(s => s.maskImage === 'none' ? 'none' : s.maskPosition)(getComputedStyle(${display}))`);
   };
-  const want = [[0, '-40px 0px, -40px 0px'], [20, '-20px 0px, -40px 0px'], [100, '0px 0px, -40px 0px'],
-    [1e6, '0px 0px, 0px 0px']];
+  const [range, size] = await page.evaluate(`[${display}.scrollWidth - ${display}.clientWidth,
+    parseFloat(getComputedStyle(${display}).fontSize)]`);
+  const edge = 2.5 * size, half = edge / 2;
+  const want = [[0, -edge, -edge], [half, -half, -edge], [100, 0, -edge], [range - half, 0, -half], [range, 0, 0]];
   const problems = [];
-  for (const [scroll, positions] of want) {
+  for (const [scroll, left, right] of want) {
+    const positions = `${left}px 0px, ${right}px 0px`.replace(/-0px/g, '0px');
     const got = await mask(scroll);
     if (got !== positions) problems.push(`a display that scrolls, scrolled ${scroll}px: mask ${got}, not ${positions}`);
   }
-  const fits = await page.evaluate(`[...document.querySelectorAll('mjx-container[display], div.tabular, pre')]
-    .filter(d => d.scrollWidth <= d.clientWidth && getComputedStyle(d).maskImage !== 'none').length`);
+  const masked = `[...document.querySelectorAll('mjx-container[display], div.tabular, pre')]
+    .filter(d => d.scrollWidth <= d.clientWidth && getComputedStyle(d).maskImage !== 'none').length`;
+  const fits = await page.evaluate(masked);
   if (fits) problems.push(`${fits} displays, tabulars or verbatims that fit, masked`);
   await page.evaluate(`${display}.focus({ focusVisible: true })`);
   if (await mask() !== 'none') problems.push('a display that scrolls, focused: masked, hiding the focus ring');
   await page.evaluate(`${display}.blur()`);
-  const ends = `for (const d of document.querySelectorAll('mjx-container[display]')) d.scrollLeft = d.scrollWidth`;
-  const masked = `[...document.querySelectorAll('mjx-container[display]')]
-    .filter(d => d.scrollWidth <= d.clientWidth && getComputedStyle(d).maskImage !== 'none').length`;
+  const ends = `for (const d of document.querySelectorAll('mjx-container[display], div.tabular, pre')) d.scrollLeft = d.scrollWidth`;
   await page.evaluate(ends);
   await page.evaluate(frame);
   await page.resize(1600, 900);
   await page.evaluate(frame);
   const wide = await page.evaluate(masked);
-  if (wide) problems.push(`${wide} displays scrolled to their end, then fitting a wider screen, masked`);
+  if (wide) problems.push(`${wide} displays, tabulars or verbatims scrolled to their end, then fitting a wider screen, masked`);
   await page.resize(390, 844);
   await page.evaluate(ends);
   await page.evaluate(frame);
   await page.media('print');
   await page.evaluate(frame);
   const printed = await page.evaluate(masked);
-  if (printed) problems.push(`${printed} displays scrolled to their end, then printed, masked`);
+  if (printed) problems.push(`${printed} displays, tabulars or verbatims scrolled to their end, then printed, masked`);
   await page.close();
   return problems;
 }
