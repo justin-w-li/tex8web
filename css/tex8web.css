@@ -30,7 +30,9 @@ a[href] { text-decoration: var(--tex8web-link-line, underline); text-decoration-
     text-underline-offset: 0.15em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
 :is(.tex8web-toc, .tex8web-controls, .footnote-mark) a, a.tex8web-permalink { text-decoration: none; }
 a[href^="#X"] { color: var(--tex8web-cite, inherit); }
-a.url, a[href^="mailto:"] { color: var(--tex8web-url, inherit); }
+/* (hyperref's urlcolor is \href's too, to any other site; not the
+   controls' link to tex8web's repository) */
+a.url, a[href*="://"]:not(.tex8web-control), a[href^="mailto:"] { color: var(--tex8web-url, inherit); }
 /* pictures tex4ht generates (TikZ) are black line art; inverted in dark
    mode (tex8web-page.tex picks them out by the document's name) */
 @media (prefers-color-scheme: dark) {
