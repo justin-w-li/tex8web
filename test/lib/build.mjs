@@ -16,7 +16,8 @@ export const expected = JSON.parse(readFileSync(join(root, 'test/expected.json')
 export const testDir = (doc, base = 'test') => join(root, 'build', base, doc.name.replace(/[^A-Za-z0-9]/g, '_'));
 
 // test/fixtures/*.tex and examples/*/main.tex, each with its config: the
-// document's own <name>.cfg if it has one, otherwise tex8web.cfg
+// document's own <name>.cfg if it has one, otherwise tex8web.cfg. An
+// example links its PDF, which it is published with
 export function documents() {
   const docs = [];
   const fixtures = join(root, 'test/fixtures');
@@ -30,7 +31,7 @@ export function documents() {
     if (!existsSync(join(dir, 'main.tex'))) continue;
     const own = join(dir, `${name}.cfg`);
     docs.push({ name: `examples/${name}`, dir, tex: 'main.tex',
-      cfg: existsSync(own) ? own : join(root, 'tex8web.cfg') });
+      cfg: existsSync(own) ? own : join(root, 'tex8web.cfg'), pdf: 'build/pdf/main.pdf' });
   }
   return docs;
 }
@@ -60,8 +61,10 @@ const deadline = 300;
 // when it copies to -d, so it is passed relative to the document, where
 // characters like - in the path above don't matter
 export async function build(doc, out, aux, env = {}) {
-  // the PDF a config links with \WebPDF, if it isn't built yet
-  const pdf = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];
+  // the PDF the page links, if it isn't built yet: with -p, unless the
+  // config links it with \WebPDF, which keeps that tested
+  const own = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];
+  const pdf = own ?? doc.pdf;
   if (pdf && !existsSync(join(doc.dir, pdf))) {
     const code = await latexmk(doc, dirname(pdf));
     if (code !== 0) return { code, log: `latexmk exited with ${code}` };
@@ -70,7 +73,8 @@ export async function build(doc, out, aux, env = {}) {
   rmSync(aux, { recursive: true, force: true });
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
-  const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out), doc.tex];
+  const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
+    ...!own && pdf ? ['-p', pdf] : [], doc.tex];
   return new Promise(done => {
     const child = spawn(join(root, 'bin/tex8web'), args, { cwd: doc.dir, env: { ...process.env, ...env }, detached: true });
     running.add(child.pid);

@@ -63,8 +63,8 @@ jobs:
           name: visual-builds
           path: build/visual
 
-  # the examples and their PDFs, as the site: index.html, and each example's
-  # page and PDF in a folder of its own
+  # the examples as the site: index.html, and each example's page, with
+  # its PDF, in a folder of its own
   site:
     needs: [test, visual]
     runs-on: ubuntu-latest
@@ -81,7 +81,6 @@ jobs:
           for dir in examples/*/; do
             name=$(basename "$dir")
             cp -R "$dir/build/html" "_site/$name"
-            cp "$dir/build/pdf/main.pdf" "_site/$name/main.pdf"
           done
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
 

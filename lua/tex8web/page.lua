@@ -19,13 +19,13 @@ local function text_of(element)
 end
 
 -- tex8web-page.tex's build elements, for the later passes: the PDF
--- (context.pdf), the \WebMathMacros definitions (context.macros), the
--- colors for math (context.colors) and \contentsname (context.contents) as
--- tex4ht writes it
+-- (context.pdf: TEX8WEB_PDF, which tex8web's -p sets, or else \WebPDF's),
+-- the \WebMathMacros definitions (context.macros), the colors for math
+-- (context.colors) and \contentsname (context.contents) as tex4ht writes it
 function M.build_data(document, context)
   local element = document:query_selector("script[type='text/x-tex8web-build']")[1]
   if not element then return end
-  local pdf = element:get_attribute("data-pdf")
+  local pdf = os.getenv("TEX8WEB_PDF") or element:get_attribute("data-pdf")
   context.pdf = pdf ~= "" and pdf or nil
   context.macros = element:get_text()
   element:remove_node()
@@ -172,7 +172,7 @@ local function contents(document, body, title)
 end
 
 -- the controls at the top left: the table of contents (as a drawer, on a
--- narrow screen; hidden or shown, on a wide one), the PDF (\WebPDF),
+-- narrow screen; hidden or shown, on a wide one), the PDF (-p, \WebPDF),
 -- copied next to the page, the theme, which needs tex8web-page.js, and
 -- tex8web's repository, and on a narrow screen the section being read,
 -- which tex8web-page.js fills in and which opens the table of contents
@@ -187,7 +187,7 @@ function M.controls(document, context)
   end
   if context.pdf then
     if lfs.attributes(context.pdf) == nil then
-      log:warning("\\WebPDF: no " .. context.pdf .. "; build the PDF first")
+      log:warning("no PDF at " .. context.pdf .. "; build it first")
     else
       assets.add(context.pdf, context.dir .. "/" .. context.input .. ".pdf")
       control(controls, "pdf", {class = "tex8web-control", href = context.input .. ".pdf",

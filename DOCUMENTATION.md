@@ -21,12 +21,13 @@ The options:
 - **`-c config`** builds with your own config instead of `tex8web.cfg`. See [Your own config](#your-own-config).
 - **`-d out`** puts the page in `out/` instead, a path relative to where you run the command.
 - **`-B aux`** puts tex4ht's working files in `aux/`, a path relative to the document. Keep `-` out of it; see [Known limitations](#known-limitations).
+- **`-p pdf`** adds an icon that links to the document's PDF, and copies the PDF next to the page. The path is relative to where you run the command. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`. It takes the place of a config's [`\WebPDF`](#your-own-config).
 - **`-m draft`** runs LaTeX once and skips the bibliography and index. It is quicker while you work, but references and citations may show as ??.
 - Any other option is passed to make4ht. The document comes last.
 
 The output folder holds the page and everything it uses:
 - `document.html` and its stylesheets;
-- the pictures, and the PDF if you link it with `\WebPDF`;
+- the pictures, and the PDF if you link it with `-p` or `\WebPDF`;
 - `fonts/`: Latin Modern, MathJax's fonts, and `LICENSE.txt`, which covers them;
 - `tex8web-head.js` and `tex8web-page.js`, the page's controls;
 - without Node, `tex8web.js` instead of MathJax's fonts.
@@ -43,7 +44,7 @@ The paths are relative, so you can publish the folder as it is. With Node, its f
 make4ht -u -c path/to/tex8web/tex8web.cfg -e path/to/tex8web/tex8web.mk4 -B build/tex4ht -d build/html document.tex
 ```
 
-Pass both files every time: `tex8web.mk4` tells TeX where to find what `tex8web.cfg` loads. If TeX stops with "tex8web-core.tex not found", the `-e` option is missing.
+Pass both files every time: `tex8web.mk4` tells TeX where to find what `tex8web.cfg` loads. If TeX stops with "tex8web-core.tex not found", the `-e` option is missing. The wrapper's `-p pdf` sets `TEX8WEB_PDF` to the PDF's absolute path.
 
 **Platform.** The build runs Node, bibtex and makeindex through a POSIX shell, so it works on macOS and Linux, not Windows.
 
@@ -54,7 +55,7 @@ Most documents need no config of their own. tex8web reads what it needs from the
 Write a config when:
 - the build ends with a warning about macros MathJax can't read;
 - your document needs a style of its own on the web;
-- you want a link to the PDF;
+- you always want a link to the PDF, without passing `-p`;
 - your document marks its terms with a command of its own, for the contents filter to find;
 - you want the text set as in the PDF.
 
@@ -107,7 +108,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 
 **`\WebLikePDF`** replaces the page's [reading defaults](#reading-defaults) with the PDF's. The text takes the PDF's size, and the column, which is measured in ems, follows it. Lines are spaced as TeX spaces them. Paragraphs are indented as in the PDF, with its space between them, usually none. On a wide screen the text is justified and hyphenated. A narrow screen stays ragged right, where a formula that can't break would leave wide gaps.
 
-**`\WebPDF`** copies the PDF next to the page. Its path is relative to the document. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`.
+**`\WebPDF`** does what [`-p`](#building-a-page) does, from the config. Its path is relative to the document.
 
 **`\Css`** adds a style after tex8web's own. Write `#` as `\#` and `%` as `\%` inside it. tex8web's styles are in `css/tex8web.css`. The document's measurements are custom properties that you can set again:
 
@@ -134,7 +135,7 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 ## On the page
 
-**Controls.** Small icons sit at the top left: the table of contents, the PDF (with `\WebPDF`), light or dark, and a link to tex8web. On a narrow screen they form a bar across the top. The bar names the section being read, and hides while the reader scrolls down.
+**Controls.** Small icons sit at the top left: the table of contents, the PDF (with `-p` or `\WebPDF`), light or dark, and a link to tex8web. On a narrow screen they form a bar across the top. The bar names the section being read, and hides while the reader scrolls down.
 
 **Theme.** The page follows the reader's light or dark setting until they choose one with the button. Their choice is kept in the browser, under `localStorage` key `tex8web-theme`, for every tex8web page on the site. A site can set a default with `data-theme="light"` or `"dark"` on the root element; the reader's choice still wins. Light mode uses the PDF's colors. In dark mode, the document's colors keep their hue: dark text becomes light, and light backgrounds become dark. TikZ pictures are inverted.
 
