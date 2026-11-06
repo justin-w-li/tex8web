@@ -664,10 +664,13 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 .tex8web-toc-more { position: relative; flex: none; align-self: flex-start; margin-inline-start: auto;
     padding: 0 0 0 0.75em; border: 0; font: inherit; line-height: inherit; color: inherit;
     background: none; cursor: pointer; opacity: 0; }
-.tex8web-toc-more::before { content: ""; display: inline-block; width: 0.4em; height: 0.4em;
-    margin-inline-end: 0.15em; border: solid currentColor; border-width: 0 1.5px 1.5px 0;
-    rotate: -45deg; translate: 0 -0.15em; }
-.tex8web-toc-more[aria-expanded="true"]::before { rotate: 45deg; translate: 0 -0.25em; }
+/* (centered on the math axis, a quarter em above the baseline, as a
+   parenthesis is: a square's two sides, turned, which the downward one
+   has below its middle) */
+.tex8web-toc-more::before { content: ""; display: inline-block; box-sizing: border-box;
+    width: 0.45em; height: 0.45em; margin-inline-end: 0.15em; border: solid currentColor;
+    border-width: 0 1.5px 1.5px 0; rotate: -45deg; translate: 0 -0.025em; }
+.tex8web-toc-more[aria-expanded="true"]::before { rotate: 45deg; translate: 0 -0.185em; }
 .tex8web-toc-more[aria-expanded="true"], .tableofcontents > span:hover > .tex8web-toc-more { opacity: 0.3; }
 .tex8web-toc-more:focus-visible, .tableofcontents > span > .tex8web-toc-more:hover { opacity: 0.8; }
 @media (hover: none) {
