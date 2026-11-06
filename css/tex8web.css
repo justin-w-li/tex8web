@@ -310,6 +310,9 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
    alone on a line after a display */
 .tex8web-qed { float: right; float: inline-end; margin-inline-start: 1em; }
 p:has(> .tex8web-qed), .tex8web-qed-line { display: flow-root; }
+/* a \tcbox in its line (tex8web-boxes.tex), on the text's baseline */
+span.tcolorbox { display: inline-block; margin-block: 0; vertical-align: baseline; }
+span.tcolorbox > .tcolorbox-title { display: block; }
 /* what follows an \hfill in an after upper (a proof's square) */
 .tex8web-hfill { float: right; }
 /* framed's, as far from the text as in the PDF (tex8web-text.tex). Under

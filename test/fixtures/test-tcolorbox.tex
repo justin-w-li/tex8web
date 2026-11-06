@@ -4,7 +4,9 @@
 % raster (which numbers its boxes for itself) and a box without a title
 % don't. A numbered or labelled box holding another keeps its own link,
 % \ref and number. A boxed title at the left, in the middle and at the
-% right has its link beside it (labelled, for the link). (Its table of
+% right has its link beside it (labelled, for the link). A \tcbox on line,
+% with a title or in a box, stays in its line; one with tcolorbox's space
+% around it doesn't. (Its table of
 % contents gives test:visual's filter check a box to find)
 \documentclass{article}
 \usepackage[most]{tcolorbox}
@@ -35,4 +37,8 @@
 \begin{tcolorbox}[boxed=right, title=Boxed right]A boxed title at the right.\end{tcolorbox}
 See Theorem~\ref{thm:one} and the box~\ref{box}; Theorem~\ref{thm:outer}, the
 outer box~\ref{outerbox} and the inner box~\ref{innerbox}.
+
+A word \tcbox[on line]{boxed} in its line, \tcbox[on line,title=T]{titled}
+one too, and \tcbox{alone} on lines of its own.
+\begin{tcolorbox}And \tcbox[nobeforeafter]{one} in a box.\end{tcolorbox}
 \end{document}

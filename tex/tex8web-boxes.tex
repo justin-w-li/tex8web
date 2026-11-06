@@ -243,22 +243,51 @@
 
 % tex4ht's box, with that style; the title in its font (fonttitle), which
 % tex4ht leaves out; and an anchor for a numbered box, where tcolorbox.4ht
-% puts a label's, for page.lua's link
+% puts a label's, for page.lua's link. A \tcbox in its line (on line, or
+% another way to have nothing before and after it) is in its line, as in
+% the PDF: spans in the paragraph, which it doesn't end. (Its end comes
+% after tcolorbox's group, so its start pushes its tag)
+\def\web@tcb@hbox{hbox}
+\def\web@tcb@span{span}
+\ExplSyntaxOn
+\seq_new:N \g__web_tcb_tags_seq
+\cs_new_protected:Npn \web@tcb@pushtag { \seq_gpush:NV \g__web_tcb_tags_seq \web@tcb@tag }
+\cs_new_protected:Npn \web@tcb@poptag { \seq_gpop:NN \g__web_tcb_tags_seq \web@tcb@tag }
+\ExplSyntaxOff
+\newif\ifweb@tcb@hbox
 \Configure{tcolorbox}
-    {\ifvmode\IgnorePar\fi\EndP
+    {\def\web@tcb@tag{div}%
+     \let\web@tcb@env\@currenvir
+     \web@tcb@hboxfalse
+     \ifx\kvtcb@capture\web@tcb@hbox\ifx\kvtcb@beforebox\@empty
+         \web@tcb@hboxtrue
+         \let\web@tcb@tag\web@tcb@span
+         \def\web@tcb@env{tcbox}%
+     \fi\fi
+     \ifweb@tcb@hbox\else\ifvmode\IgnorePar\fi\EndP\fi
+     \web@tcb@pushtag
      \web@tcb@give
      \web@tcb@style
      \edef\kvtcb@before@title{\unexpanded\expandafter{\kvtcb@fonttitle}%
          \unexpanded\expandafter{\kvtcb@before@title}}%
-     \HCode{<div class="tcolorbox \@currenvir\web@tcb@classes"
+     \HCode{<\web@tcb@tag\space class="tcolorbox \web@tcb@env\web@tcb@classes"
          id="\csname :tcbcolid\endcsname">}%
      \ifx\web@tcb@numbered\@empty
          \ifx\web@tcb@label\relax\AnchorLabel\fi
      \fi}
-    {\ifx\kvtcb@title\@empty\else\HCode{\Hnewline<div class="tcolorbox-title">}\par\fi}
-    {\ifx\kvtcb@title\@empty\else\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\fi
-     \HCode{\Hnewline<div class="tcolorbox-content">}}
-    {\ifvmode\IgnorePar\fi\EndP\HCode{\Hnewline</div>\Hnewline</div>}\par\ShowPar}
+    {\ifx\kvtcb@title\@empty\else
+         \HCode{\Hnewline<\web@tcb@tag\space class="tcolorbox-title">}\ifweb@tcb@hbox\else\par\fi
+     \fi}
+    {\ifx\kvtcb@title\@empty\else
+         \ifweb@tcb@hbox\else\ifvmode\IgnorePar\fi\EndP\fi\HCode{</\web@tcb@tag>}%
+     \fi
+     \HCode{\Hnewline<\web@tcb@tag\space class="tcolorbox-content">}}
+    {\web@tcb@poptag
+     \ifx\web@tcb@tag\web@tcb@span
+         \HCode{</span></span>}%
+     \else
+         \ifvmode\IgnorePar\fi\EndP\HCode{\Hnewline</div>\Hnewline</div>}\par\ShowPar
+     \fi}
 \Configure{tcolorlowerbox}
     {\ifvmode\IgnorePar\fi\EndP\HCode{\Hnewline<div class="lowerbox">}}
     {\ifvmode\IgnorePar\fi\EndP\HCode{\Hnewline</div>}}
