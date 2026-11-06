@@ -51,7 +51,7 @@ Most documents need nothing more. To link the page to the PDF, build the PDF fir
 - `custom`: class notes with their own colors and boxes, and a config;
 - `complex`: a long, heavily customized document, which also shows tex8web's known gaps.
 
-`npm run examples` builds each, with its PDF, into `examples/<name>/build/`.
+`npm run examples` builds each, with its PDF, into `examples/<name>/build/`, and the site that links them into `build/site/`.
 
 ## Documentation
 

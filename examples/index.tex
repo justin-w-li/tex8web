@@ -1,0 +1,33 @@
+% The examples' index, built with tex8web as they are, as the published
+% site's index.html. Its links are to the pages beside it on the site.
+\documentclass{article}
+\usepackage{xcolor}
+\usepackage[colorlinks, allcolors=blue!60!black]{hyperref}
+
+\title{tex8web examples}
+
+\newcommand{\example}[1]{%
+    \href{#1/main.html}{Page}\ \textperiodcentered\
+    \href{#1/main.pdf}{PDF}\ \textperiodcentered\
+    \href{https://github.com/justin-w-li/tex8web/tree/main/examples/#1}{Source}}
+
+\begin{document}
+\section*{tex8web examples}
+
+Four documents from the Overleaf gallery, each built by
+\href{https://github.com/justin-w-li/tex8web}{tex8web}, next to its PDF.
+
+\begin{description}
+    \item[Basic article.] A figure, a table, lists, math and a bibliography.\\
+        \example{basic}
+    \item[Law review article.] Footnotes beside their paragraphs, and headings
+        five levels deep.\\
+        \example{footnotes}
+    \item[Class notes.] Colored boxes, and a config of its own.\\
+        \example{custom}
+    \item[A long, heavily customized document.] Many packages and macros. It
+        also shows tex8web's known gaps.\\
+        \example{complex}
+\end{description}
+
+\end{document}

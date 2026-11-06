@@ -91,7 +91,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
 
   It also builds `test-generic` for MathJax in the browser. Each build's log is kept in `build/test/<document>/make4ht.log`. A build still running after five minutes has hung, and is stopped. `node test/run.mjs <name>` builds and checks one document.
 - **`npm run test:visual`** needs Chrome and the network, and takes under two minutes. It builds each document twice into `build/visual/<document>/`, prerendered and for MathJax in the browser. It compares the two in headless Chrome, screen by screen, and they must be identical. Differing screens are saved in `build/visual/<document>/visual/`. It also drives the page's controls: the picture viewer by mouse and touch, the narrow screen's bar, the fade of a display that scrolls, the theme, the contents filter and printing. Run it after changing the math path or `js/tex8web-page.js`, and before merging.
-- **`npm run examples`** builds each example's PDF and page into `examples/<name>/build/`. It fails if either is missing.
+- **`npm run examples`** builds each example's PDF and page into `examples/<name>/build/`. It then builds the published site in `build/site/`: the index, `examples/index.tex`, with each example beside it. It fails if a page or PDF is missing, or if the index links to a file the site lacks.
 - **`node test/shots.mjs <out> <page or html dir>`** takes the screenshots a visual change is checked with: each page whole, 1400 and 390 pixels wide, light and dark. Set them beside the PDF's page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
 - **`node test/shots.mjs <out> <old dir> <new dir>`** compares two builds that way, screen by screen. It saves the screens that differ and fails if any do.
 - **`--clip <selector>`**, before either, shoots only the band of the page holding the first element the selector matches.
@@ -104,7 +104,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
 
 **Known gaps.** `test/expected.json` lists the problems a document is allowed, each with its reason. Make each entry as specific as the message it allows. An entry that no longer matches anything fails, until it's taken out.
 
-**CI.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm test` and `npm run test:visual` on every push to main and every pull request. It uses TeX Live's Docker image, pinned by digest. It also builds the examples and their PDFs, and on main publishes them to GitHub Pages.
+**CI.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm test` and `npm run test:visual` on every push to main and every pull request. It uses TeX Live's Docker image, pinned by digest. It also builds the examples' site, and on main publishes it to GitHub Pages.
 
 **The README's screenshot** is `.github/screenshot.png`. To redo it:
 1. Build the `custom` example and its PDF with `npm run examples`.
@@ -159,6 +159,6 @@ Open an issue with:
 | `js/tex8web-page.js` | the page's controls, footnotes, table of contents, previews and picture viewer |
 | `js/prerender.mjs` | MathJax in Node |
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which goes with every page |
-| `examples/` | the examples, and `index.html` for the published site |
+| `examples/` | the examples, and `index.tex`, the published site's index |
 | `test/` | `run.mjs`, `visual.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, `lib/` |
 | `.github/workflows/ci.yml` | CI and the published examples |

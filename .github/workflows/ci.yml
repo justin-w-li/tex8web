@@ -63,8 +63,7 @@ jobs:
           name: visual-builds
           path: build/visual
 
-  # the examples as the site: index.html, and each example's page, with
-  # its PDF, in a folder of its own
+  # the examples as the site, which npm run examples builds in build/site
   site:
     needs: [test, visual]
     runs-on: ubuntu-latest
@@ -75,14 +74,9 @@ jobs:
       - *node
       - *install
       - run: npm run examples
-      - run: |
-          mkdir _site
-          cp examples/index.html _site/
-          for dir in examples/*/; do
-            name=$(basename "$dir")
-            cp -R "$dir/build/html" "_site/$name"
-          done
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: build/site
 
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
