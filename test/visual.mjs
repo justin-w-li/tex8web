@@ -368,9 +368,10 @@ async function filtering(chrome, file) {
 }
 
 // on a phone's screen, the bar naming the section being read: nothing
-// before the first heading, then a section halfway down scrolled to near
-// the top (unless the page is too short to scroll it there); and tapped,
-// opening the table of contents
+// before the first heading, then a section halfway down scrolled just above
+// the top quarter, where the page starts naming it (higher, a short section
+// would bring the next heading above that line too), unless the page is too
+// short to scroll it there; and tapped, opening the table of contents
 async function naming(chrome, file) {
   const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
   const problems = [];
@@ -383,7 +384,7 @@ async function naming(chrome, file) {
     const first = document.getElementById(decodeURIComponent(links[0].hash.slice(1)));
     const before = first.getBoundingClientRect().top > innerHeight / 4 ? shown() : '';
     const el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
-    scrollTo(0, scrollY + el.getBoundingClientRect().top - 100);
+    scrollTo(0, scrollY + el.getBoundingClientRect().top - (innerHeight / 4 - 10));
     if (el.getBoundingClientRect().top > innerHeight / 4) return done([]);
     const copy = a.cloneNode(true);
     copy.querySelectorAll('mjx-assistive-mml').forEach(n => n.remove());
