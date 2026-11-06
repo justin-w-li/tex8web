@@ -345,4 +345,7 @@ if (typeof document !== 'undefined') {
     paths[`mathjax-${name}-extension`] = `https://cdn.jsdelivr.net/npm/@mathjax/mathjax-${name}-font-extension@${version}`;
   }
   window.MathJax = tex8web(data.mathjax, data.tex);
+  // (ui/lazy's, which prerender.mjs leaves out: the contents' math at once,
+  // as the phone's bar copies the entry being read)
+  window.MathJax.options.lazyAlwaysTypeset = '.tex8web-toc';
 }
