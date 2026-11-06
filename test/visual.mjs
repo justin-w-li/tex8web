@@ -7,7 +7,8 @@
 // build/visual/<document>/visual/. In both, the columns of an alignment
 // should line up across its \intertext. And the prerendered page's closer
 // view of pictures should work with the mouse and a finger, the page be no
-// wider than a phone's screen, its bar there come and go as it scrolls,
+// wider than a phone's screen, a display that scrolls there fade at the
+// edge where more is hidden, its bar there come and go as it scrolls,
 // its theme button be there before tex8web-page.js runs, a theorem, list
 // or framed box under a heading as far below it as in the PDF, and no
 // math character be clipped.
@@ -421,6 +422,60 @@ async function phone(chrome, file) {
   return problems;
 }
 
+// on a phone's screen, the fade of a display that scrolls (two masks, as
+// their positions say): at its start, the right edge's; 20px in, the left
+// edge's halfway; in the middle, both; at its end, the left edge's. None for
+// a display that fits, for one that stops scrolling at its end (a wider
+// screen, then printing), or for one the keyboard has focused. test.tex
+// has a display that scrolls there
+async function edges(chrome, file) {
+  const page = await chrome.open(pathToFileURL(file).href, { width: 390, height: 844 });
+  const frame = 'new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))';
+  const index = await page.evaluate(`[...document.querySelectorAll('mjx-container[display]')]
+    .findIndex(d => d.scrollWidth - d.clientWidth > 200)`);
+  if (index < 0) {
+    await page.close();
+    return file.endsWith('/test.html') ? ['no display that scrolls on a phone, for its fade'] : [];
+  }
+  const display = `document.querySelectorAll('mjx-container[display]')[${index}]`;
+  const mask = async scroll => {
+    if (scroll !== undefined) await page.evaluate(`${display}.scrollLeft = ${scroll}`);
+    await page.evaluate(frame);
+    return page.evaluate(`(s => s.maskImage === 'none' ? 'none' : s.maskPosition)(getComputedStyle(${display}))`);
+  };
+  const want = [[0, '-40px 0px, -40px 0px'], [20, '-20px 0px, -40px 0px'], [100, '0px 0px, -40px 0px'],
+    [1e6, '0px 0px, 0px 0px']];
+  const problems = [];
+  for (const [scroll, positions] of want) {
+    const got = await mask(scroll);
+    if (got !== positions) problems.push(`a display that scrolls, scrolled ${scroll}px: mask ${got}, not ${positions}`);
+  }
+  const fits = await page.evaluate(`[...document.querySelectorAll('mjx-container[display], div.tabular, pre')]
+    .filter(d => d.scrollWidth <= d.clientWidth && getComputedStyle(d).maskImage !== 'none').length`);
+  if (fits) problems.push(`${fits} displays, tabulars or verbatims that fit, masked`);
+  await page.evaluate(`${display}.focus({ focusVisible: true })`);
+  if (await mask() !== 'none') problems.push('a display that scrolls, focused: masked, hiding the focus ring');
+  await page.evaluate(`${display}.blur()`);
+  const ends = `for (const d of document.querySelectorAll('mjx-container[display]')) d.scrollLeft = d.scrollWidth`;
+  const masked = `[...document.querySelectorAll('mjx-container[display]')]
+    .filter(d => d.scrollWidth <= d.clientWidth && getComputedStyle(d).maskImage !== 'none').length`;
+  await page.evaluate(ends);
+  await page.evaluate(frame);
+  await page.resize(1600, 900);
+  await page.evaluate(frame);
+  const wide = await page.evaluate(masked);
+  if (wide) problems.push(`${wide} displays scrolled to their end, then fitting a wider screen, masked`);
+  await page.resize(390, 844);
+  await page.evaluate(ends);
+  await page.evaluate(frame);
+  await page.media('print');
+  await page.evaluate(frame);
+  const printed = await page.evaluate(masked);
+  if (printed) problems.push(`${printed} displays scrolled to their end, then printed, masked`);
+  await page.close();
+  return problems;
+}
+
 // the theme button: hidden with JavaScript off (checked in compare(), on
 // the page compared), as it needs tex8web-page.js, but there before that
 // runs, with the other controls (a long page is drawn well before its
@@ -605,7 +660,7 @@ async function compare(chrome, doc, ok) {
       if (b[i]) writeFileSync(join(visual, `${name}-prerendered.png`), Buffer.from(b[i], 'base64'));
     });
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
-    for (const check of [viewing, phone, themed, printed, filtering, naming, touching]) {
+    for (const check of [viewing, phone, edges, themed, printed, filtering, naming, touching]) {
       problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     }
   }

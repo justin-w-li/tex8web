@@ -203,6 +203,37 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 /* a tabular or verbatim too wide for a narrow screen scrolls on its own,
    as a display too wide does, rather than widening the page */
 @media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }
+/* What scrolls fades out at an edge where more of it is hidden. Two masks
+   fade in from the left and right edges, each moved out of the box until
+   the scroll is within --tex8web-edge of that end. The masks are set only
+   by an animation, so that what doesn't scroll, its timeline inactive, has
+   none. That animation ends a pixel past the scroll's end: once finished,
+   Chrome keeps its effect after the element stops scrolling. A keyboard's
+   focus ring, which a mask would hide, shows instead of the fade. It
+   follows the scroll position, so it isn't motion to reduce */
+:root { --tex8web-edge: 2.5em; }
+@property --tex8web-edge-left { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --tex8web-edge-right { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@keyframes tex8web-edges {
+    from, to {
+        mask-image: linear-gradient(to right, transparent, #000 var(--tex8web-edge)),
+            linear-gradient(to left, transparent, #000 var(--tex8web-edge));
+        mask-size: calc(100% + var(--tex8web-edge)) 100%; mask-repeat: no-repeat;
+        mask-composite: intersect; }
+}
+@keyframes tex8web-edge-left {
+    from { --tex8web-edge-left: calc(-1 * var(--tex8web-edge)); } to { --tex8web-edge-left: 0px; } }
+@keyframes tex8web-edge-right {
+    from { --tex8web-edge-right: calc(-1 * var(--tex8web-edge)); } to { --tex8web-edge-right: 0px; } }
+@supports (animation-timeline: scroll()) {
+    mjx-container[display], div.tabular, pre {
+        animation: tex8web-edges linear both, tex8web-edge-left linear both, tex8web-edge-right linear both;
+        animation-timeline: scroll(self inline);
+        animation-range: 0% calc(100% + 1px), 0px var(--tex8web-edge),
+            calc(100% - var(--tex8web-edge)) 100%;
+        mask-position: var(--tex8web-edge-left) 0, var(--tex8web-edge-right) 0; }
+    :is(mjx-container[display], div.tabular, pre):focus-visible { animation: none; }
+}
 /* MathJax clips each character to its box, hiding the tall line box of its
    ZERO font, which only a selection shows (output/chtml.ts). Safari gives
    each clipped element a layer, and painting a long page as it scrolls
