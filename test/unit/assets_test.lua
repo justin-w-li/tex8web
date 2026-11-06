@@ -94,6 +94,13 @@ return {
       .. ".border:hover{color:black}")
   end,
 
+  ["assets.other_lists: html4.4ht's rules for an li's paragraphs, not in tex8web's lists"] = function()
+    equal(assets.other_lists("li p.indent { text-indent: 0em }\n"
+      .. "li p:last-child, li div:last-child { margin-bottom:0.5em; }\nul li { x }"),
+      "li p.indent:not(.tex8web-list *) { text-indent: 0em }\n"
+      .. "li p:last-child:not(.tex8web-list *), li div:last-child:not(.tex8web-list *) { margin-bottom:0.5em; }\nul li { x }")
+  end,
+
   ["assets.wide_screens: the text's width, and a column and two gaps each side"] = function()
     local css = ":root { --tex8web-margin: 14rem; --tex8web-gap: 1.5rem; }\n"
       .. ":root { --tex8web-textwidth: 40em; }\n:root { --tex8web-textwidth: 42.9em; }\n"

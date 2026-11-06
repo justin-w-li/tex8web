@@ -3,7 +3,7 @@
 % as extensions, xparse macros, equation numbers by section, titling's
 % title with a \thanks, a table of contents with a macro of its own,
 % lists of enumitem's \newlist (one with a display too wide for a phone,
-% one of the description kind), a table and a verbatim too wide for a
+% one of the description kind, an itemize with a label of its own), a table and a verbatim too wide for a
 % phone, titlesec's explicit headings, labeled with \thetitle and spaced
 % in titlesec's *n form, a title in a size of its own, framed's boxes, a
 % theorem and a list under headings, and small capitals of an accented
@@ -73,6 +73,12 @@ has only the small letter: {\fontencoding{T1}\selectfont\textsc{Erdős}}.
 \end{gather}
 See \eqref{eq:a}, \eqref{eq:b} and \eqref{eq:c}, which should read (2.1),
 (2.2) and (2.3), followed by (2.4) for $x = y$.
+\begin{itemize}[label=Note:]
+    \item A label of the list's own.
+\end{itemize}
+\begin{itemize}
+    \item The class's bullet.
+\end{itemize}
 \begin{steps}
     \item First.
     \item Second.

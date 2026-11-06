@@ -408,13 +408,26 @@ function M.wide_screens(css)
   return (css:gsub("%(%-%-tex8web%-wide%)", query))
 end
 
+-- html4.4ht's rules for the paragraphs and blocks in an <li>, which space
+-- and indent them unlike LaTeX, kept from tex8web's own lists
+-- (tex8web-text.tex) but not from other packages', such as paralist's
+function M.other_lists(css)
+  return (css:gsub("[^\n]+", function(line)
+    local selectors, rule = line:match("^(li [^{]-)%s*({.*)$")
+    if not selectors then return end
+    return selectors:gsub("[^,]+", function(selector)
+      return (selector:gsub("%s+$", "")) .. ":not(.tex8web-list *)"
+    end) .. " " .. rule
+  end))
+end
+
 -- css/tex8web.css, where tex8web-core.tex marks its place in the document's
 -- stylesheet
 function M.stylesheet(context)
   local path = context.dir .. "/" .. context.input .. ".css"
   local css = assert(files.read(path))
   local i, j = assert(css:find("/* tex8web.css */", 1, true))
-  css = css:sub(1, i - 1) .. assert(files.read(context.root .. "/css/tex8web.css"))
+  css = M.other_lists(css:sub(1, i - 1)) .. assert(files.read(context.root .. "/css/tex8web.css"))
     .. font_css(context.roles) .. css:sub(j + 1)
   local f = assert(io.open(path, "w"))
   f:write(M.wide_screens(M.colors_in_dark_mode(M.rules_in_text_color(css))))

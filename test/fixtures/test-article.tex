@@ -1,11 +1,13 @@
 % A test of tex8web on an article as LaTeX's standard classes set it, with no
-% package for its layout: two abstracts, headings, lists, a figure's caption,
-% a footnote, an inline TikZ picture, the LaTeX logo and a bibliography.
+% package for its layout: two abstracts, headings, lists (an item starting
+% with a list or ending in a block), a figure's caption, a footnote, an
+% inline TikZ picture, the LaTeX logo and a bibliography.
 \documentclass{article}
 \usepackage{tikz}
 \usepackage{hyperref}
 \title{An article}
 \author{Someone}
+\newtheorem{theorem}{Theorem}
 \begin{document}
 \maketitle
 \begin{abstract}
@@ -29,6 +31,13 @@ Text with a footnote.\footnote{A note, \emph{emphasized}.}
         \item inside.
     \end{enumerate}
 \end{enumerate}
+\begin{itemize}
+    \item[Case 1] \begin{itemize} \item a list in an item at once. \end{itemize}
+    \item Ends centered.
+    \begin{center} Centered. \end{center}
+    \item Ends in a theorem.
+    \begin{theorem} A theorem. \end{theorem}
+\end{itemize}
 \begin{description}
     \item[Term] A description long enough to run onto a second line, which
     \LaTeX\ indents by the list's left margin, as it does every item.

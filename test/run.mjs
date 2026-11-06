@@ -331,11 +331,14 @@ const lists = {
     new RegExp(`${item("<mjx-container aria-label='star'[^]*?")}A label of its own\\.`),
     new RegExp(`<ol class='tex8web-list enumerate' role='list' [^>]*>${item('1\\.')}First,`),
     new RegExp(`${item('\\(a\\)')}inside\\.`),
+    // (an \item's own label, read though a list follows at once)
+    new RegExp(`${item('Case 1')}\\s*<\\/p>\\s*<ul`),
   ],
   // (an item's paragraphs, each a paragraph of its own; enumitem's
   // description kind as a description list, whose terms are read)
   'test': [/<p class='noindent'>Bullet with a second paragraph\.\s*<\/p><!--[^>]*--><p class='noindent'>The second paragraph\./],
   'test-generic': [new RegExp(`<ol class='tex8web-list enumitem-steps' [^>]*>${item('Step 1\\.')}First\\.`),
+    new RegExp(`${item('Note:')}A label of the list’s own\\.`), new RegExp(`${item('•', true)}The class’s bullet\\.`),
     /<dl class='tex8web-list enumitem-terms' [^>]*><div><dt>\s*<span class='cmbx-10'>Term<\/span>\s*<\/dt><dd>\s*<!--[^>]*--><p class='noindent'>A list of/],
   'examples/complex': [
     /see \[<a id='[^']*'><\/a><a id='[^']*'><\/a><a href='#X0-evanchen'>1<\/a>/,

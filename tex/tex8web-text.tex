@@ -404,8 +404,8 @@
 % label as TeX typesets it rather than the browser's, with each list's own
 % lengths, set by the first \item, where tex4ht opens the list (latex.4ht).
 % A list is a ul or an ol; or, for enumitem's description kind, a dl.
-% Screen readers skip a ul's own label, a bullet, which says nothing, and
-% read any other. (WebKit reads a list whose items show no marker as no
+% Screen readers skip the class's bullets, which say nothing, and read
+% any other label. (WebKit reads a list whose items show no marker as no
 % list, unless its role says so)
 % #3 gives its element as the list opens: tex4ht opens it in \everypar,
 % maybe in a group, so the element and the item's end are kept globally.
@@ -423,12 +423,26 @@
 \def\web@label@dl{</dt><dd\Hnewline>}
 \def\web@end@dl{</dd></div>}
 \let\web@listtag\empty
-% (whether an \item has the list's own label: LaTeX's \@item clears
-% \if@noitemarg as it starts, before tex4ht opens the item)
+% (whether an \item has the class's bullet: no label of its own, and
+% \labelitemi to iv as the document starts. LaTeX's \@item clears
+% \if@noitemarg as it starts, before tex4ht opens the item. enumitem's
+% label= redefines \labelitemi and so on)
+\def\web@bullet#1{%
+    \edef\web@bulletlabel{\expandafter\noexpand\csname labelitem#1\endcsname}%
+    \ifx\web@bulletlabel\@itemlabel
+        \expandafter\expandafter\expandafter\ifx\expandafter
+            \csname labelitem#1\expandafter\endcsname\csname web@labelitem#1\endcsname
+            \gdef\web@ownlabel{ aria-hidden="true"}%
+        \fi
+    \fi}
+\def\web@keepbullet#1{\expandafter\let
+    \csname web@labelitem#1\expandafter\endcsname\csname labelitem#1\endcsname}
+\web@keepbullet{i}\web@keepbullet{ii}\web@keepbullet{iii}\web@keepbullet{iv}
 \let\web@ownlabel\empty
 \let\web@item\@item
-\def\@item{\if@noitemarg\gdef\web@ownlabel{ aria-hidden="true"}%
-    \else\global\let\web@ownlabel\empty\fi \web@item}
+\def\@item{\global\let\web@ownlabel\empty
+    \if@noitemarg\web@bullet{i}\web@bullet{ii}\web@bullet{iii}\web@bullet{iv}\fi
+    \web@item}
 \def\web@configurelist#1#2#3{%
     \ConfigureList{#1}
         {\EndP\PushMacro\web@listtag \xdef\web@listtag{#3}%
