@@ -81,7 +81,7 @@ Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped
 ## Testing
 
 - **`npm test`** runs the Lua unit tests in `test/unit/`, then builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`. A fixture with its own `<name>.cfg` is built with it. Each page is checked for:
-  - TeX errors, build warnings, and tex8web's warning that tex4ht or a package changed;
+  - TeX errors, build warnings (also make4ht's note that tex4ht wrote HTML its XML parser rejected), and tex8web's warning that tex4ht or a package changed;
   - MathJax errors, macros MathJax doesn't know, the sizes `tex8web.js` sets, and no `NaN` in any style;
   - the table of contents beside the text, with its numbers and indents, and each level's font, with tocloft and without it (`test-tocloft.tex` and `test-report.tex`, whose computed fonts `test:visual` checks);
   - colors in dark mode, `\color` as a declaration (`test-declared.tex`), indexes, each list's lengths, alt text, each example's title and its link to the PDF beside it, the title of a page without `\maketitle`, and pictures' sizes (also with the graphics package, and after angle);

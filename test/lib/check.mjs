@@ -22,11 +22,8 @@ export function checkTexLog(path) {
 
 // make4ht's warnings and errors in its log
 export function checkLog(log) {
-  // (make4ht falls back to parsing the page as HTML when tex4ht's isn't
-  // well-formed XML, as with boxes and minipages; the browser does the same)
-  const benign = /XML DOM parsing of .* failed|luaxml-mod-xml\.lua:\d+: Unbalanced Tag|HTML DOM parsing OK/;
   // (MathJax's own warnings, from prerendering, start with "MathJax:")
-  return log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]|^MathJax:/.test(l) && !benign.test(l))
+  return log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]|^MathJax:/.test(l))
     .map(line => line.trim());
 }
 

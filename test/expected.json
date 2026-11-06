@@ -1,8 +1,11 @@
 {
   "examples/complex": {
-    "why": "MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat and \\passtonextarg)",
+    "why": "MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat and \\passtonextarg); tex4ht writes a stray </p> in a multicols of listings, so make4ht reads the page as HTML, as a browser does",
     "allow": [
-      "left undefined for MathJax, which can't read their definitions: \\cvc"
+      "left undefined for MathJax, which can't read their definitions: \\cvc",
+      "XML DOM parsing of",
+      "Unbalanced Tag (/p)",
+      "HTML DOM parsing OK"
     ]
   }
 }
