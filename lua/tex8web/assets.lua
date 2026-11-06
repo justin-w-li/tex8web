@@ -186,19 +186,6 @@ local function custom(css, name)
   return value
 end
 
--- text in tex4ht's classes for sans-serif fonts (css/tex8web.css), or
--- headings and contents' entries in sans-serif (tex8web-page.tex, in the
--- document's stylesheet)
-local function uses_sans(document, context, roles)
-  local css = assert(files.read(context.dir .. "/" .. context.input .. ".css"))
-  local found = (roles.body == "sans" and not roles.sans) or css:find("%-%-tex8web%-[%a-]+%-family: var%(%-%-tex8web%-sans%)") ~= nil
-  document:traverse_elements(function(el)
-    local class = el:get_attribute("class") or ""
-    found = found or class:find("%-lmss") or class:find("^cmss") or class:find("^ecss")
-  end)
-  return found
-end
-
 -- the faces of Latin Modern the page's text is set in, by the rules that
 -- set its font: tex4ht's for its font classes (.ec-lmbx-10 bold,
 -- .ec-lmro-10 oblique, which is the italic), css/tex8web.css's for their
@@ -318,12 +305,13 @@ function M.copy(document, context)
   add_font("LICENSE.txt")
   local roles = roles_of(context, document)
   context.roles = roles
-  local sans = uses_sans(document, context, roles)
+  local faces = M.faces(document, assert(files.read(context.dir .. "/" .. context.input .. ".css")), roles)
+  local sans = false
+  for font in pairs(faces) do sans = sans or font:find("^lmsans10%-") ~= nil end
   if sans then
     for _, font in ipairs(sans_fonts) do add_font(font) end
   end
   local head = document:query_selector("head")[1]
-  local faces = M.faces(document, assert(files.read(context.dir .. "/" .. context.input .. ".css")), roles)
   local function preload(font)
     if faces[font] then
       head:add_child_node(head:create_element("link", {rel = "preload", as = "font",
