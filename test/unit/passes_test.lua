@@ -416,4 +416,77 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     text.theorem_spacing(d)
     equal(d:query_selector("div")[1]:get_attribute("style"), "margin-top: 1em; margin-bottom: 2em")
   end,
+
+  ["text.no_break_spaces: none in verbatim, code or listings"] = function()
+    local d = parse("<pre>a\u{A0}b <span>c\u{A0}d</span></pre><code>e\u{A0}f</code>"
+      .. "<div class=\"lstlisting\"><span>g\u{A0}h</span></div><p>i\u{A0}j</p>")
+    text.no_break_spaces(d)
+    equal(#d:query_selector("span.tex8web-nbsp"), 1)
+    equal(d:query_selector("p span.tex8web-nbsp")[1] ~= nil, true)
+  end,
+
+  ["text.minipages: tex4ht's whitespace around \\noindent's empty paragraph, and a raw ~ between minipages"] = function()
+    local d = parse("<!--  l. 9  --><p class='noindent'>\n</p>\n"
+      .. [[<div class="minipage tex8web-minipage-c">A</div>]] .. "\u{A0}" .. [[<div class="minipage tex8web-minipage-c">B</div>]])
+    text.minipages(d)
+    equal(body(d), "<!--   l. 9   -->\n<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c'>A</div>"
+      .. "<div class='minipage tex8web-minipage-c'>B</div></div>")
+  end,
+
+  ["text.heading_lists: the empty paragraph with a comment in it, and a cached parent's later lists"] = function()
+    local d = parse("<h3>A</h3><p class=\"noindent\">\n<!--  l. 3  --></p>\n<ol><li>a</li></ol>"
+      .. "<h3>B</h3><p></p><ul><li>b</li></ul><p>x</p><ul><li>c</li></ul>")
+    text.heading_lists(d)
+    equal(body(d), "<h3>A</h3>\n<ol><li>a</li></ol><h3>B</h3><ul><li>b</li></ul><p>x</p><ul><li>c</li></ul>")
+  end,
+
+  ["text.sidenotes: many footnotes in time"] = function()
+    local marks, notes = {}, {}
+    for n = 1, 300 do
+      marks[#marks + 1] = ([[<p>]] .. string.rep("<span>filler</span>", 30) .. [[Text<span class="footnote-mark"><a href="#fnNx0" id="fnNx0-bk">N</a></span></p>]]):gsub("N", n)
+      notes[#notes + 1] = ([[<aside class="footnotetext"><p><span class="footnote-mark"><a href="#fnNx0-bk" id="fnNx0">N</a></span>Note</p></aside>]]):gsub("N", n)
+    end
+    local d = parse(table.concat(marks) .. [[<div class="footnotes">]] .. table.concat(notes) .. "</div>")
+    local start = os.clock()
+    text.sidenotes(d)
+    equal(#d:query_selector("aside.tex8web-sidenote"), 300)
+    check(os.clock() - start < 3, "took " .. (os.clock() - start) .. " s")
+  end,
+
+  ["page.permalinks: every heading level, in one pass"] = function()
+    local d = parse([[<h2><a id="a2"></a>T</h2><h4><a id="a4"></a>T</h4><h6><a id="a6"></a>T</h6><h1><a id="a1"></a>T</h1>]])
+    page.permalinks(d)
+    equal(#d:query_selector("a.tex8web-permalink"), 3)
+  end,
+
+  ["text.theorem_spacing: after a color's style, joined with a semicolon"] = function()
+    local d = parse([[<div class="newtheorem" style="color:#FF0000;"><p><span class="head">Lemma 1.<span class="tex8web-thmskip" data-before="1em" data-after="2em"></span></span></p></div>]]
+      .. [[<div class="newtheorem" style="color:#00FF00"><p><span class="head">Lemma 2.<span class="tex8web-thmskip" data-before="1em" data-after="2em"></span></span></p></div>]])
+    text.theorem_spacing(d)
+    equal(d:query_selector("div")[1]:get_attribute("style"), "color:#FF0000; margin-top: 1em; margin-bottom: 2em")
+    equal(d:query_selector("div")[2]:get_attribute("style"), "color:#00FF00; margin-top: 1em; margin-bottom: 2em")
+  end,
+
+  ["dom.has_class: whole class names; class_starts: a prefix of one"] = function()
+    local dom = require "tex8web.dom"
+    local d = parse([[<div class="newtheorem lemma"></div><div class="newtheoremx"></div>]]
+      .. [[<div class="a-newtheorem"></div><div class="tcolorbox-title x"></div>text<div></div>]])
+    local divs = d:query_selector("div")
+    equal({dom.has_class(divs[1], "newtheorem"), dom.has_class(divs[1], "lemma"), dom.has_class(divs[1], "newtheo")},
+      {true, true, false})
+    equal({dom.has_class(divs[2], "newtheorem"), dom.has_class(divs[3], "newtheorem")}, {false, false})
+    equal({dom.class_starts(divs[4], "tcolorbox"), dom.class_starts(divs[4], "x"), dom.class_starts(divs[4], "title")},
+      {true, true, false})
+    equal(dom.has_class(divs[5], "x"), false)
+    equal(dom.has_class(d:query_selector("body")[1]:get_children()[5], "x"), false)
+  end,
+
+  ["dom.is_blank: no element and no text but space"] = function()
+    local dom = require "tex8web.dom"
+    local d = parse([[<p> </p><p>
+<!-- c --></p><p>a</p><p><b></b></p>]])
+    local ps = d:query_selector("p")
+    equal({dom.is_blank(ps[1]), dom.is_blank(ps[2]), dom.is_blank(ps[3]), dom.is_blank(ps[4])},
+      {true, true, false, false})
+  end,
 }

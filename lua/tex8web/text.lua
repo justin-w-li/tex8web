@@ -8,12 +8,11 @@ local M = {}
 function M.theorem_spacing(document)
   for _, mark in ipairs(document:query_selector("span.tex8web-thmskip")) do
     local div = dom.closest(mark, function(el)
-      return el:get_element_name() == "div" and dom.has_class(el, "%f[%w-]newtheorem%f[^%w-]")
+      return el:get_element_name() == "div" and dom.has_class(el, "newtheorem")
     end)
     if div then
-      -- (after the color text.colors may have given it)
-      div:set_attribute("style", (div:get_attribute("style") or "") .. "margin-top: "
-        .. mark:get_attribute("data-before") .. "; margin-bottom: " .. mark:get_attribute("data-after"))
+      dom.add_style(div, "margin-top: " .. mark:get_attribute("data-before")
+        .. "; margin-bottom: " .. mark:get_attribute("data-after"))
     end
     mark:remove_node()
   end
@@ -24,11 +23,24 @@ end
 -- margin would still collapse with the heading's (css/tex8web.css sets it
 -- as LaTeX does, with no \topsep under a heading)
 function M.heading_lists(document)
+  -- (each parent's elements once; a paragraph removed from them is before
+  -- only the list it was found for)
+  local siblings = {}
+  local function before(el)
+    local parent = el:get_parent()
+    if not siblings[parent] then
+      local elements, at = dom.elements(parent), {}
+      for i, element in ipairs(elements) do at[element] = i end
+      siblings[parent] = {elements = elements, at = at}
+    end
+    local group = siblings[parent]
+    return group.elements[group.at[el] - 1]
+  end
   for _, list in ipairs(document:query_selector("ol, ul, dl")) do
-    local p = dom.previous_element(list)
-    local heading = p and dom.previous_element(p)
+    local p = before(list)
+    local heading = p and before(p)
     if heading and heading:get_element_name():match("^h[2-6]$") and p:get_element_name() == "p"
-        and #dom.elements(p) == 0 and not p:get_text():find("%S") then
+        and dom.is_blank(p) then
       p:remove_node()
     end
   end
@@ -100,7 +112,7 @@ end
 -- tex4ht's mathjax option puts each formula's source in a <span> or <div>
 -- of class mathjax-inline, mathjax-block or mathjax-env
 local function is_math(el)
-  return dom.has_class(el, "^mathjax%-")
+  return dom.class_starts(el, "mathjax-")
 end
 
 -- the children of el, with each no-break space in a <span class="tex8web-nbsp">
@@ -135,6 +147,12 @@ local function has_nbsp(el)
   return false
 end
 
+-- (a narrowed space would misalign the columns of code)
+local function is_verbatim(el)
+  local name = el:get_element_name()
+  return name == "pre" or name == "code" or dom.has_class(el, "lstlisting")
+end
+
 local function is_nbsp(node)
   return node:is_element() and node:get_attribute("class") == "tex8web-nbsp"
 end
@@ -142,12 +160,12 @@ end
 -- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
 -- as wide as a space; mark each so the CSS can narrow it. A browser still
 -- breaks the line between one and the math after it (Lemma~$1$), so wrap the
--- two together
+-- two together. Verbatim text and listings keep theirs as they are
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)
     local class = el:get_attribute("class")
     if class == "tex8web-nbsp" or class == "tex8web-nowrap" or not has_nbsp(el)
-        or dom.closest(el, is_math) then
+        or dom.closest(el, function(up) return is_math(up) or is_verbatim(up) end) then
       return
     end
     local children, wrapped, i = mark_nbsp(el), {}, 1
@@ -157,7 +175,7 @@ function M.no_break_spaces(document)
       while children[j] and not children[j]:is_element() and not children[j]:is_text() do
         j = j + 1
       end
-      if is_nbsp(children[i]) and children[j] and dom.has_class(children[j], "^mathjax%-inline") then
+      if is_nbsp(children[i]) and children[j] and dom.has_class(children[j], "mathjax-inline") then
         local nowrap = el:create_element("span", {class = "tex8web-nowrap"})
         for k = i, j do nowrap:add_child_node(children[k]) end
         wrapped[#wrapped + 1] = nowrap
@@ -176,13 +194,13 @@ end
 -- One that begins a paragraph (tex8web-par) starts a new line
 local function is_minipage(node)
   return node:is_element() and node:get_element_name() == "div"
-    and (dom.has_class(node, "^minipage ") or dom.has_class(node, "^subfigure "))
+    and (dom.has_class(node, "minipage") or dom.has_class(node, "subfigure"))
 end
 
 -- (~ between two is a space too)
 local function is_space(node)
-  if node:is_text() then return not node:get_text():find("%S") end
-  return not node:is_element() or node:get_attribute("class") == "tex8web-nbsp"
+  if node:is_text() then return not node:get_text():gsub("\u{A0}", " "):find("%S") end
+  return not node:is_element() or is_nbsp(node)
 end
 
 function M.minipages(document)
@@ -202,7 +220,7 @@ function M.minipages(document)
           local k = j
           while children[k] and is_space(children[k]) do k = k + 1 end
           if not (children[k] and is_minipage(children[k]))
-              or dom.has_class(children[k], "tex8web%-par") then
+              or dom.has_class(children[k], "tex8web-par") then
             break
           end
           row:add_child_node(children[k])
@@ -210,10 +228,10 @@ function M.minipages(document)
         end
         -- (\noindent's empty paragraph before it, which would only add
         -- the space between paragraphs at the top of a box)
-        local before = out[#out]
-        if before and before:is_element() and before:get_element_name() == "p"
-            and #before:get_children() == 0 then
-          out[#out] = nil
+        local k = #out
+        while k > 0 and is_space(out[k]) do k = k - 1 end
+        if k > 0 and out[k]:is_element() and out[k]:get_element_name() == "p" and dom.is_blank(out[k]) then
+          table.remove(out, k)
         end
         out[#out + 1] = row
         i = j
@@ -233,22 +251,28 @@ end
 -- was. \thanks, which fn-in also puts there, goes back under the title
 local function stays(el)
   local name = el:get_element_name()
-  return name == "table" or name == "figure" or dom.has_class(el, "^tcolorbox") or is_math(el)
+  return name == "table" or name == "figure" or dom.class_starts(el, "tcolorbox") or is_math(el)
 end
 
 local function is_top(el)
   local name = el:is_element() and el:get_element_name()
-  return not name or name == "body" or name == "section" or name == "main"
+  return not name or name == "body" or name == "section"
 end
 
 function M.sidenotes(document)
   local list = document:query_selector("div.footnotes")[1]
   if not list then return end
   local last = {} -- the last note put after each block
+  -- (a selector for each id would search the whole page once for each note)
+  local by_id = {}
+  document:traverse_elements(function(el)
+    local id = el:get_attribute("id")
+    if id and not by_id[id] then by_id[id] = el end
+  end)
   for _, note in ipairs(list:query_selector("aside.footnotetext")) do
     local back = note:query_selector("span.footnote-mark a")[1]
     local id = (back and back:get_attribute("href") or ""):match("^#(.+)")
-    local mark = id and document:query_selector("[id='" .. id .. "']")[1]
+    local mark = id and by_id[id]
     if mark and not dom.closest(mark, stays) then
       local block = mark
       while not is_top(block:get_parent()) do block = block:get_parent() end
@@ -286,17 +310,13 @@ local blocks = {p = true, div = true, ul = true, ol = true, li = true, dl = true
   th = true, figure = true, figcaption = true, aside = true, blockquote = true, pre = true,
   section = true, hr = true}
 
-local function is_named(name)
-  return function(el) return el:get_element_name() == name end
-end
-
 local function is_mark(node)
-  return dom.has_class(node, "^tex8web%-color$") or dom.has_class(node, "^tex8web%-color%-end$")
+  return dom.has_class(node, "tex8web-color") or dom.has_class(node, "tex8web-color-end")
 end
 
 local function own_color(el)
-  return dom.has_class(el, "^tcolorbox") or el:get_element_name() == "figure"
-    or dom.has_class(el, "^table$")
+  return dom.class_starts(el, "tcolorbox") or el:get_element_name() == "figure"
+    or dom.has_class(el, "table")
 end
 
 local function index(node)
@@ -372,10 +392,10 @@ function M.colors(document)
   walk(document:query_selector("html")[1])
   local function start(from, to)
     if not dom.closest(from, function(el) return el == body end)
-        or dom.closest(from, function(el) return dom.has_class(el, "^lst") end) then
+        or dom.closest(from, function(el) return dom.class_starts(el, "lst") end) then
       return
     end
-    local link = dom.closest(from, is_named("a"))
+    local link = dom.closest(from, function(el) return el:get_element_name() == "a" end)
     if link and to and not dom.closest(to, function(el) return el == link end) then to = nil end
     color(from, to, to and body or link or body, from:get_attribute("data-color"))
   end
@@ -383,7 +403,7 @@ function M.colors(document)
   -- ended has its end first, and colors nothing)
   for _, mark in ipairs(marks) do
     local id = mark:get_attribute("data-id")
-    if dom.has_class(mark, "^tex8web%-color$") then
+    if dom.has_class(mark, "tex8web-color") then
       if starts[id] == nil or starts[id] == "closed" then
         starts[id] = mark
         open[#open + 1] = mark
@@ -404,8 +424,7 @@ function M.colors(document)
     local parent = mark:get_parent()
     mark:remove_node()
     if parent:get_element_name() == "p" and not parent:get_attribute("class")
-        and not parent:get_attribute("id") and #dom.elements(parent) == 0
-        and not parent:get_text():find("%S") then
+        and not parent:get_attribute("id") and dom.is_blank(parent) then
       parent:remove_node()
     end
   end
@@ -417,7 +436,7 @@ end
 -- display, goes in a span css/tex8web.css floats right
 local function ends_line(node)
   return node:is_element() and (node:get_element_name() == "br" or blocks[node:get_element_name()]
-    or is_math(node) and not dom.has_class(node, "^mathjax%-inline"))
+    or is_math(node) and not dom.has_class(node, "mathjax-inline"))
 end
 
 local function shows(node)
@@ -445,7 +464,7 @@ function M.hfill(document)
       from = nil
     end
     for _, node in ipairs(parent:get_children()) do
-      if dom.has_class(node, "^tex8web%-hfill%-mark$") then
+      if dom.has_class(node, "tex8web-hfill-mark") then
         from = #out + 1
       else
         if ends_line(node) then close() end

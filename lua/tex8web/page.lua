@@ -64,11 +64,7 @@ end
 -- links to it (make4ht later gives headings ids from their titles, and
 -- rewrites links to their anchors to those)
 function M.permalinks(document)
-  local heads = document:query_selector(".newtheorem span.head")
-  for level = 2, 6 do
-    for _, heading in ipairs(document:query_selector("h" .. level)) do heads[#heads + 1] = heading end
-  end
-  for _, head in ipairs(heads) do
+  for _, head in ipairs(document:query_selector(".newtheorem span.head, h2, h3, h4, h5, h6")) do
     local id = anchor(head)
     if id then permalink(head, id) end
   end
@@ -131,7 +127,7 @@ end
 local function holds_contents(list)
   for _, entry in ipairs(dom.elements(list)) do
     for _, level in ipairs({"part", "chapter", "section", "paragraph"}) do
-      if dom.has_class(entry, "^%a*" .. level .. "Toc$") then return true end
+      if dom.class_matches(entry, "%a*" .. level .. "Toc") then return true end
     end
   end
 end
@@ -148,12 +144,12 @@ local function contents(document, body, title)
   end
   if not list then return end
   local heading = dom.previous_element(list)
-  if heading and dom.has_class(heading, "^like%a*Head$") then
+  if heading and dom.class_matches(heading, "like%a*Head") then
     title = text_of(heading)
     heading:remove_node()
   end
   local content = list:get_parent()
-  local box = dom.has_class(content, "^tcolorbox%-content$") and content:get_parent()
+  local box = dom.has_class(content, "tcolorbox-content") and content:get_parent()
   if box and #dom.elements(content) == 1 then
     local box_title = box:query_selector(".tcolorbox-title")[1]
     if box_title then title = text_of(box_title) end

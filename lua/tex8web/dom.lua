@@ -10,8 +10,26 @@ function M.closest(el, predicate)
   end
 end
 
-function M.has_class(el, pattern)
-  return el:is_element() and (el:get_attribute("class") or ""):match(pattern) ~= nil
+-- whether one of el's classes is name, starts with prefix or matches a Lua
+-- pattern (as a whole class)
+local function any_class(el, matches)
+  if not el:is_element() then return false end
+  for class in (el:get_attribute("class") or ""):gmatch("%S+") do
+    if matches(class) then return true end
+  end
+  return false
+end
+
+function M.has_class(el, name)
+  return any_class(el, function(class) return class == name end)
+end
+
+function M.class_starts(el, prefix)
+  return any_class(el, function(class) return class:sub(1, #prefix) == prefix end)
+end
+
+function M.class_matches(el, pattern)
+  return any_class(el, function(class) return class:match("^" .. pattern .. "$") ~= nil end)
 end
 
 -- el's children that are elements
@@ -21,6 +39,18 @@ function M.elements(el)
     if node:is_element() then elements[#elements + 1] = node end
   end
   return elements
+end
+
+-- whether el has no elements in it and no text but space (comments don't
+-- show)
+function M.is_blank(el)
+  return #M.elements(el) == 0 and not el:get_text():find("%S")
+end
+
+-- joins a declaration to el's style
+function M.add_style(el, declaration)
+  local style = (el:get_attribute("style") or ""):gsub("[;%s]+$", "")
+  el:set_attribute("style", style == "" and declaration or style .. "; " .. declaration)
 end
 
 -- the element before el among its parent's children

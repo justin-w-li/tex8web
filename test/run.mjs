@@ -261,7 +261,7 @@ const colors = {
     // color; a float, which LaTeX sets in the text's color; a box copied
     // after its group ended, which colors nothing after it)
     `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <dl class='tex8web-list itemize' style='${list}color:${dark('#0000FF')};'>`,
-    `<div class='newtheorem' style='color:${dark('#FF0000')};margin-top:`,
+    `<div class='newtheorem' style='color:${dark('#FF0000')}; margin-top:`,
     `<p class='noindent' style='color:${dark('#FF0000')};'>Red from the box’s start.</p>`,
     `<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c' style='--tex8web-share: 0.4; color:${dark('#FF0000')};'>`,
     `<figure class='figure' id='x1-10051'>`,
