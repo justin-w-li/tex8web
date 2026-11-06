@@ -93,16 +93,30 @@ export const run = (command, args, { slot = false, ...options } = {}) => slot &&
   ? inSlots(slotFile => execute(command, args, { ...options, slotFile })).finally(released)
   : execute(command, args, options);
 
-// With slotFile, runs the command as a child of lockf, which holds the lock
-// on that file until the command has ended, even if this process is killed
-// outright and the command is not. The timers start when the command's
-// first line, held, says it has the lock. Resolves to null if the lock is
-// busy (75, EX_TEMPFAIL)
+// Runs the command under a watchdog that ends it, with its process group,
+// when it has run for the total limit and two seconds more, or when this
+// process is gone: a build with no one to time it is not left holding a slot
+const watchdog = `
+  use POSIX ':sys_wait_h';
+  my $end = time + shift;
+  my $parent = getppid;
+  my $pid = fork // die "fork: $!";
+  if (!$pid) { exec @ARGV or die "exec: $!" }
+  while (waitpid($pid, WNOHANG) == 0) {
+    kill KILL => -getpgrp(0) if time >= $end || getppid != $parent;
+    select undef, undef, undef, 0.1;
+  }
+  exit($? & 127 ? 128 + ($? & 127) : $? >> 8);`;
+
+// With slotFile, runs the command as a child of the watchdog and lockf,
+// which holds the lock on that file until the command has ended. The timers
+// start when the command's first line, held, says it has the lock. Resolves
+// to null if the lock is busy (75, EX_TEMPFAIL)
 function execute(command, args, { idle = 180, total = 900, slotFile, ...options }) {
   return new Promise(done => {
     const child = slotFile
-      ? spawn('lockf', ['-k', '-t', '0', slotFile, 'sh', '-c', `echo ${held}; exec "$@"`, 'sh', command, ...args],
-        { ...options, detached: true })
+      ? spawn('perl', ['-e', watchdog, total + 2, 'lockf', '-k', '-t', '0', slotFile, 'sh', '-c', `echo ${held}; exec "$@"`,
+        'sh', command, ...args], { ...options, detached: true })
       : spawn(command, args, { ...options, detached: true });
     running.add(child.pid);
     let log = '', timer, limit, started = !slotFile;
@@ -120,16 +134,23 @@ function execute(command, args, { idle = 180, total = 900, slotFile, ...options 
       watch();
     };
     if (started) start();
-    for (const stream of [child.stdout, child.stderr]) {
-      stream.on('data', d => {
+    // (what lockf prints before the command's first line is dropped)
+    let before = '';
+    child.stdout.on('data', d => {
+      if (started) {
         log += d;
-        if (started) return watch();
-        const at = log.indexOf(`${held}\n`);
-        if (at < 0) return;
-        log = log.slice(at + held.length + 1);
-        start();
-      });
-    }
+        return watch();
+      }
+      before += d;
+      const at = before.indexOf(`${held}\n`);
+      if (at < 0) return;
+      log += before.slice(at + held.length + 1);
+      start();
+    });
+    child.stderr.on('data', d => {
+      log += d;
+      if (started) watch();
+    });
     child.on('close', code => {
       clearTimeout(timer);
       clearTimeout(limit);
@@ -158,15 +179,21 @@ export const sourceHash = base => hashFiles(base, sources);
 
 // what a build is made from besides the document, as a hash: tex8web's
 // sources, and the tools it uses, which change its output when they change:
-// MathJax, if it is there to prerender with (lua/tex8web/prerender.lua), and
-// TeX Live
+// MathJax and subset-font, if they are there to prerender with
+// (lua/tex8web/prerender.lua), TeX Live, and make4ht and tex4ht, which
+// change within a TeX Live year (the version, and when tex4ht.sty was
+// installed)
 let toolchain;
 function tools() {
   if (toolchain) return toolchain;
-  let mathjax = null;
-  try { mathjax = JSON.parse(readFileSync(join(root, 'node_modules/mathjax/package.json'), 'utf8')).version; } catch {}
-  const tex = spawnSync('tex', ['--version'], { encoding: 'utf8' }).stdout?.split('\n')[0] ?? null;
-  return toolchain = JSON.stringify([sourceHash(root), mathjax, tex]);
+  const version = name => {
+    try { return JSON.parse(readFileSync(join(root, 'node_modules', name, 'package.json'), 'utf8')).version; } catch { return null; }
+  };
+  const first = (command, ...args) => spawnSync(command, args, { encoding: 'utf8' }).stdout?.split('\n')[0] ?? null;
+  const sty = first('kpsewhich', 'tex4ht.sty');
+  const installed = sty && statSync(sty, { throwIfNoEntry: false })?.mtimeMs;
+  return toolchain = JSON.stringify([sourceHash(root), version('mathjax'), version('subset-font'),
+    first('tex', '--version'), first('make4ht', '--version'), installed ?? null]);
 }
 
 // the whole stamp of a build: those, the document's directory, the command

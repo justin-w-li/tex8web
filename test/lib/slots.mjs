@@ -43,7 +43,7 @@ export async function inSlots(attempt) {
   mkdirSync(dir(), { recursive: true });
   const start = Date.now();
   let told = false;
-  await sleep(freed + poll - Date.now());
+  await sleep(Math.max(0, freed + poll - Date.now()));
   for (;;) {
     for (let i = 0; i < slotCount(); i++) {
       const result = await attempt(join(dir(), String(i)));

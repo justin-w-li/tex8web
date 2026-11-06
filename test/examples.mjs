@@ -3,7 +3,7 @@
 // build/site: the index (examples/index.tex), and each example's page in
 // a folder of its own. Fails if a build does, or if the index links to a
 // file the site lacks.
-import { cpSync, existsSync, readFileSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { build, documents, latexmk, pool, root, workers } from './lib/build.mjs';
 
@@ -20,9 +20,14 @@ await pool(examples, workers, async doc => {
   console.log(`${doc.name}: ${wrong.join(', ') || 'built'} (${join(doc.dir, 'build')})`);
 });
 
+// (the index, as built, copied into a site of its own: a site built before may
+// hold an example that has gone)
 const site = join(root, 'build/site');
 const index = { name: 'examples/index', dir: join(root, 'examples'), tex: 'index.tex', cfg: join(root, 'tex8web.cfg') };
-const { code } = await build(index, site, join(root, 'build/siteaux'));
+const indexOut = join(root, 'build/siteindex');
+const { code } = await build(index, indexOut, join(root, 'build/siteaux'));
+rmSync(site, { recursive: true, force: true });
+if (existsSync(indexOut)) cpSync(indexOut, site, { recursive: true });
 for (const doc of examples) {
   if (existsSync(join(doc.dir, 'build/html'))) cpSync(join(doc.dir, 'build/html'), join(site, basename(doc.dir)), { recursive: true });
 }

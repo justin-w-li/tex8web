@@ -114,19 +114,50 @@ test('a slot is free again once the process holding it is killed', { skip: !lock
   }
 });
 
-test('a build keeps its slot if the tool that started it is killed outright', { skip: !lockf, timeout: 30000 }, async () => {
+// a tool that runs a silent build of its own in a slot, with a total limit of
+// total seconds; the build writes its pid to pid, and the slot is file
+async function silentBuild(total) {
+  const { tmp, env } = pool(1);
+  const file = join(tmp, 'tex8web-slots/0');
+  const pid = join(tmp, 'pid');
+  const tool = child(`import { run } from './test/lib/build.mjs';
+    run('sh', ['-c', 'echo $$ > ${pid}; exec sleep 1000'], { slot: true, total: ${total} });`, env);
+  assert.ok(await until(() => existsSync(pid), Boolean, 10000), 'the build did not start');
+  const busy = () => spawnSync('lockf', ['-k', '-t', '0', file, 'true']).status === 75;
+  assert.ok(busy(), 'the slot is free while the build runs');
+  const gone = () => { try { process.kill(Number(readFileSync(pid, 'utf8')), 0); return false; } catch (e) { return e.code === 'ESRCH'; } };
+  return { tmp, tool, free: ms => until(() => !busy() && gone(), Boolean, ms) };
+}
+
+test('a build ends and gives its slot back when the tool that started it is killed outright', { skip: !lockf, timeout: 30000 }, async () => {
+  const { tmp, tool, free } = await silentBuild(600);
+  try {
+    tool.kill('SIGKILL');
+    assert.ok(await free(5000), 'the build or its slot is left');
+  } finally {
+    rmSync(tmp, { recursive: true });
+  }
+});
+
+test('a build is ended by its own total limit when the tool is stopped', { skip: !lockf, timeout: 30000 }, async () => {
+  const { tmp, tool, free } = await silentBuild(2);
+  try {
+    // (its timers stopped with it; the limit is 2 s more than the tool's)
+    tool.kill('SIGSTOP');
+    assert.ok(await free(10000), 'the build or its slot is left');
+  } finally {
+    tool.kill('SIGKILL');
+    rmSync(tmp, { recursive: true });
+  }
+});
+
+test('the stdout and stderr of a slotted build are both in its log, in order', { skip: !lockf, timeout: 30000 }, async () => {
   const { tmp, env } = pool(1);
   try {
-    const tool = child(`import { run } from './test/lib/build.mjs';
-      run('sh', ['-c', 'echo building; sleep 4'], { slot: true });`, env);
-    // (the slot's lock file is there once the build has asked for it)
-    await until(() => existsSync(join(tmp, 'tex8web-slots/0')), Boolean, 10000);
-    await new Promise(done => setTimeout(done, 1000));
-    tool.kill('SIGKILL');
-    const busy = () => spawnSync('lockf', ['-k', '-t', '0', join(tmp, 'tex8web-slots/0'), 'true']).status === 75;
-    assert.ok(busy(), 'the slot is free while the build runs');
-    // (and free once it has ended)
-    assert.ok(await until(() => !busy(), Boolean, 10000), 'the slot is not free after the build');
+    const out = await child(`import { run } from './test/lib/build.mjs';
+      const { log } = await run('sh', ['-c', 'echo to-stderr >&2; echo to-stdout'], { slot: true });
+      console.log(JSON.stringify(log)); process.exit();`, env).done;
+    assert.equal(JSON.parse(out), 'to-stderr\nto-stdout\n');
   } finally {
     rmSync(tmp, { recursive: true });
   }
