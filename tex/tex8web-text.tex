@@ -258,12 +258,18 @@
 
 % \WebTerm\cs: what \cs{...} sets is a term, which the contents' filter finds
 % (page.terms gives it an id). In math, which the mathjax option passes to
-% MathJax as source, \cs is the bridge's
+% MathJax as source, \cs is the bridge's. Written to a file, as a heading
+% is to the contents, it is only what \cs sets: the span would give the
+% heading's id (make4ht's sectionid) the letters of its TeX, and its entry
+% in the contents a term the filter would find
 \NewDocumentCommand\WebTerm{m}{%
     \expandafter\NewCommandCopy\csname web@term@\string#1\endcsname#1%
-    \renewcommand#1[1]{\leavevmode\HCode{<span class="tex8web-term">}%
-        \csname web@term@\string#1\endcsname{##1}\HCode{</span>}}%
+    \expandafter\def\csname web@termspan@\string#1\endcsname##1{\leavevmode
+        \HCode{<span class="tex8web-term">}\csname web@term@\string#1\endcsname{##1}\HCode{</span>}}%
+    \edef#1{\noexpand\web@term{\expandafter\noexpand\csname web@term@\string#1\endcsname}%
+        {\expandafter\noexpand\csname web@termspan@\string#1\endcsname}}%
 }
+\def\web@term{\ifx\protect\@typeset@protect\expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi}
 
 % --- table of contents ------------------------------------------------------
 

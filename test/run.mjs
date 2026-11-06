@@ -343,9 +343,11 @@ const lists = {
 // tex4ht's SVG (dvisvgm's, scaled 1.4) centers on it
 const tikz = { 'test-article': 'test-article0x.svg' };
 
-// a term (\WebTerm), with its id for the contents' filter
+// a term (\WebTerm), with its id for the contents' filter; in a heading,
+// only its text in the heading's id and contents entry
 const terms = {
   'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
+  'test-term': [/<h3 class='sectionHead' id='the-group-law'>/, /<a href='#the-group-law' id='[^']*'>The <span class='cmbx-10'>group\s*<\/span>\s*law<\/a>/],
 };
 
 // links at the heads of numbered theorems and the titles of numbered or

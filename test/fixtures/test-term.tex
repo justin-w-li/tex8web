@@ -1,0 +1,9 @@
+% A test for tex8web's terms (\WebTerm, in test-term.cfg) in a heading,
+% whose id and contents entry have only the term's text.
+\documentclass{article}
+\newcommand{\term}[1]{\textbf{#1}}
+\begin{document}
+\tableofcontents
+\section{The \term{group} law}
+A \term{group} is a set with an operation.
+\end{document}
