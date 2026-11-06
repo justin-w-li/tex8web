@@ -1,6 +1,6 @@
 % A test for tex8web: amsthm's \qedhere where the display has more of its
-% own: a \label, a \tag, a nested environment, text; a second \qedhere or
-% one outside a proof; and a proof that ends in a list.
+% own: a \label (also in \[ \]), a \tag, a nested environment, text; a
+% second \qedhere or one outside a proof; and a proof that ends in a list.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \begin{document}
@@ -34,10 +34,14 @@ A.
 B.
 \[ c = d \qedhere \]
 \end{proof}
+\begin{proof}[Bracket label]
+A.
+\[ a = b \label{eq:c} \qedhere \]
+\end{proof}
 Outside a proof, no box and no number lost:
 \begin{align} a &= b \\ c &= d \qedhere \end{align}
 \begin{equation}\label{eq:e} e = f \end{equation}
-See \eqref{eq:a}, \eqref{eq:b} and \eqref{eq:e}.
+See \eqref{eq:a}, \eqref{eq:b} and \eqref{eq:e}. And \ref{eq:c}.
 \begin{proof}[List]
 \begin{itemize}\item One.\end{itemize}
 \end{proof}

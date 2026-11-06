@@ -440,7 +440,7 @@ const qed = {
   // \qedhere in a row with a \label, a \tag, a nested environment or text
   // in a display, twice, or outside a proof; and a proof ending in a list
   'test-qedrow': [
-    ...['Label', 'Label align', 'No tag align', 'Aligned', 'Text'].map(tagged),
+    ...['Label', 'Label align', 'No tag align', 'Aligned', 'Text', 'Bracket label'].map(tagged),
     // (a \tag of the row's own keeps the box on the proof, below the display)
     new RegExp(`${inProof('Tag')}<\\/mjx-container><\\/span>\\s*${box}`),
     // (the second \qedhere finds no box)
@@ -448,9 +448,12 @@ const qed = {
     // (outside a proof, \qedhere takes no number: the equation after the
     // alignment is the sixth, as it is in the PDF)
     /and \(<a href='#[^']+'>6<!--/,
+    // (a \ref to a \label in \[ \] leads to the display; its number is
+    // empty, as in the PDF)
+    /<a id='([^']+)'><\/a><mjx-container(?=[^]*And <a href='#\1'>)/,
     /<\/ul>\s*<div class='tex8web-qed-line'><span class='tex8web-qed'><mjx-container/,
-    // (eight squares: six tags, the box after the \tag and the one after the list)
-    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){8}$/,
+    // (nine squares: seven tags, the box after the \tag and the one after the list)
+    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){9}$/,
   ],
   // equation* through the walker: a \ref to its \label leads to the
   // section, and the three relations of the page's math, one in the split's
