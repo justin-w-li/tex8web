@@ -20,7 +20,9 @@
     "test": "node test/run.mjs",
     "test:visual": "node test/visual.mjs && node test/page.mjs && node --test test/chrome.test.mjs",
     "test:page": "node test/page.mjs",
-    "examples": "node test/examples.mjs"
+    "examples": "node test/examples.mjs",
+    "regress": "node test/regress.mjs",
+    "clean": "node test/clean.mjs"
   },
   "dependencies": {
     "@mathjax/mathjax-bbm-font-extension": "4.1.3",

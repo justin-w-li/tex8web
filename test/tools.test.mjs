@@ -2,7 +2,7 @@
 // node --test test/tools.test.mjs
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -179,6 +179,31 @@ test('a process that has given a slot back does not take one at once', { skip: !
   }
 });
 
+test('a lock taken on a file that is then deleted is taken again on a live one', { skip: !lockf, timeout: 30000 }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8weblock')));
+  const file = join(dir, 'out/regress.lock');
+  mkdirSync(join(dir, 'out'));
+  writeFileSync(file, '');
+  const holder = spawn('lockf', ['-k', file, 'sh', '-c', 'echo held; cat >/dev/null'], { stdio: ['pipe', 'pipe', 'ignore'] });
+  const probe = () => spawnSync('lockf', ['-k', '-s', '-t', '0', file, 'true']).status;
+  let waiter;
+  try {
+    await new Promise(done => holder.stdout.once('data', done));
+    waiter = child(`import { lock } from './test/lib/slots.mjs';
+      await lock(process.env.FILE); console.log('locked'); setInterval(() => {}, 1000);`, { FILE: file });
+    // (it waits for the holder; the directory is removed under it, as clean does, and the holder lets go)
+    await new Promise(done => setTimeout(done, 1000));
+    rmSync(join(dir, 'out'), { recursive: true });
+    holder.stdin.end();
+    assert.ok(await waiter.printed('locked'), 'the waiter did not lock');
+    assert.equal(probe(), 75, 'the waiter does not hold the file at the path');
+  } finally {
+    waiter?.kill('SIGKILL');
+    holder.kill();
+    rmSync(dir, { recursive: true });
+  }
+});
+
 test('a number of slots that is not a number of slots is refused', async () => {
   for (const slots of ['0', 'two', '1.5']) {
     const result = await child(`import { takeSlot } from './test/lib/slots.mjs';
@@ -223,6 +248,24 @@ test('what a build reads, in tex8web and in the document, is in its stamp', () =
   }
 });
 
+test('a build that makes its own PDF is reused by the next', { timeout: 120000 }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webpdf')));
+  try {
+    writeFileSync(join(dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nx\n\\end{document}\n');
+    mkdirSync(join(dir, 'cfg'));
+    writeFileSync(join(dir, 'cfg/doc.cfg'), '\\Preamble{xhtml,mathjax}\n\\begin{document}\n\\input{tex8web-core.tex}\n\\WebPDF{build/pdf/doc.pdf}\n\\EndPreamble\n');
+    const doc = { name: 'pdf', dir: join(dir, 'doc'), tex: 'doc.tex', cfg: join(dir, 'cfg/doc.cfg') };
+    mkdirSync(doc.dir);
+    renameSync(join(dir, 'doc.tex'), join(doc.dir, 'doc.tex'));
+    const make = () => build(doc, join(dir, 'html'), join(dir, 'aux'));
+    assert.equal((await make()).reused, undefined);
+    assert.ok(existsSync(join(doc.dir, 'build/pdf/doc.pdf')));
+    assert.equal((await make()).reused, true);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
 test('a build is reused only while nothing it was built from has changed', { timeout: 120000 }, async () => {
   // (the real path: make4ht gets the config's path relative to it)
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webreuse')));
@@ -246,6 +289,20 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal((await make()).reused, undefined);
     assert.match(html(), /second/);
 
+    // the config's content counts too, where it is not in the document's directory
+    const cfgDir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webcfg')));
+    try {
+      doc.cfg = join(cfgDir, 'other.cfg');
+      copyFileSync(join(root, 'tex8web.cfg'), doc.cfg);
+      assert.equal((await make()).reused, undefined);
+      assert.equal((await make()).reused, true);
+      appendFileSync(doc.cfg, '\n% changed\n');
+      assert.equal((await make()).reused, undefined);
+    } finally {
+      doc.cfg = join(root, 'tex8web.cfg');
+      rmSync(cfgDir, { recursive: true });
+    }
+
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1' })).reused, undefined);
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1' })).reused, true);
 
@@ -256,6 +313,270 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.notEqual(again.code, 0);
     assert.equal(again.reused, undefined);
   } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+// regress.mjs, run from a temporary directory as npm does (in tex8web's, told where from), with a tex8web checkout of its own
+// to record: a clean git repository, or one with a file git doesn't know
+const git = (dir, ...args) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-C', dir, ...args], { encoding: 'utf8' });
+const regress = (cwd, tree, ...args) => spawnSync(process.execPath, [join(here, 'regress.mjs'), ...args],
+  { cwd: root, encoding: 'utf8', env: { ...process.env, npm_lifecycle_event: 'regress', INIT_CWD: cwd, TEX8WEB_TREE: tree }, timeout: 300000 });
+const article = body => `\\documentclass{article}\n\\begin{document}\n${body}\n\\end{document}\n`;
+function scratch(names) {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webregress')));
+  for (const [path, body] of Object.entries(names)) {
+    mkdirSync(join(dir, path, '..'), { recursive: true });
+    writeFileSync(join(dir, path), body);
+  }
+  const clean = join(dir, 'clean'), dirty = join(dir, 'dirty');
+  for (const repo of [clean, dirty]) {
+    mkdirSync(repo);
+    git(repo, 'init');
+    git(repo, 'commit', '--allow-empty', '-m', 'x');
+  }
+  writeFileSync(join(dirty, 'file'), 'not committed');
+  return { dir, clean, dirty, head: git(clean, 'rev-parse', '--short', 'HEAD').stdout.trim() };
+}
+
+test('regress.mjs says what changed in each document since its accepted build', { skip: !lockf, timeout: 600000 }, () => {
+  const { dir, clean, head } = scratch({ 'one/main.tex': article('First'), 'two/note.tex': article('Second') });
+  const out = join(dir, 'build/regress');
+  const stamp = () => readFileSync(join(out, 'accepted/STAMP'), 'utf8');
+  try {
+    let result = regress(dir, clean, 'one', 'two');
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    assert.match(result.stdout, /^one: no baseline/m);
+    assert.match(result.stdout, /^two: no baseline/m);
+
+    result = regress(dir, clean, '--accept', 'one', 'two/note.tex');
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    assert.ok(existsSync(join(out, 'accepted/one/main.html')));
+    assert.match(stamp(), new RegExp(`^${head} \\d{4}-\\d\\d-\\d\\d`));
+
+    result = regress(dir, clean, 'one', 'two');
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    assert.match(result.stdout, /^one: unchanged/m);
+    assert.match(result.stdout, /^two: unchanged/m);
+
+    writeFileSync(join(dir, 'two/note.tex'), article('Second, and more words than before'));
+    result = regress(dir, clean, 'one', 'two');
+    assert.equal(result.status, 3, result.stderr + result.stdout);
+    assert.match(result.stdout, /^one: unchanged/m);
+    assert.match(result.stdout, /^two: looks different: .*-light/m);
+    assert.ok(readdirSync(join(out, 'compare/two')).some(file => file.endsWith('-new.png')));
+
+    // a document that doesn't build fails the run and keeps the rest from being accepted
+    mkdirSync(join(dir, 'bad'));
+    writeFileSync(join(dir, 'bad/main.tex'), article('\\undefinedcs'));
+    const before = stamp();
+    result = regress(dir, clean, '--accept', 'two', 'bad');
+    assert.equal(result.status, 1, result.stderr + result.stdout);
+    assert.match(result.stdout, /^bad: failed to build/m);
+    assert.equal(stamp(), before);
+    assert.doesNotMatch(readFileSync(join(out, 'accepted/two/note.html'), 'utf8'), /more words/);
+
+    // a looking-different page is accepted without failing, and is then the baseline
+    result = regress(dir, clean, '--accept', 'two');
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    result = regress(dir, clean, 'two');
+    assert.match(result.stdout, /^two: unchanged/m);
+
+    // another baseline, another output directory, and a config
+    copyFileSync(join(root, 'tex8web.cfg'), join(dir, 'my.cfg'));
+    result = regress(dir, clean, '--out', 'elsewhere', '--baseline', join(out, 'accepted'), '-c', 'my.cfg', 'one');
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    assert.match(result.stdout, /^one: unchanged/m);
+    assert.ok(existsSync(join(dir, 'elsewhere/html/one/main.html')));
+
+    result = regress(dir, clean, '--draft', '--out', 'drafts', 'one');
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    assert.ok(existsSync(join(dir, 'drafts/html/one/main.html')));
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+test('regress.mjs builds a page whose PDF is missing, and builds no PDF', { timeout: 300000 }, () => {
+  const { dir, clean } = scratch({ 'one/main.tex': article('First'),
+    'my.cfg': '\\Preamble{xhtml,mathjax}\n\\begin{document}\n\\input{tex8web-core.tex}\n\\WebPDF{build/pdf/main.pdf}\n\\EndPreamble\n' });
+  try {
+    const result = regress(dir, clean, '-c', 'my.cfg', 'one');
+    assert.ok(existsSync(join(dir, 'build/regress/html/one/main.html')), result.stderr + result.stdout);
+    assert.equal(existsSync(join(dir, 'one/build')), false, 'something built the PDF');
+    assert.match(result.stdout, /^one: /m);
+    assert.doesNotMatch(readFileSync(join(dir, 'build/regress/html/one/main.html'), 'utf8'), /main\.pdf/);
+
+    // once the PDF is there, the page is built again and links it
+    mkdirSync(join(dir, 'one/build/pdf'), { recursive: true });
+    writeFileSync(join(dir, 'one/build/pdf/main.pdf'), '%PDF-1.4\n');
+    const again = regress(dir, clean, '-c', 'my.cfg', 'one');
+    assert.doesNotMatch(again.stdout, /reusing/);
+    assert.match(readFileSync(join(dir, 'build/regress/html/one/main.html'), 'utf8'), /main\.pdf/);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+test("regress.mjs holds its output directory's lock while it runs, and clean leaves it", { skip: !lockf, timeout: 120000 }, async () => {
+  const { dir, clean } = scratch({ 'one/main.tex': article('First') });
+  const out = join(dir, 'build/regress');
+  const busy = () => spawnSync('lockf', ['-k', '-s', '-t', '0', join(out, 'regress.lock'), 'true']).status === 75;
+  const proc = spawn(process.execPath, [join(here, 'regress.mjs'), 'one'], { cwd: root, stdio: 'ignore',
+    env: { ...process.env, npm_lifecycle_event: 'regress', INIT_CWD: dir, TEX8WEB_TREE: clean } });
+  const ended = new Promise(done => proc.on('close', done));
+  try {
+    assert.ok(await until(() => existsSync(join(out, 'regress.lock')) && busy(), Boolean, 20000), 'the lock was not taken');
+    const result = spawnSync(process.execPath, [join(here, 'clean.mjs'), '--in', dir, 'regress'],
+      { cwd: root, encoding: 'utf8', env: { ...process.env, TMPDIR: dir } });
+    assert.match(result.stdout, /skipping .*build\/regress: .*in use/);
+    assert.ok(existsSync(join(out, 'regress.lock')));
+    assert.equal(await ended, 0);
+    assert.equal(busy(), false, 'the lock is held after it ended');
+  } finally {
+    proc.kill();
+    rmSync(dir, { recursive: true });
+  }
+});
+
+test('regress.mjs refuses what it cannot do before it builds anything', () => {
+  const { dir, clean, dirty } = scratch({ 'one/main.tex': article('First'), 'a/dup/main.tex': article('A'), 'b/dup/main.tex': article('B'),
+    'empty/readme.txt': 'no TeX', 'two/a.tex': article('A'), 'two/b.tex': article('B') });
+  try {
+    const refused = (pattern, tree, ...args) => {
+      const result = regress(dir, tree, ...args);
+      assert.equal(result.status, 2, `${args.join(' ')}: ${result.stdout}${result.stderr}`);
+      assert.match(result.stderr, pattern);
+      assert.equal(existsSync(join(dir, 'build')), false, `${args.join(' ')} built something`);
+    };
+    refused(/usage/, clean);
+    refused(/usage/, clean, '--no-such-option', 'one');
+    refused(/usage/, clean, '--out');
+    refused(/--draft/, clean, '--draft', '--accept', 'one');
+    refused(/no such/, clean, 'missing');
+    refused(/main\.tex/, clean, 'empty');
+    refused(/main\.tex/, clean, 'two');
+    refused(/same name.*dup/, clean, 'a/dup', 'b/dup');
+    refused(/make4ht/, clean, '--out', 'my-out', 'one');
+    refused(/make4ht/, clean, '--out', 'my%out', 'one');
+    refused(/make4ht/, clean, '--out', 'my(out)', 'one');
+    // (by default the pages go in the directory it is run from, which npm makes tex8web's)
+    const inside = spawnSync(process.execPath, [join(here, 'regress.mjs'), join(dir, 'one')],
+      { cwd: root, encoding: 'utf8', env: { ...process.env, npm_lifecycle_event: undefined, TEX8WEB_TREE: clean } });
+    assert.equal(inside.status, 2);
+    assert.match(inside.stderr, /inside tex8web.*--prefix/s);
+    // (and a plain node takes paths from its own directory, not from INIT_CWD)
+    const plain = spawnSync(process.execPath, [join(here, 'regress.mjs'), 'two'],
+      { cwd: dir, encoding: 'utf8', env: { ...process.env, npm_lifecycle_event: undefined, INIT_CWD: root } });
+    assert.equal(plain.status, 2);
+    assert.match(plain.stderr, /main\.tex/);
+    refused(/uncommitted/, dirty, '--accept', 'one');
+    refused(/not a git/, dir, '--accept', 'one');
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+// clean.mjs in a temporary directory, as npm runs it, with $TMPDIR in tmp
+function cleaner() {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webclean')));
+  const tmp = join(dir, 'tmp');
+  mkdirSync(tmp);
+  const file = path => { mkdirSync(join(dir, path, '..'), { recursive: true }); writeFileSync(join(dir, path), 'x'); };
+  const clean = (...args) => spawnSync(process.execPath, [join(here, 'clean.mjs'), ...args], { cwd: root, encoding: 'utf8',
+    env: { ...process.env, npm_lifecycle_event: 'clean', INIT_CWD: dir, TMPDIR: tmp } });
+  // (what is under dir except tmp, links listed and not followed)
+  const walk = (base, rel) => readdirSync(base, { withFileTypes: true })
+    .flatMap(entry => [join(rel, entry.name), ...entry.isDirectory() ? walk(join(base, entry.name), join(rel, entry.name)) : []]);
+  const left = () => walk(dir, '').filter(path => !path.startsWith('tmp')).sort();
+  return { dir, tmp, file, clean, left };
+}
+
+test('clean.mjs removes one key\'s builds and dead Chrome profiles, and nothing else', async () => {
+  const { dir, tmp, file, clean, left } = cleaner();
+  for (const path of ['each/a/main.tex', 'each/a/build/k/html/a.html', 'each/a/build/pdf/main.pdf', 'each/a/build/main/html/a.html',
+    'each/a/build/k/html/a.lock', 'each/b/b.tex', 'each/b/build/k/tex4ht/b.log', 'each/c/main.tex', 'each/plain/build/k/x',
+    'each/cm/main.tex', 'each/cm/build/k/CMakeCache.txt', 'fake/tex8web.mk4', 'fake/build/k/html/a.html',
+    'each/ln/main.tex', 'target2/k/html/x.html', 'outside/f.lock', 'outside/x',
+    'each/tex8web-x/tex8web.mk4', 'each/tex8web-x/test.tex', 'each/tex8web-x/build/k/page.html',
+    'each/link/main.tex', 'target/keep', 'here/build/k/accepted/a/a.html', 'here/build/k/html/a/a.html',
+    'here/build/main/html/a.html', 'build/k/html/d.html',
+    'tmp/tex8webchromeDead01/Default', 'tmp/tex8webchromeDead01.log', 'tmp/tex8webchromeLive01/Default',
+    'tmp/tex8webchromeNew001/Default', 'tmp/tex8webchromepagesAbCdEf/file', 'tmp/other/file']) file(path);
+  mkdirSync(join(dir, 'each/link/build'));
+  symlinkSync(join(dir, 'target'), join(dir, 'each/link/build/k'));
+  // (a link to where the build's files are, and a link in a build to where something else's are)
+  symlinkSync(join(dir, 'target2'), join(dir, 'each/ln/build'));
+  symlinkSync(join(dir, 'outside'), join(dir, 'each/b/build/k/tex4ht/out'));
+  const old = new Date(Date.now() - 3600000);
+  for (const name of ['tex8webchromeDead01', 'tex8webchromeDead01.log', 'tex8webchromeLive01', 'tex8webchromepagesAbCdEf']) utimesSync(join(tmp, name), old, old);
+  const live = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 60000)', '--', `--user-data-dir=${join(tmp, 'tex8webchromeLive01')}`], { stdio: 'ignore' });
+  try {
+    const before = left();
+    let result = clean('--dry-run', '--each', 'each', '--in', 'here', 'k');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /would remove .*each\/a\/build\/k\n/);
+    assert.match(result.stdout, /would remove .*tex8webchromeDead01\n/);
+    assert.deepEqual(left(), before);
+
+    // (--each alone keeps the current directory, and --in then drops it)
+    result = clean('--each', 'each', 'k');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /^removed .*each\/b\/build\/k$/m);
+    assert.match(result.stdout, new RegExp(`^removed ${dir}/build/k$`, 'm'));
+    // (a document's build directory that is a link is not followed; what a build holds that regress doesn't make
+    // means it isn't one of its builds; a tex8web checkout has builds of its own)
+    assert.match(result.stdout, /skipping .*each\/ln\/build: a link/);
+    assert.match(result.stdout, /skipping .*each\/cm\/build\/k: .*CMakeCache\.txt/);
+    result = clean('--in', 'here', '--in', 'fake', 'k');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /skipping .*fake\/build\/k: .*tex8web checkout/);
+    // (what stays: a build's accepted pages, the other keys' builds, the PDFs, what is not a document, a tex8web checkout,
+    // a link's target and the live profiles and the other tests' directories)
+    assert.deepEqual(left(), [
+      'build', 'each', 'each/a', 'each/a/build', 'each/a/build/main', 'each/a/build/main/html', 'each/a/build/main/html/a.html',
+      'each/a/build/pdf', 'each/a/build/pdf/main.pdf', 'each/a/main.tex', 'each/b', 'each/b/b.tex', 'each/b/build',
+      'each/c', 'each/c/main.tex', 'each/link', 'each/link/build', 'each/link/main.tex',
+      'each/plain', 'each/plain/build', 'each/plain/build/k', 'each/plain/build/k/x',
+      'each/cm', 'each/cm/build', 'each/cm/build/k', 'each/cm/build/k/CMakeCache.txt', 'each/cm/main.tex',
+      'each/ln', 'each/ln/build', 'each/ln/main.tex', 'fake', 'fake/build', 'fake/build/k', 'fake/build/k/html',
+      'fake/build/k/html/a.html', 'fake/tex8web.mk4', 'outside', 'outside/f.lock', 'outside/x',
+      'target2', 'target2/k', 'target2/k/html', 'target2/k/html/x.html',
+      'each/tex8web-x', 'each/tex8web-x/build', 'each/tex8web-x/build/k', 'each/tex8web-x/build/k/page.html',
+      'each/tex8web-x/test.tex', 'each/tex8web-x/tex8web.mk4',
+      'here', 'here/build', 'here/build/k', 'here/build/k/accepted', 'here/build/k/accepted/a', 'here/build/k/accepted/a/a.html',
+      'here/build/main', 'here/build/main/html', 'here/build/main/html/a.html', 'target', 'target/keep'].sort());
+    assert.deepEqual(readdirSync(tmp).sort(), ['other', 'tex8webchromeLive01', 'tex8webchromeNew001', 'tex8webchromepagesAbCdEf']);
+
+    for (const key of ['main', 'accepted', 'pdf', '../k', '', 'a/b']) {
+      result = clean('--each', 'each', key);
+      assert.equal(result.status, 2, `key "${key}"`);
+    }
+    assert.equal(clean().status, 2);
+  } finally {
+    live.kill();
+    rmSync(dir, { recursive: true });
+  }
+});
+
+test('clean.mjs leaves a build whose lock is held', { skip: !lockf, timeout: 30000 }, async () => {
+  const { dir, file, clean, left } = cleaner();
+  file('busy/build/k/html/a.lock');
+  file('busy/build/k/html/a.html');
+  file('free/build/k/html/a.html');
+  const holder = spawn('lockf', ['-k', join(dir, 'busy/build/k/html/a.lock'), 'sh', '-c', 'echo held; cat >/dev/null'], { stdio: ['pipe', 'pipe', 'ignore'] });
+  try {
+    await new Promise(done => holder.stdout.once('data', done));
+    const result = clean('--in', 'busy', '--in', 'free', 'k');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /skipping .*busy\/build\/k: .*locked/);
+    assert.deepEqual(left().filter(path => path.includes('busy') || path.includes('free')),
+      ['busy', 'busy/build', 'busy/build/k', 'busy/build/k/html', 'busy/build/k/html/a.html', 'busy/build/k/html/a.lock', 'free', 'free/build']);
+    holder.stdin.end();
+    await new Promise(done => holder.on('close', done));
+    assert.match(clean('--in', 'busy', 'k').stdout, /removed .*busy\/build\/k/);
+  } finally {
+    holder.kill();
     rmSync(dir, { recursive: true });
   }
 });

@@ -6,7 +6,8 @@ This is the guide to building pages and configuring them. For how tex8web works 
 2. [Your own config](#your-own-config)
 3. [On the page](#on-the-page)
 4. [Differences from the PDF](#differences-from-the-pdf)
-5. [Known limitations](#known-limitations)
+5. [Checking your documents after an upgrade](#checking-your-documents-after-an-upgrade)
+6. [Known limitations](#known-limitations)
 
 ## Building a page
 
@@ -205,11 +206,41 @@ A page has no pages and no fixed width.
 - The table of contents has no page numbers or dot leaders.
 - An index is in one column. Its numbers count the `\index` commands in order, in place of page numbers.
 
+## Checking your documents after an upgrade
+
+A new tex8web can change how your pages look. To see whether it does, build your documents before the upgrade and accept them, then build them again after it. Run the command from the directory that holds your documents, so that the builds and the accepted pages stay with them, not in tex8web's directory:
+
+```sh
+cd ~/papers
+npm --prefix path/to/tex8web run regress -- --accept thesis talk/talk.tex   # before
+npm --prefix path/to/tex8web run regress -- thesis talk/talk.tex            # after
+```
+
+Each argument is a document's directory, which means its `main.tex` or its only `.tex` file, or a `.tex` file. A document is named by its directory, so two of them can't share a name. The command builds the documents side by side, checks each page for the problems `npm test` looks for, and compares it with the accepted one. It prints one line for each document:
+- `unchanged`: the page is the same;
+- `changed: <files>`: the HTML or its files differ, but every screen looks the same;
+- `looks different: <screens>`: the screens named differ in a browser;
+- `no baseline to compare with`: nothing has been accepted for it yet;
+- `failed to build`, or `problem:` lines under it: see the log in `logs/<name>.html.log`.
+
+The exit code is 0 when nothing looks different, 3 when a page does, 1 when a build or check failed, and 2 for a mistake in the command. A page that looks different comes with the differing screens, old and new, in `compare/<name>`. Look at them before you accept.
+
+The options:
+- **`-c config`** builds every document with your own config.
+- **`--accept`** makes this run's pages the baseline, and records which tex8web commit and when in `accepted/STAMP`. It refuses when tex8web has uncommitted changes, when any document failed, and with `--draft`.
+- **`--baseline dir`** compares with the pages in `dir/<name>` instead, such as another checkout's `html` directory.
+- **`--out dir`** says where everything goes, `build/regress` in the directory you run it from by default: `html/<name>` for the pages, `compare/<name>`, `logs/`, `tex4ht/` and `accepted/<name>`. The command refuses the default when it would be inside tex8web. Keep `-` and the other characters of a Lua pattern out of its path (see [Known limitations](#known-limitations)).
+- **`--draft`** builds in make4ht's draft mode, which is quicker and not to be trusted.
+
+The command doesn't build PDFs. If the config links one with `\WebPDF` and it's missing, the page is built without it. A document is built again only when something it is made from has changed: tex8web, the document's directory, the config, the PDF it links, or the tools.
+
+`npm --prefix path/to/tex8web run clean -- <key>` removes the builds of a finished checkout: `build/<key>` in the current directory, or in each directory given with `--in <dir>`, and `build/<key>` in each directory under `--each <dir>` that holds a `.tex` file. It also removes the Chrome profiles that no process uses. It leaves alone a build in use, an `accepted/` directory, a directory holding anything that `regress` doesn't make, and a tex8web checkout. Don't start a build with the key while it runs. `--dry-run` only lists what it would remove.
+
 ## Known limitations
 
 Each item says what goes wrong and, where there is one, what to do.
 
-- **`-B` with a `-` in its path.** make4ht reads the `-B` directory as a Lua pattern, so a `-` anywhere in its path sends files to the wrong place. Keep `-` out of it, and keep it relative to the document, as `bin/tex8web`'s default `build/tex4ht` is.
+- **`-B` with a `-` in its path.** make4ht reads the `-B` directory as a Lua pattern, so a `-` anywhere in its path sends files to the wrong place. So do `^ $ ( ) % [ ] * + ?`. Keep `-` out of it, and keep it relative to the document, as `bin/tex8web`'s default `build/tex4ht` is.
 - **A space in tex8web's path or in a config's path.** tex4ht can't read such a config, so `bin/tex8web` stops. Move tex8web or the config to a path without spaces.
 - **Macros MathJax can't read** show in red. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
 - **`\color` for the whole document**, in the preamble or in `\AtBeginDocument`, isn't followed. A `\normalcolor` inside a colored group doesn't bring back the text's color.

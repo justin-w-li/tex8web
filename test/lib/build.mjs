@@ -196,13 +196,15 @@ function tools() {
     first('tex', '--version'), first('make4ht', '--version'), installed ?? null]);
 }
 
-// the whole stamp of a build: those, the document's directory, the command
-// and the environment variables the build reads. The files themselves, not
-// the commit, so that an edit not yet committed, or a file git doesn't know,
-// is part of it
-function stamp(doc, args, env) {
-  const vars = Object.entries({ ...process.env, ...env }).filter(([name]) => /^(TEX8WEB_(?!SLOTS)|TEXINPUTS$|TEXMF)/.test(name)).sort();
-  return createHash('sha256').update(JSON.stringify([tools(), hashFiles(doc.dir, ['']), args, vars])).digest('hex');
+// the whole stamp of a build: those, the document's directory and config
+// (which may be elsewhere), the command and the environment variables the
+// build reads, and the PDF the page links: a page built before it was there
+// lacks the link. The files themselves, not the commit, so that an edit not
+// yet committed, or a file git doesn't know, is part of it
+function stamp(doc, args, env, pdf) {
+  // (the slots and regress.mjs's test hook change no page)
+  const vars = Object.entries({ ...process.env, ...env }).filter(([name]) => /^(TEX8WEB_(?!SLOTS|TREE)|TEXINPUTS$|TEXMF)/.test(name)).sort();
+  return createHash('sha256').update(JSON.stringify([tools(), hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf])).digest('hex');
 }
 
 // runs bin/tex8web on a document, with the page in out and tex4ht's files
@@ -212,7 +214,10 @@ function stamp(doc, args, env) {
 // The build is kept with a stamp of what it was made from (out.stamp) and
 // its log (out.log), and a later build from the same stamp is not run: it
 // resolves to { code: 0, log, reused: true }. A build that failed leaves no
-// stamp. One at a time for each out, so that tools running at once share it
+// stamp. One at a time for each out, so that tools running at once share it.
+// A draft document (doc.draft) is built in make4ht's draft mode, which
+// needs tex4ht's files from the build before in aux. A document with
+// noLatexmk has its PDF built elsewhere: a missing one isn't built here
 export async function build(doc, out, aux, env = {}) {
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
@@ -229,20 +234,26 @@ async function buildHere(doc, out, aux, env) {
   const own = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];
   const pdf = own ?? doc.pdf;
   const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
-    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], doc.tex];
-  const wanted = stamp(doc, args, env);
+    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], ...doc.draft ? ['-m', 'draft'] : [], doc.tex];
+  const stampNow = () => {
+    const made = pdf && statSync(join(doc.dir, pdf), { throwIfNoEntry: false });
+    return stamp(doc, args, env, made ? [made.size, made.mtimeMs] : null);
+  };
+  let wanted = stampNow();
   const kept = { stamp: `${out}.stamp`, log: `${out}.log` };
   if (existsSync(kept.stamp) && readFileSync(kept.stamp, 'utf8') === wanted && existsSync(out) && existsSync(aux)) {
     console.log(`reusing ${doc.name}'s ${basename(out)} build: nothing it is made from has changed`);
     return { code: 0, log: readFileSync(kept.log, 'utf8'), reused: true };
   }
   rmSync(kept.stamp, { force: true });
-  if (pdf && !existsSync(join(doc.dir, pdf))) {
+  if (pdf && !doc.noLatexmk && !existsSync(join(doc.dir, pdf))) {
     const { code, log } = await latexmk(doc, dirname(pdf));
     if (code !== 0) return { code, log: `latexmk exited with ${code}\n${log}` };
+    // (the PDF is there now, as the next build will find it)
+    wanted = stampNow();
   }
   rmSync(out, { recursive: true, force: true });
-  rmSync(aux, { recursive: true, force: true });
+  if (!doc.draft) rmSync(aux, { recursive: true, force: true });
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
   const result = await run(join(root, 'bin/tex8web'), args,

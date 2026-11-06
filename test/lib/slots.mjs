@@ -4,9 +4,9 @@
 // the machine to itself leaves it swapping. A slot is a lock file in
 // $TMPDIR/tex8web-slots, taken with lockf; rebuild.sh takes the same ones.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { closeSync, mkdirSync, openSync, statSync } from 'node:fs';
 import { tmpdir, totalmem } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 // TEX8WEB_SLOTS, else one slot for each 4 GB of memory (a build and its
 // Chrome or MathJax take about that), and at least one
@@ -60,8 +60,24 @@ export async function inSlots(attempt) {
 // Holds an exclusive lock on file until the release function it resolves to
 // is called, or this process ends, however it ends: lockf runs a shell that
 // stops when its stdin closes. Resolves to null if wait is false and the
-// lock is held by another
-function hold(file, wait) {
+// lock is held by another. Someone who holds the lock may delete the file
+// (tools/clean.mjs does), and a lock waited for is then on a deleted file,
+// with another process free to lock a new one at the path. So the path's
+// file is looked at before and after, and a lock on one that has changed or
+// gone is given up and taken again, in a directory made again if need be
+async function hold(file, wait) {
+  const identity = () => { const found = statSync(file, { throwIfNoEntry: false }); return found && `${found.dev}:${found.ino}`; };
+  for (;;) {
+    mkdirSync(dirname(file), { recursive: true });
+    closeSync(openSync(file, 'a'));
+    const before = identity();
+    const release = await holdFile(file, wait);
+    if (!release || identity() === before) return release;
+    release();
+  }
+}
+
+function holdFile(file, wait) {
   return new Promise((done, fail) => {
     const child = spawn('lockf', ['-k', ...wait ? [] : ['-t', '0'], file, 'sh', '-c', 'echo held; cat >/dev/null'],
       { stdio: ['pipe', 'pipe', 'ignore'] });
@@ -96,3 +112,6 @@ export async function takeSlot() {
 
 // waits for the lock on file; resolves to the function that gives it back
 export const lock = async file => noLockf() ? () => {} : hold(file, true);
+
+// the same without waiting: null if another holds the lock
+export const tryLock = async file => noLockf() ? () => {} : hold(file, false);
