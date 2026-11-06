@@ -260,7 +260,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **A size after `angle`,** as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`**, aren't followed. The picture is at its natural size. Put the size before `angle`, or leave `scale` out.
 - **`trim` and `viewport`.** The page shows the whole picture at the width of the part that is kept.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
-- **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
+- **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class, unless titlesec formats them.
 - **One page per document.** tex4ht can split a document into a page for each section. It does so with a number such as `2` among `\Preamble`'s options, with `splitat=`, or with `\CutAt` in a config. tex8web stops with a message. Remove the option.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.
 - **imakeidx's `program`** isn't followed: makeindex always runs. Its `splitindex` option isn't supported.

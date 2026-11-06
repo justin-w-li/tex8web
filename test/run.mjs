@@ -499,6 +499,8 @@ const preloads = {
   // (the table of contents' sans-serif, bold and italic entries)
   'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
     'lmsans10-regular'],
+  // (a chapter's \titleformat, in sans-serif's regular face)
+  'test-titlechapter': ['lmroman10-regular', 'lmroman10-bold', 'lmsans10-regular'],
   // (in Times, Helvetica and Courier: TeX Gyre's faces, for the controls
   // too, as for the text in sans-serif; and MathJax's Termes, as the math
   // is in Times)

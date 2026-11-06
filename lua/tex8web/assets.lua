@@ -213,10 +213,12 @@ function M.faces(document, css, roles)
       italic = (custom(css, prefix .. "-style") or "normal") == "italic",
       family = family:find("sans") and "sans" or family:find("mono") and "mono" or nil}
   end
-  for _, level in ipairs({"section", "subsection", "subsubsection", "paragraph", "subparagraph"}) do
+  for _, level in ipairs({"part", "chapter", "section", "subsection", "subsubsection", "paragraph",
+      "subparagraph"}) do
     local font = font_of(level, "bold")
     classes[level .. "Head"], classes["like" .. level .. "Head"] = font, font
   end
+  classes.appendixHead = classes.chapterHead
   -- (entries are bold without tocloft only for parts and chapters, as in
   -- css/tex8web.css)
   for _, level in ipairs({"part", "chapter", "section", "subsection", "subsubsection", "paragraph", "subparagraph"}) do

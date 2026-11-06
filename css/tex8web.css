@@ -124,12 +124,18 @@ div.thanks { font-style: normal; }
 section.abstract { margin-inline: 0; }
 .abstract p { margin-inline: var(--tex8web-abstract-left, 0) var(--tex8web-abstract-right, 0); }
 /* (a part's and a chapter's label, "Chapter 1", above the title in a size of
-   its own; an article's parts aren't measured, and keep the browser's
-   size) */
-.partHead, .likepartHead { font-size: var(--tex8web-part-size, 2em); }
+   its own, unless titlesec formats it; an article's parts aren't measured,
+   and keep the browser's size) */
+.partHead, .likepartHead { font-size: var(--tex8web-part-size, 2em);
+    font-family: var(--tex8web-part-family, inherit);
+    font-weight: var(--tex8web-part-weight, bold);
+    font-style: var(--tex8web-part-style, normal); }
 .partHead .titlemark { font-size: var(--tex8web-part-label-size, 1em); }
-.chapterHead, .likechapterHead, .appendixHead { font-size: var(--tex8web-chapter-size); }
-:is(.chapterHead, .appendixHead) .titlemark { font-size: var(--tex8web-chapter-label-size); }
+.chapterHead, .likechapterHead, .appendixHead { font-size: var(--tex8web-chapter-size);
+    font-family: var(--tex8web-chapter-family, inherit);
+    font-weight: var(--tex8web-chapter-weight, bold);
+    font-style: var(--tex8web-chapter-style, normal); }
+:is(.chapterHead, .appendixHead) .titlemark { font-size: var(--tex8web-chapter-label-size, 1em); }
 .sectionHead, .likesectionHead { font-size: var(--tex8web-section-size);
     font-family: var(--tex8web-section-family, inherit);
     font-weight: var(--tex8web-section-weight, bold);
@@ -143,9 +149,15 @@ section.abstract { margin-inline: 0; }
     font-weight: var(--tex8web-subsubsection-weight, bold);
     font-style: var(--tex8web-subsubsection-style, normal); }
 /* (titlesec's, with the space above and below a heading, its own or the
-   class's (tex8web-page.tex), otherwise the browser's (h3, h4, h5); :where,
-   so that a class's own wins, such as amsart's centered sections in
-   html4.4ht) */
+   class's (tex8web-page.tex), otherwise the browser's (h1 to h5); :where,
+   so that a class's own wins, such as amsart's centered sections and
+   report's centered parts in html4.4ht) */
+:where(.partHead, .likepartHead) { font-variant: var(--tex8web-part-variant, normal);
+    text-align: var(--tex8web-part-align, left); }
+:where(.chapterHead, .likechapterHead, .appendixHead) {
+    font-variant: var(--tex8web-chapter-variant, normal);
+    text-align: var(--tex8web-chapter-align, left);
+    margin-block: var(--tex8web-chapter-before, 0.83em) var(--tex8web-chapter-after, 0.83em); }
 :where(.sectionHead, .likesectionHead) { font-variant: var(--tex8web-section-variant, normal);
     text-align: var(--tex8web-section-align, left);
     margin-block: var(--tex8web-section-before, 1em) var(--tex8web-section-after, 1em); }
@@ -360,6 +372,8 @@ p:has(.tex8web-hfill) { display: flow-root; }
    titlesec puts it with \vspace, which ends in \vskip\z@skip (source2e),
    so framed's \addvspace adds to it */
 .framedenv { margin-block: var(--tex8web-framed-sep); }
+:is(.chapterHead, .likechapterHead, .appendixHead) + .framedenv {
+    margin-top: calc(var(--tex8web-chapter-after-text, 0em) + var(--tex8web-framed-sep)); }
 :is(.sectionHead, .likesectionHead) + .framedenv {
     margin-top: calc(var(--tex8web-section-after-text, 0em) + var(--tex8web-framed-sep)); }
 :is(.subsectionHead, .likesubsectionHead) + .framedenv {

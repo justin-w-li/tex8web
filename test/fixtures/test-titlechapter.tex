@@ -1,0 +1,15 @@
+% A test for tex8web's chapters and parts under titlesec: a chapter's
+% \titleformat, in a font, size and alignment of its own, with its
+% \titlespacing, and a part in report's format.
+\documentclass{report}
+\usepackage{titlesec}
+\titleformat{\chapter}[display]{\normalfont\sffamily\huge\filcenter}
+    {\chaptertitlename\ \thechapter}{12pt}{}
+\titlespacing*{\chapter}{0pt}{20pt}{30pt}
+\begin{document}
+\part{Beginnings}
+\chapter{First}
+Some text.
+\section{A section}
+More text.
+\end{document}

@@ -439,14 +439,27 @@
 \web@headsize{subparagraph}{\normalsize}
 % (and in a class with chapters, a part's or chapter's title in report's and
 % book's \Huge, its label in \huge, as their \@part and \@makechapterhead
-% set them; tex4ht replaces these, report.4ht)
+% set them; tex4ht replaces these, report.4ht. Under a \titleformat, the
+% label is in the format's font. titlesec's spacing of a chapter holds only
+% under its \titleformat, and a part's is the fill of a page of its own,
+% titlesec.sty)
+\newcommand\web@bighead[1]{%
+    \begingroup
+        \ifcsname web@titlefont@#1\endcsname
+            \web@headsize{#1}{\Huge}%
+        \else
+            \expandafter\let\csname ttls@#1\endcsname\@undefined
+            \web@headsize{#1}{\Huge}%
+            \huge\edef\web@a{\f@size pt}\Huge
+            \web@Css{:root { --tex8web-#1-label-size: \web@em\web@a; }}%
+        \fi
+    \endgroup}
 \ifdefined\c@chapter
-    \web@headsize{part}{\Huge}
-    \web@headsize{chapter}{\Huge}
-    \begingroup\huge\edef\web@a{\f@size pt}\Huge
-        \web@Css{:root { --tex8web-part-label-size: \web@em\web@a;
-            --tex8web-chapter-label-size: \web@em\web@a; }}%
+    \begingroup
+        \expandafter\let\csname ttls@part\endcsname\@undefined
+        \web@bighead{part}
     \endgroup
+    \web@bighead{chapter}
 \fi
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
