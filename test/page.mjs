@@ -504,7 +504,8 @@ async function keying(chrome, file) {
 
 // the page typeset by MathJax in the browser (built with
 // TEX8WEB_NO_PRERENDER), which comes after the page's script has run, as it
-// does on a slow network: a display that scrolls fades at its edge.
+// does on a slow network: the bar's copy of a heading with math is typeset
+// while the contents are closed, and a display that scrolls fades at its edge.
 // MathJax is loaded by the check, once the page's script has run. The build
 // is made here, as only this check wants it
 async function lazily(chrome, [doc]) {
@@ -528,6 +529,18 @@ async function lazily(chrome, [doc]) {
       })()`);
       const typeset = await until(() => page.evaluate(`!!window.MathJax?.startup?.promise`), Boolean, 30000);
       if (!typeset) return ["MathJax didn't load in 30s (offline?)"];
+      // (ui/lazy leaves the closed drawer's math a placeholder, mjx-lazy,
+      // which the bar copies)
+      await page.evaluate(`MathJax.startup.promise.then(() => {
+        const heading = document.querySelector('.subsectionHead');
+        scrollTo(0, scrollY + heading.getBoundingClientRect().top - (innerHeight / 4 - 10));
+      })`);
+      const barMath = await until(() => page.evaluate(`(() => {
+        const where = document.querySelector('.tex8web-where');
+        return !where.hidden && !!where.querySelector('mjx-container mjx-math')
+          && !document.getElementById('tex8web-toc').matches(':popover-open');
+      })()`), Boolean, 5000);
+      if (!barMath) problems.push("the bar's copy of a heading with math: not typeset before the contents open");
       await page.evaluate(`MathJax.startup.promise.then(() => MathJax.startup.document.lazyTypesetAll?.())
         .then(() => MathJax.startup.document.lazyPromise)`);
       const wide = `[...document.querySelectorAll('mjx-container[display]')]
