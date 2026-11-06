@@ -622,6 +622,10 @@ const jobs = largestFirst(docs).map(doc => async () => {
   const result = await build(doc, out, aux, { TEX8WEB_MATHML: '1' });
   mkdirSync(testDir(doc), { recursive: true });
   writeFileSync(join(testDir(doc), 'make4ht.log'), result.log);
+  // (tex8web refuses a document built with tex4ht's split option)
+  if (doc.name === 'test-split') {
+    return report(doc.name, result.code !== 0 && /one page per document/.test(result.log) ? [] : ['the split option was not refused']);
+  }
   report(doc.name, check(doc, result, out, aux));
 });
 

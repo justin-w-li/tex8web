@@ -213,7 +213,8 @@ const tocFonts = {
   },
 };
 
-const docs = select(only);
+// (test-split is refused; npm test checks that)
+const docs = select(only).filter(doc => doc.name !== 'test-split');
 // each document built twice, prerendered (html) and for the browser
 // (fallback), a few builds at a time, the largest first; a document is
 // compared as soon as both its builds are done

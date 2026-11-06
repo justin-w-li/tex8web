@@ -230,6 +230,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **`trim` and `viewport`.** The page shows the whole picture at the width of the part that is kept.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class.
+- **One page per document.** tex4ht's split options, a number such as `2` among `\Preamble`'s options, or `splitat=`, write a page for each section. tex8web stops with a message. Remove the option.
 - **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.
 - **imakeidx's `program`** isn't followed: makeindex always runs. Its `splitindex` option isn't supported.
 - **The page's controls are in English**, whatever the document's language. So is the speech for math. It reads `|` as "given", as in `P(A | B)`, so a document about divisibility hears `a | b` as "a given b".

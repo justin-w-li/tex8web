@@ -260,16 +260,14 @@ for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: ur
 const page = adaptor.doctype(document) + '\n' + adaptor.outerHTML(root)
   .replace(/ data-latex(-item)?="[^"]*"/g, '');
 // the fonts, each with only the glyphs of the characters in the document's
-// pages and styles: a third as much to fetch. Each from its original, as
-// the pages of a document tex4ht splits share them: the last page typeset
-// sees the others done (make4ht copies a file each time a page lists it).
-// With the characters a browser may draw itself: a hyphen where it breaks
-// a word, the filter's ellipsis, the capitals of small caps (Latin Modern
-// has none of its own), an accent composed or not; and Latin-1, for what
-// a reader types into the filter. Before the page is written, which
-// tex8web.mk4 takes for typeset only if this finishes
+// page and styles: a third as much to fetch. With the characters a browser
+// may draw itself: a hyphen where it breaks a word, the filter's ellipsis,
+// the capitals of small caps (Latin Modern has none of its own), an accent
+// composed or not; and Latin-1, for what a reader types into the filter.
+// Before the page is written, which tex8web.mk4 takes for typeset only if
+// this finishes
 const dir = dirname(file);
-const read = pattern => readdirSync(dir).filter(name => pattern.test(name) && name !== basename(file))
+const read = pattern => readdirSync(dir).filter(name => pattern.test(name))
   .map(name => readFileSync(join(dir, name), 'utf8')).join('');
 // (the characters of entities and of CSS's escapes)
 const character = (hex, base = 16) => {
@@ -278,7 +276,7 @@ const character = (hex, base = 16) => {
 };
 let text = '\u2010\u2026';
 for (let code = 0x20; code <= 0xff; code++) text += String.fromCharCode(code);
-text += (page + read(/\.html$/)).replace(/&#x([\da-f]+);/gi, (_, hex) => character(hex))
+text += page.replace(/&#x([\da-f]+);/gi, (_, hex) => character(hex))
   .replace(/&#(\d+);/g, (_, n) => character(n, 10));
 text += read(/\.css$/).replace(/\\([\da-f]{1,6}) ?/gi, (_, hex) => character(hex));
 text += text.toUpperCase() + text.toLowerCase();

@@ -419,13 +419,11 @@ function M.wide_screens(css)
 end
 
 -- css/tex8web.css, where tex8web-core.tex marks its place in the document's
--- stylesheet (a page that tex4ht splits off shares the stylesheet, which
--- then has it already)
+-- stylesheet
 function M.stylesheet(context)
   local path = context.dir .. "/" .. context.input .. ".css"
   local css = assert(files.read(path))
-  local i, j = css:find("/* tex8web.css */", 1, true)
-  if not i then return end
+  local i, j = assert(css:find("/* tex8web.css */", 1, true))
   css = css:sub(1, i - 1) .. assert(files.read(context.root .. "/css/tex8web.css"))
     .. font_css(context.roles) .. css:sub(j + 1)
   local f = assert(io.open(path, "w"))
