@@ -124,9 +124,11 @@ export async function launch() {
   const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
   const browser = await connect(version.webSocketDebuggerUrl);
 
-  async function attach(targetId, url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before }) {
+  async function attach(targetId, url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before, touch = false }) {
     const page = await connect(`ws://127.0.0.1:${port}/devtools/page/${targetId}`);
     await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+    // (a touch screen, without a mouse: hover: none, pointer: coarse)
+    if (touch) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true });
     await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
     if (!javascript) await page.send('Emulation.setScriptExecutionDisabled', { value: true });
     await page.send('Page.enable');
@@ -167,7 +169,6 @@ export async function launch() {
       }
       throw new Error(`${url}: the screen at ${y}px keeps changing`);
     };
-    let touch = false;
     return {
       evaluate,
       frame,

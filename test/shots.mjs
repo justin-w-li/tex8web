@@ -10,6 +10,9 @@
 //     compare)
 //   --clip <selector>, before either: only the band of the page holding the
 //     first element the selector matches, in one shot
+//   --then <expression>, before either: evaluated on each page (a promise
+//     awaited, then the animations it starts) before it's shot
+//   --touch, before either: on a touch screen without a mouse
 //   node test/shots.mjs --eval <expression> <page.html | html directory>
 //     prints, for each page, width and scheme, the expression's value on the
 //     page, as JSON (a promise is awaited)
@@ -26,9 +29,11 @@ const args = process.argv.slice(2);
 const option = name => args.includes(name) ? args.splice(args.indexOf(name), 2)[1] : undefined;
 const clip = option('--clip');
 const expression = option('--eval');
+const then = option('--then');
+const touch = args.includes('--touch') && args.splice(args.indexOf('--touch'), 1).length > 0;
 const [out, ...builds] = expression === undefined ? args : [undefined, ...args];
 if ((!out && expression === undefined) || !builds.length || builds.length > (expression === undefined ? 2 : 1)) {
-  console.error('usage: node test/shots.mjs [--clip <selector>] <out> <page.html | html directory> [<new html directory>]\n'
+  console.error('usage: node test/shots.mjs [--clip <selector>] [--then <expression>] [--touch] <out> <page.html | html directory> [<new html directory>]\n'
     + '       node test/shots.mjs --eval <expression> <page.html | html directory>');
   process.exit(2);
 }
@@ -73,7 +78,12 @@ try {
           // silent for long)
           const at = `${label}: ${builds.length === 1 ? '' : file === page ? 'old, ' : 'new, '}`;
           console.error(`${at}loading`);
-          await chrome.withPage(url, { width, height, colorScheme }, async tab => {
+          await chrome.withPage(url, { width, height, colorScheme, touch }, async tab => {
+            if (then !== undefined) {
+              await tab.evaluate(then);
+              await tab.evaluate('Promise.all(document.getAnimations().map(a => a.finished.catch(() => {})))');
+              await tab.frame();
+            }
             if (expression !== undefined) console.log(`${label}: ${JSON.stringify(await tab.evaluate(expression))}`);
             else shots.push(clip ? await band(tab, url) : await tab.screens((i, n) => console.error(`${at}screen ${i} of ${n}`)));
           });

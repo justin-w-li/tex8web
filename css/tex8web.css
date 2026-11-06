@@ -657,6 +657,24 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     .tex8web-toc a:not([aria-current]):hover { border-radius: 0.2em;
         background-color: var(--tex8web-hover); }
 }
+/* the chevron after a section with subsections (tex8web-page.js), which
+   shows or hides them: at the end of the entry's first line, shown under
+   the mouse, faint while the section is open, and faint always on a touch
+   screen, where a finger finds it by the drawer's edge */
+.tex8web-toc-more { position: relative; flex: none; align-self: flex-start; margin-inline-start: auto;
+    padding: 0 0 0 0.75em; border: 0; font: inherit; line-height: inherit; color: inherit;
+    background: none; cursor: pointer; opacity: 0; }
+.tex8web-toc-more::before { content: ""; display: inline-block; width: 0.4em; height: 0.4em;
+    margin-inline-end: 0.15em; border: solid currentColor; border-width: 0 1.5px 1.5px 0;
+    rotate: -45deg; translate: 0 -0.15em; }
+.tex8web-toc-more[aria-expanded="true"]::before { rotate: 45deg; translate: 0 -0.25em; }
+.tex8web-toc-more[aria-expanded="true"], .tableofcontents > span:hover > .tex8web-toc-more { opacity: 0.3; }
+.tex8web-toc-more:focus-visible, .tableofcontents > span > .tex8web-toc-more:hover { opacity: 0.8; }
+@media (hover: none) {
+    .tex8web-toc-more { opacity: 0.3; }
+    /* (out to the drawer's edge, and between the lines, for a finger) */
+    .tex8web-toc-more::after { content: ""; position: absolute; inset: -0.6em -1.25rem -0.6em 0; }
+}
 /* the filter (tex8web-page.js): a field, and what matches in place of the
    entries, the one chosen (which Enter follows) marked while the field has
    focus */

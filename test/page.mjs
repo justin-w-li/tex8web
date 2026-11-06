@@ -2,11 +2,11 @@
 // driven in headless Chrome on the pages of the fixtures that have the
 // feature: the picture viewer by mouse, by finger and by keyboard, the narrow
 // screen's bar, the fade of a display that scrolls, the theme button, the
-// contents (its filter, and the subsections shown), the page when one
-// feature of the script fails, and the transition from one page of a site to
-// another. Each check fails if its fixture lacks what it drives, and waits
-// for a state the page reaches rather than for a time. The checks run once
-// the builds are done.
+// contents (its filter, the subsections shown, and its chevrons), the page
+// when one feature of the script fails, and the transition from one page of
+// a site to another. Each check fails if its fixture lacks what it drives,
+// and waits for a state the page reaches rather than for a time. The checks
+// run once the builds are done.
 //   node test/page.mjs [check names...]
 import { cpSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -574,6 +574,77 @@ async function opening(chrome, file) {
   });
 }
 
+// the contents' chevrons, by mouse: one on each section with subsections,
+// and the one being read open; another section opened slides open and stays
+// open as the page scrolls to it and on to a third, which opens at once,
+// without a slide, as the first closes; and closed again, as is the section being
+// read, which then stays closed while it's read
+async function browsing(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
+    const problems = [];
+    const state = `[...document.querySelectorAll('#tex8web-toc .tex8web-toc-more')].map(button => {
+      let shown = 0;
+      for (let el = button.parentElement.nextElementSibling; el && !el.querySelector('.tex8web-toc-more')
+        && !/^(likesection|section)Toc$/.test(el.className); el = el.nextElementSibling) {
+        if (el.checkVisibility()) shown++;
+      }
+      return button.getAttribute('aria-expanded') === 'true' ? shown : -shown;
+    })`;
+    const sections = await page.evaluate(`[...document.querySelectorAll('#tex8web-toc .tableofcontents > span')]
+      .filter((el, i, all) => /^sectionToc$/.test(el.className) && /subsectionToc/.test(all[i + 1]?.className)).length`);
+    let now = await page.evaluate(state);
+    if (sections < 3 || now.length !== sections) return [`${now.length} chevrons for ${sections} sections with subsections (3 at least wanted)`];
+    if (!(now[0] > 0 && now.slice(1).every(n => n === 0))) problems.push(`at the top, the sections show ${now} subsections`);
+    const click = async i => {
+      const [x, y] = await page.evaluate(`(() => {
+        const box = document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[${i}].getBoundingClientRect();
+        return [box.left + box.width / 2, box.top + box.height / 2];
+      })()`);
+      await page.mouse('pressed', x, y);
+      await page.mouse('released', x, y);
+    };
+    await click(1);
+    if (!await page.evaluate('document.getAnimations().length')) problems.push('a section opened without a slide');
+    await finished(page);
+    now = await page.evaluate(state);
+    if (!(now[1] > 0)) problems.push(`the second section opened shows ${now[1]} subsections`);
+    const to = i => page.evaluate(`(() => {
+      const a = document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[${i}].parentElement.querySelector('a');
+      scrollTo(0, scrollY + document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top);
+    })()`);
+    await to(1);
+    if (!await until(() => page.evaluate(`(() => {
+      let el = document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[1].parentElement;
+      do if (el.querySelector('[aria-current]')) return true;
+      while ((el = el.nextElementSibling) && !el.querySelector('.tex8web-toc-more'));
+      return false;
+    })()`))) problems.push('scrolled to the second section, none of its entries marked');
+    await to(2);
+    now = await until(() => page.evaluate(state), n => n[2] > 0);
+    if (!now) problems.push('scrolled to the third section, its subsections not shown');
+    if (await page.evaluate('document.getAnimations().length')) problems.push('the page scrolled, a slide in the contents');
+    now = await page.evaluate(state);
+    if (!(now[0] === 0 && now[1] > 0)) problems.push(`scrolled to the third section, the first two show ${now.slice(0, 2)} subsections`);
+    await click(1);
+    await click(2);
+    await finished(page);
+    const read = await page.evaluate(`(() => {
+      let el = document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[2].parentElement;
+      while (!el.matches('span')) el = el.nextElementSibling;
+      do el = el.nextElementSibling; while (!el.matches('span'));
+      const a = el.querySelector('a');
+      scrollTo(0, scrollY + document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top);
+      return a.hash;
+    })()`);
+    if (!await until(() => page.evaluate(`document.querySelector('#tex8web-toc [aria-current]')?.hash`), hash => hash === read)) {
+      problems.push('scrolled to the third section\'s first subsection, its entry not marked');
+    }
+    now = await page.evaluate(state);
+    if (!(now[1] === 0 && now[2] === 0)) problems.push(`closed, the second and third sections show ${now.slice(1, 3)} subsections`);
+    return problems;
+  });
+}
+
 // one feature of the page's script failing (here, the fade at an edge,
 // whose ResizeObserver throws) leaves the others working: the contents
 // showing the subsections being read, and the filter set up
@@ -657,9 +728,9 @@ async function navigating(chrome, [example, index]) {
 }
 
 // each check, with the fixtures it runs on, which must have its feature
-// (the viewer: an SVG and a raster picture; the bar, fade and one filter:
-// test.tex's long page, with its display that scrolls, its previews and
-// its term; the filter's other: a titled box; transitions: an example and
+// (the viewer: an SVG and a raster picture; the bar, fade, chevrons and
+// one filter: test.tex's long page, with its display that scrolls, its
+// previews, its term and its sections' subsections; the filter's other: a titled box; transitions: an example and
 // the page that links it; the contents, the failing feature and the fade
 // of the browser's math: a page with subsections before its first section)
 const each = check => async (chrome, docs) => {
@@ -677,6 +748,7 @@ const checks = {
   keyboard: [['examples/basic'], each(keying)],
   lazy: [['test-tocsub'], lazily],
   contents: [['test-tocsub'], each(opening)],
+  browsing: [['test'], each(browsing)],
   isolated: [['test-tocsub'], each(isolating)],
   transitions: [['examples/basic', 'test-generic'], navigating],
 };

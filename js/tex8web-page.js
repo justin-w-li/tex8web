@@ -257,7 +257,9 @@
   // heading above the top quarter of the screen) is marked, and its
   // section's subsections shown, and on a narrow screen it's in the bar
   // (css/tex8web.css), once the first heading is read; as a drawer, it
-  // closes on following a link
+  // closes on following a link. A chevron after each section with
+  // subsections shows or hides them, sliding; those the reader opens stay
+  // open as the page scrolls, which opens and closes the others at once
   function contents() {
     const toc = document.getElementById('tex8web-toc');
     if (!toc) return;
@@ -267,7 +269,54 @@
     if (!entries.length) return;
     const where = document.querySelector('.tex8web-where');
     const isSection = el => el.matches('.sectionToc, .likesectionToc, .chapterToc, .likechapterToc, .appendixToc, .partToc, .likepartToc');
-    let current;
+    const motion = matchMedia('(prefers-reduced-motion: no-preference)');
+    const chosen = new Set();
+    // (tex4ht's entries are siblings, between <br />s: a section's, then
+    // its subsections')
+    const under = section => {
+      const rows = [];
+      for (let el = section.nextElementSibling; el && !isSection(el); el = el.nextElementSibling) {
+        if (el.matches('span')) rows.push(el);
+      }
+      return rows;
+    };
+    const show = (section, open, slide) => {
+      const rows = under(section);
+      section.querySelector('.tex8web-toc-more')?.setAttribute('aria-expanded', open);
+      // (the first entries, subsections before any section, are shown with
+      // the class on themselves)
+      if (!isSection(section)) section.classList.toggle('tex8web-open', open);
+      for (const row of rows) {
+        row.getAnimations().forEach(animation => animation.cancel());
+        if (open) row.classList.add('tex8web-open');
+      }
+      if (!slide || !motion.matches) {
+        if (!open) rows.forEach(row => row.classList.remove('tex8web-open'));
+        return;
+      }
+      // (clipped to the row as it grows, with clip-path, which animates)
+      for (const row of rows) {
+        const top = getComputedStyle(row).paddingTop;
+        const shut = { height: '0px', paddingTop: '0px', clipPath: 'inset(0)' };
+        const full = { height: `${row.getBoundingClientRect().height - parseFloat(top)}px`, paddingTop: top, clipPath: 'inset(0)' };
+        const animation = row.animate(open ? [shut, full] : [full, shut], { duration: faded() / 2, easing: 'ease', fill: 'forwards' });
+        animation.onfinish = () => {
+          if (!open) row.classList.remove('tex8web-open');
+          animation.cancel();
+        };
+      }
+    };
+    for (const section of toc.querySelectorAll('.tableofcontents > span')) {
+      if (!isSection(section) || !under(section).length) continue;
+      const link = section.querySelector('a');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'tex8web-toc-more';
+      button.setAttribute('aria-expanded', 'false');
+      button.setAttribute('aria-label', `Subsections of ${link ? entryText(link) : section.textContent.trim()}`);
+      section.append(button);
+    }
+    let current, opened;
     const update = () => {
       const line = innerHeight / 4;
       let reading = entries[0];
@@ -278,17 +327,16 @@
       if (where) where.hidden = reading.heading.getBoundingClientRect().top > line;
       if (reading === current) return;
       current?.a.removeAttribute('aria-current');
-      toc.querySelectorAll('.tex8web-open').forEach(el => el.classList.remove('tex8web-open'));
       current = reading;
       current.a.setAttribute('aria-current', 'location');
       if (where) where.replaceChildren(entryShown(current.a));
-      // (tex4ht's entries are siblings: a section's, then its subsections';
-      // subsections before the first section have none, so from the first)
+      // (subsections before the first section have none, so from the first)
       let section = current.a.closest('.tableofcontents > span');
       while (section?.previousElementSibling && !isSection(section)) section = section.previousElementSibling;
-      for (let el = section; el; el = el.nextElementSibling) {
-        if (el !== section && isSection(el)) break;
-        el.classList.add('tex8web-open');
+      if (section !== opened) {
+        if (opened && !chosen.has(opened)) show(opened, false);
+        show(section, true);
+        opened = section;
       }
       // (not while the filter's results stand in for the entries)
       const a = current.a.getBoundingClientRect(), box = toc.getBoundingClientRect();
@@ -308,6 +356,13 @@
         .observe(toc.querySelector('.tableofcontents'), { childList: true, subtree: true });
     }
     toc.addEventListener('click', event => {
+      const button = event.target.closest('.tex8web-toc-more');
+      if (button) {
+        const section = button.parentElement, opening = button.getAttribute('aria-expanded') !== 'true';
+        if (opening) chosen.add(section);
+        else chosen.delete(section);
+        show(section, opening, true);
+      }
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });
   }
