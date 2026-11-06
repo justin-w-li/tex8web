@@ -346,6 +346,8 @@ if (typeof document !== 'undefined') {
   }
   window.MathJax = tex8web(data.mathjax, data.tex);
   // (ui/lazy's, which prerender.mjs leaves out: the contents' math at once,
-  // as the phone's bar copies the entry being read)
-  window.MathJax.options.lazyAlwaysTypeset = '.tex8web-toc';
+  // as the phone's bar copies the entry being read. Only on a page with
+  // contents, which page.lua marks: ui/lazy 4.1.3 fails on a selector that
+  // matches nothing)
+  if ('contents' in document.currentScript.dataset) window.MathJax.options.lazyAlwaysTypeset = '.tex8web-toc';
 }

@@ -264,7 +264,8 @@ end
 -- table of contents and its filter, previews, the picture viewer, the fade
 -- at an edge);
 -- and for MathJax in the browser, MathJax and tex8web.js, which configures
--- it from tex8web-config (marked for prerender.mjs, which removes them)
+-- it from tex8web-config and whether the page has contents (marked for
+-- prerender.mjs, which removes them)
 function M.scripts(document, context)
   local head = document:query_selector("head")[1]
   local function script(attributes)
@@ -277,7 +278,8 @@ function M.scripts(document, context)
   end
   script({src = "tex8web-head.js"})
   script({src = "tex8web-page.js", defer = "defer"})
-  script({src = "tex8web.js", ["data-tex8web-browser"] = "", ["data-mathjax"] = context.mathjax})
+  script({src = "tex8web.js", ["data-tex8web-browser"] = "", ["data-mathjax"] = context.mathjax,
+    ["data-contents"] = document:query_selector("#tex8web-toc")[1] and "" or nil})
   script({async = "async", id = "MathJax-script", ["data-tex8web-browser"] = "",
     src = "https://cdn.jsdelivr.net/npm/mathjax@" .. context.mathjax .. "/tex-chtml.js"})
 end
