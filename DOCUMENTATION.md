@@ -213,6 +213,7 @@ Each item says what goes wrong and, where there is one, what to do.
 - **The QED box** of an amsthm proof sits at the right, in a display's tag after `\qedhere` as in the PDF. Not followed: with a `\tag` of the display's own the proof ends with its box below the display, as it does after `$$ $$` and `displaymath`; in `multline` the box goes under the number, not at the end of the last line. A `\qedsymbol` that isn't math or text MathJax can read, such as `\ensuremath{...}`, shows in red in a display.
 - **enumitem.** `align=left`, `wide` and `itemindent` aren't followed: labels are right-aligned and hang into the margin, as LaTeX's own are.
 - **A TikZ picture in display math**, such as a `tikzcd`, is drawn as a picture together with the rest of that display's math.
+- **Safari after a swipe back.** Once a reader swipes back to a page, Safari no longer slides when they return to it from history, by the up icon or the back button. The page still comes back where they were.
 - **Delimiters and radicals** can differ slightly in size, since MathJax picks them from its own font.
 - **Prerendered math is laid out by estimates** where a browser would measure, such as text in math that MathJax has no glyphs for. A box can come out a pixel or so off.
 - **tcolorbox.** Boxes get their colors, rules, corners, shadow, spacing and title. What a skin draws with TikZ, such as overlays and shadings, comes out as a plain frame. Pictures in side-by-side listing boxes aren't converted. If a fragile command in a box's title breaks the build, `\robustify` it in your config.
