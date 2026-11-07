@@ -694,6 +694,22 @@ if (!only.length) jobs.push(async () => {
   report(`${doc.name} (MathJax in the browser)`, problems);
 });
 
+// and a page whose prerendering fails (node can't start): the math is left
+// for the browser, and no preload link points at a font that wasn't written
+const failing = docs.find(d => d.name === 'test-pagella');
+if (failing) jobs.push(async () => {
+  const out = join(testDir(failing), 'failing'), aux = join(testDir(failing), 'failingaux');
+  const result = await build(failing, out, aux, { NODE_OPTIONS: '--no-such-option' });
+  const page = join(out, 'test-pagella.html');
+  const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  const problems = [];
+  if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
+  if (!result.log.includes('prerender.mjs failed')) problems.push('no warning that prerendering failed');
+  const links = [...html.matchAll(/<link [^>]*rel='preload'[^>]*>/g)].map(([link]) => link.match(/href='([^']+)'/)[1]);
+  for (const href of links.filter(href => !existsSync(join(out, href)))) problems.push(`${href} preloaded, not written`);
+  report(`${failing.name} (prerendering fails)`, problems);
+});
+
 // and the same page with tex4ht's own escaping of each formula's source,
 // which tex8web-math.tex replaces with a faster one: both, left as source
 // for MathJax, must be the same page

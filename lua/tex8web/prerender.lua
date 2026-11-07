@@ -14,14 +14,26 @@ function M.mathjax_version(root)
   return assert(files.read(root .. "/package.json")):match('"mathjax":%s*"([^"]+)"')
 end
 
+-- the MathJax in node_modules, which a worktree may share with a checkout
+-- that pins another
+local function installed_version(context)
+  local json = files.read(context.root .. "/node_modules/mathjax/package.json")
+  return json and json:match('"version":%s*"([^"]+)"')
+end
+
 local function installed(context)
   return lfs.attributes(context.root .. "/node_modules/mathjax") ~= nil
     and lfs.attributes(context.root .. "/node_modules/subset-font") ~= nil
 end
 
+-- whether node_modules has the MathJax package.json pins
+local function pinned(context)
+  return installed_version(context) == context.mathjax
+end
+
 -- whether M.run will try
 function M.available(context)
-  return not os.getenv("TEX8WEB_NO_PRERENDER") and installed(context)
+  return not os.getenv("TEX8WEB_NO_PRERENDER") and installed(context) and pinned(context)
 end
 
 -- typesets the page's math; false if it couldn't, and the page needs
@@ -31,6 +43,11 @@ function M.run(context, filename)
   if not installed(context) then
     log:warning("math left for MathJax in the browser, from jsDelivr; run npm ci in "
       .. context.root .. " to typeset it here")
+    return false
+  end
+  if not pinned(context) then
+    log:warning("MathJax " .. tostring(installed_version(context)) .. " is installed, not the " .. context.mathjax
+      .. " package.json pins; math left for MathJax in the browser. Run npm ci in " .. context.root)
     return false
   end
   local node = io.popen("node " .. files.quote(context.root .. "/js/prerender.mjs") .. " "

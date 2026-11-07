@@ -378,6 +378,29 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
       logged[1] or "nothing logged")
   end,
 
+  ["prerender.run: node_modules with another MathJax than package.json pins, a warning"] = function()
+    local root, skip = os.tmpname(), os.getenv("TEX8WEB_NO_PRERENDER")
+    os.remove(root)
+    for _, dir in ipairs({"", "/node_modules", "/node_modules/mathjax", "/node_modules/subset-font"}) do
+      lfs.mkdir(root .. dir)
+    end
+    local json = root .. "/node_modules/mathjax/package.json"
+    local f = assert(io.open(json, "w"))
+    f:write('{"name": "mathjax", "version": "4.0.0"}')
+    f:close()
+    os.setenv("TEX8WEB_NO_PRERENDER", nil)
+    local context = {root = root, mathjax = "4.1.3"}
+    local available, result = prerender.available(context), prerender.run(context, "x.html")
+    os.setenv("TEX8WEB_NO_PRERENDER", skip)
+    for _, path in ipairs({json, root .. "/node_modules/mathjax", root .. "/node_modules/subset-font",
+        root .. "/node_modules", root}) do
+      os.remove(path)
+    end
+    equal({available, result}, {false, false})
+    check(logged[#logged]:find("MathJax 4.0.0 is installed, not the 4.1.3 package.json pins", 1, true),
+      logged[#logged])
+  end,
+
   ["macros.define: the definitions the math uses, and a warning for the rest"] = function()
     local tex = tmpfile([[\newcommand{\R}{\mathbb{R}}
 \newcommand{\unused}{u}

@@ -347,6 +347,20 @@ function M.originals(context)
   end
 end
 
+-- M.copy preloads the TeX Live faces prerender.mjs cuts down; when it
+-- failed, those files were never written, so the page drops the links
+function M.drop_missing_preloads(filename)
+  local dir = filename:match("^(.*)/") or "."
+  local html = assert(files.read(filename))
+  html = html:gsub("<link [^>]*rel='preload'[^>]*>", function(link)
+    local href = link:match("href='([^']*)'")
+    if href and not exists(dir .. "/" .. href) then return "" end
+  end)
+  local f = assert(io.open(filename, "w"))
+  f:write(html)
+  f:close()
+end
+
 -- tex4ht draws rules (\hline, \fbox, a table's | columns) in black; in the
 -- text's color instead, so they show in dark mode
 function M.rules_in_text_color(css)

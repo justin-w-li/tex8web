@@ -120,4 +120,25 @@ return {
     equal(assets.wide_screens(css), (css:gsub("%(%-%-tex8web%-wide%)", "(min-width: 10000.00em)")))
     check(logged[1]:find("--tex8web-textwidth is 700px, not", 1, true), logged[1])
   end,
+
+  ["assets.drop_missing_preloads: links to fonts that weren't written go, the others stay"] = function()
+    local dir = os.tmpname()
+    os.remove(dir)
+    lfs.mkdir(dir)
+    lfs.mkdir(dir .. "/fonts")
+    local function write(path, text)
+      local f = assert(io.open(path, "w"))
+      f:write(text)
+      f:close()
+    end
+    write(dir .. "/fonts/a.woff2", "")
+    write(dir .. "/p.html", "<head><link as='font' crossorigin='' href='fonts/a.woff2' rel='preload' />"
+      .. "<link as='font' crossorigin='' href='fonts/b.woff2' rel='preload' /><link href='fonts/c.css' rel='stylesheet' />"
+      .. "</head>")
+    assets.drop_missing_preloads(dir .. "/p.html")
+    local html = require("tex8web.files").read(dir .. "/p.html")
+    for _, path in ipairs({dir .. "/fonts/a.woff2", dir .. "/p.html", dir .. "/fonts", dir}) do os.remove(path) end
+    equal(html, "<head><link as='font' crossorigin='' href='fonts/a.woff2' rel='preload' />"
+      .. "<link href='fonts/c.css' rel='stylesheet' /></head>")
+  end,
 }

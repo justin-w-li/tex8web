@@ -97,6 +97,7 @@ Make:match("html$", function(filename, par)
   if not prerender.run(context, filename) then
     assets.add(root .. "/js/tex8web.js", context.dir .. "/tex8web.js")
     assets.originals(context)
+    assets.drop_missing_preloads(filename)
   end
   return status
 end)

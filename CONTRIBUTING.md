@@ -154,6 +154,8 @@ The date is not in the stamp, so a reused build keeps the date it was built on. 
 - `npm run test:visual`, which compares Node's MathJax with the browser's;
 - a rebuild of your own documents, compared with the last one.
 
+A build warns, and leaves the math to the browser, when `node_modules` holds another MathJax than `package.json` pins. A worktree that links another checkout's `node_modules` must replace the link with an install of its own before the bump.
+
 `js/prerender.mjs` also relies on:
 - `MmlTree`'s `TEXCLASS`, `postFilters` (the speech's adjustment of the math) and `walkTree`;
 - `outputData.speech` of each formula of the second typesetting;
