@@ -459,7 +459,7 @@ async function themed(chrome, file) {
 // a link to an equation tints it, as it does a heading, once whether tex4ht's
 // anchor is just before it, first among the anchors of an alignment's lines
 // or, for a gather, last in the paragraph before; and not the others around,
-// nor a link to another anchor, such as an \index's before an equation
+// nor a link to another anchor, such as an \index's (dx...) before an equation
 async function targeting(chrome, file, doc) {
   const displays = `document.querySelectorAll('.mathjax-env, .mathjax-block')`;
   const tinted = `[...${displays}].map(el => getComputedStyle(el.querySelector('mjx-container')).backgroundColor !== 'rgba(0, 0, 0, 0)')`;
@@ -471,7 +471,7 @@ async function targeting(chrome, file, doc) {
     const last = el => { let n = el.lastChild; while (skip(n)) n = n.previousSibling; return n; };
     const run = n => {
       const ids = [];
-      for (; n?.nodeType === 1 && n.matches('a[id]:empty'); n = before(n)) ids.unshift(n.id);
+      for (; n?.nodeType === 1 && n.matches('a[id]:empty'); n = before(n)) if (!n.id.startsWith('dx')) ids.unshift(n.id);
       return [ids, n];
     };
     const belong = [...${displays}].map(display => {
@@ -484,6 +484,10 @@ async function targeting(chrome, file, doc) {
   return chrome.withPage(pathToFileURL(file).href, {}, async page => {
     const { belong, others } = await page.evaluate(anchors);
     if (!belong.some(ids => ids.length)) return ['no equation with an anchor'];
+    // (the index's anchors just before the equation, and after some text before it)
+    if (doc.name === 'test-index' && !(belong[0].length === 1 && others.filter(id => id.startsWith('dx')).length > 5)) {
+      return [`test-index: the equation's anchors ${belong[0]}, and the others ${others.length}`];
+    }
     if (doc.name === 'test-generic' && !belong.some(ids => ids.length > 1)) return ['no alignment with an anchor on each of two lines'];
     const problems = [];
     const show = async (id, only) => {

@@ -121,24 +121,22 @@ return {
     check(logged[1]:find("--tex8web-textwidth is 700px, not", 1, true), logged[1])
   end,
 
-  ["assets.drop_missing_preloads: links to fonts that weren't written go, the others stay"] = function()
-    local dir = os.tmpname()
-    os.remove(dir)
-    lfs.mkdir(dir)
-    lfs.mkdir(dir .. "/fonts")
-    local function write(path, text)
-      local f = assert(io.open(path, "w"))
-      f:write(text)
-      f:close()
+  ["assets.drop_preloads: the links to a font's faces go, the others stay"] = function()
+    local file = os.tmpname()
+    local function font(name)
+      return {files = {regular = name .. "-regular", bold = name .. "-bold", italic = name .. "-italic",
+        bolditalic = name .. "-bolditalic"}}
     end
-    write(dir .. "/fonts/a.woff2", "")
-    write(dir .. "/p.html", "<head><link as='font' crossorigin='' href='fonts/a.woff2' rel='preload' />"
-      .. "<link as='font' crossorigin='' href='fonts/b.woff2' rel='preload' /><link href='fonts/c.css' rel='stylesheet' />"
-      .. "</head>")
-    assets.drop_missing_preloads(dir .. "/p.html")
-    local html = require("tex8web.files").read(dir .. "/p.html")
-    for _, path in ipairs({dir .. "/fonts/a.woff2", dir .. "/p.html", dir .. "/fonts", dir}) do os.remove(path) end
-    equal(html, "<head><link as='font' crossorigin='' href='fonts/a.woff2' rel='preload' />"
+    local f = assert(io.open(file, "w"))
+    f:write("<head><link as='font' crossorigin='' href='fonts/a-bold.woff2' rel='preload' />"
+      .. "<link as='font' crossorigin='' href='fonts/lmroman10-regular.woff2' rel='preload' />"
+      .. "<link as='font' crossorigin='' href='fonts/b-regular.woff2' rel='preload' />"
+      .. "<link href='fonts/c.css' rel='stylesheet' /></head>")
+    f:close()
+    assets.drop_preloads(file, {roman = font("a"), others = {font("b")}})
+    local html = require("tex8web.files").read(file)
+    os.remove(file)
+    equal(html, "<head><link as='font' crossorigin='' href='fonts/lmroman10-regular.woff2' rel='preload' />"
       .. "<link href='fonts/c.css' rel='stylesheet' /></head>")
   end,
 }

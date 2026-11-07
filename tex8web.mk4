@@ -55,7 +55,8 @@ Make:match("4idx$", function() return false end)
 -- its scripts); text.colors before the passes that look at what lies
 -- between elements (its marks are elements until it removes them);
 -- make4ht's fixinlines, which only looks at the top of the body, before
--- page.controls puts the text in <main>; page.equation_anchors after it;
+-- page.controls puts the text in <main>; page.equation_anchors after
+-- fixinlines, which gives a loose anchor a paragraph of its own;
 -- text.line_comments after the passes that look at what lies between nodes
 -- (a removed comment stays among its parent's children); and assets.copy
 -- last (it reads the finished page)
@@ -103,7 +104,7 @@ Make:match("html$", function(filename, par)
   if not prerender.run(context, filename) then
     assets.add(root .. "/js/tex8web.js", context.dir .. "/tex8web.js")
     assets.originals(context)
-    assets.drop_missing_preloads(filename)
+    assets.drop_preloads(filename, context.roles)
   end
   return status
 end)

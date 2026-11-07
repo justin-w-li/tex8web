@@ -555,14 +555,16 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
 <a id="e2"></a><span class="mathjax-env">x</span> <a id="i2"></a> text <a id="e3"></a>
 <span class="mathjax-block">y</span></p>]]
       .. [[<p>c <a id="i3"></a>d.<a id="e4"></a>
-</p><div class="mathjax-env">z</div><p>e<a id="e5"></a></p><p>f</p><div class="mathjax-env">w</div>]])
+</p><div class="mathjax-env">z</div><p>e<a id="e5"></a></p><p>f</p><div class="mathjax-env">w</div>]]
+      .. [[<p>g<a id="dx1"></a>
+<a id="e6"></a><a id="dx2"></a><span class="mathjax-env">v</span></p><p>h<a id="dx3"></a></p><div class="mathjax-env">u</div>]])
     page.equation_anchors(d)
     local marked = {}
     for _, a in ipairs(d:query_selector("a[class]")) do
       marked[#marked + 1] = a:get_attribute("id") .. " " .. a:get_attribute("class")
     end
     equal(marked, {"e1 tex8web-eq-anchor", "e2 tex8web-eq-anchor", "e3 tex8web-eq-anchor",
-      "e4 tex8web-eq-anchor-end"})
+      "e4 tex8web-eq-anchor-end", "e6 tex8web-eq-anchor"})
   end,
 
   ["text.line_comments: tex4ht's source line comments go, other comments stay"] = function()

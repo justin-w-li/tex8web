@@ -347,14 +347,16 @@ function M.originals(context)
   end
 end
 
--- M.copy preloads the TeX Live faces prerender.mjs cuts down; when it
--- failed, those files were never written, so the page drops the links
-function M.drop_missing_preloads(filename)
-  local dir = filename:match("^(.*)/") or "."
+-- M.copy preloads the cut-down TeX Live faces (prerender.mjs writes them);
+-- when it failed, the page shows the whole fonts, and the links go
+function M.drop_preloads(filename, roles)
+  local gone = {}
+  for _, font in ipairs(fonts_of(roles)) do
+    for _, shape in ipairs(shapes) do gone["fonts/" .. font.files[shape] .. ".woff2"] = true end
+  end
   local html = assert(files.read(filename))
   html = html:gsub("<link [^>]*rel='preload'[^>]*>", function(link)
-    local href = link:match("href='([^']*)'")
-    if href and not exists(dir .. "/" .. href) then return "" end
+    if gone[link:match("href='([^']*)'")] then return "" end
   end)
   local f = assert(io.open(filename, "w"))
   f:write(html)

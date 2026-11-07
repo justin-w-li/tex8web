@@ -227,16 +227,20 @@ function M.controls(document, context)
   dom.set_children(body, toc and {controls, toc, main} or {controls, main})
 end
 
--- tex4ht puts the anchor of an equation's label just before the display
+-- tex4ht puts the anchor of an equation's number just before the display
 -- (with the anchors of an alignment's other lines), or, for a block display
 -- such as gather, at the end of the paragraph before. The anchors of
--- \index and the like come before text and displays too, so mark the ones
--- only space separates from a display: the stylesheet tints it when one is
--- the :target. (The ones that end a paragraph differ in name, as a
+-- \index (dx..., latex.4ht's indexhaddr) come before text and displays
+-- too, so mark the others that only space separates from a display: the
+-- stylesheet tints it when one is the :target. (The ones that end a paragraph differ in name, as a
 -- paragraph may hold the anchors of several displays)
 local function is_anchor(node)
   return node:is_element() and node:get_element_name() == "a" and node:get_attribute("id") ~= nil
     and dom.is_blank(node)
+end
+
+local function is_index_anchor(node)
+  return is_anchor(node) and node:get_attribute("id"):find("^dx") ~= nil
 end
 
 -- marks the anchors that end nodes[1..last] (not counting space and
@@ -245,7 +249,9 @@ local function mark_anchors(nodes, last, name)
   local count = 0
   for i = last, 1, -1 do
     local node = nodes[i]
-    if is_anchor(node) then
+    if is_index_anchor(node) then
+      -- (skipped, not marked)
+    elseif is_anchor(node) then
       local class = node:get_attribute("class")
       node:set_attribute("class", (class and class .. " " or "") .. name)
       count = count + 1
@@ -261,7 +267,7 @@ function M.equation_anchors(document)
     local nodes = display:get_parent():get_children()
     local at
     for i, node in ipairs(nodes) do
-      if node == display then at = i end
+      if node == display then at = i break end
     end
     local count, before = mark_anchors(nodes, at - 1, "tex8web-eq-anchor")
     if count == 0 and before > 0 and nodes[before]:is_element() and nodes[before]:get_element_name() == "p" then
