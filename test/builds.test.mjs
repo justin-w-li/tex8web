@@ -139,6 +139,12 @@ test('a build is reused only while nothing it was built from has changed', { tim
     const fixed = { SOURCE_DATE_EPOCH: '946684800', FORCE_SOURCE_DATE: '1' };
     assert.equal((await make(fixed)).latexReused, undefined);
     assert.equal(await nextDay(fixed), true);
+    // (nor when part of it is gone)
+    rmSync(join(dir, 'build/html.stamp'));
+    rmSync(join(dir, 'build/aux.latex.log'));
+    const partial = await make(fixed);
+    assert.equal(partial.code, 0, partial.log);
+    assert.equal(partial.latexReused, undefined);
     write('third');
     assert.equal((await make()).latexReused, undefined);
     assert.match(html(), /third/);

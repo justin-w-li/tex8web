@@ -195,8 +195,8 @@ export const latexSourceHash = base => hashFiles(base, latexSources);
 // (lua/tex8web/prerender.lua), TeX Live, and make4ht and tex4ht, which
 // change within a TeX Live year (the version, when tex4ht.sty was
 // installed, and when tlmgr last changed TeX Live: it keeps each file's own
-// date). And the same for LaTeX's part of the build: its sources and TeX's
-// tools
+// date). LaTeX's runs have their own, narrower stamp (latex): only the
+// sources they read, and TeX's tools
 let toolchain;
 function tools() {
   if (toolchain) return toolchain;
@@ -206,7 +206,8 @@ function tools() {
   const first = (command, ...args) => spawnSync(command, args, { encoding: 'utf8' }).stdout?.split('\n')[0] ?? null;
   const sty = first('kpsewhich', 'tex4ht.sty');
   const installed = sty && statSync(sty, { throwIfNoEntry: false })?.mtimeMs;
-  const tlpdb = statSync(join(first('kpsewhich', '-var-value', 'TEXMFROOT') ?? '', 'tlpkg/texlive.tlpdb'), { throwIfNoEntry: false });
+  const texmfroot = first('kpsewhich', '-var-value', 'TEXMFROOT');
+  const tlpdb = texmfroot ? statSync(join(texmfroot, 'tlpkg/texlive.tlpdb'), { throwIfNoEntry: false }) : null;
   const tex = [first('tex', '--version'), first('make4ht', '--version'), installed ?? null, tlpdb?.mtimeMs ?? null];
   return toolchain = { page: JSON.stringify([sourceHash(root), version('mathjax'), version('subset-font'), ...tex]),
     latex: JSON.stringify([latexSourceHash(root), ...tex]) };
@@ -285,7 +286,7 @@ async function buildHere(doc, out, aux, env) {
   // (not in draft mode, which runs LaTeX once on the last build's files)
   const stage = { dir: `${aux}.latex`, stamp: `${aux}.latex.stamp`, log: `${aux}.latex.log` };
   const reuse = !doc.draft && existsSync(stage.stamp) && readFileSync(stage.stamp, 'utf8') === wanted.latex
-    && existsSync(stage.dir);
+    && existsSync(stage.dir) && existsSync(stage.log);
   rmSync(out, { recursive: true, force: true });
   if (!doc.draft) rmSync(aux, { recursive: true, force: true });
   if (reuse) {
