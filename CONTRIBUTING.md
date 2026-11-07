@@ -88,7 +88,7 @@ A document has one page. A tex4ht split option (a number or `splitat=` in `\Prea
 
 Each script's header comment says what it checks. CLAUDE.md says when to run which.
 
-- **`npm test`** runs `test/unit/` (Lua), `test/unit/prerender.test.mjs`, `test/tools.test.mjs` and `test/run.mjs`. The last builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`, and checks each page. `node test/run.mjs <name>` builds one.
+- **`npm test`** runs `test/unit/` (Lua) and `test/run.mjs`. `run.mjs` builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`, and checks each page. `node test/run.mjs <name>` builds one. While it builds, it runs the tests of the test tools beside it: `test/unit/prerender.test.mjs`, `slots.test.mjs`, `builds.test.mjs`, `regress.test.mjs` and `tools.test.mjs`, which node runs at once. They take their build slots from a pool of their own, so they never wait for another session's builds. `lib/stubs.mjs` sets that up, with two slots, and puts a stand-in for make4ht on the PATH of the tests of stamps, reuse and `regress.mjs`'s flow. One test in `builds.test.mjs` runs the real make4ht, to check that a real build is reused, and `regress.test.mjs` runs a real Chrome for the screens.
   - `test-mathescape.tex` has the formulas where tex8web's escaping of a formula's source (`\alteqtoks`) could differ from tex4ht's. `run.mjs` builds it a second time with `test-mathescape-stock.cfg`, which restores tex4ht's, and the two pages must be the same.
 - **`npm run test:visual`** needs Chrome and the network. It runs `test/visual.mjs`, `test/page.mjs` and `test/chrome.test.mjs`.
   - `visual.mjs` compares each page, prerendered and typeset by MathJax in the browser, screen by screen.
@@ -112,13 +112,13 @@ Each script's header comment says what it checks. CLAUDE.md says when to run whi
 
 Each build's log is kept in `build/test/<document>/make4ht.log`.
 
-**Build slots.** Sessions and checkouts that run tests at once would otherwise swap, as each tool sizes its builds for a machine of its own. So every make4ht or latexmk build, and every Chrome the tests launch, holds one of a pool of lock files in `$TMPDIR/tex8web-slots` while it runs (`test/lib/slots.mjs`). The pool has one slot for each 4 GB of memory, or `TEX8WEB_SLOTS` of them, a whole number of 1 or more. A process that waits for a slot says so after 10 seconds, and one that has given a slot back waits a second before it takes another, so that the others get a turn. Without `lockf` (Linux) there are no slots. The idle and total limits of a build start once it holds its slot. A build runs under a watchdog, so that it ends, and gives its slot back, when its tool is killed or it runs over its total limit. A test's Chrome has a watcher too, which ends it and removes its profile when the Node process that launched it is killed. A tool that holds a slot never waits for a build that needs one, so `visual.mjs` builds before it launches Chrome. `regress.mjs` and a wrapper script that builds PDFs take the same slots.
+**Build slots.** Sessions and checkouts that run tests at once would otherwise swap, as each tool sizes its builds for a machine of its own. So every make4ht or latexmk build, and every Chrome the tests launch, holds one of a pool of lock files in `$TMPDIR/tex8web-slots` while it runs (`test/lib/slots.mjs`). The pool has one slot for each 4 GB of memory, or `TEX8WEB_SLOTS` of them, a whole number of 1 or more. A process that waits for a slot says so after 10 seconds, and one that has given a slot back waits a second before it takes another, so that the others get a turn. The tests of the tools shorten that second with `TEX8WEB_SLOTS_POLL`, in milliseconds, as nobody else is in their pool. Without `lockf` (Linux) there are no slots. The idle and total limits of a build start once it holds its slot. A build runs under a watchdog, so that it ends, and gives its slot back, when its tool is killed or it runs over its total limit. A test's Chrome has a watcher too, which ends it and removes its profile when the Node process that launched it is killed. A tool that holds a slot never waits for a build that needs one, so `visual.mjs` builds before it launches Chrome. `regress.mjs` and a wrapper script that builds PDFs take the same slots. Only the tests of the tools, which build almost nothing, take theirs from a pool of their own.
 
 **Reused builds.** A build is kept with a stamp of what it was made from, in `build/test/<document>/html.stamp`. The stamp covers:
 - the files in tex8web's `bin`, `css`, `fonts`, `js`, `lua` and `tex` directories, `tex8web.cfg`, `tex8web.mk4`, `package.json` and `package-lock.json`, by content;
 - the files in the document's directory, and the config's, by content;
 - the PDF the page links, if there is one: its size and modification time, as a page built before the PDF was there lacks the link;
-- the command's arguments, and the `TEX8WEB_*`, `TEXINPUTS` and `TEXMF*` environment variables, except `TEX8WEB_SLOTS` and `TEX8WEB_TREE`;
+- the command's arguments, and the `TEX8WEB_*`, `TEXINPUTS` and `TEXMF*` environment variables, except `TEX8WEB_TREE` and those that begin `TEX8WEB_SLOTS`;
 - the versions of `node_modules/mathjax` and `node_modules/subset-font`, or that one is missing;
 - the first line of `tex --version` and of `make4ht --version`, and when `tex4ht.sty` was installed.
 
@@ -192,5 +192,5 @@ Open an issue with:
 | `js/prerender.mjs`, `prerender-rules.mjs` | MathJax in Node, and the rules of its CSS that the pass removing elements relies on |
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which goes with every page |
 | `examples/` | the examples, and `index.tex`, the published site's index |
-| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `tools.test.mjs`, `chrome.test.mjs`, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, `lib/` |
+| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `slots.test.mjs`, `builds.test.mjs`, `regress.test.mjs`, `tools.test.mjs`, `chrome.test.mjs`, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, `lib/` |
 | `.github/workflows/ci.yml` | CI and the published examples |

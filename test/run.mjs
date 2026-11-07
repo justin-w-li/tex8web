@@ -1,8 +1,8 @@
-// npm test: the Lua unit tests and the tools' tests, then every test
-// document and example built with make4ht and checked. Pages go to
-// build/test/<document>/html.
+// npm test: the Lua unit tests, then every test document and example built
+// with make4ht and checked, while the tools' tests run beside them. Pages go
+// to build/test/<document>/html.
 //   node test/run.mjs [document names...]
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build, expected, largestFirst, pool, root, select, strayKeys, testDir, workers } from './lib/build.mjs';
@@ -31,10 +31,18 @@ if (!only.length) {
   const unit = spawnSync('texlua', [join(root, 'test/unit/run.lua')], { encoding: 'utf8' });
   process.stdout.write(unit.stdout + unit.stderr);
   failures += unit.status === 0 ? 0 : 1;
-  const tools = spawnSync(process.execPath, ['--test', join(root, 'test/unit/prerender.test.mjs'), join(root, 'test/tools.test.mjs')], { encoding: 'utf8' });
-  process.stdout.write(tools.stdout + tools.stderr);
-  failures += tools.status === 0 ? 0 : 1;
 }
+
+// the tools' tests, which take their build slots from a pool of their own and
+// so don't wait for the builds below, or for anyone's. Their report comes at
+// the end
+const tools = only.length ? null : new Promise(done => {
+  const files = ['unit/prerender', 'slots', 'builds', 'realbuild', 'regress', 'tools'].map(name => join(root, `test/${name}.test.mjs`));
+  const child = spawn(process.execPath, ['--test', ...files], { timeout: 300000 });
+  let report = '';
+  for (const stream of [child.stdout, child.stderr]) stream.on('data', data => { report += data; });
+  child.on('close', (code, signal) => done({ report: signal ? `${report}\nthe tools' tests were stopped by ${signal} after their 300 s limit\n` : report, code }));
+});
 
 // --- builds ----------------------------------------------------------------
 
@@ -699,6 +707,12 @@ if (escaping) jobs.push(async () => {
 });
 
 await pool(jobs, workers, job => job());
+
+if (tools) {
+  const { report, code } = await tools;
+  process.stdout.write(report);
+  failures += code === 0 ? 0 : 1;
+}
 
 console.log(failures ? `\n${failures} failed` : '\nall passed');
 process.exit(failures ? 1 : 0);

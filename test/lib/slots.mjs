@@ -30,8 +30,9 @@ export function noLockf() {
 }
 
 // A process that frees a slot lets the others, which look once in a poll,
-// have it before it takes another
-const poll = 1000;
+// have it before it takes another. The tools' tests, whose pool has no other
+// process to give a turn, shorten it with TEX8WEB_SLOTS_POLL, in ms
+const poll = () => Number(process.env.TEX8WEB_SLOTS_POLL ?? 1000);
 let freed = 0;
 export const released = () => { freed = Date.now(); };
 
@@ -43,7 +44,7 @@ export async function inSlots(attempt) {
   mkdirSync(dir(), { recursive: true });
   const start = Date.now();
   let told = false;
-  await sleep(Math.max(0, freed + poll - Date.now()));
+  await sleep(Math.max(0, freed + poll() - Date.now()));
   for (;;) {
     for (let i = 0; i < slotCount(); i++) {
       const result = await attempt(join(dir(), String(i)));
@@ -53,7 +54,7 @@ export async function inSlots(attempt) {
       console.error(`tex8web: waiting for one of ${slotCount()} build slots, all busy (TEX8WEB_SLOTS sets how many)`);
       told = true;
     }
-    await sleep(poll * (0.5 + Math.random()));
+    await sleep(poll() * (0.5 + Math.random()));
   }
 }
 
