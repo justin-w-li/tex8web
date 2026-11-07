@@ -9,7 +9,7 @@
 // (assets.lua) are cut down to the characters the document has.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, renameSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
 import { runInThisContext } from 'node:vm';
@@ -259,9 +259,11 @@ const spoken = MathJax.startup.getDocument(html);
 await spoken.renderPromise();
 tex.postFilters.remove(forSpeech);
 // (a file that can't be written means only that the next build speaks
-// everything again; one written part way doesn't parse)
+// everything again. Renamed into place, as builds of the same document from
+// other checkouts may share it)
 try {
-  writeFileSync(cacheFile, JSON.stringify(kept));
+  writeFileSync(`${cacheFile}.${process.pid}`, JSON.stringify(kept));
+  renameSync(`${cacheFile}.${process.pid}`, cacheFile);
 } catch {}
 const items = [...MathJax.startup.document.math];
 const speeches = [...spoken.math];
