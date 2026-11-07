@@ -129,7 +129,7 @@ describe('slots and run()', { concurrency: true }, () => {
   const interleaved = ['sh', ['-c', 'i=0; while [ $i -lt 200 ]; do echo e$i >&2; echo o$i; i=$((i + 1)); done']];
   const inTurn = Array.from({ length: 200 }, (_, i) => `e${i}\no${i}\n`).join('');
 
-  test('a build\'s log has its stdout and stderr in the order it wrote them', async () => {
+  test('a build\'s log has its stdout and stderr in the order it wrote them', { timeout: 30000 }, async () => {
     assert.equal((await run(...interleaved)).log, inTurn);
   });
 

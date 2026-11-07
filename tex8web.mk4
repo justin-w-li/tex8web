@@ -40,12 +40,11 @@ local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}"
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
 -- The tests' builds (test/lib/build.mjs) keep what LaTeX left in the build
 -- directory, in TEX8WEB_LATEX_SAVE, a path not there yet. When nothing
--- LaTeX reads has changed, they put it back and set TEX8WEB_LATEX_REUSE,
--- which skips LaTeX if its .dvi is there. The marks around LaTeX's part of
--- the log let them keep that part too
-local save = os.getenv("TEX8WEB_LATEX_SAVE")
-local reuse = os.getenv("TEX8WEB_LATEX_REUSE") == "1"
-  and lfs.attributes(((settings.builddir ~= "" and settings.builddir) or ".") .. "/" .. settings.input .. ".dvi") ~= nil
+-- LaTeX reads has changed, they name that copy in TEX8WEB_LATEX_REUSE, which
+-- is copied back in place of running LaTeX if it has LaTeX's DVI. The marks
+-- around LaTeX's part of the log let them keep that part too
+local save, reuse = os.getenv("TEX8WEB_LATEX_SAVE"), os.getenv("TEX8WEB_LATEX_REUSE")
+if reuse and not lfs.attributes(reuse .. "/" .. settings.input .. "." .. settings.dvi) then reuse = nil end
 local function mark(name)
   io.stdout:flush()
   print("tex8web-latex-" .. name)
@@ -54,7 +53,11 @@ end
 if reuse then
   -- (with LaTeX's parameters, which make4ht keeps for the commands after
   -- it: correct_exit makes a failed tex4ht or t4ht fatal)
-  Make:add("latex_reused", function() mark("begin") mark("end") return 0 end, {correct_exit = 0})
+  Make:add("latex_reused", function(par)
+    mark("begin")
+    mark("end")
+    return os.execute("cp -R " .. files.quote(reuse .. "/.") .. " " .. files.quote(par.builddir))
+  end, {correct_exit = 0})
   Make:latex_reused(latex)
 else
   if save then

@@ -107,35 +107,24 @@ describe('real builds', { concurrency: true }, () => {
     }
   });
 
-  // bin/tex8web run directly on a document of its own, with the tests'
-  // variables as one might leave them in a shell
-  async function direct(env) {
+  // the tests' variables as one might leave them in a shell, in runs of
+  // bin/tex8web on a document of one's own
+  test('the tests\' LaTeX variables neither skip LaTeX nor remove a file of one\'s own', { timeout: 180000 }, async () => {
     const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webdirect')));
-    writeFileSync(join(dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nx\n\\end{document}\n');
-    const result = await run(join(root, 'bin/tex8web'), ['doc.tex'], { cwd: dir, slot: true,
-      env: { ...process.env, TEX8WEB_NO_PRERENDER: '1', ...env(dir) } });
-    return { dir, ...result };
-  }
-
-  test('a direct build with TEX8WEB_LATEX_REUSE and no LaTeX run kept runs LaTeX', { timeout: 180000 }, async () => {
-    const { dir, code, log } = await direct(() => ({ TEX8WEB_LATEX_REUSE: '1' }));
     try {
-      assert.equal(code, 0, log);
-      assert.ok(existsSync(join(dir, 'build/html/doc.html')));
-    } finally {
-      rmSync(dir, { recursive: true });
-    }
-  });
-
-  test('TEX8WEB_LATEX_SAVE leaves what is already there', { timeout: 180000 }, async () => {
-    const { dir, code, log } = await direct(dir => {
       mkdirSync(join(dir, 'kept'));
       writeFileSync(join(dir, 'kept/mine'), '');
-      return { TEX8WEB_LATEX_SAVE: join(dir, 'kept') };
-    });
-    try {
-      assert.equal(code, 0, log);
+      const direct = async body => {
+        writeFileSync(join(dir, 'doc.tex'), `\\documentclass{article}\n\\begin{document}\n${body}\n\\end{document}\n`);
+        const { code, log } = await run(join(root, 'bin/tex8web'), ['doc.tex'], { cwd: dir, slot: true,
+          env: { ...process.env, TEX8WEB_NO_PRERENDER: '1', TEX8WEB_LATEX_REUSE: '1', TEX8WEB_LATEX_SAVE: join(dir, 'kept') } });
+        assert.equal(code, 0, log);
+        return readFileSync(join(dir, 'build/html/doc.html'), 'utf8');
+      };
+      await direct('first');
       assert.deepEqual(readdirSync(join(dir, 'kept')), ['mine']);
+      // (the first run's DVI is in the build directory now)
+      assert.match(await direct('second'), /second/);
     } finally {
       rmSync(dir, { recursive: true });
     }

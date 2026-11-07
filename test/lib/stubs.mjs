@@ -33,7 +33,7 @@ done
 grep -q undefinedcs "$1" && { echo '[ERROR] Undefined control sequence'; exit 1; }
 mkdir -p "$out" "$aux"
 echo tex8web-latex-begin
-if [ "$TEX8WEB_LATEX_REUSE" != 1 ]; then
+if [ -z "$TEX8WEB_LATEX_REUSE" ]; then
   echo 'LaTeX ran'
   [ -z "$TEX8WEB_LATEX_SAVE" ] || mkdir -p "$TEX8WEB_LATEX_SAVE"
 fi

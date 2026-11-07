@@ -2,7 +2,7 @@
 // for npm run examples.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { availableParallelism, constants } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -122,8 +122,8 @@ const watchdog = `
 // to null if the lock is busy (75, EX_TEMPFAIL)
 function execute(command, args, { idle = 180, total = 900, slotFile, ...options }) {
   return new Promise(done => {
-    // (its stderr into its stdout: read from two pipes, the two would be in
-    // the order they were read, not written)
+    // (its stderr into its stdout, so that the log has the two in the order
+    // they reached it, not the order two pipes were read in)
     const child = slotFile
       ? spawn('perl', ['-e', watchdog, total + 2, 'lockf', '-k', '-t', '0', slotFile, 'sh', '-c', `echo ${held}; exec "$@" 2>&1`,
         'sh', command, ...args], { ...options, detached: true })
@@ -299,7 +299,6 @@ async function buildHere(doc, out, aux, env) {
   if (!doc.draft) rmSync(aux, { recursive: true, force: true });
   if (reuse) {
     console.log(`reusing ${doc.name}'s LaTeX run in ${basename(out)}: nothing LaTeX reads has changed`);
-    cpSync(stage.dir, aux, { recursive: true });
   } else if (!doc.draft) {
     rmSync(stage.stamp, { force: true });
     rmSync(stage.dir, { recursive: true, force: true });
@@ -312,10 +311,11 @@ async function buildHere(doc, out, aux, env) {
   mkdirSync(join(doc.dir, 'build'), { recursive: true });
   const speech = join(doc.dir, 'build', doc.tex.replace(/\.tex$/, '.speech.json'));
   const result = await run(join(root, 'bin/tex8web'), args, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
-    TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? '1' : undefined,
+    TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? stage.dir : undefined,
     TEX8WEB_LATEX_SAVE: doc.draft || reuse ? undefined : stage.dir } });
   // (the marks around LaTeX's part of the log, which a reused run takes from
-  // the run that was kept. A run that stopped in LaTeX has only the first)
+  // the run that was kept. A run that stopped in LaTeX has only the first,
+  // and one that ran LaTeX in place of a kept run with no DVI has none)
   const parts = result.log.split(/^tex8web-latex-(?:begin|end)\n/m);
   const latexLog = parts.length === 3 ? parts[1] : undefined;
   if (reuse && latexLog !== undefined) parts[1] = readFileSync(stage.log, 'utf8');
@@ -328,7 +328,7 @@ async function buildHere(doc, out, aux, env) {
       writeFileSync(stage.stamp, wanted.latex);
     }
   }
-  return reuse ? { ...result, latexReused: true } : result;
+  return reuse && latexLog !== undefined ? { ...result, latexReused: true } : result;
 }
 
 // builds a document's PDF in outdir (relative to it) with latexmk: its exit
