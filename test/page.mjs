@@ -348,6 +348,16 @@ async function hiding(chrome, file) {
     if (!away) return ['the bar: a page too short to scroll'];
     const problems = away.join() === 'true,true,true,false,false'
       ? [] : [`the bar away ${away.join(', ')} scrolling to 300, 600, 597, 560 and 563px`];
+    // its line: clear at the top, drawn once the page has scrolled (and faded in)
+    const line = async y => {
+      await page.evaluate(`scrollTo(0, ${y})`);
+      await page.frame();
+      return page.evaluate(`new Promise(done => setTimeout(() => done(
+        getComputedStyle(document.querySelector('.tex8web-controls')).borderBottomColor), 400))`);
+    };
+    const [top, down] = [await line(0), await line(20)];
+    if (top !== 'rgba(0, 0, 0, 0)') problems.push(`the bar's line ${top} at the top`);
+    if (down === 'rgba(0, 0, 0, 0)') problems.push("the bar's line clear 20px down");
     // from a wide window, scrolled down, to a narrow one: away at once
     await page.resize(1600, 900);
     await page.frame();

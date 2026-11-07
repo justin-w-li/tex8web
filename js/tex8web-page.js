@@ -153,7 +153,10 @@
     // keeps the reader's place as the width changes. Safari on iOS bounces
     // past the page's ends and jitters a pixel or two back as its own bars
     // grow or shrink, so a turn counts only once it has gone 10px)
+    const atTop = () => root.classList.toggle('tex8web-top', scrollY <= 0);
+    atTop();
     addEventListener('scroll', () => {
+      atTop();
       const end = document.documentElement.scrollHeight - innerHeight;
       if (innerWidth !== width) {
         width = innerWidth;

@@ -143,7 +143,7 @@ In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not 
 
 ## On the page
 
-**Controls.** Small icons sit at the top left: the page above (with `-u` or `\WebUp`), the table of contents, the PDF (with `-p` or `\WebPDF`), light or dark, and a link to tex8web. On a narrow screen they form a bar across the top. The bar names the section being read, and hides while the reader scrolls down.
+**Controls.** Small icons sit at the top left: the page above (with `-u` or `\WebUp`), the table of contents, the PDF (with `-p` or `\WebPDF`), light or dark, and a link to tex8web. On a narrow screen they form a bar across the top. The bar names the section being read, and hides while the reader scrolls down. Its line appears once the page has scrolled.
 
 **Between pages.** The up icon goes back to the page above, where the reader was on it, if they came from there. Following a link from one tex8web page to another of the same origin, the page moves a little to the left as the next one fades in. Going up or back, it moves to the right. A site's own pages can take part by adding `@view-transition { navigation: auto; }` to their CSS; they fade. Readers who ask for reduced motion get the next page at once. Other browsers fade to it, or show it at once.
 

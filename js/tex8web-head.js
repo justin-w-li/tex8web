@@ -2,7 +2,8 @@
 // theme and hidden table of contents (which tex8web-page.js keeps) apply
 // before the page is drawn, and so that pagereveal, which fires before
 // then, is heard.
-document.documentElement.classList.add('tex8web-js');
+// (tex8web-top: the page starts at its top, which tex8web-page.js keeps true)
+document.documentElement.classList.add('tex8web-js', 'tex8web-top');
 try {
   const theme = localStorage.getItem('tex8web-theme');
   if (theme) document.documentElement.dataset.theme = theme;

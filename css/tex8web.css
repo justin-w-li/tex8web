@@ -643,7 +643,8 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
 /* the controls: line icons at the top left, faint until pointed at; on a
    narrow screen, in a bar across the top, which tex8web-page.js slides
    away while the reader scrolls down (and back as they scroll up), with
-   room kept for it above what a link leads to */
+   room kept for it above what a link leads to; its line shows only once
+   the page has scrolled */
 .tex8web-controls { position: fixed; z-index: 10; inset: 0 0 auto;
     display: flex; gap: 0.125rem;
     padding: calc(env(safe-area-inset-top, 0px) + 0.625rem) 0.875rem 0.625rem;
@@ -683,12 +684,17 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
        of reach of the keyboard; the fade below fades to it too) */
     .tex8web-controls.tex8web-away:not(:has(:focus-visible)) { transform: translateY(-100%);
         opacity: 0; }
+    /* (at the top, the title gets the space above it that a wide screen
+       gives; tex8web-head.js and tex8web-page.js keep the class) */
+    .tex8web-top .tex8web-controls { border-bottom-color: transparent; }
 }
 @media (prefers-reduced-motion: no-preference) {
     @media not (--tex8web-wide) {
-        .tex8web-controls { transition: transform var(--tex8web-fade), opacity var(--tex8web-fade); }
+        .tex8web-controls { transition: transform var(--tex8web-fade), opacity var(--tex8web-fade),
+            border-color var(--tex8web-fade); }
         .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
-            transition: transform var(--tex8web-fade), opacity 0s var(--tex8web-fade); }
+            transition: transform var(--tex8web-fade), opacity 0s var(--tex8web-fade),
+                border-color var(--tex8web-fade); }
     }
 }
 
