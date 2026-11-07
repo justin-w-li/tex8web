@@ -52,6 +52,14 @@ const pageChecks = [
     const scripts = [...html.matchAll(/<script([^>]*)>/g)].map(m => m[1]);
     return scripts.some(s => !/src=['"]tex8web-page\.js['"]|id=['"]tex8web-head['"]/.test(s)) ? ["has a <script> besides tex8web's"] : [];
   },
+  // (the head script's text whole, in its CDATA section: the serializer
+  // escapes the <, > and & of a script's text)
+  function headScript(html) {
+    if (!html.includes('<head>')) return []; // (the tool tests' stand-in pages are not HTML)
+    const body = html.match(/<script [^>]*id=['"]tex8web-head['"][^>]*>([^]*?)<\/script>/)?.[1];
+    return body !== undefined && /^\/\*<!\[CDATA\[\*\/[^]*\/\*\]\]>\*\/$/.test(body) && !/&(amp|lt|gt);/.test(body)
+      ? [] : ['no head script, whole in its CDATA section'];
+  },
   // (a list of figures or tables is a div.tableofcontents too, and stays)
   function tocBeside(html) {
     return [...html.replace(toc(html), '').matchAll(/class=['"]tableofcontents['"]>([^]*?)<\/div>/g)]

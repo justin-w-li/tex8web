@@ -1,7 +1,8 @@
 // tex8web: inline at the top of <head> (page.lua), so that the reader's
 // theme and hidden table of contents (which tex8web-page.js keeps) apply
 // before the page is drawn, pagereveal, which fires before then, is heard,
-// and the fonts' preloads start with the first bytes of the page.
+// and the fonts' preloads start when the parser reaches this, not after a
+// script's download.
 // (tex8web-top: the page starts at its top, which tex8web-page.js keeps true)
 document.documentElement.classList.add('tex8web-js', 'tex8web-top');
 try {
