@@ -19,7 +19,7 @@ const screen = 900;
 // the browser's typeset page as it stands, without its scripts and with
 // MathJax's styles (which it adds through the CSSOM) written out. The page
 // is a copy without tex8web-page.js, so that only MathJax and
-// tex8web-head.js, whose class on <html> is taken off, have changed it
+// tex8web-head.js, whose classes on <html> are taken off, have changed it
 const typesetPage = `(async () => {
   // (MathJax's script, from the network, may not have run yet)
   for (let t = 0; !MathJax.startup.promise; t += 100) {
@@ -36,7 +36,7 @@ const typesetPage = `(async () => {
   const css = [...document.styleSheets].filter(s => s.ownerNode?.id?.startsWith('MJX'))
     .map(s => [...s.cssRules].map(r => r.cssText).join('\\n')).join('\\n');
   const html = document.documentElement.cloneNode(true);
-  html.classList.remove('tex8web-js');
+  html.classList.remove('tex8web-js', 'tex8web-top');
   if (!html.classList.length) html.removeAttribute('class');
   html.querySelectorAll('script, style[id^=MJX]').forEach(n => n.remove());
   const style = document.createElement('style');
