@@ -1,10 +1,13 @@
 % A test for tex8web: colors in math in a document with xcolor but not
 % colortbl (which has MathJax load its color extension up front): the
-% \definecolor lines MathJax is given load the extension themselves.
+% \definecolor lines MathJax is given load the extension themselves,
+% which restarts the definitions before them: a \DeclarePairedDelimiter
+% fails on the second run, and the colors after it would be lost.
 \documentclass{article}
-\usepackage{xcolor}
+\usepackage{xcolor,mathtools,graphicx}
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
 \definecolor{ink}{RGB}{200,0,100}
 \colorlet{accent}{ink}
 \begin{document}
-In math, $\textcolor{accent}{a} + \textcolor{green}{b} + \textcolor[HTML]{3366CC}{c}$.
+In math, $\abs{x} + \textcolor{accent}{a} + \textcolor{green}{b} + \textcolor[HTML]{3366CC}{c}$.
 \end{document}

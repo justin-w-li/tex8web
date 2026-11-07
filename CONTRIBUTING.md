@@ -50,6 +50,8 @@ The bridge also handles colors. MathJax knows only CSS's and dvips's color names
 
 It looks for them in every word in braces in the math, so it also finds a color named in a macro's argument.
 
+The colors come before the macros. A `\definecolor` makes MathJax load its color extension and run the whole text again, where a repeated `\DeclarePairedDelimiter` is an error. `tex8web.js` logs such an error as a line that starts with `tex8web:`, which fails the checks.
+
 `tex8web-hooks.sty` records each color as xcolor defines it. TeX writes the values at the end of the document, in the color's model: gray, CMYK or RGB. `macros.lua` mixes them in the model xcolor would, converts as xcolor does, and rounds once. `tex8web.js` adds the color models MathJax lacks: `HTML`, `Gray`, `cmy` and `cmyk`.
 
 **Indexes** (`index.lua`). makeindex gets each `\index`'s count in place of a page number. The counts start at 1000001, so that no number in an entry's text is taken for one. Each count becomes a link back to its `\index`, shown counted from 1. makeindex runs with `-r`, so consecutive counts stay separate. imakeidx runs nothing under tex4ht, so `tex8web-hooks.sty` records the command it would run in the `.aux`.

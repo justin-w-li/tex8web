@@ -169,7 +169,12 @@ function M.define(document, context)
     log:warning(#skipped .. " macro(s) left undefined for MathJax, which can't read their definitions: "
       .. table.concat(skipped, ", ") .. ". Define them for MathJax with \\WebMathMacros in your config")
   end
-  for _, def in ipairs(color_definitions(texts, context.colors or "")) do defs[#defs + 1] = def end
+  -- (the colors go first: \definecolor makes MathJax load its color
+  -- extension and run the whole text again, where a repeated
+  -- \DeclarePairedDelimiter is an error that drops the colors after it)
+  local colors = color_definitions(texts, context.colors or "")
+  for _, def in ipairs(defs) do colors[#colors + 1] = def end
+  defs = colors
   if #defs == 0 then return end
   local body = document:query_selector("body")[1]
   -- (mathjax_ignore: MathJax's class for text it doesn't look for math in)

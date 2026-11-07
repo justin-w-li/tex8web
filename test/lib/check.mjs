@@ -22,8 +22,9 @@ export function checkTexLog(path) {
 
 // make4ht's warnings and errors in its log
 export function checkLog(log) {
-  // (MathJax's own warnings, from prerendering, start with "MathJax:")
-  return log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]|^MathJax:/.test(l))
+  // (MathJax's own warnings, from prerendering, start with "MathJax:", and
+  // tex8web.js's, as a macro MathJax can't define, with "tex8web:")
+  return log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]|^(MathJax|tex8web):/.test(l))
     .map(line => line.trim());
 }
 

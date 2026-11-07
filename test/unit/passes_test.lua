@@ -410,6 +410,16 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     check(not definitions:find("nope", 1, true), definitions)
   end,
 
+  ["macros.define: the colors come before the macros, which MathJax restarts after the first"] = function()
+    local tex = tmpfile([[\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}]])
+    local d = parse([[<span class="mathjax-inline">\(\abs{\textcolor{ink}{a}}\)</span>]])
+    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216 "})
+    os.remove(tex)
+    local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
+    local color, macro = definitions:find("\\definecolor", 1, true), definitions:find("\\DeclarePairedDelimiter", 1, true)
+    check(color and macro and color < macro, definitions)
+  end,
+
   ["macros.define: mixes in the first color's model, as xcolor does"] = function()
     local d = parse([[<span class="mathjax-inline">\(\textcolor{olive!50}{a}\textcolor{BrickRed!30}{b}]]
       .. [[\textcolor{Mahogany!40!Goldenrod}{c}\textcolor{-BrickRed!40}{d}\textcolor{gray!50!BrickRed}{e}]]
