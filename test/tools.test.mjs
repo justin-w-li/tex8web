@@ -109,7 +109,7 @@ test('clean.mjs removes one key\'s builds and dead Chrome profiles, and nothing 
     'each/ln/main.tex', 'target2/k/html/x.html', 'outside/f.lock', 'outside/x',
     'each/tex8web-x/tex8web.mk4', 'each/tex8web-x/test.tex', 'each/tex8web-x/build/k/page.html',
     'each/link/main.tex', 'target/keep', 'here/build/k/accepted/a/a.html', 'here/build/k/html/a/a.html',
-    'here/build/main/html/a.html', 'build/k/html/d.html',
+    'here/build/main/html/a.html', 'build/k/html/d.html', 'build/k/base/d/d.html',
     'tmp/tex8webchromeDead01/Default', 'tmp/tex8webchromeDead01.log', 'tmp/tex8webchromeLive01/Default',
     'tmp/tex8webchromeNew001/Default', 'tmp/tex8webchromepagesAbCdEf/file', 'tmp/other/file']) file(path);
   mkdirSync(join(dir, 'each/link/build'));

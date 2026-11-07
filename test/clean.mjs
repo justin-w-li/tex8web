@@ -69,8 +69,8 @@ if (options.each) {
 }
 
 // what a build's directory holds when it is regress.mjs's (or a wrapper's:
-// rebuild.lock)
-const ours = ['html', 'compare', 'logs', 'tex4ht', 'accepted', 'shots-cache', 'regress.lock', 'rebuild.lock'];
+// rebuild.lock, and base, a copy of the pages it compares with)
+const ours = ['html', 'compare', 'logs', 'tex4ht', 'accepted', 'shots-cache', 'regress.lock', 'rebuild.lock', 'base'];
 // the lock files in a directory, by looking and not by following links
 const locksIn = dir => readdirSync(dir, { withFileTypes: true })
   .flatMap(entry => entry.isDirectory() ? locksIn(join(dir, entry.name)) : entry.isFile() && entry.name.endsWith('.lock') ? [join(dir, entry.name)] : []);
