@@ -49,7 +49,8 @@ local function mark(name)
   io.stdout:flush()
 end
 if reuse then
-  -- (with LaTeX's parameters, which make4ht keeps for the commands after it)
+  -- (with LaTeX's parameters, which make4ht keeps for the commands after
+  -- it: correct_exit makes a failed tex4ht or t4ht fatal)
   Make:add("latex_reused", function() mark("begin") mark("end") return 0 end, {correct_exit = 0})
   Make:latex_reused(latex)
 else

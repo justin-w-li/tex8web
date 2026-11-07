@@ -6,8 +6,8 @@ import assert from 'node:assert/strict';
 import { appendFileSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { test } from 'node:test';
-import { build, latexSourceHash, root, sourceHash } from './lib/build.mjs';
+import { mock, test } from 'node:test';
+import { build, latexSourceHash, latexSources, root, sourceHash } from './lib/build.mjs';
 import { stubbed } from './lib/stubs.mjs';
 
 test('what a build reads, in tex8web and in the document, is in its stamp', () => {
@@ -53,6 +53,20 @@ test('what LaTeX reads of tex8web, and only that, is in the stamp of its LaTeX r
   } finally {
     rmSync(dir, { recursive: true });
   }
+});
+
+test('the Lua that runs between LaTeX runs, and what it requires, is in the stamp of LaTeX\'s run', () => {
+  // (tex8web.mk4 runs these two between LaTeX's runs)
+  const files = new Set();
+  const add = file => {
+    if (files.has(file)) return;
+    files.add(file);
+    for (const [, name] of readFileSync(join(root, file), 'utf8').matchAll(/require\s*\(?\s*"tex8web\.(\w+)"/g)) add(`lua/tex8web/${name}.lua`);
+  };
+  add('lua/tex8web/bibliography.lua');
+  add('lua/tex8web/index.lua');
+  assert.ok(files.has('lua/tex8web/files.lua'));
+  for (const file of files) assert.ok(latexSources.includes(file), file);
 });
 
 test('a build is reused only while nothing it was built from has changed', { timeout: 30000 }, async () => {
@@ -111,6 +125,20 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal(latex.log.match(/LaTeX ran/g)?.length, 1);
     assert.doesNotMatch(latex.log, /tex8web-latex/);
     assert.equal((await make()).reused, true);
+    // (but not on another day, which \today would show, unless the date is fixed)
+    const nextDay = async env => {
+      rmSync(join(dir, 'build/html.stamp'));
+      const day = mock.method(Date.prototype, 'toDateString', () => 'another day');
+      try {
+        return (await make(env)).latexReused;
+      } finally {
+        day.mock.restore();
+      }
+    };
+    assert.equal(await nextDay(), undefined);
+    const fixed = { SOURCE_DATE_EPOCH: '946684800', FORCE_SOURCE_DATE: '1' };
+    assert.equal((await make(fixed)).latexReused, undefined);
+    assert.equal(await nextDay(fixed), true);
     write('third');
     assert.equal((await make()).latexReused, undefined);
     assert.match(html(), /third/);

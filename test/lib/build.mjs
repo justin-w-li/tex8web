@@ -185,7 +185,7 @@ const sources = ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8
 export const sourceHash = base => hashFiles(base, sources);
 // what LaTeX's runs read of it, with the Lua that runs between them, which
 // makes the bibliography and the index LaTeX reads (tex8web.mk4)
-const latexSources = ['bin', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'lua/tex8web/bibliography.lua',
+export const latexSources = ['bin', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'lua/tex8web/bibliography.lua',
   'lua/tex8web/files.lua', 'lua/tex8web/index.lua'];
 export const latexSourceHash = base => hashFiles(base, latexSources);
 
@@ -193,9 +193,10 @@ export const latexSourceHash = base => hashFiles(base, latexSources);
 // sources, and the tools it uses, which change its output when they change:
 // MathJax and subset-font, if they are there to prerender with
 // (lua/tex8web/prerender.lua), TeX Live, and make4ht and tex4ht, which
-// change within a TeX Live year (the version, and when tex4ht.sty was
-// installed). And the same for LaTeX's part of the build: its sources and
-// TeX's tools
+// change within a TeX Live year (the version, when tex4ht.sty was
+// installed, and when tlmgr last changed TeX Live: it keeps each file's own
+// date). And the same for LaTeX's part of the build: its sources and TeX's
+// tools
 let toolchain;
 function tools() {
   if (toolchain) return toolchain;
@@ -205,7 +206,8 @@ function tools() {
   const first = (command, ...args) => spawnSync(command, args, { encoding: 'utf8' }).stdout?.split('\n')[0] ?? null;
   const sty = first('kpsewhich', 'tex4ht.sty');
   const installed = sty && statSync(sty, { throwIfNoEntry: false })?.mtimeMs;
-  const tex = [first('tex', '--version'), first('make4ht', '--version'), installed ?? null];
+  const tlpdb = statSync(join(first('kpsewhich', '-var-value', 'TEXMFROOT') ?? '', 'tlpkg/texlive.tlpdb'), { throwIfNoEntry: false });
+  const tex = [first('tex', '--version'), first('make4ht', '--version'), installed ?? null, tlpdb?.mtimeMs ?? null];
   return toolchain = { page: JSON.stringify([sourceHash(root), version('mathjax'), version('subset-font'), ...tex]),
     latex: JSON.stringify([latexSourceHash(root), ...tex]) };
 }
@@ -215,15 +217,18 @@ function tools() {
 // variables the build reads, and the PDF the page links: a page built
 // before it was there lacks the link. The files themselves, not the commit,
 // so that an edit not yet committed, or a file git doesn't know, is part of
-// it. And the stamp of its LaTeX part (latex), with LaTeX's tools
+// it. And the stamp of its LaTeX part (latex), with LaTeX's tools and the
+// day, which \today gives, unless the date is fixed
 function stamps(doc, args, env, pdf) {
+  const all = { ...process.env, ...env };
   // (the slots, regress.mjs's test hook and the speech kept from the last
   // build change no page)
-  const vars = Object.entries({ ...process.env, ...env })
+  const vars = Object.entries(all)
     .filter(([name]) => /^(TEX8WEB_(?!SLOTS|TREE|SPEECH_CACHE)|TEXINPUTS$|TEXMF|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).sort();
+  const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
   const rest = [hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf];
-  const hash = tools => createHash('sha256').update(JSON.stringify([tools, ...rest])).digest('hex');
-  return { page: hash(tools().page), latex: hash(tools().latex) };
+  const hash = (...head) => createHash('sha256').update(JSON.stringify([...head, ...rest])).digest('hex');
+  return { page: hash(tools().page), latex: hash(tools().latex, day) };
 }
 
 // runs bin/tex8web on a document, with the page in out and tex4ht's files
