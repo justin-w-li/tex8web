@@ -706,7 +706,7 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
    the button hides and shows with tex8web-page.js (fading). Its
    lines close together, and entries a little apart. tex8web-page.js marks
    the section being read, and shows its section's subsections and those
-   the reader opens */
+   the reader opens, or every entry where all of them fit */
 /* (85vw in all, with the padding) */
 .tex8web-toc { --tex8web-toc-pad: 1.25rem; inset: 0 auto 0 0;
     width: min(var(--tex8web-margin), 85vw - 2 * var(--tex8web-toc-pad)); height: 100%;
@@ -768,7 +768,7 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
     .tex8web-toc .tableofcontents { overflow-y: clip; }
 }
 /* (the section being read, its subsections hidden, marked in their place) */
-.tex8web-toc .tex8web-reading:has(> .tex8web-toc-more[aria-expanded="false"]) > a {
+.tex8web-toc:not(.tex8web-toc-all) .tex8web-reading:has(> .tex8web-toc-more[aria-expanded="false"]) > a {
     border-radius: 0.2em; background-color: var(--tex8web-highlight); }
 /* the filter (tex8web-page.js): a field, and what matches in place of the
    entries, the one chosen (which Enter follows) marked while the field has
@@ -790,9 +790,11 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
 .tex8web-toc-where, .tex8web-toc-none { opacity: 0.6; }
 .tex8web-toc-filter:focus ~ .tex8web-toc-results [aria-selected="true"] a { border-radius: 0.2em;
     background-color: var(--tex8web-highlight); }
-.tex8web-js .tex8web-toc .tableofcontents > :is(.subsectionToc, .likesubsectionToc,
+.tex8web-js .tex8web-toc:not(.tex8web-toc-all) .tableofcontents > :is(.subsectionToc, .likesubsectionToc,
     .subsubsectionToc, .likesubsubsectionToc, .paragraphToc, .likeparagraphToc,
     .subparagraphToc, .likesubparagraphToc):not(.tex8web-open) { display: none; }
+/* (every entry, where all fit: tex8web-page.js) */
+.tex8web-toc-all .tex8web-toc-more { display: none; }
 @media (--tex8web-wide) {
     /* (the icons where they are in the narrow screen's bar) */
     .tex8web-controls { inset: var(--tex8web-icons-inset); padding: 0.125rem; border: 0;

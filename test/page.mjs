@@ -2,11 +2,11 @@
 // driven in headless Chrome on the pages of the fixtures that have the
 // feature: the picture viewer by mouse, by finger and by keyboard, the narrow
 // screen's bar, the fade of a display that scrolls, the theme button, the
-// contents (its filter, the subsections shown, and its chevrons), the page
-// when one feature of the script fails, and the transition from one page of
-// a site to another. Each check fails if its fixture lacks what it drives,
-// and waits for a state the page reaches rather than for a time. The checks
-// run once the builds are done.
+// contents (its filter, the subsections shown, its chevrons, and every
+// entry where all fit), the page when one feature of the script fails, and
+// the transition from one page of a site to another. Each check fails if
+// its fixture lacks what it drives, and waits for a state the page reaches
+// rather than for a time. The checks run once the builds are done.
 //   node test/page.mjs [check names...]
 import { cpSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -655,10 +655,11 @@ async function lazily(chrome, [doc]) {
 }
 
 // the contents of a page whose first headings are subsections, before its
-// first section: while one is read, those and the section's are shown, and
-// then only the subsections of the section being read
+// first section, in a window too short for all of them: while one is read,
+// those and the section's are shown, and then only the subsections of the
+// section being read
 async function opening(chrome, file) {
-  return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 200 }, async page => {
     const shown = () => page.evaluate(`[...document.querySelectorAll('#tex8web-toc .tableofcontents > span')]
       .filter(entry => entry.checkVisibility()).map(entry => entry.textContent.replace(/\\s+/g, ' ').trim()).join('|')`);
     const problems = [];
@@ -694,9 +695,10 @@ async function reaching(chrome, file) {
 // slides open, and stays open as the page scrolls to a third section. That
 // one opens without a slide, and the first, being left, closes. The section
 // being read, once closed, stays closed while it's read, its entry marked.
-// The opened section still stays open as a contents link leads back
+// The opened section still stays open as a contents link leads back. (In
+// a window too short for all the entries, which would show them all)
 async function browsing(chrome, file) {
-  return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 700 }, async page => {
     const problems = [];
     const state = `[...document.querySelectorAll('#tex8web-toc .tex8web-toc-more')].map(button => {
       let shown = 0;
@@ -772,9 +774,76 @@ async function browsing(chrome, file) {
   });
 }
 
+// the contents of a short page. Where all of them fit, in the column and
+// in the narrow screen's open drawer, every entry is shown, and no chevron.
+// Where they don't, a section neither read nor opened shows no subsections,
+// and its chevron opens it. That section stays open as the window grows
+// to fit them all and shrinks again, also while the filter's results stand
+// in for the entries
+async function fitting(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
+    const problems = [];
+    const state = () => page.evaluate(`(() => {
+      const entries = [...document.querySelectorAll('#tex8web-toc .tableofcontents > span')];
+      const chevrons = [...document.querySelectorAll('#tex8web-toc .tex8web-toc-more')];
+      return { sections: entries.filter(el => el.matches('.sectionToc, .likesectionToc')).length,
+        entries: entries.length, shown: entries.filter(el => el.checkVisibility()).length,
+        chevrons: chevrons.length, seen: chevrons.filter(el => el.checkVisibility()).length,
+        open: chevrons.map(el => el.getAttribute('aria-expanded')).join() };
+    })()`);
+    const drawer = open => page.evaluate(`document.getElementById('tex8web-toc').${open ? 'show' : 'hide'}Popover()`);
+    const all = s => s.shown === s.entries && s.seen === 0;
+    const collapsed = s => s.shown === s.sections && s.seen === s.chevrons;
+    const first = await state();
+    if (!first.chevrons || first.entries === first.sections) return [`${first.chevrons} chevrons, ${first.entries - first.sections} subsections`];
+    const at = async (what, wanted) => {
+      if (!await until(state, wanted)) problems.push(`${what}: ${JSON.stringify(await state())}`);
+    };
+    await at('wide, room for all', all);
+    await page.resize(400, 800);
+    await drawer(true);
+    await at('narrow, room for all', all);
+    await drawer(false);
+    await page.resize(400, 150);
+    await drawer(true);
+    await at('narrow, too short', collapsed);
+    await drawer(false);
+    await page.resize(1600, 150);
+    await at('wide, too short', collapsed);
+    await page.evaluate(`document.querySelector('#tex8web-toc .tex8web-toc-more').click()`);
+    await finished(page);
+    await at('too short, a section opened', s => s.shown === s.entries && s.seen === s.chevrons);
+    await page.resize(1600, 900);
+    await at('a section opened, room for all', all);
+    await page.resize(1600, 150);
+    await at('a section opened, too short again', s => s.shown === s.entries && s.seen === s.chevrons && s.open === 'true');
+    // (measured with the entries, not the filter's results, which fit in
+    // a window as tall as this)
+    const typed = text => page.evaluate(`(() => {
+      const input = document.querySelector('.tex8web-toc-filter');
+      input.value = '${text}';
+      input.dispatchEvent(new Event('input'));
+    })()`);
+    await page.resize(1600, 900);
+    await at('room for all again', all);
+    await typed('nothing such');
+    await page.resize(1600, 300);
+    if (!await until(() => page.evaluate(`!document.getElementById('tex8web-toc').classList.contains('tex8web-toc-all')`))) {
+      problems.push('too short as the filter is used: still set to show every entry');
+    }
+    if (!await page.evaluate(`document.querySelector('.tex8web-toc-results').checkVisibility()`)) {
+      problems.push('resized as the filter is used: its results not shown');
+    }
+    await typed('');
+    await at('too short as the filter was used', s => s.shown === s.entries && s.seen === s.chevrons);
+    return problems;
+  });
+}
+
 // one feature of the page's script failing (here, the fade at an edge,
 // whose ResizeObserver throws) leaves the others working: the contents
-// showing the subsections being read, and the filter set up
+// showing the subsections being read, and the filter set up. (The contents'
+// own ResizeObserver throws too, but last, once the rest is set up)
 async function isolating(chrome, file) {
   const before = `window.ResizeObserver = class { constructor() { throw new Error('a feature fails'); } }`;
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, before }, async page => {
@@ -860,7 +929,8 @@ async function navigating(chrome, [example, index]) {
 // previews, its term and its sections' subsections; the filter's other: a
 // titled box; transitions: an example and the page that links it; the
 // contents, the failing feature and the fade of the browser's math: a page
-// with subsections before its first section)
+// with subsections before its first section; the contents that fit: a short
+// example whose one section with subsections isn't the first)
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));
@@ -880,6 +950,7 @@ const checks = {
   reach: [['test-tocsub'], each(reaching)],
   browsing: [['test'], each(browsing)],
   isolated: [['test-tocsub'], each(isolating)],
+  fit: [['examples/footnotes'], each(fitting)],
   transitions: [['examples/basic', 'test-generic'], navigating],
 };
 

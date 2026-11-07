@@ -385,6 +385,31 @@
       }
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });
+    // every entry shown, without chevrons, where all of them fit in the
+    // column or drawer without scrolling (css/tex8web.css). Measured with
+    // all shown, which doesn't depend on what's open, and with the entries
+    // rather than the filter's results. The box is measured as tall as it
+    // is in the large viewport: on a phone it grows as the URL bar hides
+    // while the page scrolls, which mustn't change what's shown. (Its
+    // height auto, as the drawer's 100% would keep a margin from growing
+    // it.) Measured again as fonts arrive, which change the entries'
+    // heights but not the box's
+    const list = toc.querySelector('.tableofcontents');
+    const fit = () => {
+      const results = toc.querySelector('.tex8web-toc-results');
+      const filtering = list.hidden, top = toc.scrollTop;
+      if (filtering) [list.hidden, results.hidden] = [false, true];
+      toc.classList.add('tex8web-toc-all');
+      toc.style.height = 'auto';
+      toc.style.marginBottom = 'calc(100dvh - 100lvh)';
+      const fits = toc.scrollHeight <= toc.clientHeight;
+      toc.style.height = toc.style.marginBottom = '';
+      if (filtering) [list.hidden, results.hidden] = [true, false];
+      toc.classList.toggle('tex8web-toc-all', fits);
+      toc.scrollTop = top;
+    };
+    document.fonts.addEventListener('loadingdone', fit);
+    new ResizeObserver(fit).observe(toc);
   }
 
   // the contents' filter: in place of the entries, the headings, theorems
