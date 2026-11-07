@@ -122,10 +122,12 @@ const watchdog = `
 // to null if the lock is busy (75, EX_TEMPFAIL)
 function execute(command, args, { idle = 180, total = 900, slotFile, ...options }) {
   return new Promise(done => {
+    // (its stderr into its stdout: read from two pipes, the two would be in
+    // the order they were read, not written)
     const child = slotFile
-      ? spawn('perl', ['-e', watchdog, total + 2, 'lockf', '-k', '-t', '0', slotFile, 'sh', '-c', `echo ${held}; exec "$@"`,
+      ? spawn('perl', ['-e', watchdog, total + 2, 'lockf', '-k', '-t', '0', slotFile, 'sh', '-c', `echo ${held}; exec "$@" 2>&1`,
         'sh', command, ...args], { ...options, detached: true })
-      : spawn(command, args, { ...options, detached: true });
+      : spawn('sh', ['-c', 'exec "$@" 2>&1', 'sh', command, ...args], { ...options, detached: true });
     running.add(child.pid);
     let log = '', timer, limit, started = !slotFile;
     const stop = why => {

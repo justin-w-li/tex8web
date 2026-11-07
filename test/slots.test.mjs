@@ -125,14 +125,21 @@ describe('slots and run()', { concurrency: true }, () => {
     }
   });
 
-  test('the stdout and stderr of a slotted build are both in its log', { skip: !lockf, timeout: 30000 }, async () => {
+  // (lines in turn, faster than a reader of two pipes could keep their order)
+  const interleaved = ['sh', ['-c', 'i=0; while [ $i -lt 200 ]; do echo e$i >&2; echo o$i; i=$((i + 1)); done']];
+  const inTurn = Array.from({ length: 200 }, (_, i) => `e${i}\no${i}\n`).join('');
+
+  test('a build\'s log has its stdout and stderr in the order it wrote them', async () => {
+    assert.equal((await run(...interleaved)).log, inTurn);
+  });
+
+  test('a slotted build\'s log has its stdout and stderr in the order it wrote them', { skip: !lockf, timeout: 30000 }, async () => {
     const { tmp, env } = pool(1);
     try {
       const out = await child(`import { run } from './test/lib/build.mjs';
-        const { log } = await run('sh', ['-c', 'echo to-stderr >&2; echo to-stdout'], { slot: true });
+        const { log } = await run(...${JSON.stringify(interleaved)}, { slot: true });
         console.log(JSON.stringify(log)); process.exit();`, env).done;
-      // (the pipes' order isn't fixed)
-      assert.deepEqual(JSON.parse(out).split('\n').sort(), ['', 'to-stderr', 'to-stdout']);
+      assert.equal(JSON.parse(out), inTurn);
     } finally {
       rmSync(tmp, { recursive: true });
     }
