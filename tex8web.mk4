@@ -39,10 +39,13 @@ local text = require "tex8web.text"
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
 -- The tests' builds (test/lib/build.mjs) keep what LaTeX left in the build
--- directory, in TEX8WEB_LATEX_SAVE, and when nothing LaTeX reads has
--- changed, put it back and set TEX8WEB_LATEX_REUSE, which skips LaTeX. The
--- marks around LaTeX's part of the log let them keep that part too
-local save, reuse = os.getenv("TEX8WEB_LATEX_SAVE"), os.getenv("TEX8WEB_LATEX_REUSE") == "1"
+-- directory, in TEX8WEB_LATEX_SAVE, a path not there yet. When nothing
+-- LaTeX reads has changed, they put it back and set TEX8WEB_LATEX_REUSE,
+-- which skips LaTeX if its .dvi is there. The marks around LaTeX's part of
+-- the log let them keep that part too
+local save = os.getenv("TEX8WEB_LATEX_SAVE")
+local reuse = os.getenv("TEX8WEB_LATEX_REUSE") == "1"
+  and lfs.attributes(((settings.builddir ~= "" and settings.builddir) or ".") .. "/" .. settings.input .. ".dvi") ~= nil
 local function mark(name)
   io.stdout:flush()
   print("tex8web-latex-" .. name)
@@ -69,8 +72,9 @@ else
   if save then
     Make:add("latex_save", function(par)
       -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
-      local status = os.execute("rm -rf " .. files.quote(save) .. " && cp -R " .. files.quote(par.builddir) .. " " .. files.quote(save))
-      if status == 0 then mark("end") end
+      if not lfs.attributes(save) and os.execute("cp -R " .. files.quote(par.builddir) .. " " .. files.quote(save)) == 0 then
+        mark("end")
+      end
       return 0
     end)
     Make:latex_save {}

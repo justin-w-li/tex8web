@@ -302,6 +302,7 @@ async function buildHere(doc, out, aux, env) {
     cpSync(stage.dir, aux, { recursive: true });
   } else if (!doc.draft) {
     rmSync(stage.stamp, { force: true });
+    rmSync(stage.dir, { recursive: true, force: true });
   }
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });

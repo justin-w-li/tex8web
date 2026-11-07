@@ -4,11 +4,11 @@
 // A file of their own gives them a pool of slots of their own, which the
 // tests with a stand-in for make4ht then needn't wait for.
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, test } from 'node:test';
-import { build, hashFiles } from './lib/build.mjs';
+import { build, hashFiles, root, run } from './lib/build.mjs';
 import { stubbed } from './lib/stubs.mjs';
 
 // (the real builds are the slow part, so these run at once)
@@ -102,6 +102,40 @@ describe('real builds', { concurrency: true }, () => {
       const again = await make();
       assert.notEqual(again.code, 0);
       assert.equal(again.reused, undefined);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  // bin/tex8web run directly on a document of its own, with the tests'
+  // variables as one might leave them in a shell
+  async function direct(env) {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webdirect')));
+    writeFileSync(join(dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nx\n\\end{document}\n');
+    const result = await run(join(root, 'bin/tex8web'), ['doc.tex'], { cwd: dir, slot: true,
+      env: { ...process.env, TEX8WEB_NO_PRERENDER: '1', ...env(dir) } });
+    return { dir, ...result };
+  }
+
+  test('a direct build with TEX8WEB_LATEX_REUSE and no LaTeX run kept runs LaTeX', { timeout: 180000 }, async () => {
+    const { dir, code, log } = await direct(() => ({ TEX8WEB_LATEX_REUSE: '1' }));
+    try {
+      assert.equal(code, 0, log);
+      assert.ok(existsSync(join(dir, 'build/html/doc.html')));
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  test('TEX8WEB_LATEX_SAVE leaves what is already there', { timeout: 180000 }, async () => {
+    const { dir, code, log } = await direct(dir => {
+      mkdirSync(join(dir, 'kept'));
+      writeFileSync(join(dir, 'kept/mine'), '');
+      return { TEX8WEB_LATEX_SAVE: join(dir, 'kept') };
+    });
+    try {
+      assert.equal(code, 0, log);
+      assert.deepEqual(readdirSync(join(dir, 'kept')), ['mine']);
     } finally {
       rmSync(dir, { recursive: true });
     }
