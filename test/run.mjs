@@ -123,11 +123,15 @@ const typeset = {
 };
 
 // what screen readers hear: ClearSpeak's words, | as "given", no "normal"
-// before an upright letter, Δ as "Delta", and A^\top as "A transpose"
+// before an upright letter, Δ as "Delta", and A^\top as "A transpose"; a
+// numbered equation as one without a number, then its label, and an
+// alignment of several lines as one
 const speech = {
   'test': [/aria-label='P of open paren A given B close paren'/, /aria-label='Gamma of z'/,
     /aria-label='d x'/, /aria-label='Delta of S'/, /aria-label='A transpose'/,
     /^(?![^]*down tack)/, /aria-label='x sub i transpose'/],
+  'test-generic': [/aria-label='double struck P of [^']* over t Label open paren 2\.1 close paren'/,
+    /aria-label='2 lines Line 1: x equals y Label open paren 2\.4 close paren Line 2: z equals w'/],
   // (nicefrac's and xfrac's fractions, the units extension's)
   'test-units': [/aria-label='one half'/, /aria-label='one fourth'/],
 };

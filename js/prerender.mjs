@@ -289,11 +289,14 @@ const speeches = [...spoken.math];
 if (speeches.length !== items.length) {
   throw new Error(`MathJax found ${speeches.length} formulas for the speech and ${items.length} in the page`);
 }
+// (an equation with a number is a table of one row to MathJax, whose
+// speech says so, as "1 lines Line 1: a equals b Label 1"; the speech
+// rule engine's options for tables apply to every table)
 speeches.forEach(({ outputData: { speech } }, i) => {
   const container = items[i].typesetRoot;
   if (!speech) return adaptor.setAttribute(container, 'aria-hidden', 'true');
   adaptor.setAttribute(container, 'role', 'math');
-  adaptor.setAttribute(container, 'aria-label', speech);
+  adaptor.setAttribute(container, 'aria-label', speech.replace(/^1 lines Line 1: /, ''));
   adaptor.setAttribute(adaptor.tags(container, 'mjx-math')[0], 'aria-hidden', 'true');
 });
 
