@@ -41,6 +41,7 @@
 \@for\web@package:=mathpazo,pxfonts,newpxmath\do{\@ifpackageloaded\web@package{\def\web@mathfont{pagella}}{}}
 \@ifpackageloaded{fouriernc}{\def\web@mathfont{schola}}{}
 \@ifpackageloaded{newtxmath}{%
+    \web@needs{iftx@ntxmath}\web@needs{iftx@nc}%
     \iftx@ntxmath\def\web@mathfont{termes}\fi
     \iftx@nc\def\web@mathfont{schola}\fi}{}
 \edef\web@mathjax{{
