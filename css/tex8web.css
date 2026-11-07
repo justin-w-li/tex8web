@@ -228,6 +228,18 @@ figure { margin-inline: 0; }
 :is(figcaption, div).caption { width: fit-content; margin-inline: auto; text-align: start;
     text-indent: 0; }
 :is(figcaption, div).caption span.id { font-weight: normal; }
+/* float.sty's ruled style, as algorithm's floats have it (tex8web-text.tex):
+   the caption at the top wherever \caption is, at the left, under a thick
+   rule and over a thin one; a thin rule ends the float. Each rule is 2pt
+   from the text, as float.sty's are */
+figure.tex8web-float-ruled { display: flex; flex-direction: column;
+    padding-block-end: var(--tex8web-float-sep);
+    border-block: var(--tex8web-float-thinrule) solid;
+    border-top-width: var(--tex8web-float-rule); }
+.tex8web-float-ruled > figcaption { order: -1; width: auto; margin: 0 0 var(--tex8web-float-sep);
+    padding-block: var(--tex8web-float-sep);
+    border-bottom: var(--tex8web-float-thinrule) solid; }
+.tex8web-float-ruled > figcaption span.id { font-weight: bold; }
 /* minipages and subfigures side by side while the column has room, each
    as wide as in the PDF (--tex8web-share of the text, tex8web-text.tex),
    spread along the line as by \hfill, the usual space between them (but
@@ -506,6 +518,15 @@ span.tcolorbox > .tcolorbox-title { display: block; }
 .tex8web-list > * > :last-child { margin-left: 0; }
 /* (LaTeX adds the larger of a list's space below and the next item's) */
 .tex8web-list > * > :last-child > .tex8web-list:last-child { margin-bottom: 0; }
+/* algorithmicx's lines (tex8web-text.tex), each indented by its block's
+   depth; a line without text is left out. A label wider than its column,
+   such as Require:, pushes the text over, as in a list of LaTeX's own */
+.algorithmic > * { align-items: baseline; grid-template-columns:
+    minmax(calc(var(--tex8web-list-indent) - var(--tex8web-list-labelsep)), max-content)
+    minmax(0, 1fr); }
+.algorithmic > * > :last-child { display: flow-root;
+    padding-inline-start: var(--tex8web-alg-indent); }
+.algorithmic > .tex8web-alg-notext { display: none; }
 /* (an item in a preview, tex8web-page.js's, without its list's marker) */
 .tex8web-preview > li { list-style: none; }
 /* a description's term runs into its text, which is indented after its

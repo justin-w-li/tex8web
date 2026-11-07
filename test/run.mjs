@@ -73,6 +73,9 @@ const measured = {
     '--tex8web-link': 'light-dark(#FF0000, var(--tex8web-link-dark))' },
   'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, var(--tex8web-url-dark))' },
   'test-tocentry': { '--tex8web-toc-chapter-skip': '1em' },
+  // (float.sty's rules, 0.8pt and 0.4pt, and their 2pt from the text)
+  'test-algorithmic': { '--tex8web-float-rule': '0.08em', '--tex8web-float-thinrule': '0.04em',
+    '--tex8web-float-sep': '0.2em' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
@@ -536,6 +539,21 @@ const hfill = {
   'examples/custom': [/<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'><mjx-container/],
 };
 
+// algorithm's ruled floats: the caption's label followed by a space, not a
+// colon, and algorithmicx's lines, each with its number in its own font
+// and indented by its block's depth. \Statex has neither, a line without
+// text is marked to be left out, and a \ref to a line leads to it
+const algorithms = {
+  'test-algorithmic': [
+    /^(?:(?!<figure class='float tex8web-float-ruled'>)[^])*(?:<figure class='float tex8web-float-ruled'>(?:(?!<figure)[^])*){2}$/,
+    /<span class='id'>Algorithm 1 <\/span><span class='content'>Binary search/,
+    /<span class='tex8web-label'>\s*<span class='cmr-8'>6:<\/span>\s*<\/span><div style='--tex8web-alg-indent: 4.5em'>/,
+    /<span class='tex8web-label'>\s*<\/span><div style='--tex8web-alg-indent: 0em'><a id='[^']+'><\/a>an unnumbered line/,
+    /<div class='tex8web-alg-notext'>/,
+    /line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>11[^]*<a id='\1'><\/a>\s*<span class='cmbx-10'>return/,
+  ],
+};
+
 // the spaces of verbatim text, alltt and \verbatiminput, which keep the
 // font's width: only the ~ in the text is narrowed
 const verbatim = {
@@ -611,7 +629,7 @@ const patterns = [
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
-  [permalinks, 'among the links'], [loose, 'in a paragraph'],
+  [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'],
 ];
 
 // what's wrong with a built page: its log, the page and the files with it

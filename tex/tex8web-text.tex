@@ -619,4 +619,70 @@
         {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}%
 }{}
 
+% --- algorithms ---------------------------------------------------------------
+
+% float.sty's floats, such as algorithm's, in their style: the figure's class
+% names it (tex8web-float-ruled, say), for the stylesheet to draw its rules
+% and place its caption. tex4ht sets the caption as LaTeX's (float.4ht), not
+% float.sty's: a ruled one's label is followed by a space, not a colon
+% (\floatc@ruled). This is html5.4ht's \Configure{float}, the same for every
+% class, with the class added
+\ExplSyntaxOn
+\@ifpackageloaded { float }
+  {
+    \web@Css { :root~{~--tex8web-float-rule:~\web@em{0.8pt};~
+      --tex8web-float-thinrule:~\web@em{0.4pt};~--tex8web-float-sep:~\web@em{2pt};~} }
+    \web@needs { cptB: }
+    \str_new:N \l__web_float_str
+    \cs_set_protected:Npn \__web_float_style:
+      {
+        \str_clear:N \l__web_float_str
+        \cs_if_exist:cT { fst@ \@captype }
+          {
+            \str_set:Nx \l__web_float_str { ~tex8web-float-
+              \exp_after:wN \exp_after:wN \exp_after:wN \cs_to_str:N \cs:w fst@ \@captype \cs_end: }
+            \str_remove_once:Nn \l__web_float_str { fs@ }
+            \cs_if_eq:NNT \@fs@capt \floatc@ruled { \tl_set:Nn \cptB: { ~ } }
+          }
+      }
+    \Configure{float}
+      { \ifOption{refcaption}{}{ \csname par\endcsname \ShowPar \leavevmode } }
+      { \__web_float_style: \:xhtml{ \IgnorePar \EndP }
+        \HCode{ <figure~class="float \l__web_float_str" \Hnewline> } }
+      { \ifvmode \IgnorePar \fi \EndP \HCode{ </figure> } \csname par\endcsname \ShowPar }
+  }
+  { }
+\ExplSyntaxOff
+
+% algorithmicx's lines as LaTeX's list sets them (.tex8web-list): each number
+% in its own font, right-aligned \labelsep before its line, and the line
+% indented by its block's depth, \ALG@tlm, which tex4ht writes as spaces.
+% A line without text, such as algpseudocode's noend makes of \EndIf, is
+% left out, as in the PDF; \Statex has neither number nor indent. (In place
+% of html4.4ht's, whose \NoFonts loses the numbers' size)
+\catcode58 11
+\@ifpackageloaded{algorithmicx}{%
+    \web@needs{ALG@tlm}\web@needs{ALG@x@notext}\web@needs{Statex}%
+    \ConfigureEnv{algorithmic}
+        {\ifvmode\IgnorePar\fi\EndP\bgroup\Configure{HtmlPar}{\EndP}{\EndP}{}{}}
+        {\egroup\ifvmode\IgnorePar\fi\EndP\par\ShowPar}
+        {}{}%
+    \global\let\web@algindent\ALG@tlm
+    \let\web@Statex\Statex
+    \def\Statex{\global\let\web@algindent\z@\web@Statex}%
+    \ConfigureList{algorithmic}
+        {\EndP\HCode{<div class="algorithmic tex8web-list"
+             style="--tex8web-list-topsep: \web@em\topsep; --tex8web-list-itemsep: 0em;
+             --tex8web-list-indent: \web@em\leftmargin;
+             --tex8web-list-labelsep: \web@em\labelsep">}%
+         \PushMacro\end:itm \global\let\end:itm\empty}
+        {\end:itm\PopMacro\end:itm \global\let\end:itm\end:itm \HCode{</div>}}
+        {\end:itm \global\def\end:itm{\EndP\HCode{</div></div>}}%
+         \HCode{<div\ifx\ALG@text\ALG@x@notext\space class="tex8web-alg-notext"\fi
+             ><span class="tex8web-label">}}
+        {\HCode{</span><div style="--tex8web-alg-indent: \web@em\web@algindent">}%
+         \global\let\web@algindent\ALG@tlm \AnchorLabel}%
+}{}
+\catcode58 12
+
 \makeatother

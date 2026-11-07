@@ -1,0 +1,52 @@
+% A test for tex8web: algorithm's ruled float with algpseudocode's lines.
+% The caption is at the left between two rules, at the top wherever
+% \caption is, and a rule ends the body, as in the PDF, also in an [H]
+% float. Each line is indented by its block's depth, with its number in
+% the PDF's size; \Statex has neither, and a line without text (\algtext*)
+% is left out. A \ref to the algorithm and to one of its lines leads
+% there.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[ruled]{algorithm}
+\usepackage{algpseudocode}
+\begin{document}
+\section{Search}
+Algorithm~\ref{alg:search} finds the smallest $i$ with $a_i \ge x$; its
+loop ends at line~\ref{line:return}.
+\begin{algorithm}
+\caption{Binary search}\label{alg:search}
+\begin{algorithmic}[1]
+\Require a sorted array $a_1 \le \dots \le a_n$ and a value $x$
+\Ensure the least $i$ with $a_i \ge x$, or $n+1$
+\Function{Search}{$a, x$}
+  \State $\ell \gets 1$, $h \gets n + 1$ \Comment{the answer is in $[\ell, h]$}
+  \While{$\ell < h$}
+    \State $m \gets \lfloor (\ell + h)/2 \rfloor$
+    \If{$a_m < x$}
+      \State $\ell \gets m + 1$ \Comment{$a_1, \dots, a_m < x$}
+    \Else
+      \State $h \gets m$
+    \EndIf
+  \EndWhile
+  \State \Return $\ell$\label{line:return}
+\EndFunction
+\For{$k = 1, \dots, K$}
+  \State $s_k \gets \sum_{j=1}^{k} a_j$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+Text after the algorithm.
+
+\algtext*{EndIf}
+\begin{algorithm}[H]
+\begin{algorithmic}
+\State $c \gets 0$
+\Statex an unnumbered line
+\If{$c = 0$}
+  \State $c \gets 1$
+\EndIf
+\end{algorithmic}
+\caption{A caption at the end, an \texttt{[H]} float}\label{alg:end}
+\end{algorithm}
+See Algorithm~\ref{alg:end}.
+\end{document}
