@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, wri
 import { availableParallelism, constants } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { inSlots, lock, noLockf, released } from './slots.mjs';
+import { inSlots, lock, noLockf } from './slots.mjs';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -98,7 +98,6 @@ const held = 'tex8web-slot-held';
 // being stdout and stderr in order
 export const run = (command, args, { slot = false, ...options } = {}) => slot && !noLockf()
   ? inSlots(slotFile => execute(command, args, { ...options, env: { ...options.env ?? process.env, TEX8WEB_SLOTS_HELD: '1' }, slotFile }))
-    .finally(released)
   : execute(command, args, options);
 
 // Runs the command under a watchdog that ends it, with its process group,
@@ -226,10 +225,9 @@ function tools() {
 // day, which \today gives, unless the date is fixed
 function stamps(doc, args, env, pdf) {
   const all = { ...process.env, ...env };
-  // (the slots, regress.mjs's test hook and the speech kept from the last
-  // build change no page)
+  // (the slots and the speech kept from the last build change no page)
   const vars = Object.entries(all)
-    .filter(([name]) => /^(TEX8WEB_(?!SLOTS|TREE|SPEECH_CACHE)|TEXINPUTS$|TEXMF|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).sort();
+    .filter(([name]) => /^(TEX8WEB_(?!SLOTS|SPEECH_CACHE)|TEXINPUTS$|TEXMF|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).sort();
   const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
   const rest = [hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf];
   const hash = (...head) => createHash('sha256').update(JSON.stringify([...head, ...rest])).digest('hex');

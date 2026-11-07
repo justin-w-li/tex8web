@@ -14,39 +14,30 @@
 //                      logs/, tex4ht/ and, by default, accepted/<name>
 //   --baseline <dir>   compare with the pages in <dir>/<name> instead, such as
 //                      another checkout's html directory
-//   --accept           make this run's pages the baseline, with a STAMP file
-//                      saying which tex8web commit and when, without
-//                      comparing the screens: a change is looked at before
-//                      it is accepted. Refused when tex8web has uncommitted
-//                      changes, with --draft, and when any document failed
+//   --accept           make this run's pages the baseline, without comparing
+//                      the screens: a change is looked at before it is
+//                      accepted. Refused with --draft, and not done when any
+//                      document failed
 //   --draft            make4ht's draft mode, quicker and not to be trusted
-//   --expect look      the pages are meant to look different, so compare
-//                      the screens only as far as the first strip of 20
-//                      that differs, for each width and scheme, and say from
-//                      which screen. By default every screen is compared
 //   --shots-cache <dir>  where shots.mjs keeps what the baseline's screens
 //                      came to, by what decides them, so that every run and
 //                      checkout using the directory shoots a baseline once.
 //                      Default <out>/shots-cache
-//   --shots-at-once <n>  how many pages' screens are compared at once, each
-//                      in a Chrome of its own, as the others are built.
-//                      Default 1
 //   --latexmk          build each document's PDF first, with latexmk in the
 //                      document's directory, holding its build/pdf.lock so
 //                      that no two runs of latexmk share a build/pdf. A
 //                      document whose PDF fails isn't built. Without it
 //                      the PDFs are the caller's to build
-import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { build, pool, root, run, workers } from './lib/build.mjs';
-import { lock, tryLock } from './lib/slots.mjs';
+import { lock } from './lib/slots.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 // (npm runs a script in tex8web's directory, and says where it was run from)
 const at = path => resolve(process.env.npm_lifecycle_event ? process.env.INIT_CWD ?? process.cwd() : process.cwd(), path);
-const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--expect look] [--shots-cache <dir>] [--shots-at-once <n>] <dir or .tex file>...';
+const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--shots-cache <dir>] <dir or .tex file>...';
 const refuse = message => {
   console.error(message);
   process.exit(2);
@@ -57,36 +48,16 @@ try {
   parsed = parseArgs({ allowPositionals: true, options: {
     c: { type: 'string', short: 'c' }, baseline: { type: 'string' }, out: { type: 'string' },
     accept: { type: 'boolean' }, draft: { type: 'boolean' }, latexmk: { type: 'boolean' },
-    expect: { type: 'string' }, 'shots-cache': { type: 'string' }, 'shots-at-once': { type: 'string' },
+    'shots-cache': { type: 'string' },
   } });
 } catch (error) {
   refuse(`${error.message}\n${usage}`);
 }
 const { values: options, positionals } = parsed;
 if (!positionals.length) refuse(usage);
-if (options.expect !== undefined && options.expect !== 'look') refuse(`--expect takes look, not ${options.expect}\n${usage}`);
-const shotsAtOnce = Number(options['shots-at-once'] ?? 1);
-if (!Number.isInteger(shotsAtOnce) || shotsAtOnce < 1) refuse(`--shots-at-once takes a number, 1 or more\n${usage}`);
 if (options.draft && options.accept) refuse('--draft pages are not to be trusted, so --draft and --accept don\'t go together');
 
-// the abbreviated commit of the checkout whose pages are accepted. The tests
-// set TEX8WEB_TREE to name another checkout
-function commit() {
-  const tree = process.env.TEX8WEB_TREE ?? root;
-  const git = (...args) => spawnSync('git', ['-C', tree, ...args], { encoding: 'utf8' });
-  const head = git('rev-parse', '--short', 'HEAD');
-  if (head.status !== 0) refuse(`${tree} is not a git checkout, so --accept can't record which tex8web built the pages`);
-  const changes = git('status', '--porcelain').stdout.trim();
-  if (changes) refuse(`tex8web has uncommitted changes, so --accept can't record which tex8web built the pages:\n${changes}`);
-  return head.stdout.trim();
-}
-const accepting = options.accept ? commit() : null;
-
 const out = at(options.out ?? 'build/regress');
-// (a baseline there would be lost with a fresh clone)
-if (!options.out && !relative(root, out).startsWith('..')) {
-  refuse(`The pages would go to ${out}, inside tex8web. Run it from your documents' directory instead:\n  npm --prefix ${root} run regress -- <documents>`);
-}
 const baseline = at(options.baseline ?? join(out, 'accepted'));
 const logs = join(out, 'logs');
 const shotsCache = at(options['shots-cache'] ?? join(out, 'shots-cache'));
@@ -124,14 +95,6 @@ for (const doc of docs) {
   }
 }
 
-// one run at a time in an out directory, which clean.mjs leaves alone meanwhile
-const lockFile = join(out, 'regress.lock');
-// (held until this process ends)
-let outLock = await tryLock(lockFile);
-if (!outLock) {
-  console.error(`waiting for another regress run in ${out}`);
-  outLock = await lock(lockFile);
-}
 mkdirSync(logs, { recursive: true });
 console.error(`building ${docs.length} document(s) into ${out}`);
 const started = Date.now();
@@ -178,41 +141,30 @@ async function regress(doc) {
   return { ...found, kind: 'changed', files, outcome: `changed: ${files.slice(0, 6).join(', ')}${files.length > 6 ? ` and ${files.length - 6} more` : ''}` };
 }
 
-// (each page's screens in a Chrome of its own, which holds a slot like a
-// build: the one shots.mjs runs in)
-let shooting = 0;
-const waiting = [];
-const turn = () => new Promise(go => shooting < shotsAtOnce ? (shooting++, go()) : waiting.push(go));
-const next = () => (waiting.shift() ?? (() => shooting--))();
-
-// the screens of a changed page, as soon as it is built
+// the screens of a changed page, as soon as it is built, in a Chrome of its
+// own, which holds a slot like a build: the one shots.mjs runs in
 async function screens(result) {
   const compare = join(out, 'compare', result.doc.name);
-  await turn();
-  try {
-    console.error(`${result.doc.name}: comparing the screens`);
-    // (a long page takes shots.mjs minutes for each width and scheme, when
-    // the machine is busy, and more than run()'s 15 minutes in all)
-    const shots = await run(process.execPath, [join(here, 'shots.mjs'), '--cache', shotsCache, ...options.expect ? ['--expect', options.expect] : [],
-      compare, result.kept, result.html], { slot: true, total: 3600 });
-    writeFileSync(join(logs, `${result.doc.name}.shots.log`), shots.log);
-    if (shots.code === 1) {
-      result.kind = 'looks';
-      result.outcome = `looks different: ${shots.log.trim().split('\n').filter(line => /: (screens .* differ|differs from screen|only in )/.test(line))
-        .map(line => line.replace(/: screens (.*?) of \d+ differ.*$/, ' (screens $1)').replace(/: differs from screen (\d+) of .*$/, ' (from screen $1)')).join('; ')}`;
-    } else if (shots.code !== 0) {
-      result.failed = true;
-      result.outcome += `; couldn't compare the screens: ${shots.log.trim().split('\n').pop()}`;
-    }
-  } finally {
-    next();
+  console.error(`${result.doc.name}: comparing the screens`);
+  // (a long page takes shots.mjs minutes for each width and scheme, when
+  // the machine is busy, and more than run()'s 15 minutes in all)
+  const shots = await run(process.execPath, [join(here, 'shots.mjs'), '--cache', shotsCache, compare, result.kept, result.html],
+    { slot: true, total: 3600 });
+  writeFileSync(join(logs, `${result.doc.name}.shots.log`), shots.log);
+  if (shots.code === 1) {
+    result.kind = 'looks';
+    result.outcome = `looks different: ${shots.log.trim().split('\n').filter(line => /: (screens .* differ|differs from screen|only in )/.test(line))
+      .map(line => line.replace(/: screens (.*?) of \d+ differ.*$/, ' (screens $1)').replace(/: differs from screen (\d+) of .*$/, ' (from screen $1)')).join('; ')}`;
+  } else if (shots.code !== 0) {
+    result.failed = true;
+    result.outcome += `; couldn't compare the screens: ${shots.log.trim().split('\n').pop()}`;
   }
 }
 
 const results = await pool(docs, workers, async doc => {
   const result = await regress(doc);
   // (not awaited: the pool goes on to build the next document)
-  if (result.kind === 'changed' && !accepting) result.shots = screens(result);
+  if (result.kind === 'changed' && !options.accept) result.shots = screens(result);
   return result;
 });
 await Promise.all(results.map(result => result.shots));
@@ -227,11 +179,9 @@ console.log(`${results.length} document(s): ${count('unchanged')} unchanged, ${c
   + `${count('new')} without a baseline, ${failed} failed`);
 console.log(`pages in ${join(out, 'html')}, logs in ${logs}`);
 
-if (accepting && failed) console.log('not accepting: a document failed');
-else if (accepting) {
+if (options.accept && failed) console.log('not accepting: a document failed');
+else if (options.accept) {
   mkdirSync(baseline, { recursive: true });
-  // (no STAMP while some pages are the old ones and some the new)
-  rmSync(join(baseline, 'STAMP'), { force: true });
   // (whole, as another run may be comparing with it)
   for (const { doc, html } of results) {
     const target = join(baseline, doc.name), staged = join(baseline, `.${doc.name}`);
@@ -240,8 +190,7 @@ else if (accepting) {
     rmSync(target, { recursive: true, force: true });
     renameSync(staged, target);
   }
-  writeFileSync(join(baseline, 'STAMP'), `${accepting} ${new Date().toISOString()}\n`);
-  console.log(`accepted in ${baseline}, from tex8web ${accepting}`);
+  console.log(`accepted in ${baseline}`);
 }
 console.log(`done in ${Math.round((Date.now() - started) / 1000)}s`);
 process.exit(failed ? 1 : count('looks') ? 3 : 0);

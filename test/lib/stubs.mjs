@@ -10,22 +10,17 @@ const pooled = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webtools')));
 process.env.TMPDIR = pooled;
 // (two, as the shared pool still limits the builds of the documents beside them)
 process.env.TEX8WEB_SLOTS = '2';
-// (nobody else is waiting to be given a turn)
-process.env.TEX8WEB_SLOTS_POLL = '20';
 after(() => rmSync(pooled, { recursive: true, force: true }));
 
 // The stand-in is first on the PATH of the builds and regress.mjs runs that
 // pass `stubbed`, for the tests of what happens around a build. bin/tex8web
 // runs it as it runs make4ht. The page is the document's text, and a
 // document with \undefinedcs fails. It keeps and reuses LaTeX's run as
-// tex8web.mk4 does, saying 'LaTeX ran' in LaTeX's part of the log. While the
-// file STUB_HOLD names exists, it waits, up to 30 s, for a test to look at
-// the build as it runs.
+// tex8web.mk4 does, saying 'LaTeX ran' in LaTeX's part of the log.
 const stubs = join(pooled, 'stubs');
 mkdirSync(stubs);
 writeFileSync(join(stubs, 'make4ht'), `#!/bin/sh
 [ "$1" = --version ] && { echo 'make4ht stub'; exit 0; }
-for i in $(seq 300); do [ -e "$STUB_HOLD" ] || break; sleep 0.1; done
 while [ $# -gt 1 ]; do
   case $1 in -B) aux=$2; shift ;; -d) out=$2; shift ;; esac
   shift

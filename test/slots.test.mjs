@@ -3,7 +3,7 @@
 // node --test test/slots.test.mjs
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, test } from 'node:test';
@@ -53,7 +53,7 @@ describe('slots and run()', { concurrency: true }, () => {
   }
   const pool = (slots) => {
     const tmp = mkdtempSync(join(tmpdir(), 'tex8webslots'));
-    return { tmp, env: { TMPDIR: tmp, TEX8WEB_SLOTS: String(slots), TEX8WEB_SLOTS_POLL: '1000', LOG: join(tmp, 'log') } };
+    return { tmp, env: { TMPDIR: tmp, TEX8WEB_SLOTS: String(slots), LOG: join(tmp, 'log') } };
   };
 
   test('no more builds hold slots than there are slots', { skip: !lockf }, async () => {
@@ -145,46 +145,6 @@ describe('slots and run()', { concurrency: true }, () => {
       assert.equal(JSON.parse(out), inTurn);
     } finally {
       rmSync(tmp, { recursive: true });
-    }
-  });
-
-  test('a process that has given a slot back does not take one at once', { skip: !lockf, timeout: 30000 }, async () => {
-    const { tmp, env } = pool(1);
-    try {
-      const again = child(`import { takeSlot } from './test/lib/slots.mjs';
-        (await takeSlot())();
-        const start = Date.now();
-        (await takeSlot())();
-        console.log('waited', Date.now() - start); process.exit();`, env);
-      const waited = Number((await again.done).match(/waited (\d+)/)[1]);
-      assert.ok(waited >= 900, `took another after ${waited} ms`);
-    } finally {
-      rmSync(tmp, { recursive: true });
-    }
-  });
-
-  test('a lock taken on a file that is then deleted is taken again on a live one', { skip: !lockf, timeout: 30000 }, async () => {
-    const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8weblock')));
-    const file = join(dir, 'out/regress.lock');
-    mkdirSync(join(dir, 'out'));
-    writeFileSync(file, '');
-    const holder = spawn('lockf', ['-k', file, 'sh', '-c', 'echo held; cat >/dev/null'], { stdio: ['pipe', 'pipe', 'ignore'], timeout: deadline });
-    const probe = () => spawnSync('lockf', ['-k', '-s', '-t', '0', file, 'true'], { timeout: deadline }).status;
-    let waiter;
-    try {
-      await new Promise(done => holder.stdout.once('data', done));
-      waiter = child(`import { lock } from './test/lib/slots.mjs';
-        await lock(process.env.FILE); console.log('locked'); setInterval(() => {}, 1000);`, { FILE: file });
-      // (it waits for the holder; the directory is removed under it, as clean does, and the holder lets go)
-      await new Promise(done => setTimeout(done, 1000));
-      rmSync(join(dir, 'out'), { recursive: true });
-      holder.stdin.end();
-      assert.ok(await waiter.printed('locked'), 'the waiter did not lock');
-      assert.equal(probe(), 75, 'the waiter does not hold the file at the path');
-    } finally {
-      waiter?.kill('SIGKILL');
-      holder.kill();
-      rmSync(dir, { recursive: true });
     }
   });
 

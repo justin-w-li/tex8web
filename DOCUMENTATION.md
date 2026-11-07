@@ -230,18 +230,14 @@ The exit code is 0 when nothing looks different, 3 when a page does, 1 when a bu
 
 The options:
 - **`-c config`** builds every document with your own config.
-- **`--accept`** makes this run's pages the baseline, and records which tex8web commit and when in `accepted/STAMP`. It doesn't compare the screens, which you have looked at before accepting, so a page that changed says `changed`. It refuses when tex8web has uncommitted changes, when any document failed, and with `--draft`.
+- **`--accept`** makes this run's pages the baseline. It doesn't compare the screens, which you have looked at before accepting, so a page that changed says `changed`. It accepts nothing when any document failed, and refuses `--draft`.
 - **`--baseline dir`** compares with the pages in `dir/<name>` instead, such as another checkout's `html` directory.
-- **`--out dir`** says where everything goes, `build/regress` in the directory you run it from by default: `html/<name>` for the pages, `compare/<name>`, `logs/`, `tex4ht/` and `accepted/<name>`. The command refuses the default when it would be inside tex8web. Keep `-` and the other characters of a Lua pattern out of its path (see [Known limitations](#known-limitations)).
+- **`--out dir`** says where everything goes, `build/regress` in the directory you run it from by default: `html/<name>` for the pages, `compare/<name>`, `logs/`, `tex4ht/` and `accepted/<name>`. Keep `-` and the other characters of a Lua pattern out of its path (see [Known limitations](#known-limitations)).
 - **`--draft`** builds in make4ht's draft mode, which is quicker and not to be trusted.
-- **`--expect look`** is for a change that is meant to show. For each width and scheme, the screens are compared only as far as the first strip of screens that differs, and the report says from which screen. Without it every screen is compared and every differing one listed.
 - **`--shots-cache dir`** keeps what the baseline's screens came to, so that a baseline is shot once for every run that uses the directory. By default it is `shots-cache` in `--out`.
-- **`--shots-at-once n`** compares the screens of `n` pages at once, as the others are built (1 by default).
 - **`--latexmk`** builds each document's PDF first, with `latexmk` in the document's directory. A document whose PDF fails isn't built.
 
 Unless you say `--latexmk`, the command doesn't build PDFs. If the config links one with `\WebPDF` and it's missing, the page is built without it. A document is built again only when something it is made from has changed: tex8web, the document's directory, the config, the PDF it links, or the tools. When the change is one LaTeX doesn't read, such as tex8web's stylesheet, the build starts from the last one's LaTeX runs.
-
-`npm --prefix path/to/tex8web run clean -- <key>` removes the builds of a finished checkout: `build/<key>` in the current directory, or in each directory given with `--in <dir>`, and `build/<key>` in each directory under `--each <dir>` that holds a `.tex` file. It also removes the Chrome profiles that no process uses. It leaves alone a build in use, an `accepted/` directory, a directory holding anything that `regress` doesn't make, and a tex8web checkout. Don't start a build with the key while it runs. `--dry-run` only lists what it would remove.
 
 ## Known limitations
 

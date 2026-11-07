@@ -109,7 +109,7 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1' })).reused, undefined);
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1' })).reused, true);
     // (the slots' settings change no page)
-    assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1', TEX8WEB_SLOTS: '9', TEX8WEB_SLOTS_POLL: '5' })).reused, true);
+    assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1', TEX8WEB_SLOTS: '9' })).reused, true);
     // (the date TeX is given does, from the command or the document)
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1', SOURCE_DATE_EPOCH: '946684800' })).reused, undefined);
     doc.env = { SOURCE_DATE_EPOCH: '946684800' };

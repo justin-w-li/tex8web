@@ -4,9 +4,9 @@
 // the machine to itself leaves it swapping. A slot is a lock file in
 // $TMPDIR/tex8web-slots, taken with lockf; rebuild.sh takes the same ones.
 import { spawn, spawnSync } from 'node:child_process';
-import { closeSync, mkdirSync, openSync, statSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { tmpdir, totalmem } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 // TEX8WEB_SLOTS, else one slot for each 4 GB of memory (a build and its
 // Chrome or MathJax take about that), and at least one
@@ -29,22 +29,13 @@ export function noLockf() {
   return missing;
 }
 
-// A process that frees a slot lets the others, which look once in a poll,
-// have it before it takes another. The tools' tests, whose pool has no other
-// process to give a turn, shorten it with TEX8WEB_SLOTS_POLL, in ms
-const poll = () => Number(process.env.TEX8WEB_SLOTS_POLL ?? 1000);
-let freed = 0;
-export const released = () => { freed = Date.now(); };
-
 // Calls attempt(lock file) on each slot's file until one returns something
-// but null, and resolves to that. Between rounds it waits half a poll to
-// one and a half, so that waiters don't keep step, and says so after 10 s,
-// and again every 60 s
+// but null, and resolves to that. Between rounds it waits 0.5 to 1.5 s, so
+// that waiters don't keep step, and says so after 10 s, and again every 60 s
 export async function inSlots(attempt) {
   mkdirSync(dir(), { recursive: true });
   const start = Date.now();
   let told = 0;
-  await sleep(Math.max(0, freed + poll() - Date.now()));
   for (;;) {
     for (let i = 0; i < slotCount(); i++) {
       const result = await attempt(join(dir(), String(i)));
@@ -54,31 +45,15 @@ export async function inSlots(attempt) {
       console.error(`tex8web: waiting for one of ${slotCount()} build slots, all busy (TEX8WEB_SLOTS sets how many)`);
       told = Date.now();
     }
-    await sleep(poll() * (0.5 + Math.random()));
+    await sleep(500 + 1000 * Math.random());
   }
 }
 
 // Holds an exclusive lock on file until the release function it resolves to
 // is called, or this process ends, however it ends: lockf runs a shell that
 // stops when its stdin closes. Resolves to null if wait is false and the
-// lock is held by another. Someone who holds the lock may delete the file
-// (tools/clean.mjs does), and a lock waited for is then on a deleted file,
-// with another process free to lock a new one at the path. So the path's
-// file is looked at before and after, and a lock on one that has changed or
-// gone is given up and taken again, in a directory made again if need be
-async function hold(file, wait) {
-  const identity = () => { const found = statSync(file, { throwIfNoEntry: false }); return found && `${found.dev}:${found.ino}`; };
-  for (;;) {
-    mkdirSync(dirname(file), { recursive: true });
-    closeSync(openSync(file, 'a'));
-    const before = identity();
-    const release = await holdFile(file, wait);
-    if (!release || identity() === before) return release;
-    release();
-  }
-}
-
-function holdFile(file, wait) {
+// lock is held by another
+function hold(file, wait) {
   return new Promise((done, fail) => {
     const child = spawn('lockf', ['-k', ...wait ? [] : ['-t', '0'], file, 'sh', '-c', 'echo held; cat >/dev/null'],
       { stdio: ['pipe', 'pipe', 'ignore'] });
@@ -114,15 +89,8 @@ export async function takeSlot() {
     return () => { inherited = true; };
   }
   if (noLockf()) return () => {};
-  const release = await inSlots(file => hold(file, false));
-  return () => {
-    release();
-    released();
-  };
+  return inSlots(file => hold(file, false));
 }
 
 // waits for the lock on file; resolves to the function that gives it back
 export const lock = async file => noLockf() ? () => {} : hold(file, true);
-
-// the same without waiting: null if another holds the lock
-export const tryLock = async file => noLockf() ? () => {} : hold(file, false);
