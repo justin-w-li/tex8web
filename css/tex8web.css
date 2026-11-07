@@ -231,14 +231,16 @@ figure { margin-inline: 0; }
 /* float.sty's ruled style, as algorithm's floats have it, and
    algorithm2e's (tex8web-text.tex): the caption at the top wherever
    \caption is, at the left, under a rule and over another; a third rule
-   ends the float. Each rule is 2pt from the text, as float.sty's are */
+   ends the float. Each rule is 2pt from the text, as float.sty's are
+   (algorithm2e: those around the caption \interspacetitleruled, the
+   others \interspacealgoruled) */
 :is(figure.tex8web-float-ruled, .tex8web-a2e-ruled, .tex8web-a2e-algoruled) {
     display: flex; flex-direction: column;
-    padding-block-end: var(--tex8web-float-sep);
+    padding-block-end: var(--tex8web-float-bodysep);
     border-block: var(--tex8web-float-endrule) solid;
     border-top-width: var(--tex8web-float-rule); }
 :is(.tex8web-float-ruled, .tex8web-a2e-ruled, .tex8web-a2e-algoruled) > figcaption {
-    order: -1; width: auto; margin: 0 0 var(--tex8web-float-sep);
+    order: -1; width: auto; margin: 0 0 var(--tex8web-float-bodysep);
     padding-block: var(--tex8web-float-sep);
     border-bottom: var(--tex8web-float-midrule) solid; }
 .tex8web-float-ruled > figcaption span.id { font-weight: bold; }
@@ -550,6 +552,8 @@ span.tcolorbox > .tcolorbox-title { display: block; }
 .tex8web-a2e-caption-top > figcaption, .tex8web-a2e-caption-above > figcaption { order: -1; }
 .tex8web-a2e-caption-bottom > figcaption, .tex8web-a2e-caption-under > figcaption { order: 1; }
 .tex8web-a2e > :not(figcaption) { margin-inline-start: var(--tex8web-a2e-margin); }
+.tex8web-a2e > .tex8web-a2e-block {
+    margin-inline-start: calc(var(--tex8web-a2e-margin) + var(--tex8web-a2e-rule)); }
 .tex8web-a2e :is(p, div) { margin-block: 0; }
 .tex8web-a2e p { text-indent: calc(-1 * var(--tex8web-a2e-hang));
     padding-inline-start: var(--tex8web-a2e-hang); }

@@ -136,7 +136,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 | `--tex8web-roman`, `--tex8web-sans`, `--tex8web-mono` | the roman, sans-serif and typewriter fonts |
 | `--tcb-*` | a tcolorbox's frame, colors and spacing, on the box's element |
 | `--tex8web-mdf-rules`, `-padding`, `-margin` | an mdframed box's lines, its space inside and around it, on the box's element |
-| `--tex8web-float-rule`, `-midrule`, `-endrule`, `-sep` | the rules of a ruled float (algorithm's, with float's `ruled` style) and their space from the text; an algorithm2e algorithm has its own on its element |
+| `--tex8web-float-rule`, `-midrule`, `-endrule`, `-sep`, `-bodysep` | the rules of a ruled float (algorithm's, with float's `ruled` style), and their space from the caption and from the body; an algorithm2e algorithm has its own on its element |
 | `--tex8web-a2e-*` | an algorithm2e algorithm's margins, indents and lines, on its element |
 
 In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not (--tex8web-wide)` a narrow one.
@@ -267,9 +267,9 @@ Each item says what goes wrong and, where there is one, what to do.
 - **A picture's size without its `.xbb` file.** tex4ht reads a bitmap's or PDF's size from a `.xbb` file beside it. Without one, a picture sized by `scale` or `height`, or by `width` and `height` with `keepaspectratio`, isn't at the PDF's size. Make the file with `extractbb -x picture.png`.
 - **A size after `angle`,** as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`**, aren't followed. The picture is at its natural size. Put the size before `angle`, or leave `scale` out.
 - **`trim` and `viewport`.** The page shows the whole picture at the width of the part that is kept.
-- **float's styles.** Only `ruled` is drawn. A `boxed` float has no frame.
-- **algorithm2e.** The `ruled` and `algoruled` styles have their rules, and every style its caption in its place. `boxed`, `boxruled` and `tworuled` have no frame or rules. Block markers (`\AlgoDisplayBlockMarkers`) aren't shown. A line wraps in the window's width, not the PDF's, so a `\tcp*` comment can go to the line below.
-- **mdframed.** A box has its middle line (`linewidth`), its colors and its space inside and around. Its inner and outer lines, rounded corners, shadow and what TikZ or PSTricks draws aren't.
+- **float's styles.** Only `ruled` is drawn. A `boxed` float has no frame, and a `plaintop` float's caption stays where `\caption` is.
+- **algorithm2e.** The `ruled` and `algoruled` styles have their rules, and every style its caption in its place. `boxed`, `boxruled`, `tworuled` and `plainruled` have no frame or rules. Block markers (`\AlgoDisplayBlockMarkers`) aren't shown. A line wraps in the window's width, not the PDF's, so a `\tcp*` comment can go to the line below.
+- **mdframed.** A box has its middle line (`linewidth`), its colors and its space inside and around. Its inner and outer lines, rounded corners, shadow and what TikZ or PSTricks draws aren't. A `frametitle` is inside the box's padding, without a bar of its own.
 - **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
 - **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class, unless titlesec formats them.
 - **One page per document.** tex4ht can split a document into a page for each section. It does so with a number such as `2` among `\Preamble`'s options, with `splitat=`, or with `\CutAt` in a config. tex8web stops with a message. Remove the option.

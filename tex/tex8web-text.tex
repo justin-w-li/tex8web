@@ -661,7 +661,7 @@
   {
     \web@Css { :root~{~--tex8web-float-rule:~\web@em{0.8pt};~
       --tex8web-float-midrule:~\web@em{0.4pt};~--tex8web-float-endrule:~\web@em{0.4pt};~
-      --tex8web-float-sep:~\web@em{2pt};~} }
+      --tex8web-float-sep:~\web@em{2pt};~--tex8web-float-bodysep:~\web@em{2pt};~} }
     \web@needs { cptB: }
     \str_new:N \l__web_float_str
     \cs_set_protected:Npn \__web_float_style:
@@ -669,7 +669,7 @@
         \str_clear:N \l__web_float_str
         \cs_if_exist:cT { fst@ \@captype }
           {
-            \str_set:Nx \l__web_float_str { ~tex8web-float-
+            \str_set:Ne \l__web_float_str { ~tex8web-float-
               \exp_after:wN \exp_after:wN \exp_after:wN \cs_to_str:N \cs:w fst@ \@captype \cs_end: }
             \str_remove_once:Nn \l__web_float_str { fs@ }
             \cs_if_eq:NNT \@fs@capt \floatc@ruled { \tl_set:Nn \cptB: { ~ } }
@@ -716,7 +716,7 @@
 \catcode58 12
 
 % algorithm2e's algorithms, which it sets in boxes tex4ht can't follow (the
-% lines run together), as HTML: a div with its style's class (ruled, say),
+% lines run together), as HTML: a figure with its style's class (ruled, say),
 % where its caption goes (top) and its lengths, its lines as paragraphs and
 % its blocks as divs, with a vertical line where the style has one (vlined)
 % and the short rule ending such a block. A line's number goes in the
@@ -725,16 +725,18 @@
 % ends it with \IgnorePar, which would leave the next line out of a <p>.
 % algorithm2e's \everypar replaces tex4ht's: \HtmlPar goes first in it,
 % and the tags between lines are written where no line is started, as
-% \HCode would start one
+% \HCode would start one. An [H] algorithm isn't a float, whose head
+% latex.4ht gives its caption's anchor (\get:cptg): its caption has its
+% own, as with the refcaption option
 \catcode58 11
 \@ifpackageloaded{algorithm2e}{%
     \web@needs{@algocf@start}\web@needs{@algocf@finish}\web@needs{algocf@everypar}%
     \web@needs{algocf@printnl}\web@needs{algocf@setcaption}%
-    \web@needs{algocf@latexcaption}\web@needs{algocf@Vline}%
+    \web@needs{algocf@latexcaption}\web@needs{algocf@Vline}\web@needs{cap:ref}%
     \def\algocf@everypar{\HtmlPar\algocf@everyparnl\algocf@everyparhanging}%
     \def\web@algocode#1{\par\ifvmode\IgnorePar\fi\EndP{\everypar{}\HCode{#1}\par}\ShowPar}%
     \def\@algocf@start{%
-        \web@algocode{<div class="tex8web-a2e tex8web-a2e-\algocf@style\space tex8web-a2e-caption-%
+        \web@algocode{<figure class="tex8web-a2e tex8web-a2e-\algocf@style\space tex8web-a2e-caption-%
             \csname @algocf@capt@\algocf@style\endcsname"
             style="--tex8web-a2e-margin: \web@em\algomargin;
             --tex8web-a2e-nlsep: \web@em\skiptotal; --tex8web-a2e-hang: \web@em\algocf@hangindent;
@@ -744,12 +746,17 @@
             --tex8web-float-rule: \web@em\algoheightrule;
             --tex8web-float-midrule: \web@em\algotitleheightrule;
             --tex8web-float-endrule: \web@em\algoheightrule;
-            --tex8web-float-sep: \web@em\interspacetitleruled">}%
+            --tex8web-float-sep: \web@em\interspacetitleruled;
+            --tex8web-float-bodysep: \web@em\interspacealgoruled">}%
         \bgroup
+        \ifalgocf@algoH
+            \def\cap:ref##1{\cur:lbl{}\Link{}{\cur:th\:currentlabel}##1\EndLink
+                \global\let\skip:anchor\:UnDef}%
+        \fi
         \let\@mathsemicolon\;\def\;{\ifmmode\@mathsemicolon\else\@endalgoln\fi}%
         \raggedright\AlFnt{}}%
     \def\@algocf@finish{%
-        \par\egroup\web@algocode{</div>}%
+        \par\egroup\web@algocode{</figure>}%
         \setlength{\skiptotal}{\@defaultskiptotal}%
         \let\;\@mathsemicolon \let\]\@emathdisplay}%
     \def\web@algoblock#1#2{%

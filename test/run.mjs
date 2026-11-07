@@ -75,7 +75,7 @@ const measured = {
   'test-tocentry': { '--tex8web-toc-chapter-skip': '1em' },
   // (float.sty's rules, 0.8pt and 0.4pt, and their 2pt from the text)
   'test-algorithmic': { '--tex8web-float-rule': '0.08em', '--tex8web-float-midrule': '0.04em',
-    '--tex8web-float-endrule': '0.04em', '--tex8web-float-sep': '0.2em' },
+    '--tex8web-float-endrule': '0.04em', '--tex8web-float-sep': '0.2em', '--tex8web-float-bodysep': '0.2em' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
@@ -539,15 +539,11 @@ const hfill = {
   'examples/custom': [/<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'><mjx-container/],
 };
 
-// algorithm's ruled floats: the caption's label followed by a space, not a
-// colon, and algorithmicx's lines, each with its number in its own font
-// and indented by its block's depth. \Statex has neither, a line without
-// text is marked to be left out, and a \ref to a line leads to it.
-// algorithm2e's algorithms, [H] too: their style, caption place and
-// lengths, the caption's label and separator, each line a paragraph (the
-// one after the caption too) numbered as in the PDF, a block a div with
-// its vertical line and closing rule, and a \ref to a line leading to it
 const algorithms = {
+  // algorithm's ruled floats: the caption's label followed by a space, not
+  // a colon. algorithmicx's lines, each with its number in its own font and
+  // indented by its block's depth; \Statex has neither, a line without text
+  // is marked to be left out, and a \ref to a line leads to it
   'test-algorithmic': [
     /^(?:(?!<figure class='float tex8web-float-ruled'>)[^])*(?:<figure class='float tex8web-float-ruled'>(?:(?!<figure)[^])*){2}$/,
     /<span class='id'>Algorithm 1 <\/span><span class='content'>Binary search/,
@@ -556,14 +552,20 @@ const algorithms = {
     /<div class='tex8web-alg-notext'>/,
     /line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>11[^]*<a id='\1'><\/a>\s*<span class='cmbx-10'>return/,
   ],
+  // algorithm2e's, [H] too: their style, caption place and lengths, the
+  // caption's label and separator, each line a paragraph (the one after the
+  // caption too) numbered as in the PDF, a block a div with its vertical
+  // line and closing rule, and a \ref to a line or to the [H] algorithm
+  // leading to it
   'test-algorithm2e': [
-    /^(?:(?!<div class='tex8web-a2e )[^])*(?:<div class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'[^>]* style='--tex8web-a2e-margin: 1.5em; --tex8web-a2e-nlsep: 0.5em; --tex8web-a2e-hang: 0.5em; --tex8web-a2e-rule: 0.5em; --tex8web-a2e-text: 1em; --tex8web-a2e-vrule: 0.04em; --tex8web-a2e-hook: 0.34445em; --tex8web-a2e-caption: 0.75em; --tex8web-float-rule: 0.08em; --tex8web-float-midrule: 0.08em; --tex8web-float-endrule: 0.08em; --tex8web-float-sep: 0.2em'>(?:(?!<div class='tex8web-a2e )[^])*){2}$/,
+    /^(?:(?!<figure class='tex8web-a2e )[^])*(?:<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'[^>]* style='--tex8web-a2e-margin: 1.5em; --tex8web-a2e-nlsep: 0.5em; --tex8web-a2e-hang: 0.5em; --tex8web-a2e-rule: 0.5em; --tex8web-a2e-text: 1em; --tex8web-a2e-vrule: 0.04em; --tex8web-a2e-hook: 0.34445em; --tex8web-a2e-caption: 0.75em; --tex8web-float-rule: 0.08em; --tex8web-float-midrule: 0.08em; --tex8web-float-endrule: 0.08em; --tex8web-float-sep: 0.2em; --tex8web-float-bodysep: 0.2em'>(?:(?!<figure class='tex8web-a2e )[^])*){2}$/,
     /<span class='id'><span class='cmbx-10'>Algorithm<span class='tex8web-nbsp'> <\/span>1:<\/span><span class='tex8web-nbsp'> <\/span><\/span><span class='content'>Binary search/,
     /<\/figcaption>(?:\s*<!--[^>]*-->)*\s*<p class='noindent'><span class='cmbx-10'>Input:/,
     /<div class='tex8web-a2e-block tex8web-a2e-vline tex8web-a2e-hook'>(?:\s*<!--[^>]*-->)*\s*<p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>3<\/span><\/span>/,
     /<span class='cmbx-10'>else<\/span>\s*<\/p>\s*<div class='tex8web-a2e-block tex8web-a2e-vline tex8web-a2e-hook'>/,
     /line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>8<!--[^>]*--><\/a>[^]*<a id='\1'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>8<\/span><\/span><span class='cmbx-10'>return/,
     /<a id='([^']+)'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>9<\/span><\/span>remove[^]*line<span class='tex8web-nbsp'>.<\/span><a href='#\1'>9</,
+    /^(?:(?!<figure class='tex8web-a2e )[^])*<figure class='tex8web-a2e [^>]*>(?:(?!<figure class='tex8web-a2e )[^])*<figure class='tex8web-a2e [^>]*>(?:(?!<\/figure>)[^])*<a id='([^']+)'>[^]*See Algorithm<span class='tex8web-nbsp'>.<\/span><a href='#\1'>2</,
   ],
 };
 
