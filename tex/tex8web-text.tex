@@ -631,7 +631,8 @@
 \@ifpackageloaded { float }
   {
     \web@Css { :root~{~--tex8web-float-rule:~\web@em{0.8pt};~
-      --tex8web-float-thinrule:~\web@em{0.4pt};~--tex8web-float-sep:~\web@em{2pt};~} }
+      --tex8web-float-midrule:~\web@em{0.4pt};~--tex8web-float-endrule:~\web@em{0.4pt};~
+      --tex8web-float-sep:~\web@em{2pt};~} }
     \web@needs { cptB: }
     \str_new:N \l__web_float_str
     \cs_set_protected:Npn \__web_float_style:
@@ -682,6 +683,58 @@
              ><span class="tex8web-label">}}
         {\HCode{</span><div style="--tex8web-alg-indent: \web@em\web@algindent">}%
          \global\let\web@algindent\ALG@tlm \AnchorLabel}%
+}{}
+\catcode58 12
+
+% algorithm2e's algorithms, which it sets in boxes tex4ht can't follow (the
+% lines run together), as HTML: a div with its style's class (ruled, say),
+% where its caption goes (top) and its lengths, its lines as paragraphs and
+% its blocks as divs, with a vertical line where the style has one (vlined)
+% and the short rule ending such a block. A line's number goes in the
+% margin, as \algocf@printnl puts it (css/tex8web.css). The caption is
+% tex4ht's, with algorithm2e's label and separator; \algocf@latexcaption
+% ends it with \IgnorePar, which would leave the next line out of a <p>.
+% algorithm2e's \everypar replaces tex4ht's: \HtmlPar goes first in it,
+% and the tags between lines are written where no line is started, as
+% \HCode would start one
+\catcode58 11
+\@ifpackageloaded{algorithm2e}{%
+    \web@needs{@algocf@start}\web@needs{@algocf@finish}\web@needs{algocf@everypar}%
+    \web@needs{algocf@printnl}\web@needs{algocf@setcaption}%
+    \web@needs{algocf@latexcaption}\web@needs{algocf@Vline}%
+    \def\algocf@everypar{\HtmlPar\algocf@everyparnl\algocf@everyparhanging}%
+    \def\web@algocode#1{\par\ifvmode\IgnorePar\fi\EndP{\everypar{}\HCode{#1}\par}\ShowPar}%
+    \def\@algocf@start{%
+        \web@algocode{<div class="tex8web-a2e tex8web-a2e-\algocf@style\space tex8web-a2e-caption-%
+            \csname @algocf@capt@\algocf@style\endcsname"
+            style="--tex8web-a2e-margin: \web@em\algomargin;
+            --tex8web-a2e-nlsep: \web@em\skiptotal; --tex8web-a2e-hang: \web@em\algocf@hangindent;
+            --tex8web-a2e-rule: \web@em\skiprule; --tex8web-a2e-text: \web@em\skiptext;
+            --tex8web-a2e-vrule: \web@em{0.4pt}; --tex8web-a2e-hook: \web@em\skiphlne;
+            --tex8web-a2e-caption: \web@em\AlCapHSkip;
+            --tex8web-float-rule: \web@em\algoheightrule;
+            --tex8web-float-midrule: \web@em\algotitleheightrule;
+            --tex8web-float-endrule: \web@em\algoheightrule;
+            --tex8web-float-sep: \web@em\interspacetitleruled">}%
+        \bgroup
+        \let\@mathsemicolon\;\def\;{\ifmmode\@mathsemicolon\else\@endalgoln\fi}%
+        \raggedright\AlFnt{}}%
+    \def\@algocf@finish{%
+        \par\egroup\web@algocode{</div>}%
+        \setlength{\skiptotal}{\@defaultskiptotal}%
+        \let\;\@mathsemicolon \let\]\@emathdisplay}%
+    \def\web@algoblock#1#2{%
+        \web@algocode{<div class="tex8web-a2e-block#1">}#2\web@algocode{</div>}}%
+    \def\algocf@Vline#1{\web@algoblock{ tex8web-a2e-vline tex8web-a2e-hook}{#1}}%
+    \def\algocf@Vsline#1{\par\algocf@bblockcode\web@algoblock{ tex8web-a2e-vline}{#1}\algocf@eblockcode}%
+    \def\algocf@Noline#1{\par\algocf@bblockcode\web@algoblock{}{#1}\algocf@eblockcode}%
+    \def\algocf@printnl#1{\HCode{<span class="tex8web-a2e-nl\ifalgocf@leftlinenumber\else
+        \space tex8web-a2e-nl-right\fi">}\NlSty{#1}\HCode{</span>}\ignorespaces}%
+    \let\web@algocf@setcaption\algocf@setcaption
+    \def\algocf@setcaption{\web@algocf@setcaption\let\@makecaption\algocf@oldmakecaption
+        \def\cptB:{\AlCapSty{\AlCapFnt\algocf@typo\algocf@capseparator}\nobreakspace}}%
+    \let\web@algocf@latexcaption\algocf@latexcaption
+    \long\def\algocf@latexcaption#1[#2]#3{\web@algocf@latexcaption{#1}[{#2}]{#3}\ShowPar}%
 }{}
 \catcode58 12
 

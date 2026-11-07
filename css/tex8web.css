@@ -228,17 +228,19 @@ figure { margin-inline: 0; }
 :is(figcaption, div).caption { width: fit-content; margin-inline: auto; text-align: start;
     text-indent: 0; }
 :is(figcaption, div).caption span.id { font-weight: normal; }
-/* float.sty's ruled style, as algorithm's floats have it (tex8web-text.tex):
-   the caption at the top wherever \caption is, at the left, under a thick
-   rule and over a thin one; a thin rule ends the float. Each rule is 2pt
-   from the text, as float.sty's are */
-figure.tex8web-float-ruled { display: flex; flex-direction: column;
+/* float.sty's ruled style, as algorithm's floats have it, and
+   algorithm2e's (tex8web-text.tex): the caption at the top wherever
+   \caption is, at the left, under a rule and over another; a third rule
+   ends the float. Each rule is 2pt from the text, as float.sty's are */
+:is(figure.tex8web-float-ruled, .tex8web-a2e-ruled, .tex8web-a2e-algoruled) {
+    display: flex; flex-direction: column;
     padding-block-end: var(--tex8web-float-sep);
-    border-block: var(--tex8web-float-thinrule) solid;
+    border-block: var(--tex8web-float-endrule) solid;
     border-top-width: var(--tex8web-float-rule); }
-.tex8web-float-ruled > figcaption { order: -1; width: auto; margin: 0 0 var(--tex8web-float-sep);
+:is(.tex8web-float-ruled, .tex8web-a2e-ruled, .tex8web-a2e-algoruled) > figcaption {
+    order: -1; width: auto; margin: 0 0 var(--tex8web-float-sep);
     padding-block: var(--tex8web-float-sep);
-    border-bottom: var(--tex8web-float-thinrule) solid; }
+    border-bottom: var(--tex8web-float-midrule) solid; }
 .tex8web-float-ruled > figcaption span.id { font-weight: bold; }
 /* minipages and subfigures side by side while the column has room, each
    as wide as in the PDF (--tex8web-share of the text, tex8web-text.tex),
@@ -527,6 +529,31 @@ span.tcolorbox > .tcolorbox-title { display: block; }
 .algorithmic > * > :last-child { display: flow-root;
     padding-inline-start: var(--tex8web-alg-indent); }
 .algorithmic > .tex8web-alg-notext { display: none; }
+/* algorithm2e's algorithms (tex8web-text.tex): the lines \algomargin in
+   from the caption's \AlCapHSkip, each wrapped line hanging; a block
+   \skiprule in, its text \skiptext from its vertical line, which a short
+   rule ends (vlined). A line's number ends \skiptotal before the text's
+   margin, or goes at the right */
+.tex8web-a2e { position: relative; display: flex; flex-direction: column;
+    margin-block: 1em; text-align: start; }
+.tex8web-a2e > figcaption { width: auto; margin: 0;
+    padding-inline-start: var(--tex8web-a2e-caption); }
+.tex8web-a2e-caption-top > figcaption, .tex8web-a2e-caption-above > figcaption { order: -1; }
+.tex8web-a2e-caption-bottom > figcaption, .tex8web-a2e-caption-under > figcaption { order: 1; }
+.tex8web-a2e > :not(figcaption) { margin-inline-start: var(--tex8web-a2e-margin); }
+.tex8web-a2e :is(p, div) { margin-block: 0; }
+.tex8web-a2e p { text-indent: calc(-1 * var(--tex8web-a2e-hang));
+    padding-inline-start: var(--tex8web-a2e-hang); }
+.tex8web-a2e-block { margin-inline-start: var(--tex8web-a2e-rule);
+    padding-inline-start: var(--tex8web-a2e-text); }
+.tex8web-a2e-vline { border-inline-start: var(--tex8web-a2e-vrule) solid; }
+.tex8web-a2e-hook::after { content: ""; display: block; width: 0.5em;
+    margin-inline-start: calc(-1 * var(--tex8web-a2e-text));
+    margin-block-end: var(--tex8web-a2e-hook);
+    border-top: var(--tex8web-a2e-vrule) solid; }
+.tex8web-a2e-nl { position: absolute; inset-inline-start: 0; text-indent: 0;
+    width: calc(var(--tex8web-a2e-margin) - var(--tex8web-a2e-nlsep)); text-align: end; }
+.tex8web-a2e-nl.tex8web-a2e-nl-right { inset-inline: auto 0; width: auto; }
 /* (an item in a preview, tex8web-page.js's, without its list's marker) */
 .tex8web-preview > li { list-style: none; }
 /* a description's term runs into its text, which is indented after its

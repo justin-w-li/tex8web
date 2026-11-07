@@ -1,0 +1,50 @@
+% A test for tex8web: algorithm2e's algorithms, ruled, with vertical lines
+% along their blocks and numbered lines. The caption is at the left
+% between two rules, at the top wherever \caption is, and a rule ends the
+% body, all three as wide as the text, as in the PDF, also in an [H]
+% algorithm. Each line is a line of its own, its number in the margin and
+% its keywords bold; a block's line ends in a short rule unless an else
+% follows. A \ref to an algorithm and to one of its lines leads there.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\begin{document}
+\section{Search}
+Algorithm~\ref{alg:search} finds the smallest $i$ with $a_i \ge x$; its
+loop ends at line~\ref{line:return}.
+\begin{algorithm}
+\caption{Binary search}\label{alg:search}
+\KwIn{a sorted array $a_1 \le \dots \le a_n$ and a value $x$}
+\KwOut{the least $i$ with $a_i \ge x$, or $n+1$}
+$\ell \gets 1$, $h \gets n + 1$\tcp*{the answer is in $[\ell, h]$}
+\While{$\ell < h$}{
+  $m \gets \lfloor (\ell + h)/2 \rfloor$\;
+  \eIf{$a_m < x$}{
+    $\ell \gets m + 1$\tcp*{$a_1, \dots, a_m < x$}
+  }{
+    $h \gets m$\;
+  }
+}
+\Return{$\ell$}\label{line:return}\;
+\For{$k = 1, \dots, K$}{
+  $s_k \gets \sum_{j=1}^{k} a_j$\;
+}
+\end{algorithm}
+Text after the algorithm.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{a graph $G = (V, E)$}
+\ForEach{$v \in V$}{
+  \tcc{a comment on its own line}
+  \uIf{$\deg v = 0$}{remove $v$}
+  \ElseIf{$\deg v = 1$}{mark $v$}
+  \Else{keep $v$}
+}
+\Repeat{no vertex is marked}{
+  remove the marked vertices\label{line:remove}
+}
+\caption{An \texttt{[H]} algorithm, its caption at the end}\label{alg:prune}
+\end{algorithm}
+See Algorithm~\ref{alg:prune}, line~\ref{line:remove}.
+\end{document}
