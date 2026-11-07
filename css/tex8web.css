@@ -15,7 +15,7 @@
 /* (tex4ht gives body a color-scheme of its own, which would keep the page
    in the system's setting; html body: to win over tex4ht's body rules) */
 html body { color-scheme: inherit; }
-:root { --tex8web-bg: light-dark(#FFFFFF, #221D1B); --tex8web-text: light-dark(#000000, #E3E3E3); }
+:root { --tex8web-bg: light-dark(#FFFFFF, #201E1D); --tex8web-text: light-dark(#000000, #E3E3E3); }
 /* the document's colors in dark mode: the same hue at another lightness
    (l, of oklch), which tex8web-boxes.tex, assets.lua and tex8web.js write
    as oklch(from <color> var(--tex8web-dark-<property>) c h). Text is as
@@ -24,8 +24,12 @@ html body { color-scheme: inherit; }
 :root { --tex8web-dark-color: max(l, 1 - l); --tex8web-dark-background: min(l, 1.24 - l);
     --tex8web-dark-border: max(l, 0.62); }
 /* what a link leads to, and the table of contents' entry for the section
-   being read */
-:root { --tex8web-highlight: light-dark(#EAECF6, #4A4232); }
+   being read, and what's under the mouse. The dark highlight is a grayed
+   mauve, apart from yellow and pink highlighters, and the dark hover
+   is stronger, as 8% barely shows on a dark background */
+:root { --tex8web-highlight: light-dark(#EAECF6, #383234);
+    --tex8web-hover: light-dark(color-mix(in srgb, currentColor 8%, transparent),
+        color-mix(in srgb, currentColor 14%, transparent)); }
 html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
 /* links: hyperref's colors with colorlinks (tex8web-page.tex), and these
    in dark mode. Otherwise the color of the text, with a faint underline
@@ -572,7 +576,7 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     border-radius: 0.375rem; color: inherit; background: none; cursor: pointer;
     opacity: 0.45; }
 .tex8web-control:hover, .tex8web-control:focus-visible { opacity: 1;
-    background-color: color-mix(in srgb, currentColor 8%, transparent); }
+    background-color: var(--tex8web-hover); }
 /* (the theme button needs tex8web-page.js, but not to show: a long page
    is drawn well before that deferred script runs) */
 :root:not(.tex8web-js) .tex8web-theme { display: none; }
@@ -651,7 +655,7 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 /* (under the mouse, tinted as the controls are) */
 @media (hover: hover) {
     .tex8web-toc a:not([aria-current]):hover { border-radius: 0.2em;
-        background-color: color-mix(in srgb, currentColor 8%, transparent); }
+        background-color: var(--tex8web-hover); }
 }
 /* the filter (tex8web-page.js): a field, and what matches in place of the
    entries, the one chosen (which Enter follows) marked while the field has
