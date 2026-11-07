@@ -72,7 +72,7 @@ MathJax's TeX input differs from TeX in a few sizes. `js/tex8web.js` sets them a
 `js/prerender.mjs` runs MathJax in Node, configured as it is in the browser. The page keeps the result. Prerendering also makes the page lighter:
 
 - **No assistive MathML.** MathJax adds a hidden MathML copy of each formula. On a long page it is a quarter of the markup, and most of a phone's layout time. `TEX8WEB_MATHML=1` keeps it; the tests set it and check the math through it.
-- **Speech instead.** Each formula is `role="math"` with its speech as an `aria-label`. The speech comes from MathJax's semantic enrichment, which changes the math itself. So the page is typeset twice: the second typesetting gives the speech and is then dropped. That typesetting also adjusts the math for the speech rule engine, which would say "normal Gamma" for Γ and "raised to the down tack power" for `^\top`.
+- **Speech instead.** Each formula is `role="math"` with its speech as an `aria-label`. The speech comes from MathJax's semantic enrichment, which changes the math itself. So the page is typeset twice: the second typesetting gives the speech and is then dropped. That typesetting also adjusts the math for the speech rule engine, which would say "normal Gamma" for Γ and "raised to the down tack power" for `^\top`. The speech rule engine takes most of prerendering's time, so what it said of each formula is kept for the next build. It is keyed by what MathJax sends the engine, the enriched MathML and the speech options, and by MathJax's version. It is in `TEX8WEB_SPEECH_CACHE`, which `test/lib/build.mjs` sets to `<out>.speech.json`, or else in `<page>-speech.json` among tex4ht's files.
 - **Fewer elements.** Wrappers that add nothing to their children's box are removed, such as one-character tokens and `mjx-mrow` in left-aligned math. A long document goes from 67,000 elements to 40,000. A phone restyles the page as it scrolls, in time that grows with that count. test:visual checks that the page still looks like MathJax's own output.
 - **Preloaded fonts.** Without preloads, the browser fetches each font when it first needs it, then lays out the page again.
 - **Subset fonts.** MathJax's, Latin Modern's, TeX Gyre's and XCharter's fonts are cut to the document's characters with [subset-font](https://github.com/papandreou/subset-font). A long page's fonts go from about 380 KB to 140 KB.
@@ -118,7 +118,7 @@ Each build's log is kept in `build/test/<document>/make4ht.log`.
 - the files in tex8web's `bin`, `css`, `fonts`, `js`, `lua` and `tex` directories, `tex8web.cfg`, `tex8web.mk4`, `package.json` and `package-lock.json`, by content;
 - the files in the document's directory, and the config's, by content;
 - the PDF the page links, if there is one: its size and modification time, as a page built before the PDF was there lacks the link;
-- the command's arguments, and the `TEX8WEB_*`, `TEXINPUTS` and `TEXMF*` environment variables, except `TEX8WEB_TREE` and those that begin `TEX8WEB_SLOTS`;
+- the command's arguments, and the `TEX8WEB_*`, `TEXINPUTS` and `TEXMF*` environment variables, except `TEX8WEB_TREE`, `TEX8WEB_SPEECH_CACHE` and those that begin `TEX8WEB_SLOTS`;
 - the versions of `node_modules/mathjax` and `node_modules/subset-font`, or that one is missing;
 - the first line of `tex --version` and of `make4ht --version`, and when `tex4ht.sty` was installed.
 
@@ -147,6 +147,7 @@ Each build's log is kept in `build/test/<document>/make4ht.log`.
 `js/prerender.mjs` also relies on:
 - `MmlTree`'s `TEXCLASS`, `postFilters` (the speech's adjustment of the math) and `walkTree`;
 - `outputData.speech` of each formula of the second typesetting;
+- `WorkerHandler.Post` of `a11y/speech`, through which the speech is kept, and its `speech` command's data and result;
 - that typesetting finding the same formulas, in the same order, as the first: it throws when the counts differ, and pairs them by position;
 - the CSS values `js/prerender-rules.mjs` reads: each removed tag's rule, `mjx-math`'s and `mjx-script`'s, and the sizes of `[size]`. When one differs, the pass is skipped and `npm test` fails with a line that starts with `MathJax:`.
 

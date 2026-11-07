@@ -1,8 +1,12 @@
-// Unit test for js/prerender-rules.mjs, run by npm test:
+// Unit tests for js/prerender-rules.mjs and prerender.mjs, run by npm test:
 // node --test test/unit/prerender.test.mjs
 // The rules prerender.mjs reads from MathJax's CSS, and what it says when
-// MathJax changes one.
+// MathJax changes one; and the speech it keeps.
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
 import { readRules, tokens, wrappers } from '../../js/prerender-rules.mjs';
 
@@ -49,4 +53,60 @@ test('a missing size', () => {
 });
 test('a math that does not line up on the left', () => {
   assert.match(problems(css.replace('line-height: 0', 'line-height: 1'))[0], /^mjx-math isn't/);
+});
+
+// prerender.mjs's speech kept from one build to the next: a page built
+// with it is the page built without, and a formula whose MathML changed,
+// by a \def or a label elsewhere, is spoken anew
+const page = body => `<!DOCTYPE html>
+<html><head><title>speech</title>
+<script data-tex8web-browser='' id='tex8web-config' type='application/json'>{"mathjax": {"loader": {"load": []}, "options": {}, "tex": {"tags": "ams"}, "output": {"font": "mathjax-tex"}}, "tex": {"exscale": 1, "baselineskip": 1.2, "jot": 0.3, "pt": 0.1}}</script>
+</head><body>${body}</body></html>`;
+const before = page(String.raw`<p>\(\def\f{x}\f + 1\) \(\f\) \(\,\) \(y\)</p>\begin{equation}\label{a}z\end{equation}<p>\(\eqref{a}\)</p>`);
+// (\f and \eqref{a} the same TeX, but not the same math)
+const after = page(String.raw`<p>\(\def\f{w}\f + 1\) \(\f\) \(\,\) \(y\)</p>\begin{equation}v\end{equation}\begin{equation}\label{a}z\end{equation}<p>\(\eqref{a}\)</p>`);
+
+test('the speech kept from a build gives the same page, and only what changed is spoken anew', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'tex8webspeech'));
+  const prerender = (html, cache, mathml = false) => {
+    const file = join(dir, 'page.html');
+    writeFileSync(file, html);
+    const env = { ...process.env, TEX8WEB_SPEECH_CACHE: join(dir, cache) };
+    delete env.TEX8WEB_MATHML;
+    if (mathml) env.TEX8WEB_MATHML = '1';
+    const result = spawnSync(process.execPath, [new URL('../../js/prerender.mjs', import.meta.url).pathname, file], { env, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    return readFileSync(file, 'utf8');
+  };
+  // (each formula's speech, or hidden for none)
+  const speech = html => [...html.matchAll(/<mjx-container [^>]*>/g)]
+    .map(([tag]) => tag.match(/aria-label="([^"]*)"/)?.[1] ?? (tag.includes('aria-hidden="true"') ? 'hidden' : 'none'));
+  try {
+    const cold = prerender(before, 'speech.json');
+    assert.deepEqual(speech(cold).slice(0, 4), ['x plus 1', 'x', 'hidden', 'y']);
+    assert.equal(prerender(before, 'speech.json'), cold);
+    // (one written part way, or not at all, is as none)
+    writeFileSync(join(dir, 'speech.json'), '{"');
+    assert.equal(prerender(before, 'speech.json'), cold);
+    const kept = readFileSync(join(dir, 'speech.json'), 'utf8');
+    writeFileSync(join(dir, 'partial.json'), kept);
+    const changed = prerender(after, 'fresh.json');
+    assert.equal(prerender(after, 'partial.json'), changed);
+    // (the kept speech marked, to tell it from the speech rule engine's)
+    const marked = Object.fromEntries(Object.entries(JSON.parse(kept)).map(([key, result]) => [key, JSON.stringify({ ...JSON.parse(result), label: 'kept' })]));
+    writeFileSync(join(dir, 'speech.json'), JSON.stringify(marked));
+    const warm = speech(prerender(after, 'speech.json'));
+    const fresh = speech(changed);
+    assert.deepEqual(warm, ['w plus 1', 'w', 'kept', 'kept', fresh[4], fresh[5], fresh[6]]);
+    assert.deepEqual(fresh.slice(0, 4), ['w plus 1', 'w', 'hidden', 'y']);
+    assert.notDeepEqual(speech(cold).at(-1), fresh.at(-1));
+    // (only this build's)
+    assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(dir, 'speech.json'), 'utf8'))).sort(),
+      Object.keys(JSON.parse(readFileSync(join(dir, 'fresh.json'), 'utf8'))).sort());
+    const mathml = prerender(before, 'mathml.json', true);
+    assert.match(mathml, /<mjx-assistive-mml/);
+    assert.equal(prerender(before, 'mathml.json', true), mathml);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
 });

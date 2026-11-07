@@ -202,8 +202,9 @@ function tools() {
 // lacks the link. The files themselves, not the commit, so that an edit not
 // yet committed, or a file git doesn't know, is part of it
 function stamp(doc, args, env, pdf) {
-  // (the slots and regress.mjs's test hook change no page)
-  const vars = Object.entries({ ...process.env, ...env }).filter(([name]) => /^(TEX8WEB_(?!SLOTS|TREE)|TEXINPUTS$|TEXMF)/.test(name)).sort();
+  // (the slots, regress.mjs's test hook and the speech kept from the last
+  // build change no page)
+  const vars = Object.entries({ ...process.env, ...env }).filter(([name]) => /^(TEX8WEB_(?!SLOTS|TREE|SPEECH_CACHE)|TEXINPUTS$|TEXMF)/.test(name)).sort();
   return createHash('sha256').update(JSON.stringify([tools(), hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf])).digest('hex');
 }
 
@@ -257,7 +258,7 @@ async function buildHere(doc, out, aux, env) {
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
   const result = await run(join(root, 'bin/tex8web'), args,
-    { cwd: doc.dir, env: { ...process.env, ...env }, slot: true });
+    { cwd: doc.dir, env: { ...process.env, ...env, TEX8WEB_SPEECH_CACHE: `${out}.speech.json` }, slot: true });
   if (result.code === 0) {
     writeFileSync(kept.log, result.log);
     writeFileSync(kept.stamp, wanted);

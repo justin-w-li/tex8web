@@ -8,7 +8,8 @@
 // tex8web.mk4 to list with the output. Those fonts and Latin Modern's
 // (assets.lua) are cut down to the characters the document has.
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, renameSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
 import { runInThisContext } from 'node:vm';
@@ -223,11 +224,41 @@ const forSpeech = ({ data }) => data.root.walkTree(node => {
   }
 });
 tex.postFilters.add(forSpeech);
+
+// The speech rule engine takes most of this script's time, and most
+// formulas are the same from one build to the next: what it said of each is
+// kept, in TEX8WEB_SPEECH_CACHE (test/lib/build.mjs's) or else beside the
+// page among tex4ht's files. It is keyed by all MathJax sends its worker
+// (internal: WorkerHandler.Post), the enriched MathML and the options, and
+// by MathJax's version: a \def, a \label or tex8web.js's columns change a
+// formula's MathML, and so its key. Only what this page said is kept
+const cacheFile = process.env.TEX8WEB_SPEECH_CACHE || file.replace(/\.html$/, '') + '-speech.json';
+let cached = new Map();
+try {
+  cached = new Map(Object.entries(JSON.parse(readFileSync(cacheFile, 'utf8'))));
+} catch {}
+const said = new Map();
+const kept = {};
+const { WorkerHandler } = MathJax._.a11y.speech.WebWorker;
+const post = WorkerHandler.prototype.Post;
+WorkerHandler.prototype.Post = function (command, item) {
+  if (command.cmd !== 'speech') return post.call(this, command, item);
+  const key = createHash('sha256').update(`${MathJax.version}\0${JSON.stringify(command.data)}`).digest('base64');
+  if (!said.has(key)) {
+    const result = cached.has(key) ? Promise.resolve(cached.get(key)) : post.call(this, command, item);
+    said.set(key, result.then(speech => kept[key] = speech));
+  }
+  return said.get(key);
+};
 Object.assign(MathJax.config.options, { enableEnrichment: true, enableSpeech: true },
   mathml && { enableAssistiveMml: false });
 const spoken = MathJax.startup.getDocument(html);
 await spoken.renderPromise();
 tex.postFilters.remove(forSpeech);
+// (written whole, then renamed: a build stopped part way leaves the last
+// one's)
+writeFileSync(`${cacheFile}.${process.pid}`, JSON.stringify(kept));
+renameSync(`${cacheFile}.${process.pid}`, cacheFile);
 const items = [...MathJax.startup.document.math];
 const speeches = [...spoken.math];
 if (speeches.length !== items.length) {
