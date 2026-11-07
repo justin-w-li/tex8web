@@ -279,3 +279,4 @@ Each item says what goes wrong and, where there is one, what to do.
 - **The browser's find-in-page** finds a formula's characters one at a time, but not a run of them such as `Δ(S)`.
 - **A page opened from disk in Chrome** loads its fonts without preloading, and the console reports each preload as blocked.
 - **Styles for `.mathjax-inline`** in a config apply only when MathJax typesets in the browser.
+- **The space before inline math after a word in another font** can be in that word's font when MathJax typesets in the browser, and in the text's font in a prerendered page. algorithm2e's keyword before its argument is one such case. The two pages can be a pixel apart, and neither is always the PDF's.
