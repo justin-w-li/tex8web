@@ -574,12 +574,12 @@ async function opening(chrome, file) {
   });
 }
 
-// the contents' chevrons, by mouse: one on each section with subsections,
-// at the column's inner edge, and the one being read open; another section opened slides open, and
-// stays open as the page scrolls to a third, which opens without a slide
-// while the first closes; closed, the section being read stays closed while
-// it's read, its entry marked in place of its subsection's; and the one
-// opened stays open as a link in the contents leads to the first again
+// the contents' chevrons, by mouse. There's one on each section with
+// subsections, at the column's inner edge. A section the reader opens
+// slides open, and stays open as the page scrolls to a third section. That
+// one opens without a slide, and the first, being left, closes. The section
+// being read, once closed, stays closed while it's read, its entry marked.
+// The opened section still stays open as a contents link leads back
 async function browsing(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
     const problems = [];
@@ -611,7 +611,7 @@ async function browsing(chrome, file) {
       await page.mouse('released', x, y);
     };
     await click(1);
-    if (!await page.evaluate('document.getAnimations().length')) problems.push('a section opened without a slide');
+    if (!await page.evaluate("document.getElementById('tex8web-toc').getAnimations({ subtree: true }).length")) problems.push('a section opened without a slide');
     await finished(page);
     now = await page.evaluate(state);
     if (!(now[1] > 0)) problems.push(`the second section opened shows ${now[1]} subsections`);
@@ -621,7 +621,7 @@ async function browsing(chrome, file) {
     })()`);
     now = await until(() => page.evaluate(state), n => n[2] > 0);
     if (!now) problems.push('scrolled to the third section, its subsections not shown');
-    if (await page.evaluate('document.getAnimations().length')) problems.push('the page scrolled, a slide in the contents');
+    if (await page.evaluate("document.getElementById('tex8web-toc').getAnimations({ subtree: true }).length")) problems.push('the page scrolled, a slide in the contents');
     now = await page.evaluate(state);
     if (!(now[0] === 0 && now[1] > 0)) problems.push(`scrolled to the third section, the first two show ${now.slice(0, 2)} subsections`);
     await click(2);
@@ -742,9 +742,10 @@ async function navigating(chrome, [example, index]) {
 // each check, with the fixtures it runs on, which must have its feature
 // (the viewer: an SVG and a raster picture; the bar, fade, chevrons and
 // one filter: test.tex's long page, with its display that scrolls, its
-// previews, its term and its sections' subsections; the filter's other: a titled box; transitions: an example and
-// the page that links it; the contents, the failing feature and the fade
-// of the browser's math: a page with subsections before its first section)
+// previews, its term and its sections' subsections; the filter's other: a
+// titled box; transitions: an example and the page that links it; the
+// contents, the failing feature and the fade of the browser's math: a page
+// with subsections before its first section)
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));

@@ -620,10 +620,12 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
    a column beside the text, as wide as the drawer and as footnotes, which
    the button hides and shows with tex8web-page.js (fading). Its
    lines close together, and entries a little apart. tex8web-page.js marks
-   the section being read, and shows only its section's subsections */
+   the section being read, and shows its section's subsections and those
+   the reader opens */
 /* (85vw in all, with the padding) */
-.tex8web-toc { inset: 0 auto 0 0; width: min(var(--tex8web-margin), 85vw - 2.5rem); height: 100%;
-    max-height: none; margin: 0; padding: 4rem 1.25rem 2rem; border: 0;
+.tex8web-toc { --tex8web-toc-pad: 1.25rem; inset: 0 auto 0 0;
+    width: min(var(--tex8web-margin), 85vw - 2 * var(--tex8web-toc-pad)); height: 100%;
+    max-height: none; margin: 0; padding: 4rem var(--tex8web-toc-pad) 2rem; border: 0;
     border-inline-end: 1px solid color-mix(in srgb, currentColor 15%, transparent);
     color: var(--tex8web-text); background-color: var(--tex8web-bg); overflow-y: auto;
     scrollbar-width: none; }
@@ -658,19 +660,14 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
         background-color: var(--tex8web-hover); }
 }
 /* the chevron after a section with subsections (tex8web-page.js), which
-   shows or hides them: at the end of the entry's first line, in a gutter
-   measured as the column is (rem, not the text's em), so that in any
-   document it's as far from the right edge as the text is from the left.
-   It's shown under the mouse, faint while the section is open, and faint
-   always on a touch screen, where a finger finds it by the drawer's edge.
-   While a section being read has its subsections hidden, its entry is
-   marked */
+   shows or hides them. Its gutter is in rem, as the column is, not in the
+   text's em: so in any document it's as far from the right edge as the
+   text is from the left */
 .tex8web-toc-more { position: relative; flex: none; align-self: flex-start; width: 1rem;
     margin-inline-start: auto; padding: 0; border: 0; font: inherit; line-height: inherit;
     text-align: end; color: inherit; background: none; cursor: pointer; opacity: 0; }
-/* (centered on the math axis, a quarter em above the baseline, as a
-   parenthesis is: a square's two sides, turned, which the downward one
-   has below its middle) */
+/* (two sides of a square, turned; translated so that its middle is on
+   the math axis, a quarter em above the baseline, as a parenthesis's is) */
 .tex8web-toc-more::before { content: ""; display: inline-block; box-sizing: border-box;
     width: 0.45em; height: 0.45em; margin-inline-end: 0.15em; border: solid currentColor;
     border-width: 0 1.5px 1.5px 0; rotate: -45deg; translate: 0 -0.025em; }
@@ -679,9 +676,11 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 .tex8web-toc-more:focus-visible, .tableofcontents > span > .tex8web-toc-more:hover { opacity: 0.8; }
 @media (hover: none) {
     .tex8web-toc-more { opacity: 0.3; }
-    /* (out to the drawer's edge, and between the lines, for a finger) */
-    .tex8web-toc-more::after { content: ""; position: absolute; inset: -0.6em -1.25rem -0.6em 0; }
+    /* (out to the column's edge, and between the lines, for a finger) */
+    .tex8web-toc-more::after { content: ""; position: absolute;
+        inset: -0.6em calc(-1 * var(--tex8web-toc-pad)) -0.6em 0; }
 }
+/* (the section being read, its subsections hidden, marked in their place) */
 .tex8web-toc .tex8web-reading:has(> .tex8web-toc-more[aria-expanded="false"]) > a {
     border-radius: 0.2em; background-color: var(--tex8web-highlight); }
 /* the filter (tex8web-page.js): a field, and what matches in place of the
@@ -716,7 +715,7 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     /* (its text where the drawer's is, and the icons, 1.25rem in) */
     .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
         inset: var(--tex8web-column-inset); width: var(--tex8web-margin); height: auto;
-        padding: 0 0.5rem; border: 0; background: none; translate: none; transition: none; }
+        --tex8web-toc-pad: 0.5rem; padding: 0 var(--tex8web-toc-pad); border: 0; background: none; translate: none; transition: none; }
     .tex8web-toc-hidden .tex8web-toc { display: none; opacity: 0; }
     .tex8web-toc::backdrop { display: none; }
     /* (only as the button is pressed: not as the page loads, or as the

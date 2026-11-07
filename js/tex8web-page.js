@@ -341,8 +341,10 @@
         section.classList.add('tex8web-reading');
         opened = section;
       }
-      // (not while the filter's results stand in for the entries)
-      const a = current.a.getBoundingClientRect(), box = toc.getBoundingClientRect();
+      // (the section's entry while its subsections are hidden; neither while
+      // the filter's results stand in for the entries)
+      const shown = current.a.getClientRects().length ? current.a : opened.querySelector('a');
+      const a = shown.getBoundingClientRect(), box = toc.getBoundingClientRect();
       if (a.height && (a.top < box.top || a.bottom > box.bottom)) toc.scrollTop += a.top - box.top - box.height / 3;
     };
     let pending = false;

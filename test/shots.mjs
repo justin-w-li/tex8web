@@ -30,7 +30,8 @@ const option = name => args.includes(name) ? args.splice(args.indexOf(name), 2)[
 const clip = option('--clip');
 const expression = option('--eval');
 const then = option('--then');
-const touch = args.includes('--touch') && args.splice(args.indexOf('--touch'), 1).length > 0;
+const touch = args.includes('--touch');
+if (touch) args.splice(args.indexOf('--touch'), 1);
 const [out, ...builds] = expression === undefined ? args : [undefined, ...args];
 if ((!out && expression === undefined) || !builds.length || builds.length > (expression === undefined ? 2 : 1)) {
   console.error('usage: node test/shots.mjs [--clip <selector>] [--then <expression>] [--touch] <out> <page.html | html directory> [<new html directory>]\n'
