@@ -15,12 +15,12 @@ after(() => rmSync(dir, { recursive: true }));
 
 // a page 45 screens high at 900px (more than a strip), with a bar fixed to
 // the top, a block as high as the window, and a line of text at 25000px
-const page = (name, { extra = '', more = 0, color = 'black', background = 'white' } = {}) => {
+const page = (name, { extra = '', more = 0, color = 'black', background = 'white', style = '' } = {}) => {
   mkdirSync(join(dir, name), { recursive: true });
   writeFileSync(join(dir, name, 'main.html'), `<!DOCTYPE html><meta charset="utf-8"><style>
     body { margin: 0; font: 20px sans-serif; background: ${background}; } .bar { position: fixed; top: 0; left: 0; right: 0; background: #ccc; }
     .tall { height: 100vh; background: linear-gradient(#fff, #9cf); } .gap { height: ${24100 + more}px; }
-    .end { height: 14976px; } p { height: 24px; margin: 0; color: ${color}; }</style>
+    .end { height: 14976px; } ${style} p { height: 24px; margin: 0; color: ${color}; }</style>
     <div class="bar">bar</div><div class="tall">window</div><div class="gap"></div><p>${extra}</p><div class="end"></div>`);
   return join(dir, name);
 };
@@ -122,4 +122,17 @@ test('a cache made with another Chrome is refused, and a run leaves only whole e
   const result = shots('--cache', cache, join(dir, 'out-y'), old, other);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /was made with Chrome\/1\.0/);
+});
+
+test('--then runs on each page before it is shot, and --touch makes it a touch screen', () => {
+  const [old, other] = [page('old'), page('other', { background: '#eef' })];
+  // (inline style beats both pages' sheets, so the pages are the same once it has run)
+  const result = shots('--then', "document.body.style.background = '#ccc'", join(dir, 'out-then'), old, other);
+  assert.equal(result.status, 0, result.stderr);
+
+  const touchy = page('touchy', { style: '@media (hover: none) { body { background: #000; } }' });
+  assert.equal(shots(join(dir, 'out-mouse'), old, touchy).status, 0);
+  const touched = shots('--touch', '--expect', 'look', join(dir, 'out-touch'), old, touchy);
+  assert.equal(touched.status, 1, touched.stderr);
+  assert.match(lines(touched)[0], /^main-1400-light: differs from screen 1 of 45/);
 });
