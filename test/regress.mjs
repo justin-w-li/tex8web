@@ -142,11 +142,13 @@ const results = await pool(docs, workers, regress);
 // the screens of the changed pages, one page in Chrome at a time
 for (const result of results.filter(result => result.kind === 'changed')) {
   const compare = join(out, 'compare', result.doc.name);
-  const shots = await node('shots.mjs', compare, result.kept, result.html);
+  // (a long page takes shots.mjs minutes for each width and scheme, and
+  // more than run()'s 15 minutes in all when the machine is busy)
+  const shots = await run(process.execPath, [join(here, 'shots.mjs'), compare, result.kept, result.html], { total: 3600 });
   writeFileSync(join(logs, `${result.doc.name}.shots.log`), shots.log);
   if (shots.code === 1) {
     result.kind = 'looks';
-    result.outcome = `looks different: ${shots.log.trim().split('\n').filter(line => !line.endsWith(': identical'))
+    result.outcome = `looks different: ${shots.log.trim().split('\n').filter(line => /: (screens .* differ|only in )/.test(line))
       .map(line => line.replace(/: screens (.*?) of \d+ differ.*$/, ' (screens $1)')).join('; ')}`;
   } else if (shots.code !== 0) {
     result.failed = true;

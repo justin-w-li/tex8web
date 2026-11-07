@@ -364,6 +364,8 @@ test('regress.mjs says what changed in each document since its accepted build', 
     assert.equal(result.status, 3, result.stderr + result.stdout);
     assert.match(result.stdout, /^one: unchanged/m);
     assert.match(result.stdout, /^two: looks different: .*-light/m);
+    // (shots.mjs's progress isn't part of the outcome)
+    assert.doesNotMatch(result.stdout, /^two: .*(loading|screen \d+ of)/m);
     assert.ok(readdirSync(join(out, 'compare/two')).some(file => file.endsWith('-new.png')));
 
     // a document that doesn't build fails the run and keeps the rest from being accepted

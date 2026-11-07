@@ -13,6 +13,7 @@
 //   node test/shots.mjs --eval <expression> <page.html | html directory>
 //     prints, for each page, width and scheme, the expression's value on the
 //     page, as JSON (a promise is awaited)
+// It prints its progress on stderr.
 // The PDF's page beside them: pdftoppm -png -r 100 -f <n> -l <n> -singlefile
 // <pdf> <out>/pdf
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -67,9 +68,14 @@ try {
         const shots = [];
         for (const file of [page, ...builds.slice(1).map(dir => join(dir, basename(page)))]) {
           const url = pathToFileURL(file).href;
+          // (a line a screen, as a long page takes minutes: a caller that
+          // times silence, as build.mjs's run(), knows it moves and, if it
+          // stops, where)
+          const at = `${label}: ${builds.length === 1 ? '' : file === page ? 'old, ' : 'new, '}`;
+          console.error(`${at}loading`);
           await chrome.withPage(url, { width, height, colorScheme }, async tab => {
             if (expression !== undefined) console.log(`${label}: ${JSON.stringify(await tab.evaluate(expression))}`);
-            else shots.push(clip ? await band(tab, url) : await tab.screens());
+            else shots.push(clip ? await band(tab, url) : await tab.screens((i, n) => console.error(`${at}screen ${i} of ${n}`)));
           });
         }
         if (expression !== undefined) continue;

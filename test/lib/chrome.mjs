@@ -170,12 +170,14 @@ export async function launch() {
       evaluate,
       frame,
       screenshot,
-      // the whole page, a window's height at a time
-      async screens() {
+      // the whole page, a window's height at a time, calling shot(i, n)
+      // after each of the n
+      async screens(shot = () => {}) {
         const total = await evaluate('document.documentElement.scrollHeight');
         const shots = [];
         for (let y = 0; y < total; y += height) {
           shots.push(await screenshot(y, Math.min(height, total - y)));
+          shot(shots.length, Math.ceil(total / height));
         }
         return shots;
       },
