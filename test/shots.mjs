@@ -82,8 +82,10 @@ async function prepare(tab) {
 }
 
 // A comparison shoots a page in strips of this many screens, as a capture
-// costs Chrome half a second whatever its height (captureBeyondViewport),
-// and the screens of a strip are what they would be one by one. A strip
+// costs Chrome up to a second more than its height does, and the screens
+// of a strip are what they would be one by one. That cost is
+// captureBeyondViewport's resize of the page to 1x1 and back
+// (crbug.com/40727379). A wide page switches layouts each time. A strip
 // that is the same in both builds settles its screens; only the screens of
 // the others are cut out and compared. The tests make a strip a few screens
 // (TEX8WEB_SHOTS_STRIP), so that their pages can be short.
