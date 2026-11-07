@@ -45,7 +45,8 @@ const realShots = (views, ...args) => run({ TEX8WEB_SHOTS_VIEWS: views }, args);
 const all = '1400-light,1400-dark,390-light,390-dark';
 const lines = result => result.stdout.trim().split('\n');
 
-describe('shots.mjs', { concurrency: true }, () => {
+// (two at a time: without lockf, as on Linux, no slot limits their Chromes)
+describe('shots.mjs', { concurrency: 2 }, () => {
   test('a comparison says which screens differ, and writes them', async () => {
     const page = pages();
     const [old, same, changed] = [page('old'), page('same'), page('changed', { extra: 'new words', color: 'red' })];
@@ -136,6 +137,8 @@ describe('shots.mjs', { concurrency: true }, () => {
     assert.match(result.stderr, /main-1400-light: new, strip 3 of 3/);
 
     assert.equal((await shots('1400-light', '--expect', 'nothing', join(dir, 'out-bad'), old, other)).status, 2);
+    assert.equal((await shots('1400-ligth', join(dir, 'out-bad'), old, other)).status, 2);
+    assert.equal((await run({ TEX8WEB_SHOTS_STRIP: '' }, [join(dir, 'out-bad'), old, other])).status, 2);
   });
 
   test('a run leaves only whole entries, and a build\'s own files decide the key', async () => {
@@ -212,9 +215,12 @@ describe('shots.mjs', { concurrency: true }, () => {
     // (inline style beats both pages' sheets, so the pages are the same once it has run)
     const result = await shots('1400-light', '--then', "document.body.style.background = '#ccc'", join(dir, 'out-then'), old, other);
     assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(lines(result), ['main-1400-light: identical']);
 
     const touchy = page('touchy', { style: '@media (hover: none) { body { background: #000; } }' });
-    assert.equal((await shots('1400-light', join(dir, 'out-mouse'), old, touchy)).status, 0);
+    const moused = await shots('1400-light', join(dir, 'out-mouse'), old, touchy);
+    assert.equal(moused.status, 0, moused.stderr);
+    assert.deepEqual(lines(moused), ['main-1400-light: identical']);
     const touched = await shots('1400-light', '--touch', '--expect', 'look', join(dir, 'out-touch'), old, touchy);
     assert.equal(touched.status, 1, touched.stderr);
     assert.match(lines(touched)[0], /^main-1400-light: differs from screen 1 of 9/);
