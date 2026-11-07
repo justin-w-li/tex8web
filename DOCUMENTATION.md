@@ -24,7 +24,7 @@ The options:
 - **`-B aux`** puts tex4ht's working files in `aux/`, a path relative to the document. Keep `-` out of it; see [Known limitations](#known-limitations).
 - **`-p pdf`** adds an icon that links to the document's PDF, and copies the PDF next to the page. The path is relative to where you run the command. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`. With a config's [`\WebPDF`](#your-own-config) too, `-p` wins.
 - **`-u url`** adds an icon that links up to the page above this one on your site, such as a list of your documents. The URL is relative to the page, for example `../index.html`. With a config's `\WebUp` too, `-u` wins.
-- **`-m draft`** runs LaTeX once and skips the bibliography and index. It is quicker while you work, but references and citations may show as ??, and the page has no title: tex4ht hands the title to the next run, so the tab, the link preview and the document's title in the contents stay empty.
+- **`-m draft`** runs LaTeX once and skips the bibliography and index. It is quicker while you work, but references and citations may show as ??. A fresh draft build also has no title: tex4ht hands the title to the next run, so the tab, the link preview and the contents' link to the top stay empty.
 - Any other option is passed to make4ht. The document comes last.
 
 The output folder holds the page and everything it uses:

@@ -157,13 +157,10 @@ for (const math of flat ? adaptor.tags(root, 'mjx-math') : []) {
   for (const child of adaptor.childNodes(math)) if (isElement(child)) flatten(child);
 }
 // (tex4ht's span around inline math, which the passes before this one look
-// for, and nothing after; but not at the top of the body, where make4ht's
-// fixinlines, after this, gathers text and inline elements such as a span,
-// but not an mjx-container, into a paragraph)
+// for, and nothing after)
 for (const span of adaptor.tags(root, 'span')) {
   const [container, ...rest] = adaptor.childNodes(span);
   if (!rest.length && container && adaptor.kind(container) === 'mjx-container'
-      && adaptor.kind(adaptor.parent(span)) !== 'body'
       && only(span, ['class']) && adaptor.getAttribute(span, 'class') === 'mathjax-inline') {
     adaptor.replace(container, span);
   }

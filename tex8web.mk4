@@ -19,6 +19,7 @@ end)
 os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 
 local domfilter = require "make4ht-domfilter"
+local fixinlines = require "make4ht-fixinlines"
 local assets = require "tex8web.assets"
 local bibliography = require "tex8web.bibliography"
 local index = require "tex8web.index"
@@ -53,8 +54,11 @@ Make:match("4idx$", function() return false end)
 -- depends on: page.build_data first (it fills context and removes
 -- its scripts); text.colors before the passes that look at what lies
 -- between elements (its marks are elements until it removes them);
--- text.line_comments after them (a removed comment stays among its
--- parent's children); and assets.copy last (it reads the finished page)
+-- make4ht's fixinlines, which only looks at the top of the body, before
+-- page.controls puts the text in <main>; page.equation_anchors after it;
+-- text.line_comments after the passes that look at what lies between nodes
+-- (a removed comment stays among its parent's children); and assets.copy
+-- last (it reads the finished page)
 local passes = {
   page.build_data,
   text.colors,
@@ -67,7 +71,9 @@ local passes = {
   text.no_break_spaces,
   text.minipages,
   text.sidenotes,
+  fixinlines,
   page.controls,
+  page.equation_anchors,
   macros.define,
   page.permalinks,
   page.terms,

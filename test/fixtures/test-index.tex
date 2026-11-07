@@ -2,7 +2,8 @@
 % entries on several pages, a subentry, a page range and a "see" entry; each
 % number links back to its \index. Entries whose text has numbers (after ^
 % or a comma, as an entry's or a subentry's) keep them, unlinked. An entry
-% indexed three times in a row has three numbers, not a range.
+% indexed three times in a row has three numbers, not a range. An entry
+% before an equation doesn't make a link to it tint the equation.
 \documentclass{article}
 \usepackage{makeidx}
 \makeindex
@@ -19,5 +20,8 @@ The space\index{$L^2$ space} of square-integrable functions, by the
 theorem\index{Theorem, 2nd form}\index{group!cyclic, of order 2}.
 A set\index{set} is not a group\index{set} until it has
 an operation\index{set}.
+A group is finite when its order\index{order} is, that is
+\begin{equation}\label{eq:order}|G| < \infty,\end{equation}
+as in (\ref{eq:order}).
 \printindex
 \end{document}

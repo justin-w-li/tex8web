@@ -572,6 +572,14 @@ const families = {
   'test-titlefont': ['[class^="bch"], [class*="-bch"]', ':root { --tex8web-title-size: 1em; }'],
 };
 
+// text between blocks at the top of the page, which make4ht puts in a
+// paragraph (its fixinlines runs on the page before the text goes in
+// <main>, where it would no longer find it)
+const loose = {
+  'test-generic': [/<\/div><p> See \(<a href=/],
+  'test-tcolorbox': [/<\/div><p> See Theorem<span class='tex8web-nbsp'> <\/span>/],
+};
+
 // the patterns each table holds, matched against the page (and its
 // stylesheet, for the colors), each with how a failure reads
 const patterns = [
@@ -579,7 +587,7 @@ const patterns = [
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
-  [permalinks, 'among the links'],
+  [permalinks, 'among the links'], [loose, 'in a paragraph'],
 ];
 
 // what's wrong with a built page: its log, the page and the files with it
@@ -707,6 +715,8 @@ if (failing) jobs.push(async () => {
   if (!result.log.includes('prerender.mjs failed')) problems.push('no warning that prerendering failed');
   const links = [...html.matchAll(/<link [^>]*rel='preload'[^>]*>/g)].map(([link]) => link.match(/href='([^']+)'/)[1]);
   for (const href of links.filter(href => !existsSync(join(out, href)))) problems.push(`${href} preloaded, not written`);
+  // (the page still has TeX Live's font, whole, to show)
+  if (!existsSync(join(out, 'fonts/texgyrepagella-regular.otf'))) problems.push('no whole TeX Gyre Pagella beside the page');
   report(`${failing.name} (prerendering fails)`, problems);
 });
 

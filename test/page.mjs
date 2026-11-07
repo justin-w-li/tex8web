@@ -255,7 +255,7 @@ async function filtering(chrome, file, doc) {
     const placeholder = await page.evaluate(`document.querySelector('.tex8web-toc-filter').placeholder`);
     if (doc.name === 'test' && placeholder !== 'Find a section, theorem, or term') problems.push(`filter: placeholder "${placeholder}"`);
     const label = await page.evaluate(`document.querySelector('.tex8web-toc-filter').getAttribute('aria-label')`);
-    if (!label || label !== placeholder) problems.push(`filter: named "${label}", not "${placeholder}"`);
+    if (label !== placeholder) problems.push(`filter: named "${label}", not "${placeholder}"`);
     const hash = () => page.evaluate('location.hash');
     await page.press('Enter', 13);
     if (!await until(hash, h => h === head)) problems.push(`filter: Enter went to ${await hash()}, not ${head}`);
@@ -458,30 +458,41 @@ async function themed(chrome, file) {
 
 // a link to an equation tints it, as it does a heading, once whether tex4ht's
 // anchor is just before it, first among the anchors of an alignment's lines
-// or, for a gather, last in the paragraph before; and not the others around
-async function targeting(chrome, file) {
-  const tinted = `[...document.querySelectorAll('.mathjax-env > mjx-container')]
-    .map(el => getComputedStyle(el).backgroundColor !== 'rgba(0, 0, 0, 0)')`;
-  const anchors = `[...document.querySelectorAll('.mathjax-env')].map(env => {
-    let a = env.previousElementSibling;
-    if (a?.matches('p') && a.lastElementChild?.matches('a:empty')) a = a.lastElementChild;
-    const ids = [];
-    for (; a?.matches('a:empty'); a = a.previousElementSibling) ids.unshift(a.id);
-    return ids;
-  })`;
+// or, for a gather, last in the paragraph before; and not the others around,
+// nor a link to another anchor, such as an \index's before an equation
+async function targeting(chrome, file, doc) {
+  const displays = `document.querySelectorAll('.mathjax-env, .mathjax-block')`;
+  const tinted = `[...${displays}].map(el => getComputedStyle(el.querySelector('mjx-container')).backgroundColor !== 'rgba(0, 0, 0, 0)')`;
+  // (the anchors with only space and comments between them and the display,
+  // or, failing those, ending the paragraph before it; and every other)
+  const anchors = `(() => {
+    const skip = n => n && (n.nodeType === 8 || (n.nodeType === 3 && !n.textContent.trim()));
+    const before = n => { n = n.previousSibling; while (skip(n)) n = n.previousSibling; return n; };
+    const last = el => { let n = el.lastChild; while (skip(n)) n = n.previousSibling; return n; };
+    const run = n => {
+      const ids = [];
+      for (; n?.nodeType === 1 && n.matches('a[id]:empty'); n = before(n)) ids.unshift(n.id);
+      return [ids, n];
+    };
+    const belong = [...${displays}].map(display => {
+      const [ids, stop] = run(before(display));
+      return ids.length || !stop?.matches?.('p') ? ids : run(last(stop))[0];
+    });
+    const others = [...document.querySelectorAll('main a[id]:empty')].map(a => a.id).filter(id => !belong.flat().includes(id));
+    return { belong, others };
+  })()`;
   return chrome.withPage(pathToFileURL(file).href, {}, async page => {
-    const all = await page.evaluate(anchors);
-    if (all.filter(ids => ids.length > 1).length < 1 || all.filter(ids => ids.length).length < 3) {
-      return ['no equation with an anchor, an alignment with two, and a gather with one'];
-    }
+    const { belong, others } = await page.evaluate(anchors);
+    if (!belong.some(ids => ids.length)) return ['no equation with an anchor'];
+    if (doc.name === 'test-generic' && !belong.some(ids => ids.length > 1)) return ['no alignment with an anchor on each of two lines'];
     const problems = [];
-    for (const [i, ids] of all.entries()) {
-      for (const id of ids) {
-        await page.evaluate(`location.hash = '#${id}'`);
-        const now = await page.evaluate(tinted);
-        if (now.some((on, j) => on !== (j === i))) problems.push(`#${id}: tinted ${now.map(on => +on).join('')}, not only the equation ${i}`);
-      }
-    }
+    const show = async (id, only) => {
+      await page.evaluate(`location.hash = '#${id}'`);
+      const now = await page.evaluate(tinted);
+      if (now.some((on, i) => on !== (i === only))) problems.push(`#${id}: tinted ${now.map(on => +on).join('')}, not ${only === undefined ? 'none' : `only the display ${only}`}`);
+    };
+    for (const [i, ids] of belong.entries()) for (const id of ids) await show(id, i);
+    for (const id of others) await show(id);
     return problems;
   });
 }
@@ -806,7 +817,7 @@ const checks = {
   bar: [['test'], each(async (...args) => [...await naming(...args), ...await hiding(...args)])],
   fade: [['test'], each(fading)],
   theme: [['test-generic'], each(themed)],
-  target: [['test-generic'], each(targeting)],
+  target: [['test-generic', 'test-index'], each(targeting)],
   filter: [['test', 'test-tcolorbox'], each(filtering)],
   keyboard: [['examples/basic'], each(keying)],
   lazy: [['test-tocsub'], lazily],

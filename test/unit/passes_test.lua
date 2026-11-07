@@ -550,6 +550,21 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(d:query_selector("div")[2]:get_attribute("style"), "color:#00FF00; margin-top: 1em; margin-bottom: 2em")
   end,
 
+  ["page.equation_anchors: the anchors only space separates from a display, and not \\index's"] = function()
+    local d = parse([[<p>a<a id="i1"></a> b <a id="e1"></a><!-- c -->
+<a id="e2"></a><span class="mathjax-env">x</span> <a id="i2"></a> text <a id="e3"></a>
+<span class="mathjax-block">y</span></p>]]
+      .. [[<p>c <a id="i3"></a>d.<a id="e4"></a>
+</p><div class="mathjax-env">z</div><p>e<a id="e5"></a></p><p>f</p><div class="mathjax-env">w</div>]])
+    page.equation_anchors(d)
+    local marked = {}
+    for _, a in ipairs(d:query_selector("a[class]")) do
+      marked[#marked + 1] = a:get_attribute("id") .. " " .. a:get_attribute("class")
+    end
+    equal(marked, {"e1 tex8web-eq-anchor", "e2 tex8web-eq-anchor", "e3 tex8web-eq-anchor",
+      "e4 tex8web-eq-anchor-end"})
+  end,
+
   ["text.line_comments: tex4ht's source line comments go, other comments stay"] = function()
     local d = parse("<!--  l. 52  --><p>a</p>\n<!--l. 7--><p>b</p><!-- keep --><p>c<!--  l. 9  -->d</p>")
     text.line_comments(d)
