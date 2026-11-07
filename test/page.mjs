@@ -574,6 +574,23 @@ async function opening(chrome, file) {
   });
 }
 
+// on a wide touch screen, a closed section's chevron (its tap area larger
+// than its line) last in a column that scrolls: the column scrolls no
+// further than the entry
+async function reaching(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 200, touch: true }, async page => {
+    const [over, chevron] = await page.evaluate(`(() => {
+      const toc = document.getElementById('tex8web-toc');
+      const last = [...toc.querySelectorAll('.tableofcontents > span')].filter(entry => entry.checkVisibility()).at(-1);
+      toc.scrollTop = toc.scrollHeight;
+      return [toc.getBoundingClientRect().bottom - last.getBoundingClientRect().bottom,
+        last.querySelector('.tex8web-toc-more')?.getAttribute('aria-expanded')];
+    })()`);
+    if (chevron !== 'false') return ['the last entry shown not a closed section'];
+    return over > 1 ? [`scrolled to the end, ${over}px below the last entry`] : [];
+  });
+}
+
 // the contents' chevrons, by mouse. There's one on each section with
 // subsections, at the column's inner edge. A section the reader opens
 // slides open, and stays open as the page scrolls to a third section. That
@@ -761,6 +778,7 @@ const checks = {
   keyboard: [['examples/basic'], each(keying)],
   lazy: [['test-tocsub'], lazily],
   contents: [['test-tocsub'], each(opening)],
+  reach: [['test-tocsub'], each(reaching)],
   browsing: [['test'], each(browsing)],
   isolated: [['test-tocsub'], each(isolating)],
   transitions: [['examples/basic', 'test-generic'], navigating],

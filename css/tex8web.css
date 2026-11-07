@@ -679,6 +679,8 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     /* (out to the column's edge, and between the lines, for a finger) */
     .tex8web-toc-more::after { content: ""; position: absolute;
         inset: -0.6em calc(-1 * var(--tex8web-toc-pad)) -0.6em 0; }
+    /* (but not past the last entry, where the column would scroll to it) */
+    .tex8web-toc .tableofcontents { overflow-y: clip; }
 }
 /* (the section being read, its subsections hidden, marked in their place) */
 .tex8web-toc .tex8web-reading:has(> .tex8web-toc-more[aria-expanded="false"]) > a {
