@@ -17,8 +17,10 @@ after(() => rmSync(pooled, { recursive: true, force: true }));
 // The stand-in is first on the PATH of the builds and regress.mjs runs that
 // pass `stubbed`, for the tests of what happens around a build. bin/tex8web
 // runs it as it runs make4ht. The page is the document's text, and a
-// document with \undefinedcs fails. While the file STUB_HOLD names exists, it
-// waits, up to 30 s, for a test to look at the build as it runs.
+// document with \undefinedcs fails. It keeps and reuses LaTeX's run as
+// tex8web.mk4 does, saying 'LaTeX ran' in LaTeX's part of the log. While the
+// file STUB_HOLD names exists, it waits, up to 30 s, for a test to look at
+// the build as it runs.
 const stubs = join(pooled, 'stubs');
 mkdirSync(stubs);
 writeFileSync(join(stubs, 'make4ht'), `#!/bin/sh
@@ -30,6 +32,12 @@ while [ $# -gt 1 ]; do
 done
 grep -q undefinedcs "$1" && { echo '[ERROR] Undefined control sequence'; exit 1; }
 mkdir -p "$out" "$aux"
+echo tex8web-latex-begin
+if [ "$TEX8WEB_LATEX_REUSE" != 1 ]; then
+  echo 'LaTeX ran'
+  [ -z "$TEX8WEB_LATEX_SAVE" ] || mkdir -p "$TEX8WEB_LATEX_SAVE"
+fi
+echo tex8web-latex-end
 cp "$1" "$out/\${1%.tex}.html"
 : > "$aux/\${1%.tex}.log"
 `, { mode: 0o755 });

@@ -22,6 +22,7 @@ local domfilter = require "make4ht-domfilter"
 local fixinlines = require "make4ht-fixinlines"
 local assets = require "tex8web.assets"
 local bibliography = require "tex8web.bibliography"
+local files = require "tex8web.files"
 local index = require "tex8web.index"
 local macros = require "tex8web.macros"
 local page = require "tex8web.page"
@@ -37,13 +38,42 @@ local text = require "tex8web.text"
 -- is still empty)
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
-Make:htlatex(latex)
-if mode ~= "draft" then
-  Make:add("bibliography", bibliography.run)
-  Make:bibliography {}
-  Make:add("index", index.run)
-  Make:index {}
-  Make:autohtlatex(latex)
+-- The tests' builds (test/lib/build.mjs) keep what LaTeX left in the build
+-- directory, in TEX8WEB_LATEX_SAVE, and when nothing LaTeX reads has
+-- changed, put it back and set TEX8WEB_LATEX_REUSE, which skips LaTeX. The
+-- marks around LaTeX's part of the log let them keep that part too
+local save, reuse = os.getenv("TEX8WEB_LATEX_SAVE"), os.getenv("TEX8WEB_LATEX_REUSE") == "1"
+local function mark(name)
+  io.stdout:flush()
+  print("tex8web-latex-" .. name)
+  io.stdout:flush()
+end
+if reuse then
+  -- (with LaTeX's parameters, which make4ht keeps for the commands after it)
+  Make:add("latex_reused", function() mark("begin") mark("end") return 0 end, {correct_exit = 0})
+  Make:latex_reused(latex)
+else
+  if save then
+    Make:add("latex_begin", function() mark("begin") return 0 end)
+    Make:latex_begin {}
+  end
+  Make:htlatex(latex)
+  if mode ~= "draft" then
+    Make:add("bibliography", bibliography.run)
+    Make:bibliography {}
+    Make:add("index", index.run)
+    Make:index {}
+    Make:autohtlatex(latex)
+  end
+  if save then
+    Make:add("latex_save", function(par)
+      -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
+      local status = os.execute("rm -rf " .. files.quote(save) .. " && cp -R " .. files.quote(par.builddir) .. " " .. files.quote(save))
+      if status == 0 then mark("end") end
+      return 0
+    end)
+    Make:latex_save {}
+  end
 end
 -- (tex4ht's class files list \jobname.4idx among the page's files, for its
 -- own index script (\warn:idx in article.4ht); make4ht never makes it, and

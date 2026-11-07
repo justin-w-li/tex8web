@@ -4,11 +4,11 @@
 // A file of their own gives them a pool of slots of their own, which the
 // tests with a stand-in for make4ht then needn't wait for.
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, test } from 'node:test';
-import { build } from './lib/build.mjs';
+import { build, hashFiles } from './lib/build.mjs';
 import { stubbed } from './lib/stubs.mjs';
 
 // (the real builds are the slow part, so these run at once)
@@ -51,6 +51,35 @@ describe('real builds', { concurrency: true }, () => {
       assert.equal((await make()).reused, undefined);
       assert.match(page(), /doc\.pdf/);
       assert.equal((await make()).reused, true);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  test('a real build starts from the last one\'s LaTeX run while nothing LaTeX reads has changed', { timeout: 180000 }, async () => {
+    const { dir, doc, make } = pdfDoc({ noLatexmk: true });
+    try {
+      const page = () => hashFiles(join(dir, 'html'), ['']);
+      const first = await make();
+      assert.equal(first.code, 0, first.log);
+      assert.equal(first.latexReused, undefined);
+      const full = page();
+      // (as a change to css/ would: in the page's stamp, not in LaTeX's)
+      rmSync(join(dir, 'html.stamp'));
+      // (which LaTeX, had it run, would write again)
+      appendFileSync(join(dir, 'aux.latex/doc.aux'), '% kept\n');
+      const second = await make();
+      assert.equal(second.code, 0, second.log);
+      assert.equal(second.latexReused, true);
+      assert.match(readFileSync(join(dir, 'aux/doc.aux'), 'utf8'), /% kept/);
+      assert.equal(page(), full);
+      assert.equal(second.log, first.log);
+
+      writeFileSync(join(doc.dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nchanged\n\\end{document}\n');
+      const third = await make();
+      assert.equal(third.code, 0, third.log);
+      assert.equal(third.latexReused, undefined);
+      assert.match(readFileSync(join(dir, 'html/doc.html'), 'utf8'), /changed/);
     } finally {
       rmSync(dir, { recursive: true });
     }

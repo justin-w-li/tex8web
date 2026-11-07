@@ -2,7 +2,7 @@
 // for npm run examples.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { availableParallelism, constants } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -183,13 +183,19 @@ export function hashFiles(base, paths, { outputs = false } = {}) {
 // what bin/tex8web reads of tex8web's own
 const sources = ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'package.json', 'package-lock.json'];
 export const sourceHash = base => hashFiles(base, sources);
+// what LaTeX's runs read of it, with the Lua that runs between them, which
+// makes the bibliography and the index LaTeX reads (tex8web.mk4)
+const latexSources = ['bin', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'lua/tex8web/bibliography.lua',
+  'lua/tex8web/files.lua', 'lua/tex8web/index.lua'];
+export const latexSourceHash = base => hashFiles(base, latexSources);
 
 // what a build is made from besides the document, as a hash: tex8web's
 // sources, and the tools it uses, which change its output when they change:
 // MathJax and subset-font, if they are there to prerender with
 // (lua/tex8web/prerender.lua), TeX Live, and make4ht and tex4ht, which
 // change within a TeX Live year (the version, and when tex4ht.sty was
-// installed)
+// installed). And the same for LaTeX's part of the build: its sources and
+// TeX's tools
 let toolchain;
 function tools() {
   if (toolchain) return toolchain;
@@ -199,21 +205,25 @@ function tools() {
   const first = (command, ...args) => spawnSync(command, args, { encoding: 'utf8' }).stdout?.split('\n')[0] ?? null;
   const sty = first('kpsewhich', 'tex4ht.sty');
   const installed = sty && statSync(sty, { throwIfNoEntry: false })?.mtimeMs;
-  return toolchain = JSON.stringify([sourceHash(root), version('mathjax'), version('subset-font'),
-    first('tex', '--version'), first('make4ht', '--version'), installed ?? null]);
+  const tex = [first('tex', '--version'), first('make4ht', '--version'), installed ?? null];
+  return toolchain = { page: JSON.stringify([sourceHash(root), version('mathjax'), version('subset-font'), ...tex]),
+    latex: JSON.stringify([latexSourceHash(root), ...tex]) };
 }
 
-// the whole stamp of a build: those, the document's directory and config
-// (which may be elsewhere), the command and the environment variables the
-// build reads, and the PDF the page links: a page built before it was there
-// lacks the link. The files themselves, not the commit, so that an edit not
-// yet committed, or a file git doesn't know, is part of it
-function stamp(doc, args, env, pdf) {
+// the whole stamp of a build (page): those, the document's directory and
+// config (which may be elsewhere), the command and the environment
+// variables the build reads, and the PDF the page links: a page built
+// before it was there lacks the link. The files themselves, not the commit,
+// so that an edit not yet committed, or a file git doesn't know, is part of
+// it. And the stamp of its LaTeX part (latex), with LaTeX's tools
+function stamps(doc, args, env, pdf) {
   // (the slots, regress.mjs's test hook and the speech kept from the last
   // build change no page)
   const vars = Object.entries({ ...process.env, ...env })
     .filter(([name]) => /^(TEX8WEB_(?!SLOTS|TREE|SPEECH_CACHE)|TEXINPUTS$|TEXMF|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).sort();
-  return createHash('sha256').update(JSON.stringify([tools(), hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf])).digest('hex');
+  const rest = [hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf];
+  const hash = tools => createHash('sha256').update(JSON.stringify([tools, ...rest])).digest('hex');
+  return { page: hash(tools().page), latex: hash(tools().latex) };
 }
 
 // runs bin/tex8web on a document, with the page in out and tex4ht's files
@@ -224,6 +234,10 @@ function stamp(doc, args, env, pdf) {
 // its log (out.log), and a later build from the same stamp is not run: it
 // resolves to { code: 0, log, reused: true }. A build that failed leaves no
 // stamp. One at a time for each out, so that tools running at once share it.
+// What LaTeX left in aux is kept too (aux.latex), with the stamp of what
+// LaTeX read and its part of the log. A build from the same stamp starts
+// from it rather than running LaTeX (tex8web.mk4), and resolves with
+// latexReused: true.
 // The document's own variables (doc.env) come before env's.
 // A draft document (doc.draft) is built in make4ht's draft mode, which
 // needs tex4ht's files from the build before in aux. A document with
@@ -248,11 +262,11 @@ async function buildHere(doc, out, aux, env) {
     ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], ...doc.draft ? ['-m', 'draft'] : [], doc.tex];
   const stampNow = () => {
     const made = pdf && statSync(join(doc.dir, pdf), { throwIfNoEntry: false });
-    return stamp(doc, args, env, made ? [made.size, made.mtimeMs] : null);
+    return stamps(doc, args, env, made ? [made.size, made.mtimeMs] : null);
   };
   let wanted = stampNow();
   const kept = { stamp: `${out}.stamp`, log: `${out}.log` };
-  if (existsSync(kept.stamp) && readFileSync(kept.stamp, 'utf8') === wanted && existsSync(out) && existsSync(aux)) {
+  if (existsSync(kept.stamp) && readFileSync(kept.stamp, 'utf8') === wanted.page && existsSync(out) && existsSync(aux)) {
     console.log(`reusing ${doc.name}'s ${basename(out)} build: nothing it is made from has changed`);
     return { code: 0, log: readFileSync(kept.log, 'utf8'), reused: true };
   }
@@ -263,8 +277,18 @@ async function buildHere(doc, out, aux, env) {
     // (the PDF is there now, as the next build will find it)
     wanted = stampNow();
   }
+  // (not in draft mode, which runs LaTeX once on the last build's files)
+  const stage = { dir: `${aux}.latex`, stamp: `${aux}.latex.stamp`, log: `${aux}.latex.log` };
+  const reuse = !doc.draft && existsSync(stage.stamp) && readFileSync(stage.stamp, 'utf8') === wanted.latex
+    && existsSync(stage.dir);
   rmSync(out, { recursive: true, force: true });
   if (!doc.draft) rmSync(aux, { recursive: true, force: true });
+  if (reuse) {
+    console.log(`reusing ${doc.name}'s LaTeX run in ${basename(out)}: nothing LaTeX reads has changed`);
+    cpSync(stage.dir, aux, { recursive: true });
+  } else if (!doc.draft) {
+    rmSync(stage.stamp, { force: true });
+  }
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
   // (the speech is kept beside the document, so that the builds of a
@@ -272,13 +296,24 @@ async function buildHere(doc, out, aux, env) {
   // the formulas, which another version of tex8web mostly keeps)
   mkdirSync(join(doc.dir, 'build'), { recursive: true });
   const speech = join(doc.dir, 'build', doc.tex.replace(/\.tex$/, '.speech.json'));
-  const result = await run(join(root, 'bin/tex8web'), args,
-    { cwd: doc.dir, env: { ...process.env, ...env, TEX8WEB_SPEECH_CACHE: speech }, slot: true });
+  const result = await run(join(root, 'bin/tex8web'), args, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
+    TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? '1' : undefined,
+    TEX8WEB_LATEX_SAVE: doc.draft || reuse ? undefined : stage.dir } });
+  // (the marks around LaTeX's part of the log, which a reused run takes from
+  // the run that was kept. A run that stopped in LaTeX has only the first)
+  const parts = result.log.split(/^tex8web-latex-(?:begin|end)\n/m);
+  const latexLog = parts.length === 3 ? parts[1] : undefined;
+  if (reuse && latexLog !== undefined) parts[1] = readFileSync(stage.log, 'utf8');
+  result.log = parts.join('');
   if (result.code === 0) {
     writeFileSync(kept.log, result.log);
-    writeFileSync(kept.stamp, wanted);
+    writeFileSync(kept.stamp, wanted.page);
+    if (!reuse && latexLog !== undefined) {
+      writeFileSync(stage.log, latexLog);
+      writeFileSync(stage.stamp, wanted.latex);
+    }
   }
-  return result;
+  return reuse ? { ...result, latexReused: true } : result;
 }
 
 // builds a document's PDF in outdir (relative to it) with latexmk: its exit

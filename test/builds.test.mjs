@@ -5,9 +5,9 @@
 import assert from 'node:assert/strict';
 import { appendFileSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
-import { build, root, sourceHash } from './lib/build.mjs';
+import { build, latexSourceHash, root, sourceHash } from './lib/build.mjs';
 import { stubbed } from './lib/stubs.mjs';
 
 test('what a build reads, in tex8web and in the document, is in its stamp', () => {
@@ -25,6 +25,31 @@ test('what a build reads, in tex8web and in the document, is in its stamp', () =
     assert.notEqual(changed, before);
     writeFileSync(join(dir, 'lua/new.lua'), 'a file added later');
     assert.notEqual(sourceHash(dir), changed);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
+test('what LaTeX reads of tex8web, and only that, is in the stamp of its LaTeX run', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'tex8weblatexstamp'));
+  try {
+    const read = ['bin/tex8web', 'tex/a.tex', 'tex8web.cfg', 'tex8web.mk4', 'lua/tex8web/bibliography.lua',
+      'lua/tex8web/files.lua', 'lua/tex8web/index.lua'];
+    const unread = ['css/tex8web.css', 'js/a.js', 'fonts/a.woff2', 'lua/tex8web/text.lua', 'package.json', 'package-lock.json'];
+    for (const file of [...read, ...unread]) {
+      mkdirSync(dirname(join(dir, file)), { recursive: true });
+      writeFileSync(join(dir, file), 'a');
+    }
+    for (const file of unread) {
+      const before = latexSourceHash(dir);
+      writeFileSync(join(dir, file), 'b');
+      assert.equal(latexSourceHash(dir), before, file);
+    }
+    for (const file of read) {
+      const before = latexSourceHash(dir);
+      writeFileSync(join(dir, file), 'b');
+      assert.notEqual(latexSourceHash(dir), before, file);
+    }
   } finally {
     rmSync(dir, { recursive: true });
   }
@@ -77,12 +102,28 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1' })).reused, true);
     delete doc.env;
 
+    // LaTeX's run is reused while nothing LaTeX reads has changed (the page's
+    // stamp gone, as a change to css/ would make it), with its part of the log
+    assert.equal((await make()).latexReused, undefined);
+    rmSync(join(dir, 'build/html.stamp'));
+    const latex = await make();
+    assert.equal(latex.latexReused, true);
+    assert.equal(latex.log.match(/LaTeX ran/g)?.length, 1);
+    assert.doesNotMatch(latex.log, /tex8web-latex/);
+    assert.equal((await make()).reused, true);
+    write('third');
+    assert.equal((await make()).latexReused, undefined);
+    assert.match(html(), /third/);
+
     // a build that failed isn't reused
     write('\\undefinedcs');
     assert.notEqual((await make()).code, 0);
     const again = await make();
     assert.notEqual(again.code, 0);
     assert.equal(again.reused, undefined);
+    // nor is its LaTeX run, nor the one before it
+    write('third');
+    assert.equal((await make()).latexReused, undefined);
   } finally {
     rmSync(dir, { recursive: true });
   }
