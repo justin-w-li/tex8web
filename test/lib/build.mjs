@@ -162,7 +162,7 @@ function execute(command, args, { idle = 180, total = 900, slotFile, ...options 
 
 // a hash of the files under the paths (relative to base): their names and
 // contents, leaving out dotfiles and build directories, which hold outputs
-function hashFiles(base, paths) {
+export function hashFiles(base, paths) {
   const hash = createHash('sha256');
   const add = file => hash.update(`${relative(base, file)}\0${statSync(file).size}\0`).update(readFileSync(file));
   const walk = path => {

@@ -223,7 +223,7 @@ Each argument is a document's directory, which means its `main.tex` or its only 
 - `no baseline to compare with`: nothing has been accepted for it yet;
 - `failed to build`, or `problem:` lines under it: see the log in `logs/<name>.html.log`.
 
-The exit code is 0 when nothing looks different, 3 when a page does, 1 when a build or check failed, and 2 for a mistake in the command. A page that looks different comes with the differing screens, old and new, in `compare/<name>`. Look at them before you accept.
+The exit code is 0 when nothing looks different, 3 when a page does, 1 when a build or check failed, and 2 for a mistake in the command. A page that looks different comes with the first differing screens for each width and scheme, old and new, in `compare/<name>`. Look at them before you accept.
 
 The options:
 - **`-c config`** builds every document with your own config.
@@ -231,6 +231,9 @@ The options:
 - **`--baseline dir`** compares with the pages in `dir/<name>` instead, such as another checkout's `html` directory.
 - **`--out dir`** says where everything goes, `build/regress` in the directory you run it from by default: `html/<name>` for the pages, `compare/<name>`, `logs/`, `tex4ht/` and `accepted/<name>`. The command refuses the default when it would be inside tex8web. Keep `-` and the other characters of a Lua pattern out of its path (see [Known limitations](#known-limitations)).
 - **`--draft`** builds in make4ht's draft mode, which is quicker and not to be trusted.
+- **`--expect look`** is for a change that is meant to show. For each width and scheme, the screens are compared only as far as the first strip of 20 that differs, and the report says from which screen. Without it every screen is compared and every differing one listed.
+- **`--shots-cache dir`** keeps what the baseline's screens came to, so that a baseline is shot once for every run that uses the directory. By default it is `shots-cache` in `--out`.
+- **`--shots-at-once n`** compares the screens of `n` pages at once, as the others are built (1 by default).
 
 The command doesn't build PDFs. If the config links one with `\WebPDF` and it's missing, the page is built without it. A document is built again only when something it is made from has changed: tex8web, the document's directory, the config, the PDF it links, or the tools.
 

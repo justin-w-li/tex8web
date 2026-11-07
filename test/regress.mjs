@@ -1,7 +1,8 @@
 // What a change to tex8web does to your own documents: builds each one,
 // checks the page as npm test checks its own, and says what changed since the
 // baseline (the last build you accepted): the HTML (test/diff.mjs), then, if
-// that changed, how the page looks (test/shots.mjs).
+// that changed, how the page looks (test/shots.mjs), while the other
+// documents are still building.
 //   node test/regress.mjs [options] <dir or .tex file>...
 // A directory means its main.tex, or its only .tex file. Documents build in
 // parallel, within the build slots (test/lib/slots.mjs). Each is named by its
@@ -18,6 +19,17 @@
 //                      tex8web has uncommitted changes, with --draft, and
 //                      when any document failed
 //   --draft            make4ht's draft mode, quicker and not to be trusted
+//   --expect look      the pages are meant to look different, so compare
+//                      the screens only as far as the first strip of 20
+//                      that differs, for each width and scheme, and say from
+//                      which screen. By default every screen is compared
+//   --shots-cache <dir>  where shots.mjs keeps what the baseline's screens
+//                      came to, by what decides them, so that every run and
+//                      checkout using the directory shoots a baseline once.
+//                      Default <out>/shots-cache
+//   --shots-at-once <n>  how many pages' screens are compared at once, each
+//                      in a Chrome of its own, as the others are built.
+//                      Default 1
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
@@ -28,7 +40,7 @@ import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 // (npm runs a script in tex8web's directory, and says where it was run from)
 const at = path => resolve(process.env.npm_lifecycle_event ? process.env.INIT_CWD ?? process.cwd() : process.cwd(), path);
-const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] <dir or .tex file>...';
+const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--expect look] [--shots-cache <dir>] [--shots-at-once <n>] <dir or .tex file>...';
 const refuse = message => {
   console.error(message);
   process.exit(2);
@@ -39,12 +51,16 @@ try {
   parsed = parseArgs({ allowPositionals: true, options: {
     c: { type: 'string', short: 'c' }, baseline: { type: 'string' }, out: { type: 'string' },
     accept: { type: 'boolean' }, draft: { type: 'boolean' },
+    expect: { type: 'string' }, 'shots-cache': { type: 'string' }, 'shots-at-once': { type: 'string' },
   } });
 } catch (error) {
   refuse(`${error.message}\n${usage}`);
 }
 const { values: options, positionals } = parsed;
 if (!positionals.length) refuse(usage);
+if (options.expect !== undefined && options.expect !== 'look') refuse(`--expect takes look, not ${options.expect}\n${usage}`);
+const shotsAtOnce = Number(options['shots-at-once'] ?? 1);
+if (!Number.isInteger(shotsAtOnce) || shotsAtOnce < 1) refuse(`--shots-at-once takes a number, 1 or more\n${usage}`);
 if (options.draft && options.accept) refuse('--draft pages are not to be trusted, so --draft and --accept don\'t go together');
 
 // the abbreviated commit of the checkout whose pages are accepted. The tests
@@ -67,6 +83,7 @@ if (!options.out && !relative(root, out).startsWith('..')) {
 }
 const baseline = at(options.baseline ?? join(out, 'accepted'));
 const logs = join(out, 'logs');
+const shotsCache = at(options['shots-cache'] ?? join(out, 'shots-cache'));
 const cfg = at(options.c ?? join(root, 'tex8web.cfg'));
 if (!existsSync(cfg)) refuse(`no such config: ${options.c}`);
 
@@ -137,24 +154,43 @@ async function regress(doc) {
   return { ...found, kind: 'changed', files, outcome: `changed: ${files.slice(0, 6).join(', ')}${files.length > 6 ? ` and ${files.length - 6} more` : ''}` };
 }
 
-const results = await pool(docs, workers, regress);
+// (each page's screens in a Chrome of its own, which takes a slot like a build)
+let shooting = 0;
+const waiting = [];
+const turn = () => new Promise(go => shooting < shotsAtOnce ? (shooting++, go()) : waiting.push(go));
+const next = () => (waiting.shift() ?? (() => shooting--))();
 
-// the screens of the changed pages, one page in Chrome at a time
-for (const result of results.filter(result => result.kind === 'changed')) {
+// the screens of a changed page, as soon as it is built
+async function screens(result) {
   const compare = join(out, 'compare', result.doc.name);
-  // (a long page takes shots.mjs minutes for each width and scheme, and
-  // more than run()'s 15 minutes in all when the machine is busy)
-  const shots = await run(process.execPath, [join(here, 'shots.mjs'), compare, result.kept, result.html], { total: 3600 });
-  writeFileSync(join(logs, `${result.doc.name}.shots.log`), shots.log);
-  if (shots.code === 1) {
-    result.kind = 'looks';
-    result.outcome = `looks different: ${shots.log.trim().split('\n').filter(line => /: (screens .* differ|only in )/.test(line))
-      .map(line => line.replace(/: screens (.*?) of \d+ differ.*$/, ' (screens $1)')).join('; ')}`;
-  } else if (shots.code !== 0) {
-    result.failed = true;
-    result.outcome += `; couldn't compare the screens: ${shots.log.trim().split('\n').pop()}`;
+  await turn();
+  try {
+    console.error(`${result.doc.name}: comparing the screens`);
+    // (a long page takes shots.mjs minutes for each width and scheme, when
+    // the machine is busy, and more than run()'s 15 minutes in all)
+    const shots = await run(process.execPath, [join(here, 'shots.mjs'), '--cache', shotsCache, ...options.expect ? ['--expect', options.expect] : [],
+      compare, result.kept, result.html], { total: 3600 });
+    writeFileSync(join(logs, `${result.doc.name}.shots.log`), shots.log);
+    if (shots.code === 1) {
+      result.kind = 'looks';
+      result.outcome = `looks different: ${shots.log.trim().split('\n').filter(line => /: (screens .* differ|differs from screen|only in )/.test(line))
+        .map(line => line.replace(/: screens (.*?) of \d+ differ.*$/, ' (screens $1)').replace(/: differs from screen (\d+) of .*$/, ' (from screen $1)')).join('; ')}`;
+    } else if (shots.code !== 0) {
+      result.failed = true;
+      result.outcome += `; couldn't compare the screens: ${shots.log.trim().split('\n').pop()}`;
+    }
+  } finally {
+    next();
   }
 }
+
+const results = await pool(docs, workers, async doc => {
+  const result = await regress(doc);
+  // (not awaited: the pool goes on to build the next document)
+  if (result.kind === 'changed') result.shots = screens(result);
+  return result;
+});
+await Promise.all(results.map(result => result.shots));
 
 for (const { doc, outcome, problems } of results) {
   console.log(`${doc.name}: ${outcome}`);

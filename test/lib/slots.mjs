@@ -38,21 +38,21 @@ export const released = () => { freed = Date.now(); };
 
 // Calls attempt(lock file) on each slot's file until one returns something
 // but null, and resolves to that. Between rounds it waits half a poll to
-// one and a half, so that waiters don't keep step, and says so, once, after
-// 10 s
+// one and a half, so that waiters don't keep step, and says so after 10 s,
+// and again every 60 s
 export async function inSlots(attempt) {
   mkdirSync(dir(), { recursive: true });
   const start = Date.now();
-  let told = false;
+  let told = 0;
   await sleep(Math.max(0, freed + poll() - Date.now()));
   for (;;) {
     for (let i = 0; i < slotCount(); i++) {
       const result = await attempt(join(dir(), String(i)));
       if (result !== null) return result;
     }
-    if (!told && Date.now() - start > 10000) {
+    if (Date.now() - start > 10000 && Date.now() - told > 60000) {
       console.error(`tex8web: waiting for one of ${slotCount()} build slots, all busy (TEX8WEB_SLOTS sets how many)`);
-      told = true;
+      told = Date.now();
     }
     await sleep(poll() * (0.5 + Math.random()));
   }

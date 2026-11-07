@@ -75,6 +75,12 @@ describe('regress.mjs', { concurrency: true }, () => {
       assert.doesNotMatch(result.stdout, /^two: .*(loading|screen \d+ of)/m);
       assert.ok(readdirSync(join(out, 'compare/two')).some(file => file.endsWith('-new.png')));
 
+      // a change that is meant to show is compared as far as its first differing strip
+      result = await regress(dir, clean, '--expect', 'look', '--shots-cache', join(dir, 'store'), 'two');
+      assert.equal(result.status, 3, result.stderr + result.stdout);
+      assert.match(result.stdout, /^two: looks different: main-1400-light \(from screen \d+\)/m);
+      assert.ok(readdirSync(join(dir, 'store')).length > 0, 'no cache');
+
       // another baseline, another output directory, and a config
       copyFileSync(join(root, 'tex8web.cfg'), join(dir, 'my.cfg'));
       result = await regress(dir, clean, '--out', 'elsewhere', '--baseline', join(out, 'accepted'), '-c', 'my.cfg', 'one');

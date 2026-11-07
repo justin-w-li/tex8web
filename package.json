@@ -18,7 +18,7 @@
   },
   "scripts": {
     "test": "node test/run.mjs",
-    "test:visual": "node test/visual.mjs && node test/page.mjs && node --test test/chrome.test.mjs",
+    "test:visual": "node test/visual.mjs && node test/page.mjs && node --test test/chrome.test.mjs test/shots.test.mjs",
     "test:page": "node test/page.mjs",
     "examples": "node test/examples.mjs",
     "regress": "node test/regress.mjs",

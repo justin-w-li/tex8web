@@ -8,7 +8,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { deflateSync } from 'node:zlib';
 import { root, strayKeys } from './lib/build.mjs';
+import { decode, encode } from './lib/png.mjs';
 
 // every command has a deadline, as a hung one would hold up the other tests
 const deadline = 60000;
@@ -29,6 +31,46 @@ test('diff.mjs compares the fonts', () => {
   } finally {
     rmSync(dir, { recursive: true });
   }
+});
+
+test('png.mjs reads every filter a PNG row can have, and writes rows of a picture', () => {
+  const [width, height, channels] = [7, 5, 3], stride = width * channels;
+  const rows = Buffer.from(Array.from({ length: height * stride }, (_, i) => (i * 37 + (i >> 3) * 11) & 255));
+  // each row filtered as its number says (0 to 4; the first row has no row above)
+  const filtered = Buffer.concat(Array.from({ length: height }, (_, y) => {
+    const out = Buffer.alloc(stride + 1);
+    out[0] = y;
+    for (let x = 0; x < stride; x++) {
+      const left = x >= channels ? rows[y * stride + x - channels] : 0, up = y ? rows[(y - 1) * stride + x] : 0;
+      const upLeft = y && x >= channels ? rows[(y - 1) * stride + x - channels] : 0;
+      const p = left + up - upLeft, [a, b, c] = [left, up, upLeft].map(v => Math.abs(p - v));
+      const predicted = [0, left, up, (left + up) >> 1, a <= b && a <= c ? left : b <= c ? up : upLeft][y];
+      out[x + 1] = (rows[y * stride + x] - predicted) & 255;
+    }
+    return out;
+  }));
+  const chunk = (type, body) => {
+    const out = Buffer.alloc(12 + body.length);
+    out.writeUInt32BE(body.length);
+    out.write(type, 4, 'latin1');
+    body.copy(out, 8);
+    return out;
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header), chunk('IDAT', deflateSync(filtered)), chunk('IEND', Buffer.alloc(0))]);
+  const picture = decode(png);
+  assert.deepEqual([picture.width, picture.height, picture.channels], [width, height, channels]);
+  assert.ok(picture.rows.equals(rows));
+
+  // rows 1 to 3 come back as a picture of their own
+  const part = decode(encode(picture, 1, 4));
+  assert.equal(part.height, 3);
+  assert.ok(part.rows.equals(rows.subarray(stride, 4 * stride)));
+  assert.throws(() => decode(Buffer.from('not a png at all')), /not a PNG/);
 });
 
 for (const script of ['run', 'visual', 'page']) {

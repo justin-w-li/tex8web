@@ -243,6 +243,7 @@ export async function launch() {
   };
 
   return {
+    version: version.Browser,
     open,
     withPage,
     async tabs() {
