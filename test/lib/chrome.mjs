@@ -56,14 +56,16 @@ async function connect(url) {
   };
 }
 
-// Waits while Chrome (the second argument, a group's leader) runs, and if
-// its parent (the first) is gone first, kills Chrome's group and removes
-// the profile (the third)
+// Waits while Chrome, a group's leader, runs. If the Node process that
+// launched it is gone first, kills Chrome's group and removes the profile,
+// once the group is gone: a helper may still be writing into it
 const watch = `
   my ($parent, $chrome, $profile) = @ARGV;
   while (kill 0 => $chrome) {
     if (getppid != $parent) {
       kill KILL => -$chrome;
+      my $end = time + 5;
+      select undef, undef, undef, 0.1 while kill(0 => -$chrome) && time < $end;
       rmtree($profile);
       unlink "$profile.log";
       exit;
@@ -82,9 +84,9 @@ export async function launch() {
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'],
     { stdio: ['ignore', 'ignore', openSync(`${profile}.log`, 'w')], detached: true });
-  // Chrome's group isn't this process's, so it outlives this process when
-  // that is killed outright, as build.mjs's run() kills a command that hangs,
-  // where no handler runs: the watcher, in a group of its own, ends it then
+  // Chrome has a group of its own, so it outlives this process when that
+  // is killed outright and no handler runs. build.mjs's run() kills a
+  // command that hangs so. The watcher, in a third group, ends Chrome then
   const watcher = spawn('perl', ['-MFile::Path=rmtree', '-e', watch, process.pid, proc.pid, profile],
     { stdio: 'ignore', detached: true });
   let cleaned = false;

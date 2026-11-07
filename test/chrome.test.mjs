@@ -63,22 +63,23 @@ test('a signal ends the process with 128 plus its number, and the profile is rem
 test('Chrome and its profile go with the process that started it, however it ends', async () => {
   const temp = mkdtempSync(join(tmpdir(), 'tex8webchromekill'));
   // the processes whose command line names the profile, by pid
-  const left = () => spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' }).stdout
+  const left = () => spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8', maxBuffer: 1 << 28 }).stdout
     .split('\n').filter(line => line.includes(temp)).map(line => Number(line.trim().split(' ')[0]));
+  // (in a group of its own, killed outright, as build.mjs's run() kills a
+  // command that hangs)
+  const child = spawn(process.execPath, ['--input-type=module', '-e',
+    `import { launch } from './test/lib/chrome.mjs'; await launch(); console.log('up'); await new Promise(() => {});`],
+  { cwd: join(here, '..'), env: { ...process.env, TMPDIR: temp }, stdio: ['ignore', 'pipe', 'inherit'], detached: true });
   try {
-    // (in a group of its own, killed outright, as build.mjs's run() kills
-    // a command that hangs)
-    const child = spawn(process.execPath, ['--input-type=module', '-e',
-      `import { launch } from './test/lib/chrome.mjs'; await launch(); console.log('up'); await new Promise(() => {});`],
-    { cwd: join(here, '..'), env: { ...process.env, TMPDIR: temp }, stdio: ['ignore', 'pipe', 'inherit'], detached: true });
-    await once(child.stdout, 'data');
+    const up = await Promise.race([once(child.stdout, 'data').then(() => true), once(child, 'exit').then(() => false)]);
+    assert.ok(up, 'the launcher exited before Chrome was up');
     assert.notDeepEqual(left(), []);
     process.kill(-child.pid, 'SIGKILL');
     assert.deepEqual(await until(left, lines => !lines.length) ?? left(), []);
     const profiles = () => readdirSync(temp).filter(name => name.startsWith('tex8webchrome'));
     assert.deepEqual(await until(profiles, names => !names.length) ?? profiles(), []);
   } finally {
-    for (const pid of left()) try { process.kill(pid, 'SIGKILL'); } catch {}
+    for (const pid of [-child.pid, ...left()]) try { process.kill(pid, 'SIGKILL'); } catch {}
     rmSync(temp, { recursive: true, force: true, maxRetries: 10 });
   }
 });
