@@ -71,16 +71,20 @@ return {
       .. "<span class='mathjax-inline'>\\(1\\)</span></span> and a<span class='tex8web-nbsp'>\u{A0}</span>b</p>")
   end,
 
-  ["text.hfill: the rest of each line after its last \\hfill in a span, up to a <br>, a block or a display"] = function()
+  ["text.hfill: the rest of each line after its last \\hfill in a span, up to a <br>, a block or a display; in a paragraph, its line too"] = function()
     local mark = [[<span class="tex8web-hfill-mark"></span>]]
+    local fill = "<span class='tex8web-hfill-gap'></span><span class='tex8web-hfill'>"
     local d = parse("<p>Name " .. mark .. " Date</p>"
       .. "<p>a " .. mark .. "b " .. mark .. " <b>c</b><br />d " .. mark .. " e<br />f</p>"
-      .. "<dd>g " .. mark .. " <br />h " .. mark .. " <div>i</div>j " .. mark
-      .. [[<span class="mathjax-block">\[x\]</span></dd>]])
+      .. "<p>g<br />h " .. mark .. " i<span class=\"mathjax-block\">\\[x\\]</span>j <a>k " .. mark .. " l</a></p>"
+      .. "<dd>m " .. mark .. " <br />n " .. mark .. " <div>o</div>p " .. mark .. " q<br />r</dd>")
     text.hfill(d)
-    equal(body(d), "<p>Name <span class='tex8web-hfill'> Date</span></p>"
-      .. "<p>a b <span class='tex8web-hfill'> <b>c</b></span><br />d <span class='tex8web-hfill'> e</span><br />f</p>"
-      .. "<dd>g  <br />h  <div>i</div>j <span class='mathjax-block'>\\[x\\]</span></dd>")
+    equal(body(d), "<p><span class='tex8web-hfill-line'>Name " .. fill .. " Date</span></span></p>"
+      .. "<p><span class='tex8web-hfill-line'>a b " .. fill .. " <b>c</b></span><br /></span>"
+      .. "<span class='tex8web-hfill-line'>d " .. fill .. " e</span><br /></span>f</p>"
+      .. "<p>g<br /><span class='tex8web-hfill-line'>h " .. fill .. " i</span></span>"
+      .. "<span class='mathjax-block'>\\[x\\]</span>j <a>k " .. fill .. " l</span></a></p>"
+      .. "<dd>m  <br />n  <div>o</div>p " .. fill .. " q</span><br />r</dd>")
   end,
 
   ["text.minipages: each line of minipages and subfigures in a row, nested ones too, without \\noindent's empty paragraph"] = function()

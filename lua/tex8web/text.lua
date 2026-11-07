@@ -435,7 +435,12 @@ end
 -- what follows an \hfill at the right of its line, as in the PDF:
 -- tex8web-text.tex marks each \hfill in a paragraph (span.tex8web-hfill-mark).
 -- What follows the last mark on a line, up to a \\ (<br>), a block or a
--- display, goes in a span css/tex8web.css floats right
+-- display, goes in a span css/tex8web.css floats right, after an empty one
+-- that keeps it a quad from the text. In a paragraph, the whole line goes
+-- in a span too, with its <br>, which the stylesheet makes a block: one
+-- that holds the float, and that can be aligned on its own. (Not in a
+-- heading, whose anchor make4ht's sectionid makes its id only as the
+-- heading's child)
 local function ends_line(node)
   return node:is_element() and (node:get_element_name() == "br" or blocks[node:get_element_name()]
     or is_math(node) and not dom.has_class(node, "mathjax-inline"))
@@ -452,24 +457,37 @@ function M.hfill(document)
     if not seen[parent] then seen[parent], parents[#parents + 1] = true, parent end
   end
   for _, parent in ipairs(parents) do
-    -- (from: where out's part after the line's last mark starts)
-    local out, from = {}, nil
-    local function close()
-      local right, shown = from and {table.unpack(out, from)} or {}, false
-      for _, node in ipairs(right) do shown = shown or shows(node) end
+    local in_p = parent:get_element_name() == "p"
+    -- (line: where out's current line starts; from: where its part after
+    -- the line's last mark starts)
+    local out, line, from = {}, 1, nil
+    local function wrap(first, class)
+      local span = parent:create_element("span", {class = class})
+      dom.set_children(span, {table.unpack(out, first)})
+      for k = #out, first, -1 do out[k] = nil end
+      out[#out + 1] = span
+    end
+    -- (stop: the node that ends the line, if any)
+    local function close(stop)
+      local shown = false
+      for k = from or #out + 1, #out do shown = shown or shows(out[k]) end
       if shown then
-        for k = #out, from, -1 do out[k] = nil end
-        local span = parent:create_element("span", {class = "tex8web-hfill"})
-        dom.set_children(span, right)
-        out[#out + 1] = span
+        wrap(from, "tex8web-hfill")
+        table.insert(out, #out, parent:create_element("span", {class = "tex8web-hfill-gap"}))
+        if in_p then
+          if stop and stop:get_element_name() == "br" then out[#out + 1], stop = stop, nil end
+          wrap(line, "tex8web-hfill-line")
+        end
       end
-      from = nil
+      if stop then out[#out + 1] = stop end
+      line, from = #out + 1, nil
     end
     for _, node in ipairs(parent:get_children()) do
       if dom.has_class(node, "tex8web-hfill-mark") then
         from = #out + 1
+      elseif ends_line(node) then
+        close(node)
       else
-        if ends_line(node) then close() end
         out[#out + 1] = node
       end
     end

@@ -37,7 +37,7 @@
 \newcommand\web@hfillright[1]{%
     \begingroup
         \def\hfill{\ifx\web@endhfill\relax
-            \HCode{<span class="tex8web-hfill">}%
+            \HCode{<span class="tex8web-hfill-gap"></span><span class="tex8web-hfill">}%
             \gdef\web@endhfill{\HCode{</span>}}%
         \fi}%
         #1%

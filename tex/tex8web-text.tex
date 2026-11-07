@@ -239,16 +239,26 @@
 % after its glue (which starts the paragraph in vertical mode), and
 % text.hfill puts the rest of the line in a span css/tex8web.css floats
 % right. No mark in a box (\ifinner), whose line isn't the paragraph's;
-% before \break, which ends the line (tex4ht's own \hfill\break in list
-% labels, latex.4ht, and the index, html4.4ht); or in \dotfill's and
+% before \break or a \penalty of -10000 or less, which end the line
+% (tex4ht's own \hfill\break in list labels, latex.4ht, and the index,
+% html4.4ht) but write nothing; before \linebreak or \nolinebreak, which
+% remove the \hfill (\@no@lnbk, latex.ltx); or in \dotfill's and
 % \hrulefill's leaders, which tex4ht draws as dots or drops. \HCode writes
 % nothing in a picture
 \let\web@hfill\hfill
 \protected\def\hfill{\web@hfill
     \ifhmode\ifinner\else\expandafter\expandafter\expandafter\web@hfill@peek\fi\fi}
 \def\web@hfill@peek{\futurelet\web@next\web@hfill@mark}
-\def\web@hfill@mark{\ifx\web@next\break\else
-    \HCode{<span class="tex8web-hfill-mark"></span>}\fi}
+\def\web@hfill@mark{\let\web@hfill@do\web@hfill@write
+    \ifx\web@next\break \let\web@hfill@do\relax \fi
+    \ifx\web@next\linebreak \let\web@hfill@do\relax \fi
+    \ifx\web@next\nolinebreak \let\web@hfill@do\relax \fi
+    \ifx\web@next\penalty \let\web@hfill@do\web@hfill@penalty \fi
+    \web@hfill@do}
+\def\web@hfill@write{\HCode{<span class="tex8web-hfill-mark"></span>}}
+\newcount\web@hfill@count
+\def\web@hfill@penalty\penalty{\afterassignment\web@hfill@pen\web@hfill@count}
+\def\web@hfill@pen{\ifnum\web@hfill@count>-\@M \web@hfill@write \fi \penalty\web@hfill@count}
 \let\web@dotfill\dotfill
 \def\dotfill{{\let\hfill\web@hfill\web@dotfill}}
 \let\web@hrulefill\hrulefill

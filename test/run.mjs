@@ -486,30 +486,38 @@ const qed = {
 
 // what follows an \hfill, in a span the stylesheet floats right. It runs to
 // the end of the paragraph or of the line (\\), after the last \hfill of
-// a line. It is found in a list item, a centered paragraph, a figure, a
-// paragraph cell, and a proof before its QED box. Nothing is moved in a
-// box, a label, a cell of one line, \dotfill, \hrulefill, or before
-// \break, and no mark is left.
+// a line; in a paragraph, the line is in a span of its own, and in a
+// centered one, only that line. It is found in a list item, a centered
+// paragraph, a figure, a paragraph cell, a proof before its QED box, a
+// heading and its entry in the contents, and a link. Nothing is moved in a
+// box, a label, a cell of one line, \dotfill, \hrulefill, or before \break,
+// \linebreak or a \penalty that ends the line, and no mark is left.
 const hfill = {
   'test-hfill': [
-    /<p class='noindent'>Name\s+<span class='tex8web-hfill'>Date/,
-    /<p class='indent'>\s*<span class='tex8web-hfill'>— A\./,
-    /First line\s+<span class='tex8web-hfill'>right of the\s+first<\/span><br class='newline' \/>Second line\s+<span class='tex8web-hfill'>right of the\s+second<\/span><br class='newline' \/>Third line/,
-    /<span class='cmbx-10'>Bold name\s*<\/span><span class='tex8web-hfill'><span class='cmbx-10'>bold\s+date/,
-    /that line\.\s+<span class='tex8web-hfill'>\(a\s+note\)/,
-    /a\s+b\s+<span class='tex8web-hfill'>c\s/,
-    /<\/mjx-container>\s+<span class='tex8web-hfill'>\(not differentiable at/,
-    /Its description\s+<span class='tex8web-hfill'>at the\s+right/,
-    /Centered left\s+<span class='tex8web-hfill'>centered right/,
-    /<figure class='figure'>(?:(?!<\/figure>)[^])*<img [^>]*\/>\s*<span class='tex8web-hfill'><img /,
-    /in a paragraph cell\s+<span class='tex8web-hfill'>p/,
-    /Ends in text\s+<span class='tex8web-hfill'>\(by a\s+lemma\)<span class='tex8web-qed'>/,
-    /^(?:(?!tex8web-hfill')[^])*(?:tex8web-hfill'(?:(?!tex8web-hfill')[^])*){13}$/,
+    /<p class='noindent'><span class='tex8web-hfill-line'>Name\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>Date\s*<\/span><\/span><\/p>/,
+    /<p class='indent'><span class='tex8web-hfill-line'>\s*<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>— A\./,
+    /<p class='indent'><span class='tex8web-hfill-line'>\s*First line\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>right of the\s+first<\/span><br class='newline' \/><\/span><span class='tex8web-hfill-line'>Second line\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>right of the\s+second<\/span><br class='newline' \/><\/span>Third line/,
+    /<span class='cmbx-10'>Bold name\s*<\/span><span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'><span class='cmbx-10'>bold\s+date/,
+    /that line\.\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>\(a\s+note\)/,
+    /a\s+b\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>c\s/,
+    /<\/mjx-container>\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>\(not differentiable at/,
+    /Its description\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>at the\s+right/,
+    /Centered left\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>centered right/,
+    /<figure class='figure'>(?:(?!<\/figure>)[^])*<img [^>]*\/>\s*<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'><img /,
+    /in a paragraph cell\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>p/,
+    /Ends in text\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>\(by a\s+lemma\)<span class='tex8web-qed'>/,
+    /<span class='cmbx-10'>Centered above<\/span><br \/><span class='tex8web-hfill-line'>\s*Name\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>Date<\/span><\/span><\/p>/,
+    /<p class='indent'>\s*Before\s+a\s+linebreak\s+after the linebreak/,
+    /<p class='indent'>\s*Before a penalty\s+after the penalty/,
+    /<h3 class='sectionHead' id='heading-at-its-right-or-below-it'><a [^>]*class='tex8web-permalink'[^]*?<\/a>Heading\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>at its right/,
+    /<a href='#heading-at-its-right-or-below-it'[^>]*>Heading\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>at its right/,
+    /<a href='https:\/\/example\.com'>in a link\s+<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>linked<\/span><\/a>/,
+    /^(?:(?!tex8web-hfill')[^])*(?:tex8web-hfill'(?:(?!tex8web-hfill')[^])*){18}$/,
     /^(?![^]*tex8web-hfill-mark)/,
   ],
-  'examples/complex': [/^(?:(?!\(not differentiable)[^])*(?:<span class='tex8web-hfill'>\(not differentiable(?:(?!\(not differentiable)[^])*){2}$/],
+  'examples/complex': [/^(?:(?!\(not differentiable)[^])*(?:<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'>\(not differentiable(?:(?!\(not differentiable)[^])*){2}$/],
   // (tcolorbox's after upper, tex8web-boxes.tex)
-  'examples/custom': [/<span class='tex8web-hfill'><mjx-container/],
+  'examples/custom': [/<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'><mjx-container/],
 };
 
 // the spaces of verbatim text, alltt and \verbatiminput, which keep the

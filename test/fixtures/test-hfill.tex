@@ -1,7 +1,7 @@
 % A test for tex8web: what follows an \hfill in a paragraph at the right of
 % its line, as in the PDF; and the \hfill that does nothing on the page.
 \documentclass{article}
-\usepackage{amsmath,amsthm,graphicx}
+\usepackage{amsmath,amsthm,graphicx,hyperref}
 \begin{document}
 Name \hfill Date
 
@@ -52,4 +52,27 @@ Before a break \hfill\break after the break.
 \begin{proof}
 Ends in text \hfill (by a lemma)
 \end{proof}
+
+\begin{center}
+    \textbf{Centered above}\\
+    Name \hfill Date
+\end{center}
+
+Before a linebreak \hfill\linebreak after the linebreak, which starts the
+next line at the left in the PDF.
+
+Before a penalty \hfill\penalty-10000 after the penalty.
+
+Short \hfill A remainder long enough to wrap onto a second line of the page,
+which the PDF starts at the left of the line, as it does every line after the
+first one of a paragraph.
+
+\section{Heading \hfill at its right, or below it}
+After the heading.
+
+\begin{itemize}
+    \item \href{https://example.com}{in a link \hfill linked}
+\end{itemize}
+
+\tableofcontents
 \end{document}
