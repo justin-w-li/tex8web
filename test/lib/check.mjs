@@ -94,9 +94,10 @@ const pageChecks = [
     const merrors = count(html, /<mjx-merror/g);
     return merrors ? [`${merrors} MathJax error(s)`] : [];
   },
-  // (MathJax draws a macro it doesn't know as its name, in red)
+  // (MathJax draws a macro it doesn't know as its name, in red, which
+  // tex8web.js makes light-dark(red, ...))
   function unknownMacros(html) {
-    const unknown = [...html.matchAll(/<mjx-mtext style=['"]color: red;['"]>(.*?)<\/mjx-mtext>/g)]
+    const unknown = [...html.matchAll(/<mjx-mtext style=['"]color: (?:red|light-dark\(red,[^'"]*);['"]>(.*?)<\/mjx-mtext>/g)]
       .map(m => m[1].replace(/<[^>]+>/g, ''));
     return unknown.length ? [`macros MathJax doesn't know: ${[...new Set(unknown)].join(', ')}`] : [];
   },
