@@ -575,7 +575,7 @@ async function opening(chrome, file) {
 }
 
 // the contents' chevrons, by mouse: one on each section with subsections,
-// and the one being read open; another section opened slides open, and
+// at the column's inner edge, and the one being read open; another section opened slides open, and
 // stays open as the page scrolls to a third, which opens without a slide
 // while the first closes; closed, the section being read stays closed while
 // it's read, its entry marked in place of its subsection's; and the one
@@ -596,6 +596,12 @@ async function browsing(chrome, file) {
     let now = await page.evaluate(state);
     if (sections < 3 || now.length !== sections) return [`${now.length} chevrons for ${sections} sections with subsections (3 at least wanted)`];
     if (!(now[0] > 0 && now.slice(1).every(n => n === 0))) problems.push(`at the top, the sections show ${now} subsections`);
+    const off = await page.evaluate(`(() => {
+      const toc = document.getElementById('tex8web-toc');
+      const edge = toc.getBoundingClientRect().right - parseFloat(getComputedStyle(toc).paddingRight);
+      return Math.max(...[...toc.querySelectorAll('.tex8web-toc-more')].map(b => Math.abs(b.getBoundingClientRect().right - edge)));
+    })()`);
+    if (off > 0.5) problems.push(`a chevron ${off}px off the edge of the contents' text`);
     const click = async i => {
       const [x, y] = await page.evaluate(`(() => {
         const box = document.querySelectorAll('#tex8web-toc .tex8web-toc-more')[${i}].getBoundingClientRect();

@@ -658,13 +658,15 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
         background-color: var(--tex8web-hover); }
 }
 /* the chevron after a section with subsections (tex8web-page.js), which
-   shows or hides them: past the end of the entry's first line, in the
-   padding, so that it takes no room from the titles; shown under the
-   mouse, faint while the section is open, and faint always on a touch
-   screen, where a finger finds it by the drawer's edge. While a section
-   being read has its subsections hidden, its entry is marked */
-.tex8web-toc-more { position: relative; flex: none; align-self: flex-start; width: 1em;
-    margin-inline: auto -1em; padding: 0; border: 0; font: inherit; line-height: inherit;
+   shows or hides them: at the end of the entry's first line, in a gutter
+   measured as the column is (rem, not the text's em), so that in any
+   document it's as far from the right edge as the text is from the left.
+   It's shown under the mouse, faint while the section is open, and faint
+   always on a touch screen, where a finger finds it by the drawer's edge.
+   While a section being read has its subsections hidden, its entry is
+   marked */
+.tex8web-toc-more { position: relative; flex: none; align-self: flex-start; width: 1rem;
+    margin-inline-start: auto; padding: 0; border: 0; font: inherit; line-height: inherit;
     text-align: end; color: inherit; background: none; cursor: pointer; opacity: 0; }
 /* (centered on the math axis, a quarter em above the baseline, as a
    parenthesis is: a square's two sides, turned, which the downward one
@@ -678,7 +680,7 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 @media (hover: none) {
     .tex8web-toc-more { opacity: 0.3; }
     /* (out to the drawer's edge, and between the lines, for a finger) */
-    .tex8web-toc-more::after { content: ""; position: absolute; inset: -0.6em -0.5rem -0.6em 0; }
+    .tex8web-toc-more::after { content: ""; position: absolute; inset: -0.6em -1.25rem -0.6em 0; }
 }
 .tex8web-toc .tex8web-reading:has(> .tex8web-toc-more[aria-expanded="false"]) > a {
     border-radius: 0.2em; background-color: var(--tex8web-highlight); }
@@ -711,11 +713,10 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
         border-radius: 0.5rem; }
     /* (the button needs tex8web-page.js here) */
     :root:not(.tex8web-js) .tex8web-contents { display: none; }
-    /* (its text where the drawer's is, and the icons, 1.25rem in; room on
-       the right for the chevrons) */
+    /* (its text where the drawer's is, and the icons, 1.25rem in) */
     .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
         inset: var(--tex8web-column-inset); width: var(--tex8web-margin); height: auto;
-        padding: 0 1rem 0 0.5rem; border: 0; background: none; translate: none; transition: none; }
+        padding: 0 0.5rem; border: 0; background: none; translate: none; transition: none; }
     .tex8web-toc-hidden .tex8web-toc { display: none; opacity: 0; }
     .tex8web-toc::backdrop { display: none; }
     /* (only as the button is pressed: not as the page loads, or as the
