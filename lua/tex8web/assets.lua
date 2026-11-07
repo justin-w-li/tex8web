@@ -326,7 +326,7 @@ function M.copy(document, context)
     for _, shape in ipairs(shapes) do preload(font.files[shape] .. ".woff2") end
   end
   if #preloaded > 0 then
-    document:query_selector("script[src='tex8web-head.js']")[1]
+    document:query_selector("script#tex8web-head")[1]
       :set_attribute("data-fonts", table.concat(preloaded, " "))
   end
   for _, img in ipairs(document:query_selector("img")) do

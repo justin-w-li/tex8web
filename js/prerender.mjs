@@ -320,7 +320,7 @@ for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: ur
     preloaded.push(url);
   }
 }
-const headScript = adaptor.tags(root, 'script').find(s => adaptor.getAttribute(s, 'src') === 'tex8web-head.js');
+const headScript = adaptor.tags(root, 'script').find(s => adaptor.getAttribute(s, 'id') === 'tex8web-head');
 if (preloaded.length) {
   const listed = adaptor.getAttribute(headScript, 'data-fonts');
   adaptor.setAttribute(headScript, 'data-fonts', [...(listed ? [listed] : []), ...preloaded].join(' '));

@@ -4,6 +4,7 @@
 -- and the scripts.
 local assets = require "tex8web.assets"
 local dom = require "tex8web.dom"
+local files = require "tex8web.files"
 
 local log = logging.new("tex8web")
 
@@ -311,7 +312,8 @@ function M.meta_tags(document)
 end
 
 -- tex8web-head.js (the reader's theme, before the page is drawn, and the
--- transition from the page before) and tex8web-page.js (the controls, the
+-- transition from the page before), inline: its font preloads then start as
+-- the page is read, not after a script's download. And tex8web-page.js (the controls, the
 -- table of contents and its filter, previews, the picture viewer, the fade
 -- at an edge);
 -- and for MathJax in the browser, MathJax and tex8web.js, which configures
@@ -324,12 +326,18 @@ function M.scripts(document, context)
     el:add_child_node(el:create_text_node(""))
     head:add_child_node(el, position)
   end
-  for _, name in ipairs({"tex8web-head.js", "tex8web-page.js"}) do
-    assets.add(context.root .. "/js/" .. name, context.dir .. "/" .. name)
-  end
+  assets.add(context.root .. "/js/tex8web-page.js", context.dir .. "/tex8web-page.js")
   -- (before the stylesheet's link: a script waits for the stylesheets above
   -- it, and its preloads would start only once main.css had loaded)
-  script({src = "tex8web-head.js"}, head:query_selector("link[rel='stylesheet']")[1]:find_element_pos())
+  local inline = head:create_element("script", {id = "tex8web-head"})
+  -- (in a CDATA section behind comment marks: the serializer would escape
+  -- the > and & of its text, and make4ht's later XML parse needs them whole)
+  local code = inline:create_text_node("*/\n" .. assert(files.read(context.root .. "/js/tex8web-head.js")) .. "\n/*")
+  code._type = "CDATA"
+  inline:add_child_node(inline:create_text_node("/*"))
+  inline:add_child_node(code)
+  inline:add_child_node(inline:create_text_node("*/"))
+  head:add_child_node(inline, head:query_selector("link[rel='stylesheet']")[1]:find_element_pos())
   script({src = "tex8web-page.js", defer = "defer"})
   script({src = "tex8web.js", ["data-tex8web-browser"] = "", ["data-mathjax"] = context.mathjax,
     ["data-contents"] = document:query_selector("#tex8web-toc")[1] and "" or nil})

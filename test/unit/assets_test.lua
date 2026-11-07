@@ -129,12 +129,12 @@ return {
     end
     local f = assert(io.open(file, "w"))
     f:write("<head><script data-fonts='fonts/a-bold.woff2 fonts/lmroman10-regular.woff2 fonts/b-regular.woff2'"
-      .. " src='tex8web-head.js'></script></head>")
+      .. " id='tex8web-head'></script></head>")
     f:close()
     assets.drop_preloads(file, {roman = font("a"), others = {font("b")}})
     local html = require("tex8web.files").read(file)
     os.remove(file)
     equal(html, "<head><script data-fonts='fonts/lmroman10-regular.woff2'"
-      .. " src='tex8web-head.js'></script></head>")
+      .. " id='tex8web-head'></script></head>")
   end,
 }

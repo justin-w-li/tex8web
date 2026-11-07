@@ -1,7 +1,7 @@
-// tex8web: loaded in <head> without defer (page.lua), so that the reader's
+// tex8web: inline at the top of <head> (page.lua), so that the reader's
 // theme and hidden table of contents (which tex8web-page.js keeps) apply
-// before the page is drawn, and so that pagereveal, which fires before
-// then, is heard.
+// before the page is drawn, pagereveal, which fires before then, is heard,
+// and the fonts' preloads start with the first bytes of the page.
 // (tex8web-top: the page starts at its top, which tex8web-page.js keeps true)
 document.documentElement.classList.add('tex8web-js', 'tex8web-top');
 try {

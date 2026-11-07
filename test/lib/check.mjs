@@ -47,10 +47,10 @@ export function checkOutput(out) {
 const toc = html => html.match(/<nav[^>]*id=['"]tex8web-toc['"][^]*?<\/nav>/)?.[0] ?? '';
 const count = (html, pattern) => (html.match(pattern) || []).length;
 const pageChecks = [
-  // (only tex8web-head.js and tex8web-page.js)
+  // (only the inline head script and tex8web-page.js)
   function scripts(html) {
     const scripts = [...html.matchAll(/<script([^>]*)>/g)].map(m => m[1]);
-    return scripts.some(s => !/src=['"]tex8web-(head|page)\.js['"]/.test(s)) ? ["has a <script> besides tex8web's"] : [];
+    return scripts.some(s => !/src=['"]tex8web-page\.js['"]|id=['"]tex8web-head['"]/.test(s)) ? ["has a <script> besides tex8web's"] : [];
   },
   // (a list of figures or tables is a div.tableofcontents too, and stays)
   function tocBeside(html) {

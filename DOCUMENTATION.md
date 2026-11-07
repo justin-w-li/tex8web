@@ -31,7 +31,7 @@ The output folder holds the page and everything it uses:
 - `document.html` and its stylesheets;
 - the pictures, and the PDF if you link it with `-p` or `\WebPDF`;
 - `fonts/`: Latin Modern, TeX Gyre or XCharter, MathJax's fonts, and `LICENSE.txt`, which covers them;
-- `tex8web-head.js` and `tex8web-page.js`, the page's controls;
+- `tex8web-page.js`, the page's controls;
 - without Node, `tex8web.js` instead of MathJax's fonts.
 
 The paths are relative, so you can publish the folder as it is. With Node, its fonts contain only the characters the document uses, so each document needs its own folder. The page is `document.html`, not `index.html`, so link to it by name. On GitHub Pages, for example, that is `https://you.github.io/repo/document.html`.
