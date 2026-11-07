@@ -258,8 +258,8 @@
   // section's subsections shown, and on a narrow screen it's in the bar
   // (css/tex8web.css), once the first heading is read; as a drawer, it
   // closes on following a link. A chevron after each section with
-  // subsections shows or hides them, sliding, until the section being read
-  // changes, which closes them at once
+  // subsections shows or hides them, sliding; what it opens stays open, while
+  // the section being read opens on reaching it and closes on leaving it
   function contents() {
     const toc = document.getElementById('tex8web-toc');
     if (!toc) return;
@@ -315,6 +315,8 @@
       button.setAttribute('aria-label', `Subsections of ${link ? entryText(link) : section.textContent.trim()}`);
       section.append(button);
     }
+    // (the sections the reader opened)
+    const kept = new Set();
     let current, opened;
     const update = () => {
       const line = innerHeight / 4;
@@ -334,9 +336,8 @@
       while (section?.previousElementSibling && !isSection(section)) section = section.previousElementSibling;
       if (section !== opened) {
         opened?.classList.remove('tex8web-reading');
-        if (opened) show(opened, false);
-        toc.querySelectorAll('.tex8web-toc-more[aria-expanded="true"]').forEach(button => show(button.parentElement, false));
-        show(section, true);
+        if (opened && !kept.has(opened)) show(opened, false);
+        if (!kept.has(section)) show(section, true);
         section.classList.add('tex8web-reading');
         opened = section;
       }
@@ -360,7 +361,9 @@
     toc.addEventListener('click', event => {
       const button = event.target.closest('.tex8web-toc-more');
       if (button) {
-        show(button.parentElement, button.getAttribute('aria-expanded') !== 'true', true);
+        const open = button.getAttribute('aria-expanded') !== 'true';
+        kept[open ? 'add' : 'delete'](button.parentElement);
+        show(button.parentElement, open, true);
       }
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });

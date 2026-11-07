@@ -576,9 +576,10 @@ async function opening(chrome, file) {
 
 // the contents' chevrons, by mouse: one on each section with subsections,
 // and the one being read open; another section opened slides open, and
-// closes at once, without a slide, as the page scrolls to a third, which
-// opens; and closed, the section being read stays closed while it's read,
-// its entry marked in place of its subsection's
+// stays open as the page scrolls to a third, which opens without a slide
+// while the first closes; closed, the section being read stays closed while
+// it's read, its entry marked in place of its subsection's; and the one
+// opened stays open as a link in the contents leads to the first again
 async function browsing(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
     const problems = [];
@@ -616,7 +617,7 @@ async function browsing(chrome, file) {
     if (!now) problems.push('scrolled to the third section, its subsections not shown');
     if (await page.evaluate('document.getAnimations().length')) problems.push('the page scrolled, a slide in the contents');
     now = await page.evaluate(state);
-    if (!(now[0] === 0 && now[1] === 0)) problems.push(`scrolled to the third section, the first two show ${now.slice(0, 2)} subsections`);
+    if (!(now[0] === 0 && now[1] > 0)) problems.push(`scrolled to the third section, the first two show ${now.slice(0, 2)} subsections`);
     await click(2);
     await finished(page);
     const read = await page.evaluate(`(() => {
@@ -636,6 +637,16 @@ async function browsing(chrome, file) {
       .parentElement.querySelector('a'), document.querySelector('#tex8web-toc [aria-current]')]
       .map(a => getComputedStyle(a).backgroundColor)`);
     if (section !== reading) problems.push(`closed, the third section's entry in ${section}, not ${reading} as the one read`);
+    const [x, y] = await page.evaluate(`(() => {
+      const box = document.querySelector('#tex8web-toc .tex8web-toc-more').parentElement.querySelector('a').getBoundingClientRect();
+      return [box.left + box.width / 2, box.top + box.height / 2];
+    })()`);
+    await page.mouse('pressed', x, y);
+    await page.mouse('released', x, y);
+    now = await until(() => page.evaluate(state), n => n[0] > 0);
+    if (!now) problems.push('the first section\'s link followed, its subsections not shown');
+    now = await page.evaluate(state);
+    if (!(now[1] > 0 && now[2] === 0)) problems.push(`the first section's link followed, the next two show ${now.slice(1, 3)} subsections`);
     return problems;
   });
 }
