@@ -70,8 +70,10 @@ const measured = {
   // (and test.cfg's \WebColor, from an xcolor expression and an RGB color)
   // (the link colors, also with only the color package, in the example)
   'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235',
-    '--tex8web-link': 'light-dark(#FF0000, var(--tex8web-link-dark))' },
-  'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, var(--tex8web-url-dark))' },
+    '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
+  'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, oklch(from #0000FF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
+  // (linkcolor=.: none, so the link takes the color around it)
+  'examples/complex': { '--tex8web-link': null },
   'test-tocentry': { '--tex8web-toc-chapter-skip': '1em' },
   // (float.sty's rules, 0.8pt and 0.4pt, and their 2pt from the text)
   'test-algorithmic': { '--tex8web-float-rule': '0.08em', '--tex8web-float-midrule': '0.04em',
@@ -672,7 +674,9 @@ function check(doc, result, out, aux) {
   const css = join(out, doc.tex.replace(/\.tex$/, '.css'));
   const styles = existsSync(css) ? readFileSync(css, 'utf8') : '';
   for (const [property, value] of Object.entries(measured[doc.name] ?? {})) {
-    if (!styles.includes(`${property}: ${value};`)) problems.push(`${property} isn't ${value}`);
+    if (value === null ? styles.includes(`${property}:`) : !styles.includes(`${property}: ${value};`)) {
+      problems.push(value === null ? `${property} is set` : `${property} isn't ${value}`);
+    }
   }
   // (each abstract's, which are the same)
   if (styles.split('--tex8web-abstract-leading:').length > 2) problems.push("the abstract's leading set twice");

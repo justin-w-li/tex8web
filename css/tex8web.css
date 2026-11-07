@@ -20,9 +20,12 @@ html body { color-scheme: inherit; }
    (l, of oklch), which tex8web-boxes.tex, assets.lua and tex8web.js write
    as oklch(from <color> var(--tex8web-dark-<property>) c h). Text is as
    light as it was dark, backgrounds as dark as they were light, and
-   borders at least 0.62, so they show */
+   borders at least 0.62, so they show. Links are at least 0.75, with
+   chroma (c) at most 0.14, so that they stand out on the dark background
+   as they do on white, and none glares */
 :root { --tex8web-dark-color: max(l, 1 - l); --tex8web-dark-background: min(l, 1.24 - l);
-    --tex8web-dark-border: max(l, 0.62); }
+    --tex8web-dark-border: max(l, 0.62); --tex8web-dark-link: max(l, 1 - l, 0.75);
+    --tex8web-dark-link-chroma: min(c, 0.14); }
 /* what a link leads to, and the table of contents' entry for the section
    being read, and what's under the mouse. The dark highlight is a grayed
    mauve, apart from yellow and pink highlighters, and the dark hover
@@ -31,13 +34,12 @@ html body { color-scheme: inherit; }
     --tex8web-hover: light-dark(color-mix(in srgb, currentColor 8%, transparent),
         color-mix(in srgb, currentColor 14%, transparent)); }
 html body { background-color: var(--tex8web-bg); color: var(--tex8web-text); }
-/* links: hyperref's colors with colorlinks (tex8web-page.tex), and these
-   in dark mode. Otherwise the color of the text, with a faint underline
+/* links: hyperref's colors with colorlinks (tex8web-page.tex), in dark
+   mode as above. Otherwise the color of the text, with a faint underline
    where the PDF draws boxes around them; none with hidelinks
    (.tex8web-plain-links). The contents, the controls and the # links are
    the page's, not the document's; a footnote's raised mark, underlined,
    reads as a stray rule */
-:root { --tex8web-link-dark: #6CB4FF; --tex8web-cite-dark: #5FD3A0; --tex8web-url-dark: #F27FB0; }
 a { color: var(--tex8web-link, inherit); text-decoration: none; }
 a[href] { text-decoration: underline; text-decoration-thickness: 1px;
     text-underline-offset: 0.15em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }

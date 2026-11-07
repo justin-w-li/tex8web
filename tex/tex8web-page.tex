@@ -269,9 +269,10 @@
             }
     }
 \ExplSyntaxOff
-% links: hyperref's colors with colorlinks, in light mode (the stylesheet
-% has the dark ones); otherwise the PDF draws boxes, and the links keep the
-% color of the text, underlined (css/tex8web.css).
+% links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
+% and the links keep the color of the text, underlined (css/tex8web.css).
+% In dark mode they are at another lightness, as the document's other
+% colors are. A link in color . keeps the color around it, as in the PDF.
 % Colored links and hidelinks' need no underline. tex4ht turns colorlinks
 % on itself, so count it as the document's when its hyperref options name
 % it, or its link colors aren't hyperref's defaults
@@ -286,8 +287,12 @@
         {
             \clist_map_inline:nn { link, cite, url }
                 {
-                    \exp_args:Nv \web@hex { @##1color } \l__web_hex_tl
-                    \web@Css { :root~{~--tex8web-##1:~light-dark(\#\l__web_hex_tl,~var(--tex8web-##1-dark));~} }
+                    \str_if_eq:eeF { \use:c { @##1color } } { . }
+                        {
+                            \exp_args:Nv \web@hex { @##1color } \l__web_hex_tl
+                            \web@Css { :root~{~--tex8web-##1:~light-dark(\#\l__web_hex_tl,~oklch(from~
+                                \#\l__web_hex_tl \c_space_tl var(--tex8web-dark-link)~var(--tex8web-dark-link-chroma)~h));~} }
+                        }
                 }
         }
     \bool_lazy_or:nnT
