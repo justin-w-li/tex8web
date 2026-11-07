@@ -296,7 +296,7 @@ end
 
 -- the fonts, and the pictures, which the page references relative to the
 -- document (\includegraphics), unless tex4ht made them. The faces the text
--- uses are preloaded (M.faces; prerender.mjs says why)
+-- uses are listed for tex8web-head.js to preload (M.faces)
 function M.copy(document, context)
   local function add_font(font)
     M.add(context.root .. "/fonts/" .. font, context.dir .. "/fonts/" .. font)
@@ -313,12 +313,9 @@ function M.copy(document, context)
   if sans then
     for _, font in ipairs(sans_fonts) do add_font(font) end
   end
-  local head = document:query_selector("head")[1]
+  local preloaded = {}
   local function preload(font)
-    if faces[font] then
-      head:add_child_node(head:create_element("link", {rel = "preload", as = "font",
-        type = "font/woff2", crossorigin = "", href = "fonts/" .. font}))
-    end
+    if faces[font] then preloaded[#preloaded + 1] = "fonts/" .. font end
   end
   for _, font in ipairs(fonts) do preload(font) end
   if sans then
@@ -326,6 +323,11 @@ function M.copy(document, context)
   end
   for _, font in ipairs(prerender.available(context) and fonts_of(roles) or {}) do
     for _, shape in ipairs(shapes) do preload(font.files[shape] .. ".woff2") end
+  end
+  if #preloaded > 0 then
+    local script = assert(document:query_selector("script[src='tex8web-head.js']")[1],
+      "no tex8web-head.js script to list the fonts on")
+    script:set_attribute("data-fonts", table.concat(preloaded, " "))
   end
   for _, img in ipairs(document:query_selector("img")) do
     local src = img:get_attribute("src") or ""
@@ -347,16 +349,20 @@ function M.originals(context)
   end
 end
 
--- M.copy preloads the cut-down TeX Live faces (prerender.mjs writes them);
--- when it failed, the page shows the whole fonts, and the links go
+-- M.copy lists the cut-down TeX Live faces to preload (prerender.mjs writes
+-- them); when it failed, the page shows the whole fonts, and they go
 function M.drop_preloads(filename, roles)
   local gone = {}
   for _, font in ipairs(fonts_of(roles)) do
     for _, shape in ipairs(shapes) do gone["fonts/" .. font.files[shape] .. ".woff2"] = true end
   end
   local html = assert(files.read(filename))
-  html = html:gsub("<link [^>]*rel='preload'[^>]*>", function(link)
-    if gone[link:match("href='([^']*)'")] then return "" end
+  html = html:gsub("data%-fonts='([^']*)'", function(list)
+    local kept = {}
+    for href in list:gmatch("%S+") do
+      if not gone[href] then kept[#kept + 1] = href end
+    end
+    return "data-fonts='" .. table.concat(kept, " ") .. "'"
   end)
   local f = assert(io.open(filename, "w"))
   f:write(html)

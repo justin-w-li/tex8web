@@ -121,22 +121,20 @@ return {
     check(logged[1]:find("--tex8web-textwidth is 700px, not", 1, true), logged[1])
   end,
 
-  ["assets.drop_preloads: the links to a font's faces go, the others stay"] = function()
+  ["assets.drop_preloads: a font's faces leave the list, the others stay"] = function()
     local file = os.tmpname()
     local function font(name)
       return {files = {regular = name .. "-regular", bold = name .. "-bold", italic = name .. "-italic",
         bolditalic = name .. "-bolditalic"}}
     end
     local f = assert(io.open(file, "w"))
-    f:write("<head><link as='font' crossorigin='' href='fonts/a-bold.woff2' rel='preload' />"
-      .. "<link as='font' crossorigin='' href='fonts/lmroman10-regular.woff2' rel='preload' />"
-      .. "<link as='font' crossorigin='' href='fonts/b-regular.woff2' rel='preload' />"
-      .. "<link href='fonts/c.css' rel='stylesheet' /></head>")
+    f:write("<head><script data-fonts='fonts/a-bold.woff2 fonts/lmroman10-regular.woff2 fonts/b-regular.woff2'"
+      .. " src='tex8web-head.js'></script></head>")
     f:close()
     assets.drop_preloads(file, {roman = font("a"), others = {font("b")}})
     local html = require("tex8web.files").read(file)
     os.remove(file)
-    equal(html, "<head><link as='font' crossorigin='' href='fonts/lmroman10-regular.woff2' rel='preload' />"
-      .. "<link href='fonts/c.css' rel='stylesheet' /></head>")
+    equal(html, "<head><script data-fonts='fonts/lmroman10-regular.woff2'"
+      .. " src='tex8web-head.js'></script></head>")
   end,
 }

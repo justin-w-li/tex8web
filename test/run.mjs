@@ -589,6 +589,9 @@ const verbatim = {
     /<div class='alltt'>/, /<div class='verbatiminput'>/, /<pre class='verbatim'/],
 };
 
+// (listed in data-fonts on the head script, which preloads them over HTTP)
+const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1] ?? '').split(/\s+/).filter(Boolean);
+
 // the fonts preloaded, and no others: the faces of the text (bold
 // headings, italic, \texttt; but not \verb, in the browser's monospace)
 // and MathJax's that the math uses
@@ -697,8 +700,7 @@ function check(doc, result, out, aux) {
     }
   }
   if (preloads[doc.name]) {
-    const found = [...html.matchAll(/<link [^>]*rel='preload'[^>]*>/g)]
-      .map(([link]) => link.match(/href='fonts\/([^']+)\.woff2'/)?.[1]).sort().join(' ');
+    const found = fontsListed(html).map(href => href.match(/^fonts\/(.+)\.woff2$/)?.[1]).sort().join(' ');
     const wanted = [...preloads[doc.name]].sort().join(' ');
     if (found !== wanted) problems.push(`fonts preloaded: ${found}, not ${wanted}`);
   }
@@ -774,7 +776,7 @@ if (!only.length) jobs.push(async () => {
 });
 
 // and a page whose prerendering fails (node can't start): the math is left
-// for the browser, and no preload link points at a font that wasn't written
+// for the browser, and no font to preload is one that wasn't written
 const failing = docs.find(d => d.name === 'test-pagella');
 if (failing) jobs.push(async () => {
   const out = join(testDir(failing), 'failing'), aux = join(testDir(failing), 'failingaux');
@@ -784,8 +786,7 @@ if (failing) jobs.push(async () => {
   const problems = [];
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
   if (!result.log.includes('prerender.mjs failed')) problems.push('no warning that prerendering failed');
-  const links = [...html.matchAll(/<link [^>]*rel='preload'[^>]*>/g)].map(([link]) => link.match(/href='([^']+)'/)[1]);
-  for (const href of links.filter(href => !existsSync(join(out, href)))) problems.push(`${href} preloaded, not written`);
+  for (const href of fontsListed(html).filter(href => !existsSync(join(out, href)))) problems.push(`${href} preloaded, not written`);
   // (the page still has TeX Live's font, whole, to show)
   if (!existsSync(join(out, 'fonts/texgyrepagella-regular.otf'))) problems.push('no whole TeX Gyre Pagella beside the page');
   report(`${failing.name} (prerendering fails)`, problems);

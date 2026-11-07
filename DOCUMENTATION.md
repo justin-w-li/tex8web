@@ -273,6 +273,6 @@ Each item says what goes wrong and, where there is one, what to do.
 - **imakeidx's `program`** isn't followed: makeindex always runs. Its `splitindex` option isn't supported.
 - **The page's controls are in English**, whatever the document's language. So is the speech for math. It reads `|` as "given", as in `P(A | B)`, so a document about divisibility hears `a | b` as "a given b".
 - **The browser's find-in-page** finds a formula's characters one at a time, but not a run of them such as `Δ(S)`.
-- **A page opened from disk in Chrome** loads its fonts without preloading, and the console reports each preload as blocked.
+- **A page opened from disk, or read with JavaScript off,** loads its fonts without preloading them. A long page may take a moment longer to settle on a phone.
 - **Styles for `.mathjax-inline`** in a config apply only when MathJax typesets in the browser.
 - **The space before inline math after a word in another font** can be in that word's font when MathJax typesets in the browser, and in the text's font in a prerendered page. algorithm2e's keyword before its argument is one such case. The two pages can be a pixel apart, and neither is always the PDF's.

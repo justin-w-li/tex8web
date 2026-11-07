@@ -299,9 +299,11 @@ speeches.forEach(({ outputData: { speech } }, i) => {
   adaptor.setAttribute(adaptor.tags(container, 'mjx-math')[0], 'aria-hidden', 'true');
 });
 
-// the fonts the math uses, preloaded: fetched as the page starts loading,
-// rather than as each is first laid out, which lays out the whole page
-// again (on a phone, a quarter of a second for a long page, each time). A
+// the fonts the math uses, which tex8web-head.js preloads: fetched as the
+// page starts loading, rather than as each is first laid out, which lays out
+// the whole page again (on a phone, a quarter of a second for a long page,
+// each time). It does so only over HTTP: Safari refuses a preload from a
+// file, and then loads none of the page's fonts. A
 // font is used if its name is a class in the math (MJX-TEX-C, TEX-C); ZERO
 // comes with every one of them, and BRK draws where a line breaks (an
 // mjx-break, or a line of a breakable display)
@@ -313,12 +315,18 @@ const collect = node => {
 for (const math of adaptor.tags(root, 'mjx-math')) collect(math);
 const breaks = adaptor.tags(root, 'mjx-break').length > 0
   || adaptor.tags(root, 'mjx-linestack').some(stack => has(stack, 'breakable'));
+const preloaded = [];
 for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: url\("([^"]+)"\)/g)) {
   const name = family.slice('MJX-'.length);
   if (classes.has(name) || (name === `${prefix}-ZERO` && classes.size) || (name === 'BRK' && breaks)) {
-    adaptor.insert(adaptor.node('link', { rel: 'preload', as: 'font', type: 'font/woff2', crossorigin: '',
-      href: url }), stylesheet);
+    preloaded.push(url);
   }
+}
+const headScript = adaptor.tags(root, 'script').find(s => adaptor.getAttribute(s, 'src') === 'tex8web-head.js');
+if (!headScript) throw new Error('no tex8web-head.js script to list the fonts on');
+if (preloaded.length) {
+  const listed = adaptor.getAttribute(headScript, 'data-fonts');
+  adaptor.setAttribute(headScript, 'data-fonts', [...(listed ? [listed] : []), ...preloaded].join(' '));
 }
 
 // (data-latex holds each node's source, for MathJax's menu)

@@ -12,6 +12,19 @@ try {
   }
 } catch {}
 
+// the page's fonts, which assets.lua and prerender.mjs list in this script's
+// data-fonts, preloaded: fetched as the page starts loading, not as each is
+// first laid out. Not from a file: Safari refuses the preloads there (no
+// CORS headers to pass), and its @font-face loads reuse the refusals, so
+// every face stays unloaded
+if (location.protocol !== 'file:') {
+  for (const href of document.currentScript.dataset.fonts?.match(/\S+/g) ?? []) {
+    const link = document.createElement('link');
+    Object.assign(link, { rel: 'preload', as: 'font', type: 'font/woff2', crossOrigin: '', href });
+    document.head.append(link);
+  }
+}
+
 // the change from one of a site's tex8web pages to another (css/tex8web.css's
 // @view-transition): back when it's to the page above (\WebUp) or the
 // browser goes back in history, or else forward. The page left knows

@@ -3,14 +3,15 @@
 // feature: the picture viewer by mouse, by finger and by keyboard, the narrow
 // screen's bar, the fade of a display that scrolls, the theme button, the
 // contents (its filter, the subsections shown, its chevrons, and every
-// entry where all fit), the page when one feature of the script fails, and
-// the transition from one page of a site to another. Each check fails if
-// its fixture lacks what it drives, and waits for a state the page reaches
-// rather than for a time. The checks run once the builds are done.
+// entry where all fit), the page when one feature of the script fails, the
+// fonts' preloads, and the transition from one page of a site to another.
+// Each check fails if its fixture lacks what it drives, and waits for a
+// state the page reaches rather than for a time. The checks run once the
+// builds are done.
 //   node test/page.mjs [check names...]
 import { cpSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join } from 'node:path';
+import { basename, dirname, extname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build, pool, select, testDir, workers } from './lib/build.mjs';
 import { launch, until } from './lib/chrome.mjs';
@@ -856,6 +857,20 @@ async function isolating(chrome, file) {
   });
 }
 
+// a folder served over HTTP
+const served = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2' };
+async function serve(site) {
+  const server = createServer((request, response) => {
+    const file = join(site, decodeURIComponent(new URL(request.url, 'http://localhost').pathname)
+      .replace(/\/$/, '/index.html'));
+    if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return response.writeHead(404).end();
+    response.writeHead(200, { 'content-type': served[extname(file)] ?? 'application/octet-stream' })
+      .end(readFileSync(file));
+  });
+  await new Promise(done => server.listen(0, '127.0.0.1', done));
+  return server;
+}
+
 // from one page of a site to another, served over HTTP as a file has no
 // origin to share: from another page, as the site's index at /, to an
 // example (which links up to ../index.html, the same page), then up again.
@@ -863,7 +878,6 @@ async function isolating(chrome, file) {
 // second back (tex8web-head.js), and the up link goes back in history
 // rather than to a new entry (tex8web-page.js). Then the browser's buttons:
 // forward is forward, back is back whichever page it is to
-const served = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2' };
 // (each page's transition, once tex8web-head.js, which listens after this,
 // has named it)
 const seenTypes = `addEventListener('pagereveal', event => setTimeout(() => {
@@ -877,14 +891,7 @@ async function navigating(chrome, [example, index]) {
   cpSync(join(testDir(index, 'page'), 'html'), site, { recursive: true });
   renameSync(join(site, `${index.name}.html`), join(site, 'index.html'));
   cpSync(join(testDir(example, 'page'), 'html'), join(site, 'example'), { recursive: true });
-  const server = createServer((request, response) => {
-    const file = join(site, decodeURIComponent(new URL(request.url, 'http://localhost').pathname)
-      .replace(/\/$/, '/index.html'));
-    if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return response.writeHead(404).end();
-    response.writeHead(200, { 'content-type': served[extname(file)] ?? 'application/octet-stream' })
-      .end(readFileSync(file));
-  });
-  await new Promise(done => server.listen(0, '127.0.0.1', done));
+  const server = await serve(site);
   try {
     return await chrome.withPage(`http://127.0.0.1:${server.address().port}/`, { before: seenTypes }, async page => {
       // at a page, its transition (the nth) seen and over; the page's
@@ -923,6 +930,29 @@ async function navigating(chrome, [example, index]) {
   }
 }
 
+// the fonts the head script lists, preloaded over HTTP and not from a file:
+// Safari refuses a preload from a file, and then loads no font at all.
+// Chrome doesn't refuse, so this guards the mechanism and not Safari
+const preloaded = `[...document.querySelectorAll('link[rel=preload]')]
+  .map(link => [link.getAttribute('href'), link.as, link.type, link.crossOrigin].join(' '))`;
+async function preloading(chrome, file) {
+  const listed = readFileSync(file, 'utf8').match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1].split(' ') ?? [];
+  if (!listed.length) return ['no fonts listed on the head script'];
+  const problems = [];
+  const opened = await chrome.withPage(pathToFileURL(file).href, {}, page => page.evaluate(preloaded));
+  if (opened.length) problems.push(`opened from a file, ${opened.length} fonts preloaded`);
+  const server = await serve(dirname(file));
+  try {
+    const over = await chrome.withPage(`http://127.0.0.1:${server.address().port}/${basename(file)}`, {},
+      page => page.evaluate(preloaded));
+    const wanted = listed.map(href => `${href} font font/woff2 anonymous`);
+    if (over.join('\n') !== wanted.join('\n')) problems.push(`over HTTP, ${over.join(', ')} preloaded, not ${wanted.join(', ')}`);
+  } finally {
+    server.close();
+  }
+  return problems;
+}
+
 // each check, with the fixtures it runs on, which must have its feature
 // (the viewer: an SVG and a raster picture; the bar, fade, chevrons and
 // one filter: test.tex's long page, with its display that scrolls, its
@@ -951,6 +981,7 @@ const checks = {
   browsing: [['test'], each(browsing)],
   isolated: [['test-tocsub'], each(isolating)],
   fit: [['examples/footnotes'], each(fitting)],
+  preloads: [['test'], each(preloading)],
   transitions: [['examples/basic', 'test-generic'], navigating],
 };
 

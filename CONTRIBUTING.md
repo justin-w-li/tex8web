@@ -33,7 +33,7 @@ A page goes through four stages.
 - Equations get TeX's own numbers, so they agree with `\eqref`.
 - Alignments are split at `\intertext`. `js/tex8web.js` later gives the parts the same columns, so they line up as one alignment.
 - TeX measures the document: its text width, heading sizes, theorem and list spacing, and link colors. The measurements reach the stylesheet as `--tex8web-*` custom properties. The stylesheet, `css/tex8web.css`, holds every static rule.
-- With tocloft, `\web@tocfont` reads each level's `\cft<level>font` as a heading's font is read. `lua/tex8web/assets.lua` predicts the faces those fonts need, to copy and preload them.
+- With tocloft, `\web@tocfont` reads each level's `\cft<level>font` as a heading's font is read. `lua/tex8web/assets.lua` predicts the faces those fonts need, to copy and list for preloading.
 - `tex/tex8web-hooks.sty` loads before the preamble. It keeps what tex4ht would discard, such as titlesec's formats and tcolorbox's options. Its `\web@needs` warns when tex4ht or a package no longer has a command tex8web patches. The tests treat that warning as a failure.
 
 ### 2. HTML passes
@@ -74,7 +74,7 @@ MathJax's TeX input differs from TeX in a few sizes. `js/tex8web.js` sets them a
 - **No assistive MathML.** MathJax adds a hidden MathML copy of each formula. On a long page it is a quarter of the markup, and most of a phone's layout time. `TEX8WEB_MATHML=1` keeps it; the tests set it and check the math through it.
 - **Speech instead.** Each formula is `role="math"` with its speech as an `aria-label`. The speech comes from MathJax's semantic enrichment, which changes the math itself. So the page is typeset twice: the second typesetting gives the speech and is then dropped. That typesetting also adjusts the math for the speech rule engine, which would say "normal Gamma" for Γ and "raised to the down tack power" for `^\top`. The speech rule engine takes most of prerendering's time, so the speech of each formula is kept for the next build. It is keyed by what MathJax sends the engine, the enriched MathML and the speech options, by MathJax's version, and by the text of `prerender.mjs` and `prerender-rules.mjs`. It is in `TEX8WEB_SPEECH_CACHE`, or else in `<page>-speech.json` among tex4ht's files. `test/lib/build.mjs` sets it to `build/<document>.speech.json` in the document's directory. So the builds of a document outside tex8web, such as `regress`'s, share it across checkouts.
 - **Fewer elements.** Wrappers that add nothing to their children's box are removed, such as one-character tokens and `mjx-mrow` in left-aligned math. A long document goes from 67,000 elements to 40,000. A phone restyles the page as it scrolls, in time that grows with that count. test:visual checks that the page still looks like MathJax's own output.
-- **Preloaded fonts.** Without preloads, the browser fetches each font when it first needs it, then lays out the page again.
+- **Preloaded fonts.** Without preloads, the browser fetches each font when it first needs it, then lays out the page again. `assets.lua` and `prerender.mjs` list the fonts in `data-fonts` on the head script, which inserts the preload links unless the page is opened from disk. Safari refuses a preload from a file, and then loads none of the page's fonts. The links have `crossorigin`, as `@font-face` fetches in CORS mode and a font would be fetched twice without it.
 - **Subset fonts.** MathJax's, Latin Modern's, TeX Gyre's and XCharter's fonts are cut to the document's characters with [subset-font](https://github.com/papandreou/subset-font). A long page's fonts go from about 380 KB to 140 KB.
 - **No clipping.** MathJax clips each character to its box. In Safari that gives each character its own layer, which makes scrolling slow. The stylesheet removes the clip.
 
@@ -196,7 +196,7 @@ Open an issue with:
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, prerendering |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
 | `js/tex8web.js` | MathJax's sizes set as TeX's |
-| `js/tex8web-head.js` | the reader's theme and table of contents setting, applied before the page is drawn, and the direction of the transition to the next page |
+| `js/tex8web-head.js` | the reader's theme and table of contents setting, applied before the page is drawn, the fonts' preload links, and the direction of the transition to the next page |
 | `js/tex8web-page.js` | the page's controls (the up link going back in history), footnotes, table of contents, previews and picture viewer |
 | `js/prerender.mjs`, `prerender-rules.mjs` | MathJax in Node, and the rules of its CSS that the pass removing elements relies on |
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which goes with every page |

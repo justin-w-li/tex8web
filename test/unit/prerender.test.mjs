@@ -61,6 +61,7 @@ test('a math that does not line up on the left', () => {
 const page = body => `<!DOCTYPE html>
 <html><head><title>speech</title>
 <script data-tex8web-browser='' id='tex8web-config' type='application/json'>{"mathjax": {"loader": {"load": []}, "options": {}, "tex": {"tags": "ams"}, "output": {"font": "mathjax-tex"}}, "tex": {"exscale": 1, "baselineskip": 1.2, "jot": 0.3, "pt": 0.1}}</script>
+<script src='tex8web-head.js'></script>
 </head><body>${body}</body></html>`;
 const before = page(String.raw`<p>\(\def\f{x}\f + 1\) \(\f\) \(\,\) \(y\)</p>\begin{equation}\label{a}z\end{equation}<p>\(\eqref{a}\)</p>`);
 // (\f and \eqref{a} the same TeX, but not the same math)
@@ -85,6 +86,7 @@ test('the speech kept from a build gives the same page, and only what changed is
   try {
     const cold = prerender(before, 'speech.json');
     assert.deepEqual(speech(cold).slice(0, 4), ['x plus 1', 'x', 'hidden', 'y']);
+    assert.match(cold, /<script [^>]*data-fonts="fonts\/mathjax\/mjx-tex-zero\.woff2 [^"]*"/);
     // (with assistive MathML, the same speech, kept by the same keys)
     const kept = readFileSync(join(dir, 'speech.json'), 'utf8');
     const mathml = prerender(before, 'speech.json', true);
