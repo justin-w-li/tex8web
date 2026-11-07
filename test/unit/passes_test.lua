@@ -280,6 +280,16 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(d:query_selector("a.tex8web-control")[1]:get_attribute("href"), "https://github.com/justin-w-li/tex8web")
   end,
 
+  ["page.controls: the text in <main>, the controls and the contents outside it"] = function()
+    local d = parse([[<h3 class="likesectionHead">Contents</h3><div class="tableofcontents"><span class="sectionToc">]]
+      .. [[<a href="#intro">Intro</a></span></div><h3 class="sectionHead" id="intro">Intro</h3><p>Text</p>]])
+    page.controls(d, {contents = "Contents"})
+    local main = d:query_selector("main")[1]
+    equal(#d:query_selector("main"), 1)
+    equal({#main:query_selector("h3"), #main:query_selector("p"), #main:query_selector("nav"),
+      #main:query_selector(".tex8web-controls")}, {1, 1, 0, 0})
+  end,
+
   ["page.controls: a title on several lines, as TeX broke it, on one"] = function()
     local d = parse([[<h3 class="likesectionHead">Table of]] .. "\n" .. [[Contents</h3>]]
       .. [[<div class="tableofcontents"><span class="sectionToc"><a href="#intro">Intro</a></span></div>]])
@@ -515,6 +525,12 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     text.theorem_spacing(d)
     equal(d:query_selector("div")[1]:get_attribute("style"), "color:#FF0000; margin-top: 1em; margin-bottom: 2em")
     equal(d:query_selector("div")[2]:get_attribute("style"), "color:#00FF00; margin-top: 1em; margin-bottom: 2em")
+  end,
+
+  ["text.line_comments: tex4ht's source line comments go, other comments stay"] = function()
+    local d = parse("<!--  l. 52  --><p>a</p>\n<!--l. 7--><p>b</p><!-- keep --><p>c<!--  l. 9  -->d</p>")
+    text.line_comments(d)
+    equal(body(d), "<p>a</p>\n<p>b</p><!--  keep  --><p>cd</p>")
   end,
 
   ["dom.has_class: whole class names; class_starts: a prefix of one"] = function()

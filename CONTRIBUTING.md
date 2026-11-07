@@ -56,7 +56,7 @@ The colors come before the macros. A `\definecolor` makes MathJax load its color
 
 **Indexes** (`index.lua`). makeindex gets each `\index`'s count in place of a page number. The counts start at 1000001, so that no number in an entry's text is taken for one. Each count becomes a link back to its `\index`, shown counted from 1. makeindex runs with `-r`, so consecutive counts stay separate. imakeidx runs nothing under tex4ht, so `tex8web-hooks.sty` records the command it would run in the `.aux`.
 
-**The other passes** color the text a `\color` declaration sets, fix spacing, put what follows an `\hfill` at the right, add links to headings and theorems, and add meta tags and the page's controls. They copy what the page needs next to it, and preload the faces its text uses: Latin Modern's, or TeX Live's for a document in Times, Charter and the like. Those are found by the families the build element names, and by the font classes in the page.
+**The other passes** color the text a `\color` declaration sets, fix spacing, put what follows an `\hfill` at the right, add links to headings and theorems, drop tex4ht's source-line comments, and add meta tags and the page's controls. They copy what the page needs next to it, and preload the faces its text uses: Latin Modern's, or TeX Live's for a document in Times, Charter and the like. Those are found by the families the build element names, and by the font classes in the page.
 
 ### 3. MathJax's sizes
 
@@ -92,7 +92,7 @@ Each script's header comment says what it checks. CLAUDE.md says when to run whi
   - `test-mathescape.tex` has the formulas where tex8web's escaping of a formula's source (`\alteqtoks`) could differ from tex4ht's. `run.mjs` builds it a second time with `test-mathescape-stock.cfg`, which restores tex4ht's, and the two pages must be the same.
 - **`npm run test:visual`** needs Chrome and the network. It runs `test/visual.mjs`, then `test/page.mjs`. Beside them it runs `test/chrome.test.mjs` and `test/shots.test.mjs`, so their output is mixed in.
   - `visual.mjs` compares each page, prerendered and typeset by MathJax in the browser, screen by screen.
-  - `page.mjs` drives the page's script on the fixtures that have each feature. `npm run test:page` runs it alone.
+  - `page.mjs` drives the page's script, and its links to equations, on the fixtures that have each feature. `npm run test:page` runs it alone.
   - `chrome.test.mjs` tests `test/lib/chrome.mjs`.
   - `shots.test.mjs` tests `shots.mjs`'s comparison of two builds. Its tests run two at a time, with build slots from the tools' pool (`lib/stubs.mjs`). Most shoot short pages, in strips of 3 screens (`TEX8WEB_SHOTS_STRIP`), at only the widths and schemes they look at (`TEX8WEB_SHOTS_VIEWS`). The tests of a strip's screens against single shots, and of an old build replaced during a run, keep long pages and the tool's own strips.
 - **`npm run examples`** builds each example's PDF and page into `examples/<name>/build/`, and the published site in `build/site/`.

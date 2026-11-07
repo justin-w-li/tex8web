@@ -478,4 +478,14 @@ function M.hfill(document)
   end
 end
 
+-- tex4ht's <!--l. 65--> before each paragraph says where in the .tex it
+-- came from, which readers don't need and which makes the page larger
+function M.line_comments(document)
+  document:traverse(function(node)
+    if (dom.comment_text(node) or ""):match("^%s*l%.%s*%d+%s*$") then
+      document:remove_node(node)
+    end
+  end)
+end
+
 return M

@@ -28,7 +28,7 @@
     const add = el => {
       for (const node of el.childNodes) {
         if (node.nodeType === Node.TEXT_NODE) line.append(node.textContent.replace(/\s+/g, ' '));
-        // (and not tex4ht's comments, <!-- l. 12 -->, as in a box's title)
+        // (and not tex4ht's comments, <!-- tex4ht:ref: x -->)
         else if (node.nodeType !== Node.ELEMENT_NODE) continue;
         else if (node.matches('mjx-container')) line.append(node.cloneNode(true));
         else if (!node.matches('.tex8web-permalink, mjx-assistive-mml')) add(node);
@@ -495,6 +495,7 @@
     if (document.querySelector(theoremLinks)) kinds.push('theorem');
     if (document.querySelector('.tex8web-term[id]')) kinds.push('term');
     input.placeholder = `Find a ${new Intl.ListFormat('en', { type: 'disjunction' }).format(kinds)}`;
+    input.setAttribute('aria-label', input.placeholder);
   }
 
   // previews: pointing at (or focusing, with the keyboard) a link to

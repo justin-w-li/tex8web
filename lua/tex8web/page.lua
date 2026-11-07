@@ -187,7 +187,8 @@ end
 -- one), the PDF (-p, \WebPDF), copied next to the page, the theme, which
 -- needs tex8web-page.js, and tex8web's repository, and on a narrow screen
 -- the section being read, which tex8web-page.js fills in and which opens
--- the table of contents too; then the table of contents
+-- the table of contents too; then the table of contents, and the text in a
+-- <main>, which screen readers jump to
 function M.controls(document, context)
   local body = document:query_selector("body")[1]
   local controls = body:create_element("div", {class = "tex8web-controls"})
@@ -221,9 +222,9 @@ function M.controls(document, context)
     where:add_child_node(where:create_text_node(""))
     controls:add_child_node(where)
   end
-  local children = {controls, toc}
-  for _, child in ipairs(body:get_children()) do children[#children + 1] = child end
-  dom.set_children(body, children)
+  local main = body:create_element("main")
+  dom.set_children(main, body:get_children())
+  dom.set_children(body, toc and {controls, toc, main} or {controls, main})
 end
 
 -- the abstract's text, with the math's source, in at most about 200

@@ -63,6 +63,11 @@ function M.previous_element(el)
   end
 end
 
+-- a comment's text (LuaXML's get_text gives none), or nil for another node
+function M.comment_text(node)
+  if node._type == "COMMENT" then return node._text end
+end
+
 function M.set_children(el, nodes)
   for _, node in ipairs(nodes) do node._parent = el end
   el._children = nodes

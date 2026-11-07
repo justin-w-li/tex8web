@@ -52,8 +52,9 @@ Make:match("4idx$", function() return false end)
 -- each pass is function(document, context), in this order. What the order
 -- depends on: page.build_data first (it fills context and removes
 -- its scripts); text.colors before the passes that look at what lies
--- between elements (its marks are elements until it removes them); and
--- assets.copy last (it reads the finished page)
+-- between elements (its marks are elements until it removes them);
+-- text.line_comments after them (a removed comment stays among its
+-- parent's children); and assets.copy last (it reads the finished page)
 local passes = {
   page.build_data,
   text.colors,
@@ -72,6 +73,7 @@ local passes = {
   page.terms,
   page.meta_tags,
   page.scripts,
+  text.line_comments,
   assets.inline_colors,
   assets.copy,
 }

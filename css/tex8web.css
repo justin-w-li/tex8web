@@ -546,6 +546,12 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 :target { scroll-margin-top: 1em; }
 :is(h2, h3, h4, h5, h6, .tex8web-term):target, .newtheorem:has(.head > a:target), .tcolorbox:has(> a:target) {
     background-color: var(--tex8web-highlight); }
+/* an equation's anchor comes just before it, or before the anchors of its
+   other lines: the first display after them. For a block display (gather)
+   tex4ht ends the paragraph first, with the anchors last in it */
+a:empty:target ~ :is(.mathjax-env, .mathjax-block):not(a:empty:target ~ :not(a:empty) ~ *) > mjx-container,
+p:has(> a:empty:target):not(:has(> a:empty:target ~ :not(a:empty))) + :is(.mathjax-env, .mathjax-block) > mjx-container {
+    background-color: var(--tex8web-highlight); }
 
 /* --- controls and the table of contents (page.lua) -------------------- */
 
