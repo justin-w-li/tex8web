@@ -302,9 +302,7 @@ speeches.forEach(({ outputData: { speech } }, i) => {
 // the fonts the math uses, which tex8web-head.js preloads: fetched as the
 // page starts loading, rather than as each is first laid out, which lays out
 // the whole page again (on a phone, a quarter of a second for a long page,
-// each time). It does so only over HTTP: Safari refuses a preload from a
-// file, and then loads none of the page's fonts. A
-// font is used if its name is a class in the math (MJX-TEX-C, TEX-C); ZERO
+// each time). A font is used if its name is a class in the math (MJX-TEX-C, TEX-C); ZERO
 // comes with every one of them, and BRK draws where a line breaks (an
 // mjx-break, or a line of a breakable display)
 const classes = new Set();
@@ -323,7 +321,6 @@ for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: ur
   }
 }
 const headScript = adaptor.tags(root, 'script').find(s => adaptor.getAttribute(s, 'src') === 'tex8web-head.js');
-if (!headScript) throw new Error('no tex8web-head.js script to list the fonts on');
 if (preloaded.length) {
   const listed = adaptor.getAttribute(headScript, 'data-fonts');
   adaptor.setAttribute(headScript, 'data-fonts', [...(listed ? [listed] : []), ...preloaded].join(' '));

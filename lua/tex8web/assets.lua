@@ -296,7 +296,8 @@ end
 
 -- the fonts, and the pictures, which the page references relative to the
 -- document (\includegraphics), unless tex4ht made them. The faces the text
--- uses are listed for tex8web-head.js to preload (M.faces)
+-- uses are listed for tex8web-head.js to preload (M.faces): fetched as the
+-- page loads, not as each is first laid out (prerender.mjs says why)
 function M.copy(document, context)
   local function add_font(font)
     M.add(context.root .. "/fonts/" .. font, context.dir .. "/fonts/" .. font)
@@ -325,9 +326,8 @@ function M.copy(document, context)
     for _, shape in ipairs(shapes) do preload(font.files[shape] .. ".woff2") end
   end
   if #preloaded > 0 then
-    local script = assert(document:query_selector("script[src='tex8web-head.js']")[1],
-      "no tex8web-head.js script to list the fonts on")
-    script:set_attribute("data-fonts", table.concat(preloaded, " "))
+    document:query_selector("script[src='tex8web-head.js']")[1]
+      :set_attribute("data-fonts", table.concat(preloaded, " "))
   end
   for _, img in ipairs(document:query_selector("img")) do
     local src = img:get_attribute("src") or ""
@@ -357,12 +357,12 @@ function M.drop_preloads(filename, roles)
     for _, shape in ipairs(shapes) do gone["fonts/" .. font.files[shape] .. ".woff2"] = true end
   end
   local html = assert(files.read(filename))
-  html = html:gsub("data%-fonts='([^']*)'", function(list)
+  html = html:gsub("<script data%-fonts='([^']*)'", function(list)
     local kept = {}
     for href in list:gmatch("%S+") do
       if not gone[href] then kept[#kept + 1] = href end
     end
-    return "data-fonts='" .. table.concat(kept, " ") .. "'"
+    return "<script data-fonts='" .. table.concat(kept, " ") .. "'"
   end)
   local f = assert(io.open(filename, "w"))
   f:write(html)

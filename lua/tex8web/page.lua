@@ -319,15 +319,17 @@ end
 -- prerender.mjs, which removes them)
 function M.scripts(document, context)
   local head = document:query_selector("head")[1]
-  local function script(attributes)
+  local function script(attributes, position)
     local el = head:create_element("script", attributes)
     el:add_child_node(el:create_text_node(""))
-    head:add_child_node(el)
+    head:add_child_node(el, position)
   end
   for _, name in ipairs({"tex8web-head.js", "tex8web-page.js"}) do
     assets.add(context.root .. "/js/" .. name, context.dir .. "/" .. name)
   end
-  script({src = "tex8web-head.js"})
+  -- (before the stylesheet's link: a script waits for the stylesheets above
+  -- it, and its preloads would start only once main.css had loaded)
+  script({src = "tex8web-head.js"}, head:query_selector("link[rel='stylesheet']")[1]:find_element_pos())
   script({src = "tex8web-page.js", defer = "defer"})
   script({src = "tex8web.js", ["data-tex8web-browser"] = "", ["data-mathjax"] = context.mathjax,
     ["data-contents"] = document:query_selector("#tex8web-toc")[1] and "" or nil})
