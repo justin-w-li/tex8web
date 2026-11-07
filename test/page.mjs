@@ -931,8 +931,8 @@ async function navigating(chrome, [example, index]) {
 }
 
 // the fonts the inline script lists, preloaded over HTTP and not from a file
-// (it says why). Chrome doesn't refuse them there, so this guards the
-// mechanism and not Safari
+// (CONTRIBUTING.md says why). Chrome doesn't refuse them there, so this
+// guards the mechanism and not Safari
 const preloaded = `[...document.querySelectorAll('link[rel=preload]')]
   .map(link => [link.getAttribute('href'), link.as, link.type, link.crossOrigin].join(' '))`;
 async function preloading(chrome, file) {

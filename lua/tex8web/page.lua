@@ -311,26 +311,28 @@ function M.meta_tags(document)
   end
 end
 
--- tex8web-fonts.js, written into the page, which preloads the fonts (it
--- says why it is there). Then tex8web-head.js (the reader's theme, before
--- the page is drawn, and the transition from the page before), and
--- tex8web-page.js (the controls, the table of contents and its filter,
--- previews, the picture viewer, the fade at an edge). And for MathJax in
--- the browser, MathJax and tex8web.js, which configures it from
--- tex8web-config and whether the page has contents (marked for
--- prerender.mjs, which removes them)
+-- tex8web-fonts.js, written into the page before the stylesheet's link,
+-- which preloads the fonts: they then start as the parser reaches it, not
+-- after a download. It stays small because a large script ahead of the
+-- link delays the stylesheet's request. Then tex8web-head.js (the
+-- reader's theme, before the page is drawn, and the transition from the
+-- page before), after the link, in a file of its own. Inline before the
+-- link it delayed the stylesheet like that. And after the link it waits
+-- for the stylesheet, as preloads in it would. Then tex8web-page.js (the
+-- controls, the table of contents and its filter, previews, the picture
+-- viewer, the fade at an edge). And for MathJax in the browser, MathJax
+-- and tex8web.js, which configures it from tex8web-config and whether
+-- the page has contents (marked for prerender.mjs, which removes them)
 function M.scripts(document, context)
   local head = document:query_selector("head")[1]
-  local function script(attributes, position)
+  local function script(attributes)
     local el = head:create_element("script", attributes)
     el:add_child_node(el:create_text_node(""))
-    head:add_child_node(el, position)
+    head:add_child_node(el)
   end
   for _, name in ipairs({"tex8web-head.js", "tex8web-page.js"}) do
     assets.add(context.root .. "/js/" .. name, context.dir .. "/" .. name)
   end
-  -- (before the stylesheet's link, as a script waits for the stylesheets
-  -- above it)
   local inline = head:create_element("script", {id = "tex8web-fonts"})
   -- (in a CDATA section behind comment marks: the serializer would escape
   -- the <, > and & of its text, and make4ht's later XML parse needs them whole)
@@ -340,8 +342,6 @@ function M.scripts(document, context)
   inline:add_child_node(code)
   inline:add_child_node(inline:create_text_node("*/"))
   head:add_child_node(inline, head:query_selector("link[rel='stylesheet']")[1]:find_element_pos())
-  -- (after the stylesheet's link: its work would delay the stylesheet's
-  -- request on HTTP/1.1)
   script({src = "tex8web-head.js"})
   script({src = "tex8web-page.js", defer = "defer"})
   script({src = "tex8web.js", ["data-tex8web-browser"] = "", ["data-mathjax"] = context.mathjax,

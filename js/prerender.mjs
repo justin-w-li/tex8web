@@ -302,9 +302,9 @@ speeches.forEach(({ outputData: { speech } }, i) => {
 // the fonts the math uses, which tex8web-fonts.js preloads: fetched as the
 // page starts loading, rather than as each is first laid out, which lays out
 // the whole page again (on a phone, a quarter of a second for a long page,
-// each time). A font is used if its name is a class in the math (MJX-TEX-C, TEX-C); ZERO
-// comes with every one of them, and BRK draws where a line breaks (an
-// mjx-break, or a line of a breakable display)
+// each time). A font is used if its name is a class in the math (MJX-TEX-C,
+// TEX-C); ZERO comes with every one of them, and BRK draws where a line
+// breaks (an mjx-break, or a line of a breakable display)
 const classes = new Set();
 const collect = node => {
   for (const name of (adaptor.getAttribute(node, 'class') || '').split(' ')) classes.add(name);
