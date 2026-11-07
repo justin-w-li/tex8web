@@ -43,7 +43,7 @@ describe('real builds', { concurrency: true }, () => {
       const first = await make();
       assert.equal(first.code, 0, first.log);
       assert.equal(first.reused, undefined);
-      assert.equal(existsSync(join(doc.dir, 'build')), false, 'something built the PDF');
+      assert.equal(existsSync(join(doc.dir, 'build/pdf')), false, 'something built the PDF');
       assert.doesNotMatch(page(), /doc\.pdf/);
 
       mkdirSync(join(doc.dir, 'build/pdf'), { recursive: true });

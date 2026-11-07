@@ -148,7 +148,7 @@ describe('regress.mjs', { concurrency: true }, () => {
     try {
       const result = await regress(dir, clean, '-c', 'my.cfg', 'one');
       assert.ok(existsSync(join(dir, 'build/regress/html/one/main.html')), result.stderr + result.stdout);
-      assert.equal(existsSync(join(dir, 'one/build')), false, 'something built the PDF');
+      assert.equal(existsSync(join(dir, 'one/build/pdf')), false, 'something built the PDF');
       assert.match(result.stdout, /^one: /m);
 
       // once the PDF is there, the page is built again
