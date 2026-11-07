@@ -296,7 +296,7 @@ end
 
 -- the fonts, and the pictures, which the page references relative to the
 -- document (\includegraphics), unless tex4ht made them. The faces the text
--- uses are listed for tex8web-head.js to preload (M.faces): fetched as the
+-- uses are listed for tex8web-fonts.js to preload (M.faces): fetched as the
 -- page loads, not as each is first laid out (prerender.mjs says why)
 function M.copy(document, context)
   local function add_font(font)
@@ -326,7 +326,7 @@ function M.copy(document, context)
     for _, shape in ipairs(shapes) do preload(font.files[shape] .. ".woff2") end
   end
   if #preloaded > 0 then
-    document:query_selector("script#tex8web-head")[1]
+    document:query_selector("script#tex8web-fonts")[1]
       :set_attribute("data-fonts", table.concat(preloaded, " "))
   end
   for _, img in ipairs(document:query_selector("img")) do

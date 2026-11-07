@@ -299,7 +299,7 @@ speeches.forEach(({ outputData: { speech } }, i) => {
   adaptor.setAttribute(adaptor.tags(container, 'mjx-math')[0], 'aria-hidden', 'true');
 });
 
-// the fonts the math uses, which tex8web-head.js preloads: fetched as the
+// the fonts the math uses, which tex8web-fonts.js preloads: fetched as the
 // page starts loading, rather than as each is first laid out, which lays out
 // the whole page again (on a phone, a quarter of a second for a long page,
 // each time). A font is used if its name is a class in the math (MJX-TEX-C, TEX-C); ZERO
@@ -320,7 +320,7 @@ for (const [, family, url] of css.matchAll(/font-family: (MJX-[\w-]+);\s*src: ur
     preloaded.push(url);
   }
 }
-const headScript = adaptor.tags(root, 'script').find(s => adaptor.getAttribute(s, 'id') === 'tex8web-head');
+const headScript = adaptor.tags(root, 'script').find(s => adaptor.getAttribute(s, 'id') === 'tex8web-fonts');
 if (preloaded.length) {
   const listed = adaptor.getAttribute(headScript, 'data-fonts');
   adaptor.setAttribute(headScript, 'data-fonts', [...(listed ? [listed] : []), ...preloaded].join(' '));

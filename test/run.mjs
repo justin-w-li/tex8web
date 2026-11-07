@@ -589,7 +589,7 @@ const verbatim = {
     /<div class='alltt'>/, /<div class='verbatiminput'>/, /<pre class='verbatim'/],
 };
 
-// (listed in data-fonts on the head script, which preloads them over HTTP)
+// (listed in data-fonts on the inline script, which preloads them over HTTP)
 const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1] ?? '').split(/\s+/).filter(Boolean);
 
 // the fonts preloaded, and no others: the faces of the text (bold

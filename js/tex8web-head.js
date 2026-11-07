@@ -1,8 +1,7 @@
-// tex8web: inline at the top of <head> (page.lua), so that the reader's
+// tex8web: loaded in <head> without defer (page.lua), so that the reader's
 // theme and hidden table of contents (which tex8web-page.js keeps) apply
-// before the page is drawn, pagereveal, which fires before then, is heard,
-// and the fonts' preloads start when the parser reaches this, not after a
-// script's download.
+// before the page is drawn, and so that pagereveal, which fires before
+// then, is heard.
 // (tex8web-top: the page starts at its top, which tex8web-page.js keeps true)
 document.documentElement.classList.add('tex8web-js', 'tex8web-top');
 try {
@@ -12,19 +11,6 @@ try {
     document.documentElement.classList.add('tex8web-toc-hidden');
   }
 } catch {}
-
-// the page's fonts, which assets.lua and prerender.mjs list in this script's
-// data-fonts, preloaded: fetched as the page starts loading, not as each is
-// first laid out. Not from a file: Safari refuses the preloads there (no
-// CORS headers to pass), and its @font-face loads reuse the refusals, so
-// every face stays unloaded
-if (location.protocol !== 'file:') {
-  for (const href of document.currentScript.dataset.fonts?.match(/\S+/g) ?? []) {
-    const link = document.createElement('link');
-    Object.assign(link, { rel: 'preload', as: 'font', type: 'font/woff2', crossOrigin: '', href });
-    document.head.append(link);
-  }
-}
 
 // the change from one of a site's tex8web pages to another (css/tex8web.css's
 // @view-transition): back when it's to the page above (\WebUp) or the

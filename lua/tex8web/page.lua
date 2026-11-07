@@ -311,8 +311,9 @@ function M.meta_tags(document)
   end
 end
 
--- tex8web-head.js (the reader's theme, before the page is drawn, and the
--- transition from the page before), written into the page. Then
+-- tex8web-fonts.js, written into the page, which preloads the fonts (it
+-- says why it is there). Then tex8web-head.js (the reader's theme, before
+-- the page is drawn, and the transition from the page before), and
 -- tex8web-page.js (the controls, the table of contents and its filter,
 -- previews, the picture viewer, the fade at an edge). And for MathJax in
 -- the browser, MathJax and tex8web.js, which configures it from
@@ -325,18 +326,23 @@ function M.scripts(document, context)
     el:add_child_node(el:create_text_node(""))
     head:add_child_node(el, position)
   end
-  assets.add(context.root .. "/js/tex8web-page.js", context.dir .. "/tex8web-page.js")
-  -- (before the stylesheet's link: a script waits for the stylesheets above
-  -- it, and its preloads would wait for main.css)
-  local inline = head:create_element("script", {id = "tex8web-head"})
+  for _, name in ipairs({"tex8web-head.js", "tex8web-page.js"}) do
+    assets.add(context.root .. "/js/" .. name, context.dir .. "/" .. name)
+  end
+  -- (before the stylesheet's link, as a script waits for the stylesheets
+  -- above it)
+  local inline = head:create_element("script", {id = "tex8web-fonts"})
   -- (in a CDATA section behind comment marks: the serializer would escape
   -- the <, > and & of its text, and make4ht's later XML parse needs them whole)
-  local code = inline:create_text_node("*/\n" .. assert(files.read(context.root .. "/js/tex8web-head.js")) .. "\n/*")
+  local code = inline:create_text_node("*/\n" .. assert(files.read(context.root .. "/js/tex8web-fonts.js")) .. "\n/*")
   code._type = "CDATA"
   inline:add_child_node(inline:create_text_node("/*"))
   inline:add_child_node(code)
   inline:add_child_node(inline:create_text_node("*/"))
   head:add_child_node(inline, head:query_selector("link[rel='stylesheet']")[1]:find_element_pos())
+  -- (after the stylesheet's link: its work would delay the stylesheet's
+  -- request on HTTP/1.1)
+  script({src = "tex8web-head.js"})
   script({src = "tex8web-page.js", defer = "defer"})
   script({src = "tex8web.js", ["data-tex8web-browser"] = "", ["data-mathjax"] = context.mathjax,
     ["data-contents"] = document:query_selector("#tex8web-toc")[1] and "" or nil})

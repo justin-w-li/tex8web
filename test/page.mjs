@@ -930,14 +930,14 @@ async function navigating(chrome, [example, index]) {
   }
 }
 
-// the fonts the head script lists, preloaded over HTTP and not from a file
+// the fonts the inline script lists, preloaded over HTTP and not from a file
 // (it says why). Chrome doesn't refuse them there, so this guards the
 // mechanism and not Safari
 const preloaded = `[...document.querySelectorAll('link[rel=preload]')]
   .map(link => [link.getAttribute('href'), link.as, link.type, link.crossOrigin].join(' '))`;
 async function preloading(chrome, file) {
   const listed = readFileSync(file, 'utf8').match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1].split(' ') ?? [];
-  if (!listed.length) return ['no fonts listed on the head script'];
+  if (!listed.length) return ['no fonts listed on the inline script'];
   const problems = [];
   const opened = await chrome.withPage(pathToFileURL(file).href, {}, page => page.evaluate(preloaded));
   if (opened.length) problems.push(`opened from a file, ${opened.length} fonts preloaded`);

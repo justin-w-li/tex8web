@@ -33,7 +33,7 @@ if [ -z "$TEX8WEB_LATEX_REUSE" ]; then
   [ -z "$TEX8WEB_LATEX_SAVE" ] || mkdir -p "$TEX8WEB_LATEX_SAVE"
 fi
 echo tex8web-latex-end
-cp "$1" "$out/\${1%.tex}.html"
+{ echo "<head><script id='tex8web-fonts'>/*<![CDATA[*/ /*]]>*/</script></head>"; cat "$1"; } > "$out/\${1%.tex}.html"
 : > "$aux/\${1%.tex}.log"
 `, { mode: 0o755 });
 export const stubbed = { PATH: `${stubs}:${process.env.PATH}` };
