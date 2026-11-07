@@ -36,12 +36,10 @@
 }
 % (and the units extension's \nicefrac for nicefrac's, and for xfrac's
 % \sfrac in macros.lua)
-\let\web@units\relax
-\@for\web@package:=units,nicefrac,xfrac\do{\@ifpackageloaded\web@package{\let\web@units\empty}{}}
-\ifx\web@units\empty
-    \edef\web@extensions{\web@extensions, "units"}%
-    \edef\web@load{\web@load, "[tex]/units"}%
-\fi
+\let\web@units\empty
+\@for\web@package:=units,nicefrac,xfrac\do{\@ifpackageloaded\web@package{\def\web@units{, "units"}}{}}
+\edef\web@extensions{\web@extensions\web@units}
+\edef\web@load{\web@load\ifx\web@units\empty\else, "[tex]/units"\fi}
 % (newtxmath's options for other fonts turn \iftx@ntxmath off; nc is New
 % Century Schoolbook)
 \def\web@mathfont{tex}
@@ -139,12 +137,16 @@
 % option passes to MathJax as it is. And MathJax knows none of siunitx's
 % commands in a formula. So each quantity in text, and each command in a
 % formula, is run in a box, keeping what it prints: its numbers, units and
-% product, and its text as \text. The quantity is then one formula, as in
-% the PDF, and the formula gets what the command printed. Ranges and lists
-% in a formula are left: their phrases are text, with translations. The
-% unit \percent prints a %, which starts a comment for MathJax.
+% product, as math. The quantity is then one formula, as in the PDF, and
+% the formula gets what the command printed. A quantity siunitx sets as
+% text is left to tex4ht. Ranges and lists in a formula are left: their
+% phrases are text, with translations. The unit \percent prints a %,
+% which starts a comment for MathJax.
 \@ifpackageloaded{siunitx}{
     \web@needs{l__siunitx_quantity_product_tl}
+    \web@needs{siunitx_quantity_print:nn}
+    \web@needs{l_siunitx_number_mode_str}
+    \web@needs{l_siunitx_unit_mode_str}
     \tl_new:N \l__web_si_tl
     \tl_new:N \g__web_si_tl
     \str_new:N \l__web_si_str
@@ -169,17 +171,23 @@
         \tl_gclear:N \g__web_si_tl
         \hbox_set:Nn \l__web_si_box {
             \cs_set_protected:Npn \__web_si_auxii:n ##1 { \__web_si_keep:n {##1} }
-            \cs_set_protected:Npn \siunitx_print_text:n ##1 { \__web_si_keep:n { \text {##1} } }
             \cs_set_eq:NN \siunitx_quantity_print:nn \__web_si_quantity:nn
             \cs_set_eq:NN \ensuremath \use:n
-            \keys_set:ne { siunitx }
-                { quantity-product = { \__web_si_keep:n { \exp_not:V \l__siunitx_quantity_product_tl } } }
+            \keys_set:ne { siunitx } {
+                mode = math ,
+                quantity-product = { \__web_si_keep:n { \exp_not:V \l__siunitx_quantity_product_tl } }
+            }
             #1
         }
     }
     \cs_set_eq:NN \__web_si_quantity:nn \siunitx_quantity_print:nn
+    % (siunitx's own test for \ensuremath)
     \cs_set_protected:Npn \siunitx_quantity_print:nn #1#2 {
-        \mode_if_math:TF { \__web_si_quantity:nn {#1} {#2} } {
+        \bool_lazy_any:nTF {
+            { \mode_if_math_p: }
+            { ! \str_if_eq_p:Vn \l_siunitx_number_mode_str { math } }
+            { ! \str_if_eq_p:Vn \l_siunitx_unit_mode_str { math } }
+        } { \__web_si_quantity:nn {#1} {#2} } {
             \__web_si_print:n { \__web_si_quantity:nn {#1} {#2} }
             \a:MathjaxInline
             \use:e { \alteqtoks { \exp_not:N \( \exp_not:V \g__web_si_tl \exp_not:N \) } }
@@ -248,8 +256,8 @@
         \__web_si_command:Nnn \qty { O{} m m }
             { [ \exp_not:n {#1} ] { \exp_not:n {#2} } { \exp_not:n {#3} } }
     }
-    \__web_si_command:Nnn \SI { O{} m O{} m }
-        { [ \exp_not:n {#1} ] { \exp_not:n {#2} } [ \exp_not:n {#3} ] { \exp_not:n {#4} } }
+    \__web_si_command:Nnn \SI { O{} m o m }
+        { [ \exp_not:n {#1} ] { \exp_not:n {#2} } \IfValueT {#3} { [ \exp_not:n {#3} ] } { \exp_not:n {#4} } }
 }{}
 
 % a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math

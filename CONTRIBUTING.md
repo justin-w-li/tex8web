@@ -162,7 +162,8 @@ A build warns, and leaves the math to the browser, when `node_modules` holds ano
 
 `js/prerender.mjs` also relies on:
 - `MmlTree`'s `TEXCLASS`, `postFilters` (the speech's adjustment of the math) and `walkTree`;
-- `outputData.speech` of each formula of the second typesetting;
+- `outputData.speech` of each formula of the second typesetting, and its words for a table of one row ("1 lines Line 1: ");
+- noundefined's drawing of a macro it doesn't know: an `mtext` with a `mathcolor`, holding the macro's name;
 - `WorkerHandler.Speech` of `a11y/speech`, through which the speech is kept: its arguments, and that it leaves the label in `outputData.speech`;
 - that typesetting finding the same formulas, in the same order, as the first: it throws when the counts differ, and pairs them by position;
 - the CSS values `js/prerender-rules.mjs` reads: each removed tag's rule, `mjx-math`'s and `mjx-script`'s, and the sizes of `[size]`. When one differs, the pass is skipped and `npm test` fails with a line that starts with `MathJax:`.

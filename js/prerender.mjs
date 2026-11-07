@@ -48,9 +48,9 @@ require('mathjax/tex-chtml.js');
 await MathJax.startup.promise;
 
 // the macros MathJax doesn't know, which its noundefined extension draws as
-// their names in red: an mtext with a color of its own (which tex8web.js
-// has made a light-dark() one) that holds \name (npm test fails on a line
-// that starts with tex8web:)
+// their names in red: an mtext with a color of its own that holds \name.
+// tex8web.js has made the color a light-dark() one. npm test fails on a
+// line that starts with tex8web:
 const unknown = new Set();
 for (const { root } of MathJax.startup.document.math) {
   root.walkTree(node => {
