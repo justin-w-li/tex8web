@@ -685,16 +685,18 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
     .tex8web-controls.tex8web-away:not(:has(:focus-visible)) { transform: translateY(-100%);
         opacity: 0; }
     /* (at the top, the title gets the space above it that a wide screen
-       gives; tex8web-head.js and tex8web-page.js keep the class) */
-    .tex8web-top .tex8web-controls { border-bottom-color: transparent; }
+       gives, and what the document pulls up into that strip stays in
+       view; tex8web-head.js and tex8web-page.js keep the class) */
+    .tex8web-top .tex8web-controls { border-bottom-color: transparent;
+        background-color: transparent; }
 }
 @media (prefers-reduced-motion: no-preference) {
     @media not (--tex8web-wide) {
         .tex8web-controls { transition: transform var(--tex8web-fade), opacity var(--tex8web-fade),
-            border-color var(--tex8web-fade); }
+            border-color var(--tex8web-fade), background-color var(--tex8web-fade); }
         .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
             transition: transform var(--tex8web-fade), opacity 0s var(--tex8web-fade),
-                border-color var(--tex8web-fade); }
+                border-color var(--tex8web-fade), background-color var(--tex8web-fade); }
     }
 }
 

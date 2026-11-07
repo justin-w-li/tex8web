@@ -348,16 +348,21 @@ async function hiding(chrome, file) {
     if (!away) return ['the bar: a page too short to scroll'];
     const problems = away.join() === 'true,true,true,false,false'
       ? [] : [`the bar away ${away.join(', ')} scrolling to 300, 600, 597, 560 and 563px`];
-    // its line: clear at the top, drawn once the page has scrolled (and faded in)
-    const line = async y => {
+    // its line and background: clear at the top, drawn once the page has scrolled (and faded in)
+    const clear = 'rgba(0, 0, 0, 0)';
+    const look = async y => {
       await page.evaluate(`scrollTo(0, ${y})`);
       await page.frame();
-      return page.evaluate(`new Promise(done => setTimeout(() => done(
-        getComputedStyle(document.querySelector('.tex8web-controls')).borderBottomColor), 400))`);
+      return page.evaluate(`new Promise(done => setTimeout(() => {
+        const style = getComputedStyle(document.querySelector('.tex8web-controls'));
+        done([style.borderBottomColor, style.backgroundColor]);
+      }, 400))`);
     };
-    const [top, down] = [await line(0), await line(20)];
-    if (top !== 'rgba(0, 0, 0, 0)') problems.push(`the bar's line ${top} at the top`);
-    if (down === 'rgba(0, 0, 0, 0)') problems.push("the bar's line clear 20px down");
+    const [top, down] = [await look(0), await look(20)];
+    if (top[0] !== clear) problems.push(`the bar's line ${top[0]} at the top`);
+    if (top[1] !== clear) problems.push(`the bar's background ${top[1]} at the top`);
+    if (down[0] === clear) problems.push("the bar's line clear 20px down");
+    if (down[1] === clear) problems.push("the bar's background clear 20px down");
     // from a wide window, scrolled down, to a narrow one: away at once
     await page.resize(1600, 900);
     await page.frame();
