@@ -173,10 +173,10 @@ const spaced = `(() => {
 
 // each \hfill's rest (text.hfill) where the PDF has it, outside the
 // contents: at the right of the block that holds it (its line, paragraph or
-// heading) and inside it; when it takes more than a line, starting at the
-// left. And its line's first letter, picture or formula at the left, past
-// the first line's indent. What fails: [the rest's first words, what is
-// wrong]
+// heading, or an algorithmicx line, a div of its own) and inside it; when
+// it takes more than a line, starting at the left. And its line's first
+// letter, picture or formula at the left, past the first line's indent.
+// What fails: [the rest's first words, what is wrong]
 const filled = `(() => {
   const wrong = [];
   // a letter's box, and the text nodes an element shows outside its math
@@ -194,9 +194,16 @@ const filled = `(() => {
     }
     return nodes;
   };
+  // (whether what a node is in is positioned out of the block's flow)
+  const outOfFlow = (node, block) => {
+    for (let el = node.parentElement; el && el !== block; el = el.parentElement) {
+      if (getComputedStyle(el).position === 'absolute') return true;
+    }
+    return false;
+  };
   const floats = [...document.querySelectorAll('.tex8web-hfill')].filter(rest => !rest.closest('.tableofcontents'));
   for (const rest of floats) {
-    const block = rest.parentElement.closest('.tex8web-hfill-line, p, h1, h2, h3, h4, h5, h6');
+    const block = rest.parentElement.closest('.tex8web-hfill-line, p, h1, h2, h3, h4, h5, h6, .algorithmic > * > :last-child');
     const name = rest.textContent.replace(/\\s+/g, ' ').trim().slice(0, 30);
     if (!block) {
       wrong.push([name, 'in no paragraph or heading']);
@@ -213,9 +220,10 @@ const filled = `(() => {
         > parseFloat(style.fontSize) && Math.abs(at.left - left) > 0.5) {
       wrong.push([name, 'its lines not at the left']);
     }
-    // (what the line shows first)
+    // (what the line shows first, in its flow: not a line number set in the
+    // margin, as algorithm2e's are)
     const first = [...block.querySelectorAll('img, mjx-container'), ...shown(block)]
-      .filter(node => !node.parentElement.closest('mjx-container')
+      .filter(node => !node.parentElement.closest('mjx-container') && !outOfFlow(node, block)
         && node.compareDocumentPosition(rest) & Node.DOCUMENT_POSITION_FOLLOWING)
       .sort((a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)
       .map(node => node.nodeType === Node.TEXT_NODE ? letter(node, node.data.search(/\\S/)) : node.getBoundingClientRect())[0];
