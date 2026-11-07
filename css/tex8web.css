@@ -396,6 +396,15 @@ span.tcolorbox > .tcolorbox-title { display: block; }
    line isn't one of text.hfill's; and in a centered heading) */
 :is(div.center, div.flushright, figure) :is(.tex8web-hfill-line, p:has(.tex8web-hfill):not(:has(.tex8web-hfill-line))),
 :is(h1, h2, h3, h4, h5, h6):has(.tex8web-hfill) { text-align: start; }
+/* mdframed's boxes (tex8web-text.tex): their lines, the space between them
+   and the text, and around them, as the box's options set them; no more
+   space inside at the top and bottom, as in the PDF, where the box is set
+   apart (important over a theorem's inline margin, text.lua's) */
+.mdframed { display: flow-root; margin: var(--tex8web-mdf-margin);
+    border-style: solid; border-width: var(--tex8web-mdf-rules);
+    padding: var(--tex8web-mdf-padding); }
+.mdframed > :first-child { margin-top: 0 !important; }
+.mdframed > :last-child { margin-bottom: 0 !important; }
 /* framed's, as far from the text as in the PDF (tex8web-text.tex). Under
    a titlesec heading, that and the heading's space below, not the larger:
    titlesec puts it with \vspace, which ends in \vskip\z@skip (source2e),

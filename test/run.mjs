@@ -567,6 +567,19 @@ const algorithms = {
   ],
 };
 
+// mdframed's boxes: each its lines (the second's 2pt; the third's still
+// 0.4pt; the last only at the sides), its space inside and around, and
+// its colors; a box ending at its theorem ends there
+const mdframed = {
+  'test-mdframed': [
+    /#mdframed-1\{--tex8web-mdf-rules: 0.04em 0.04em 0.04em 0.04em; --tex8web-mdf-padding: 0.48em 1em 0.48em 1em; --tex8web-mdf-margin: 0.8em 0em 0.8em 0em; border-color: currentColor;/,
+    new RegExp(`#mdframed-2\\{--tex8web-mdf-rules: 0.2em 0.2em 0.2em 0.2em; --tex8web-mdf-padding: 1.2em 1em 0.48em 2em; [^}]*border-color: ${lightDark('#0000FF', 'border')}; background-color: ${lightDark('#FFFFCC', 'background')};`),
+    /#mdframed-3\{--tex8web-mdf-rules: 0.04em 0.04em 0.04em 0.04em;/,
+    /#mdframed-4\{--tex8web-mdf-rules: 0em 0.04em 0em 0.04em; --tex8web-mdf-padding: 0.48em 1em 0.48em 1em; --tex8web-mdf-margin: 0.8em 2em 0.8em 2em;/,
+    /<div class='mdframed' id='mdframed-3'> <div class='newtheorem'[^>]*>(?:(?!<\/div>)[^])*<\/div> (?:<!--[^>]*--> )?<\/div>/,
+  ],
+};
+
 // the spaces of verbatim text, alltt and \verbatiminput, which keep the
 // font's width: only the ~ in the text is narrowed
 const verbatim = {
@@ -643,6 +656,7 @@ const patterns = [
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'],
+  [mdframed, "in mdframed's boxes", true],
 ];
 
 // what's wrong with a built page: its log, the page and the files with it

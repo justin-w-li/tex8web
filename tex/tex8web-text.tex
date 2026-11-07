@@ -512,6 +512,35 @@
 }{}
 \catcode58 12
 
+% --- mdframed ---------------------------------------------------------------
+
+% mdframed's boxes, each with its lines (only the middle one, the
+% linewidth), the space inside and around them, and its colors, as
+% tex4ht's mdframed.4ht and html4.4ht write them. Theirs had no space
+% inside, and a box after one with its own linewidth had none
+% (html4.4ht's \mdfl@linewidth, set to \relax)
+\catcode58 11
+\@ifpackageloaded{mdframed}{%
+    \web@needs{mdf@middlelinewidth@length}\web@needs{mdf@innertopmargin@length}%
+    \web@needs{mdf@skipabove@length}\web@needs{mdf@leftmargin@length}%
+    \def\web@mdf@rule#1{\ifbool{mdf@#1line}{\web@em\mdf@middlelinewidth@length}{0em}}%
+    \Configure{mdframedstyle}{%
+        \get:xcolorcss{\mdf@backgroundcolor}\mdf:bgcolor
+        \get:xcolorcss{\mdf@linecolor}\mdf:bordercolor
+        \get:xcolorcss{\mdf@fontcolor}\mdf:fontcolor
+        \web@Css{\#\mdf:id{--tex8web-mdf-rules: \web@mdf@rule{top} \web@mdf@rule{right}
+            \web@mdf@rule{bottom} \web@mdf@rule{left};
+            --tex8web-mdf-padding: \web@em\mdf@innertopmargin@length\space
+            \web@em\mdf@innerrightmargin@length\space \web@em\mdf@innerbottommargin@length\space
+            \web@em\mdf@innerleftmargin@length;
+            --tex8web-mdf-margin: \web@em\mdf@skipabove@length\space
+            \web@em\mdf@rightmargin@length\space \web@em\mdf@skipbelow@length\space
+            \web@em\mdf@leftmargin@length;
+            border-color: \mdf:bordercolor; background-color: \mdf:bgcolor;
+            color: \mdf:fontcolor;}}}%
+}{}
+\catcode58 12
+
 % --- figures ----------------------------------------------------------------
 
 % no alt text but the author's (graphicx's alt key): tex4ht's own, PIC and

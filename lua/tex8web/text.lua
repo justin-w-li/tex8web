@@ -18,6 +18,20 @@ function M.theorem_spacing(document)
   end
 end
 
+-- an mdframed box ending at its theorem (\newmdtheoremenv's), without the
+-- empty paragraph tex8web-text.tex starts after a theorem for the text
+-- that follows (\indent), whose margin would add to the box's padding
+function M.box_theorems(document)
+  for _, box in ipairs(document:query_selector("div.mdframed")) do
+    local elements = dom.elements(box)
+    local p, theorem = elements[#elements], elements[#elements - 1]
+    if theorem and p:get_element_name() == "p" and dom.is_blank(p)
+        and dom.has_class(theorem, "newtheorem") then
+      p:remove_node()
+    end
+  end
+end
+
 -- a list just under a heading, without the empty paragraph html4.4ht opens
 -- there before an enumerate or a description, through which the list's
 -- margin would still collapse with the heading's (css/tex8web.css sets it

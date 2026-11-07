@@ -37,6 +37,16 @@ return {
     equal(body(d), [[<div class='newtheorem' style='margin-top: 1em; margin-bottom: 2em'><p><span class='head'>Theorem 1.</span> Text</p></div>]])
   end,
 
+  ["text.box_theorems: no empty paragraph after a theorem ending a box, only there"] = function()
+    local d = parse([[<div class="mdframed"><div class="newtheorem"><p>T</p></div><p class="noindent">]]
+      .. "\n" .. [[</p></div><div class="mdframed"><div class="newtheorem"><p>T</p></div><p>Text</p></div>]]
+      .. [[<div class="newtheorem"><p>T</p></div><p> </p>]])
+    text.box_theorems(d)
+    equal(body(d), [[<div class='mdframed'><div class='newtheorem'><p>T</p></div></div>]]
+      .. [[<div class='mdframed'><div class='newtheorem'><p>T</p></div><p>Text</p></div>]]
+      .. [[<div class='newtheorem'><p>T</p></div><p> </p>]])
+  end,
+
   ["text.heading_lists: no empty paragraph between a heading and a list, only there"] = function()
     local d = parse([[<h3>A</h3><p class="noindent">]] .. "\n " .. [[</p><ol><li>a</li></ol>]]
       .. [[<h3>B</h3><p>Text</p><ol><li>b</li></ol><p> </p><dl><dt>c</dt></dl>]])

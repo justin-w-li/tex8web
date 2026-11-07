@@ -195,13 +195,13 @@ Open an issue with:
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, prerendering |
 | `tex/tex8web-core.tex` | loads the four modules below |
 | `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, the escaping of each formula's source, siunitx, equation numbers, `\intertext`, TikZ in display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill`, the table of contents, lists, framed's boxes, algorithms (float's ruled style, algorithmicx, algorithm2e), figures, `\WebTerm` |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill`, the table of contents, lists, framed's and mdframed's boxes, algorithms (float's ruled style, algorithmicx, algorithm2e), figures, `\WebTerm` |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard, and `\web@needs` |
 | `css/tex8web.css` | the page's styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
-| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, colors, spacing, footnotes, links, controls, the table of contents, meta tags, scripts |
+| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, colors, spacing, theorems in boxes, footnotes, links, controls, the table of contents, meta tags, scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, prerendering |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
 | `js/tex8web.js` | MathJax's sizes set as TeX's |

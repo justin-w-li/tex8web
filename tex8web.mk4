@@ -96,6 +96,7 @@ local passes = {
   text.colors,
   source.spaces,
   text.theorem_spacing,
+  text.box_theorems,
   text.heading_lists,
   text.same_page_links,
   text.label_space,

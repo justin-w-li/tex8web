@@ -1,0 +1,31 @@
+% A test for tex8web: mdframed's boxes have their lines, their space
+% inside between the lines and the text, and their space around, as in
+% the PDF: the default box, one with its own margins, colors and line
+% width (and the default box after it keeps its line), one with only its
+% side lines, and a theorem framed by \newmdtheoremenv, which ends at the
+% theorem, with a \ref to it.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\newmdtheoremenv{lemma}{Lemma}
+\begin{document}
+Text before the box.
+\begin{mdframed}
+A framed paragraph with $x^2 + y^2 = z^2$ in it.
+
+A second paragraph.
+\end{mdframed}
+Text between.
+\begin{mdframed}[innerleftmargin=20pt, innertopmargin=12pt, linecolor=blue,
+  backgroundcolor=yellow!20, linewidth=2pt]
+A box with its own margins and colors.
+\end{mdframed}
+\begin{lemma}\label{lem:one}
+A framed lemma: $\sum_{i=1}^n i = n(n+1)/2$.
+\end{lemma}
+Lemma~\ref{lem:one} is framed.
+\begin{mdframed}[topline=false, bottomline=false, leftmargin=20pt, rightmargin=20pt]
+A box with only its side lines, set in from the text's margins.
+\end{mdframed}
+\end{document}
