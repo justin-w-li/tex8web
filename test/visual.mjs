@@ -2,9 +2,10 @@
 // screen by screen with the same page typeset by MathJax in the browser,
 // JavaScript off in both, and checked for alignments that line up across an
 // \intertext, math characters not clipped, footnotes in the text's color,
-// headings spaced as in LaTeX, the contents' fonts, printing and a page that
-// fits a phone; it needs Chrome and the network, and saves the screens that
-// differ in build/visual/<document>/visual/.
+// headings spaced as in LaTeX, what follows an \hfill at the right, the
+// contents' fonts, printing and a page that fits a phone; it needs Chrome
+// and the network, and saves the screens that differ in
+// build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -170,6 +171,57 @@ const spaced = `(() => {
   return { checked, wrong };
 })()`;
 
+// each \hfill's rest (text.hfill) where the PDF has it, outside the
+// contents: at the right of the block that holds it (its line, paragraph or
+// heading) and inside it; when it takes more than a line, starting at the
+// left. And its line's first letter, picture or formula at the left, past
+// the first line's indent. What fails: [the rest's first words, what is
+// wrong]
+const filled = `(() => {
+  const wrong = [];
+  // a letter's box, and the text nodes an element shows outside its math
+  const letter = (node, i) => {
+    const range = document.createRange();
+    range.setStart(node, i);
+    range.setEnd(node, i + 1);
+    return range.getBoundingClientRect();
+  };
+  const shown = el => {
+    const nodes = [];
+    for (const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); walk.nextNode();) {
+      const node = walk.currentNode;
+      if (/\\S/.test(node.data) && !node.parentElement.closest('mjx-container, .tex8web-permalink')) nodes.push(node);
+    }
+    return nodes;
+  };
+  const floats = [...document.querySelectorAll('.tex8web-hfill')].filter(rest => !rest.closest('.tableofcontents'));
+  for (const rest of floats) {
+    const block = rest.parentElement.closest('.tex8web-hfill-line, p, h1, h2, h3, h4, h5, h6');
+    const style = getComputedStyle(block), box = block.getBoundingClientRect(), at = rest.getBoundingClientRect();
+    const left = box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
+    const right = box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight);
+    const name = rest.textContent.replace(/\\s+/g, ' ').trim().slice(0, 30);
+    if (Math.abs(at.right - right) > 0.5) wrong.push([name, 'not at the right']);
+    if (at.bottom > box.bottom + 0.5) wrong.push([name, 'below its block']);
+    // (more than a line: its first and last letters a line apart)
+    const text = shown(rest), last = text.at(-1);
+    if (text.length && letter(last, last.data.trimEnd().length - 1).top - letter(text[0], text[0].data.search(/\\S/)).top
+        > parseFloat(style.fontSize) && Math.abs(at.left - left) > 0.5) {
+      wrong.push([name, 'its lines not at the left']);
+    }
+    // (what the line shows first)
+    const first = [...block.querySelectorAll('img, mjx-container'), ...shown(block)]
+      .filter(node => !node.parentElement.closest('mjx-container')
+        && node.compareDocumentPosition(rest) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .sort((a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)
+      .map(node => node.nodeType === Node.TEXT_NODE ? letter(node, node.data.search(/\\S/)) : node.getBoundingClientRect())[0];
+    if (first && Math.abs(first.left - left - parseFloat(style.textIndent)) > 0.5) {
+      wrong.push([name, 'its line starts ' + (first.left - left).toFixed(1) + 'px in']);
+    }
+  }
+  return { checked: floats.length, wrong };
+})()`;
+
 // the table of contents' entries in their fonts (css/tex8web.css), each
 // level's as the browser computes it, with JavaScript off, when every
 // entry is shown: sizes and the indent as multiples of the contents' own,
@@ -229,7 +281,7 @@ const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).
 
 // how many times each check had something to check, over the whole run:
 // one that never did has checked nothing
-const ran = { spaced: 0, misaligned: 0, sidenotes: 0 };
+const ran = { spaced: 0, misaligned: 0, sidenotes: 0, filled: 0 };
 
 // a document's two pages compared: its report's lines, and whether it failed
 async function compare(chrome, doc, ok) {
@@ -277,6 +329,9 @@ async function compare(chrome, doc, ok) {
           const under = await page.evaluate(spaced);
           ran.spaced += under.checked;
           for (const [id, gap, want] of under.wrong) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
+          const rests = await page.evaluate(filled);
+          ran.filled += rests.checked;
+          for (const [name, what] of rests.wrong) problems.push(`${html}: the \\hfill before "${name}": ${what}`);
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {

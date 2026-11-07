@@ -472,6 +472,10 @@ function M.hfill(document)
       local shown = false
       for k = from or #out + 1, #out do shown = shown or shows(out[k]) end
       if shown then
+        -- (and no space before the gap, where the line could break)
+        if out[from - 1] and out[from - 1]:is_text() then
+          dom.set_node_text(out[from - 1], (out[from - 1]:get_text():gsub("%s+$", "")))
+        end
         wrap(from, "tex8web-hfill")
         table.insert(out, #out, parent:create_element("span", {class = "tex8web-hfill-gap"}))
         if in_p then

@@ -257,7 +257,7 @@
     \web@hfill@do}
 \def\web@hfill@write{\HCode{<span class="tex8web-hfill-mark"></span>}}
 \newcount\web@hfill@count
-\def\web@hfill@penalty\penalty{\afterassignment\web@hfill@pen\web@hfill@count}
+\def\web@hfill@penalty#1{\afterassignment\web@hfill@pen\web@hfill@count}
 \def\web@hfill@pen{\ifnum\web@hfill@count>-\@M \web@hfill@write \fi \penalty\web@hfill@count}
 \let\web@dotfill\dotfill
 \def\dotfill{{\let\hfill\web@hfill\web@dotfill}}

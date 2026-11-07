@@ -365,20 +365,23 @@ p:has(> .tex8web-qed), .tex8web-qed-line { display: flow-root; }
 span.tcolorbox { display: inline-block; margin-block: 0; vertical-align: baseline; }
 span.tcolorbox > .tcolorbox-title { display: block; }
 /* what follows an \hfill (tex8web-text.tex), at the right of its line as in
-   the PDF, or of the line below when the line has no room. Longer than a
-   line, it starts on the line below, at the left, as the PDF's lines after
-   the first do. It is a quad from the text, as the QED box, by a gap that
-   isn't in it, so that it starts at the left there. Its line (text.hfill)
-   contains it, as the QED box's paragraph does; so does its paragraph, for
-   a line in a link, and its heading */
+   the PDF, or of the line below when the line has no room. When it is longer
+   than a line, it starts on the line below, at the left, as the PDF's later
+   lines do. So its quad from the text, as the QED box's, is an empty span
+   before it rather than a margin. Its line (text.hfill) contains it, as the
+   QED box's paragraph does. A paragraph or heading does too, for a line in
+   a link or a color, or a heading's */
 .tex8web-hfill { float: right; float: inline-end; text-indent: 0; }
 .tex8web-hfill-gap { padding-inline-end: 1em; }
 .tex8web-hfill-line { display: flow-root; }
 .tex8web-hfill-line:not(:first-child) { text-indent: 0; }
 :is(p, h1, h2, h3, h4, h5, h6):has(.tex8web-hfill) { display: flow-root; }
-/* (its fill outstretches \centering's, so the line's start is at the left,
-   in a center environment and in a figure, which tex4ht centers) */
-:is(div.center, figure) .tex8web-hfill-line { text-align: start; }
+/* (its fill outstretches \centering's, so the line's start is at the left:
+   in a center environment and in a figure, which tex4ht centers, the line
+   alone, or the paragraph when the line isn't one of text.hfill's; and in a
+   centered heading) */
+:is(div.center, figure) :is(.tex8web-hfill-line, p:has(.tex8web-hfill):not(:has(.tex8web-hfill-line))),
+:is(h1, h2, h3, h4, h5, h6):has(.tex8web-hfill) { text-align: start; }
 /* framed's, as far from the text as in the PDF (tex8web-text.tex). Under
    a titlesec heading, that and the heading's space below, not the larger:
    titlesec puts it with \vspace, which ends in \vskip\z@skip (source2e),

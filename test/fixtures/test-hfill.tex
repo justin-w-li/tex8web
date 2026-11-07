@@ -1,5 +1,6 @@
-% A test for tex8web: what follows an \hfill in a paragraph at the right of
-% its line, as in the PDF; and the \hfill that does nothing on the page.
+% A test for tex8web: what follows an \hfill in a paragraph or a heading at
+% the right of its line, as in the PDF; and the \hfill that does nothing on
+% the page.
 \documentclass{article}
 \usepackage{amsmath,amsthm,graphicx,hyperref}
 \begin{document}
@@ -58,10 +59,17 @@ Ends in text \hfill (by a lemma)
     Name \hfill Date
 \end{center}
 
+\begin{center}
+    \href{https://example.com}{Linked left \hfill linked right}
+\end{center}
+
 Before a linebreak \hfill\linebreak after the linebreak, which starts the
 next line at the left in the PDF.
 
 Before a penalty \hfill\penalty-10000 after the penalty.
+
+\let\otherpenalty\penalty
+Before another penalty \hfill\otherpenalty-10000 after it.
 
 Short \hfill A remainder long enough to wrap onto a second line of the page,
 which the PDF starts at the left of the line, as it does every line after the
