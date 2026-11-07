@@ -20,8 +20,11 @@ describe('slots and run()', { concurrency: true }, () => {
     assert.notEqual(code, 0);
     assert.match(log, /\[FATAL\] sh printed nothing for 0\.5s/);
     const child = Number(log.split('\n')[0]);
-    // (a killed process may be a zombie for a moment, which kill(pid, 0) finds)
-    const gone = () => { try { process.kill(child, 0); return false; } catch (e) { return e.code === 'ESRCH'; } };
+    // (kill(pid, 0) finds a killed process until it is reaped, which in a
+    // container whose init doesn't reap, as CI's, is never: a zombie is gone)
+    const zombie = () => existsSync('/proc') ? /^\d+ \(.*\) Z/.test(readFileSync(`/proc/${child}/stat`, 'utf8'))
+      : spawnSync('ps', ['-o', 'stat=', '-p', String(child)], { encoding: 'utf8', timeout: deadline }).stdout.startsWith('Z');
+    const gone = () => { try { process.kill(child, 0); return zombie(); } catch (e) { return e.code === 'ESRCH'; } };
     assert.ok(await until(gone, Boolean, 5000), `process ${child} still running`);
   });
 

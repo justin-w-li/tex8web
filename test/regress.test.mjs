@@ -132,7 +132,8 @@ describe('regress.mjs', { concurrency: true }, () => {
       const result = await regress(dir, clean, '--latexmk', 'one', 'bad');
       assert.equal(result.status, 1, result.stderr + result.stdout);
       assert.ok(existsSync(join(dir, 'one/main.pdf')), 'no PDF');
-      assert.ok(existsSync(join(dir, 'one/build/pdf.lock')), 'no lock');
+      // (without lockf, as on Linux, there are no locks)
+      if (lockf) assert.ok(existsSync(join(dir, 'one/build/pdf.lock')), 'no lock');
       assert.ok(existsSync(join(dir, 'build/regress/html/one/main.html')));
       assert.match(result.stdout, /^one: no baseline/m);
       assert.match(result.stdout, /^bad: failed to build its PDF, exit \d+ \(log: .*bad\.pdf\.log\)/m);
