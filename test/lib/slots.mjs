@@ -101,7 +101,8 @@ function holdFile(file, wait) {
 }
 
 // the slot this process was run in by run(), with slot (build.mjs), which
-// is its first takeSlot()'s. Not its children's: one slot is not two
+// is its first takeSlot()'s. Not a Node process's that this one starts:
+// one slot is not two
 let inherited = process.env.TEX8WEB_SLOTS_HELD === '1';
 delete process.env.TEX8WEB_SLOTS_HELD;
 

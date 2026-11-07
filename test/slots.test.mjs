@@ -206,7 +206,7 @@ describe('slots and run()', { concurrency: true }, () => {
     const { tmp, env } = pool(1);
     try {
       const first = child(`import { takeSlot } from './test/lib/slots.mjs';
-        await takeSlot(); console.log('held'); await new Promise(done => setTimeout(done, 6000)); process.exit();`, env);
+        await takeSlot(); console.log('held'); await new Promise(done => setTimeout(done, 8000)); process.exit();`, env);
       assert.ok(await first.printed('held'));
       // (it waits for the slot, then has it for its first takeSlot() and
       // again once that gives it back. A total of 5 s, less than the wait,
