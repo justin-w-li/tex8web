@@ -227,7 +227,7 @@ The exit code is 0 when nothing looks different, 3 when a page does, 1 when a bu
 
 The options:
 - **`-c config`** builds every document with your own config.
-- **`--accept`** makes this run's pages the baseline, and records which tex8web commit and when in `accepted/STAMP`. It refuses when tex8web has uncommitted changes, when any document failed, and with `--draft`.
+- **`--accept`** makes this run's pages the baseline, and records which tex8web commit and when in `accepted/STAMP`. It doesn't compare the screens, which you have looked at before accepting, so a page that changed says `changed`. It refuses when tex8web has uncommitted changes, when any document failed, and with `--draft`.
 - **`--baseline dir`** compares with the pages in `dir/<name>` instead, such as another checkout's `html` directory.
 - **`--out dir`** says where everything goes, `build/regress` in the directory you run it from by default: `html/<name>` for the pages, `compare/<name>`, `logs/`, `tex4ht/` and `accepted/<name>`. The command refuses the default when it would be inside tex8web. Keep `-` and the other characters of a Lua pattern out of its path (see [Known limitations](#known-limitations)).
 - **`--draft`** builds in make4ht's draft mode, which is quicker and not to be trusted.

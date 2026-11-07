@@ -157,7 +157,7 @@ test('clean.mjs removes one key\'s builds and dead Chrome profiles, and nothing 
       'here/build/main', 'here/build/main/html', 'here/build/main/html/a.html', 'target', 'target/keep'].sort());
     assert.deepEqual(readdirSync(tmp).sort(), ['other', 'tex8webchromeLive01', 'tex8webchromeNew001', 'tex8webchromepagesAbCdEf']);
 
-    for (const key of ['main', 'accepted', 'pdf', 'store', '../k', '', 'a/b']) {
+    for (const key of ['main', 'accepted', 'pdf', 'store', 'base', '../k', '', 'a/b']) {
       result = clean('--each', 'each', key);
       assert.equal(result.status, 2, `key "${key}"`);
     }

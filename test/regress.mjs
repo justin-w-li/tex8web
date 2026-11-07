@@ -15,9 +15,10 @@
 //   --baseline <dir>   compare with the pages in <dir>/<name> instead, such as
 //                      another checkout's html directory
 //   --accept           make this run's pages the baseline, with a STAMP file
-//                      saying which tex8web commit and when. Refused when
-//                      tex8web has uncommitted changes, with --draft, and
-//                      when any document failed
+//                      saying which tex8web commit and when, without
+//                      comparing the screens: a change is looked at before
+//                      it is accepted. Refused when tex8web has uncommitted
+//                      changes, with --draft, and when any document failed
 //   --draft            make4ht's draft mode, quicker and not to be trusted
 //   --expect look      the pages are meant to look different, so compare
 //                      the screens only as far as the first strip of 20
@@ -210,7 +211,7 @@ async function screens(result) {
 const results = await pool(docs, workers, async doc => {
   const result = await regress(doc);
   // (not awaited: the pool goes on to build the next document)
-  if (result.kind === 'changed') result.shots = screens(result);
+  if (result.kind === 'changed' && !accepting) result.shots = screens(result);
   return result;
 });
 await Promise.all(results.map(result => result.shots));
@@ -242,4 +243,4 @@ else if (accepting) {
   console.log(`accepted in ${baseline}, from tex8web ${accepting}`);
 }
 console.log(`done in ${Math.round((Date.now() - started) / 1000)}s`);
-process.exit(failed ? 1 : count('looks') && !accepting ? 3 : 0);
+process.exit(failed ? 1 : count('looks') ? 3 : 0);

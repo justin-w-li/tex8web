@@ -14,9 +14,9 @@
 // - the Chrome profiles in $TMPDIR (tex8webchrome plus six characters) that
 //   no process uses.
 // It prints what it removes, or with --dry-run what it would. It never
-// removes the builds of the key main, which is for the merged checkout,
-// or store, which holds screens kept for the baselines, accepted/, or a
-// document's build/pdf, and it leaves git, the build slots'
+// removes the builds of the keys main (the merged checkout's), store
+// (screens kept for the baselines) and base (a wrapper's baselines),
+// accepted/, or a document's build/pdf. It leaves git, the build slots'
 // lock files (a lock is its holder's, so none is left behind) and everything
 // else alone. It follows no link, and removes a link in place of
 // build/<key> as a link.
@@ -46,7 +46,7 @@ const { values: options, positionals: [key, ...more] } = parsed;
 if (key === undefined || more.length) refuse(usage);
 if (!/^[A-Za-z0-9_]+$/.test(key)) refuse(`${usage}\nThe key is letters, digits and _, as in a tex8web-<key> checkout`);
 const kept = { main: "the merged checkout's builds", accepted: 'the baselines', pdf: "a document's PDF",
-  store: "the screens kept for the baselines" };
+  store: 'the screens kept for the baselines', base: "a wrapper's baselines" };
 if (kept[key]) refuse(`build/${key} is ${kept[key]}, so it isn't cleaned`);
 
 let removed = 0;

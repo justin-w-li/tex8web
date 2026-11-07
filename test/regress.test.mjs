@@ -112,10 +112,12 @@ describe('regress.mjs', { concurrency: true }, () => {
       assert.equal(stamp(), before);
       assert.equal(existsSync(join(out, 'accepted/three')), false);
 
-      // a looking-different page is accepted without failing, and is then the baseline
+      // a changed page is accepted without its screens being compared, and is then the baseline
       writeFileSync(join(dir, 'two/note.tex'), article('Second, and more words than before'));
       result = await regress(dir, clean, '--accept', 'two');
       assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.match(result.stdout, /^two: changed: note\.html/m);
+      assert.equal(existsSync(join(out, 'logs/two.shots.log')), false);
       assert.match(readFileSync(join(out, 'accepted/two/note.html'), 'utf8'), /more words/);
       result = await regress(dir, clean, 'two');
       assert.match(result.stdout, /^two: unchanged/m);
