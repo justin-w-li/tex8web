@@ -34,7 +34,7 @@ tex8web turns LaTeX documents into static web pages that look like their PDF and
 
 **Simplicity.**
 - Write the minimum code that solves the problem.
-- Nothing speculative: no unrequested features, configurability, or abstractions for single-use code.
+- Nothing speculative: no unrequested features, configurability, or abstractions for single-use code. A case is speculative when no document reproduces it, not when the documents at hand don't use it. A short document in `examples/` with a check that runs on it makes a case real.
 - No error handling for impossible cases.
 - If 200 lines could be 50, rewrite them. Ask: would a senior engineer call this overcomplicated?
 
