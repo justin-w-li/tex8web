@@ -133,6 +133,125 @@
 }
 \fi
 
+% siunitx. tex4ht writes each number and unit siunitx prints as a formula
+% of its own (\__siunitx_print_math_auxii:n, html4.4ht). But a quantity in
+% text is \ensuremath around an internal command, which tex4ht's mathjax
+% option passes to MathJax as it is. And MathJax knows none of siunitx's
+% commands in a formula. So each quantity in text, and each command in a
+% formula, is run in a box, keeping what it prints: its numbers, units and
+% product, and its text as \text. The quantity is then one formula, as in
+% the PDF, and the formula gets what the command printed. Ranges and lists
+% in a formula are left: their phrases are text, with translations. The
+% unit \percent prints a %, which starts a comment for MathJax.
+\@ifpackageloaded{siunitx}{
+    \web@needs{l__siunitx_quantity_product_tl}
+    \tl_new:N \l__web_si_tl
+    \tl_new:N \g__web_si_tl
+    \str_new:N \l__web_si_str
+    \bool_new:N \l__web_si_bool
+    \box_new:N \l__web_si_box
+    \quark_new:N \q__web_si
+    \clist_new:N \l__web_si_clist
+    % (after tex4ht's, set in begindocument)
+    \AddToHook { begindocument/end } {
+        \web@needs{__siunitx_print_math_auxii:n}
+        \cs_set_eq:NN \__web_si_auxii:n \__siunitx_print_math_auxii:n
+        % (\tl_replace_all:Nnn leaves what is in braces)
+        \cs_gset_protected:Npn \__siunitx_print_math_auxii:n #1 {
+            \str_set:Nn \l_tmpa_str {#1}
+            \exp_args:NNV \str_replace_all:Nnn \l_tmpa_str \c_percent_str { \% }
+            \a:MathjaxInline \exp_args:NV \__web_si_auxii:n \l_tmpa_str \b:MathjaxInline
+        }
+    }
+    % \g__web_si_tl: what #1 prints
+    \cs_new_protected:Npn \__web_si_keep:n #1 { \tl_gput_right:Nn \g__web_si_tl {#1} }
+    \cs_new_protected:Npn \__web_si_print:n #1 {
+        \tl_gclear:N \g__web_si_tl
+        \hbox_set:Nn \l__web_si_box {
+            \cs_set_protected:Npn \__web_si_auxii:n ##1 { \__web_si_keep:n {##1} }
+            \cs_set_protected:Npn \siunitx_print_text:n ##1 { \__web_si_keep:n { \text {##1} } }
+            \cs_set_eq:NN \siunitx_quantity_print:nn \__web_si_quantity:nn
+            \cs_set_eq:NN \ensuremath \use:n
+            \keys_set:ne { siunitx }
+                { quantity-product = { \__web_si_keep:n { \exp_not:V \l__siunitx_quantity_product_tl } } }
+            #1
+        }
+    }
+    \cs_set_eq:NN \__web_si_quantity:nn \siunitx_quantity_print:nn
+    \cs_set_protected:Npn \siunitx_quantity_print:nn #1#2 {
+        \mode_if_math:TF { \__web_si_quantity:nn {#1} {#2} } {
+            \__web_si_print:n { \__web_si_quantity:nn {#1} {#2} }
+            \a:MathjaxInline
+            \use:e { \alteqtoks { \exp_not:N \( \exp_not:V \g__web_si_tl \exp_not:N \) } }
+            \b:MathjaxInline
+        }
+    }
+    \cs_set_eq:NN \__web_si_alteqtoks:n \alteqtoks
+    \cs_set_protected:Npn \alteqtoks #1 {
+        \str_set:Nn \l__web_si_str {#1}
+        \bool_set_false:N \l__web_si_bool
+        \clist_map_inline:Nn \l__web_si_clist {
+            \str_if_in:NnT \l__web_si_str {##1}
+                { \bool_set_true:N \l__web_si_bool \clist_map_break: }
+        }
+        \bool_if:NTF \l__web_si_bool
+            {
+                % (displays come as their source, detokenized)
+                \tl_set_rescan:Nno \l_tmpa_tl {} \l__web_si_str
+                \exp_args:NV \__web_si_walk:n \l_tmpa_tl
+                \exp_args:NV \__web_si_alteqtoks:n \l__web_si_tl
+            }
+            { \__web_si_alteqtoks:n {#1} }
+    }
+    % \l__web_si_tl: #1, with siunitx's commands replaced by what they print
+    \cs_new_protected:Npn \__web_si_walk:n #1 {
+        \tl_clear:N \l__web_si_tl
+        \__web_si_loop: #1 \q__web_si
+    }
+    \cs_new_protected:Npn \__web_si_loop: {
+        \peek_N_type:TF { \__web_si_token:N }
+            { \peek_catcode:NTF \c_group_begin_token { \__web_si_group:n } { \__web_si_space:w } }
+    }
+    \cs_new_protected:Npn \__web_si_token:N #1 {
+        \token_if_eq_meaning:NNF #1 \q__web_si {
+            \cs_if_exist:cTF { __web_si_ \token_to_str:N #1 }
+                { \use:c { __web_si_ \token_to_str:N #1 } }
+                { \tl_put_right:Nn \l__web_si_tl {#1} \__web_si_loop: }
+        }
+    }
+    \cs_new_protected:Npn \__web_si_group:n #1 {
+        \group_begin:
+            \__web_si_walk:n {#1}
+            \use:e {
+                \group_end:
+                \tl_put_right:Nn \exp_not:N \l__web_si_tl { { \exp_not:V \l__web_si_tl } }
+            }
+        \__web_si_loop:
+    }
+    \use:n { \cs_new_protected:Npn \__web_si_space:w } ~ {
+        \tl_put_right:Nn \l__web_si_tl { ~ }
+        \__web_si_loop:
+    }
+    % each command, with its arguments as siunitx reads them (but \qty,
+    % which is physics's with physics, where siunitx leaves it)
+    \cs_new_protected:Npn \__web_si_command:Nnn #1#2#3 {
+        \clist_put_right:Nn \l__web_si_clist {#1}
+        \exp_args:Nc \NewDocumentCommand { __web_si_ \token_to_str:N #1 } {#2} {
+            \use:e { \__web_si_print:n { \exp_not:N #1 #3 } }
+            \tl_put_right:NV \l__web_si_tl \g__web_si_tl
+            \__web_si_loop:
+        }
+    }
+    \clist_map_inline:nn { \num, \unit, \si, \ang }
+        { \__web_si_command:Nnn #1 { O{} m } { [ \exp_not:n {##1} ] { \exp_not:n {##2} } } }
+    \@ifpackageloaded{physics}{}{
+        \__web_si_command:Nnn \qty { O{} m m }
+            { [ \exp_not:n {#1} ] { \exp_not:n {#2} } { \exp_not:n {#3} } }
+    }
+    \__web_si_command:Nnn \SI { O{} m O{} m }
+        { [ \exp_not:n {#1} ] { \exp_not:n {#2} } [ \exp_not:n {#3} ] { \exp_not:n {#4} } }
+}{}
+
 % a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math
 % for MathJax: typeset it, re-reading the source, which tex4ht read with &
 % as a letter

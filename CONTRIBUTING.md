@@ -193,7 +193,7 @@ Open an issue with:
 | `tex8web.cfg` | the config for documents without one of their own |
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, prerendering |
 | `tex/tex8web-core.tex` | loads the four modules below |
-| `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, the escaping of each formula's source, equation numbers, `\intertext`, TikZ in display math |
+| `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, the escaping of each formula's source, siunitx, equation numbers, `\intertext`, TikZ in display math |
 | `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill`, the table of contents, lists, framed's boxes, figures, `\WebTerm` |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |

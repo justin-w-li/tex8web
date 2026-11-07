@@ -132,8 +132,13 @@ const speech = {
     /^(?![^]*down tack)/, /aria-label='x sub i transpose'/],
   'test-generic': [/aria-label='double struck P of [^']* over t Label open paren 2\.1 close paren'/,
     /aria-label='2 lines Line 1: x equals y Label open paren 2\.4 close paren Line 2: z equals w'/],
-  // (nicefrac's and xfrac's fractions, the units extension's)
-  'test-units': [/aria-label='one half'/, /aria-label='one fourth'/],
+  // (nicefrac's and xfrac's fractions, the units extension's, and siunitx's
+  // quantities, one formula each, in text, in math and in a display)
+  'test-units': [/aria-label='one half'/, /aria-label='one fourth'/,
+    /aria-label='3 times m s to the negative 1 power'/, /aria-label='2 percent'/, /aria-label='1 K'/,
+    /aria-label='v equals 3 times m s to the negative 1 power'/,
+    /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,
+    /aria-label='E equals 1\.6 times 10 to the negative 19 power J Label 1'/],
 };
 
 // pictures sized by \includegraphics's width, scale or height: a share of

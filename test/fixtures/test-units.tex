@@ -1,8 +1,26 @@
-% A test for tex8web: fractions with a slash, nicefrac's and xfrac's, as
-% the PDF sets them (MathJax has neither).
+% A test for tex8web: units as the PDF sets them. nicefrac's and xfrac's
+% fractions with a slash (MathJax has neither), and siunitx's numbers,
+% units and quantities, in text, in math and in a display (MathJax has none
+% of siunitx's commands).
 \documentclass{article}
+\usepackage{amsmath}
 \usepackage{nicefrac}
 \usepackage{xfrac}
+% (siunitx.4ht loads color, which tex4ht then doesn't configure: tex8web
+% would warn that \a:color is gone; xcolor brings it)
+\usepackage{xcolor}
+\usepackage{siunitx}
 \begin{document}
 Half of $\nicefrac{1}{2}$ is $\sfrac{1}{4}$, and $\nicefrac[\mathrm]{a}{b}$.
+
+Text: \num{12345.678}, \num{1.5e-3}, \SI{3}{\meter\per\second},
+\qty{9.81}{\metre\per\square\second}, \si{\kilo\gram}, \unit{\joule},
+\ang{30}, \numrange{1}{5}, \qtyrange{1}{5}{\kelvin}, \numlist{1;2;3},
+\qtylist{1;2}{\metre}, \qty{2}{\percent}.
+
+Math: $v = \SI{3}{\meter\per\second}$, $\qty[per-mode=fraction]{9.81}{\metre\per\square\second}$,
+$\num{1.5e-3} + \unit{\joule}$, $\ang{30}$.
+\begin{align}
+  E &= \qty{1.6e-19}{\joule}
+\end{align}
 \end{document}
