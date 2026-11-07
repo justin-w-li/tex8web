@@ -155,9 +155,10 @@ export async function launch() {
     // ResizeObserver, a frame later) or after a resize
     const frame = () => evaluate('new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))');
     if (javascript) await frame();
-    // (optimizeForSpeed: the same pixels, less compressed, sooner)
+    // (not optimizeForSpeed: with it, a repeated capture can antialias a
+    // rounded corner one level differently, as in Chrome 156)
     const capture = async (y, h) => (await page.send('Page.captureScreenshot', { format: 'png',
-      optimizeForSpeed: true, captureBeyondViewport: true, clip: { x: 0, y, width, height: h, scale: 1 } })).data;
+      captureBeyondViewport: true, clip: { x: 0, y, width, height: h, scale: 1 } })).data;
     // a PNG (base64) of the page from y down, h high, once two captures in
     // a row agree: the first of a part beyond the window can miss what
     // Chrome hasn't painted there yet, such as a display
