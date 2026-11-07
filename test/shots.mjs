@@ -22,6 +22,8 @@
 //   --then <expression>, before either: evaluated on each page (a promise
 //     awaited, then the animations it starts) before it's shot
 //   --touch, before either: on a touch screen without a mouse
+//   --window <width>x<height>, before either: in a window of that size
+//     only, as views named by its width
 //   node test/shots.mjs --eval <expression> <page.html | html directory>
 //     prints, for each page, width and scheme, the expression's value on the
 //     page, as JSON (a promise is awaited)
@@ -47,18 +49,20 @@ if (touch) args.splice(args.indexOf('--touch'), 1);
 const cache = option('--cache');
 const expect = option('--expect');
 const keepOption = option('--keep');
+const windowOption = option('--window');
 const [out, ...builds] = expression === undefined ? args : [undefined, ...args];
 if ((!out && expression === undefined) || !builds.length || builds.length > (expression === undefined ? 2 : 1)) {
-  console.error('usage: node test/shots.mjs [--clip <selector>] [--then <expression>] [--touch] <out> <page.html | html directory> [<new html directory>]\n'
+  console.error('usage: node test/shots.mjs [--clip <selector>] [--then <expression>] [--touch] [--window <width>x<height>] <out> <page.html | html directory> [<new html directory>]\n'
     + '       node test/shots.mjs --eval <expression> <page.html | html directory>');
   process.exit(2);
 }
-if ((expect !== undefined && expect !== 'look') || (keepOption !== undefined && !/^(\d+|all)$/.test(keepOption))) {
-  console.error('--expect takes look, and --keep a number or all');
+if ((expect !== undefined && expect !== 'look') || (keepOption !== undefined && !/^(\d+|all)$/.test(keepOption))
+  || (windowOption !== undefined && !/^\d+x\d+$/.test(windowOption))) {
+  console.error('--expect takes look, --keep a number or all, and --window a width and height, as 1400x900');
   process.exit(2);
 }
 const keep = keepOption === undefined ? 8 : keepOption === 'all' ? Infinity : Number(keepOption);
-const windows = [[1400, 900], [390, 844]];
+const windows = windowOption ? [windowOption.split('x').map(Number)] : [[1400, 900], [390, 844]];
 // (the tests' hook: only the views a test looks at, as 1400-light,390-dark)
 const views = process.env.TEX8WEB_SHOTS_VIEWS?.split(',');
 const known = windows.flatMap(([width]) => [`${width}-light`, `${width}-dark`]);
