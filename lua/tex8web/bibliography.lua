@@ -27,8 +27,8 @@ function M.run(par)
     return 0
   end
   log:info("bibliography: " .. command)
-  local ok = os.execute(command .. " > /dev/null")
-  if not ok then log:warning("the bibliography failed (" .. command .. ")") end
+  -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
+  if os.execute(command .. " > /dev/null") ~= 0 then log:warning("the bibliography failed (" .. command .. ")") end
   return 0
 end
 
