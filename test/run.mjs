@@ -158,8 +158,7 @@ const titles = {
   'test-nomaketitle': [/<title>Without a maketitle<\/title>/],
 };
 
-// \today, as the fixed date the tests build with (lib/build.mjs), so a
-// page kept from another day is the same
+// \today, as lib/build.mjs's fixed date
 const dates = {
   'test-letter': [/January 1, 2000/],
   'test-declared': [/January 1, 2000/],

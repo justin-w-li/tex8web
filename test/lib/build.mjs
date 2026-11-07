@@ -19,12 +19,13 @@ export const testDir = (doc, base = 'test') => join(root, 'build', base, doc.nam
 
 // the date TeX gives \today and \year in the test documents, so that a
 // build kept from another day is still the page a build today would give
-// (pdfTeX's reproducible builds)
+// (web2c's SOURCE_DATE_EPOCH, with FORCE_SOURCE_DATE). Not the examples',
+// which are published beside their PDF
 const fixedDate = { SOURCE_DATE_EPOCH: '946684800', FORCE_SOURCE_DATE: '1' };
 
 // test/fixtures/*.tex and examples/*/main.tex, each with its config: the
-// document's own <name>.cfg if it has one, otherwise tex8web.cfg, and the
-// fixed date. An example links its PDF, which it is published with, and the
+// document's own <name>.cfg if it has one, otherwise tex8web.cfg. A
+// fixture has the fixed date. An example links its PDF, which it is published with, and the
 // site's index above it
 export function documents() {
   const docs = [];
@@ -40,7 +41,7 @@ export function documents() {
     const own = join(dir, `${name}.cfg`);
     docs.push({ name: `examples/${name}`, dir, tex: 'main.tex',
       cfg: existsSync(own) ? own : join(root, 'tex8web.cfg'), pdf: 'build/pdf/main.pdf',
-      up: '../index.html', env: fixedDate });
+      up: '../index.html' });
   }
   return docs;
 }

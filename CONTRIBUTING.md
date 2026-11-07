@@ -130,7 +130,7 @@ Each build's log is kept in `build/test/<document>/make4ht.log`.
 - the versions of `node_modules/mathjax` and `node_modules/subset-font`, or that one is missing;
 - the first line of `tex --version` and of `make4ht --version`, and when `tex4ht.sty` was installed.
 
-The date is not in the stamp. The test documents build with a fixed one, January 1, 2000, through pdfTeX's `SOURCE_DATE_EPOCH`, so a page kept from another day is the one a build today would give.
+The date is not in the stamp, so a reused build keeps the date it was built on. The test fixtures build with a fixed one, January 1, 2000, through `SOURCE_DATE_EPOCH` with `FORCE_SOURCE_DATE`, so their pages don't depend on the day.
 
 `npm test`, `test:visual` and `test:page` build each document with the same environment into `build/test/<document>/html`, so the later ones reuse the earlier one's build, and say so. A change to any of those builds again, and a build that failed is never reused. `test:page` works on a copy in `build/page`, as a reused build is read, never written. To force a build, remove `build/test/<document>`, and `build/visual/<document>`, where `visual.mjs` keeps its browser-typeset `fallback` page, stamped the same way.
 
