@@ -73,7 +73,7 @@ return {
 
   ["text.hfill: the rest of each line after its last \\hfill in a span, up to a <br>, a block or a display; in a paragraph, its line too"] = function()
     local mark = [[<span class="tex8web-hfill-mark"></span>]]
-    local fill = "<span class='tex8web-hfill-gap'></span><span class='tex8web-hfill'>"
+    local fill = "<span class='tex8web-hfill-gap'> </span><span class='tex8web-hfill'>"
     local d = parse("<p>Name " .. mark .. " Date</p>"
       .. "<p>a " .. mark .. "b " .. mark .. " <b>c</b><br />d " .. mark .. " e<br />f</p>"
       .. "<p>g<br />h " .. mark .. " i<span class=\"mathjax-block\">\\[x\\]</span>j <a>k " .. mark .. " l</a></p>"

@@ -435,8 +435,8 @@ end
 -- what follows an \hfill at the right of its line, as in the PDF:
 -- tex8web-text.tex marks each \hfill in a paragraph (span.tex8web-hfill-mark).
 -- What follows the last mark on a line, up to a \\ (<br>), a block or a
--- display, goes in a span css/tex8web.css floats right, after an empty one
--- that keeps it a quad from the text. In a paragraph, the whole line goes
+-- display, goes in a span css/tex8web.css floats right, after one that
+-- holds the space before it and keeps it a quad from the text. In a paragraph, the whole line goes
 -- in a span too, with its <br>, which the stylesheet makes a block: one
 -- that holds the float, and that can be aligned on its own. (Not in a
 -- heading, whose anchor make4ht's sectionid makes its id only as the
@@ -472,12 +472,15 @@ function M.hfill(document)
       local shown = false
       for k = from or #out + 1, #out do shown = shown or shows(out[k]) end
       if shown then
-        -- (and no space before the gap, where the line could break)
+        -- (the space before the rest goes in the gap, so that a line
+        -- can't break between the text and the gap)
         if out[from - 1] and out[from - 1]:is_text() then
           dom.set_node_text(out[from - 1], (out[from - 1]:get_text():gsub("%s+$", "")))
         end
         wrap(from, "tex8web-hfill")
-        table.insert(out, #out, parent:create_element("span", {class = "tex8web-hfill-gap"}))
+        local gap = parent:create_element("span", {class = "tex8web-hfill-gap"})
+        gap:add_child_node(gap:create_text_node(" "))
+        table.insert(out, #out, gap)
         if in_p then
           if stop and stop:get_element_name() == "br" then out[#out + 1], stop = stop, nil end
           wrap(line, "tex8web-hfill-line")

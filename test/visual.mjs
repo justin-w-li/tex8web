@@ -197,10 +197,14 @@ const filled = `(() => {
   const floats = [...document.querySelectorAll('.tex8web-hfill')].filter(rest => !rest.closest('.tableofcontents'));
   for (const rest of floats) {
     const block = rest.parentElement.closest('.tex8web-hfill-line, p, h1, h2, h3, h4, h5, h6');
+    const name = rest.textContent.replace(/\\s+/g, ' ').trim().slice(0, 30);
+    if (!block) {
+      wrong.push([name, 'in no paragraph or heading']);
+      continue;
+    }
     const style = getComputedStyle(block), box = block.getBoundingClientRect(), at = rest.getBoundingClientRect();
     const left = box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
     const right = box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight);
-    const name = rest.textContent.replace(/\\s+/g, ' ').trim().slice(0, 30);
     if (Math.abs(at.right - right) > 0.5) wrong.push([name, 'not at the right']);
     if (at.bottom > box.bottom + 0.5) wrong.push([name, 'below its block']);
     // (more than a line: its first and last letters a line apart)
