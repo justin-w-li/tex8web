@@ -43,6 +43,8 @@ describe('real builds', { concurrency: true }, () => {
       const first = await make();
       assert.equal(first.code, 0, first.log);
       assert.equal(first.reused, undefined);
+      // (which keep run()'s idle limit from timing the whole build)
+      assert.match(first.log, /^\[INFO\] +htlatex: LaTeX call/m, "make4ht's steps are not in the log");
       assert.equal(existsSync(join(doc.dir, 'build/pdf')), false, 'something built the PDF');
       assert.doesNotMatch(page(), /doc\.pdf/);
 
@@ -75,7 +77,12 @@ describe('real builds', { concurrency: true }, () => {
       assert.equal(second.latexReused, true);
       assert.match(readFileSync(join(dir, 'aux/doc.aux'), 'utf8'), /% kept/);
       assert.equal(page(), full);
-      assert.equal(second.log, first.log);
+      // (LaTeX's part of the log is the kept run's, its calls included.
+      // make4ht's other steps differ without LaTeX)
+      const calls = log => log.match(/htlatex: LaTeX call/g)?.length;
+      const output = log => log.replace(/^\[INFO\].*\n/gm, '');
+      assert.equal(calls(second.log), calls(first.log));
+      assert.equal(output(second.log), output(first.log));
 
       writeFileSync(join(doc.dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nchanged\n\\end{document}\n');
       const third = await make(fixed);

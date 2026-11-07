@@ -100,9 +100,18 @@ function holdFile(file, wait) {
   });
 }
 
+// the slot this process was run in by run(), with slot (build.mjs), which
+// is its first takeSlot()'s. Not its children's: one slot is not two
+let inherited = process.env.TEX8WEB_SLOTS_HELD === '1';
+delete process.env.TEX8WEB_SLOTS_HELD;
+
 // waits for one of the slots; resolves to the function that gives it back.
 // For what is not a command to run: a command takes its slot through run()
 export async function takeSlot() {
+  if (inherited) {
+    inherited = false;
+    return () => { inherited = true; };
+  }
   if (noLockf()) return () => {};
   const release = await inSlots(file => hold(file, false));
   return () => {

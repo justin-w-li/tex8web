@@ -178,7 +178,8 @@ async function regress(doc) {
   return { ...found, kind: 'changed', files, outcome: `changed: ${files.slice(0, 6).join(', ')}${files.length > 6 ? ` and ${files.length - 6} more` : ''}` };
 }
 
-// (each page's screens in a Chrome of its own, which takes a slot like a build)
+// (each page's screens in a Chrome of its own, which holds a slot like a
+// build: the one shots.mjs runs in)
 let shooting = 0;
 const waiting = [];
 const turn = () => new Promise(go => shooting < shotsAtOnce ? (shooting++, go()) : waiting.push(go));
@@ -193,7 +194,7 @@ async function screens(result) {
     // (a long page takes shots.mjs minutes for each width and scheme, when
     // the machine is busy, and more than run()'s 15 minutes in all)
     const shots = await run(process.execPath, [join(here, 'shots.mjs'), '--cache', shotsCache, ...options.expect ? ['--expect', options.expect] : [],
-      compare, result.kept, result.html], { total: 3600 });
+      compare, result.kept, result.html], { slot: true, total: 3600 });
     writeFileSync(join(logs, `${result.doc.name}.shots.log`), shots.log);
     if (shots.code === 1) {
       result.kind = 'looks';

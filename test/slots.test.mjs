@@ -201,4 +201,30 @@ describe('slots and run()', { concurrency: true }, () => {
       rmSync(tmp, { recursive: true });
     }
   });
+
+  test("a command run in a slot has it for its Chrome, and not for a second at once or for its children's", { skip: !lockf, timeout: 30000 }, async () => {
+    const { tmp, env } = pool(1);
+    try {
+      const first = child(`import { takeSlot } from './test/lib/slots.mjs';
+        await takeSlot(); console.log('held'); await new Promise(done => setTimeout(done, 6000)); process.exit();`, env);
+      assert.ok(await first.printed('held'));
+      // (it waits for the slot, then has it for its first takeSlot() and
+      // again once that gives it back. A total of 5 s, less than the wait,
+      // ends it if a slot's wait is timed or if it waits for a second slot)
+      const command = `import { takeSlot } from './test/lib/slots.mjs';
+        const chrome = await takeSlot();
+        let second = false;
+        takeSlot().then(() => { second = true; });
+        await new Promise(done => setTimeout(done, 1000));
+        chrome();
+        await takeSlot();
+        console.log('second', second, 'children', process.env.TEX8WEB_SLOTS_HELD ?? 'none'); process.exit();`;
+      const tool = child(`import { run } from './test/lib/build.mjs';
+        const { code, log } = await run(process.execPath, ['--input-type=module', '-e', ${JSON.stringify(command)}], { slot: true, total: 5 });
+        console.log('exit', code, log); process.exit();`, env);
+      assert.match(await tool.done, /exit 0 second false children none/);
+    } finally {
+      rmSync(tmp, { recursive: true });
+    }
+  });
 });

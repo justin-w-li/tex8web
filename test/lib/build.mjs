@@ -93,10 +93,12 @@ const held = 'tex8web-slot-held';
 // without silencing it for long, so the idle limit is the tight one. The
 // total limit stops one that loops while printing. With slot, the command
 // holds a build slot (slots.mjs) from when it starts, and waiting for the
-// slot isn't timed. Resolves to { code, log }, the log being stdout and
-// stderr in order
+// slot isn't timed. TEX8WEB_SLOTS_HELD tells it so: its takeSlot() has that
+// slot without waiting for another. Resolves to { code, log }, the log
+// being stdout and stderr in order
 export const run = (command, args, { slot = false, ...options } = {}) => slot && !noLockf()
-  ? inSlots(slotFile => execute(command, args, { ...options, slotFile })).finally(released)
+  ? inSlots(slotFile => execute(command, args, { ...options, env: { ...options.env ?? process.env, TEX8WEB_SLOTS_HELD: '1' }, slotFile }))
+    .finally(released)
   : execute(command, args, options);
 
 // Runs the command under a watchdog that ends it, with its process group,
@@ -264,8 +266,12 @@ async function buildHere(doc, out, aux, env) {
   // config links it with \WebPDF, which keeps that tested
   const own = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];
   const pdf = own ?? doc.pdf;
+  // (-a info has make4ht print each step. By default it is silent from its
+  // first lines to its last: run()'s idle limit would time the whole build,
+  // and a build that stalls wouldn't say where)
   const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
-    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], ...doc.draft ? ['-m', 'draft'] : [], doc.tex];
+    ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], ...doc.draft ? ['-m', 'draft'] : [],
+    '-a', 'info', doc.tex];
   const stampNow = () => {
     const made = pdf && statSync(join(doc.dir, pdf), { throwIfNoEntry: false });
     return stamps(doc, args, env, made ? [made.size, made.mtimeMs] : null);
