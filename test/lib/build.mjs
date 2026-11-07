@@ -17,16 +17,21 @@ export const expected = JSON.parse(readFileSync(join(root, 'test/expected.json')
 // document
 export const testDir = (doc, base = 'test') => join(root, 'build', base, doc.name.replace(/[^A-Za-z0-9]/g, '_'));
 
+// the date TeX gives \today and \year in the test documents, so that a
+// build kept from another day is still the page a build today would give
+// (pdfTeX's reproducible builds)
+const fixedDate = { SOURCE_DATE_EPOCH: '946684800', FORCE_SOURCE_DATE: '1' };
+
 // test/fixtures/*.tex and examples/*/main.tex, each with its config: the
-// document's own <name>.cfg if it has one, otherwise tex8web.cfg. An
-// example links its PDF, which it is published with, and the site's index
-// above it
+// document's own <name>.cfg if it has one, otherwise tex8web.cfg, and the
+// fixed date. An example links its PDF, which it is published with, and the
+// site's index above it
 export function documents() {
   const docs = [];
   const fixtures = join(root, 'test/fixtures');
   for (const file of readdirSync(fixtures).filter(f => f.endsWith('.tex')).sort()) {
     const name = file.replace(/\.tex$/, ''), own = join(fixtures, `${name}.cfg`);
-    docs.push({ name, dir: fixtures, tex: file, cfg: existsSync(own) ? own : join(root, 'tex8web.cfg') });
+    docs.push({ name, dir: fixtures, tex: file, cfg: existsSync(own) ? own : join(root, 'tex8web.cfg'), env: fixedDate });
   }
   const examples = join(root, 'examples');
   for (const name of existsSync(examples) ? readdirSync(examples).sort() : []) {
@@ -35,7 +40,7 @@ export function documents() {
     const own = join(dir, `${name}.cfg`);
     docs.push({ name: `examples/${name}`, dir, tex: 'main.tex',
       cfg: existsSync(own) ? own : join(root, 'tex8web.cfg'), pdf: 'build/pdf/main.pdf',
-      up: '../index.html' });
+      up: '../index.html', env: fixedDate });
   }
   return docs;
 }
@@ -205,7 +210,8 @@ function tools() {
 function stamp(doc, args, env, pdf) {
   // (the slots, regress.mjs's test hook and the speech kept from the last
   // build change no page)
-  const vars = Object.entries({ ...process.env, ...env }).filter(([name]) => /^(TEX8WEB_(?!SLOTS|TREE|SPEECH_CACHE)|TEXINPUTS$|TEXMF)/.test(name)).sort();
+  const vars = Object.entries({ ...process.env, ...env })
+    .filter(([name]) => /^(TEX8WEB_(?!SLOTS|TREE|SPEECH_CACHE)|TEXINPUTS$|TEXMF|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).sort();
   return createHash('sha256').update(JSON.stringify([tools(), hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf])).digest('hex');
 }
 
@@ -217,6 +223,7 @@ function stamp(doc, args, env, pdf) {
 // its log (out.log), and a later build from the same stamp is not run: it
 // resolves to { code: 0, log, reused: true }. A build that failed leaves no
 // stamp. One at a time for each out, so that tools running at once share it.
+// The document's own variables (doc.env) come before env's.
 // A draft document (doc.draft) is built in make4ht's draft mode, which
 // needs tex4ht's files from the build before in aux. A document with
 // noLatexmk has its PDF built elsewhere: a missing one isn't built here
@@ -231,6 +238,7 @@ export async function build(doc, out, aux, env = {}) {
 }
 
 async function buildHere(doc, out, aux, env) {
+  env = { ...doc.env, ...env };
   // the PDF the page links, if it isn't built yet: with -p, unless the
   // config links it with \WebPDF, which keeps that tested
   const own = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];

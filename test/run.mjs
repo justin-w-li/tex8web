@@ -158,6 +158,13 @@ const titles = {
   'test-nomaketitle': [/<title>Without a maketitle<\/title>/],
 };
 
+// \today, as the fixed date the tests build with (lib/build.mjs), so a
+// page kept from another day is the same
+const dates = {
+  'test-letter': [/January 1, 2000/],
+  'test-declared': [/January 1, 2000/],
+};
+
 // minipages and subfigures, two in one row, each with its share of the
 // PDF's text width and its position
 const minipages = {
@@ -570,7 +577,7 @@ const families = {
 // stylesheet, for the colors), each with how a failure reads
 const patterns = [
   [typeset, 'in the typeset math'], [speech, 'in the speech'], [pictures, 'among the pictures'],
-  [titles, "as the page's title"], [minipages, 'among the minipages'], [index, 'in the index'],
+  [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'],

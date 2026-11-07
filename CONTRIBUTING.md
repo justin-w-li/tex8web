@@ -126,9 +126,11 @@ Each build's log is kept in `build/test/<document>/make4ht.log`.
 - the files in tex8web's `bin`, `css`, `fonts`, `js`, `lua` and `tex` directories, `tex8web.cfg`, `tex8web.mk4`, `package.json` and `package-lock.json`, by content;
 - the files in the document's directory, and the config's, by content;
 - the PDF the page links, if there is one: its size and modification time, as a page built before the PDF was there lacks the link;
-- the command's arguments, and the `TEX8WEB_*`, `TEXINPUTS` and `TEXMF*` environment variables, except `TEX8WEB_TREE`, `TEX8WEB_SPEECH_CACHE` and those that begin `TEX8WEB_SLOTS`;
+- the command's arguments, and the `TEX8WEB_*`, `TEXINPUTS`, `TEXMF*`, `SOURCE_DATE_EPOCH` and `FORCE_SOURCE_DATE` environment variables, except `TEX8WEB_TREE`, `TEX8WEB_SPEECH_CACHE` and those that begin `TEX8WEB_SLOTS`;
 - the versions of `node_modules/mathjax` and `node_modules/subset-font`, or that one is missing;
 - the first line of `tex --version` and of `make4ht --version`, and when `tex4ht.sty` was installed.
+
+The date is not in the stamp. The test documents build with a fixed one, January 1, 2000, through pdfTeX's `SOURCE_DATE_EPOCH`, so a page kept from another day is the one a build today would give.
 
 `npm test`, `test:visual` and `test:page` build each document with the same environment into `build/test/<document>/html`, so the later ones reuse the earlier one's build, and say so. A change to any of those builds again, and a build that failed is never reused. `test:page` works on a copy in `build/page`, as a reused build is read, never written. To force a build, remove `build/test/<document>`, and `build/visual/<document>`, where `visual.mjs` keeps its browser-typeset `fallback` page, stamped the same way.
 
