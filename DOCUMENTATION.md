@@ -92,7 +92,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 
 | Command | Use it when |
 | --- | --- |
-| `\WebMathMacros{definitions}` | the build warns of "macro(s) left undefined for MathJax", or math shows in red |
+| `\WebMathMacros{definitions}` | the build warns of "macro(s) left undefined for MathJax" or "macro(s) MathJax doesn't know", or math shows in red |
 | `\WebColor{name}{light}{dark}` | your config writes HTML or CSS of its own and needs a color that follows dark mode |
 | `\WebTerm\cs` | your document marks the terms it defines with a one-argument command, and you want the contents filter to find them |
 | `\WebPDF{path}` | you always want the icon linking to the PDF, without passing `-p` |
@@ -246,7 +246,7 @@ Each item says what goes wrong and, where there is one, what to do.
 
 - **`-B` with a `-` in its path.** make4ht reads the `-B` directory as a Lua pattern, so a `-` anywhere in its path sends files to the wrong place. So do `^ $ ( ) % [ ] * + ?`. Keep `-` out of it, and keep it relative to the document, as `bin/tex8web`'s default `build/tex4ht` is.
 - **A space in tex8web's path or in a config's path.** tex4ht can't read such a config, so `bin/tex8web` stops. Move tex8web or the config to a path without spaces.
-- **Macros MathJax can't read** show in red. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
+- **Macros MathJax can't read** show in red, and the build names them. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
 - **`\color` for the whole document**, in the preamble or in `\AtBeginDocument`, isn't followed. A `\normalcolor` inside a colored group doesn't bring back the text's color.
 - **tocloft's fonts for lists of figures and tables**, `\cftfigfont` and `\cfttabfont`, aren't followed. Those lists stay in the text's font.
 - **The QED box** of an amsthm proof sits at the right, in a display's tag after `\qedhere` as in the PDF. Not followed: with a `\tag` of the display's own the proof ends with its box below the display, as it does after `$$ $$` and `displaymath`; in `multline` the box goes under the number, not at the end of the last line. A `\qedsymbol` that isn't math or text MathJax can read, such as `\ensuremath{...}`, shows in red in a display.

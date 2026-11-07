@@ -47,6 +47,22 @@ globalThis.MathJax = config;
 require('mathjax/tex-chtml.js');
 await MathJax.startup.promise;
 
+// the macros MathJax doesn't know, which its noundefined extension draws as
+// their names in red: an mtext with a color of its own (which tex8web.js
+// has made a light-dark() one) that holds \name (npm test fails on a line
+// that starts with tex8web:)
+const unknown = new Set();
+for (const { root } of MathJax.startup.document.math) {
+  root.walkTree(node => {
+    if (node.isKind('mtext') && node.attributes.getExplicit('mathcolor')
+        && /^\\([A-Za-z@]+|.)$/.test(node.getText())) unknown.add(node.getText());
+  });
+}
+if (unknown.size) {
+  console.error(`tex8web: ${unknown.size} macro(s) MathJax doesn't know, shown in red: `
+    + `${[...unknown].sort().join(', ')}. Define them for MathJax with \\WebMathMacros in your config`);
+}
+
 const adaptor = MathJax.startup.adaptor;
 const document = MathJax.startup.document.document;
 const root = adaptor.root(document);

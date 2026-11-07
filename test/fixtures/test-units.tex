@@ -1,0 +1,8 @@
+% A test for tex8web: fractions with a slash, nicefrac's and xfrac's, as
+% the PDF sets them (MathJax has neither).
+\documentclass{article}
+\usepackage{nicefrac}
+\usepackage{xfrac}
+\begin{document}
+Half of $\nicefrac{1}{2}$ is $\sfrac{1}{4}$, and $\nicefrac[\mathrm]{a}{b}$.
+\end{document}

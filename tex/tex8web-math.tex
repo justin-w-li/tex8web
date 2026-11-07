@@ -29,11 +29,19 @@
 \def\web@extensions{"mathtools"}
 \def\web@load{"[tex]/mathtools"}
 \@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
-        colortbl,dsfont,empheq,gensymb,mhchem,physics,textcomp,units,upgreek\do{%
+        colortbl,dsfont,empheq,gensymb,mhchem,physics,textcomp,upgreek\do{%
     \@ifpackageloaded\web@package
         {\edef\web@extensions{\web@extensions, "\web@package"}%
          \edef\web@load{\web@load, "[tex]/\web@package"}}{}%
 }
+% (and the units extension's \nicefrac for nicefrac's, and for xfrac's
+% \sfrac in macros.lua)
+\let\web@units\relax
+\@for\web@package:=units,nicefrac,xfrac\do{\@ifpackageloaded\web@package{\let\web@units\empty}{}}
+\ifx\web@units\empty
+    \edef\web@extensions{\web@extensions, "units"}%
+    \edef\web@load{\web@load, "[tex]/units"}%
+\fi
 % (newtxmath's options for other fonts turn \iftx@ntxmath off; nc is New
 % Century Schoolbook)
 \def\web@mathfont{tex}

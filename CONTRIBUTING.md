@@ -78,6 +78,8 @@ MathJax's TeX input differs from TeX in a few sizes. `js/tex8web.js` sets them a
 - **Subset fonts.** MathJax's, Latin Modern's, TeX Gyre's and XCharter's fonts are cut to the document's characters with [subset-font](https://github.com/papandreou/subset-font). A long page's fonts go from about 380 KB to 140 KB.
 - **No clipping.** MathJax clips each character to its box. In Safari that gives each character its own layer, which makes scrolling slow. The stylesheet removes the clip.
 
+MathJax draws a macro it doesn't know as its name, in red. Prerendering names these macros in a warning that starts with `tex8web:`.
+
 Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped. [DOCUMENTATION.md](DOCUMENTATION.md) says what the page does then ("Without Node").
 
 `tex8web.js` relies on MathJax's internals, so MathJax's version is pinned in `package.json`.

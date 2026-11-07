@@ -14,6 +14,9 @@ local M = {}
 local fallbacks = {
   ["\\bm"] = "\\newcommand{\\bm}[1]{\\boldsymbol{#1}}",
   ["\\qedhere"] = "\\newcommand{\\qedhere}{}",
+  -- (xfrac's, as the units extension's \nicefrac, which tex8web-math.tex
+  -- loads with xfrac)
+  ["\\sfrac"] = "\\newcommand{\\sfrac}[3][]{\\nicefrac{#2}{#3}}",
 }
 
 -- MathJax names colors as CSS and dvips do, and has no xcolor. The math's

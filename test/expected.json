@@ -1,8 +1,9 @@
 {
   "examples/complex": {
-    "why": "MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat and \\passtonextarg); tex4ht writes a stray </p> in a multicols of listings, so make4ht reads the page as HTML, as a browser does",
+    "why": "MathJax can't parse the macros that split comma-separated arguments (\\cvc, \\rvc, \\mat and \\passtonextarg), and the build can't see the large operators a command of the document's defines (\\Sum and co.); tex4ht writes a stray </p> in a multicols of listings, so make4ht reads the page as HTML, as a browser does",
     "allow": [
       "left undefined for MathJax, which can't read their definitions: \\cvc",
+      "15 macro(s) MathJax doesn't know, shown in red: \\Capp, \\Coprod, \\Cupp, \\Kupp, \\Odot, \\Oplus, \\Otimes, \\Prod, \\Sum, \\Uplus, \\Vee, \\Wedge, \\cvc, \\mat, \\rvc.",
       "XML DOM parsing of",
       "Unbalanced Tag (/p)",
       "HTML DOM parsing OK"

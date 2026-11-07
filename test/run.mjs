@@ -128,6 +128,8 @@ const speech = {
   'test': [/aria-label='P of open paren A given B close paren'/, /aria-label='Gamma of z'/,
     /aria-label='d x'/, /aria-label='Delta of S'/, /aria-label='A transpose'/,
     /^(?![^]*down tack)/, /aria-label='x sub i transpose'/],
+  // (nicefrac's and xfrac's fractions, the units extension's)
+  'test-units': [/aria-label='one half'/, /aria-label='one fourth'/],
 };
 
 // pictures sized by \includegraphics's width, scale or height: a share of
