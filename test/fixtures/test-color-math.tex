@@ -1,8 +1,9 @@
 % A test for tex8web: colors in math in a document with xcolor but not
 % colortbl (which has MathJax load its color extension up front): the
-% \definecolor lines MathJax is given load the extension themselves,
-% which restarts the definitions before them: a \DeclarePairedDelimiter
-% fails on the second run, and the colors after it would be lost.
+% \definecolor lines MathJax is given load the extension themselves. The
+% math has a paired delimiter, so that a restart after it would lose the
+% colors. graphicx is loaded because mathtools without it gives a false
+% \a:Gin-dim warning.
 \documentclass{article}
 \usepackage{xcolor,mathtools,graphicx}
 \DeclarePairedDelimiter{\abs}{\lvert}{\rvert}

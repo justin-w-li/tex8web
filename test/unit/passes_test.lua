@@ -410,7 +410,7 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     check(not definitions:find("nope", 1, true), definitions)
   end,
 
-  ["macros.define: the colors come before the macros, which MathJax restarts after the first"] = function()
+  ["macros.define: the colors come before the macros (MathJax reruns them after a \\definecolor)"] = function()
     local tex = tmpfile([[\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}]])
     local d = parse([[<span class="mathjax-inline">\(\abs{\textcolor{ink}{a}}\)</span>]])
     macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216 "})
