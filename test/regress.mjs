@@ -30,6 +30,11 @@
 //   --shots-at-once <n>  how many pages' screens are compared at once, each
 //                      in a Chrome of its own, as the others are built.
 //                      Default 1
+//   --latexmk          build each document's PDF first, with latexmk in the
+//                      document's directory, holding its build/pdf.lock so
+//                      that no two runs of latexmk share a build/pdf. A
+//                      document whose PDF fails isn't built. Without it
+//                      the PDFs are the caller's to build
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
@@ -40,7 +45,7 @@ import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 // (npm runs a script in tex8web's directory, and says where it was run from)
 const at = path => resolve(process.env.npm_lifecycle_event ? process.env.INIT_CWD ?? process.cwd() : process.cwd(), path);
-const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--expect look] [--shots-cache <dir>] [--shots-at-once <n>] <dir or .tex file>...';
+const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--expect look] [--shots-cache <dir>] [--shots-at-once <n>] <dir or .tex file>...';
 const refuse = message => {
   console.error(message);
   process.exit(2);
@@ -50,7 +55,7 @@ let parsed;
 try {
   parsed = parseArgs({ allowPositionals: true, options: {
     c: { type: 'string', short: 'c' }, baseline: { type: 'string' }, out: { type: 'string' },
-    accept: { type: 'boolean' }, draft: { type: 'boolean' },
+    accept: { type: 'boolean' }, draft: { type: 'boolean' }, latexmk: { type: 'boolean' },
     expect: { type: 'string' }, 'shots-cache': { type: 'string' }, 'shots-at-once': { type: 'string' },
   } });
 } catch (error) {
@@ -99,7 +104,8 @@ function document(arg) {
     tex = files.includes('main.tex') ? 'main.tex' : files.length === 1 ? files[0] : null;
     if (!tex) refuse(`${arg} has no main.tex and not exactly one .tex file; name the file`);
   }
-  // (the PDFs, which a config's \WebPDF links, are the caller's to build)
+  // (the PDFs, which a config's \WebPDF links, are the caller's to build,
+  // unless it says --latexmk)
   return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true };
 }
 
@@ -131,10 +137,27 @@ const started = Date.now();
 const here = dirname(new URL(import.meta.url).pathname);
 const node = (script, ...args) => run(process.execPath, [join(here, script), ...args]);
 
+// builds a document's PDF as a wrapper script does, or says why it couldn't:
+// the lock first, then a slot, so that a run waiting for the lock holds none
+async function latexmk(doc) {
+  mkdirSync(join(doc.dir, 'build'), { recursive: true });
+  const release = await lock(join(doc.dir, 'build/pdf.lock'));
+  try {
+    // (latexmk is silent for a while on a long document)
+    const result = await run('latexmk', ['-interaction=nonstopmode', '-halt-on-error', doc.tex], { cwd: doc.dir, slot: true, idle: 900 });
+    writeFileSync(join(logs, `${doc.name}.pdf.log`), result.log);
+    if (result.code !== 0) return `failed to build its PDF, exit ${result.code} (log: ${join(logs, `${doc.name}.pdf.log`)})`;
+  } finally {
+    release();
+  }
+}
+
 // builds and checks one document, and finds out what changed since its baseline
 async function regress(doc) {
   const html = join(out, 'html', doc.name), aux = auxFor(doc), kept = join(baseline, doc.name);
   rmSync(join(out, 'compare', doc.name), { recursive: true, force: true });
+  const pdfFailed = options.latexmk && await latexmk(doc);
+  if (pdfFailed) return { doc, html, kept, failed: true, kind: 'failed', outcome: pdfFailed, problems: [] };
   const result = await build(doc, html, aux);
   writeFileSync(join(logs, `${doc.name}.html.log`), result.log);
   if (result.code !== 0) {

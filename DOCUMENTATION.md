@@ -234,8 +234,9 @@ The options:
 - **`--expect look`** is for a change that is meant to show. For each width and scheme, the screens are compared only as far as the first strip of 20 that differs, and the report says from which screen. Without it every screen is compared and every differing one listed.
 - **`--shots-cache dir`** keeps what the baseline's screens came to, so that a baseline is shot once for every run that uses the directory. By default it is `shots-cache` in `--out`.
 - **`--shots-at-once n`** compares the screens of `n` pages at once, as the others are built (1 by default).
+- **`--latexmk`** builds each document's PDF first, with `latexmk` in the document's directory. A document whose PDF fails isn't built.
 
-The command doesn't build PDFs. If the config links one with `\WebPDF` and it's missing, the page is built without it. A document is built again only when something it is made from has changed: tex8web, the document's directory, the config, the PDF it links, or the tools.
+Unless you say `--latexmk`, the command doesn't build PDFs. If the config links one with `\WebPDF` and it's missing, the page is built without it. A document is built again only when something it is made from has changed: tex8web, the document's directory, the config, the PDF it links, or the tools.
 
 `npm --prefix path/to/tex8web run clean -- <key>` removes the builds of a finished checkout: `build/<key>` in the current directory, or in each directory given with `--in <dir>`, and `build/<key>` in each directory under `--each <dir>` that holds a `.tex` file. It also removes the Chrome profiles that no process uses. It leaves alone a build in use, an `accepted/` directory, a directory holding anything that `regress` doesn't make, and a tex8web checkout. Don't start a build with the key while it runs. `--dry-run` only lists what it would remove.
 

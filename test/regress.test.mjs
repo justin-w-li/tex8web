@@ -124,6 +124,22 @@ describe('regress.mjs', { concurrency: true }, () => {
     }
   });
 
+  test('regress.mjs --latexmk builds each PDF before its page, and a failed PDF fails the document', async () => {
+    const { dir, clean } = scratch({ 'one/main.tex': article('First'), 'one/.latexmkrc': '$pdf_mode = 1;', 'bad/main.tex': article('\\undefinedcs') });
+    try {
+      const result = await regress(dir, clean, '--latexmk', 'one', 'bad');
+      assert.equal(result.status, 1, result.stderr + result.stdout);
+      assert.ok(existsSync(join(dir, 'one/main.pdf')), 'no PDF');
+      assert.ok(existsSync(join(dir, 'one/build/pdf.lock')), 'no lock');
+      assert.ok(existsSync(join(dir, 'build/regress/html/one/main.html')));
+      assert.match(result.stdout, /^one: no baseline/m);
+      assert.match(result.stdout, /^bad: failed to build its PDF, exit \d+ \(log: .*bad\.pdf\.log\)/m);
+      assert.equal(existsSync(join(dir, 'build/regress/html/bad')), false);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
   test('regress.mjs builds a page whose PDF is missing, and builds no PDF', async () => {
     const { dir, clean } = scratch({ 'one/main.tex': article('First'),
       'my.cfg': '\\Preamble{xhtml,mathjax}\n\\begin{document}\n\\input{tex8web-core.tex}\n\\WebPDF{build/pdf/main.pdf}\n\\EndPreamble\n' });
