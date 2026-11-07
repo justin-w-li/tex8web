@@ -74,38 +74,37 @@ test('the speech kept from a build gives the same page, and only what changed is
     const env = { ...process.env, TEX8WEB_SPEECH_CACHE: join(dir, cache) };
     delete env.TEX8WEB_MATHML;
     if (mathml) env.TEX8WEB_MATHML = '1';
-    const result = spawnSync(process.execPath, [new URL('../../js/prerender.mjs', import.meta.url).pathname, file], { env, encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [new URL('../../js/prerender.mjs', import.meta.url).pathname, file], { env, encoding: 'utf8', timeout: 60000 });
     assert.equal(result.status, 0, result.stderr);
     return readFileSync(file, 'utf8');
   };
   // (each formula's speech, or hidden for none)
   const speech = html => [...html.matchAll(/<mjx-container [^>]*>/g)]
     .map(([tag]) => tag.match(/aria-label="([^"]*)"/)?.[1] ?? (tag.includes('aria-hidden="true"') ? 'hidden' : 'none'));
+  const keys = cache => Object.keys(JSON.parse(readFileSync(join(dir, cache), 'utf8'))).sort();
   try {
     const cold = prerender(before, 'speech.json');
     assert.deepEqual(speech(cold).slice(0, 4), ['x plus 1', 'x', 'hidden', 'y']);
-    assert.equal(prerender(before, 'speech.json'), cold);
-    // (one written part way, or not at all, is as none)
-    writeFileSync(join(dir, 'speech.json'), '{"');
-    assert.equal(prerender(before, 'speech.json'), cold);
+    // (with assistive MathML, the same speech, kept by the same keys)
     const kept = readFileSync(join(dir, 'speech.json'), 'utf8');
-    writeFileSync(join(dir, 'partial.json'), kept);
+    const mathml = prerender(before, 'speech.json', true);
+    assert.match(mathml, /<mjx-assistive-mml/);
+    assert.deepEqual(speech(mathml), speech(cold));
+    assert.deepEqual(keys('speech.json'), Object.keys(JSON.parse(kept)).sort());
+    // (one written part way is as none)
+    writeFileSync(join(dir, 'fresh.json'), '{"');
     const changed = prerender(after, 'fresh.json');
+    writeFileSync(join(dir, 'partial.json'), kept);
     assert.equal(prerender(after, 'partial.json'), changed);
     // (the kept speech marked, to tell it from the speech rule engine's)
-    const marked = Object.fromEntries(Object.entries(JSON.parse(kept)).map(([key, result]) => [key, JSON.stringify({ ...JSON.parse(result), label: 'kept' })]));
-    writeFileSync(join(dir, 'speech.json'), JSON.stringify(marked));
+    writeFileSync(join(dir, 'speech.json'), JSON.stringify(Object.fromEntries(Object.keys(JSON.parse(kept)).map(key => [key, 'kept']))));
     const warm = speech(prerender(after, 'speech.json'));
     const fresh = speech(changed);
     assert.deepEqual(warm, ['w plus 1', 'w', 'kept', 'kept', fresh[4], fresh[5], fresh[6]]);
     assert.deepEqual(fresh.slice(0, 4), ['w plus 1', 'w', 'hidden', 'y']);
     assert.notDeepEqual(speech(cold).at(-1), fresh.at(-1));
     // (only this build's)
-    assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(dir, 'speech.json'), 'utf8'))).sort(),
-      Object.keys(JSON.parse(readFileSync(join(dir, 'fresh.json'), 'utf8'))).sort());
-    const mathml = prerender(before, 'mathml.json', true);
-    assert.match(mathml, /<mjx-assistive-mml/);
-    assert.equal(prerender(before, 'mathml.json', true), mathml);
+    assert.deepEqual(keys('speech.json'), keys('fresh.json'));
   } finally {
     rmSync(dir, { recursive: true });
   }

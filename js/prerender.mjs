@@ -9,7 +9,7 @@
 // (assets.lua) are cut down to the characters the document has.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, renameSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
 import { runInThisContext } from 'node:vm';
@@ -229,9 +229,12 @@ tex.postFilters.add(forSpeech);
 // formulas are the same from one build to the next: what it said of each is
 // kept, in TEX8WEB_SPEECH_CACHE (test/lib/build.mjs's) or else beside the
 // page among tex4ht's files. It is keyed by all MathJax sends its worker
-// (internal: WorkerHandler.Post), the enriched MathML and the options, and
-// by MathJax's version: a \def, a \label or tex8web.js's columns change a
-// formula's MathML, and so its key. Only what this page said is kept
+// (internal: WorkerHandler.Speech), the enriched MathML and the options,
+// and by MathJax's version: a \def, a \label or tex8web.js's columns change
+// a formula's MathML, and so its key. Of what the worker returns, only the
+// label reaches the page (outputData.speech, which Attach leaves unset when
+// it is empty); the rest goes on this typesetting's elements. Only what
+// this page said is kept.
 const cacheFile = process.env.TEX8WEB_SPEECH_CACHE || file.replace(/\.html$/, '') + '-speech.json';
 let cached = new Map();
 try {
@@ -240,25 +243,26 @@ try {
 const said = new Map();
 const kept = {};
 const { WorkerHandler } = MathJax._.a11y.speech.WebWorker;
-const post = WorkerHandler.prototype.Post;
-WorkerHandler.prototype.Post = function (command, item) {
-  if (command.cmd !== 'speech') return post.call(this, command, item);
-  const key = createHash('sha256').update(`${MathJax.version}\0${JSON.stringify(command.data)}`).digest('base64');
+const speak = WorkerHandler.prototype.Speech;
+WorkerHandler.prototype.Speech = async function (mml, options, item) {
+  const key = createHash('sha256').update(JSON.stringify([MathJax.version, mml, options])).digest('base64');
   if (!said.has(key)) {
-    const result = cached.has(key) ? Promise.resolve(cached.get(key)) : post.call(this, command, item);
-    said.set(key, result.then(speech => kept[key] = speech));
+    said.set(key, cached.has(key) ? Promise.resolve(cached.get(key))
+      : speak.call(this, mml, options, item).then(() => item.outputData.speech ?? null));
   }
-  return said.get(key);
+  const label = kept[key] = await said.get(key);
+  if (label) item.outputData.speech = label;
 };
 Object.assign(MathJax.config.options, { enableEnrichment: true, enableSpeech: true },
   mathml && { enableAssistiveMml: false });
 const spoken = MathJax.startup.getDocument(html);
 await spoken.renderPromise();
 tex.postFilters.remove(forSpeech);
-// (written whole, then renamed: a build stopped part way leaves the last
-// one's)
-writeFileSync(`${cacheFile}.${process.pid}`, JSON.stringify(kept));
-renameSync(`${cacheFile}.${process.pid}`, cacheFile);
+// (a file that can't be written means only that the next build speaks
+// everything again; one written part way doesn't parse)
+try {
+  writeFileSync(cacheFile, JSON.stringify(kept));
+} catch {}
 const items = [...MathJax.startup.document.math];
 const speeches = [...spoken.math];
 if (speeches.length !== items.length) {
