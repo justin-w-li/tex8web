@@ -14,8 +14,10 @@ local M = {}
 local fallbacks = {
   ["\\bm"] = "\\newcommand{\\bm}[1]{\\boldsymbol{#1}}",
   ["\\qedhere"] = "\\newcommand{\\qedhere}{}",
-  -- (LaTeX's, in the units siunitx prints, such as \degree)
-  ["\\TextOrMath"] = "\\newcommand{\\TextOrMath}[2]{#2}",
+  -- (LaTeX's, in the units siunitx prints. Its \degree is
+  -- \TextOrMath{°}{{}^{\circ}}, where MathJax reads a raised ∘ as "composed
+  -- with" and ° as "degrees")
+  ["\\TextOrMath"] = "\\newcommand{\\TextOrMath}[2]{#1}",
   ["\\ensuremath"] = "\\newcommand{\\ensuremath}[1]{#1}",
   -- (xfrac's, as the units extension's \nicefrac, which tex8web-math.tex
   -- loads with xfrac)

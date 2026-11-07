@@ -154,13 +154,17 @@
     \box_new:N \l__web_si_box
     \quark_new:N \q__web_si
     \clist_new:N \l__web_si_clist
-    % (after tex4ht's, set in begindocument)
+    % (after tex4ht's, set in begindocument under \fixmathjaxtoc)
+    \web@needs{fixmathjaxtoc}
+    \web@needs{__siunitx_print_math_auxii:n}
+    \cs_generate_variant:Nn \str_replace_all:Nnn { Nee }
     \AddToHook { begindocument/end } {
-        \web@needs{__siunitx_print_math_auxii:n}
         \cs_set_eq:NN \__web_si_auxii:n \__siunitx_print_math_auxii:n
-        % (\tl_replace_all:Nnn leaves what is in braces)
+        % (a unit's \% too, as a %; \tl_replace_all:Nnn leaves what is in
+        % braces)
         \cs_gset_protected:Npn \__siunitx_print_math_auxii:n #1 {
             \str_set:Nn \l_tmpa_str {#1}
+            \str_replace_all:Nee \l_tmpa_str { \c_backslash_str \c_percent_str } { \c_percent_str }
             \exp_args:NNV \str_replace_all:Nnn \l_tmpa_str \c_percent_str { \% }
             \a:MathjaxInline \exp_args:NV \__web_si_auxii:n \l_tmpa_str \b:MathjaxInline
         }
@@ -204,8 +208,9 @@
         }
         \bool_if:NTF \l__web_si_bool
             {
-                % (displays come as their source, detokenized)
-                \tl_set_rescan:Nno \l_tmpa_tl {} \l__web_si_str
+                % (displays come as their source, detokenized; & as a
+                % letter, which the walk can read unbraced)
+                \tl_set_rescan:Nno \l_tmpa_tl { \char_set_catcode_letter:N \& } \l__web_si_str
                 \exp_args:NV \__web_si_walk:n \l_tmpa_tl
                 \exp_args:NV \__web_si_alteqtoks:n \l__web_si_tl
             }

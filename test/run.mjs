@@ -134,10 +134,11 @@ const speech = {
     /aria-label='2 lines Line 1: x equals y Label open paren 2\.4 close paren Line 2: z equals w'/],
   // (nicefrac's and xfrac's fractions, the units extension's, and siunitx's
   // quantities, one formula each, in text, in math and in a display, but
-  // as text with mode=text)
+  // as text with mode=text; a % read as one, and an angle in degrees)
   'test-units': [/aria-label='one half'/, /aria-label='one fourth'/,
-    /aria-label='3 times m s to the negative 1 power'/, /aria-label='2 percent'/, /aria-label='1 K'/,
-    /, 1\.5 m\./,
+    /aria-label='3 times m s to the negative 1 power'/, /aria-label='2 percent'/, /aria-label='3 percent'/, /aria-label='1 K'/,
+    /aria-label='30 degrees'/,
+    /, 1\.5 m, /,
     /aria-label='v equals 3 times m s to the negative 1 power'/,
     /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,
     /aria-label='E equals 1\.6 times 10 to the negative 19 power J Label 1'/],

@@ -10,6 +10,7 @@
 % would warn that \a:color is gone; xcolor brings it)
 \usepackage{xcolor}
 \usepackage{siunitx}
+\DeclareSIUnit\pct{\%}
 \begin{document}
 Half of $\nicefrac{1}{2}$ is $\sfrac{1}{4}$, and $\nicefrac[\mathrm]{a}{b}$.
 
@@ -17,7 +18,7 @@ Text: \num{12345.678}, \num{1.5e-3}, \SI{3}{\meter\per\second},
 \qty{9.81}{\metre\per\square\second}, \si{\kilo\gram}, \unit{\joule},
 \ang{30}, \numrange{1}{5}, \qtyrange{1}{5}{\kelvin}, \numlist{1;2;3},
 \qtylist{1;2}{\metre}, \qty{2}{\percent},
-{\sisetup{mode=text}\qty{1.5}{\metre}}.
+{\sisetup{mode=text}\qty{1.5}{\metre}}, \qty{3}{\pct}.
 
 Math: $v = \SI{3}{\meter\per\second}$, $\qty[per-mode=fraction]{9.81}{\metre\per\square\second}$,
 $\num{1.5e-3} + \unit{\joule}$, $\ang{30}$.
