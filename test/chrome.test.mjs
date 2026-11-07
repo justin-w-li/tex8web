@@ -1,7 +1,8 @@
 // Tests of lib/chrome.mjs, which need Chrome, run by npm run test:visual:
 // node --test test/chrome.test.mjs
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -56,5 +57,28 @@ test('a signal ends the process with 128 plus its number, and the profile is rem
     assert.deepEqual(readdirSync(temp).filter(name => name.startsWith('tex8webchrome')), []);
   } finally {
     rmSync(temp, { recursive: true });
+  }
+});
+
+test('Chrome and its profile go with the process that started it, however it ends', async () => {
+  const temp = mkdtempSync(join(tmpdir(), 'tex8webchromekill'));
+  // the processes whose command line names the profile, by pid
+  const left = () => spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' }).stdout
+    .split('\n').filter(line => line.includes(temp)).map(line => Number(line.trim().split(' ')[0]));
+  try {
+    // (in a group of its own, killed outright, as build.mjs's run() kills
+    // a command that hangs)
+    const child = spawn(process.execPath, ['--input-type=module', '-e',
+      `import { launch } from './test/lib/chrome.mjs'; await launch(); console.log('up'); await new Promise(() => {});`],
+    { cwd: join(here, '..'), env: { ...process.env, TMPDIR: temp }, stdio: ['ignore', 'pipe', 'inherit'], detached: true });
+    await once(child.stdout, 'data');
+    assert.notDeepEqual(left(), []);
+    process.kill(-child.pid, 'SIGKILL');
+    assert.deepEqual(await until(left, lines => !lines.length) ?? left(), []);
+    const profiles = () => readdirSync(temp).filter(name => name.startsWith('tex8webchrome'));
+    assert.deepEqual(await until(profiles, names => !names.length) ?? profiles(), []);
+  } finally {
+    for (const pid of left()) try { process.kill(pid, 'SIGKILL'); } catch {}
+    rmSync(temp, { recursive: true, force: true, maxRetries: 10 });
   }
 });
