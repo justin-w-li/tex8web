@@ -62,6 +62,68 @@
 \tl_new:N \g__web_macros_tl
 \NewDocumentCommand\WebMathMacros{+m}{\tl_gput_right:Nn \g__web_macros_tl {#1}}
 
+% tex4ht escapes each formula's source (\alteqtoks, mathjax-latex-4ht.4ht)
+% with four \regex_replace_all, most of a long document's LaTeX run. Here
+% \detokenize's output, characters of catcode 12 and spaces, gets the same
+% replacements and the same tokens:
+% - &, < and > as the regex does: its & has the catcode that & has when it
+%   runs (a letter in display math, where tex4ht reads & as one)
+% - \par where the regex does, before a space, any character but a letter,
+%   a digit or _, or the end of the formula (its \b). \detokenize ends a
+%   control word with a space, so that is \par and \\par; \partial and
+%   \parbox are left. A regex costs as much for a formula with \partial as
+%   for any, so each \par is found with a delimited argument instead
+% - \par first, as the loop reads the formula unbraced, where a catcode 4 &
+%   would end a table cell
+% test-mathescape.tex has them all; test/run.mjs builds it with tex4ht's own
+% escaping, kept as \web@alteqtoks, and compares the pages. Not under
+% fastmathjax, which escapes nothing.
+\web@needs{alteqtoks}
+\:CheckOption{fastmathjax}\if:Option\else
+\let\web@alteqtoks\alteqtoks
+\tl_const:Ne \c__web_amp_tl { \tl_to_str:n { & } }
+\tl_const:Ne \c__web_lt_tl { \tl_to_str:n { < } }
+\tl_const:Ne \c__web_gt_tl { \tl_to_str:n { > } }
+\tl_const:Ne \c__web_par_tl { \char_generate:nn {92} {12} \tl_to_str:n { par } }
+\tl_const:Ne \c__web_newlines_tl { \char_generate:nn {10} {12} \char_generate:nn {10} {12} }
+\tl_const:Ne \c__web_word_tl
+    { \tl_to_str:n { abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ } }
+\cs_new:Npn \__web_entity:n #1 { \char_generate:nn {38} { \tex_catcode:D 38 } #1 ; }
+\cs_generate_variant:Nn \tl_replace_all:Nnn { NVe }
+\tl_new:N \l__web_rest_tl
+\cs_new_protected:Npn \__web_par_blank: { \tl_put_right:NV \l_tmpa_tl \c__web_newlines_tl }
+% \__web_par:w #1 \par #2 \q_stop, the delimiter being a catcode 12 \par
+\cs_new_protected:Npn \__web_par_define:n #1 {
+    \cs_new_protected:Npn \__web_par:w ##1 #1 ##2 \q_stop {
+        \tl_put_right:Nn \l_tmpa_tl {##1}
+        \tl_if_empty:nF {##2} {
+            \tl_set:Nn \l__web_rest_tl {##2}
+            \tl_if_head_is_space:nTF {##2} { \__web_par_blank: } {
+                \exp_args:NNe \tl_if_in:NnTF \c__web_word_tl { \tl_head:n {##2} }
+                    { \tl_put_right:NV \l_tmpa_tl \c__web_par_tl } { \__web_par_blank: }
+            }
+            \exp_after:wN \__web_par:w \l__web_rest_tl \q_stop
+        }
+    }
+}
+\exp_args:NV \__web_par_define:n \c__web_par_tl
+\cs_set_protected:Npn \alteqtoks #1 {
+    \tl_set:Ne \l_tmpa_tl { \detokenize {#1} }
+    \tl_if_in:NVT \l_tmpa_tl \c__web_par_tl {
+        % (the \par put at the end stands for the formula's end)
+        \tl_set_eq:NN \l__web_rest_tl \l_tmpa_tl
+        \tl_put_right:NV \l__web_rest_tl \c__web_par_tl
+        \tl_clear:N \l_tmpa_tl
+        \exp_after:wN \__web_par:w \l__web_rest_tl \q_stop
+    }
+    \tl_replace_all:NVe \l_tmpa_tl \c__web_amp_tl { \__web_entity:n { amp } }
+    \tl_replace_all:NVe \l_tmpa_tl \c__web_lt_tl { \__web_entity:n { lt } }
+    \tl_replace_all:NVe \l_tmpa_tl \c__web_gt_tl { \__web_entity:n { gt } }
+    \tl_set:Ne \l_tmpb_tl { \l_tmpa_tl }
+    \HCode { \l_tmpb_tl }
+}
+\fi
+
 % a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math
 % for MathJax: typeset it, re-reading the source, which tex4ht read with &
 % as a letter

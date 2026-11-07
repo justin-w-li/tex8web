@@ -676,6 +676,28 @@ if (!only.length) jobs.push(async () => {
   report(`${doc.name} (MathJax in the browser)`, problems);
 });
 
+// and the same page with tex4ht's own escaping of each formula's source,
+// which tex8web-math.tex replaces with a faster one: both, left as source
+// for MathJax, must be the same page
+const escaping = docs.find(d => d.name === 'test-mathescape');
+if (escaping) jobs.push(async () => {
+  const pages = [];
+  const problems = [];
+  for (const [kind, cfg] of [['', escaping.cfg], ['stock', join(escaping.dir, 'test-mathescape-stock.cfg')]]) {
+    const out = join(testDir(escaping), `source${kind}`), aux = join(testDir(escaping), `source${kind}aux`);
+    const result = await build({ ...escaping, cfg }, out, aux, { TEX8WEB_NO_PRERENDER: '1' });
+    if (result.code !== 0) problems.push(`make4ht exited with ${result.code}${kind && " with tex4ht's escaping"}`);
+    const page = join(out, 'test-mathescape.html');
+    pages.push(existsSync(page) ? readFileSync(page, 'utf8') : '');
+  }
+  // (a \par as two newlines, also where no space follows it, and at the end)
+  for (const wanted of ['&amp;', '&lt;', '&gt;', 'mbox{a\n\n b}', ' \\\n\n, ', '2 \\\n\n\\end{smallmatrix}']) {
+    if (!pages[0].includes(wanted)) problems.push(`no ${JSON.stringify(wanted)} in the page`);
+  }
+  if (pages[0] !== pages[1]) problems.push("the page differs from the one with tex4ht's escaping of math");
+  report(`${escaping.name} (escaping as tex4ht's)`, problems);
+});
+
 await pool(jobs, workers, job => job());
 
 console.log(failures ? `\n${failures} failed` : '\nall passed');

@@ -1,0 +1,45 @@
+% A test for tex8web: the escaping of each formula's source for the page,
+% which tex8web-math.tex does in place of tex4ht's (\alteqtoks). Every
+% input where the two could differ is here: &, < and > in every kind of
+% math, \par followed by a space (as \detokenize writes a control word), by
+% a letter (\partial, \parallel, \parity), by a character that isn't one
+% (\\par in a matrix is a row end and the letters par), at the end of a
+% source (\\par before an \end), and non-ASCII text. test/run.mjs builds
+% the page a second time with tex4ht's own escaping and compares them.
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\newcommand{\parity}[1]{\mathrm{par}(#1)}
+\begin{document}
+\section{Escaped}
+Inline: $a<b$, $a>b$, $\{x : x<1 \text{ and } y>2\}$, \(p \le q\), $a \& b$,
+$\text{caf\'e: é<ü>ï}$.
+
+Parts: $\partial_x \partial_y f \parallel g$, $\parity{n} \partial\parallel$,
+$\mathrm{par} \; \text{par}$, $\mbox{a\par b}$, $\mbox{a \par b \par c}$,
+$\mbox{a\par\par b}$.
+
+\[ a<b, \quad c>d, \quad \partial_x \parallel \parity{x} \]
+\[ \mbox{one \par two} \]
+
+\begin{align}
+  a &< b \\
+  c &> d
+\end{align}
+\begin{align*}
+  \partial a &\parallel b \\par &= \parity{z} \\
+  \text{x y} &\ne \partial \\par
+\end{align*}
+\begin{equation}
+  \begin{pmatrix} a & b \\ c & d \end{pmatrix} < \begin{bmatrix} 1 & 2 \end{bmatrix}
+\end{equation}
+
+Where par is not a control word's end:
+\[ \begin{pmatrix} a \\par b \\parx c \\par1 \\par_1 \\par, \\par& d \\\\par e \end{pmatrix} \]
+\[ \begin{smallmatrix} 1 & 2 \\par\end{smallmatrix} \]
+
+\begin{tabular}{cc}
+  $a<b$ & $\begin{smallmatrix} 1 & 2 \\ 3 & 4 \end{smallmatrix}$ \\
+  $\mbox{x\par y}$ & $\begin{pmatrix} a & b \end{pmatrix} > \partial$
+\end{tabular}
+\end{document}

@@ -89,6 +89,7 @@ A document has one page. A tex4ht split option (a number or `splitat=` in `\Prea
 Each script's header comment says what it checks. CLAUDE.md says when to run which.
 
 - **`npm test`** runs `test/unit/` (Lua), `test/unit/prerender.test.mjs`, `test/tools.test.mjs` and `test/run.mjs`. The last builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`, and checks each page. `node test/run.mjs <name>` builds one.
+  - `test-mathescape.tex` has the formulas where tex8web's escaping of a formula's source (`\alteqtoks`) could differ from tex4ht's. `run.mjs` builds it a second time with `test-mathescape-stock.cfg`, which restores tex4ht's, and the two pages must be the same.
 - **`npm run test:visual`** needs Chrome and the network. It runs `test/visual.mjs`, `test/page.mjs` and `test/chrome.test.mjs`.
   - `visual.mjs` compares each page, prerendered and typeset by MathJax in the browser, screen by screen.
   - `page.mjs` drives the page's script on the fixtures that have each feature. `npm run test:page` runs it alone.
@@ -175,7 +176,7 @@ Open an issue with:
 | `tex8web.cfg` | the config for documents without one of their own |
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, prerendering |
 | `tex/tex8web-core.tex` | loads the four modules below |
-| `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, equation numbers, `\intertext`, TikZ in display math |
+| `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, the escaping of each formula's source, equation numbers, `\intertext`, TikZ in display math |
 | `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill`, the table of contents, lists, framed's boxes, figures, `\WebTerm` |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, the document's measurements and heading fonts |
 | `tex/tex8web-boxes.tex` | tcolorbox's boxes |
