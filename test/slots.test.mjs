@@ -148,7 +148,7 @@ describe('slots and run()', { concurrency: true }, () => {
     }
   });
 
-  test('a number of slots that is not a number of slots is refused', async () => {
+  test('a number of slots that is not a number of slots is refused', { skip: !lockf }, async () => {
     for (const slots of ['0', 'two', '1.5']) {
       const result = await child(`import { takeSlot } from './test/lib/slots.mjs';
         await takeSlot().catch(error => console.log(error.message)); process.exit();`, { TEX8WEB_SLOTS: slots }).done;

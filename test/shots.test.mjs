@@ -217,10 +217,9 @@ describe('shots.mjs', { concurrency: 2 }, () => {
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(lines(result), ['main-1400-light: identical']);
 
+    // (without --touch the page isn't checked for a mouse: headless Chrome
+    // on Linux has none, so it matches hover: none either way)
     const touchy = page('touchy', { style: '@media (hover: none) { body { background: #000; } }' });
-    const moused = await shots('1400-light', join(dir, 'out-mouse'), old, touchy);
-    assert.equal(moused.status, 0, moused.stderr);
-    assert.deepEqual(lines(moused), ['main-1400-light: identical']);
     const touched = await shots('1400-light', '--touch', '--expect', 'look', join(dir, 'out-touch'), old, touchy);
     assert.equal(touched.status, 1, touched.stderr);
     assert.match(lines(touched)[0], /^main-1400-light: differs from screen 1 of 9/);
