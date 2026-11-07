@@ -267,9 +267,9 @@ async function buildHere(doc, out, aux, env) {
   if (!doc.draft) rmSync(aux, { recursive: true, force: true });
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
-  // (the speech is kept beside the document, where every checkout's
-  // build of it finds it: it is keyed by its formulas, and a build of
-  // another checkout or tex8web says mostly the same)
+  // (the speech is kept beside the document, so that the builds of a
+  // document outside tex8web share it with every checkout: it is keyed by
+  // the formulas, which another version of tex8web mostly keeps)
   mkdirSync(join(doc.dir, 'build'), { recursive: true });
   const speech = join(doc.dir, 'build', doc.tex.replace(/\.tex$/, '.speech.json'));
   const result = await run(join(root, 'bin/tex8web'), args,
