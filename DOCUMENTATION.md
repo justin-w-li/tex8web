@@ -231,7 +231,7 @@ The options:
 - **`--baseline dir`** compares with the pages in `dir/<name>` instead, such as another checkout's `html` directory.
 - **`--out dir`** says where everything goes, `build/regress` in the directory you run it from by default: `html/<name>` for the pages, `compare/<name>`, `logs/`, `tex4ht/` and `accepted/<name>`. The command refuses the default when it would be inside tex8web. Keep `-` and the other characters of a Lua pattern out of its path (see [Known limitations](#known-limitations)).
 - **`--draft`** builds in make4ht's draft mode, which is quicker and not to be trusted.
-- **`--expect look`** is for a change that is meant to show. For each width and scheme, the screens are compared only as far as the first strip of 20 that differs, and the report says from which screen. Without it every screen is compared and every differing one listed.
+- **`--expect look`** is for a change that is meant to show. For each width and scheme, the screens are compared only as far as the first strip of screens that differs, and the report says from which screen. Without it every screen is compared and every differing one listed.
 - **`--shots-cache dir`** keeps what the baseline's screens came to, so that a baseline is shot once for every run that uses the directory. By default it is `shots-cache` in `--out`.
 - **`--shots-at-once n`** compares the screens of `n` pages at once, as the others are built (1 by default).
 - **`--latexmk`** builds each document's PDF first, with `latexmk` in the document's directory. A document whose PDF fails isn't built.

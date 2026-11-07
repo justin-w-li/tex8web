@@ -1,8 +1,8 @@
 // Tests of shots.mjs's comparison, which need Chrome, run by npm run
 // test:visual: node --test test/shots.test.mjs
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
@@ -14,14 +14,16 @@ const dir = mkdtempSync(join(tmpdir(), 'tex8webshots'));
 after(() => rmSync(dir, { recursive: true }));
 
 // a page 45 screens high at 900px (more than a strip), with a bar fixed to
-// the top, a block as high as the window, and a line of text at 25000px
+// the top, a footer fixed to the bottom, a sticky header, a block as high as
+// the window, and a line of text at 25000px
 const page = (name, { extra = '', more = 0, color = 'black', background = 'white', style = '' } = {}) => {
   mkdirSync(join(dir, name), { recursive: true });
   writeFileSync(join(dir, name, 'main.html'), `<!DOCTYPE html><meta charset="utf-8"><style>
     body { margin: 0; font: 20px sans-serif; background: ${background}; } .bar { position: fixed; top: 0; left: 0; right: 0; background: #ccc; }
+    .foot { position: fixed; bottom: 0; left: 0; right: 0; background: #cfc; } .head { position: sticky; top: 30px; height: 0; } .head span { background: #fc9; }
     .tall { height: 100vh; background: linear-gradient(#fff, #9cf); } .gap { height: ${24100 + more}px; }
     .end { height: 14976px; } ${style} p { height: 24px; margin: 0; color: ${color}; }</style>
-    <div class="bar">bar</div><div class="tall">window</div><div class="gap"></div><p>${extra}</p><div class="end"></div>`);
+    <div class="bar">bar</div><div class="foot">footer</div><div class="head"><span>header</span></div><div class="tall">window</div><div class="gap"></div><p>${extra}</p><div class="end"></div>`);
   return join(dir, name);
 };
 const shots = (...args) => spawnSync(process.execPath, [join(here, 'shots.mjs'), ...args], { encoding: 'utf8', timeout: 300000 });
@@ -112,16 +114,66 @@ test('--expect look stops each width and scheme at the first strip that differs'
   assert.equal(shots('--expect', 'nothing', join(dir, 'out-bad'), old, other).status, 2);
 });
 
-test('a cache made with another Chrome is refused, and a run leaves only whole entries', () => {
-  const [old, other, cache] = [page('old'), page('other', { extra: 'words' }), join(dir, 'cache-chrome')];
+test('a run leaves only whole entries, and a build\'s own files decide the key', () => {
+  const [old, other, cache] = [page('old'), page('other', { extra: 'words' }), join(dir, 'cache-whole')];
   shots('--cache', cache, join(dir, 'out-x'), old, other);
   const [key] = readdirSync(cache);
   assert.deepEqual(readdirSync(join(cache, key)).filter(file => !file.endsWith('.json')), []);
+
+  // a picture under a build directory is part of the page
+  const withPicture = page('picture');
+  mkdirSync(join(withPicture, 'build'));
+  writeFileSync(join(withPicture, 'build', 'a.txt'), 'one');
+  shots('--cache', cache, join(dir, 'out-q'), withPicture, other);
+  writeFileSync(join(withPicture, 'build', 'a.txt'), 'two');
+  shots('--cache', cache, join(dir, 'out-r'), withPicture, other);
+  assert.equal(readdirSync(cache).length, 3);
+});
+
+test('cached strips that are wrong are shot again, so --expect look does not call a page identical', () => {
+  const [old, late, cache] = [page('old'), page('late', { extra: 'words', color: 'red' }), join(dir, 'cache-stale')];
+  shots('--cache', cache, join(dir, 'out-s'), old, page('same'));
+  const [key] = readdirSync(cache);
   const entry = join(cache, key, 'main-1400-light.json');
-  writeFileSync(entry, JSON.stringify({ ...JSON.parse(readFileSync(entry, 'utf8')), chrome: 'Chrome/1.0' }));
-  const result = shots('--cache', cache, join(dir, 'out-y'), old, other);
-  assert.equal(result.status, 2);
-  assert.match(result.stderr, /was made with Chrome\/1\.0/);
+  const right = readFileSync(entry, 'utf8');
+  const wrong = JSON.parse(right);
+  wrong.hashes[0] = 'not the strip';
+  writeFileSync(entry, JSON.stringify(wrong));
+  // (the first strip differs from the entry's, and from nothing else)
+  const result = shots('--cache', cache, '--expect', 'look', join(dir, 'out-t'), old, late);
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(lines(result)[0], /^main-1400-light: differs from screen 27 of 45, shots stopped there/);
+  assert.equal(readFileSync(entry, 'utf8'), right);
+});
+
+test('an old build replaced during the run is not kept under the key of what it was', async () => {
+  const [old, cache] = [page('old'), join(dir, 'cache-race')];
+  const child = spawn(process.execPath, [join(here, 'shots.mjs'), '--cache', cache, join(dir, 'out-race'), old, page('same')]);
+  let told = false;
+  child.stderr.on('data', chunk => {
+    if (told || !String(chunk).includes('old, strip 1')) return;
+    told = true;
+    writeFileSync(join(old, 'main.html'), readFileSync(join(old, 'main.html'), 'utf8') + '<!-- accepted -->');
+  });
+  await new Promise(resolve => child.on('close', resolve));
+  assert.ok(told);
+  // (the later widths and schemes were shot after the change, and are kept under its key)
+  const kept = existsSync(cache) ? readdirSync(cache).flatMap(key => readdirSync(join(cache, key))) : [];
+  assert.ok(!kept.includes('main-1400-light.json'), kept.join());
+});
+
+test('screens beyond the first are those of a page shot one screen at a time, with fixed and sticky elements', () => {
+  const [old, other] = [page('old'), page('other', { background: '#eef' })];
+  shots('--keep', 'all', join(dir, 'out-fixed'), old, other);
+  shots(join(dir, 'out-single'), join(other, 'main.html'));
+  // (the first and last screens of a strip, and the last of the page)
+  for (const [label, screens] of [['main-1400-light', [1, 19, 20, 21, 39, 40, 44]], ['main-390-dark', [1, 19, 20, 21, 39, 40, 47]]]) {
+    for (const i of screens) {
+      const n = String(i).padStart(3, '0');
+      const [single, compared] = [`out-single/${label}-${n}.png`, `out-fixed/${label}-${n}-new.png`].map(file => decode(readFileSync(join(dir, file))));
+      assert.ok(single.rows.equals(compared.rows), `${label} screen ${i} is not the one shot alone`);
+    }
+  }
 });
 
 test('--then runs on each page before it is shot, and --touch makes it a touch screen', () => {

@@ -78,7 +78,7 @@ describe('regress.mjs', { concurrency: true }, () => {
       // a change that is meant to show is compared as far as its first differing strip
       result = await regress(dir, clean, '--expect', 'look', '--shots-cache', join(dir, 'store'), 'two');
       assert.equal(result.status, 3, result.stderr + result.stdout);
-      assert.match(result.stdout, /^two: looks different: main-1400-light \(from screen \d+\)/m);
+      assert.match(result.stdout, /^two: looks different: note-1400-light \(from screen \d+\)/m);
       assert.ok(readdirSync(join(dir, 'store')).length > 0, 'no cache');
 
       // another baseline, another output directory, and a config

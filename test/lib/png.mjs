@@ -33,14 +33,16 @@ export function decode(png) {
     throw new Error(`unsupported PNG: ${header[8]}-bit, color type ${header[9]}, interlace ${header[12]}`);
   }
   const stride = width * channels;
-  const raw = inflateSync(Buffer.concat(data));
+  // (the rows are made in place, each a byte nearer the start than its
+  // filtered one, as a picture of a long page is 100 MB)
+  const raw = inflateSync(Buffer.concat(data)), zeros = Buffer.alloc(stride);
   if (raw.length !== height * (stride + 1)) throw new Error('truncated PNG');
-  const rows = Buffer.alloc(height * stride), zeros = Buffer.alloc(stride);
+  const rows = raw;
   for (let y = 0; y < height; y++) {
     const filter = raw[y * (stride + 1)], from = y * (stride + 1) + 1, to = y * stride;
     // (the row above, which the first row has all zero)
     const above = y ? rows : zeros, at = y ? to - stride : 0;
-    if (filter === 0) raw.copy(rows, to, from, from + stride);
+    if (filter === 0) raw.copyWithin(to, from, from + stride);
     else if (filter === 2) {
       for (let x = 0; x < stride; x++) rows[to + x] = raw[from + x] + above[at + x];
     } else if (filter === 1 || filter === 3 || filter === 4) {
@@ -58,7 +60,7 @@ export function decode(png) {
       }
     } else throw new Error(`bad PNG filter ${filter}`);
   }
-  return { width, height, channels, rows };
+  return { width, height, channels, rows: rows.subarray(0, height * stride) };
 }
 
 // the PNG of rows from top down to bottom (exclusive) of a decoded picture

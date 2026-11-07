@@ -10,10 +10,9 @@
 //     build (2 if it couldn't compare)
 //   --cache <dir>, before either: where the old build's screens are kept, as
 //     what they came to, so that a later run against the same old build
-//     doesn't shoot them again. Checkouts may share it. A cache made with
-//     another Chrome is refused
+//     doesn't shoot them again. Checkouts may share it
 //   --expect look, before either: the builds are expected to look different,
-//     so stop each width and scheme at the first strip of 20 screens that
+//     so stop each width and scheme at the first strip of screens that
 //     differs and say from which screen. Without it every screen is compared
 //   --keep <n | all>, before either: write the old and new screens for at
 //     most n differing screens of each width and scheme, the first ones
@@ -86,17 +85,17 @@ const report = (label, differing, before, after, height, early) =>
   console.log(`${label}: ${differing.length ? `${early ? `differs from screen ${differing[0]} of ${after}, shots stopped there`
     : `screens ${differing.join(', ')} of ${after} differ`}${before === after ? '' : ` (${before} before)`}, ${height}px each` : 'identical'}`);
 
-// The strips of one page, as PNGs (base64) by number: all of them, or those
-// in `which`, or up to the first that stop(number, PNG) says to stop at.
-// Resolves to { total, shots, stopped }, total being the page's height
-async function shootStrips(file, at, { width, height, colorScheme }, { which, stop } = {}) {
+// The strips of one page, as PNGs (base64) by number: those from `from` on,
+// or those in `which`, up to the first that stop(number, PNG) says to stop
+// at. Resolves to { total, shots, stopped }, total being the page's height
+async function shootStrips(file, at, { width, height, colorScheme }, { from = 0, which, stop } = {}) {
   return chrome.withPage(pathToFileURL(file).href, { width, height, colorScheme, touch }, async tab => {
     await prepare(tab);
     const total = await tab.evaluate('document.documentElement.scrollHeight');
     const count = Math.ceil(total / (strip * height));
     const shots = new Map();
     let stopped = false;
-    for (const k of which ?? [...Array(count).keys()]) {
+    for (const k of which ?? Array.from({ length: Math.max(count - from, 0) }, (_, i) => from + i)) {
       const y = k * strip * height;
       console.error(`${at}strip ${k + 1} of ${count}`);
       shots.set(k, await tab.screenshot(y, Math.min(strip * height, total - y)));
@@ -110,21 +109,15 @@ async function shootStrips(file, at, { width, height, colorScheme }, { which, st
 }
 
 // What the old build's strips came to, kept in the cache directory under a
-// key made of what decides them: the old build's files, this tool, Chrome
-let key;
-const cacheKey = () => key ??= createHash('sha256').update(JSON.stringify([hashFiles(builds[0], ['']), strip, windows, then, touch,
-  ...[import.meta.url, new URL('./lib/chrome.mjs', import.meta.url), new URL('./lib/png.mjs', import.meta.url)]
-    .map(url => readFileSync(fileURLToPath(url), 'utf8')), chrome.version])).digest('hex').slice(0, 16);
+// key made of what decides them: the old build's files (all of them, as
+// pictures may be anywhere in it), this tool, Chrome
+const tool = [import.meta.url, new URL('./lib/chrome.mjs', import.meta.url), new URL('./lib/png.mjs', import.meta.url)]
+  .map(url => readFileSync(fileURLToPath(url), 'utf8'));
+const cacheKey = () => createHash('sha256').update(JSON.stringify([hashFiles(builds[0], [''], { outputs: true }),
+  strip, windows, then, touch, ...tool, chrome.version])).digest('hex').slice(0, 16);
 
-// the cached strips of a page at one width and scheme, if there are any.
-// A cache of another Chrome's is an error: its key has the version in it,
-// so that is a file put there by hand or by another tool
-function cached(file) {
-  if (!existsSync(file)) return null;
-  const entry = JSON.parse(readFileSync(file, 'utf8'));
-  if (entry.chrome !== chrome.version) throw new Error(`${file} was made with ${entry.chrome}, and this is ${chrome.version}`);
-  return entry;
-}
+// the cached strips of a page at one width and scheme, if there are any
+const cached = file => existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
 
 // Keeps an entry for the next run, whole: written beside the file, then
 // linked to it. A run that was first has its entry kept, and this one's,
@@ -144,30 +137,20 @@ function keepEntry(file, entry) {
 
 // Compares one page of the old and new builds at one width and scheme:
 // the numbers of the screens that differ, and how many screens each build has.
-// With --expect look it stops at the first strip that differs, and the
-// numbers are those of that strip
+// With --expect look it stops at the first strip whose screens differ
+// (when the cached strips of the old build say it differs, but the screens
+// don't, they are wrong and are shot again), and the numbers are those of
+// that strip
 async function compare(page, label, view) {
   const { height } = view;
   const [oldPage, newPage] = builds.map(build => join(build, basename(page)));
-  const file = cache && join(cache, cacheKey(), `${label}.json`);
-  let old = file && cached(file);
-  let oldShots;
-  if (!old) {
-    const shot = await shootStrips(oldPage, `${label}: old, `, view);
-    oldShots = shot.shots;
-    old = { chrome: chrome.version, total: shot.total, hashes: [...oldShots.values()].map(hash) };
-    if (file) keepEntry(file, old);
-  }
-  const current = await shootStrips(newPage, `${label}: new, `, view,
-    { stop: expect && ((k, shot) => hash(shot) !== old.hashes[k]) });
-  const last = current.stopped ? Math.max(...current.shots.keys()) : Math.max(old.hashes.length, current.shots.size) - 1;
-  const unlike = [...Array(last + 1).keys()].filter(k => old.hashes[k] !== (current.shots.has(k) ? hash(current.shots.get(k)) : undefined));
-  oldShots ??= unlike.length ? (await shootStrips(oldPage, `${label}: old again, `, view, { which: unlike.filter(k => k < old.hashes.length) })).shots : new Map();
   const screens = total => Math.ceil(total / height);
   const differing = [];
-  for (const k of unlike) {
-    // (one strip's pictures at a time: a strip of a wide page is 100 MB)
-    const [a, b] = [oldShots.get(k), current.shots.get(k)].map(shot => shot && decode(Buffer.from(shot, 'base64')));
+  // the screens of strip k that differ, from its two PNGs. One strip's pictures
+  // at a time: a strip of a wide page is 100 MB
+  const compareStrip = (k, oldShot, newShot) => {
+    const [a, b] = [oldShot, newShot].map(shot => shot && decode(Buffer.from(shot, 'base64')));
+    let found = 0;
     for (let i = k * strip; i < Math.min((k + 1) * strip, Math.max(screens(old.total), screens(current.total))); i++) {
       // (a screen's rows in its strip's picture, if the build has the screen)
       const rows = picture => picture && i * height - k * strip * height < picture.height
@@ -177,12 +160,46 @@ async function compare(page, label, view) {
       const same = from && to && from[1] - from[0] === to[1] - to[0] && a.channels === b.channels
         && a.rows.subarray(from[0] * stride, from[1] * stride).equals(b.rows.subarray(to[0] * stride, to[1] * stride));
       if (same) continue;
+      found++;
       differing.push(i);
       if (differing.length > keep) continue;
       const n = String(i).padStart(3, '0');
       if (from) writeFileSync(join(out, `${label}-${n}-old.png`), encode(a, ...from));
       if (to) writeFileSync(join(out, `${label}-${n}-new.png`), encode(b, ...to));
     }
+    return found;
+  };
+
+  let file = cache && join(cache, cacheKey(), `${label}.json`);
+  let old = file && cached(file), current, oldShots;
+  for (let from = 0;;) {
+    if (!old) {
+      const key = cache && cacheKey();
+      file = cache && join(cache, key, `${label}.json`);
+      const shot = await shootStrips(oldPage, `${label}: old, `, view);
+      oldShots = shot.shots;
+      old = { total: shot.total, hashes: [...oldShots.values()].map(hash) };
+      // (not if the build was replaced meanwhile: these are not what the key says)
+      if (cache && cacheKey() === key) keepEntry(file, old);
+    }
+    current = await shootStrips(newPage, `${label}: new, `, view,
+      { from, stop: expect && ((k, shot) => hash(shot) !== old.hashes[k]) });
+    const last = current.stopped ? Math.max(...current.shots.keys())
+      : Math.max(old.hashes.length, Math.ceil(current.total / (strip * height))) - 1;
+    const unlike = [...Array(last + 1).keys()].filter(k => k >= from
+      && old.hashes[k] !== (current.shots.has(k) ? hash(current.shots.get(k)) : undefined));
+    const again = oldShots ?? (unlike.length
+      ? (await shootStrips(oldPage, `${label}: old again, `, view, { which: unlike.filter(k => k < old.hashes.length) })).shots : new Map());
+    const alike = unlike.filter(k => !compareStrip(k, again.get(k), current.shots.get(k)));
+    if (!alike.length) break;
+    if (!oldShots) {
+      // the cached strips said these differ, and they don't: the entry is wrong
+      rmSync(file, { force: true });
+      old = null;
+      differing.length = 0;
+      from = 0;
+    } else if (current.stopped) from = last + 1;
+    else break;
   }
   return [differing, screens(old.total), screens(current.total)];
 }
