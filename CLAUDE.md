@@ -76,6 +76,9 @@ Docs, comments and commit messages are read by strangers.
   - verify the tweak itself: one targeted measurement or screenshot (`shots.mjs --eval` or `--clip`), rebuilding only the page that shows it (a small test document, `node test/run.mjs <name>`; a change to `js/tex8web-page.js` alone can be copied next to a built page);
   - `npm test`, then commit; batch several tweaks per commit;
   - run `npm run test:visual` and the full rebuild once, at the end of a batch.
+- **The test tools serve the pages.** Change `test/` or the dev loop only for a failure that happened or a cost you measured. Put a risk you only foresee in the report, not in code.
+  - A change to the tools gets a reviewer only if it touches locks, slots or process lifetimes.
+  - Its checks are `npm test` and the notes' rebuild, plus `npm run test:visual` if it touches `chrome.mjs`, `shots.mjs` or `visual.mjs`.
 - **Keep the docs true.**
   - `DOCUMENTATION.md` changes when behavior or limitations do, and `CONTRIBUTING.md` when internals, tests or files do.
   - Known gaps go in `test/expected.json`.
