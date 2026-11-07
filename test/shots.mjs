@@ -59,6 +59,8 @@ if ((expect !== undefined && expect !== 'look') || (keepOption !== undefined && 
 }
 const keep = keepOption === undefined ? 8 : keepOption === 'all' ? Infinity : Number(keepOption);
 const windows = [[1400, 900], [390, 844]];
+// (the tests' hook: only the views a test looks at, as 1400-light,390-dark)
+const views = process.env.TEX8WEB_SHOTS_VIEWS?.split(',');
 // (a failure isn't a difference)
 process.on('uncaughtException', error => { console.error(error); process.exit(2); });
 const pages = path => statSync(path).isDirectory()
@@ -78,8 +80,9 @@ async function prepare(tab) {
 // costs Chrome half a second whatever its height (captureBeyondViewport),
 // and the screens of a strip are what they would be one by one. A strip
 // that is the same in both builds settles its screens; only the screens of
-// the others are cut out and compared.
-const strip = 20;
+// the others are cut out and compared. The tests make a strip a few screens
+// (TEX8WEB_SHOTS_STRIP), so that their pages can be short.
+const strip = Number(process.env.TEX8WEB_SHOTS_STRIP ?? 20);
 const hash = shot => createHash('sha256').update(shot).digest('hex');
 const report = (label, differing, before, after, height, early) =>
   console.log(`${label}: ${differing.length ? `${early ? `differs from screen ${differing[0]} of ${after}, shots stopped there`
@@ -229,6 +232,7 @@ try {
     }
     for (const [width, height] of windows) {
       for (const colorScheme of ['light', 'dark']) {
+        if (views && !views.includes(`${width}-${colorScheme}`)) continue;
         const label = `${name}-${width}-${colorScheme}`;
         if (builds.length === 2 && !clip && expression === undefined) {
           const [differing, before, after] = await compare(page, label, { width, height, colorScheme });
