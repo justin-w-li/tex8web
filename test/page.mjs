@@ -376,6 +376,42 @@ async function hiding(chrome, file) {
   });
 }
 
+// on a phone's screen, a page that lands partway down, by a link's # or by
+// the browser's reload, keeps its bar shown with its line, and nothing
+// moves: the browser's own scrolling is not the reader's
+async function landing(chrome, file) {
+  const url = pathToFileURL(file).href;
+  const size = { width: 390, height: 844 };
+  const runs = `window.__runs = [];
+    addEventListener('transitionrun', e => e.target.matches?.('.tex8web-controls') && __runs.push(e.propertyName), true)`;
+  const id = await chrome.withPage(url, size, page => page.evaluate(`[...document.querySelectorAll('h2[id], h3[id]')]
+    .find(h => h.getBoundingClientRect().top + scrollY > 1000 && h.getBoundingClientRect().top + scrollY < document.documentElement.scrollHeight - innerHeight)?.id`));
+  if (!id) return ['landing: no heading far enough down to link to'];
+  const state = `new Promise(done => setTimeout(() => {
+    const controls = document.querySelector('.tex8web-controls');
+    done([scrollY, controls.classList.contains('tex8web-away'), getComputedStyle(controls).borderBottomColor, __runs.join()]);
+  }, 500))`;
+  const problems = [];
+  const judge = (how, [y, away, line, moved]) => {
+    if (y < 500) problems.push(`landing by ${how}: at ${y}px, not partway down`);
+    if (away) problems.push(`landing by ${how}: the bar away`);
+    if (line === 'rgba(0, 0, 0, 0)') problems.push(`landing by ${how}: no line under the bar`);
+    if (moved) problems.push(`landing by ${how}: moving (${moved})`);
+  };
+  await chrome.withPage(`${url}#${id}`, { ...size, before: runs }, async page => judge('a link', await page.evaluate(state)));
+  await chrome.withPage(url, { ...size, before: runs }, async page => {
+    await page.evaluate('scrollTo(0, 1500)');
+    await page.frame();
+    await page.evaluate('window.__old = true; location.reload()');
+    if (!await until(() => page.evaluate(`!window.__old && document.readyState === 'complete'`))) {
+      problems.push('landing by reload: not loaded again');
+      return;
+    }
+    judge('reload', await page.evaluate(state));
+  });
+  return problems;
+}
+
 // the fade of a display that scrolls on a phone's screen, by its two masks'
 // positions. At its start, only the right edge fades; 20px in, the left
 // fades halfway; in the middle, both; 20px from its end, the right
@@ -828,7 +864,7 @@ const each = check => async (chrome, docs) => {
 const checks = {
   viewer: [['test-article', 'examples/basic'], each(viewing)],
   touch: [['examples/basic'], each(touching)],
-  bar: [['test'], each(async (...args) => [...await naming(...args), ...await hiding(...args)])],
+  bar: [['test'], each(async (...args) => [...await naming(...args), ...await hiding(...args), ...await landing(...args)])],
   fade: [['test'], each(fading)],
   theme: [['test-generic'], each(themed)],
   target: [['test-generic', 'test-index'], each(targeting)],

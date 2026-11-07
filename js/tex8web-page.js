@@ -147,18 +147,31 @@
     if (!controls) return;
     const top = () => scrollY <= controls.offsetHeight;
     let was = layout(), width = innerWidth, last = scrollY;
+    const atTop = () => root.classList.toggle('tex8web-top', scrollY <= 0);
+    // (the browser restores the reader's place, or follows a link's #, on
+    // its own just before the load event and tells the page a frame later:
+    // that is not the reader's scrolling, so the bar stays as it is, with
+    // no transitions, until two frames after the load)
+    let settled = false;
+    controls.style.transition = 'none';
+    atTop();
+    const settle = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+      settled = true;
+      last = scrollY;
+      controls.style.transition = '';
+    }));
+    if (document.readyState === 'complete') settle();
+    else addEventListener('load', settle);
     // (only on a narrow screen: the browser may restyle the page for a
     // narrow one before the resize event, and a bar already away would
     // then vanish there rather than fade; and not for the scrolling that
     // keeps the reader's place as the width changes. Safari on iOS bounces
     // past the page's ends and jitters a pixel or two back as its own bars
     // grow or shrink, so a turn counts only once it has gone 10px)
-    const atTop = () => root.classList.toggle('tex8web-top', scrollY <= 0);
-    atTop();
     addEventListener('scroll', () => {
       atTop();
       const end = document.documentElement.scrollHeight - innerHeight;
-      if (innerWidth !== width) {
+      if (innerWidth !== width || !settled) {
         width = innerWidth;
         last = scrollY;
       } else if (scrollY >= 0 && scrollY <= end && (Math.abs(scrollY - last) >= 10 || top())) {
