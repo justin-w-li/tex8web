@@ -381,6 +381,33 @@
     class="longtable\web@place{\web@order\LTleft}{\web@order\LTright}"\Hnewline
     \GROUPS\Hnewline}<>\HAlign}
 
+% the space that \\[len] adds below a row, in ems of the text, as the
+% height of the row that html4.4ht writes after it. latex.4ht keeps a
+% positive len in \HBorderspace and adds html4.4ht's row (\h:HBorder to
+% \j:HBorder) to \HBorder, which \a:putHBorder writes as the next row
+% starts. That row is a line of font-size len, taller than len. Its cells
+% keep their no-break space, as make4ht's tablerows removes a row of one
+% empty cell. A negative len goes through \noalign{\vskip}, which tex4ht
+% drops. A tabular that writes no <table> (an empty \a:tabular) writes its
+% rows as lines, as article.4ht's \maketitle sets the author's, so there
+% the space is a block after the line's <br>. The row is set as \HBorder
+% is written, as that \maketitle empties \HBorder.
+\def\web@rowskip{style="--tex8web-rowskip: \web@bodyem\HBorderspace"}
+\def\web@iftable{\expandafter\ifx\csname a:tabular\endcsname\empty
+    \expandafter\@secondoftwo\else\expandafter\@firstoftwo\fi}
+\web@needs{i:HBorder}
+\web@needs{a:putHBorder}
+\expandafter\let\expandafter\web@rowskip@cell\csname i:HBorder\endcsname
+\expandafter\let\expandafter\web@rowskip@end\csname j:HBorder\endcsname
+\expandafter\let\expandafter\web@putHBorder\csname a:putHBorder\endcsname
+\expandafter\def\csname a:putHBorder\endcsname{%
+    \expandafter\def\csname h:HBorder\endcsname{\web@iftable
+        {<tr\Hnewline class="vspace tex8web-rowskip" \web@rowskip>}%
+        {<span class="tex8web-rowskip" \web@rowskip>}}%
+    \expandafter\def\csname i:HBorder\endcsname{\web@iftable\web@rowskip@cell{}}%
+    \expandafter\def\csname j:HBorder\endcsname{\web@iftable\web@rowskip@end{</span>}}%
+    \web@putHBorder}
+
 % --- terms ------------------------------------------------------------------
 
 % \WebTerm\cs: what \cs{...} sets is a term, which the search field finds

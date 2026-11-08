@@ -689,6 +689,20 @@ const tables = {
     placed('tabular tex8web-center', '<p class=.noindent.>A tabularx'),
     placed('tabular tex8web-inline', 'in an X cell'),
     placed('tabular', 'After a heading'),
+    // (\\[len] with array.sty's \@argarraycr)
+    /In center\s*<\/td>\s*<\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.6em'>/,
+  ],
+  // the space that \\[len] adds below a row, in ems of the text: a row of
+  // that height, before an \hline's, in a tabular and a longtable, and in
+  // a tabular in the author's lines, and a line's space after the author's
+  // name, whose rows tex4ht writes as lines
+  'test-rowskip': [
+    /0\.5em below\s*<\/td><\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.5em'><td>[^]*6pt below\s*<\/td><\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.6em'>/,
+    /<table class='longtable[^]*0\.5em below\s*<\/td>\s*<\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.5em'>[^]*6pt below\s*<\/td>\s*<\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.6em'>/,
+    /A\. Writer<\/span>\s*<br \/>\s*<span class='tex8web-rowskip' style='--tex8web-rowskip: 0\.5875em'><\/span>/,
+    /Department of Tables\s*<\/span><\/td><\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.3em'><td>/,
+    /6pt below, then a rule\s*<\/td>\s*<\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.6em'>(?:(?!<\/tr>)[^])*<\/tr><tr class='hline'>/,
+    /^(?![^]*font-size:\d)/,
   ],
 };
 

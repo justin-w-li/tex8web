@@ -1,0 +1,37 @@
+% The space that \\[len] adds below a table's row, as in the PDF: a
+% positive and a negative skip, in ems and in points, before an \hline,
+% in the title's \author, and in a longtable. An array in math is left to
+% MathJax.
+\documentclass{article}
+\usepackage{longtable}
+\title{Row skips}
+\author{A. Writer \\[0.5em]
+    \begin{tabular}{c}Department of Tables\\[3pt]A University\end{tabular}}
+\date{}
+\begin{document}
+\maketitle
+
+\noindent\begin{tabular}{|l|l|}
+    \hline
+    First & no skip below \\
+    Second & 0.5em below \\[0.5em]
+    Third & 6pt below \\[6pt]
+    Fourth & $-4$pt below \\[-4pt]
+    Fifth & 6pt below, then a rule \\[6pt]
+    \hline
+    Sixth & last \\
+    \hline
+\end{tabular}
+
+\begin{longtable}{|l|l|}
+    \hline
+    First & no skip below \\
+    Second & 0.5em below \\[0.5em]
+    Third & 6pt below \\[6pt]
+    Fourth & $-4$pt below \\[-4pt]
+    Fifth & last \\
+    \hline
+\end{longtable}
+
+An array in math: $\begin{array}{c} a \\[6pt] b \end{array}$.
+\end{document}

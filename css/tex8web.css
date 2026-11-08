@@ -314,6 +314,10 @@ table.tex8web-indent { margin-inline-start: var(--tex8web-parindent, 0); }
 table.tex8web-center { margin-inline: auto; }
 table.tex8web-right { margin-inline-start: auto; }
 table.tex8web-inline { display: inline-table; vertical-align: middle; }
+/* the space of a \\[len] below a row, or after the author's line */
+.tex8web-rowskip { height: var(--tex8web-rowskip); }
+span.tex8web-rowskip { display: block; }
+tr.tex8web-rowskip td { padding: 0; line-height: 0; }
 /* a tabular or verbatim too wide for a narrow screen scrolls sideways, as
    a wide display does, so that the page does not widen */
 @media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }

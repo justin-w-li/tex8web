@@ -236,6 +236,8 @@ In a paragraph column, such as `p{3cm}`, `\centering` or `\raggedleft`, or ragge
 
 A table sits where it sits in the PDF. A tabular is at the left, at the paragraph's indent, unless `center`, `flushright`, `\centering`, or `\raggedleft` puts it elsewhere. A tabular in a table cell is placed by the cell's alignment. A longtable is centered, or placed by its `[l]` or `[r]` option, or by `\LTleft` and `\LTright` set to `\fill` or `0pt`. A tabularx is centered.
 
+The space that `\\[len]` adds below a row is kept, as in the PDF. This includes the lines of `\author` in the article, report, and book classes.
+
 ### Boxes
 
 In text, `\fbox`, `\framebox`, `\colorbox`, and `\fcolorbox` have the `\fboxsep` and `\fboxrule` in force at each box, as in the PDF.
@@ -366,6 +368,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **Line breaks.** A line ended by `\break` or `\linebreak` is not stretched to the full width in a justified paragraph, as it is in the PDF. `\hfil\break` does not end the line: use `\\`, `\break`, or `\hfill\break`.
 - **Paragraph cells.** All of a cell's paragraphs are aligned as its last one, for example all centered after a `\centering` between them.
 - **Tables in a line.** A paragraph with a tabular inside its text is broken around the tabular.
+- **Negative row space.** `\\[len]` with a negative length, such as `\\[-4pt]`, has no effect. In the PDF, the next row is set higher.
 - **Table widths.** A tabularx is as wide as its contents, where in the PDF it fills its width. A longtable with a fixed `\LTleft`, such as `\parindent`, is at the left margin.
 - **Minipages.** A paragraph with a minipage inside its text is broken around the minipage. `\centering` in a minipage applies only in a figure. Two minipages, each inside an `\fbox`, are one above the other instead of side by side.
 - **A list item that starts with a box.** Beside a minipage or tabular aligned at its center or bottom, the item's label is at the box's first line. In the PDF, the label is at the middle of the box, or at its last line.
