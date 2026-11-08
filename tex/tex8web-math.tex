@@ -211,8 +211,9 @@
     % the text of ranges, lists, and products (their phrases and separators,
     % and a range's opening phrase), kept as one \text with the spaces
     % around it, which MathJax keeps there and leaves out of the speech.
-    % (MathJax reads a \ as "empty".) Translations are expanded and font
-    % commands dropped. A text command such as \textendash is left as it
+    % (MathJax reads a \ as "empty", and tex4ht's \ is a box, so a \ in
+    % a phrase is a space.) Translations are expanded and font commands
+    % dropped. A text command such as \textendash is left as it
     % is, which MathJax shows in red
     \web@needs{__siunitx_compound_print_separator:n}
     \web@needs{l__siunitx_compound_separator_text_bool}
@@ -224,6 +225,7 @@
         \group_begin:
             \cs_set_eq:NN \TextOrMath \use_i:nn
             \cs_set_eq:NN \text \use:n
+            \cs_set:Npn \ { ~ }
             \tl_gset:Ne \g__web_si_phrase_tl { \text_purify:n {#1} }
         \group_end:
         \__web_si_keep:e { \exp_not:N \text { \exp_not:V \g__web_si_phrase_tl } }
