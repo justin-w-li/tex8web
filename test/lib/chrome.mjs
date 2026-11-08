@@ -58,15 +58,17 @@ async function connect(url) {
 
 // Waits while Chrome, its process group's leader, runs. If the Node process
 // that launched Chrome is gone first, kills the group, and removes the
-// profile once the group is gone (up to 5 s): a helper may still be
-// writing into the profile
+// profile once no process of the group runs (up to 5 s): a helper may
+// still be writing into the profile. A zombie counts as gone: where PID 1
+// does not reap orphans, as tail in GitHub's containers, the killed
+// processes stay zombies, and kill 0 counts them
 const watch = `
   my ($parent, $chrome, $profile) = @ARGV;
   while (kill 0 => $chrome) {
     if (getppid != $parent) {
       kill KILL => -$chrome;
       my $end = time + 5;
-      select undef, undef, undef, 0.1 while kill(0 => -$chrome) && time < $end;
+      select undef, undef, undef, 0.1 while grep(/^\\s*$chrome\\s+[^Z]/, \`ps -A -o pgid=,stat=\`) && time < $end;
       rmtree($profile);
       unlink "$profile.log";
       exit;

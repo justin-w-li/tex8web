@@ -76,7 +76,9 @@ test('Chrome and its profile go with the process that started it, however it end
     assert.ok(up, 'the launcher exited before Chrome was up');
     assert.notDeepEqual(left(), []);
     process.kill(-child.pid, 'SIGKILL');
-    assert.deepEqual(await until(left, lines => !lines.length) ?? left(), []);
+    // (under the watcher's 4 s minimum wait. The watcher names the profile
+    // too, so a watcher that waits for unreaped zombies fails here)
+    assert.deepEqual(await until(left, lines => !lines.length, 3000) ?? left(), []);
     const profiles = () => readdirSync(temp).filter(name => name.startsWith('tex8webchrome'));
     assert.deepEqual(await until(profiles, names => !names.length) ?? profiles(), []);
   } finally {
