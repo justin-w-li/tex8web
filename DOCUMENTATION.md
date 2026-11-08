@@ -1,6 +1,6 @@
 # tex8web documentation
 
-This is the guide to building pages and configuring them. For how tex8web works inside, and how it is tested, see [CONTRIBUTING.md](CONTRIBUTING.md).
+For how tex8web works and how it is tested, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 1. [Building a page](#building-a-page)
 2. [Your own config](#your-own-config)
@@ -15,51 +15,66 @@ This is the guide to building pages and configuring them. For how tex8web works 
 path/to/tex8web/bin/tex8web document.tex
 ```
 
-This builds `build/html/document.html` next to the document. tex4ht's working files and logs stay in `build/tex4ht/`; look there when a build fails. To run it as `tex8web` from anywhere, run `npm link` in tex8web's directory, or put `bin/` on your `PATH`.
+tex8web writes the page to `build/html/document.html`, next to your document. The working files and logs of tex4ht are in `build/tex4ht/`. Look there when a build fails. To run tex8web as `tex8web` from any directory, run `npm link` in the tex8web directory, or add its `bin/` directory to your `PATH`.
 
 The options:
 
-- **`-c config`** builds with your own config instead of `tex8web.cfg`. See [Your own config](#your-own-config).
-- **`-d out`** puts the page in `out/` instead, a path relative to where you run the command.
-- **`-B aux`** puts tex4ht's working files in `aux/`, a path relative to the document. Keep `-` out of it; see [Known limitations](#known-limitations).
-- **`-p pdf`** adds an icon that links to the document's PDF, and copies the PDF next to the page. The path is relative to where you run the command. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`. With a config's [`\WebPDF`](#your-own-config) too, `-p` wins.
-- **`-u url`** adds an icon that links up to the page above this one on your site, such as a list of your documents. The URL is relative to the page, for example `../index.html`. With a config's `\WebUp` too, `-u` wins.
-- **`-m draft`** runs LaTeX once and skips the bibliography and index. It is quicker while you work, but references and citations may show as ??. A fresh draft build also has no title: tex4ht hands the title to the next run, so the tab, the link preview and the contents' link to the top stay empty.
-- Any other option is passed to make4ht. The document comes last.
+- **`-c config`**: Build the page with `config` instead of `tex8web.cfg`. See [Your own config](#your-own-config).
+- **`-d out`**: Write the page to `out/` instead of `build/html/`. The path is relative to the directory you run tex8web from.
+- **`-B aux`**: Write the working files of tex4ht to `aux/` instead of `build/tex4ht/`. The path is relative to your document. Keep `-` out of the path. See [Known limitations](#known-limitations).
+- **`-p pdf`**: Add a PDF button that links to the PDF of your document, and copy the PDF next to the page. The path is relative to the directory you run tex8web from. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`. With both `-p` and `\WebPDF`, the page links to the PDF given with `-p`.
+- **`-u url`**: Add an up button that links to the page above this one on your site, such as a list of your documents. The URL is relative to the page, for example `../index.html`. With both `-u` and `\WebUp`, the up button links to the URL given with `-u`.
+- **`-m draft`**: Run LaTeX once, and skip the bibliography and the index. A draft build is quicker, but references and citations can show as ??. The first draft build of a document has no title, so the browser tab, the link preview, and the link to the top of the table of contents are empty. Later builds have the title.
+- **`--version`**: Print the version of tex8web. In a git clone, the commit is printed too, for example `tex8web 0.1.0 (a1b2c3d)`, with `-dirty` after the commit when there are uncommitted changes.
+- Any other option is passed to make4ht. Put your document last.
 
-The output folder holds the page and everything it uses:
-- `document.html` and its stylesheets;
-- the pictures, and the PDF if you link it with `-p` or `\WebPDF`;
-- `fonts/`: Latin Modern, TeX Gyre or XCharter, MathJax's fonts, and `LICENSE.txt`, which covers them;
-- `tex8web-head.js` and `tex8web-page.js`, the page's controls;
-- without Node, `tex8web.js` instead of MathJax's fonts.
+The output directory contains the page and every file loaded by the page:
 
-The paths are relative, so you can publish the folder as it is. With Node, its fonts contain only the characters the document uses, so each document needs its own folder. The page is `document.html`, not `index.html`, so link to it by name. On GitHub Pages, for example, that is `https://you.github.io/repo/document.html`.
+- `document.html` and its stylesheets
+- the pictures, and the PDF if you link it with `-p` or `\WebPDF`
+- `fonts/`, with Latin Modern, TeX Gyre or XCharter, the MathJax fonts, and `LICENSE.txt` with their licenses
+- `tex8web-head.js` and `tex8web-page.js`, for the controls
+- in a page built [without Node](#without-node), `tex8web.js` in place of the MathJax fonts
 
-**Bibliographies and indexes.** tex8web runs bibtex or biber when the document has a bibliography. It runs makeindex for each index the document prints, from makeidx or imakeidx. Each index uses its own style file. Style files are found next to the document and on `INDEXSTYLE`.
+All paths in the page are relative, so you can publish the output directory as it is. With Node, the fonts contain only the characters your document uses, so give each document a separate output directory. The page is named `document.html`, not `index.html`, so link to it by name. On GitHub Pages, for example, the address is `https://you.github.io/repo/document.html`.
 
-**Without Node.** Node typesets the math when you build. If `npm ci` hasn't been run, or `node_modules` holds another MathJax than `package.json` pins, the build warns, and the page loads MathJax from jsDelivr instead. It then needs the network to show its math, and its fonts are whole rather than cut down. Set `TEX8WEB_NO_PRERENDER` to any value to choose this on purpose.
+### Bibliographies and indexes
 
-**Without the wrapper.** `bin/tex8web` runs this command in the document's directory:
+tex8web runs bibtex or biber when your document has a bibliography. tex8web runs makeindex for each index of makeidx or imakeidx in the document. For each index, makeindex is run with the style file given in the options of its `\makeindex`. Style files are looked up next to your document and in the directories on `INDEXSTYLE`.
+
+### Without Node
+
+tex8web typesets the math with Node when you build the page. In three cases, tex8web warns and builds the page without Node:
+
+- `npm ci` has not been run in the tex8web directory
+- `node_modules` has a different MathJax version from the one in `package.json`
+- typesetting the math with Node fails
+
+In a page built without Node, MathJax is loaded from jsDelivr, and the math is typeset in the browser. Readers then need a network connection to see the math. The fonts of the page are not cut down to the characters your document uses. To build without Node on purpose, set `TEX8WEB_NO_PRERENDER` to any value.
+
+### Without the wrapper
+
+To build without `bin/tex8web`, run this command in the directory of your document:
 
 ```sh
 make4ht -u -c path/to/tex8web/tex8web.cfg -e path/to/tex8web/tex8web.mk4 -B build/tex4ht -d build/html document.tex
 ```
 
-Pass both files every time: `tex8web.mk4` tells TeX where to find what `tex8web.cfg` loads. If TeX stops with "tex8web-core.tex not found", the `-e` option is missing. To link the PDF, set `TEX8WEB_PDF` to its path, absolute or relative to the document. To link up to a page, set `TEX8WEB_UP` to its URL.
+Pass both files every time. Without `-e path/to/tex8web/tex8web.mk4`, the files loaded by `tex8web.cfg` are not found, and the build fails with the error "tex8web-core.tex not found". To link the PDF, set `TEX8WEB_PDF` to its path, absolute or relative to your document. To link up to a page, set `TEX8WEB_UP` to its URL.
 
-**Platform.** The build runs Node, bibtex and makeindex through a POSIX shell, so it works on macOS and Linux, not Windows.
+### Platform
+
+tex8web runs Node, bibtex, and makeindex through a POSIX shell. tex8web works on macOS and Linux, and not on Windows.
 
 ## Your own config
 
-Most documents need no config of their own. tex8web reads what it needs from the document: its macros, colors, theorem styles and lists. It also reads titlesec's headings, tocloft's table of contents, tcolorbox's and mdframed's boxes, float's ruled style (algorithm's) and algorithm2e's algorithms.
+Most documents need no config. tex8web reads the macros, colors, theorem styles, and lists of a document. tex8web also reads the settings of these packages:
 
-Write a config when:
-- the build ends with a warning about macros MathJax can't read;
-- your document needs a style of its own on the web;
-- you always want a link to the PDF or the page above, without passing `-p` or `-u`;
-- your document marks its terms with a command of its own, for the contents filter to find;
-- you want the text set as in the PDF.
+- titlesec, for headings
+- tocloft, for the table of contents
+- tcolorbox and mdframed, for boxes
+- float, for its `ruled` style, as used by algorithm
+- algorithm2e, for algorithms
 
 A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-core.tex}`. Pass it with `-c`. For worked examples, see `examples/custom/custom.cfg` and `examples/complex/complex.cfg`.
 
@@ -68,23 +83,23 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 \begin{document}
 \input{tex8web-core.tex}
 
-% a macro MathJax can't read as defined (here, one using \scalebox)
+% a macro that tex8web cannot translate for MathJax (here, one that uses
+% \scalebox)
 \WebMathMacros{
     \newcommand{\bigtimes}{\mathop{\Large\times}}
 }
 
-% soul's highlighter, \hl{...}, as a span of your own, with a color for
-% light and dark mode: var(--highlight)
+% the highlighter of soul, \hl{...}, as a span with a color for light mode
+% and a color for dark mode: var(--highlight)
 \renewcommand{\hl}[1]{\HCode{<span class="highlight">}#1\HCode{</span>}}
 \definecolor{highlight-dark}{RGB}{90, 80, 30}
 \WebColor{highlight}{yellow!20}{highlight-dark}
 \Css{.highlight { background-color: var(--highlight); }}
 
-% the terms a command of the document's own sets (here \term{...}), which
-% the table of contents' filter finds
+% the terms marked with \term{...}, for the search field
 \WebTerm\term
 
-% an icon linking to the PDF (build it first)
+% a PDF button (build the PDF first)
 \WebPDF{build/pdf/document.pdf}
 
 \EndPreamble
@@ -92,126 +107,184 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 
 | Command | Use it when |
 | --- | --- |
-| `\WebMathMacros{definitions}` | the build warns of "macro(s) left undefined for MathJax" or "macro(s) MathJax doesn't know", or math shows in red |
-| `\WebColor{name}{light}{dark}` | your config writes HTML or CSS of its own and needs a color that follows dark mode |
-| `\WebTerm\cs` | your document marks the terms it defines with a one-argument command, and you want the contents filter to find them |
-| `\WebPDF{path}` | you always want the icon linking to the PDF, without passing `-p` |
-| `\WebUp{url}` | you always want the icon linking up to the page above, without passing `-u` |
+| `\WebMathMacros{definitions}` | tex8web warns of "macro(s) left undefined for MathJax" or "macro(s) MathJax doesn't know", or math is shown in red |
+| `\WebColor{name}{light}{dark}` | you add HTML or CSS in your config, and the HTML or CSS needs one color in light mode and another in dark mode |
+| `\WebTerm\cs` | you mark the terms defined in your document with a one-argument command, and you want readers to find these terms with the search field |
+| `\WebPDF{path}` | you want a PDF button without passing `-p` |
+| `\WebUp{url}` | you want an up button without passing `-u` |
 | `\WebLikePDF` | you want the text set as in the PDF: its size and line spacing, indented paragraphs, and justified text |
-| `\Css{...}` | you want a style of your own, or to change one of tex8web's |
+| `\Css{...}` | you want to add a style, or change a style of tex8web |
 
-**`\WebMathMacros`** gives MathJax its own definitions, which take precedence over the document's. Write them in MathJax's TeX. You need it for:
-- the macros the build's warning names, such as those built with `\mathpalette`, `\scalebox` or internal `@` macros;
-- xparse commands with arguments other than `m` and a leading `O{}`;
-- macros the build can't see, because they are defined in loops or by your own commands. The build reads the document and the local packages it loads, and follows their `\input` and `\include` to files named relative to the document's directory.
+The commands:
 
-**`\WebColor`** makes the CSS variable `--name` from two colors: the first in light mode, the second in dark mode.
+- **`\WebMathMacros{definitions}`**: Define macros for MathJax. Write the definitions in the TeX of MathJax. These definitions replace the definitions of the same macros in your document. Use `\WebMathMacros` for these macros:
+  - the macros named in the warning, such as macros built with `\mathpalette`, `\scalebox`, or internal `@` macros
+  - xparse commands with argument types other than `m` and a leading `O{}`
+  - macros that tex8web does not find. tex8web collects definitions from your document, from the local packages loaded in it, and from the files loaded in these with `\input` or `\include`. A file loaded with `\input` or `\include` is read only when its path is relative to the directory of your document. Macros defined in loops or by other macros are not found.
+- **`\WebColor{name}{light}{dark}`**: Define the CSS variable `--name`, with the color `light` in light mode and the color `dark` in dark mode.
+- **`\WebTerm\cs`**: Make the text of each `\cs{...}` a term that readers can find with the search field. A term inside a heading or inside the note of a theorem is found as that heading or theorem. Pass each command to `\WebTerm` once. To link to a term, use its id: `term-`, then the text of the term in lower case, with a hyphen for each run of spaces or punctuation, and without its math. For example, the id of `\term{Convex set}` is `term-convex-set`. Terms with the same text have `-2`, `-3`, and so on added to their ids.
+- **`\WebLikePDF`**: Set the text as in the PDF instead of with the [reading defaults](#reading-defaults). The text has the size of the PDF text, and the width of the column scales with the text size. Lines are spaced as in TeX. Paragraphs are indented as in the PDF, with the same space between them, usually none. On a wide screen, the text is justified and hyphenated. The text stays ragged right on a narrow screen, because justified text would have wide gaps next to formulas that cannot break.
+- **`\WebPDF{path}`**: Add a PDF button, as with [`-p`](#building-a-page). The path is relative to your document.
+- **`\WebUp{url}`**: Add an up button, as with [`-u`](#building-a-page).
+- **`\Css{...}`**: Add a CSS style after the styles of tex8web. Inside `\Css`, write `#` as `\#` and `%` as `\%`. The styles of tex8web are in `css/tex8web.css`.
 
-**`\WebTerm\cs`** makes what `\cs` sets in the text a term that the filter finds. Its id is `term-` followed by its text in lower case, with a hyphen for each run of spaces or punctuation, and without its math: `\term{Convex set}` gets `term-convex-set`. Inside a heading or a theorem's note, the term is found as that heading or theorem. Give each command to `\WebTerm` once.
-
-**`\WebLikePDF`** replaces the page's [reading defaults](#reading-defaults) with the PDF's. The text takes the PDF's size, and the column, which is measured in ems, follows it. Lines are spaced as TeX spaces them. Paragraphs are indented as in the PDF, with its space between them, usually none. On a wide screen the text is justified and hyphenated. A narrow screen stays ragged right, where a formula that can't break would leave wide gaps.
-
-**`\WebPDF`** does what [`-p`](#building-a-page) does, from the config. Its path is relative to the document.
-
-**`\WebUp`** does what [`-u`](#building-a-page) does, from the config.
-
-**`\Css`** adds a style after tex8web's own. Write `#` as `\#` and `%` as `\%` inside it. tex8web's styles are in `css/tex8web.css`. The document's measurements are custom properties that you can set again:
+The measurements of your document are CSS custom properties. Set them again with `\Css` to change them:
 
 | Property | What it sets |
 | --- | --- |
-| `--tex8web-textwidth` | the text column's width |
-| `--tex8web-margin`, `--tex8web-gap` | the side columns' width and the gap around them, in `em` or `rem`. A screen is "wide" when the text and both columns fit. |
-| `--tex8web-title-size`, `--tex8web-section-size`, … `--tex8web-subparagraph-size` | heading sizes; with chapters, also `--tex8web-part-size` and `--tex8web-chapter-size` |
-| `--tex8web-<heading>-labelsep` | the space after a heading's number |
-| `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | a heading's font, with titlesec |
+| `--tex8web-textwidth` | the width of the text column |
+| `--tex8web-margin`, `--tex8web-gap` | the width of the side columns, and the gap on each side of them, in `em` or `rem` |
+| `--tex8web-title-size`, `--tex8web-section-size`, … `--tex8web-subparagraph-size` | the heading sizes. With chapters, also `--tex8web-part-size` and `--tex8web-chapter-size` |
+| `--tex8web-<heading>-labelsep` | the space after the number of a heading |
+| `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | the font and alignment of a heading, with titlesec |
 | `--tex8web-<heading>-before`, `-after` | the space above and below a heading, from titlesec or the class |
-| `--tex8web-list-sep`, `--tex8web-item-sep`, `--tex8web-leftmargin` | a description's spacing and indent; other lists have their own `--tex8web-list-*` on their element |
-| `--tex8web-bibitem-sep`, `--tex8web-biblabelsep` | the bibliography's space between entries, and after their labels |
-| `--tex8web-footnote-leading`, `--tex8web-abstract-leading` | the line spacing of footnotes and the abstract, as a multiple of the text's |
-| `--tex8web-abstract-left`, `--tex8web-abstract-right` | the abstract's margins |
-| `--tex8web-framed-sep` | the space above and below framed's boxes |
-| `--tex8web-toc-<level>-indent`, `--tex8web-toc-<level>-number` | the table of contents' indents and number widths |
-| `--tex8web-toc-<level>-family`, `-weight`, `-style`, `-variant`, `-size` | an entry's font, with tocloft; the size is a multiple of the text's |
-| `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url` | the page's colors |
-| `--tex8web-roman`, `--tex8web-sans`, `--tex8web-mono` | the roman, sans-serif and typewriter fonts |
-| `--tcb-*` | a tcolorbox's frame, colors and spacing, on the box's element |
-| `--tex8web-mdf-rules`, `-padding`, `-margin` | an mdframed box's lines, its space inside and around it, on the box's element |
-| `--tex8web-float-rule`, `-midrule`, `-endrule`, `-sep`, `-bodysep` | the rules of a ruled float (algorithm's, with float's `ruled` style), and their space from the caption and from the body; an algorithm2e algorithm has its own on its element |
-| `--tex8web-a2e-*` | an algorithm2e algorithm's margins, indents and lines, on its element |
+| `--tex8web-list-sep`, `--tex8web-item-sep`, `--tex8web-leftmargin` | the spacing and indent of a description list. Other lists have `--tex8web-list-*` properties on their element |
+| `--tex8web-bibitem-sep`, `--tex8web-biblabelsep` | the space between bibliography entries, and after their labels |
+| `--tex8web-footnote-leading`, `--tex8web-abstract-leading` | the line spacing of footnotes and of the abstract, as a multiple of the line spacing of the text |
+| `--tex8web-abstract-left`, `--tex8web-abstract-right` | the margins of the abstract |
+| `--tex8web-framed-sep` | the space above and below a box of the framed package |
+| `--tex8web-toc-<level>-indent`, `--tex8web-toc-<level>-number` | the indent and the number width of each level in the table of contents |
+| `--tex8web-toc-<level>-family`, `-weight`, `-style`, `-variant`, `-size` | the font of each level in the table of contents, with tocloft. The size is a multiple of the text size |
+| `--tex8web-bg`, `--tex8web-text`, `--tex8web-link`, `--tex8web-cite`, `--tex8web-url` | the colors of the page |
+| `--tex8web-roman`, `--tex8web-sans`, `--tex8web-mono` | the roman, sans-serif, and typewriter fonts |
+| `--tcb-*` | the frame, colors, and spacing of a tcolorbox, on the element of the box |
+| `--tex8web-mdf-rules`, `-padding`, `-margin` | the lines of an mdframed box, and the space inside and around the box, on the element of the box |
+| `--tex8web-float-rule`, `-midrule`, `-endrule`, `-sep`, `-bodysep` | the rules of a ruled float (float with the `ruled` style, as used by algorithm), and their space from the caption and from the body. An algorithm2e algorithm has these properties on its element |
+| `--tex8web-a2e-*` | the margins, indents, and lines of an algorithm2e algorithm, on its element |
 
-In a config's `\Css`, `@media (--tex8web-wide)` matches a wide screen, and `not (--tex8web-wide)` a narrow one.
+Inside `\Css`, use `@media (--tex8web-wide)` for a wide screen, and `@media not (--tex8web-wide)` for a narrow screen.
 
 ## On the page
 
-**Controls.** Small icons sit at the top left: the page above (with `-u` or `\WebUp`), the table of contents, the PDF (with `-p` or `\WebPDF`), light or dark, and a link to tex8web. On a narrow screen they form a bar across the top. The bar names the section being read, and hides while the reader scrolls down. Its line appears once the page has scrolled.
+A screen is wide when the text column fits on it with a side column and its gaps on each side. Otherwise the screen is narrow. To change the widths, set `--tex8web-textwidth`, `--tex8web-margin`, and `--tex8web-gap` with [`\Css`](#your-own-config).
 
-**Between pages.** The up icon goes back to the page above, where the reader was on it, if they came from there. Following a link from one tex8web page to another of the same origin, the page moves a little to the left as the next one fades in. Going up or back, it moves to the right. A site's own pages can take part by adding `@view-transition { navigation: auto; }` to their CSS; they fade. Readers who ask for reduced motion get the next page at once. Other browsers fade to it, or show it at once.
+### Controls
 
-**Theme.** The page follows the reader's light or dark setting until they choose one with the button. Their choice is kept in the browser, under `localStorage` key `tex8web-theme`, for every tex8web page on the site. A site can set a default with `data-theme="light"` or `"dark"` on the root element; the reader's choice still wins. Light mode uses the PDF's colors. In dark mode, the document's colors keep their hue: dark text becomes light, and light backgrounds become dark. Colored links keep their hue too, a little lighter and softer, so they stand out on the dark background. TikZ pictures are inverted.
+The controls are small buttons at the top left of the page, in this order:
 
-**Table of contents.** `\tableofcontents` moves out of the text. On a wide screen it sits beside the text; on a narrow one it opens as a drawer. It marks the section being read. It always lists the sections and the levels above them. When every entry fits in the column or drawer without scrolling, it lists them all. Otherwise it lists the subsections of the section being read, and of any section the reader opens. Only then does a chevron after a section show or hide its subsections, which stay as the reader leaves them. With a mouse, the chevron appears under the pointer, and faintly while its section is open. On a touch screen it's always shown, faintly. Its indents, number widths and fonts come from tocloft or the class: with tocloft, each level is in the font of its `\cft<level>font`, such as `\cftsecfont`. A color in that font isn't followed. A `\listoffigures` or `\listoftables` stays in the text.
+1. the up button, with `-u` or `\WebUp`
+2. the table of contents button
+3. the PDF button, with `-p` or `\WebPDF`
+4. the theme button
+5. a link to tex8web
 
-**Finding.** A field at the top of the table of contents finds headings, numbered theorems and boxes, and terms (`\WebTerm`) as the reader types. Case, accents and math styles don't matter, and a Greek letter is found by its TeX name (`sigma` finds σ). The arrow keys and Enter choose a result.
+On a narrow screen, the controls are in a bar across the top of the page. The name of the section being read is shown in the bar. Clicking the name opens the table of contents. The bar is hidden while the reader scrolls down and shown again when the reader scrolls up. Once the page is scrolled away from its top, a line is drawn under the bar.
 
-**Fonts.** The text is in the PDF's font when it is Latin Modern, LaTeX's own, Charter, or one of the standard PostScript fonts: Times, Palatino, Helvetica, Courier, Bookman, New Century Schoolbook or Avant Garde. These come from packages such as `mathptmx`, `txfonts`, `newtxtext`, `mathpazo`, `pxfonts`, `newpxtext`, `helvet`, `charter`, `XCharter` and TeX Gyre's own. The standard fonts are set in TeX Gyre's versions of them, and Charter in XCharter, which the build takes from TeX Live. This holds also for a font chosen in the text, such as `\fontfamily{bch}`. Other fonts are shown in Latin Modern. A document whose text is in its sans-serif font, with `\familydefault`, has a sans-serif page. The math is in MathJax's TeX font, like Computer Modern. Where the PDF's math is in Times, Palatino or New Century Schoolbook, it is in MathJax's TeX Gyre font for it: Termes, Pagella or Schola. That is with `mathptmx`, `newtxmath`, `txfonts`, `mathpazo`, `newpxmath`, `pxfonts` or `fouriernc`. With `newtxmath`'s option for another font, the math stays in the TeX font, except `nc`, which is New Century Schoolbook.
+### Between pages
 
-**Headings** keep the PDF's sizes, the space above and below them, and the space after their numbers. A title keeps the font and size that a document's or class's own `\maketitle` sets it in, rather than `--tex8web-title-size`. With titlesec, each heading has its `\titleformat`'s font, alignment and label, and its `\titlespacing`.
+When readers come to a page from the page above, clicking the up button returns them to their place on the page above.
 
-**Lists** keep the PDF's labels, as TeX sets them, and each list's indent and spacing.
+When a reader follows a link from one tex8web page to another on the same origin (the same scheme, host, and port), the old page moves a little to the left and fades out as the new page fades in. The pages move to the right when the reader goes up or back. In browsers without support for this transition, the new page fades in or appears at once. The new page also appears at once for readers who turn on reduced motion.
 
-**`\hfill`** in a paragraph or a heading puts the rest of its line at the right, as in the PDF. When the line has no room for it, it goes to the right of the line below.
+To fade between the other pages of your site too, add `@view-transition { navigation: auto; }` to their CSS.
 
-**Footnotes.** On a wide screen, a footnote sits beside the paragraph, list or theorem with its mark. On a narrow screen, it sits below that paragraph, list or theorem. A footnote in a table, figure, box or formula stays at the end of the page.
+### Theme
 
-**Previews.** Pointing at a reference, citation, footnote mark or section link shows what it points to in a card. The keyboard shows it too. On a touch screen, the first tap shows it and the second follows the link.
+The page uses the system setting for light or dark mode until the reader picks a theme with the theme button. This choice is saved in the browser for every tex8web page on the same origin. To set a default for your site, put `data-theme="light"` or `data-theme="dark"` on the `<html>` element.
 
-**Pictures.** Clicking a picture in a figure or a display, or any picture much taller than a line, opens it over the page. There the reader can zoom with the wheel, a pinch or a double-click, and drag it. Escape or a click beside it closes it. A picture can also be reached with Tab and opened with Enter or Space, and closing it returns the focus to the picture.
+In light mode, colors are as in the PDF. In dark mode, dark text becomes light and light backgrounds become dark, with the same hues. Colored links keep their hue but are lighter and less saturated. TikZ pictures are inverted.
 
-**Links.** Headings and numbered theorems have a `#` link in the margin, shown on hover. So does a titled tcolorbox with a number or label. On a narrow screen, the heading or theorem's head is the link.
+### Table of contents
 
-**Printing** gives the document alone, in light mode's colors, without the controls or the table of contents. Footnotes follow their paragraphs. The PDF is still the better copy to print: its page breaks and numbers are TeX's.
+`\tableofcontents` is moved out of the text. On a wide screen, the table of contents is in a column beside the text. Readers can hide or show this column with the table of contents button. This choice is saved in the browser for every tex8web page on the same origin. On a narrow screen, the table of contents is in a drawer, opened with the table of contents button.
 
-**Without JavaScript** the page still reads. The table of contents shows every entry, and the theme follows the system.
+The entry of the section being read is marked. The sections, and the levels above them, are always listed. When all entries fit in the column or the drawer without scrolling, every entry is listed. Otherwise, subsections are listed only for the section being read and for the sections the reader opens. Readers then show or hide the subsections of a section with the chevron after it. Subsections opened with a chevron stay open until the reader closes them. With a mouse, a chevron is shown faintly while the pointer is over its section or while the section is open, and clearly while the pointer is over the chevron. Every chevron is shown faintly on a touch screen.
 
-**Screen readers** hear each formula as MathJax's spoken English, such as "the fraction with numerator 1 and denominator 1 minus gamma". When MathJax typesets in the browser, they get MathML instead. An image's alt text is graphicx's `alt` key, or empty.
+The indents, number widths, and fonts of the entries are as set by tocloft or by the class. With tocloft, each level is in the font of its `\cft<level>font` command, such as `\cftsecfont`. A color in `\cft<level>font` is not applied. A `\listoffigures` or a `\listoftables` stays in the text.
 
-**Link previews** in chat apps and social sites show the document's title, and its abstract if it has one.
+### Search field
+
+As the reader types in the search field at the top of the table of contents, the matching headings, numbered theorems and boxes, and terms marked with [`\WebTerm`](#your-own-config) are listed. Case, accents, and math styles are ignored. A Greek letter is found by its TeX name, for example σ by `sigma`. Readers choose a result with the arrow keys and go to it with Enter.
+
+### Fonts
+
+The text is in the font of the PDF when the font is one of these:
+
+- Latin Modern (the LaTeX default)
+- Charter
+- the standard PostScript fonts: Times, Palatino, Helvetica, Courier, Bookman, New Century Schoolbook, and Avant Garde
+
+These fonts come from packages such as `mathptmx`, `txfonts`, `newtxtext`, `mathpazo`, `pxfonts`, `newpxtext`, `helvet`, `charter`, `XCharter`, and the TeX Gyre packages. The standard PostScript fonts are shown in their TeX Gyre versions, and Charter in XCharter. tex8web copies the TeX Gyre and XCharter fonts from your TeX Live installation.
+
+A font chosen in the text, for example with `\fontfamily{bch}`, is shown in the same way. Other fonts are shown in Latin Modern. If the text of your document is in its sans-serif font, set with `\familydefault`, the page is in a sans-serif font too.
+
+The math is in the MathJax TeX font, which looks like Computer Modern. If the math in the PDF is in Times, Palatino, or New Century Schoolbook, the math on the page is in the matching MathJax TeX Gyre font: Termes, Pagella, or Schola. The matching font is used with `mathptmx`, `newtxmath`, `txfonts`, `mathpazo`, `newpxmath`, `pxfonts`, or `fouriernc`. With an option of `newtxmath` for another font, the math stays in the TeX font. The exception is `nc`, which is New Century Schoolbook.
+
+### Headings
+
+Headings have the same sizes, the same space above and below, and the same space after their numbers as in the PDF. If `\maketitle` is defined in your document or its class, the title has the font and size set there, and `--tex8web-title-size` is not used. With titlesec, each heading has the font, alignment, and label of its `\titleformat`, and the spacing of its `\titlespacing`.
+
+### Lists
+
+List labels are as in the PDF, and so are the indent and spacing of each list.
+
+### `\hfill`
+
+After `\hfill` in a paragraph or a heading, the rest of the line is at the right, as in the PDF. If the rest does not fit on the line, it is at the right of the next line.
+
+### Footnotes
+
+On a wide screen, a footnote is beside the paragraph, list, or theorem that has its mark. The footnote is below that paragraph, list, or theorem on a narrow screen. A footnote in a table, figure, box, or formula is at the end of the page.
+
+### Preview cards
+
+When a reader points at a reference, a citation, a footnote mark, or a link to a section, its target is shown in a card. The card is also shown when the link has keyboard focus. On a touch screen, the card is shown on the first tap, and the link is followed on the second tap.
+
+### Opening a picture
+
+Readers can click a picture in a figure or in display math, or any picture much taller than a line, to open it over the page. Clicking a picture that is a link follows the link instead. In the opened picture, readers zoom with the mouse wheel, a pinch, or a double-click, and move the picture by dragging. Readers close the picture with Escape or a click beside it. Readers can also reach a picture with Tab and open it with Enter or Space. When the picture is closed, the focus returns to the picture.
+
+### Links to headings
+
+Headings and numbered theorems have a `#` link in the margin, shown when the pointer is over them. A tcolorbox with a title and a number or a label has one too. On a narrow screen, the heading or the head of the theorem is the link.
+
+### Printing
+
+A printed page contains the document alone, in the colors of light mode, without the controls or the table of contents. Footnotes are printed after their paragraphs. For a printed copy, the PDF is better, because its page breaks and page numbers are those of TeX.
+
+### Without JavaScript
+
+With JavaScript off, the page is still readable. Every entry of the table of contents is shown, and the theme is the system setting.
+
+### Screen readers
+
+Each formula has a spoken English text from MathJax for screen readers, for example "the fraction with numerator 1 and denominator 1 minus gamma". In a page built [without Node](#without-node), screen readers are given MathML instead. The alt text of a picture is the `alt` key of graphicx, or empty.
+
+### Shared links
+
+When a link to the page is shared in a chat app or on a social site, the link preview has the title of the document, and its abstract if there is one.
 
 ## Differences from the PDF
 
-These are deliberate. They fall into three groups.
-
 ### Reading defaults
 
-The page sets its text for a screen. A config's [`\WebLikePDF`](#your-own-config) sets it as the PDF does instead.
+By default, the text is set for reading on a screen. To set the text as in the PDF instead, use [`\WebLikePDF`](#your-own-config) in your config.
 
-- The text is 12pt, larger than most PDFs, and everything else is in proportion. The column is as wide as the PDF's in ems.
-- Line spacing is the browser's, a little looser than TeX's.
+- The text is 12pt, larger than in most PDFs, and everything else is scaled with it. The column has the width of the PDF column, in ems.
+- The line spacing is the browser default, a little looser than in TeX.
 - Paragraphs are separated by space instead of indented.
-- The text is ragged right, not justified and hyphenated.
+- The text is ragged right and not hyphenated.
 
 ### Choices for the web
 
-These have no switch: each helps reading without changing what the document says.
+These differences cannot be turned off.
 
-- The table of contents and the footnotes sit beside the text, not where the PDF puts them. See [On the page](#on-the-page).
-- Without hyperref's `colorlinks`, a link is in the text's color with a faint underline, where the PDF draws a box around it. With `hidelinks`, links are unmarked, as in the PDF.
-- A picture given a `width` and a `height` without `keepaspectratio` keeps its proportions instead of being squashed.
-- Dark mode has its own palette.
+- The table of contents and the footnotes are beside the text on a wide screen. See [On the page](#on-the-page).
+- Without the `colorlinks` option of hyperref, a link is in the text color with a faint underline. The PDF has a box around each link. Links are unmarked with `hidelinks`, as in the PDF.
+- A picture given a `width` and a `height` without `keepaspectratio` is shown with its original proportions. In the PDF, the picture is stretched.
+- Dark mode has separate background, text, and link colors.
 
-### What a page can't do as a PDF does
+### Screen width and page numbers
 
-A page has no pages and no fixed width.
-
-- A picture keeps its size as a narrower screen reflows the text. It shrinks only once the column is narrower than the picture.
-- Minipages and subfigures that share a line in the PDF stay side by side at their PDF widths. On a narrow screen they wrap.
-- Display math that doesn't fit scrolls sideways. On a narrow screen, so does a wide table or verbatim block. With JavaScript on, each fades out at an edge where more of it is hidden.
+- A picture is at its PDF size on a narrower screen, until the column is narrower than the picture. Then the picture is scaled down to the width of the column.
+- Minipages and subfigures that share a line in the PDF are side by side at their PDF widths. On a narrow screen, they wrap.
+- Display math wider than the column scrolls sideways. On a narrow screen, wide tables and verbatim blocks scroll sideways too. Each of these blocks fades out at an edge where more of the block is hidden, when JavaScript is on.
 - The table of contents has no page numbers or dot leaders.
-- An index is in one column. Its numbers count the `\index` commands in order, in place of page numbers.
+- An index is in one column. Each entry has numbers in place of page numbers. The numbers are a count of the `\index` commands, in order, and each number links to its `\index`.
 
 ## Checking your documents after an upgrade
 
-A new tex8web can change how your pages look. To see whether it does, build your documents before the upgrade and accept them, then build them again after it. Run the command from the directory that holds your documents, so that the builds and the accepted pages stay with them, not in tex8web's directory:
+A new version of tex8web can change how your pages look. To check, build your documents and accept the pages before the upgrade, then build them again after the upgrade. Run the command from the directory that contains your documents, so that the builds and the baselines are stored there and not in the tex8web directory:
 
 ```sh
 cd ~/papers
@@ -219,60 +292,78 @@ npm --prefix path/to/tex8web run regress -- --accept thesis talk/talk.tex   # be
 npm --prefix path/to/tex8web run regress -- thesis talk/talk.tex            # after
 ```
 
-Each argument is a document's directory, which means its `main.tex` or its only `.tex` file, or a `.tex` file. A document is named by its directory, so two of them can't share a name. The command builds the documents side by side, checks each page for the problems `npm test` looks for, and compares it with the accepted one. It prints one line for each document:
-- `unchanged`: the page is the same;
-- `changed: <files>`: the HTML or its files differ, but every screen looks the same;
-- `looks different: <screens>`: the screens named differ in a browser;
-- `no baseline to compare with`: nothing has been accepted for it yet;
-- `failed to build`, or `problem:` lines under it: see the log in `logs/<name>.html.log`.
+Each argument is a document directory or a `.tex` file. A directory means its `main.tex`, or its only `.tex` file. Documents are named after their directories, so two documents in directories with the same name cannot be checked together.
 
-The exit code is 0 when nothing looks different, 3 when a page does, 1 when a build or check failed, and 2 for a mistake in the command. A page that looks different comes with the first differing screens for each width and scheme, old and new, in `compare/<name>`. Look at them before you accept.
+The documents are built in parallel. Each page is checked for the same problems as in `npm test`, and compared with its baseline. One line is printed for each document:
+
+- `unchanged`: the page is the same as its baseline.
+- `changed: <files>`: the HTML or other files differ, but every screen looks the same.
+- `looks different: <screens>`: the screens listed differ in a browser.
+- `no baseline to compare with`: no page has been accepted for this document yet.
+- `failed to build`, or `problem:` lines under the line of the document: see the log in `logs/<name>.html.log`.
+
+The exit code is 0 when no page looks different, 3 when a page looks different, 1 when a build or a check failed, and 2 for a mistake in the command. For a page that looks different, the first differing screens for each width and color scheme are saved, old and new, in `compare/<name>`. Look at them before you accept.
 
 The options:
-- **`-c config`** builds every document with your own config.
-- **`--accept`** makes this run's pages the baseline. It doesn't compare the screens, which you have looked at before accepting, so a page that changed says `changed`. It accepts nothing when any document failed, and refuses `--draft`.
-- **`--baseline dir`** compares with the pages in `dir/<name>` instead, such as another checkout's `html` directory.
-- **`--out dir`** says where everything goes, `build/regress` in the directory you run it from by default: `html/<name>` for the pages, `compare/<name>`, `logs/`, `tex4ht/` and `accepted/<name>`. Keep `-` and the other characters of a Lua pattern out of its path (see [Known limitations](#known-limitations)).
-- **`--draft`** builds in make4ht's draft mode, which is quicker and not to be trusted.
-- **`--shots-cache dir`** keeps what the baseline's screens came to, so that a baseline is shot once for every run that uses the directory. By default it is `shots-cache` in `--out`.
-- **`--latexmk`** builds each document's PDF first, with `latexmk` in the document's directory. A document whose PDF fails isn't built.
 
-Unless you say `--latexmk`, the command doesn't build PDFs. If the config links one with `\WebPDF` and it's missing, the page is built without it. A document is built again only when something it is made from has changed: tex8web, the document's directory, the config, the PDF it links, or the tools. When the change is one LaTeX doesn't read, such as tex8web's stylesheet, the build starts from the last one's LaTeX runs.
+- **`-c config`**: Build every document with `config`.
+- **`--accept`**: Make the pages of this run the baselines. Screens are not compared, because you look at them before you accept. A page with changes is reported as `changed`. Nothing is accepted when any document failed. `--accept` cannot be used with `--draft`.
+- **`--baseline dir`**: Compare with the pages in `dir/<name>` instead, for example the `html` directory of another tex8web checkout.
+- **`--out dir`**: Write everything to `dir`. The default is `build/regress` in the directory you run the command from. `dir` contains `html/<name>` for the pages, `compare/<name>`, `logs/`, `tex4ht/`, and `accepted/<name>`. Keep `-` and the characters `^ $ ( ) % [ ] * + ?` out of the path. See [Known limitations](#known-limitations).
+- **`--draft`**: Build in draft mode, as with `-m draft`. Draft builds are quicker, but their pages are not reliable.
+- **`--shots-cache dir`**: Cache the screenshots of the baselines in `dir`, so that the screenshots of each baseline are taken once for all runs that use `dir`. The default is `shots-cache` in the `--out` directory.
+- **`--latexmk`**: Build the PDF of each document first, with `latexmk` in the directory of the document. A document whose PDF fails to build is not built.
+
+Without `--latexmk`, no PDFs are built. If a PDF is linked with `\WebPDF` in your config and the PDF is missing, the page is built without a PDF button. A document is built again only when one of its inputs has changed: tex8web, the directory of the document, the config, the linked PDF, or the build tools.
 
 ## Known limitations
 
-Each item says what goes wrong and, where there is one, what to do.
+Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#small-known-differences).
 
-- **`-B` with a `-` in its path.** make4ht reads the `-B` directory as a Lua pattern, so a `-` anywhere in its path sends files to the wrong place. So do `^ $ ( ) % [ ] * + ?`. Keep `-` out of it, and keep it relative to the document, as `bin/tex8web`'s default `build/tex4ht` is.
-- **A space in tex8web's path or in a config's path.** tex4ht can't read such a config, so `bin/tex8web` stops. Move tex8web or the config to a path without spaces.
-- **Macros MathJax can't read** show in red, and the build names them. These include macros that parse their own arguments, such as comma-separated lists. Give MathJax a version with `\WebMathMacros`.
-- **siunitx in math.** Its numbers, units, quantities and angles are set as in the PDF, in text and in math. Its other commands show in red in math, such as `$\numrange{1}{5}$`, `\qtyproduct` and `\complexnum`. In text they are set as tex4ht sets them.
-- **`\color` for the whole document**, in the preamble or in `\AtBeginDocument`, isn't followed. A `\normalcolor` inside a colored group doesn't bring back the text's color.
-- **tocloft's fonts for lists of figures and tables**, `\cftfigfont` and `\cfttabfont`, aren't followed. Those lists stay in the text's font.
-- **The QED box** of an amsthm proof sits at the right, in a display's tag after `\qedhere` as in the PDF. Not followed: with a `\tag` of the display's own the proof ends with its box below the display, as it does after `$$ $$` and `displaymath`; in `multline` the box goes under the number, not at the end of the last line. A `\qedsymbol` that isn't math or text MathJax can read, such as `\ensuremath{...}`, shows in red in a display.
-- **`\hfill`.** With several on a line, only what follows the last one goes to the right; the parts before it stay together at the left. When the rest of the line is longer than a line, it starts on the line below, at the left. In the PDF, it fills the line first. In a centered paragraph, an `\hfill` in a link or a color sends the paragraph's other lines to the left too.
-- **enumitem.** `align=left`, `wide` and `itemindent` aren't followed: labels are right-aligned and hang into the margin, as LaTeX's own are.
-- **A TikZ picture in display math**, such as a `tikzcd`, is drawn as a picture together with the rest of that display's math.
-- **Safari after a swipe back.** Once a reader swipes back to a page, Safari no longer slides when they return to it from history, by the up icon or the back button. The page still comes back where they were.
-- **Delimiters and radicals** can differ slightly in size, since MathJax picks them from its own font.
-- **Prerendered math is laid out by estimates** where a browser would measure, such as text in math that MathJax has no glyphs for. A box can come out a pixel or so off.
-- **tcolorbox.** Boxes get their colors, rules, corners, shadow, spacing and title. What a skin draws with TikZ, such as overlays and shadings, comes out as a plain frame. Pictures in side-by-side listing boxes aren't converted. If a fragile command in a box's title breaks the build, `\robustify` it in your config.
-- **Colors in math.** A color defined inside a group isn't given to MathJax. The models `hsb`, `Hsb`, `tHsb` and `wave` aren't supported. A color redefined later in the document has its last value everywhere in math.
-- **Table colors.** With colortbl but not xcolor, `\textcolor` of the document's own colors is lost, as tex4ht loads xcolor after the document defines them. Load xcolor yourself, before the colors are defined. In a table with `\hline`, `\rowcolors` alternates wrongly.
-- **Minipages.** A minipage inside a paragraph's text breaks the paragraph around it. `\centering` in a minipage is followed only in a figure. Two minipages, each in its own `\fbox`, sit one above the other instead of side by side.
-- **A picture's size without its `.xbb` file.** tex4ht reads a bitmap's or PDF's size from a `.xbb` file beside it. Without one, a picture sized by `scale` or `height`, or by `width` and `height` with `keepaspectratio`, isn't at the PDF's size. Make the file with `extractbb -x picture.png`.
-- **A size after `angle`,** as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`**, aren't followed. The picture is at its natural size. Put the size before `angle`, or leave `scale` out.
-- **`trim` and `viewport`.** The page shows the whole picture at the width of the part that is kept.
-- **float's styles.** Only `ruled` is drawn. A `boxed` float has no frame, and a `plaintop` float's caption stays where `\caption` is.
-- **algorithm2e.** The `ruled` and `algoruled` styles have their rules, and every style its caption in its place. `boxed`, `boxruled`, `tworuled` and `plainruled` have no frame or rules. Block markers (`\AlgoDisplayBlockMarkers`) aren't shown. A line wraps in the window's width, not the PDF's, so a `\tcp*` comment can go to the line below.
-- **mdframed.** A box has its middle line (`linewidth`), its colors and its space inside and around. Its inner and outer lines, rounded corners, shadow and what TikZ or PSTricks draws aren't. A `frametitle` is inside the box's padding, without a bar of its own.
-- **framed's `\FrameSep`.** A framed box has no padding between its rule and its text.
-- **Chapters and parts.** A chapter's label, "Chapter 1", is tex4ht's. Part and chapter headings use report's and book's sizes, whatever the class, unless titlesec formats them.
-- **One page per document.** tex4ht can split a document into a page for each section. It does so with a number such as `2` among `\Preamble`'s options, with `splitat=`, or with `\CutAt` in a config. tex8web stops with a message. Remove the option.
-- **Document classes tex4ht doesn't know**, such as Tufte-LaTeX, need a config of their own.
-- **imakeidx's `program`** isn't followed: makeindex always runs. Its `splitindex` option isn't supported.
-- **The page's controls are in English**, whatever the document's language. So is the speech for math. It reads `|` as "given", as in `P(A | B)`, so a document about divisibility hears `a | b` as "a given b".
-- **The browser's find-in-page** finds a formula's characters one at a time, but not a run of them such as `Δ(S)`.
-- **A page opened from disk, or read with JavaScript off,** loads its fonts without preloading them. A long page may take a moment longer to settle on a phone.
-- **Styles for `.mathjax-inline`** in a config apply only when MathJax typesets in the browser.
-- **The space before inline math after a word in another font** can be in that word's font when MathJax typesets in the browser, and in the text's font in a prerendered page. algorithm2e's keyword before its argument is one such case. The two pages can be a pixel apart, and neither is always the PDF's.
+### Building
+
+- **A space in the path of tex8web or of a config.** A config path with a space does not work with tex4ht, so tex8web stops with an error. Move tex8web or the config to a path without spaces.
+- **`-B` with a `-` in its path.** The `-B` directory is used as a Lua pattern by make4ht, so with a `-` anywhere in the path, files are written to the wrong place. The characters `^ $ ( ) % [ ] * + ?` have the same effect. Keep them out of the path, and keep the path relative to your document, as the default `build/tex4ht` is.
+- **One page per document.** A document is split into several pages by a number such as `2` in the options of `\Preamble`, by `splitat=`, or by `\CutAt` in a config. With any of these, tex8web stops with an error. Remove the option.
+- **Document classes not supported by tex4ht**, such as Tufte-LaTeX. Configure the class for tex4ht in your config.
+- **The `program` option of imakeidx** is ignored: makeindex is always run. The `splitindex` option is not supported.
+
+### Math
+
+- **Macros that tex8web cannot translate for MathJax** are shown in red, and tex8web lists them in a warning. Among them are macros with arguments in a custom format, such as comma-separated lists. Define a version for MathJax with [`\WebMathMacros`](#your-own-config).
+- **Colors in math.** A color defined inside a group is not passed to MathJax. The color models `hsb`, `Hsb`, `tHsb`, and `wave` are not supported. A color redefined later in the document has its last value everywhere in math.
+- **The QED box** of an amsthm proof is at the right, as in the PDF. After `\qedhere` in a display, the box is in the tag of the display. The box is below the display instead when the display has a `\tag`, and in `$$ $$` and `displaymath`. In `multline`, the box is under the equation number, not at the end of the last line. A `\qedsymbol` that cannot be typeset by MathJax as math or text, such as `\ensuremath{...}`, is shown in red in a display.
+- **siunitx in math.** Numbers, units, quantities, and angles of siunitx are set as in the PDF, in text and in math. The other siunitx commands are shown in red in math, for example `$\numrange{1}{5}$`, `\qtyproduct`, and `\complexnum`. In text, these commands have the default output of tex4ht.
+- **A TikZ picture in display math**, such as a `tikzcd` diagram, is drawn as a picture together with the rest of the math in that display.
+- **Styles for `.mathjax-inline`** in a config apply only to a page built without Node.
+
+### Text and layout
+
+- **`\hfill`.** With several `\hfill` on a line, only the text after the last one is at the right. The parts before it stay together at the left. When the text after `\hfill` is longer than a line, it starts at the left of the next line. The text fills the rest of the line first in the PDF. In a centered paragraph with an `\hfill` inside a link or a color, the other lines of the paragraph are at the left too.
+- **Minipages.** A paragraph with a minipage inside its text is broken around the minipage. `\centering` in a minipage applies only in a figure. Two minipages, each inside an `\fbox`, are one above the other instead of side by side.
+- **Colors in text.** `\color` for the whole document, in the preamble or in `\AtBeginDocument`, is ignored. Inside a colored group, the text color is not restored by `\normalcolor`.
+- **Chapters and parts.** The label of a chapter, such as "Chapter 1", is the default label of tex4ht. Part and chapter headings have the sizes of the report and book classes, whatever the class, unless they are formatted with titlesec.
+
+### Packages
+
+- **tcolorbox.** Boxes have their colors, rules, corners, shadow, spacing, and title. Anything drawn with TikZ in a skin, such as overlays and shadings, is shown as a plain frame. Pictures in side-by-side listing boxes are not converted. If the build fails on a fragile command in the title of a box, make the command robust with `\robustify` in your config.
+- **enumitem.** `align=left`, `wide`, and `itemindent` are ignored. Labels are right-aligned and hang into the margin, as in the standard lists of LaTeX.
+- **Table colors.** With colortbl and without xcolor, `\textcolor` with colors defined in your document has no effect, because xcolor is loaded by tex4ht after these colors are defined. Load xcolor yourself, before you define the colors. In a table with `\hline`, the row colors of `\rowcolors` alternate wrongly.
+- **algorithm2e.** The `ruled` and `algoruled` styles have their rules, and every style has its caption in its place. `boxed`, `boxruled`, `tworuled`, and `plainruled` have no frame or rules. Block markers (`\AlgoDisplayBlockMarkers`) are not shown. A line wraps at the width of the window, not the width in the PDF, so a `\tcp*` comment can move to the next line.
+- **float styles.** Only `ruled` is drawn. A `boxed` float has no frame, and the caption of a `plaintop` float stays where `\caption` is.
+- **mdframed.** A box has its middle line (`linewidth`), its colors, and its space inside and around it. Inner and outer lines, rounded corners, shadows, and anything drawn with TikZ or PSTricks are missing. A `frametitle` is inside the padding of the box, without a separate title bar.
+- **`\FrameSep` of framed.** A framed box has no padding between its rule and its text.
+- **tocloft fonts for lists of figures and tables.** `\cftfigfont` and `\cfttabfont` are ignored. These lists are in the text font.
+
+### Pictures
+
+- **A picture without its `.xbb` file.** The size of a bitmap or PDF picture is taken from a `.xbb` file next to it. Without this file, a picture sized with `scale` or `height`, or with `width`, `height`, and `keepaspectratio`, is not at its PDF size. Make the file with `extractbb -x picture.png`.
+- **A size after `angle`**, as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`** are ignored. The picture is at its natural size. Put the size before `angle`, or leave out `scale`.
+- **`trim` and `viewport`.** The whole picture is shown, at the width of the part that is kept.
+
+### Reading in a browser
+
+- **The controls are in English**, whatever the language of the document. So is the speech for math. In the speech, `|` is "given", as in `P(A | B)`, so `a | b` in a document about divisibility is spoken as "a given b".
+- **Find in page.** Readers can find single characters of a formula with the find-in-page command of the browser, but not a run of characters such as `Δ(S)`.
+- **A page opened from disk, or read with JavaScript off.** Fonts are not preloaded. On a phone, the layout of a long page can take a moment longer to settle.
+- **Safari after a swipe back.** After a reader swipes back to a page in Safari, the pages no longer slide when the reader returns to that page from history, with the up button or the back button. The reader still returns to the same place on the page.

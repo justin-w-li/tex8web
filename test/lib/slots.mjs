@@ -2,7 +2,8 @@
 // Each make4ht or latexmk build, and each Chrome the tests launch, holds one
 // slot while it runs, as every tool sizing its own parallelism as if it had
 // the machine to itself leaves it swapping. A slot is a lock file in
-// $TMPDIR/tex8web-slots, taken with lockf; rebuild.sh takes the same ones.
+// $TMPDIR/tex8web-slots, taken with lockf, so scripts outside tex8web can
+// take the same slots.
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { tmpdir, totalmem } from 'node:os';

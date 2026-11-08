@@ -1,18 +1,17 @@
 # Contributing to tex8web
 
-This file covers how tex8web works, how it is tested and how it is released. The project's rules are in [CLAUDE.md](CLAUDE.md): what belongs in tex8web, how code and comments are written, and when each check runs. Coding agents load that file on their own, and people should read it too.
-
 1. [Setup](#setup)
-2. [How it works](#how-it-works)
-3. [Testing](#testing)
-4. [Updating MathJax or TeX Live](#updating-mathjax-or-tex-live)
-5. [Releasing](#releasing)
-6. [Reporting a problem](#reporting-a-problem)
-7. [Files](#files)
+2. [Proposing a feature](#proposing-a-feature)
+3. [How it works](#how-it-works)
+4. [Testing](#testing)
+5. [Updating MathJax or TeX Live](#updating-mathjax-or-tex-live)
+6. [Releasing](#releasing)
+7. [Reporting a problem](#reporting-a-problem)
+8. [Files](#files)
 
 ## Setup
 
-You need TeX Live 2026, Node 22 or later and, for `npm run test:visual`, Chrome or Chromium.
+You need TeX Live 2026, Node 22 or later, and, for `npm run test:visual`, Chrome or Chromium.
 
 ```sh
 git clone https://github.com/justin-w-li/tex8web.git
@@ -21,186 +20,291 @@ npm ci
 npm test
 ```
 
-## How it works
+If you work with a coding agent, [CLAUDE.md](CLAUDE.md) is its instruction file.
 
-A page goes through four stages.
+## Proposing a feature
+
+Before you build a feature, propose it to a maintainer, for example in an issue, with a sentence on how it improves reading. Build it once a maintainer agrees. New `\Web*` commands and page controls are features too. Fixes that bring the page closer to the PDF need no proposal.
+
+## How it works
 
 ### 1. tex4ht
 
-`tex8web.cfg` and `tex/` configure tex4ht.
+tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 
-- tex4ht's `mathjax` option writes the text as HTML and leaves each formula's LaTeX in the page.
-- Equations get TeX's own numbers, so they agree with `\eqref`.
-- Alignments are split at `\intertext`. `js/tex8web.js` later gives the parts the same columns, so they line up as one alignment.
-- TeX measures the document: its text width, heading sizes, theorem and list spacing, and link colors. The measurements reach the stylesheet as `--tex8web-*` custom properties. The stylesheet, `css/tex8web.css`, holds every static rule.
-- With tocloft, `\web@tocfont` reads each level's `\cft<level>font` as a heading's font is read. `lua/tex8web/assets.lua` predicts the faces those fonts need, to copy and list for preloading.
-- `tex/tex8web-hooks.sty` loads before the preamble. It keeps what tex4ht would discard, such as titlesec's formats and tcolorbox's options. Its `\web@needs` warns when tex4ht or a package no longer has a command tex8web patches. The tests treat that warning as a failure.
+- With the `mathjax` option of tex4ht, the text is written as HTML, and the formula source stays in the page as LaTeX.
+- Equations are numbered as in TeX, so the numbers agree with `\eqref`.
+- Alignments are split at `\intertext`. The parts are later given the same columns in `js/tex8web.js`, so they line up as one alignment.
+- The document is measured in TeX: the text width, heading sizes, theorem and list spacing, and link colors. The measurements are passed to the stylesheet as `--tex8web-*` custom properties. The text width is given in ems, so the column scales with the text size. Every static rule is in `css/tex8web.css`.
+- List labels are typeset by TeX, so they match the PDF.
+- The title is passed from one LaTeX run to the next by tex4ht. So the first build in draft mode, with one LaTeX run, has no title.
+- With tocloft, the font of each table of contents level is read from `\cft<level>font` by `\web@tocfont`, in the same way as heading fonts. The font faces these fonts need are predicted in `lua/tex8web/assets.lua`, so the faces can be copied next to the page and listed for preloading.
+- `tex/tex8web-hooks.sty` is loaded before the preamble. There, tex8web records settings lost under tex4ht, for example the formats of titlesec and the options of tcolorbox.
+- A warning from `\web@needs` is given when a command that tex8web patches is no longer defined in tex4ht or in a package. In the tests, this warning is a failure.
 
 ### 2. HTML passes
 
-`tex8web.mk4` runs bibtex or biber and makeindex, then the passes in `lua/tex8web/`.
+tex8web then runs bibtex or biber, makeindex, and the passes in `lua/tex8web/`. The steps are listed in `tex8web.mk4`. The TeX search paths for the files loaded by `tex8web.cfg` are also set in `tex8web.mk4`, so a build without `-e tex8web.mk4` fails.
 
-**The macro bridge** (`macros.lua`, `preamble.lua`). MathJax never sees the preamble, so it doesn't know the document's macros. The bridge reads their definitions from the document, the local packages it loads, and the files they `\input` or `\include`. It reads them in the order TeX does, each file where it is loaded, so the last definition wins, except that a `\providecommand` keeps one already made. It translates them for MathJax. The page gets only the macros its math uses, so templates and the rest of the source are never published.
+#### Macros in math (`macros.lua`, `preamble.lua`)
 
-The bridge also handles colors. MathJax knows only CSS's and dvips's color names. The bridge gives it, as `\definecolor` lines:
-- the document's own colors, from `\definecolor` and `\colorlet`;
-- colors from xcolor's `dvipsnames`, `svgnames` and `x11names` options;
-- xcolor's names that CSS gives other values, such as `green` and `orange`;
-- mixes and complements, such as `red!50!black` and `-ink`.
+MathJax is not given the preamble, so tex8web translates the macros defined there for MathJax. Definitions are collected from the document, from the local packages it loads, and from the files that the document and these packages `\input` or `\include`. Files are read in the same order as in TeX. Later definitions replace earlier ones, except that `\providecommand` keeps an existing definition. Only macros used in the math are added to the page, so the rest of the source is not published.
 
-It looks for them in every word in braces in the math, so it also finds a color named in a macro's argument.
+Only the color names of CSS and dvips are defined in MathJax. tex8web adds these colors as `\definecolor` lines:
 
-The colors come before the macros. A `\definecolor` makes MathJax load its color extension and run the whole text again, where a repeated `\DeclarePairedDelimiter` is an error. `tex8web.js` logs such an error as a line that starts with `tex8web:`, which fails the checks.
+- colors defined in the document with `\definecolor` and `\colorlet`
+- colors from the `dvipsnames`, `svgnames`, and `x11names` options of xcolor
+- xcolor names that have other values in CSS, for example `green` and `orange`
+- mixes and complements, for example `red!50!black` and `-ink`
 
-`tex8web-hooks.sty` records each color as xcolor defines it. TeX writes the values at the end of the document, in the color's model: gray, CMYK or RGB. `macros.lua` mixes them in the model xcolor would, converts as xcolor does, and rounds once. `tex8web.js` adds the color models MathJax lacks: `HTML`, `Gray`, `cmy` and `cmyk`.
+Color names are looked for in every word in braces in the math, so a color named in a macro argument is found too.
 
-**Indexes** (`index.lua`). makeindex gets each `\index`'s count in place of a page number. The counts start at 1000001, so that no number in an entry's text is taken for one. Each count becomes a link back to its `\index`, shown counted from 1. makeindex runs with `-r`, so consecutive counts stay separate. imakeidx runs nothing under tex4ht, so `tex8web-hooks.sty` records the command it would run in the `.aux`.
+The color lines are placed before the macros. The MathJax run is restarted by a `\definecolor`, and in the restarted run a repeated `\DeclarePairedDelimiter` is an error. Such errors are logged in `tex8web.js` as lines that start with `tex8web:`, and the checks fail on these lines.
 
-**The other passes** color the text a `\color` declaration sets, fix spacing, put what follows an `\hfill` at the right, add links to headings and theorems, drop tex4ht's source-line comments, and add meta tags and the page's controls. The text goes in `<main>`; make4ht's own `fixinlines` runs just before, as it only looks at the top of the body. They copy what the page needs next to it, and list the faces its text uses for the inline script to preload: Latin Modern's, or TeX Live's for a document in Times, Charter and the like. Those are found by the families the build element names, and by the font classes in the page.
+Each color is recorded in `tex8web-hooks.sty` as defined by xcolor. The values are written at the end of the document, in the model of the color: gray, CMYK, or RGB. In `macros.lua`, mixes are computed in the model used by xcolor, converted as in xcolor, and rounded once. The color models missing from MathJax are added in `tex8web.js`: `HTML`, `Gray`, `cmy`, and `cmyk`.
 
-### 3. MathJax's sizes
+#### Indexes (`index.lua`)
 
-MathJax's TeX input differs from TeX in a few sizes. `js/tex8web.js` sets them as TeX does:
-- `\big` and its relatives;
-- the 10pt delimiters and large operators of an 11pt or 12pt document;
-- the rows of arrays and alignments;
-- line breaks after relations;
-- the columns of an alignment split at `\intertext`.
+In place of page numbers, makeindex is given a count of the `\index` commands. The counts start at 1000001, so that no number in the text of an entry is mistaken for a count. Each count becomes a link back to its `\index` command, and is shown counted from 1. makeindex is run with `-r`, so consecutive counts are not joined into ranges. Under tex4ht, no command is run by imakeidx, so the makeindex command of imakeidx is recorded in the `.aux` by `tex8web-hooks.sty`.
+
+#### Other passes
+
+The other passes in `lua/tex8web/` are for:
+
+- the color of text after a `\color` declaration
+- spacing
+- text after `\hfill`, which is set at the right
+- [links to headings](DOCUMENTATION.md#links-to-headings) and theorems
+- the removal of the source-line comments of tex4ht
+- meta tags and the page controls
+- the `<main>` element around the text. tex8web runs the `fixinlines` filter of make4ht immediately before this pass, because the filter is applied only to the top level of the body.
+- the files the page needs, copied next to the page
+- the font faces the text uses, listed for preloading by the inline script. These are the faces of Latin Modern, or of TeX Live for a document in Times, Charter, or similar fonts. The faces are found from the font families named in the build element and from the font classes in the page.
+
+### 3. MathJax sizes
+
+A few sizes differ between TeX and the TeX input of MathJax. These sizes are set as in TeX in `js/tex8web.js`:
+
+- `\big` and its relatives
+- the 10pt delimiters and large operators of an 11pt or 12pt document
+- the rows of arrays and alignments
+- line breaks after relations
+- the columns of an alignment split at `\intertext`
 
 ### 4. Prerendering
 
-`js/prerender.mjs` runs MathJax in Node, configured as it is in the browser. The page keeps the result. Prerendering also makes the page lighter:
+tex8web runs MathJax in Node with `js/prerender.mjs`, configured as in the browser. The typeset math is saved in the page. The prerendered page is also lighter.
 
-- **No assistive MathML.** MathJax adds a hidden MathML copy of each formula. On a long page it is a quarter of the markup, and most of a phone's layout time. `TEX8WEB_MATHML=1` keeps it; the tests set it and check the math through it.
-- **Speech instead.** Each formula is `role="math"` with its speech as an `aria-label`. The speech comes from MathJax's semantic enrichment, which changes the math itself. So the page is typeset twice: the second typesetting gives the speech and is then dropped. That typesetting also adjusts the math for the speech rule engine, which would say "normal Gamma" for Γ and "raised to the down tack power" for `^\top`. The speech rule engine takes most of prerendering's time, so the speech of each formula is kept for the next build. It is keyed by what MathJax sends the engine, the enriched MathML and the speech options, by MathJax's version, and by the text of `prerender.mjs` and `prerender-rules.mjs`. It is in `TEX8WEB_SPEECH_CACHE`, or else in `<page>-speech.json` among tex4ht's files. `test/lib/build.mjs` sets it to `build/<document>.speech.json` in the document's directory. So the builds of a document outside tex8web, such as `regress`'s, share it across checkouts.
-- **Fewer elements.** Wrappers that add nothing to their children's box are removed, such as one-character tokens and `mjx-mrow` in left-aligned math. A long document goes from 67,000 elements to 40,000. A phone restyles the page as it scrolls, in time that grows with that count. test:visual checks that the page still looks like MathJax's own output.
-- **Preloaded fonts.** Without preloads, the browser fetches each font when it first needs it, then lays out the page again. `assets.lua` and `prerender.mjs` list the fonts in `data-fonts` on the inline script `js/tex8web-fonts.js`, which inserts the links. It inserts none when the page is opened from disk: Safari refuses a preload there, and then loads none of the page's fonts. The links have `crossorigin`, as `@font-face` fetches in CORS mode and a font would be fetched twice without it.
-- **Subset fonts.** MathJax's, Latin Modern's, TeX Gyre's and XCharter's fonts are cut to the document's characters with [subset-font](https://github.com/papandreou/subset-font). A long page's fonts go from about 380 KB to 140 KB.
-- **No clipping.** MathJax clips each character to its box. In Safari that gives each character its own layer, which makes scrolling slow. The stylesheet removes the clip.
+Prerendering is skipped without `node_modules/`, when `node_modules/` holds a MathJax other than the version pinned in `package.json`, or with `TEX8WEB_NO_PRERENDER` set to any value. The result is [a page built without Node](DOCUMENTATION.md#without-node).
 
-MathJax draws a macro it doesn't know as its name, in red. Prerendering names these macros in a warning that starts with `tex8web:`.
+The code in `tex8web.js` depends on internals of MathJax, so the MathJax version is pinned in `package.json`.
 
-Without `node_modules/`, or with `TEX8WEB_NO_PRERENDER=1`, this stage is skipped. [DOCUMENTATION.md](DOCUMENTATION.md) says what the page does then ("Without Node").
+#### No assistive MathML
 
-`tex8web.js` relies on MathJax's internals, so MathJax's version is pinned in `package.json`.
+By default, a hidden MathML copy of each formula is added by MathJax. The MathML copies are a quarter of the markup of a long page, and most of its layout time on a phone. The MathML copies are removed in prerendering, or kept with `TEX8WEB_MATHML=1`. This variable is set in the tests, and the math is checked through the MathML.
 
-A document has one page. A tex4ht split option (a number or `splitat=` in `\Preamble`) stops the build in `tex/tex8web-core.tex`. A config's `\CutAt` stops it in `page.build_data`, which finds the page without tex8web's build elements. `test-split.tex` and `test-cutat.tex` check both.
+#### Speech
+
+Each formula has `role="math"` and its speech as an `aria-label`. The speech is made by the semantic enrichment of MathJax, and the math itself is changed by this enrichment. So the page is typeset twice, and the second typesetting is used only for the speech. The math is also adjusted for the speech rule engine in the second typesetting. Without this adjustment, Γ would be spoken as "normal Gamma" and `^\top` as "raised to the down tack power".
+
+Most of the prerendering time is spent in the speech rule engine, so the speech of each formula is saved in a speech cache for the next build. The cache key is made of:
+
+- the input to the speech rule engine: the enriched MathML and the speech options
+- the MathJax version
+- the text of `prerender.mjs` and `prerender-rules.mjs`
+
+The speech cache is the file named in `TEX8WEB_SPEECH_CACHE`, or else `<page>-speech.json` among the files of tex4ht. For builds by the test tools, `TEX8WEB_SPEECH_CACHE` is set to `build/<document>.speech.json` in the directory of the document, in `test/lib/build.mjs`. So all builds of a document outside tex8web, for example builds by `npm run regress` in several checkouts, share one speech cache.
+
+#### Fewer elements
+
+Wrappers that add nothing to the box of their children are removed, for example one-character tokens and `mjx-mrow` in left-aligned math. A long document goes from 67,000 elements to 40,000. On a phone, the page is restyled during scrolling, in time that grows with the number of elements. The math is checked by `npm run test:visual` against the math typeset by MathJax in the browser.
+
+#### Preloaded fonts
+
+Without preloads, each font is fetched when first used, and the page is laid out again after each font arrives. The fonts are listed by `assets.lua` and `prerender.mjs` in `data-fonts` on the inline script `js/tex8web-fonts.js`, and the preload links are inserted by this script. No links are inserted when the page is opened from disk: a preload from disk is refused in Safari, and then none of the fonts of the page are loaded. The links have `crossorigin`, because `@font-face` fonts are fetched in CORS mode, and without `crossorigin` each font would be fetched twice.
+
+#### Subset fonts
+
+The fonts of MathJax, Latin Modern, TeX Gyre, and XCharter are cut down to the characters of the document with [subset-font](https://github.com/papandreou/subset-font). The fonts of a long page go from about 380 KB to 140 KB.
+
+#### No clipping
+
+Each character is clipped to its box by MathJax. In Safari, each clipped character is put in a separate layer, which slows scrolling. The clip is removed in the stylesheet.
+
+#### Unknown macros
+
+An unknown macro is drawn by MathJax as its name, in red. During prerendering, these macros are listed in a warning that starts with `tex8web:`.
+
+### One page for each document
+
+tex8web makes one page for each document. A build with a tex4ht split option, a number or `splitat=` in `\Preamble`, is stopped in `tex/tex8web-core.tex`. A build with `\CutAt` in the config is stopped in `page.build_data`, where the page is found without the build elements of tex8web. Both cases are checked with `test-split.tex` and `test-cutat.tex`.
 
 ## Testing
 
-Each script's header comment says what it checks. CLAUDE.md says when to run which.
+The checks of each test script are listed in its header comment.
 
-- **`npm test`** runs `test/unit/` (Lua) and `test/run.mjs`. `run.mjs` builds every document in `test/fixtures/` and `examples/` into `build/test/<document>/`, and checks each page. `node test/run.mjs <name>` builds one. While it builds, it runs the tests of the test tools beside it: `test/unit/prerender.test.mjs`, `slots.test.mjs`, `builds.test.mjs`, `realbuild.test.mjs`, `regress.test.mjs` and `tools.test.mjs`, which node runs at once. They take their build slots from a pool of their own, so they never wait for another session's builds. `lib/stubs.mjs` sets that up, with two slots, and puts a stand-in for make4ht on the PATH of the tests of stamps, reuse and `regress.mjs`'s flow. `realbuild.test.mjs` runs the real make4ht, to check that a real build is reused, and `regress.test.mjs` runs a real Chrome for the screens.
-  - `test-mathescape.tex` has the formulas where tex8web's escaping of a formula's source (`\alteqtoks`) could differ from tex4ht's. `run.mjs` builds it a second time with `test-mathescape-stock.cfg`, which restores tex4ht's, and the two pages must be the same.
-- **`npm run test:visual`** needs Chrome and the network. It runs `test/visual.mjs`, then `test/page.mjs`. Beside them it runs `test/chrome.test.mjs` and `test/shots.test.mjs`, so their output is mixed in.
-  - `visual.mjs` compares each page, prerendered and typeset by MathJax in the browser, screen by screen.
-  - `page.mjs` drives the page's script, and the tint of a linked equation, on the fixtures that have each feature. `npm run test:page` runs it alone.
-  - `chrome.test.mjs` tests `test/lib/chrome.mjs`.
-  - `shots.test.mjs` tests `shots.mjs`'s comparison of two builds. Its tests run two at a time, with build slots from the tools' pool (`lib/stubs.mjs`). Most shoot short pages, in strips of 3 screens (`TEX8WEB_SHOTS_STRIP`), at only the widths and schemes they look at (`TEX8WEB_SHOTS_VIEWS`). The tests of a strip's screens against single shots, and of an old build replaced during a run, keep long pages and the tool's own strips.
-- **`npm run examples`** builds each example's PDF and page into `examples/<name>/build/`, and the published site in `build/site/`.
-- **`node test/shots.mjs`** takes the screenshots a visual change is checked with, compares two builds, shoots one element's band (`--clip`) and prints a measurement (`--eval`). It can run a script on the page first (`--then`), play a touch screen (`--touch`), and shoot in one window of another size (`--window`). It prints its progress on stderr, as a long page takes minutes. Set its screenshots beside the PDF's page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
-  - A comparison shoots a page in strips of screens, as Chrome's capture costs the same whatever its height, and decodes (`lib/png.mjs`) and compares only the strips that differ, so its screens are the ones a shot of each alone gives. It writes the first 8 differing screens for each width and scheme (`--keep <n | all>`) and lists them all.
-  - `--expect look` stops each width and scheme at the first strip that differs.
-  - `--cache <dir>` keeps the old build's strips, under a key made of its files, the tool's sources and Chrome's version. Checkouts can share the directory. Nothing prunes it: delete it when it grows.
-- **`npm run regress -- <documents>`** (`test/regress.mjs`) builds documents, checks them and compares them with their accepted build, as DOCUMENTATION.md's "Checking your documents after an upgrade" describes. Its pieces are the ones above: `lib/build.mjs` builds in the slots, `check.mjs`'s checks, `diff.mjs`, and `shots.mjs` only if the HTML changed.
-  - `--accept` compares no screens. A build is reused by its stamp, which includes the config.
-  - npm runs the script in tex8web's directory, so relative paths are taken from `INIT_CWD`.
-  - `--latexmk` builds each document's PDF first, in a slot, holding `build/pdf.lock` as a wrapper does. Without it a document's own tools must have built the PDF its config links.
-  - A changed page's screens are compared as soon as it is built, each page in a Chrome of its own, in a slot, with `--shots-cache <dir>` passed on (`<out>/shots-cache` by default).
-- **`node test/diff.mjs <old> <new>`** says what changed in the HTML between two builds.
-- **`node test/check.mjs <html dir> [make4ht log] [TeX log]`** runs the generic page checks on any build.
-- **`test/checklist.md`** is the checklist for comparing `test.tex`'s page with its PDF by eye.
+### Which checks to run
 
-Each build's log is kept in `build/test/<document>/make4ht.log`.
+- Run `npm test` before every commit.
+- Run `npm run test:visual` before a commit that touches the math path, where MathJax in Node and in the browser can differ:
+  - `js/tex8web.js`, `js/prerender.mjs`, and `tex/tex8web-math.tex`
+  - the MathJax configuration in `tex/tex8web-page.tex`
+  - `lua/tex8web/macros.lua`, `preamble.lua`, and `source.lua`
+  - the scripts in `page.lua`
+  - the MathJax version in `package.json`
+- Run `npm run test:visual` also before a commit that touches `js/tex8web-page.js` or the styles of an [opened picture](DOCUMENTATION.md#opening-a-picture). The mouse and touch checks of an opened picture run only in `test/page.mjs`, with the checks of the bar, fade, theme, filter, and transitions.
+- For other changes, run `npm run test:visual` at the end of a batch and before opening a pull request.
+- Give a bug fix a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
+- Check a visual change with screenshots from `node test/shots.mjs`, wide and narrow, light and dark, next to the PDF.
+- Compare your documents before and after your change with `npm run regress`.
 
-**Build slots.** Sessions and checkouts that run tests at once would otherwise swap, as each tool sizes its builds for a machine of its own. So every make4ht or latexmk build, and every Chrome the tests launch, holds one of a pool of lock files in `$TMPDIR/tex8web-slots` while it runs (`test/lib/slots.mjs`). The pool has one slot for each 4 GB of memory, or `TEX8WEB_SLOTS` of them, a whole number of 1 or more. A process that waits for a slot says so after 10 seconds and every minute after that. Without `lockf` (Linux) there are no slots. The idle and total limits of a command run in a slot start once it holds it, so only work is timed. A build passes make4ht `-a info`, which prints each step, so that the idle limit times a step rather than the whole build. A Node command run in a slot, as `regress.mjs` runs `shots.mjs`, gives that slot to its first Chrome. `TEX8WEB_SLOTS_HELD` tells it so. A build runs under a watchdog, so that it ends, and gives its slot back, when its tool is killed or it runs over its total limit. A test's Chrome has a watcher too, which ends it and removes its profile when the Node process that launched it is killed. A tool that holds a slot never waits for a build that needs one, so `visual.mjs` builds before it launches Chrome. `regress.mjs` and a wrapper script that builds PDFs take the same slots. Only the tests of the tools, which build almost nothing, take theirs from a pool of their own.
+### Commands
 
-**Reused builds.** A build is kept with a stamp of what it was made from, in `build/test/<document>/html.stamp`. The stamp covers:
-- the files in tex8web's `bin`, `css`, `fonts`, `js`, `lua` and `tex` directories, `tex8web.cfg`, `tex8web.mk4`, `package.json` and `package-lock.json`, by content;
-- the files in the document's directory, and the config's, by content;
-- the PDF the page links, if there is one: its size and modification time, as a page built before the PDF was there lacks the link;
-- the command's arguments, and the `TEX8WEB_*`, `TEXINPUTS`, `TEXMF*`, `SOURCE_DATE_EPOCH` and `FORCE_SOURCE_DATE` environment variables, except `TEX8WEB_SPEECH_CACHE` and those that begin `TEX8WEB_SLOTS`;
-- the versions of `node_modules/mathjax` and `node_modules/subset-font`, or that one is missing;
-- the first line of `tex --version` and of `make4ht --version`, when `tex4ht.sty` was installed, and when tlmgr last changed TeX Live (`tlpkg/texlive.tlpdb`).
+- **`npm test`**: the Lua unit tests in `test/unit/`, then `test/run.mjs`. Every document in `test/fixtures/` and `examples/` is built by `run.mjs` into `build/test/<document>/`, and each page is checked. To build one document, run `node test/run.mjs <name>`. The build log is kept in `build/test/<document>/make4ht.log`.
+  - The tests of the test tools run beside the builds: `test/unit/prerender.test.mjs`, `slots.test.mjs`, `builds.test.mjs`, `realbuild.test.mjs`, `regress.test.mjs`, and `tools.test.mjs`. Most of them run with a stand-in for make4ht, set up in `test/lib/stubs.mjs`. The real make4ht is run in `realbuild.test.mjs`, and a real Chrome in `regress.test.mjs`.
+  - `test-mathescape.tex` holds the formulas where the escaping of formula source in tex8web (`\alteqtoks`) could differ from the escaping in tex4ht. This document is built a second time by `run.mjs` with `test-mathescape-stock.cfg`, in which the escaping of tex4ht is restored. The two pages must be the same.
+- **`npm run test:visual`**: `test/visual.mjs`, then `test/page.mjs`. Chrome and the network are needed. `test/chrome.test.mjs` and `test/shots.test.mjs` run beside them, so their output is mixed in.
+  - `visual.mjs`: each page, prerendered and typeset by MathJax in the browser, compared screen by screen
+  - `page.mjs`: the page script, and the tint of a linked equation, tested on the fixtures that have each feature. To run `page.mjs` alone, run `npm run test:page`.
+  - `chrome.test.mjs`: tests of `test/lib/chrome.mjs`
+  - `shots.test.mjs`: tests of the comparison of two builds in `shots.mjs`
+- **`npm run examples`**: the PDF and page of each example, built into `examples/<name>/build/`, and the published site, built into `build/site/`.
+- **`node test/shots.mjs`**: screenshots of a page, a comparison of two builds, the band of one element (`--clip`), or a measurement (`--eval`). With other options, a script is run on the page first (`--then`), a touch screen is emulated (`--touch`), or the page is shot in one window of another size (`--window`). Progress is printed on stderr, as a long page takes minutes. Compare the screenshots with the PDF page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
+  - In a comparison, a page is shot in strips of several screens, because a Chrome capture costs the same at any height. Only the strips that differ are decoded (`test/lib/png.mjs`) and compared screen by screen, so each screen is the same as a separate shot of that screen. The first eight differing screens for each width and color scheme are written (`--keep <n | all>`), and all of them are listed.
+  - With `--expect look`, the comparison of each width and color scheme ends at the first strip that differs.
+  - With `--cache <dir>`, the comparison results for the strips of the old build are saved as JSON. The key is a hash of the files of the old build, the `shots.mjs` options and sources, and the Chrome version. Several checkouts can share the directory. The directory is never pruned: delete it when it grows.
+- **`npm run regress -- <documents>`**: builds of your documents, checked and compared with their baselines, as described in [DOCUMENTATION.md](DOCUMENTATION.md). `regress` is made of the tools above: builds with `test/lib/build.mjs`, the checks of `check.mjs`, `diff.mjs`, and `shots.mjs` only if the HTML changed.
+  - With `--accept`, no screens are compared.
+  - The script is run by npm in the tex8web directory, so relative paths are taken from `INIT_CWD`.
+  - With `--latexmk`, the PDF of each document is built first. During the PDF build, `build/pdf.lock` in the directory of the document is held, so that two runs of latexmk never write to the same `build/pdf` at once. Without `--latexmk`, build the PDFs linked in the config before you run `regress`.
+  - The screens of a changed page are compared as soon as the page is built, with `--shots-cache <dir>` passed to `shots.mjs` (`<out>/shots-cache` by default).
+- **`node test/diff.mjs <old> <new>`**: what changed in the HTML between two builds
+- **`node test/check.mjs <html dir> [make4ht log] [TeX log]`**: the generic page checks, on any build
+- **`test/checklist.md`**: the checklist for comparing the page of `test.tex` with its PDF by eye
 
-**Reused LaTeX runs.** A build also keeps what LaTeX left in its tex4ht directory, in `<aux>.latex`, and the part of the log from LaTeX's runs, in `<aux>.latex.log`. Their stamp, in `<aux>.latex.stamp`, is the build's with less of tex8web: only what LaTeX reads, and the Lua that runs between LaTeX's runs (`latexSources` in `lib/build.mjs`). It leaves out the versions of MathJax and subset-font. It adds the day, which `\today` gives, unless `FORCE_SOURCE_DATE` fixes the date. When a build's stamp has changed but that one hasn't, `tex8web.mk4` copies those files back in place of running LaTeX (`TEX8WEB_LATEX_REUSE`), if they have LaTeX's DVI. The build says so. `tex8web.mk4` copies LaTeX's files only to a `TEX8WEB_LATEX_SAVE` that isn't there yet, and the build removes the old copy first. So a change to `css`, `js`, `fonts` or the HTML passes runs only tex4ht, t4ht and the passes again. To run LaTeX again anyway, remove `<aux>.latex.stamp` (`<out>/tex4ht/<name>.latex.stamp` for `regress`) and the build's own stamp.
+### Build slots
 
-The date is not in the build's own stamp, so a reused build keeps the date it was built on. The test fixtures build with a fixed one, January 1, 2000, through `SOURCE_DATE_EPOCH` with `FORCE_SOURCE_DATE`, so their pages don't depend on the day.
+A build slot is held for every make4ht or latexmk build, and for every Chrome launched by the tests, while the build or Chrome runs. A build slot is a lock file in `$TMPDIR/tex8web-slots`, taken with `lockf` (`test/lib/slots.mjs`). The build slots are shared by all test runs on the machine, in every checkout, so that the machine does not swap when tests run in several checkouts at once.
 
-`npm test`, `test:visual` and `test:page` build each document with the same environment into `build/test/<document>/html`, so the later ones reuse the earlier one's build, and say so. A change to any of those builds again, and a build that failed is never reused. `test:page` works on a copy in `build/page`, as a reused build is read, never written. To force a build, remove `build/test/<document>`, and `build/visual/<document>`, where `visual.mjs` keeps its browser-typeset `fallback` page, stamped the same way.
+- There is one build slot for each 4 GB of memory. To change the number, set `TEX8WEB_SLOTS` to a whole number of 1 or more.
+- A message is printed after 10 seconds of waiting for a build slot, and every minute after that.
+- Without `lockf`, as on Linux, there are no build slots.
+- The tests of the test tools use a separate pool of two build slots, set up in `test/lib/stubs.mjs`.
 
-**A change that shouldn't show.** Build the pages before and after it, then run `diff.mjs` on the two builds. If the HTML changed, run `shots.mjs` on them too, and look at every screen it saves.
+### Reused builds
 
-**A wrapper around `regress`.** A directory of many documents, each its own repository, can keep a script of its own: it builds the PDFs with latexmk, in the slots, then runs `npm --prefix path/to/tex8web run regress -- -c config --out build/<key> --baseline build/accepted <documents>`, with `<key>` naming the tex8web checkout, so that each checkout has its own builds. The merged checkout compares with the accepted pages, and passes `--accept` after a merge. A worktree can compare with the pages of tex8web at `git merge-base main HEAD` instead, built by that commit's own `regress` from a `git archive` of it, so that another branch merged since doesn't show in its comparison. The wrapper exits with `regress`'s code, or 1 if a PDF failed.
+Each build is saved with a stamp of what the build was made from, in `build/test/<document>/html.stamp`. A later build with the same stamp is not run again. The stamp covers:
 
-**Known gaps.** `test/expected.json` lists the problems a document is allowed, each with its reason. Make each entry as specific as the message it allows. An entry that no longer matches anything fails, until it's taken out. `rebuild.sh` has no allowances: a note whose make4ht log says it parsed a page as HTML fails there, and the fix belongs in tex8web.
+- the files in the `bin`, `css`, `fonts`, `js`, `lua`, and `tex` directories of tex8web, `tex8web.cfg`, `tex8web.mk4`, `package.json`, and `package-lock.json`
+- the files in the directory of the document, and the config
+- the size and modification time of the PDF linked from the page
+- the command arguments, and the `TEX8WEB_*`, `TEXINPUTS`, `TEXMF*`, `SOURCE_DATE_EPOCH`, and `FORCE_SOURCE_DATE` environment variables, except `TEX8WEB_SPEECH_CACHE` and the variables that begin with `TEX8WEB_SLOTS`
+- the versions of MathJax and subset-font
+- the versions of TeX and make4ht, and the last change to TeX Live
 
-**CI.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `npm test` and `npm run test:visual` on every push to main and every pull request. It uses TeX Live's Docker image, pinned by digest. It also builds the examples' site, and on main publishes it to GitHub Pages.
+Each document is built with the same environment into `build/test/<document>/html` by `npm test`, `npm run test:visual`, and `npm run test:page`. So a build made by one of these commands is reused by the others, with a message in the output. A failed build is never reused.
 
-**The README's screenshot** is `.github/screenshot.png`. To redo it:
+The LaTeX runs of a build are saved with a separate stamp. This stamp covers only the parts of tex8web that LaTeX reads, and adds the day, for `\today`. After a change to files that are not inputs of LaTeX, for example in `css/`, `js/`, `fonts/`, or the HTML passes, only tex4ht, t4ht, and the HTML passes run again. When the LaTeX runs are reused, the build log has a message about the reuse.
+
+The stamp of the build has no date, so a reused build keeps the `\today` of the day it was built. With `FORCE_SOURCE_DATE`, the date is fixed by `SOURCE_DATE_EPOCH`. The test fixtures are built with a fixed date, January 1, 2000, so their pages do not depend on the day.
+
+To force a build in the tests, remove `build/test/<document>`. For `visual.mjs`, remove `build/visual/<document>` too, where the page typeset by MathJax in the browser is kept. To force a build in `npm run regress`, remove `<out>/html/<name>.stamp`, and to run LaTeX again, remove `<out>/tex4ht/<name>.latex.stamp` too.
+
+### A change that should not show
+
+Build the pages before and after the change, then run `diff.mjs` on the two builds. If the HTML changed, run `shots.mjs` on the two builds too, and look at every screen saved by `shots.mjs`.
+
+### Known gaps
+
+The problems a document is allowed to have are listed in `test/expected.json`, each with its reason. Make each entry as specific as the message it matches. An entry that no longer matches anything is a failure until it is removed.
+
+### Small known differences
+
+The differences from the PDF below are too small to list with the [known limitations](DOCUMENTATION.md#known-limitations) in DOCUMENTATION.md.
+
+- **Math in a page built with Node is laid out from estimates** in place of browser measurements, for example text in math for which MathJax has no glyphs. A box can be a pixel or so off.
+- **Delimiters and radicals** can differ slightly in size from the PDF, because they are taken from the MathJax font.
+- **The space before inline math after a word in another font**, for example a keyword of algorithm2e before its argument. In a page built without Node, this space can be in the font of the word. The space is in the font of the text in a page built with Node. The two pages can be a pixel apart, and neither always matches the PDF.
+
+### CI
+
+On every push to main and every pull request, `npm test` and `npm run test:visual` run in CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). CI runs in the TeX Live Docker image, pinned by digest. The published site is also built in CI, and published to GitHub Pages from main.
+
+### The README screenshot
+
+The README screenshot is `.github/screenshot.png`. To make a new one:
+
 1. Build the `custom` example and its PDF with `npm run examples`.
-2. Render the PDF's first page with `pdftoppm`, and take the page's wide, light screenshot with `shots.mjs`.
-3. Put the two side by side, and keep the file under 300 KB.
+2. Render the first page of the PDF with `pdftoppm`, and take a wide, light screenshot of the page with `shots.mjs`.
+3. Put the two images side by side, and keep the file under 300 KB.
 
 ## Updating MathJax or TeX Live
 
-**MathJax.** Move `mathjax` and every `@mathjax/*` package to the new version in one commit. Three checks guard the update:
-- `npm test`'s `typeset` checks, which cover the internals `tex8web.js` relies on;
-- `npm run test:visual`, which compares Node's MathJax with the browser's;
-- a rebuild of your own documents, compared with the last one.
+### MathJax
 
-A build warns, and leaves the math to the browser, when `node_modules` holds another MathJax than `package.json` pins.
+Move `mathjax` and every `@mathjax/*` package to the new version in one commit. Run these checks on the update:
 
-`js/prerender.mjs` also relies on:
-- `MmlTree`'s `TEXCLASS`, `postFilters` (the speech's adjustment of the math) and `walkTree`;
-- `outputData.speech` of each formula of the second typesetting, and its words for a table of one row ("1 lines Line 1: ");
-- noundefined's drawing of a macro it doesn't know: an `mtext` with a `mathcolor`, holding the macro's name;
-- `WorkerHandler.Speech` of `a11y/speech`, through which the speech is kept: its arguments, and that it leaves the label in `outputData.speech`;
-- that typesetting finding the same formulas, in the same order, as the first: it throws when the counts differ, and pairs them by position;
-- the CSS values `js/prerender-rules.mjs` reads: each removed tag's rule, `mjx-math`'s and `mjx-script`'s, and the sizes of `[size]`. When one differs, the pass is skipped and `npm test` fails with a line that starts with `MathJax:`.
+- the `typeset` checks of `npm test`, for the internals that `tex8web.js` depends on
+- `npm run test:visual`, for the comparison of MathJax in Node with MathJax in the browser
+- `npm run regress` on your documents, compared with their baselines
 
-**TeX Live.** CI pins TeX Live's image by digest. To update, take the new digest of `texlive/texlive:latest` and confirm both test jobs pass. A warning from `\web@needs` means tex4ht or a package changed something tex8web patches.
+When `node_modules/` holds a MathJax other than the version pinned in `package.json`, a warning is printed during the build, and the math is typeset in the browser.
+
+`js/prerender.mjs` also depends on these parts of MathJax:
+
+- `TEXCLASS`, `postFilters`, and `walkTree` of `MmlTree`. The `postFilters` are the adjustment of the math for speech.
+- `outputData.speech` of each formula in the second typesetting, and its words for a table of one row ("1 lines Line 1: ")
+- the rendering of an unknown macro by the noundefined extension: an `mtext` with a `mathcolor`, holding the macro name
+- `WorkerHandler.Speech` of `a11y/speech`, through which the speech is saved: its arguments, and that the label is left in `outputData.speech`
+- the same formulas found in the second typesetting as in the first, in the same order. The formulas are paired by position, and an error is thrown when the counts differ.
+- the CSS values read in `js/prerender-rules.mjs`: the rule of each removed tag, the rules of `mjx-math` and `mjx-script`, and the sizes of `[size]`. When one of these values differs, the pass that removes elements is skipped, and `npm test` fails with a line that starts with `MathJax:`.
+
+### TeX Live
+
+The TeX Live image of CI is pinned by digest. To update TeX Live, take the new digest of `texlive/texlive:latest`, and confirm that both test jobs pass. A warning from `\web@needs` means that a command that tex8web patches was changed in tex4ht or in a package.
 
 ## Releasing
 
-Versions are `0.x`: a minor version for features and new `\Web*` commands, a patch for fixes.
+Versions are `0.x`: a minor version for features and new `\Web*` commands, and a patch version for fixes.
 
-1. Main is green on CI.
+1. Check that main is green on CI.
 2. Update `version` in `package.json` and commit.
-3. Tag it: `git tag -a vX.Y.Z -m "tex8web X.Y.Z"`, then `git push origin vX.Y.Z`.
-4. Run `gh release create vX.Y.Z` with a few lines on what changed for users.
+3. Tag the commit with `git tag -a vX.Y.Z -m "tex8web X.Y.Z"`, then run `git push origin vX.Y.Z`.
+4. Run `gh release create vX.Y.Z`, with a few lines on what changed for users.
 
 ## Reporting a problem
 
-Open an issue with:
-- your TeX Live year, and the output of `make4ht -v` and `node -v`;
-- the smallest `.tex` file that shows the problem;
-- make4ht's output, and what you expected to see.
+Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github/ISSUE_TEMPLATE). Include:
+
+- the output of `tex8web --version`
+- your TeX Live year, and the output of `make4ht -v` and `node -v`
+- the smallest `.tex` file with the problem
+- the make4ht output, and what you expected to see
 
 ## Files
 
 | Path | Contents |
 | --- | --- |
-| `bin/tex8web` | the command that builds a page |
-| `tex8web.cfg` | the config for documents without one of their own |
-| `tex8web.mk4` | the build file: search paths, build steps, HTML passes, prerendering |
-| `tex/tex8web-core.tex` | loads the four modules below |
-| `tex/tex8web-math.tex` | MathJax's configuration, `\WebMathMacros`, the escaping of each formula's source, siunitx, equation numbers, `\intertext`, TikZ in display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill`, the table of contents, lists, framed's and mdframed's boxes, algorithms (float's ruled style, algorithmicx, algorithm2e), figures, `\WebTerm` |
-| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, the document's measurements and heading fonts |
-| `tex/tex8web-boxes.tex` | tcolorbox's boxes |
-| `tex/tex8web-hooks.sty` | loaded before the preamble: what tex4ht would discard, and `\web@needs` |
-| `css/tex8web.css` | the page's styles |
-| `lua/tex8web/macros.lua`, `preamble.lua` | the macro bridge |
-| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula sources, colors, spacing, theorems in boxes, footnotes, links, controls, the table of contents, meta tags, scripts |
-| `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, prerendering |
+| `bin/tex8web` | the command to build a page |
+| `tex8web.cfg` | the config for documents without a config |
+| `tex8web.mk4` | the build file: search paths, build steps, HTML passes, and prerendering |
+| `tex/tex8web-core.tex` | the entry point, with the four modules below |
+| `tex/tex8web-math.tex` | the MathJax configuration, `\WebMathMacros`, the escaping of formula source, siunitx, equation numbers, `\intertext`, and TikZ in display math |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill`, the table of contents, lists, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
+| `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, and the measurements and heading fonts of the document |
+| `tex/tex8web-boxes.tex` | tcolorbox boxes |
+| `tex/tex8web-hooks.sty` | loaded before the preamble: settings lost under tex4ht, and `\web@needs` |
+| `css/tex8web.css` | the page styles |
+| `lua/tex8web/macros.lua`, `preamble.lua` | macros in math, and their colors |
+| `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula source, colors, spacing, theorems in boxes, footnotes, links, page controls, the table of contents, meta tags, and scripts |
+| `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, and prerendering |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
-| `js/tex8web.js` | MathJax's sizes set as TeX's |
-| `js/tex8web-fonts.js` | the fonts' preload links, written inline in each page's head, before the stylesheet's link |
-| `js/tex8web-head.js` | the reader's theme and table of contents setting, applied before the page is drawn, and the direction of the transition to the next page |
-| `js/tex8web-page.js` | the page's controls (the up link going back in history), footnotes, table of contents, previews and picture viewer |
-| `js/prerender.mjs`, `prerender-rules.mjs` | MathJax in Node, and the rules of its CSS that the pass removing elements relies on |
-| `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which goes with every page |
-| `examples/` | the examples, and `index.tex`, the published site's index |
-| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `slots.test.mjs`, `builds.test.mjs`, `regress.test.mjs`, `tools.test.mjs`, `chrome.test.mjs`, `shots.test.mjs`, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, `lib/` |
+| `js/tex8web.js` | MathJax sizes set as in TeX |
+| `js/tex8web-fonts.js` | the font preload links, written inline in the head of each page, before the stylesheet link |
+| `js/tex8web-head.js` | the theme and table of contents setting of the reader, applied before the page is drawn, and the direction of the transition to the next page. The settings are saved in `localStorage` under the keys `tex8web-theme` and `tex8web-contents`. |
+| `js/tex8web-page.js` | the page controls (the up button is a step back in history), footnotes, table of contents, [search field](DOCUMENTATION.md#search-field), [preview cards](DOCUMENTATION.md#preview-cards), and [opened pictures](DOCUMENTATION.md#opening-a-picture) |
+| `js/prerender.mjs`, `prerender-rules.mjs` | MathJax in Node, and the MathJax CSS rules that the removal of elements depends on |
+| `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which is copied with every page |
+| `examples/` | the examples, and `index.tex`, the index of the published site |
+| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `regress.mjs`, the `*.test.mjs` tests of the test tools, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, and `lib/` |
 | `.github/workflows/ci.yml` | CI and the published examples |

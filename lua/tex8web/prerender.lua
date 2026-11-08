@@ -14,8 +14,9 @@ function M.mathjax_version(root)
   return assert(files.read(root .. "/package.json")):match('"mathjax":%s*"([^"]+)"')
 end
 
--- the MathJax in node_modules, which a worktree may share with a checkout
--- that pins another
+-- the MathJax in node_modules, which may not be the version package.json
+-- pins: node_modules can be installed for an older package.json, or shared
+-- with another checkout
 local function installed_version(context)
   local json = files.read(context.root .. "/node_modules/mathjax/package.json")
   return json and json:match('"version":%s*"([^"]+)"')
