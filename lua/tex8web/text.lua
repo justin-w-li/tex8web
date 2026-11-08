@@ -265,18 +265,20 @@ end
 
 -- pictures that dvisvgm draws for tex4ht (TikZ, as <document>0x.svg and so
 -- on), as wide as in the PDF, as a share of the PDF's text width, which the
--- stylesheet's text width also is. So their labels are at the size of the
--- text. dvisvgm writes the size in bp, scaled by 1.4 (tex4ht.env's
--- -c 1.4,1.4), of what is drawn (--exact), which can differ from TeX's box
+-- stylesheet's text width also is. dvisvgm writes the size of what is
+-- drawn (--exact), which can differ from TeX's box, in bp and scaled by
+-- tex4ht.env's -c (1.4), which it records as the page's matrix
 function M.pictures(document, context)
   for _, img in ipairs(document:query_selector("img")) do
     local src = img:get_attribute("src") or ""
     if src:sub(1, #context.input) == context.input and src:sub(#context.input + 1):match("^%d+x%.svg$") then
-      local svg = files.read(context.dir .. "/" .. src) or ""
+      local svg = files.read(context.dir .. "/" .. src)
+      if not svg then error(src .. " is missing: dvisvgm did not write it") end
       local bp = tonumber(svg:match("<svg[^>]- width='([%d.]+)pt'"))
       if not bp then error("no width in " .. src) end
-      local share = bp / 1.4 * 72.27 / 72 / context.textwidth
-      dom.add_style(img, string.format("width: calc(var(--tex8web-textwidth) * %.4f)", share))
+      local scale = tonumber(svg:match("<g id='page1' transform='matrix%(([%d.]+) 0 0 ")) or 1
+      local share = bp / scale * 72.27 / 72 / context.textwidth
+      dom.add_style(img, string.format("width:calc(var(--tex8web-textwidth) * %.4f)", share))
     end
   end
 end

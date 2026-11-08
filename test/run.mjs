@@ -771,7 +771,7 @@ function check(doc, result, out, aux) {
     const [x, , width] = (svg.match(/viewBox='([^']*)'/)?.[1] ?? '').split(' ').map(Number);
     const at = 1.4 * Number(svg.match(/translate\(([^,]+),/)?.[1]);
     if (!(Math.abs(x + width / 2 - at) < 0.1)) problems.push(`${file} isn't centered on its circle`);
-    if (!html.includes(`src='${file}' style='width: calc(var(--tex8web-textwidth) * ${share})'`)) {
+    if (!html.includes(`src='${file}' style='width:calc(var(--tex8web-textwidth) * ${share})'`)) {
       problems.push(`${file} isn't ${share} of the text width`);
     }
   }

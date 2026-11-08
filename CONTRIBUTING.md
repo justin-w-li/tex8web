@@ -75,7 +75,7 @@ The other passes are for:
 - spacing
 - text after `\hfill`, which is set at the right, and line ends at `\break` and `\linebreak`
 - the alignment of a paragraph cell from its `\centering` or `\raggedleft`
-- the width of each picture drawn by dvisvgm, such as a TikZ picture, as a share of the text width. The width is read from the SVG file, which dvisvgm scales by 1.4 (`tex4ht.env`).
+- the width of each picture drawn by dvisvgm, such as a TikZ picture, as a share of the text width, read from the SVG file
 - [links to headings](DOCUMENTATION.md#links-to-headings) and theorems
 - the removal of tex4ht's source-line comments
 - meta tags and the page controls
