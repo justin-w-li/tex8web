@@ -545,16 +545,27 @@
 
 % LaTeX's spacing of a list, for lists without their own: \topsep around it,
 % \itemsep and \parsep between items, and its left margin (see
-% css/tex8web.css). The bibliography's spacing comes from biblatex when
-% biblatex sets it. memoir has \bibitemsep but no \bibparsep, and keeps the
-% list's \parsep (memoir.cls).
+% css/tex8web.css). The bibliography's \itemsep and \parsep are then set as
+% its list sets them: biblatex's \bibitemsep and \bibparsep; natbib's \bibsep
+% and no \parsep, in every class (natbib.sty); or the list's, changed by the
+% class's openbib option, which sets \parsep to zero (\@openbib@code), and by
+% memoir's \biblistextra, which sets \itemsep to \bibitemsep (memoir.cls).
+% \labelsep is read before them, as tex4ht adds \labelsep\z@ to
+% \@openbib@code (article.4ht).
 \begingroup\@listi
     \web@Css{:root { --tex8web-list-sep: \web@em\topsep;
         --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax};
         --tex8web-leftmargin: \web@em\leftmargin;
-        --tex8web-biblabelsep: \web@em{\ifdefined\biblabelsep\biblabelsep\else\labelsep\fi};
-        --tex8web-bibitem-sep: \web@em{\dimexpr\ifdefined\bibitemsep\bibitemsep\else\itemsep\fi
-            +\ifdefined\bibparsep\bibparsep\else\parsep\fi\relax}; }}
+        --tex8web-biblabelsep: \web@em{\ifdefined\biblabelsep\biblabelsep\else\labelsep\fi}; }}
+    \ifdefined\bibparsep
+        \itemsep\bibitemsep \parsep\bibparsep
+    \else\ifdefined\bibsep
+        \itemsep\bibsep \parsep\z@
+    \else
+        \csname @openbib@code\endcsname
+        \csname biblistextra\endcsname
+    \fi\fi
+    \web@Css{:root { --tex8web-bibitem-sep: \web@em{\dimexpr\itemsep+\parsep\relax}; }}
 \endgroup
 
 % itemize, enumerate, and enumitem's lists made with \newlist, as LaTeX sets

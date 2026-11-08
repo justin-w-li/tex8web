@@ -1,0 +1,12 @@
+% An article with natbib, which sets a bibliography's \itemsep to \bibsep and
+% its \parsep to zero (natbib.sty), with entries set close together.
+\documentclass{article}
+\usepackage[numbers]{natbib}
+\setlength{\bibsep}{0pt}
+\begin{document}
+Some text, as cited in \cite{book} and \cite{paper}.
+\begin{thebibliography}{9}
+\bibitem{book} A.~Author. \emph{A Book}. 2000.
+\bibitem{paper} B.~Writer. A paper. 2001.
+\end{thebibliography}
+\end{document}

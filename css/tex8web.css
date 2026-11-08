@@ -688,9 +688,9 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 
 /* a bibliography as LaTeX's list sets it: labels right-aligned in a
    column as wide as the widest, entries \labelsep (biblatex's
-   \biblabelsep) after the label and \itemsep plus \parsep apart (or
-   biblatex's lengths). The same for tex4ht's two forms: a <dl> in a
-   <section>, and biblatex's */
+   \biblabelsep) after the label and \itemsep plus \parsep apart, as
+   the bibliography's list sets them. The same for tex4ht's two forms: a
+   <dl> in a <section>, and biblatex's */
 :is(.thebibliography > dl, dl.thebibliography) { display: grid; grid-auto-flow: row;
     grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--tex8web-biblabelsep);
     row-gap: var(--tex8web-bibitem-sep); }

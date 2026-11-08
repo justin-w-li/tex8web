@@ -1,0 +1,11 @@
+% A memoir document with the openbib option, which sets the bibliography's
+% \parsep to zero (\@openbib@code in memoir.cls), and a \bibitemsep of 6pt.
+\documentclass[openbib]{memoir}
+\setlength{\bibitemsep}{6pt}
+\begin{document}
+Some text, as cited in \cite{book} and \cite{paper}.
+\begin{thebibliography}{9}
+\bibitem{book} A.~Author. \emph{A Book}. 2000.
+\bibitem{paper} B.~Writer. A paper. 2001.
+\end{thebibliography}
+\end{document}

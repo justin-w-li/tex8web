@@ -132,6 +132,10 @@ const measured = {
   // negative space between label and title)
   'test-chapterstyle': { '--tex8web-chapter-before': null, '--tex8web-chapter-label-after': null },
   'test-fncychap': { '--tex8web-chapter-before': null, '--tex8web-chapter-label-after': null },
+  // (natbib's \bibsep of 0pt, and no \parsep, in place of the list's)
+  'test-natbib': { '--tex8web-bibitem-sep': '0em' },
+  // (memoir's openbib: the \bibitemsep of 6pt, and no \parsep)
+  'test-openbib': { '--tex8web-bibitem-sep': '0.6em' },
   // (tocloft's \cft<level>font: \Large\scshape; \normalfont\itshape; \itshape;
   // \bfseries; \large\sffamily; \ttfamily; \slshape)
   'test-tocloft': { '--tex8web-toc-part-size': '1.44', '--tex8web-toc-part-variant': 'small-caps',

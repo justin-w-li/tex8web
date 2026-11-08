@@ -15,5 +15,11 @@
     "allow": [
       "Package tex8web Warning: The color package was loaded after the preamble"
     ]
+  },
+  "test-natbib": {
+    "why": "natbib.4ht writes each entry's anchor twice without hyperref, before the label and before the entry",
+    "allow": [
+      "repeated ids: Xbook, Xpaper"
+    ]
   }
 }
