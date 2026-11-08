@@ -453,6 +453,18 @@ const thin = {
   'test-article': [/<img alt='' src='test-article1x\.svg' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.0966\)' \/>/],
 };
 
+// ~ and \, in text next to inline math: the space and the math in one
+// span, and after the math, the text up to the next whitespace too
+const math = "<mjx-container(?:(?!</mjx-container>)[^])*</mjx-container>";
+const tie = "<span class='tex8web-nbsp'>.</span>";
+const ties = {
+  'test-nowrap': [new RegExp(`value of<span class='tex8web-nowrap'>${tie}${math}</span>, keeps`),
+    new RegExp(`p\\.<span class='tex8web-nowrap'>\u202F${math}</span>\\. A`),
+    new RegExp(`as in <span class='tex8web-nowrap'>${math}${tie}and,</span> <span class='tex8web-nowrap'>${math}\u202Fcm,</span> and\\s+<span class='tex8web-nowrap'>${math}${tie}${math}\\.</span>`),
+    new RegExp(`the set of<span class='tex8web-nowrap'>${tie}${math}${tie}elements</span> is <span class='tex8web-nowrap'>${math}${tie}times</span> the`),
+    new RegExp(`and <span class='tex8web-nowrap'>${math}\u202Fm<sup class='textsuperscript'><span class='cmr-9'>2</span></sup></span> is`)],
+};
+
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width
@@ -879,7 +891,7 @@ const patterns = [
   [typeset, 'in the typeset math'], [speech, 'in the speech'], [pictures, 'among the pictures'],
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
-  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [thin, 'at the thin spaces'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
+  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [thin, 'at the thin spaces'], [ties, 'at the no-break spaces'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [tables, 'among the tables'],
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
 ];

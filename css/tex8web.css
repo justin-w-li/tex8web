@@ -89,7 +89,7 @@ html body { font-family: var(--tex8web-roman); }
 [class^="ptmr7t-"] { font-family: inherit; }
 /* Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em.
    text.lua marks no-break spaces, and keeps one together with the math
-   after it */
+   next to it */
 .tex8web-nbsp { letter-spacing: -0.167em; }
 .tex8web-nowrap { white-space: nowrap; }
 /* \TeX and \LaTeX (tex8web-text.tex), kerned and moved as in LaTeX: the E

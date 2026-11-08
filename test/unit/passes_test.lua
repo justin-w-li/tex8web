@@ -121,6 +121,16 @@ return {
       .. " and 10\u{202F}000</p>")
   end,
 
+  ["text.no_break_spaces: math kept with a no-break space after it, up to the next whitespace"] = function()
+    local d = parse("<p>of <span class=\"mathjax-inline\">\\(x\\)</span>\u{A0}and, <span class=\"mathjax-inline\">\\(5\\)</span>\u{202F}<span class=\"it\">cm</span>2 and "
+      .. "of\u{A0}<span class=\"mathjax-inline\">\\(n\\)</span>\u{A0}<span class=\"mathjax-inline\">\\(y\\)</span>\u{A0}<!--l. 3-->elements, "
+      .. "<span class=\"mathjax-inline\">\\(x\\)</span>\u{A0}(<a href=\"#e\">1</a>) and <span class=\"mathjax-inline\">\\(z\\)</span>\u{A0}<em>a phrase</em></p>")
+    text.no_break_spaces(d)
+    equal(body(d), "<p>of <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span><span class='tex8web-nbsp'>\u{A0}</span>and,</span> <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(5\\)</span>\u{202F}<span class='it'>cm</span>2</span> and "
+      .. "of<span class='tex8web-nowrap'><span class='tex8web-nbsp'>\u{A0}</span><span class='mathjax-inline'>\\(n\\)</span><span class='tex8web-nbsp'>\u{A0}</span><span class='mathjax-inline'>\\(y\\)</span><span class='tex8web-nbsp'>\u{A0}</span><!-- l. 3 -->elements,</span> "
+      .. "<span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span><span class='tex8web-nbsp'>\u{A0}</span>(<a href='#e'>1</a>)</span> and <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(z\\)</span><span class='tex8web-nbsp'>\u{A0}</span></span><em>a phrase</em></p>")
+  end,
+
   ["text.hfill: the rest of each line after its last \\hfill in a span, up to a <br>, a block or a display; in a paragraph, its line too"] = function()
     local mark = [[<span class="tex8web-hfill-mark"></span>]]
     local fill = "<span class='tex8web-hfill-gap'> </span><span class='tex8web-hfill'>"

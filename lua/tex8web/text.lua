@@ -261,12 +261,50 @@ local function is_narrow(node)
   return node:is_text() and node:get_text() == narrow
 end
 
+local function is_tie(node)
+  return node and (is_nbsp(node) or is_narrow(node))
+end
+
+local function is_inline_math(node)
+  return node and dom.has_class(node, "mathjax-inline")
+end
+
+-- the index of the first text or element child after i (the math may
+-- follow after a comment)
+local function next_child(children, i)
+  repeat i = i + 1 until not children[i] or children[i]:is_element() or children[i]:is_text()
+  return i
+end
+
+-- the index of the last child, from i on, before the first whitespace. A
+-- text child is split there, and an element with whitespace in it ends
+-- the run before it.
+local function word_end(el, children, i)
+  while children[i] do
+    local child = children[i]
+    if child:is_text() then
+      local head, rest = child:get_text():match("^(%S*)(.*)$")
+      if rest ~= "" then
+        children[i] = el:create_text_node(head)
+        table.insert(children, i + 1, el:create_text_node(rest))
+        return i
+      end
+    elseif child:is_element() and child:get_text():find("%s") then
+      return i - 1
+    end
+    i = i + 1
+  end
+  return i - 1
+end
+
 -- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
 -- as wide as a space, so each is marked for the CSS to narrow. A browser
 -- still breaks the line between one and the math after it (Lemma~$1$), or
 -- between a narrow no-break space and the math (p.\,$5$), so the two are
--- wrapped together. Verbatim text, alltt, and listings are left
--- as they are.
+-- wrapped together. Safari (26.5 and 27.0) also breaks between inline math
+-- and a no-break space after it ($x$~and), even when the two are wrapped,
+-- unless the wrapper reaches the next whitespace. Verbatim text, alltt,
+-- and listings are left as they are.
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)
     local class = el:get_attribute("class")
@@ -276,16 +314,16 @@ function M.no_break_spaces(document)
     end
     local children, wrapped, i = mark_nbsp(el), {}, 1
     while i <= #children do
-      local j = i + 1
-      -- (the math may follow after a comment)
-      while children[j] and not children[j]:is_element() and not children[j]:is_text() do
-        j = j + 1
-      end
-      if (is_nbsp(children[i]) or is_narrow(children[i])) and children[j] and dom.has_class(children[j], "mathjax-inline") then
+      local j = next_child(children, i)
+      local last = is_tie(children[i]) and is_inline_math(children[j]) and j
+        or is_inline_math(children[i]) and is_tie(children[j]) and i
+      if last then
+        local tie = next_child(children, last)
+        if is_tie(children[tie]) then last = word_end(el, children, tie) end
         local nowrap = el:create_element("span", {class = "tex8web-nowrap"})
-        for k = i, j do nowrap:add_child_node(children[k]) end
+        for n = i, last do nowrap:add_child_node(children[n]) end
         wrapped[#wrapped + 1] = nowrap
-        i = j + 1
+        i = last + 1
       else
         wrapped[#wrapped + 1] = children[i]
         i = i + 1
