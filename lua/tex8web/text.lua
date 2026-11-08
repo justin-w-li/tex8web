@@ -502,7 +502,7 @@ function M.hfill(document)
         -- cannot break between the text and the gap. The space can be at
         -- the end of an element, as in \textbf{a \hfill b})
         local before = out[from - 1]
-        while before and before:is_element() do
+        while before and before:is_element() and not ends_line(before) do
           local children = before:get_children()
           before = children[#children]
         end

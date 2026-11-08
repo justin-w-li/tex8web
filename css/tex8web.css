@@ -389,7 +389,7 @@ span.tcolorbox > .tcolorbox-title { display: block; }
 .tex8web-hfill-gap { padding-inline-end: 1em; }
 .tex8web-hfill-line { display: flow-root; }
 .tex8web-hfill-line:not(:first-child) { text-indent: 0; }
-:is(p, h1, h2, h3, h4, h5, h6, figcaption):has(.tex8web-hfill) { display: flow-root; }
+:is(p, h1, h2, h3, h4, h5, h6, .caption):has(.tex8web-hfill) { display: flow-root; }
 /* (\hfill outstretches the fill of \centering and \raggedleft, so the
    line starts at the left. This applies in a center or flushright
    environment and in a figure, which tex4ht centers, to the line alone,

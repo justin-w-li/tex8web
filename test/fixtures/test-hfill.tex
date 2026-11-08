@@ -2,7 +2,7 @@
 % line, as in the PDF. Also the places where an \hfill does nothing on the
 % page.
 \documentclass{article}
-\usepackage{amsmath,amsthm,graphicx,hyperref}
+\usepackage{amsmath,amsthm,graphicx,subcaption,hyperref}
 \begin{document}
 Name \hfill Date
 
@@ -50,6 +50,14 @@ a \hfill b \hfill c
     \caption{A caption \hfill with a note at its right, long enough to take more than a line of the page, where the PDF sets it as a paragraph}
 \end{figure}
 
+\begin{figure}[h]
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=2cm]{test-picture.png}
+        \caption{A subcaption \hfill with a note at its right, longer than a line}
+    \end{subfigure}
+\end{figure}
+
 Boxes: \mbox{in \hfill an mbox} and \makebox[4cm]{in \hfill a makebox}.
 
 Leaders: chapter \dotfill 5, and a rule \hrulefill\ here.
@@ -75,6 +83,8 @@ Ends in text \hfill (by a lemma)
 
 Before a linebreak \hfill\linebreak after the linebreak, which starts the
 next line at the left in the PDF.
+
+Before a hint \hfill\linebreak[2] after the hint.
 
 Before a penalty \hfill\penalty-10000 after the penalty.
 

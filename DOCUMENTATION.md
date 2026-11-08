@@ -338,7 +338,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 
 ### Text and layout
 
-- **`\hfill`.** With several `\hfill` on a line, only the text after the last one is at the right, and the parts before it stay together at the left. Text after `\hfill` that is longer than a line starts at the left of the next line, where in the PDF it fills the rest of the line first. In a centered paragraph with an `\hfill` inside a link or a color, the paragraph's other lines are at the left too.
+- **`\hfill`.** With several `\hfill` on a line, only the text after the last one is at the right, and the parts before it stay together at the left. Text after `\hfill` that is longer than a line starts at the left of the next line, where in the PDF it fills the rest of the line first. In a centered paragraph with an `\hfill` inside a link or a color, the paragraph's other lines are at the left too. In a caption that fits on a line, the text after `\hfill` is a quad from the text before it, where in the PDF `\hfill` adds no space.
 - **Minipages.** A paragraph with a minipage inside its text is broken around the minipage. `\centering` in a minipage applies only in a figure. Two minipages, each inside an `\fbox`, are one above the other instead of side by side.
 - **Colors in text.** `\color` for the whole document, in the preamble or in `\AtBeginDocument`, is ignored. Inside a colored group, the text color is not restored by `\normalcolor`.
 - **Chapters and parts.** A chapter label, such as "Chapter 1", is tex4ht's default label. Part and chapter headings have the sizes of the report and book classes, whatever the class, unless they are formatted with titlesec.
