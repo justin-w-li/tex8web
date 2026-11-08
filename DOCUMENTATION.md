@@ -229,7 +229,7 @@ After `\hfill` in a paragraph, a heading, or a caption, the rest of the line is 
 
 In a paragraph column, such as `p{3cm}`, `\centering` or `\raggedleft`, or ragged2e's `\Centering` or `\RaggedLeft`, centers a cell's lines or sets them flush right, as in the PDF. Put it at the start of the cell, or in the column's `>{}`.
 
-A table sits where it sits in the PDF. A tabular is at the left, at the paragraph's indent, unless `center`, `flushright`, `\centering`, or `\raggedleft` puts it elsewhere. A tabular in a table cell is placed by the cell's alignment. A longtable is centered, or placed by its `[l]` or `[r]` option, or by `\LTleft` and `\LTright`. A tabularx is centered.
+A table sits where it sits in the PDF. A tabular is at the left, at the paragraph's indent, unless `center`, `flushright`, `\centering`, or `\raggedleft` puts it elsewhere. A tabular in a table cell is placed by the cell's alignment. A longtable is centered, or placed by its `[l]` or `[r]` option, or by `\LTleft` and `\LTright` set to `\fill` or `0pt`. A tabularx is centered.
 
 ### Footnotes
 
@@ -352,7 +352,8 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **`\hfill`.** With several `\hfill` on a line, only the text after the last one is at the right, and the parts before it stay together at the left. Text after `\hfill` that is longer than a line starts at the left of the next line, where in the PDF it fills the rest of the line first. In a centered paragraph with an `\hfill` inside a link or a color, the paragraph's other lines are at the left too. In a caption that fits on a line, the text after `\hfill` is a quad from the text before it, where in the PDF `\hfill` adds no space.
 - **Line breaks.** A line ended by `\break` or `\linebreak` is not stretched to the full width in a justified paragraph, as it is in the PDF. `\hfil\break` does not end the line: use `\\`, `\break`, or `\hfill\break`.
 - **Paragraph cells.** All of a cell's paragraphs are aligned as its last one, for example all centered after a `\centering` between them.
-- **Tables in a line.** A paragraph with a tabular inside its text is broken around the tabular. A tabularx is as wide as its contents, where in the PDF it fills its width.
+- **Tables in a line.** A paragraph with a tabular inside its text is broken around the tabular.
+- **Table widths.** A tabularx is as wide as its contents, where in the PDF it fills its width. A longtable with a fixed `\LTleft`, such as `\parindent`, is at the left margin.
 - **Minipages.** A paragraph with a minipage inside its text is broken around the minipage. `\centering` in a minipage applies only in a figure. Two minipages, each inside an `\fbox`, are one above the other instead of side by side.
 - **A list item that starts with a box.** Beside a minipage or tabular aligned at its center or bottom, the item's label is at the box's first line. In the PDF, the label is at the middle of the box, or at its last line.
 - **Colors in text.** `\color` for the whole document, in the preamble or in `\AtBeginDocument`, is ignored. Inside a colored group, the text color is not restored by `\normalcolor`.

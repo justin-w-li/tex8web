@@ -626,9 +626,10 @@ const breaks = {
 };
 
 // Where each table sits, from its class: at the indent of a paragraph it
-// starts, at the left after text or a \noindent, in a cell's line, centered
-// by center, \centering, and a float's \centering, flush right by
-// flushright, a longtable by \LTleft and \LTright, and tabularx centered.
+// starts, at the left after text, a \noindent, or a heading, in a cell's
+// line (a makecell's too), centered by center, \centering, and a float's
+// \centering, flush right by flushright, a longtable by \LTleft and
+// \LTright, and tabularx centered, whatever the tables in its cells.
 const placed = (cls, text) => new RegExp(`<table class='${cls}' id='[^']+'>(?:(?!<table)[^])*${text}`);
 const tables = {
   'test-tabular': [
@@ -639,6 +640,7 @@ const tables = {
     placed('tabular tex8web-inline', 'in a p cell'),
     placed('tabular tex8web-inline', 'in a c cell'),
     placed('tabular tex8web-inline', 'in an r cell'),
+    placed('tabular tex8web-inline', 'a makecell'),
     placed('tabular tex8web-center', 'In center'),
     placed('tabular tex8web-right', 'In flushright'),
     placed('tabular tex8web-center', 'After centering'),
@@ -647,6 +649,8 @@ const tables = {
     placed('longtable', 'A longtable at the left'),
     placed('longtable tex8web-right', 'A longtable at the right'),
     placed('tabular tex8web-center', '<p class=.noindent.>A tabularx'),
+    placed('tabular tex8web-inline', 'in an X cell'),
+    placed('tabular', 'After a heading'),
   ],
 };
 

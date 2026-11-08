@@ -264,12 +264,14 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 /* a formula in resized text at the text's size (tex8web-math.tex) */
 :is(.mathjax-inline, .mathjax-block, .mathjax-env) { font-size: calc(var(--tex8web-math-size, 1) * 1em); }
 /* a table where it sits in the PDF, as its class says (tex8web-text.tex),
-   in place of html4.4ht's centering of every tabular and longtable. In
-   place of html4.4ht's 0.5em around a tabular, a tabular in a paragraph is
-   spaced as the paragraph is, as by html4.4ht's p + div, div + p, and p +
-   figcaption, and one in a cell has no space around it, as in the PDF */
+   in place of html4.4ht's centering of every tabular and longtable.
+   html4.4ht also puts 0.5em around a tabular. Here a tabular in a
+   paragraph is spaced as a <p> is, by tex4ht's p + div, div + p, and p +
+   figcaption, and one in a cell has no space around it, as in the PDF. The
+   space after it gives way to the next element's own margin */
 div.tabular, div.center div.tabular { text-align: inherit; margin-block: 0; }
-div + div.tabular, div.tabular + :is(div, figcaption) { margin-top: 1em; }
+div + div.tabular { margin-top: 1em; }
+:where(div.tabular + :is(div, figcaption)) { margin-top: 1em; }
 :is(p, div.tabular) + div.tabular, div.tabular + p { margin-top: var(--tex8web-parskip, 1em); }
 table.tabular, table.longtable { margin-inline: 0; }
 table.tex8web-indent { margin-inline-start: var(--tex8web-parindent, 0); }
@@ -874,7 +876,7 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
    footnote comes between; :is, to outweigh tex4ht's p { margin-top: 0 }) */
 :where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div, pre) {
     margin-top: 1em; }
-:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + p {
+:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(p, div.tabular) {
     margin-top: var(--tex8web-parskip, 1em); }
 @media (--tex8web-wide) {
     .tex8web-sidenote { float: right; clear: right; position: relative;

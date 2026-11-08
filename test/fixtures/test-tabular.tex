@@ -2,7 +2,9 @@
 % where \centering or \raggedleft puts it; in an l, c, or r cell, where the
 % cell's alignment puts it; a longtable, where \LTleft and \LTright put it.
 \documentclass{article}
-\usepackage{array,longtable,tabularx}
+\usepackage{array,longtable,tabularx,makecell,float}
+\floatstyle{ruled}
+\newfloat{program}{h}{lop}
 \begin{document}
 A paragraph before the tables, long enough to wrap onto a second line, so
 that the left margin and the indent show.
@@ -21,13 +23,14 @@ Text before \begin{tabular}{|l|}\hline in the line\\\hline\end{tabular} and text
     \hline
 \end{tabular}
 
-\begin{tabular}{|p{3cm}|c|r|}
+\begin{tabular}{|p{3cm}|c|r|c|}
     \hline
     \begin{tabular}{|l|}\hline in a p cell\\\hline\end{tabular} &
     \begin{tabular}{|l|}\hline in a c cell\\\hline\end{tabular} &
-    \begin{tabular}{|l|}\hline in an r cell\\\hline\end{tabular} \\
+    \begin{tabular}{|l|}\hline in an r cell\\\hline\end{tabular} &
+    \makecell{a makecell\\in a c cell} \\
     \hline
-    A wide cell, long enough to wrap onto lines & a much wider c cell & a much wider r cell \\
+    A wide cell, long enough to wrap onto lines & a much wider c cell & a much wider r cell & a much wider c cell \\
     \hline
 \end{tabular}
 
@@ -85,9 +88,34 @@ Text before \begin{tabular}{|l|}\hline in the line\\\hline\end{tabular} and text
 
 \noindent\begin{tabularx}{\linewidth}{|X|X|}
     \hline
-    A tabularx & at the line's width \\
+    A tabularx & at the line's width, \begin{tabular}{|l|}\hline in an X cell\\\hline\end{tabular} \\
     \hline
 \end{tabularx}
+
+A paragraph with a footnote.\footnote{The footnote.}
+
+\begin{tabular}{|l|}
+    \hline
+    After a footnote \\
+    \hline
+\end{tabular}
+
+\begin{program}[h]
+    \centering
+    \begin{tabular}{|l|}
+        \hline
+        In a ruled float \\
+        \hline
+    \end{tabular}
+    \caption{A ruled float}
+\end{program}
+
+\section{A heading}
+\begin{tabular}{|l|}
+    \hline
+    After a heading \\
+    \hline
+\end{tabular}
 
 A paragraph after the tables.
 \end{document}

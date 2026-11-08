@@ -3,10 +3,10 @@
 // JavaScript off. Both pages are checked for alignments that line up across
 // an \intertext, unclipped math characters, and footnotes in the text's
 // color. The prerendered page is also checked for a hidden theme button,
-// headings spaced as in LaTeX, the rest of each \hfill at the right,
-// algorithm2e's numbers and captions, list labels on their text's
-// baseline, the fonts of the table of contents, printing, and a width that
-// fits a phone.
+// headings spaced as in LaTeX, tables in the text spaced as paragraphs,
+// the rest of each \hfill at the right, algorithm2e's numbers and
+// captions, list labels on their text's baseline, the fonts of the table
+// of contents, printing, and a width that fits a phone.
 // Needs Chrome and the network. Differing screens are saved in
 // build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
@@ -173,6 +173,25 @@ const spaced = `(() => {
     return Math.abs(gap - want) > 0.5 ? [[h.id, gap.toFixed(1), want.toFixed(1)]] : [];
   });
   return { checked, wrong };
+})()`;
+
+// Space above a tabular in the text, as above a paragraph in its place
+// (css/tex8web.css): after a paragraph, a table, or a footnote beside the
+// text. Failures: [table id, gap, gap above the paragraph]
+const tablesSpaced = `(() => {
+  const divs = [...document.querySelectorAll('div.tabular')].filter(d => !d.closest('td, figure'));
+  const wrong = divs.flatMap(d => {
+    const p = document.createElement('p');
+    p.textContent = 'x';
+    d.before(p);
+    d.hidden = true;
+    const want = getComputedStyle(p).marginTop;
+    p.remove();
+    d.hidden = false;
+    const got = getComputedStyle(d).marginTop;
+    return got === want ? [] : [[d.querySelector('table').id, got, want]];
+  });
+  return { checked: divs.length, wrong };
 })()`;
 
 // algorithm2e's geometry, as in its PDF: a line number at the right
@@ -370,7 +389,7 @@ const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).
 
 // the subjects each check found over the run: a check with none has
 // tested nothing
-const ran = { spaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0 };
+const ran = { spaced: 0, tablesSpaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0 };
 
 async function compare(chrome, doc, ok) {
   const dir = testDir(doc, 'visual');
@@ -416,6 +435,9 @@ async function compare(chrome, doc, ok) {
           const under = await page.evaluate(spaced);
           ran.spaced += under.checked;
           for (const [id, gap, want] of under.wrong) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
+          const tables = await page.evaluate(tablesSpaced);
+          ran.tablesSpaced += tables.checked;
+          for (const [id, gap, want] of tables.wrong) problems.push(`${html}: #${id}: ${gap} above it, not ${want} as above a paragraph`);
           const rests = await page.evaluate(filled);
           ran.filled += rests.checked;
           for (const [name, what] of rests.wrong) problems.push(`${html}: the \\hfill before "${name}": ${what}`);

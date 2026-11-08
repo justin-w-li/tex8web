@@ -322,29 +322,37 @@
 % A tabular is centered or set flush right (tex8web-center or
 % tex8web-right) by the alignment in force (\web@cellalign above, as
 % tex4ht's \centering does not stretch \leftskip, latex.4ht). It sits at
-% the indent of a paragraph it starts (tex8web-indent). In a table's cell
-% (\ifweb@cell), it is a box in the cell's line (tex8web-inline): tex4ht
-% sets every cell in a paragraph, so \ifinner does not tell. The class is
-% chosen in before:begintabular (latex.4ht's \begin), as html4.4ht's
-% \ConfigureEnv{tabular} leaves vertical mode there. The table of
-% tabularx, narrower than the width it fills in the PDF, stays centered.
+% the indent of a paragraph it starts (tex8web-indent), unless tex4ht
+% leaves that paragraph unindented, as after a heading (\IgnoreIndent,
+% tex4ht.sty). In a table's cell (\ifweb@cell, set as html4.4ht's
+% \Configure{tabular} and {longtable} start a cell), it is a box in the
+% cell's line (tex8web-inline). The class is chosen in before:begintabular
+% (latex.4ht's \begin), as html4.4ht's \ConfigureEnv{tabular} leaves
+% vertical mode there, and locally, as tabularx sets its cells in trial
+% runs first. A tabular started without \begin, as makecell's is, takes
+% the class its cell sets. The table of tabularx, narrower than the width
+% it fills in the PDF, stays centered.
 % A longtable sits as TeX sets a box between \LTleft and \LTright,
 % stretching only the glue of the highest order.
 \newif\ifweb@cell
-\AddToHook{env/tabular/begin}{\web@celltrue}
-\AddToHook{env/tabular*/begin}{\web@celltrue}
-\AddToHook{env/longtable/begin}{\web@celltrue}
-\AddToHook{env/tabularx/begin}{\web@celltrue}
+\web@needs{e:tabular}
+\def\web@tabular@cell{\web@celltrue\def\web@tabular@class{ tex8web-inline}}
+\expandafter\g@addto@macro\csname e:tabular\endcsname{\web@tabular@cell}
+\@ifpackageloaded{longtable}{\web@needs{e:longtable}%
+    \expandafter\g@addto@macro\csname e:longtable\endcsname{\web@tabular@cell}}{}
+\def\web@tabular@indent{%
+    \csname if:removeindent\endcsname\else\def\web@tabular@class{ tex8web-indent}\fi}
 \web@needs{before:begintabular}
 \expandafter\let\expandafter\web@tabular@before\csname before:begintabular\endcsname
 \expandafter\def\csname before:begintabular\endcsname{%
-    \xdef\web@tabular@class{%
-        \ifweb@cell \space tex8web-inline%
-        \else\ifx\web@cellalign\empty
-            \ifvmode\ifdim\parindent=\z@\else\space tex8web-indent\fi\fi
-        \else \space tex8web-\web@cellalign\fi\fi}%
+    \let\web@tabular@class\empty
+    \ifweb@cell \def\web@tabular@class{ tex8web-inline}%
+    \else\ifx\web@cellalign\empty
+        \ifvmode\ifdim\parindent>\z@ \web@tabular@indent\fi\fi
+    \else \edef\web@tabular@class{ tex8web-\web@cellalign}\fi\fi
     \web@tabular@before}
-\AddToHook{env/tabularx/before}{\gdef\web@tabular@class{ tex8web-center}}
+\AddToHook{env/tabularx/before}{\def\web@tabular@class{ tex8web-center}}
+\let\web@tabular@class\empty
 \Configure{halignTB<>}{tabular}{\HCode{id="TBL-\TableNo" class="tabular\web@tabular@class"\Hnewline
     \GROUPS\Hnewline}<>\HAlign}
 % (the stretch order of a glue, -1 without stretch, and the class of a box
