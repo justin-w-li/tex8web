@@ -23,8 +23,11 @@ test('tex8web --version prints the version, and the commit in a git checkout onl
   const run = dir => spawnSync(join(dir, 'bin/tex8web'), ['--version'], { encoding: 'utf8', timeout: deadline });
   const result = run(root);
   assert.equal(result.status, 0);
-  if (existsSync(join(root, '.git'))) {
-    const commit = spawnSync('git', ['-C', root, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
+  const head = spawnSync('git', ['-C', root, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' });
+  // git refuses a checkout that another user owns, as in CI's container, and
+  // then no commit is printed
+  if (existsSync(join(root, '.git')) && head.status === 0) {
+    const commit = head.stdout.trim();
     const dirty = spawnSync('git', ['-C', root, 'diff', '--quiet', 'HEAD']).status ? '-dirty' : '';
     assert.equal(result.stdout, `tex8web ${version} (${commit}${dirty})\n`);
   }
