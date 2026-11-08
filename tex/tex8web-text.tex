@@ -452,14 +452,15 @@
 % LaTeX's spacing of a list, for lists without their own: \topsep around it,
 % \itemsep and \parsep between items, and its left margin (see
 % css/tex8web.css). The bibliography's spacing comes from biblatex when
-% biblatex sets it.
+% biblatex sets it. memoir has \bibitemsep but no \bibparsep, and keeps the
+% list's \parsep (memoir.cls).
 \begingroup\@listi
     \web@Css{:root { --tex8web-list-sep: \web@em\topsep;
         --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax};
         --tex8web-leftmargin: \web@em\leftmargin;
         --tex8web-biblabelsep: \web@em{\ifdefined\biblabelsep\biblabelsep\else\labelsep\fi};
-        --tex8web-bibitem-sep: \web@em{\dimexpr\ifdefined\bibitemsep\bibitemsep+\bibparsep
-            \else\itemsep+\parsep\fi\relax}; }}
+        --tex8web-bibitem-sep: \web@em{\dimexpr\ifdefined\bibitemsep\bibitemsep\else\itemsep\fi
+            +\ifdefined\bibparsep\bibparsep\else\parsep\fi\relax}; }}
 \endgroup
 
 % itemize, enumerate, and enumitem's lists made with \newlist, as LaTeX sets

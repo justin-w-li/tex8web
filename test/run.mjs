@@ -96,6 +96,9 @@ const measured = {
     '--tex8web-abstract-left': '2.5em', '--tex8web-abstract-right': '2.5em',
     '--tex8web-footnote-leading': '0.79167', '--tex8web-biblabelsep': '0.5em',
     '--tex8web-leftmargin': '2.5em' },
+  // (memoir's bibliography: its \bibitemsep of 6pt, and the list's \parsep,
+  // a third of a 12pt line)
+  'test-memoir': { '--tex8web-bibitem-sep': '0.99995em' },
   // (tocloft's \cft<level>font: \Large\scshape; \normalfont\itshape; \itshape;
   // \bfseries; \large\sffamily; \ttfamily; \slshape)
   'test-tocloft': { '--tex8web-toc-part-size': '1.44', '--tex8web-toc-part-variant': 'small-caps',

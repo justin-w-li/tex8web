@@ -1,0 +1,29 @@
+% A memoir document: a chapter with lists, and a bibliography with memoir's
+% \bibitemsep (memoir has no \bibparsep, which biblatex adds).
+\documentclass{memoir}
+\usepackage{hyperref}
+\setlength{\bibitemsep}{6pt}
+\title{Memoir}
+\author{Someone}
+\begin{document}
+\maketitle
+\tableofcontents
+\chapter{First}
+\section{A section}
+Some text, as cited in \cite{book} and \cite{paper}.
+\begin{itemize}
+    \item One,
+    \begin{itemize}
+        \item inside.
+    \end{itemize}
+    \item two.
+\end{itemize}
+\begin{enumerate}
+    \item First,
+    \item second.
+\end{enumerate}
+\begin{thebibliography}{9}
+\bibitem{book} A.~Author. \emph{A Book}. 2000.
+\bibitem{paper} B.~Writer. A paper. 2001.
+\end{thebibliography}
+\end{document}
