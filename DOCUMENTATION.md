@@ -219,7 +219,7 @@ List labels, indents, and spacing are as in the PDF.
 
 ### `\hfill`
 
-After `\hfill` in a paragraph or a heading, the rest of the line is at the right, as in the PDF. If the rest does not fit, it is at the right of the next line.
+After `\hfill` in a paragraph, a heading, or a caption, the rest of the line is at the right, as in the PDF. If the rest does not fit, it is at the right of the next line. A `\break` or `\linebreak` after `\hfill` ends the line.
 
 ### Footnotes
 

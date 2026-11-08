@@ -97,6 +97,17 @@ return {
       .. "<dd>m  <br />n  <div>o</div>p" .. fill .. " q</span><br />r</dd>")
   end,
 
+  ["text.hfill: a break mark after text on its line ends the line, and the space before a rest is trimmed inside an element too"] = function()
+    local mark = [[<span class="tex8web-hfill-mark"></span>]]
+    local brk = [[<span class="tex8web-hfill-break"></span>]]
+    local fill = "<span class='tex8web-hfill-gap'> </span><span class='tex8web-hfill'>"
+    local d = parse("<p>s <b>t </b>" .. mark .. " u" .. brk .. "v</p><p>w " .. brk .. "x</p>"
+      .. "<dt><a id=\"a\"></a>" .. brk .. "y</dt><div><div>z</div>" .. brk .. "</div>")
+    text.hfill(d)
+    equal(body(d), "<p><span class='tex8web-hfill-line'>s <b>t</b>" .. fill .. " u</span><br class='newline' /></span>v</p>"
+      .. "<p>w <br class='newline' />x</p><dt><a id='a'></a>y</dt><div><div>z</div></div>")
+  end,
+
   ["text.minipages: each line of minipages and subfigures in a row, nested ones too, without \\noindent's empty paragraph"] = function()
     local d = parse([[<div class="minipage tex8web-par tex8web-minipage-t">A</div> <span class="tex8web-nbsp">]]
       .. "\u{A0}" .. [[</span><div class="subfigure tex8web-minipage-b">]]

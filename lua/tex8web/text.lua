@@ -457,7 +457,10 @@ end
 -- span that holds the space before the floated part and keeps that part a
 -- quad from the text. In a paragraph, the whole line and its <br> also go
 -- in a span, which the stylesheet makes a block that holds the float and
--- can be aligned alone.
+-- can be aligned alone. A break mark (span.tex8web-hfill-break) after text
+-- on its line becomes a <br>. One with nothing before it is dropped, as
+-- tex4ht's \hfill\break in list labels (latex.4ht) and in the index
+-- (html4.4ht) starts a line.
 -- (Not in a heading: make4ht's sectionid makes the heading's anchor its id
 -- only while the anchor is the heading's child.)
 local function ends_line(node)
@@ -465,15 +468,19 @@ local function ends_line(node)
     or is_math(node) and not dom.has_class(node, "mathjax-inline"))
 end
 
+-- (an empty anchor, as before a theorem's head, shows nothing)
 local function shows(node)
-  return node:is_element() or node:is_text() and node:get_text():find("%S")
+  return node:is_text() and node:get_text():find("%S")
+    or node:is_element() and (node:get_element_name() == "img" or not dom.is_blank(node))
 end
 
 function M.hfill(document)
   local parents, seen = {}, {}
-  for _, mark in ipairs(document:query_selector("span.tex8web-hfill-mark")) do
-    local parent = mark:get_parent()
-    if not seen[parent] then seen[parent], parents[#parents + 1] = true, parent end
+  for _, class in ipairs({"tex8web-hfill-mark", "tex8web-hfill-break"}) do
+    for _, mark in ipairs(document:query_selector("span." .. class)) do
+      local parent = mark:get_parent()
+      if not seen[parent] then seen[parent], parents[#parents + 1] = true, parent end
+    end
   end
   for _, parent in ipairs(parents) do
     local in_p = parent:get_element_name() == "p"
@@ -492,9 +499,15 @@ function M.hfill(document)
       for k = from or #out + 1, #out do shown = shown or shows(out[k]) end
       if shown then
         -- (the space before the rest goes in the gap, so that a line
-        -- cannot break between the text and the gap)
-        if out[from - 1] and out[from - 1]:is_text() then
-          dom.set_node_text(out[from - 1], (out[from - 1]:get_text():gsub("%s+$", "")))
+        -- cannot break between the text and the gap. The space can be at
+        -- the end of an element, as in \textbf{a \hfill b})
+        local before = out[from - 1]
+        while before and before:is_element() do
+          local children = before:get_children()
+          before = children[#children]
+        end
+        if before and before:is_text() then
+          dom.set_node_text(before, (before:get_text():gsub("%s+$", "")))
         end
         wrap(from, "tex8web-hfill")
         local gap = parent:create_element("span", {class = "tex8web-hfill-gap"})
@@ -511,6 +524,10 @@ function M.hfill(document)
     for _, node in ipairs(parent:get_children()) do
       if dom.has_class(node, "tex8web-hfill-mark") then
         from = #out + 1
+      elseif dom.has_class(node, "tex8web-hfill-break") then
+        local shown = false
+        for k = line, #out do shown = shown or shows(out[k]) end
+        if shown then close(parent:create_element("br", {class = "newline"})) end
       elseif ends_line(node) then
         close(node)
       else

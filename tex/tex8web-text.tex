@@ -242,26 +242,31 @@
 % after its glue, since an \hfill in vertical mode starts the paragraph.
 % text.hfill puts the rest of the line in a span that css/tex8web.css
 % floats right. No mark is left in a box (\ifinner), whose line is not the
-% paragraph's. None is left before \break or a \penalty of -10000 or less,
-% which end the line but write nothing (tex4ht's \hfill\break in list
-% labels, latex.4ht, and in the index, html4.4ht). None is left before
-% \linebreak or \nolinebreak, which remove the \hfill (\@no@lnbk,
-% latex.ltx), or in the leaders of \dotfill and \hrulefill, which tex4ht
-% draws as dots or drops. \HCode writes nothing in a picture.
+% paragraph's. Before \break, \linebreak, or a \penalty of -10000 or less,
+% which end the line but write nothing, a break mark is left instead, which
+% text.hfill makes a <br>. None is left before \nolinebreak, which removes
+% the \hfill (\@no@lnbk, latex.ltx), or in the leaders of \dotfill and
+% \hrulefill, which tex4ht draws as dots or drops. \HCode writes nothing in
+% a picture.
 \let\web@hfill\hfill
 \protected\def\hfill{\web@hfill
     \ifhmode\ifinner\else\expandafter\expandafter\expandafter\web@hfill@peek\fi\fi}
 \def\web@hfill@peek{\futurelet\web@next\web@hfill@mark}
 \def\web@hfill@mark{\let\web@hfill@do\web@hfill@write
-    \ifx\web@next\break \let\web@hfill@do\relax \fi
-    \ifx\web@next\linebreak \let\web@hfill@do\relax \fi
+    \ifx\web@next\break \let\web@hfill@do\web@hfill@break \fi
+    \ifx\web@next\linebreak \let\web@hfill@do\web@hfill@linebreak \fi
     \ifx\web@next\nolinebreak \let\web@hfill@do\relax \fi
     \ifx\web@next\penalty \let\web@hfill@do\web@hfill@penalty \fi
     \web@hfill@do}
 \def\web@hfill@write{\HCode{<span class="tex8web-hfill-mark"></span>}}
+\def\web@hfill@break{\HCode{<span class="tex8web-hfill-break"></span>}}
 \newcount\web@hfill@count
 \def\web@hfill@penalty#1{\afterassignment\web@hfill@pen\web@hfill@count}
-\def\web@hfill@pen{\ifnum\web@hfill@count>-\@M \web@hfill@write \fi \penalty\web@hfill@count}
+\def\web@hfill@pen{\ifnum\web@hfill@count>-\@M \web@hfill@write \else \web@hfill@break \fi
+    \penalty\web@hfill@count}
+% (\linebreak[n] ends the line only for an n of 4, the default)
+\def\web@hfill@linebreak\linebreak{\@ifnextchar[\web@hfill@lb{\web@hfill@break\linebreak}}
+\def\web@hfill@lb[#1]{\ifnum#1>3 \web@hfill@break\fi \linebreak[#1]}
 \let\web@dotfill\dotfill
 \def\dotfill{{\let\hfill\web@hfill\web@dotfill}}
 \let\web@hrulefill\hrulefill

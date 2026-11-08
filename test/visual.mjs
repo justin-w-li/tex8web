@@ -176,7 +176,7 @@ const spaced = `(() => {
 // The rest of each \hfill outside the table of contents (text.hfill), as
 // in the PDF: at the right of its block, inside it, and starting at the
 // left when it takes more than a line. The block is the line, paragraph,
-// heading, or algorithmicx line (a separate div). The line's first letter,
+// heading, caption, or algorithmicx line (a separate div). The line's first letter,
 // picture, or formula must be at the left, past the first-line indent.
 // Failures: [the rest's first words, what is wrong]
 const filled = `(() => {
@@ -205,10 +205,10 @@ const filled = `(() => {
   };
   const floats = [...document.querySelectorAll('.tex8web-hfill')].filter(rest => !rest.closest('.tableofcontents'));
   for (const rest of floats) {
-    const block = rest.parentElement.closest('.tex8web-hfill-line, p, h1, h2, h3, h4, h5, h6, .algorithmic > * > :last-child');
+    const block = rest.parentElement.closest('.tex8web-hfill-line, p, h1, h2, h3, h4, h5, h6, figcaption, .algorithmic > * > :last-child');
     const name = rest.textContent.replace(/\\s+/g, ' ').trim().slice(0, 30);
     if (!block) {
-      wrong.push([name, 'in no paragraph or heading']);
+      wrong.push([name, 'in no paragraph, heading, or caption']);
       continue;
     }
     const style = getComputedStyle(block), box = block.getBoundingClientRect(), at = rest.getBoundingClientRect();
