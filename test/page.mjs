@@ -679,7 +679,10 @@ async function opening(chrome, file) {
 // scroll to the entry of the last heading the page reaches. With the drawer
 // closed, from the page's load and as the page scrolls past each heading,
 // the entry is marked, but no entry of the drawer is measured, as the
-// measurement would lay out the whole page.
+// measurement would lay out the whole page. Opened by the contents button,
+// the drawer is drawn from its first frame with the marked entry a third of
+// the way down. A section the reader opens there stays open as the drawer
+// closes and opens again, and the drawer is not scrolled as it closes.
 async function following(chrome, file) {
   const problems = [];
   const links = `[...document.querySelectorAll('#tex8web-toc .tableofcontents a')]`;
@@ -730,8 +733,77 @@ async function following(chrome, file) {
     if (reached < 2) problems.push(`the closed drawer: ${reached} headings reached`);
     const reads = await page.evaluate('tex8webReads');
     if (reads) problems.push(`the closed drawer: entries measured ${reads} times`);
-    await page.evaluate(`document.getElementById('tex8web-toc').showPopover()`);
+    // a heading halfway, whose entry is neither in the closed drawer's first
+    // screen nor in its last. Scrolling up to it shows the bar, which is
+    // hidden as the page scrolls down.
+    const middle = await page.evaluate(to(Math.floor(count / 2)));
+    if (!middle || !await marked(page, middle)) problems.push('the closed drawer: the middle entry not marked');
+    if (!await until(() => page.evaluate(`!document.querySelector('.tex8web-controls.tex8web-away')`))) {
+      return [...problems, 'the bar not shown after a scroll up'];
+    }
     await finished(page);
+    // the drawer opened by a click on the contents button, and in each frame
+    // from its opening the drawer's scroll and the marked entry's top and
+    // bottom in it. The frames are recorded after the page script's frame
+    // callback, whose beforetoggle listener comes first.
+    const opened = async () => {
+      await page.evaluate(`(() => {
+        const toc = document.getElementById('tex8web-toc');
+        window.tex8webFrames = [];
+        const frame = () => {
+          const a = toc.querySelector('[aria-current]');
+          const shown = a.getClientRects().length ? a : toc.querySelector('.tex8web-reading a');
+          const box = toc.getBoundingClientRect(), at = shown.getBoundingClientRect();
+          tex8webFrames.push({ scroll: toc.scrollTop, top: at.top - box.top, bottom: at.bottom - box.top,
+            height: box.height, end: toc.scrollHeight - toc.clientHeight });
+          if (tex8webFrames.length < 10) requestAnimationFrame(frame);
+        };
+        toc.addEventListener('beforetoggle', event => {
+          if (event.newState === 'open') requestAnimationFrame(frame);
+        }, { once: true });
+      })()`);
+      const [x, y] = await page.evaluate(`(() => {
+        const box = document.querySelector('.tex8web-contents').getBoundingClientRect();
+        return [box.left + box.width / 2, box.top + box.height / 2];
+      })()`);
+      await page.mouse('pressed', x, y);
+      await page.mouse('released', x, y);
+      const frames = await until(() => page.evaluate('tex8webFrames'), f => f.length >= 10);
+      if (!frames) return [['not opened by the contents button']];
+      const last = frames.at(-1), wrong = [];
+      const moved = frames.find(f => f.scroll !== last.scroll || Math.abs(f.top - last.top) > 0.5);
+      if (moved) wrong.push(`drawn scrolled to ${moved.scroll}px, the marked entry ${moved.top}px down, then to ${last.scroll}px and ${last.top}px`);
+      if (!(last.top > -1 && last.bottom < last.height + 1)) wrong.push(`the marked entry from ${last.top}px to ${last.bottom}px in a box ${last.height}px tall`);
+      else if (last.scroll > 0 && last.scroll < last.end && Math.abs(last.top - last.height / 3) > 1) {
+        wrong.push(`the marked entry ${last.top}px down a box ${last.height}px tall, not a third`);
+      }
+      await finished(page);
+      return [wrong, last.scroll];
+    };
+    let [wrong, scroll] = await opened();
+    problems.push(...wrong.map(p => `the drawer opened: ${p}`));
+    if (scroll === 0) problems.push('the drawer opened: not scrolled to the marked entry');
+    const chevrons = `[...document.querySelectorAll('#tex8web-toc .tex8web-toc-more')].map(b => b.getAttribute('aria-expanded')).join()`;
+    const states = await page.evaluate(`(() => {
+      const toc = document.getElementById('tex8web-toc');
+      toc.querySelector('.tableofcontents > span:not(.tex8web-reading) > .tex8web-toc-more[aria-expanded="false"]').click();
+      toc.scrollTop = 0;
+      return ${chevrons};
+    })()`);
+    await finished(page);
+    // (scrolled to 0 above, so that a scroll on closing, which a
+    // beforetoggle listener that ignores newState would make, shows)
+    const closing = await page.evaluate(`new Promise(done => {
+      const toc = document.getElementById('tex8web-toc');
+      toc.hidePopover();
+      requestAnimationFrame(() => requestAnimationFrame(() => done(toc.scrollTop)));
+    })`);
+    if (closing) problems.push(`the drawer closing: scrolled to ${closing}px`);
+    await finished(page);
+    [wrong] = await opened();
+    problems.push(...wrong.map(p => `the drawer opened again: ${p}`));
+    const now = await page.evaluate(chevrons);
+    if (now !== states) problems.push(`the drawer opened again: sections open ${now}, not ${states}`);
     const problem = await follows(page);
     if (problem) problems.push(`the open drawer: ${problem}`);
   });

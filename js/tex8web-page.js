@@ -339,6 +339,14 @@
     // its changes, would restyle the whole page
     let wide = layout() === 'wide';
     addEventListener('resize', () => { wide = layout() === 'wide'; });
+    // the entry being read, or its section's while its subsections are
+    // hidden, scrolled a third of the way down the box if it is outside it.
+    // No scrolling while search results replace the entries (a.height is 0)
+    const reveal = () => {
+      const shown = current.a.getClientRects().length ? current.a : opened.querySelector('a');
+      const a = shown.getBoundingClientRect(), box = toc.getBoundingClientRect();
+      if (a.height && (a.top < box.top || a.bottom > box.bottom)) toc.scrollTop += a.top - box.top - box.height / 3;
+    };
     const update = () => {
       const line = innerHeight / 4;
       let reading = entries[0];
@@ -366,11 +374,7 @@
       // entries' boxes, read after the changes above, would lay out the
       // whole page.
       if (!wide && !toc.matches(':popover-open')) return;
-      // the section's entry while its subsections are hidden; no scrolling
-      // while search results replace the entries (a.height is 0)
-      const shown = current.a.getClientRects().length ? current.a : opened.querySelector('a');
-      const a = shown.getBoundingClientRect(), box = toc.getBoundingClientRect();
-      if (a.height && (a.top < box.top || a.bottom > box.bottom)) toc.scrollTop += a.top - box.top - box.height / 3;
+      reveal();
     };
     let pending = false;
     addEventListener('scroll', () => {
@@ -418,6 +422,16 @@
     document.fonts.addEventListener('loadingdone', fit);
     new ResizeObserver(fit).observe(toc);
     new MutationObserver(fit).observe(list, { childList: true, subtree: true });
+    // The closed drawer is not scrolled (update()), so its entry is scrolled
+    // to as it opens, in the frame before it is first drawn. A microtask
+    // after beforetoggle runs while the drawer is still closed when the
+    // button opens it, and Chrome dispatches toggle a frame late. Whether
+    // all entries fit is measured first: the closed drawer's empty box fits
+    // them all, and the ResizeObserver measures the open drawer only after
+    // the frame's callbacks.
+    toc.addEventListener('beforetoggle', event => {
+      if (event.newState === 'open') requestAnimationFrame(() => { fit(); reveal(); });
+    });
   }
 
   // the search field: in place of the entries, the headings, theorems and
