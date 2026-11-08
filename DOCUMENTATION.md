@@ -281,6 +281,7 @@ To set the text as in the PDF instead, use [`\WebLikePDF`](#your-own-config) in 
 - The text is at the reader's default font size, set in the browser. This size is 12pt unless the reader changes it, larger than in most PDFs. Everything else is scaled with the text. The column is as wide as the PDF column, in ems.
 - The line spacing is the browser default, a little looser than in TeX.
 - Paragraphs are separated by space instead of indented.
+- A center, flushleft, flushright, or verbatim block has the space of a list above and below it, without the paragraph space.
 - The text is ragged right and not hyphenated.
 
 ### Choices for the web

@@ -194,20 +194,26 @@ const tablesSpaced = `(() => {
   return { checked: divs.length, wrong };
 })()`;
 
-// a center, flushleft, flushright, or verbatim after a paragraph's
-// footnote, spaced as after the paragraph. Failures: [text, got, want]
+// a center, flushleft, flushright, or verbatim, and a paragraph or
+// tabular after one, spaced as a list: \topsep, plus \parskip with
+// \WebLikePDF, as \trivlist adds it. Also after a paragraph's footnote.
+// Failures: [text, got, want]
 const blocksSpaced = `(() => {
-  const blocks = [...document.querySelectorAll(':where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div.center, div.flushleft, div.flushright, pre.verbatim)')];
-  const wrong = blocks.flatMap(d => {
-    const p = document.createElement('p');
-    p.textContent = 'x';
-    d.before(p);
-    const want = getComputedStyle(d).marginTop;
-    p.remove();
+  const block = ':is(div.center, div.flushleft, div.flushright, pre.verbatim)';
+  const spaced = [...document.querySelectorAll(':is(p, ' + block + ', :where(p, .tex8web-sidenote) + .tex8web-sidenote) + ' + block
+    + ', ' + block + ' + :is(p, div.tabular)')];
+  const space = document.documentElement.classList.contains('tex8web-like-pdf')
+    ? 'calc(var(--tex8web-list-sep) + var(--tex8web-parskip))' : 'var(--tex8web-list-sep)';
+  const wrong = spaced.flatMap(d => {
     const got = getComputedStyle(d).marginTop;
+    const probe = document.createElement('div');
+    probe.style.marginTop = space;
+    d.before(probe);
+    const want = getComputedStyle(probe).marginTop;
+    probe.remove();
     return got === want ? [] : [[d.textContent.trim().slice(0, 30), got, want]];
   });
-  return { checked: blocks.length, wrong };
+  return { checked: spaced.length, wrong };
 })()`;
 
 // algorithm2e's geometry, as in its PDF: a line number at the right
@@ -456,7 +462,7 @@ async function compare(chrome, doc, ok) {
           for (const [id, gap, want] of tables.wrong) problems.push(`${html}: #${id}: ${gap} above it, not ${want} as above a paragraph`);
           const blocks = await page.evaluate(blocksSpaced);
           ran.blocksSpaced += blocks.checked;
-          for (const [text, got, want] of blocks.wrong) problems.push(`${html}: "${text}": ${got} above it after a footnote, not ${want} as after a paragraph`);
+          for (const [text, got, want] of blocks.wrong) problems.push(`${html}: "${text}": ${got} above it, not ${want} as above a list`);
           const rests = await page.evaluate(filled);
           ran.filled += rests.checked;
           for (const [name, what] of rests.wrong) problems.push(`${html}: the \\hfill before "${name}": ${what}`);

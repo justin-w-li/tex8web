@@ -69,15 +69,17 @@ const measured = {
     '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
   // (also test.cfg's \WebColor, from an xcolor expression and an RGB color,
   // and the link colors, which examples/basic has with only the color
-  // package; \intextsep and \floatsep of 12pt, and display skips of 11pt,
-  // in an 11pt document)
+  // package; \intextsep and \floatsep of 12pt, display skips of 11pt, and
+  // \topsep 9pt, in an 11pt document)
   'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235',
     '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))',
     '--tex8web-intextsep': '1.09589em', '--tex8web-floatsep': '1.09589em',
-    '--tex8web-display-above': '1.00456em', '--tex8web-display-below': '1.00456em' },
-  // (12pt: \intextsep 14pt, \floatsep 12pt, and display skips of 12pt)
+    '--tex8web-display-above': '1.00456em', '--tex8web-display-below': '1.00456em',
+    '--tex8web-list-sep': '0.82191em' },
+  // (12pt: \intextsep 14pt, \floatsep 12pt, display skips of 12pt, and
+  // \topsep 10pt)
   'test-blockspace': { '--tex8web-intextsep': '1.16667em', '--tex8web-floatsep': '1em',
-    '--tex8web-display-above': '1em', '--tex8web-display-below': '1em' },
+    '--tex8web-display-above': '1em', '--tex8web-display-below': '1em', '--tex8web-list-sep': '0.83333em' },
   'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, oklch(from #0000FF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
   // (linkcolor=.: no property, so a link is in the color of the text around it)
   'examples/complex': { '--tex8web-link': null },
@@ -91,20 +93,21 @@ const measured = {
     '--tex8web-toc-section-skip': '0em', '--tex8web-toc-section-weight': 'normal',
     '--tex8web-chapter-size': '2.488em', '--tex8web-chapter-label-size': '0.8336em' },
   // (\WebLikePDF in an 11pt document: the font size, 10.95pt over 12pt,
-  // \baselineskip 13.6pt, \parindent 17pt, and \parskip 0pt)
+  // \baselineskip 13.6pt, \parindent 17pt, the fixture's \parskip of 3pt,
+  // and \topsep 9pt)
   'test-likepdf': { '--tex8web-pdf-scale': '0.9125', '--tex8web-pdf-leading': '1.242',
-    '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em' },
+    '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0.27397em', '--tex8web-list-sep': '0.82191em' },
   // (an article without titlesec: \@startsection's space around a section,
   // 3.5ex and 2.3ex of the text, and a subsection, 3.25ex and 1.5ex, in ems
   // of the heading; the margins of the abstract's quotation;
   // \footnotesize's leading, 9.5pt over 12pt; \intextsep and \floatsep of
-  // 12pt, and display skips of 10pt)
+  // 12pt, display skips of 10pt, and \topsep 8pt)
   'test-article': { '--tex8web-section-before': '1.0465em', '--tex8web-section-after': '0.6877em',
     '--tex8web-subsection-before': '1.16609em', '--tex8web-subsection-after': '0.5382em',
     '--tex8web-abstract-left': '2.5em', '--tex8web-abstract-right': '2.5em',
     '--tex8web-footnote-leading': '0.79167', '--tex8web-biblabelsep': '0.5em',
     '--tex8web-leftmargin': '2.5em', '--tex8web-intextsep': '1.2em', '--tex8web-floatsep': '1.2em',
-    '--tex8web-display-above': '1em', '--tex8web-display-below': '1em' },
+    '--tex8web-display-above': '1em', '--tex8web-display-below': '1em', '--tex8web-list-sep': '0.8em' },
   // memoir: the bibliography's \bibitemsep of 6pt, plus the list's \parsep,
   // a third of a 12pt line. The space around headings set after a \sechook,
   // in ems of the heading: 5ex above a section, from the fixture, and

@@ -1,8 +1,10 @@
 % \WebLikePDF in the document's config (test-likepdf.cfg), which sets the
-% text as the PDF does. The checks are in test/run.mjs, and those of the
-% sizes in test/page.mjs.
+% text as the PDF does. The checks are in test/run.mjs, those of the sizes
+% in test/page.mjs, and those of the space around center and verbatim, a
+% list's plus \parskip, in test/visual.mjs.
 \documentclass[11pt]{article}
 \usepackage{amsmath}
+\setlength{\parskip}{3pt}
 \begin{document}
 \tableofcontents
 \section{Paragraphs}
@@ -12,7 +14,7 @@ wide screen: notwithstanding the incomprehensibility of characteristically
 uncharacteristic words, the text reaches the right margin.\footnote{A note,
 which stays ragged right beside the text.}
 
-A second paragraph is indented, with no space above it, and has inline math
+A second paragraph is indented, with \verb|\parskip| above it, and has inline math
 such as $\sum_{i=1}^n x_i^2 \le \bigl(\sum_{i=1}^n |x_i|\bigr)^2$ in a line
 that has to break around it somewhere.
 \[ \int_0^1 f(x)\,dx = F(1) - F(0). \]
@@ -21,4 +23,17 @@ A paragraph that goes on after the display.
 \item An item long enough to wrap onto a second line, whose text is also
   justified on a wide screen, as LaTeX justifies a list's items.
 \end{itemize}
+A paragraph before a center.
+\begin{center}
+    Centered.
+\end{center}
+A paragraph before a verbatim.
+\begin{verbatim}
+verbatim text
+\end{verbatim}
+A paragraph with a footnote.\footnote{A footnote.}
+\begin{center}
+    Centered after a footnote.
+\end{center}
+A paragraph after the blocks.
 \end{document}

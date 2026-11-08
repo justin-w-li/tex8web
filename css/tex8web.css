@@ -239,17 +239,18 @@ div.table > figure.float { margin-block: 0; }
 :is(figure.figure, figure.float) { display: flow-root; }
 /* (tex4ht's div + p would add to the float's margin) */
 div.table + p { margin-top: 0; }
-/* center, flushleft, flushright, and verbatim with \topsep and the
-   paragraph space between them and a paragraph or another of them, as
-   \trivlist gives them, also when a paragraph's footnote comes between. A
-   tabular after one starts a paragraph, so it has the same space. As with tex4ht's p + div, the space is set between
-   siblings: a block's own margins would stay inside a list item, a box, or
-   a float, where TeX sets no space at the edges */
+/* center, flushleft, flushright, and verbatim with \topsep between them
+   and a paragraph or another of them, as a list has. With \WebLikePDF the
+   paragraph space is added, as \trivlist adds \parskip. The same holds
+   when a paragraph's footnote comes between. A tabular after one starts a
+   paragraph, so it has the same space. As with tex4ht's p + div, the space
+   is set between siblings: a block's own margins would stay inside a list
+   item, a box, or a float, where TeX sets no space at the edges */
 :is(div.center, div.flushleft, div.flushright, pre.verbatim) { margin-block: 0; }
 :is(p, div.center, div.flushleft, div.flushright, pre.verbatim) + :is(div.center, div.flushleft, div.flushright, pre.verbatim),
 :where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div.center, div.flushleft, div.flushright, pre.verbatim),
 :is(div.center, div.flushleft, div.flushright, pre.verbatim) + :is(p, div.tabular) {
-    margin-top: calc(var(--tex8web-list-sep) + var(--tex8web-parskip, 1em)); }
+    margin-top: calc(var(--tex8web-list-sep) + var(--tex8web-parskip, 0em)); }
 /* (browsers indent a <figure>; LaTeX does not indent floats) */
 figure { margin-inline: 0; }
 /* a caption as LaTeX's \@makecaption sets it: centered while it fits on a
