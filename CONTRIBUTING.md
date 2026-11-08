@@ -207,7 +207,7 @@ Each document is built with the same environment into `build/test/<document>/htm
 
 The LaTeX runs have a separate stamp: only the tex8web files that LaTeX reads, plus the day, for `\today`. After a change to other files, for example in `css/`, `js/`, `fonts/`, or the HTML passes, only tex4ht, t4ht, and the HTML passes run again. Reused LaTeX runs are noted in the build log.
 
-The build stamp has no date, so a reused build has the `\today` of its build day. With `FORCE_SOURCE_DATE`, the date is fixed by `SOURCE_DATE_EPOCH`. The test fixtures are built with the fixed date January 1, 2000, so their pages do not depend on the day.
+The build stamp has the day too, so a build from another day is not reused, as its `\today` would differ. With `FORCE_SOURCE_DATE`, the date is fixed by `SOURCE_DATE_EPOCH`, and the day is left out of both stamps. The test fixtures are built with the fixed date January 1, 2000, so their pages do not depend on the day.
 
 To force a build in the tests, remove `build/test/<document>`, and for `visual.mjs` also `build/visual/<document>`, which holds the page typeset by MathJax in the browser. In `npm run regress`, remove `<out>/html/<name>.stamp`, and to run LaTeX again, `<out>/tex4ht/<name>.latex.stamp` too.
 

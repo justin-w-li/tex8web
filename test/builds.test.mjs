@@ -125,6 +125,13 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal(latex.log.match(/LaTeX ran/g)?.length, 1);
     assert.doesNotMatch(latex.log, /tex8web-latex/);
     assert.equal((await make()).reused, true);
+    // nor the page on another day, as \today would differ
+    const dayBefore = mock.method(Date.prototype, 'toDateString', () => 'the day before');
+    try {
+      assert.equal((await make()).reused, undefined);
+    } finally {
+      dayBefore.mock.restore();
+    }
     // not on another day, as \today would differ, unless the date is fixed
     const nextDay = async env => {
       rmSync(join(dir, 'build/html.stamp'));

@@ -220,10 +220,10 @@ function tools() {
 // the stamps of a build. page: the tools above, the files in the document's
 // directory, the config (which may be elsewhere), the arguments, the
 // environment variables the build reads, and the size and time of the
-// linked PDF, as a page built before the PDF existed lacks the link. The
-// files are hashed, so uncommitted edits and files unknown to git count.
-// latex: the LaTeX tools, the same document inputs, and the day, for
-// \today, unless the date is fixed
+// linked PDF, as a page built before the PDF existed lacks the link, and
+// the day, for \today, unless the date is fixed. The files are hashed, so
+// uncommitted edits and files unknown to git count. latex: the LaTeX
+// tools, the same document inputs, and the day
 function stamps(doc, args, env, pdf) {
   const all = { ...process.env, ...env };
   // (TEX8WEB_SLOTS* and TEX8WEB_SPEECH_CACHE change no page)
@@ -232,7 +232,7 @@ function stamps(doc, args, env, pdf) {
   const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
   const rest = [hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf];
   const hash = (...head) => createHash('sha256').update(JSON.stringify([...head, ...rest])).digest('hex');
-  return { page: hash(tools().page), latex: hash(tools().latex, day) };
+  return { page: hash(tools().page, day), latex: hash(tools().latex, day) };
 }
 
 // Runs bin/tex8web on a document, with the page in out and tex4ht's files
