@@ -158,7 +158,7 @@ const measured = {
     '--tex8web-section-align': 'left', '--tex8web-subsection-weight': 'bold',
     '--tex8web-paragraph-weight': 'normal', '--tex8web-paragraph-style': 'italic' },
   // (amsart's section in centered small capitals at the text size, its
-  // run-in paragraph in the text's font, and its part flush left, where
+  // run-in paragraph in the text's font, and its parts flush left, where
   // html4.4ht centers parts)
   'test-amsart': { '--tex8web-section-size': '1em', '--tex8web-section-weight': 'normal',
     '--tex8web-section-variant': 'small-caps', '--tex8web-section-align': 'center',

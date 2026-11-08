@@ -133,10 +133,10 @@ Your document's measurements are CSS custom properties. To change them, set them
 | --- | --- |
 | `--tex8web-textwidth` | the text column width |
 | `--tex8web-margin`, `--tex8web-gap` | the side column width, and the gap on each side of a side column, in `em` or `rem` |
-| `--tex8web-title-size`, `--tex8web-section-size`, … `--tex8web-subparagraph-size` | the heading sizes. With chapters, also `--tex8web-part-size` and `--tex8web-chapter-size` |
+| `--tex8web-title-size`, `--tex8web-section-size`, … `--tex8web-subparagraph-size` | the heading sizes. With chapters, also `--tex8web-part-size` and `--tex8web-chapter-size`, and in the article class `--tex8web-part-size`. `--tex8web-part-label-size` and `--tex8web-chapter-label-size` are the label's size, in ems of the title's |
 | `--tex8web-<heading>-labelsep` | the space after a heading's number |
-| `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | a heading's font and alignment, from titlesec or the class. With memoir, also `--tex8web-part-label-*` and `--tex8web-chapter-label-*` for the label's font |
-| `--tex8web-<heading>-before`, `-after` | the space above and below a heading, from titlesec or the class |
+| `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | a heading's font and alignment, from titlesec or the class. With memoir, also `--tex8web-part-label-family`, `--tex8web-chapter-label-family`, and the other `-label-` font properties for the label's font |
+| `--tex8web-<heading>-before`, `-after` | the space above and below a heading, from titlesec or the class. For a part or chapter, also `--tex8web-part-label-after` or `--tex8web-chapter-label-after`, the space between label and title |
 | `--tex8web-list-sep`, `--tex8web-item-sep`, `--tex8web-leftmargin` | the spacing and indent of a description list. The space after a description's label, and the spacing of other lists, are `--tex8web-list-*` properties on each list's element |
 | `--tex8web-intextsep`, `--tex8web-floatsep` | the space around a float, and between two floats in a row |
 | `--tex8web-caption-before`, `--tex8web-caption-after` | the space above and below a caption. Each caption also has them on its element, swapped for a caption at the top with the caption package |

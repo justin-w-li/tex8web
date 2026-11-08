@@ -550,6 +550,9 @@
                 --tex8web-chapter-after: \web@em{#3}; \web@a}}%
         \web@Css{:root { \web@a }}%
     \fi\fi\fi}
+% #3 if the tokens #1 are in the definition of macro #2
+\newcommand\web@meaninghas[3]{%
+    \edef\web@a{\noexpand\in@{\detokenize{#1}}{\meaning#2}}\web@a\ifin@#3\fi}
 % without a titlesec \titleformat, a part's spacing, read from the class's
 % \part (kept in tex8web-hooks.sty) as a chapter's is. Its page breaks,
 % page style, counter, marks, and table of contents line are turned off,
@@ -577,10 +580,11 @@
         \expandafter\web@partspacing\web@skips{#1}{#2}\fi\fi}
 \def\web@twoskips#1#2{{#1}{0pt}{#2}}
 % above, between label and title, below, the label's font, the title's font.
-% The sizes are read first, since a size command sets \@tempskipa
+% The sizes are read first, in a box, as a size command sets \@tempskipa
+% and a font may hold a \color
 \def\web@partspacing#1#2#3#4#5{%
     \begingroup
-        #4\edef\web@a{\f@size pt}#5\edef\web@b{\f@size pt}%
+        \setbox0\vbox{#4\xdef\web@a{\f@size pt}#5\xdef\web@b{\f@size pt}}%
         \skip@#1\relax \@tempskipa#2\relax \@tempskipb#3\relax
         \ifdim\skip@<\z@\else\ifdim\@tempskipa<\z@\else\ifdim\@tempskipb<\z@\else
             \edef\web@c{--tex8web-part-label-after: \web@over\@tempskipa\web@a em;}%
@@ -597,10 +601,13 @@
     \begingroup
         \expandafter\let\csname ttls@part\endcsname\@undefined
         % (memoir's \@part centers the part before \parttitlefont, whose
-        % commands are read for the alignment)
+        % commands are read for the alignment, unless the font sets another)
         \ifdefined\parttitlefont\ifdefined\web@@part
-            \edef\web@a{\noexpand\in@{\detokenize{\centering}}{\meaning\web@@part}}%
-            \web@a\ifin@
+            \let\web@b\relax
+            \web@meaninghas\centering\web@@part{\let\web@b\@empty}%
+            \web@meaninghas\raggedright\parttitlefont{\let\web@b\relax}%
+            \web@meaninghas\raggedleft\parttitlefont{\let\web@b\relax}%
+            \ifx\web@b\@empty
                 \expandafter\def\expandafter\parttitlefont\expandafter
                     {\expandafter\centering\parttitlefont}%
             \fi
@@ -619,20 +626,25 @@
 \else
     % a class without chapters: its parts' alignment, from the class's \part
     % and \@part (\raggedright in article.cls and amsart.cls), where html4.4ht
-    % centers parts
+    % centers parts. \centering, if both are there, is taken
     \ifcsname web@titlefont@part\endcsname\else\ifdefined\web@part
-        \begingroup
-            \edef\web@b{\meaning\web@part\ifdefined\web@@part\meaning\web@@part\fi}%
-            \edef\web@a{\noexpand\in@{\detokenize{\raggedright}}{\web@b}}%
-            \web@a\ifin@\web@Css{:root { --tex8web-part-align: left; }}\fi
-            \edef\web@a{\noexpand\in@{\detokenize{\centering}}{\web@b}}%
-            \web@a\ifin@\web@Css{:root { --tex8web-part-align: center; }}\fi
-        \endgroup
+        \let\web@c\relax
+        \web@meaninghas\raggedright\web@part{\def\web@c{left}}%
+        \web@meaninghas\centering\web@part{\def\web@c{center}}%
+        \ifdefined\web@@part
+            \web@meaninghas\raggedright\web@@part{\def\web@c{left}}%
+            \web@meaninghas\centering\web@@part{\def\web@c{center}}%
+        \fi
+        \ifx\web@c\relax\else\web@Css{:root { --tex8web-part-align: \web@c; }}\fi
     \fi\fi
-    % article's part: the title in \huge and the label in \Large. scrartcl
-    % sets its label in the title's size, and amsart's \part is a
-    % \@startsection, with no \@part
-    \ifcsname ver@article.cls\endcsname
+    % article's part (and extarticle's): the title in \huge and the label in
+    % \Large. scrartcl sets its label in the title's size, and amsart's \part
+    % is a \@startsection, with no \@part
+    \let\web@c\relax
+    \ifdefined\web@@part
+        \web@meaninghas{\Large\bfseries\partname}\web@@part{\let\web@c\@empty}%
+    \fi
+    \ifx\web@c\@empty
         \begingroup
             \expandafter\let\csname ttls@part\endcsname\@undefined
             \web@headsize{part}{\huge}%
