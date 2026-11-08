@@ -136,6 +136,37 @@ const measured = {
   'test-natbib': { '--tex8web-bibitem-sep': '0em' },
   // (memoir's openbib: the \bibitemsep of 6pt, and no \parsep)
   'test-openbib': { '--tex8web-bibitem-sep': '0.6em' },
+  // (the fonts of headings in their \@startsection: a section in \large
+  // sans-serif italic, a subsection in article's bold, and a run-in
+  // paragraph in italic)
+  'test-secfont': { '--tex8web-section-size': '1.2em', '--tex8web-section-family': 'var(--tex8web-sans)',
+    '--tex8web-section-weight': 'normal', '--tex8web-section-style': 'italic',
+    '--tex8web-section-align': 'left', '--tex8web-subsection-weight': 'bold',
+    '--tex8web-paragraph-weight': 'normal', '--tex8web-paragraph-style': 'italic' },
+  // (amsart's section in centered small capitals at the text size, and its
+  // run-in paragraph in the text's font)
+  'test-amsart': { '--tex8web-section-size': '1em', '--tex8web-section-weight': 'normal',
+    '--tex8web-section-variant': 'small-caps', '--tex8web-section-align': 'center',
+    '--tex8web-paragraph-weight': 'normal' },
+  // (memoir's fonts in a 10pt document: a part title in \huge small
+  // capitals and a chapter title in \Large italic, both under a label in
+  // \huge bold, a section in \normalsize italic, and a run-in paragraph in
+  // italic. The part's title and the chapter's label are read past the
+  // \MakeUppercase their fonts end in. memoir's chapter spacing, 50pt,
+  // 20pt, and 40pt, in ems of the title's \Large, 12pt, and the label's
+  // \huge, 17.28pt)
+  'test-memoirfonts': { '--tex8web-chapter-before': '4.16667em',
+    '--tex8web-chapter-label-after': '1.15741em', '--tex8web-chapter-after': '3.33333em',
+    '--tex8web-part-size': '1.728em', '--tex8web-part-weight': 'normal',
+    '--tex8web-part-variant': 'small-caps', '--tex8web-part-label-size': '1em',
+    '--tex8web-part-label-weight': 'bold', '--tex8web-part-label-variant': 'normal',
+    '--tex8web-chapter-size': '1.2em', '--tex8web-chapter-weight': 'normal',
+    '--tex8web-chapter-style': 'italic', '--tex8web-chapter-label-size': '1.44em',
+    '--tex8web-chapter-label-weight': 'bold', '--tex8web-chapter-label-style': 'normal',
+    '--tex8web-chapter-label-family': 'var(--tex8web-roman)',
+    '--tex8web-section-size': '1em', '--tex8web-section-weight': 'normal',
+    '--tex8web-section-style': 'italic', '--tex8web-paragraph-weight': 'normal',
+    '--tex8web-paragraph-style': 'italic' },
   // (tocloft's \cft<level>font: \Large\scshape; \normalfont\itshape; \itshape;
   // \bfseries; \large\sffamily; \ttfamily; \slshape)
   'test-tocloft': { '--tex8web-toc-part-size': '1.44', '--tex8web-toc-part-variant': 'small-caps',
@@ -329,6 +360,11 @@ const fonts = {
   // (a title in the font that a redefined \maketitle sets, in a heading at
   // the text size)
   'test-titlefont': [/<h1 class='titleHead'><span\s+class='bchb7t-x-x-240'>A title in its own font<\/span><\/h1>/],
+  // (a run-in paragraph heading in its \@startsection font, without
+  // html4.4ht's bold)
+  'test-secfont': [/<span class='paragraphHead' id='a-paragraph'><a id='[^']+'><\/a>A paragraph<\/span>/],
+  // (amsart's run-in head, which html4.4ht ends with a period)
+  'test-amsart': [/<span class='paragraphHead' id='a-paragraph'> <a id='[^']+'><\/a>A paragraph\.<\/span>/],
 };
 
 // Colors in dark mode: a light-dark() of the color at another lightness,
@@ -817,6 +853,11 @@ const preloads = {
   // (the table of contents' sans-serif, bold and italic entries)
   'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
     'lmsans10-regular'],
+  // (headings in their \@startsection fonts: a section in sans-serif
+  // italic, and a paragraph in italic; and memoir's, with a part's and a
+  // chapter's bold labels above their regular and italic titles)
+  'test-secfont': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmsans10-oblique'],
+  'test-memoirfonts': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic'],
   // (a chapter's \titleformat, in sans-serif's regular face)
   'test-titlechapter': ['lmroman10-regular', 'lmroman10-bold', 'lmsans10-regular'],
   // (Times, Helvetica, and Courier: TeX Gyre's faces, for the controls too,

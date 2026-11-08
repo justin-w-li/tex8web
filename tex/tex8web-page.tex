@@ -330,20 +330,20 @@
     \web@iffont\f@shape\scdefault{\gdef\web@variant{small-caps}}}
 
 % heading sizes relative to the text, as in the PDF (the standard classes'
-% sizes), and a column as wide as the PDF's, in ems of the text. With
-% titlesec, a heading's size, family, weight, style, and alignment come
-% from its \titleformat (tex8web-hooks.sty), tried in a box that is thrown
-% away. Its space above and below comes from its \titlespacing, or from the
-% class, which titlesec reads when it loads. The space between number and
-% title, as in the PDF: titlesec's space after the label, KOMA's (the glue
-% its \sectionformat ends with), amsart's \enspace (put there by its
-% \@sect, not \@seccntformat), or LaTeX's \quad (css/tex8web.css)
-\newcommand\web@headsize[2]{% name, size command
+% sizes), and a column as wide as the PDF's, in ems of the text. A
+% heading's size, family, weight, style, and alignment come from its
+% titlesec \titleformat (tex8web-hooks.sty), else from the class (its
+% \@startsection style, or memoir's chapter and part fonts), tried in a box
+% that is thrown away. \web@headfont@<name> is defined when a font is read
+% from titlesec or the class. Its space above and below comes from its
+% \titlespacing, or from the class, which titlesec reads when it loads. The
+% space between number and title, as in the PDF: titlesec's space after
+% the label, KOMA's (the glue its \sectionformat ends with), amsart's
+% \enspace (put there by its \@sect, not \@seccntformat), or LaTeX's \quad
+% (css/tex8web.css)
+\newcommand\web@headsize[2]{% name, size command without titlesec or the class's font
     \begingroup
         \def\web@font{#2}%
-        \ifcsname web@titlefont@#1\endcsname
-            \expandafter\let\expandafter\web@font\csname web@titlefont@#1\endcsname
-        \fi
         \global\let\web@spacing\relax
         \global\let\web@labelsep\relax
         \ifcsname ttls@#1\endcsname
@@ -352,7 +352,17 @@
         \else
             \web@startsection{#1}%
         \fi
-        \setbox0\vbox{\web@font
+        \ifcsname web@titlefont@#1\endcsname
+            \expandafter\let\expandafter\web@classfont\csname web@titlefont@#1\endcsname
+        \fi
+        \ifdefined\web@classfont
+            \let\web@font\web@classfont
+            \expandafter\global\expandafter\let\csname web@headfont@#1\endcsname\@empty
+        \fi
+        % (each font is given an empty group, for a font whose last command
+        % takes the title, as memoir's part and chapter fonts may:
+        % \MakeUppercase)
+        \setbox0\vbox{\web@font{}%
             \ifx\web@spacing\relax\else
                 \xdef\web@spacing{--tex8web-#1-before: \web@em\web@before;
                     --tex8web-#1-after: \web@em\web@after;
@@ -385,7 +395,7 @@
     \web@Css{:root { --tex8web-#1-size: \web@em\web@size; }}%
     \ifx\web@spacing\relax\else\web@Css{:root { \web@spacing }}\fi
     \ifx\web@labelsep\relax\else\web@Css{:root { --tex8web-#1-labelsep: \web@labelsep; }}\fi
-    \ifcsname web@titlefont@#1\endcsname
+    \ifcsname web@headfont@#1\endcsname
         \web@Css{:root { --tex8web-#1-family: \web@family;
             --tex8web-#1-weight: \web@weight; --tex8web-#1-style: \web@style;
             --tex8web-#1-variant: \web@variant; --tex8web-#1-align: \web@align; }}%
@@ -411,16 +421,16 @@
     \edef\web@aftertext{\web@em\web@after}%
     \global\let\web@spacing\@empty}
 % without titlesec, the class's \@startsection{name}{level}{indent}{before}
-% {after}{style}, which tex4ht keeps as \no@<name> (latex.4ht): the space
-% above and below, read in the text's font as LaTeX reads them. The sign of
-% the space above only says whether the text after is indented. Skipped for
-% a run-in heading, whose space below is negative. tex4ht keeps \no@<name>
-% for each heading of a class it has a .4ht for, and makes \<name> its
-% \rdef:sec. Whatever precedes \@startsection at the top level of
-% \no@<name> is skipped, as memoir's \sechook (memoir.cls). A body with
-% \@startsection only inside a group, as in \@ifstar{..}{..}, reaches the
-% empty arguments after it and is skipped. A macro with parameters is
-% skipped too
+% {after}{style}, which tex4ht keeps as \no@<name> (latex.4ht): the style
+% as the heading's font, and the space above and below, read in the text's
+% font as LaTeX reads them. The sign of the space above only says whether
+% the text after is indented. The space is skipped for a run-in heading,
+% whose space below is negative. tex4ht keeps \no@<name> for each heading
+% of a class it has a .4ht for, and makes \<name> its \rdef:sec. Whatever
+% precedes \@startsection at the top level of \no@<name> is skipped, as
+% memoir's \sechook (memoir.cls). A body with \@startsection only inside a
+% group, as in \@ifstar{..}{..}, reaches the empty arguments after it and
+% is skipped. A macro with parameters is skipped too
 \def\web@startsection#1{%
     \edef\web@a{\expandafter\noexpand\csname rdef:sec\endcsname{#1}}%
     \expandafter\ifx\csname#1\endcsname\web@a\web@needs{no@#1}\fi
@@ -432,6 +442,7 @@
             \csname no@#1\endcsname\@startsection{}{}{}{}{}{}\@nil}}
 \long\def\web@startsectionskips#1\@startsection#2#3#4#5#6#7#8\@nil{%
     \if\relax\detokenize{#6}\relax\else
+        \def\web@classfont{#7}%
         \@tempskipa#5\relax
         \ifdim\@tempskipa<\z@ \@tempskipa-\@tempskipa \fi
         \@tempskipb#6\relax
@@ -467,19 +478,36 @@
 \web@headsize{subparagraph}{\normalsize}
 % in a class with chapters, a part or chapter title in report's and book's
 % \Huge, and its label in \huge, as their \@part and \@makechapterhead set
-% them; tex4ht replaces these commands (report.4ht). Under a \titleformat,
-% the label is in the format's font. titlesec's spacing applies to a
-% chapter only under its \titleformat, and a part's spacing is the fill of
-% a page of its own (titlesec.sty)
-\newcommand\web@bighead[1]{%
+% them; tex4ht replaces these commands (report.4ht). memoir names its fonts
+% for the title and the label, which can differ in more than size
+% (memoir.cls). Under a \titleformat, the label is in the format's font.
+% titlesec's spacing applies to a chapter only under its \titleformat, and
+% a part's spacing is the fill of a page of its own (titlesec.sty)
+\newcommand\web@bighead[3]{% name, memoir's title font and label font
     \begingroup
         \ifcsname web@titlefont@#1\endcsname
             \web@headsize{#1}{\Huge}%
         \else
             \expandafter\let\csname ttls@#1\endcsname\@undefined
+            \ifdefined#2\let\web@classfont#2\fi
             \web@headsize{#1}{\Huge}%
-            \huge\edef\web@a{\f@size pt}\Huge
-            \web@Css{:root { --tex8web-#1-label-size: \web@em\web@a; }}%
+            \ifdefined#3
+                % (the roman family named, as inherit would be the title's)
+                \setbox0\vbox{#3{}\web@readfont
+                    \def\web@a{inherit}%
+                    \ifx\web@family\web@a\gdef\web@family{var(--tex8web-roman)}\fi
+                    % (the size in ems of the title's)
+                    #2{}%
+                    \xdef\web@a{--tex8web-#1-label-size: \web@em\web@size;
+                        --tex8web-#1-label-family: \web@family;
+                        --tex8web-#1-label-weight: \web@weight;
+                        --tex8web-#1-label-style: \web@style;
+                        --tex8web-#1-label-variant: \web@variant;}}%
+                \web@Css{:root { \web@a }}%
+            \else
+                \huge\edef\web@a{\f@size pt}\Huge
+                \web@Css{:root { --tex8web-#1-label-size: \web@em\web@a; }}%
+            \fi
         \fi
     \endgroup}
 % without titlesec, a chapter's space above, between label and title, and
@@ -491,8 +519,10 @@
 % counts. Any other count, as from a style that sets the label in the
 % title's line, and a negative space, as from fncychap's styles, leave the
 % stylesheet's spacing. The title is not empty, as memoir's ger style ends
-% it with \\. The space before and after is in ems of the title's \Huge,
-% between label and title in ems of the label's \huge. No space below in
+% it with \\. The space before and after is in ems of the title's font,
+% between label and title in ems of the label's: report's and book's
+% \Huge and \huge, or memoir's \chaptitlefont and \chapnamefont, tried
+% with an empty group as in \web@headsize. No space below in
 % ems of the text, as for a section: the heading ends in a plain \vskip,
 % so the space of a framed box below is the larger, not the sum
 \newcommand\web@chapterskips{%
@@ -509,22 +539,51 @@
     \ifnum\web@nskips=3 \expandafter\web@chapterspacing\web@skips\fi}
 \def\web@chapterspacing#1#2#3{%
     \ifdim#1<\z@\else\ifdim#2<\z@\else\ifdim#3<\z@\else
-        \begingroup
-            \huge\edef\web@a{--tex8web-chapter-label-after: \web@em{#2};}%
-            \Huge\web@Css{:root { --tex8web-chapter-before: \web@em{#1};
-                --tex8web-chapter-after: \web@em{#3}; \web@a }}%
-        \endgroup
+        \setbox0\vbox{%
+            \ifdefined\chapnamefont\chapnamefont{}\else\huge\fi
+            \xdef\web@a{--tex8web-chapter-label-after: \web@em{#2};}%
+            \ifdefined\chaptitlefont\chaptitlefont{}\else\Huge\fi
+            \xdef\web@a{--tex8web-chapter-before: \web@em{#1};
+                --tex8web-chapter-after: \web@em{#3}; \web@a}}%
+        \web@Css{:root { \web@a }}%
     \fi\fi\fi}
 \ifdefined\c@chapter
     \begingroup
         \expandafter\let\csname ttls@part\endcsname\@undefined
-        \web@bighead{part}
+        \web@bighead{part}\parttitlefont\partnamefont
     \endgroup
-    \web@bighead{chapter}
+    \web@bighead{chapter}\chaptitlefont\chapnamefont
     \ifcsname web@titlefont@chapter\endcsname\else\web@chapterskips\fi
 \fi
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
+% \paragraph and \subparagraph in their font from titlesec or the class
+% (css/tex8web.css), in place of the \bf that html4.4ht's article, report,
+% and book configs put in their heads (not in likeparagraph's). Other heads
+% are kept, such as amsart's, which ends a run-in head with a period. A
+% head's config is \a:<name>, with one parameter (tex4ht.sty,
+% \Configure:Sec)
+\newcommand\web@ifheadbold[2]{%
+    \def\web@a{\in@\bf}%
+    \expandafter\expandafter\expandafter\web@a
+        \expandafter\expandafter\expandafter{\csname a:#1\endcsname{}}%
+    \ifin@#2\fi}
+\ifcsname web@headfont@paragraph\endcsname
+    \web@ifheadbold{paragraph}{%
+        \Configure{paragraph}{}{}
+            {\ShowPar\IgnoreIndent
+             \HCode{<span class="paragraphHead"\csname a:LRdir\endcsname>}\TitleMark\space}
+            {\HCode{</span>}\par\IgnorePar}}
+\fi
+\ifcsname web@headfont@subparagraph\endcsname
+    \web@ifheadbold{subparagraph}{%
+        \Configure{subparagraph}{}{}
+            {\ShowPar\HCode{<span class="subparagraphHead"\csname a:LRdir\endcsname>}\TitleMark\space}
+            {\HCode{</span>}\IgnorePar}
+        \Configure{likesubparagraph}{}{}
+            {\ShowPar\HCode{<span class="likesubparagraphHead"\csname a:LRdir\endcsname>}}
+            {\HCode{</span>}\IgnorePar}}
+\fi
 % With tocloft, the table of contents entries of each level in the font of
 % its \cft<level>font, tried as a heading font is, with the size as a
 % multiple of the text size. tex4ht's entries do not use \cft<level>font,

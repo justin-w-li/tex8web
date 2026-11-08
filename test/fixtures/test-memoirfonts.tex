@@ -1,0 +1,19 @@
+% A memoir document with its own heading fonts: a part and a chapter whose
+% title font is not bold, under a bold label, a section in
+% \setsecheadstyle's italic at the text size, and a run-in paragraph in
+% \setparaheadstyle's italic. The part's title font and the chapter's
+% label font end in \MakeUppercase, which takes the title or label.
+\documentclass{memoir}
+\renewcommand\parttitlefont{\normalfont\huge\scshape\MakeUppercase}
+\renewcommand\chaptitlefont{\normalfont\Large\itshape}
+\renewcommand\chapnamefont{\normalfont\huge\bfseries\MakeUppercase}
+\setsecheadstyle{\normalsize\itshape}
+\setparaheadstyle{\normalsize\itshape}
+\begin{document}
+\part{Beginnings}
+\chapter{First}
+Some text.
+\section{A section}
+More text.
+\paragraph{A paragraph} Text after it.
+\end{document}

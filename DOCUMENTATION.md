@@ -135,7 +135,7 @@ Your document's measurements are CSS custom properties. To change them, set them
 | `--tex8web-margin`, `--tex8web-gap` | the side column width, and the gap on each side of a side column, in `em` or `rem` |
 | `--tex8web-title-size`, `--tex8web-section-size`, … `--tex8web-subparagraph-size` | the heading sizes. With chapters, also `--tex8web-part-size` and `--tex8web-chapter-size` |
 | `--tex8web-<heading>-labelsep` | the space after a heading's number |
-| `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | a heading's font and alignment, with titlesec |
+| `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | a heading's font and alignment, from titlesec or the class. With memoir, also `--tex8web-part-label-*` and `--tex8web-chapter-label-*` for the label's font |
 | `--tex8web-<heading>-before`, `-after` | the space above and below a heading, from titlesec or the class |
 | `--tex8web-list-sep`, `--tex8web-item-sep`, `--tex8web-leftmargin` | the spacing and indent of a description list. The space after a description's label, and the spacing of other lists, are `--tex8web-list-*` properties on each list's element |
 | `--tex8web-intextsep`, `--tex8web-floatsep` | the space around a float, and between two floats in a row |
@@ -214,7 +214,7 @@ The math is in the MathJax TeX font, which looks like Computer Modern. With `mat
 
 ### Headings
 
-Heading sizes, the space above and below headings, and the space after their numbers are as in the PDF. If `\maketitle` is defined in your document or its class, the title has the font and size set there, and `--tex8web-title-size` is not used. With titlesec, each heading has the font, alignment, and label of its `\titleformat`, and the spacing of its `\titlespacing`.
+Heading sizes, the space above and below headings, and the space after their numbers are as in the PDF. If `\maketitle` is defined in your document or its class, the title has the font and size set there, and `--tex8web-title-size` is not used. With titlesec, each heading has the font, alignment, and label of its `\titleformat`, and the spacing of its `\titlespacing`. Without titlesec, a heading defined with `\@startsection`, as in the standard classes, amsart, and memoir, has the font of the style in it. In memoir, this style is set with `\setsecheadstyle` and similar commands. In memoir, a part or chapter title is in `\parttitlefont` or `\chaptitlefont`, and its label in `\partnamefont` or `\chapnamefont`, as they are set by `\chapterstyle` or in your document.
 
 ### Lists
 
@@ -374,7 +374,9 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **A list item that starts with a box.** Beside a minipage or tabular aligned at its center or bottom, the item's label is at the box's first line. In the PDF, the label is at the middle of the box, or at its last line.
 - **Boxes in headings.** An `\fbox`, `\framebox`, `\colorbox`, or `\fcolorbox` in a heading has more space inside and a thicker frame than in the PDF, in proportion to the heading's size.
 - **Colors in text.** `\color` for the whole document, in the preamble or in `\AtBeginDocument`, is ignored. Inside a colored group, the text color is not restored by `\normalcolor`.
-- **Chapters and parts.** A chapter label, such as "Chapter 1", is tex4ht's default label. Part and chapter headings have the sizes of the report and book classes, whatever the class, unless they are formatted with titlesec. A chapter is spaced as in the PDF in the report, book, and memoir classes, and in chapter styles that set the label and the title on lines of their own. Other chapter styles, such as fncychap's, have a default spacing. The space above a chapter follows the text before it, where in the PDF the chapter starts a new page. Parts have a default spacing too, since in the PDF a part has a page of its own.
+- **Chapters and parts.** A chapter label, such as "Chapter 1", is tex4ht's default label. Outside memoir, part and chapter headings have the fonts of the report and book classes, unless they are formatted with titlesec. A chapter is spaced as in the PDF in the report, book, and memoir classes, and in chapter styles that set the label and the title on lines of their own. Other chapter styles, such as fncychap's, have a default spacing. The space above a chapter follows the text before it, where in the PDF the chapter starts a new page. Parts have a default spacing too, since in the PDF a part has a page of its own.
+- **Heading alignment.** A heading is centered or set flush right only if the command, such as `\centering`, is in its titlesec format, its `\@startsection` style, or memoir's `\chaptitlefont` or `\parttitlefont`. A command inside another macro, as in memoir's `\setsecheadstyle{\centering}`, is not found.
+- **KOMA-Script headings** are bold, in the text's family and the standard classes' sizes. In the PDF, they are in a bold sans-serif font. To change them, set `--tex8web-section-family` and the other heading properties with `\Css`.
 - **Text in `\scalebox` or `\resizebox`** is shown at its natural size. Only pictures in these boxes are scaled.
 
 ### Packages

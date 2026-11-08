@@ -28,12 +28,20 @@ return {
       "lmroman10-regular.woff2 lmsans10-oblique.woff2")
   end,
 
-  ["assets.faces: headings in the fonts the stylesheet gives them, verbatim in the browser's"] = function()
+  ["assets.faces: headings and their labels in the fonts the stylesheet gives them, verbatim in the browser's"] = function()
     equal(faces('<h3 class="sectionHead">A</h3><pre class="verbatim">b</pre><code class="verb">c</code>', ""),
       "lmroman10-bold.woff2 lmroman10-regular.woff2")
     equal(faces('<h3 class="sectionHead">A</h3><h1 class="titleHead">T</h1>',
       ":root { --tex8web-section-family: var(--tex8web-sans);\n --tex8web-section-weight: normal; "
       .. "--tex8web-section-style: normal; }"), "lmroman10-regular.woff2 lmsans10-regular.woff2")
+    equal(faces('<h2 class="chapterHead"><span class="titlemark">Chapter 1</span>A</h2>',
+      ":root { --tex8web-chapter-weight: normal;\n --tex8web-chapter-style: italic;\n"
+      .. " --tex8web-chapter-label-weight: bold; --tex8web-chapter-label-style: normal; }"),
+      "lmroman10-bold.woff2 lmroman10-italic.woff2 lmroman10-regular.woff2")
+    equal(faces('<h2 class="chapterHead"><span class="titlemark">Chapter 1</span>A</h2>',
+      ":root { --tex8web-chapter-family: var(--tex8web-sans);\n --tex8web-chapter-weight: normal;\n"
+      .. " --tex8web-chapter-label-family: var(--tex8web-roman); --tex8web-chapter-label-weight: bold; }"),
+      "lmroman10-bold.woff2 lmroman10-regular.woff2 lmsans10-regular.woff2")
   end,
 
   ["assets.faces: a table of contents' entries in their level's font"] = function()

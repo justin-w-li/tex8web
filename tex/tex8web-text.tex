@@ -121,22 +121,6 @@
     \else
         \web@seccntformat{#1}%
     \fi}
-% with titlesec, \paragraph and \subparagraph in their \titleformat's font
-% (css/tex8web.css), in place of html4.4ht's bold
-\ifcsname web@titlefont@paragraph\endcsname
-    \Configure{paragraph}{}{}
-        {\ShowPar\IgnoreIndent
-         \HCode{<span class="paragraphHead"\csname a:LRdir\endcsname>}\TitleMark\space}
-        {\HCode{</span>}\par\IgnorePar}
-\fi
-\ifcsname web@titlefont@subparagraph\endcsname
-    \Configure{subparagraph}{}{}
-        {\ShowPar\HCode{<span class="subparagraphHead"\csname a:LRdir\endcsname>}\TitleMark\space}
-        {\HCode{</span>}\IgnorePar}
-    \Configure{likesubparagraph}{}{}
-        {\ShowPar\HCode{<span class="likesubparagraphHead"\csname a:LRdir\endcsname>}}
-        {\HCode{</span>}\IgnorePar}
-\fi
 
 % --- theorems ---------------------------------------------------------------
 

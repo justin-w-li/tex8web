@@ -224,6 +224,13 @@ function M.faces(document, css, roles)
     classes[level .. "Head"], classes["like" .. level .. "Head"] = font, font
   end
   classes.appendixHead = classes.chapterHead
+  -- (a part's or chapter's label in its own font, with memoir, inside the
+  -- heading's titlemark)
+  local labels = {}
+  for _, level in ipairs({"part", "chapter"}) do
+    if custom(css, level .. "-label-weight") then labels[level .. "Head"] = font_of(level .. "-label", "bold") end
+  end
+  labels.appendixHead = labels.chapterHead
   -- (entries are bold without tocloft only for parts and chapters, as in
   -- css/tex8web.css)
   for _, level in ipairs({"part", "chapter", "section", "subsection", "subsubsection", "paragraph", "subparagraph"}) do
@@ -284,6 +291,11 @@ function M.faces(document, css, roles)
     for class in (el:get_attribute("class") or ""):gmatch("%S+") do
       if class:find("^mathjax%-") then return end
       apply(classes[class])
+      if class == "titlemark" and face.label then
+        face.family, face.font = nil, nil
+        apply(face.label)
+      end
+      face.label = labels[class] or face.label
       local role, font = role_of(class)
       if role then face.family, face.font = role ~= "roman" and role or nil, font end
     end

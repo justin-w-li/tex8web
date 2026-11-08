@@ -10,6 +10,12 @@
       "HTML DOM parsing OK"
     ]
   },
+  "test-amsart": {
+    "why": "a bug: amsart marks amsthm as loaded, so tex8web sets up its QED box from \\o:qedsymbol:, which only amsthm.4ht defines. tex4ht loads amsart.4ht instead, so a proof's QED box is empty",
+    "allow": [
+      "Package tex8web Warning: \\o:qedsymbol: has changed or gone"
+    ]
+  },
   "test-units-nocolor": {
     "why": "siunitx.4ht loads the color package after tex4ht has configured the packages, so the page has no colors; tex8web says so, and that xcolor is needed",
     "allow": [

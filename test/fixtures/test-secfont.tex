@@ -1,0 +1,17 @@
+% An article whose headings have their own fonts in \@startsection: a
+% section in \large sans-serif italic, not bold, and a run-in paragraph in
+% italic. The subsection keeps article's font.
+\documentclass{article}
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{\z@}{-3.5ex \@plus -1ex \@minus -.2ex}%
+    {2.3ex \@plus.2ex}{\normalfont\large\sffamily\itshape}}
+\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}{3.25ex \@plus1ex \@minus.2ex}%
+    {-1em}{\normalfont\normalsize\itshape}}
+\makeatother
+\begin{document}
+\section{A section}
+Some text.
+\subsection{A subsection}
+More text.
+\paragraph{A paragraph} Text after it.
+\end{document}
