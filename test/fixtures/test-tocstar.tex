@@ -1,0 +1,24 @@
+% Table of contents entries that \addcontentsline adds beside unnumbered
+% headings: before one, after one with text or a blank line after it, and
+% after a numbered heading, before the unnumbered one it names.
+\documentclass{article}
+\begin{document}
+\tableofcontents
+\addcontentsline{toc}{section}{Before}
+\section*{Before}
+Text.
+
+\section*{After}
+\addcontentsline{toc}{section}{After}
+Text right after.
+
+\section*{Blank}
+\addcontentsline{toc}{section}{Blank}
+
+Text after a blank line.
+
+\section{Results}
+\addcontentsline{toc}{subsection}{Overview}
+\subsection*{Overview}
+Text.
+\end{document}

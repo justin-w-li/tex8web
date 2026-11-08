@@ -311,6 +311,10 @@ const contents = {
     /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
     /<\/nav>(?:(?!<\/nav>)[^])*<div class='tableofcontents'>\s*<span class='lofToc'>/,
   ],
+  // (an entry that \addcontentsline adds beside an unnumbered heading links
+  // to that heading, under the id named from its title)
+  'test-tocstar': ['Before', 'After', 'Blank', 'Overview'].map(title =>
+    new RegExp(`<a href='#${title.toLowerCase()}'>${title}</a>[^]*<h[34] class='like\\w*Head' id='${title.toLowerCase()}'>`)),
 };
 
 // Text back in its font after a font command that the PDF keeps in a

@@ -234,12 +234,14 @@ end
 
 -- tex4ht's \addcontentsline puts the entry's anchor where it is called
 -- (latex.4ht), so an entry added before or after an unnumbered heading
--- links to an empty paragraph beside the heading, which make4ht's sectionid
--- filter then gives the entry's id. Such an entry is pointed at the
--- heading's anchor instead: the heading before the paragraph, or else the
--- one after it.
-local function is_heading(el)
-  return el and el:get_element_name():match("^h[1-6]$") ~= nil
+-- links to an empty paragraph beside the heading. Such an entry is moved to
+-- the heading. make4ht's sectionid filter names ids from the titles in the
+-- order of the .4tc file, and suffixes a repeated title with a number. So
+-- an entry before its heading has the plain name, and its anchor is moved
+-- to the front of the heading, which then takes that name. An entry after
+-- its heading links to the heading's anchor instead.
+local function unnumbered(el)
+  return el and dom.class_matches(el, "like%a*Head") and el:get_element_name():match("^h[1-6]$") and el
 end
 
 function M.toc_targets(document)
@@ -249,14 +251,19 @@ function M.toc_targets(document)
     local target = anchors[(link:get_attribute("href") or ""):match("^#(.+)")]
     local paragraph = target and target:get_parent()
     if paragraph and paragraph:get_element_name() == "p" and not paragraph:get_text():find("%S") then
-      local siblings, heading = dom.elements(paragraph:get_parent())
+      local siblings, before, after = dom.elements(paragraph:get_parent())
       for i, el in ipairs(siblings) do
         if el == paragraph then
-          heading = is_heading(siblings[i - 1]) and siblings[i - 1] or is_heading(siblings[i + 1]) and siblings[i + 1]
+          before, after = unnumbered(siblings[i - 1]), unnumbered(siblings[i + 1])
+          break
         end
       end
-      local id = heading and anchor(heading)
-      if id then link:set_attribute("href", "#" .. id) end
+      if before then
+        link:set_attribute("href", "#" .. anchor(before))
+      elseif after then
+        target:remove_node()
+        after:add_child_node(target, 1)
+      end
     end
   end
 end
