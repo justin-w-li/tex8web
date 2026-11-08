@@ -107,17 +107,19 @@ return {
       .. "<p>w <br class='newline' />x</p><dt><a id='a'></a>y</dt><div><div>z</div></div>")
   end,
 
-  ["text.cell_align: the mark at a cell's end aligns its <td>, and a mark outside a cell is dropped"] = function()
+  ["text.cell_align: the mark at a cell's end aligns its <td>, or its \\multicolumn's div"] = function()
     -- (dom.parse, as make4ht's DOM filters use it: html_parse doubles the
     -- letter after a - in a comment)
     local d = dom.parse("<html><body>" .. [[<td style="white-space:normal; text-align:left;"><p>a<!--tex8web-cell-align center--></p></td>]]
       .. [[<td style="white-space:normal; text-align:left;"><p>b</p><!--tex8web-cell-align right--></td>]]
       .. [[<td style="white-space:normal; text-align:left;"><div><p>c<!--tex8web-cell-align center--></p></div></td>]]
-      .. [[<div><!--tex8web-cell-align center-->d</div>]] .. "</body></html>")
+      .. [[<td style="text-align:left;"><div class="multicolumn" style="text-align:left;">d</div><!--tex8web-cell-align right--></td>]]
+      .. "</body></html>")
     text.cell_align(d)
     equal(body(d), "<td style='white-space:normal; text-align:center;'><p>a</p></td>"
       .. "<td style='white-space:normal; text-align:right;'><p>b</p></td>"
-      .. "<td style='white-space:normal; text-align:center;'><div><p>c</p></div></td><div>d</div>")
+      .. "<td style='white-space:normal; text-align:center;'><div><p>c</p></div></td>"
+      .. "<td style='text-align:left;'><div class='multicolumn' style='text-align:right;'>d</div></td>")
   end,
 
   ["text.hfill: the space before a rest is trimmed at the end of an element too"] = function()

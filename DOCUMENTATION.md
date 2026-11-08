@@ -223,11 +223,11 @@ After `\hfill` in a paragraph, a heading, or a caption, the rest of the line is 
 
 ### Line breaks
 
-`\break`, `\linebreak`, and `\linebreak[4]` end the line, as in the PDF. `\linebreak` with a lower number does not.
+`\break`, `\linebreak`, and `\linebreak[4]` end the line, as in the PDF. `\linebreak[n]` with n below 4 does not.
 
 ### Tables
 
-In a paragraph column, such as `p{3cm}`, `\centering` or `\raggedleft` centers a cell's lines or sets them flush right, as in the PDF. Put it at the start of the cell, or in the column's `>{}`.
+In a paragraph column, such as `p{3cm}`, `\centering` or `\raggedleft`, or ragged2e's `\Centering` or `\RaggedLeft`, centers a cell's lines or sets them flush right, as in the PDF. Put it at the start of the cell, or in the column's `>{}`.
 
 ### Footnotes
 

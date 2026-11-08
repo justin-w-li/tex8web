@@ -549,8 +549,10 @@ const hfill = {
 // list item, a centered paragraph, and a paragraph cell. Nothing ends the
 // line at a \linebreak[2], in a box, between paragraphs, or at \hfil\break,
 // and \\ ends it once. A paragraph cell is aligned by the \centering or
-// \raggedleft in force at its end: from its start or its column, in a p, an
-// m, and a longtable column, but not after a \raggedright, from a group
+// \raggedleft in force at its end, or by ragged2e's \Centering or
+// \RaggedLeft: from its start or its column, in a p, an m, a longtable
+// column, and a \multicolumn, but not after a \raggedright or a
+// \justifying, from a group
 // closed before the end, from a centered environment around the table, or
 // in a table inside the cell. A row that array starts before an \hline is
 // still removed.
@@ -578,6 +580,11 @@ const breaks = {
     /<td [^>]*style='white-space:normal; text-align:left;'>\s*inner/,
     /<td [^>]*style='white-space:normal; text-align:left;'>\s*<p class='noindent'>Justified in a centered/,
     /<td [^>]*style='white-space:normal; text-align:center;'>\s*<p class='noindent'>Centered in a longtable/,
+    /<td [^>]*style='white-space:normal; text-align:center;'>\s*<p class='noindent'>Centered by ragged2e/,
+    /<td [^>]*style='white-space:normal; text-align:right;'>\s*<p class='noindent'>Flush\s+right by ragged2e/,
+    /<td [^>]*style='white-space:normal; text-align:left;'>\s*<p class='noindent'>Justified in a centered/,
+    /<td [^>]*style='white-space:normal; text-align:left;'>\s*<div class='multicolumn' style='white-space:normal; text-align:center;'>A centered/,
+    /<td [^>]*style='white-space:normal; text-align:left;'>\s*<div class='multicolumn' style='white-space:normal; text-align:right;'>A\s+flush\s+right/,
     /^(?![^]*<tr id=[^>]*><td [^>]*>\s*(?:<p class='noindent'><\/p>\s*)?<\/td><\/tr>)/,
     /^(?![^]*tex8web-(?:break|cell-align))/,
   ],

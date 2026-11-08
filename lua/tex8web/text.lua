@@ -540,7 +540,10 @@ function M.hfill(document)
 end
 
 -- a paragraph cell's alignment (tex8web-text.tex), moved from the mark
--- at the cell's end onto its <td>, in place of tex4ht's text-align:left
+-- at the cell's end onto its <td>, in place of tex4ht's text-align:left.
+-- A \multicolumn's text is in a div with a text-align of its own
+-- (\HColAlign, html4.4ht), which takes the alignment instead. tex4ht
+-- closes that div before the cell's end, and so before the mark.
 function M.cell_align(document)
   local marks = {}
   document:traverse(function(node)
@@ -550,10 +553,13 @@ function M.cell_align(document)
   for _, entry in ipairs(marks) do
     local mark, align = entry[1], entry[2]
     local cell = mark:get_parent()
-    while cell:is_element() and cell:get_element_name() ~= "td" do cell = cell:get_parent() end
-    if cell:is_element() then
-      cell:set_attribute("style", ((cell:get_attribute("style") or ""):gsub("text%-align:%a+", "text-align:" .. align)))
+    while cell:get_element_name() ~= "td" do
+      cell = assert(cell:get_parent(), "tex8web: a cell's alignment mark outside its cell")
     end
+    for _, child in ipairs(cell:get_children()) do
+      if dom.has_class(child, "multicolumn") then cell = child break end
+    end
+    cell:set_attribute("style", (cell:get_attribute("style"):gsub("text%-align:%a+", "text-align:" .. align)))
     mark:remove_node()
   end
 end

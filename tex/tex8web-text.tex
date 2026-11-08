@@ -235,7 +235,7 @@
   }
   {}
 
-% --- \hfill -----------------------------------------------------------------
+% --- line breaks ------------------------------------------------------------
 
 % \break and \linebreak end the line but write nothing. They leave a break
 % mark, which text.hfill makes a <br> after text on its line. No mark is
@@ -249,6 +249,8 @@
 \NewCommandCopy\web@linebreak\linebreak
 \protected\def\linebreak{\@ifnextchar[\web@linebreak@opt{\web@break@mark\web@linebreak}}
 \def\web@linebreak@opt[#1]{\ifnum#1>3 \web@break@mark\fi \web@linebreak[#1]}
+
+% --- \hfill -----------------------------------------------------------------
 
 % what follows an \hfill in a paragraph goes at the right of its line, as in
 % the PDF. tex4ht would write the glue as spaces. The \hfill leaves a mark
@@ -284,7 +286,8 @@
 % --- table cells ------------------------------------------------------------
 
 % a paragraph cell's lines centered or flush right, as in the PDF, when
-% \centering or \raggedleft is in force at the cell's end, as it is from
+% \centering or \raggedleft, or ragged2e's \Centering or \RaggedLeft, is
+% in force at the cell's end, as it is from
 % the column's >{\centering}. tex4ht has written the <td> with
 % text-align:left before the cell's contents (\Configure{halignTD},
 % html4.4ht), so the cell's end leaves a mark, which text.cell_align moves
@@ -298,6 +301,12 @@
 \AddToHook{cmd/centering/after}{\def\web@cellalign{center}}
 \AddToHook{cmd/raggedleft/after}{\def\web@cellalign{right}}
 \AddToHook{cmd/raggedright/after}{\let\web@cellalign\empty}
+\@ifpackageloaded{ragged2e}{%
+    \AddToHook{cmd/Centering/after}{\def\web@cellalign{center}}%
+    \AddToHook{cmd/RaggedLeft/after}{\def\web@cellalign{right}}%
+    \AddToHook{cmd/RaggedRight/after}{\let\web@cellalign\empty}%
+    \AddToHook{cmd/justifying/after}{\let\web@cellalign\empty}%
+}{}
 \let\web@finalstrut\@finalstrut
 \def\@finalstrut#1{%
     \ifx#1\@arstrutbox\ifx\web@cellalign\empty\else

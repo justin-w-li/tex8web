@@ -1,8 +1,8 @@
-% \break and \linebreak end the line, as in the PDF, where nothing comes
-% before them on its line but text. A p{} cell's \centering or \raggedleft
-% sets its lines centered or flush right.
+% \break and \linebreak end the line, as in the PDF. A paragraph cell's
+% lines are centered or set flush right by the \centering or \raggedleft in
+% force at the cell's end, and by ragged2e's \Centering or \RaggedLeft.
 \documentclass{article}
-\usepackage{array,longtable}
+\usepackage{array,longtable,ragged2e}
 \begin{document}
 Before a break\break after the break.
 
@@ -54,6 +54,16 @@ Before an hfil\hfil\break after it, on the same line on the page only, as tex4ht
     \raggedright Flush left in a centered column, long enough to wrap &
     {\centering Grouped,} so justified, and long enough to wrap &
     \begin{tabular}{l}\centering inner\end{tabular} \\
+    \hline
+\end{tabular}
+
+\begin{tabular}{|>{\Centering}p{3cm}|>{\RaggedLeft}p{3cm}|>{\centering\arraybackslash}p{3cm}|}
+    \hline
+    Centered by ragged2e, long enough to wrap &
+    Flush right by ragged2e, long enough to wrap &
+    \justifying Justified in a centered column, long enough to wrap \tabularnewline
+    \multicolumn{1}{|>{\centering\arraybackslash}p{3cm}|}{A centered multicolumn, long enough to wrap} &
+    \multicolumn{2}{p{6cm}|}{\raggedleft A flush right multicolumn, long enough to wrap} \\
     \hline
 \end{tabular}
 
