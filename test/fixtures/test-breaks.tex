@@ -1,0 +1,73 @@
+% \break and \linebreak end the line, as in the PDF, where nothing comes
+% before them on its line but text. A p{} cell's \centering or \raggedleft
+% sets its lines centered or flush right.
+\documentclass{article}
+\usepackage{array,longtable}
+\begin{document}
+Before a break\break after the break.
+
+Before a linebreak\linebreak after the linebreak.
+
+Before a spaced linebreak \linebreak after it.
+
+Before a demand\linebreak[4] after the demand.
+
+Before a hint\linebreak[2] after the hint, which the PDF may not break at.
+
+\begin{itemize}
+    \item In an item\break after the break.
+\end{itemize}
+
+\begin{center}
+    Centered before\break centered after
+\end{center}
+
+Boxed: \mbox{in an mbox\break} and on.
+
+Before a backslash\\ after it, with one line end.
+
+Before an hfil\hfil\break after it, on the same line on the page only, as tex4ht writes \verb|\hfil\break| after its own markup.
+
+\begin{minipage}{6cm}
+    A paragraph in a minipage.\par\break
+    The next paragraph.
+\end{minipage}
+
+\begin{tabular}{|p{3cm}|p{3cm}|p{3cm}|}
+    \hline
+    \centering A centered cell, long enough to wrap &
+    \raggedleft A flush right cell, long enough to wrap &
+    A plain cell, long enough to wrap\break after a break \\
+    \hline
+\end{tabular}
+
+\begin{tabular}{|>{\centering\arraybackslash}p{3cm}|>{\raggedleft\arraybackslash}p{3cm}|>{\centering}m{3cm}|l|}
+    \hline
+    Centered by the column, long enough to wrap &
+    Flush right by the column, long enough to wrap &
+    Centered in an m column & l \\
+    \hline
+\end{tabular}
+
+\begin{tabular}{|>{\centering\arraybackslash}p{3cm}|p{3cm}|p{3cm}|}
+    \hline
+    \raggedright Flush left in a centered column, long enough to wrap &
+    {\centering Grouped,} so justified, and long enough to wrap &
+    \begin{tabular}{l}\centering inner\end{tabular} \\
+    \hline
+\end{tabular}
+
+\begin{center}
+    \begin{tabular}{|p{4cm}|}
+        \hline
+        Justified in a centered table, long enough to wrap \\
+        \hline
+    \end{tabular}
+\end{center}
+
+\begin{longtable}{|>{\centering\arraybackslash}p{4cm}|}
+    \hline
+    Centered in a longtable, long enough to wrap \\
+    \hline
+\end{longtable}
+\end{document}

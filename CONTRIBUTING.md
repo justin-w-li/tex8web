@@ -73,7 +73,8 @@ The other passes are for:
 
 - the color of text after a `\color` declaration
 - spacing
-- text after `\hfill`, which is set at the right
+- text after `\hfill`, which is set at the right, and line ends at `\break` and `\linebreak`
+- the alignment of a paragraph cell from its `\centering` or `\raggedleft`
 - [links to headings](DOCUMENTATION.md#links-to-headings) and theorems
 - the removal of tex4ht's source-line comments
 - meta tags and the page controls
@@ -287,7 +288,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, and prerendering |
 | `tex/tex8web-core.tex` | the entry point, with the four modules below |
 | `tex/tex8web-math.tex` | the MathJax configuration, `\WebMathMacros`, the escaping of formula source, siunitx, equation numbers, `\intertext`, and TikZ in display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill`, the table of contents, lists, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, the alignment of paragraph cells, the table of contents, lists, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, and the measurements and heading fonts of the document |
 | `tex/tex8web-boxes.tex` | tcolorbox boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: settings lost under tex4ht, and `\web@needs` |

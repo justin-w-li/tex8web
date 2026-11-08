@@ -457,10 +457,10 @@ end
 -- span that holds the space before the floated part and keeps that part a
 -- quad from the text. In a paragraph, the whole line and its <br> also go
 -- in a span, which the stylesheet makes a block that holds the float and
--- can be aligned alone. A break mark (span.tex8web-hfill-break) after text
--- on its line becomes a <br>. One with nothing before it is dropped, as
--- tex4ht's \hfill\break in list labels (latex.4ht) and in the index
--- (html4.4ht) starts a line.
+-- can be aligned alone. A break mark (span.tex8web-break, from \break or
+-- \linebreak) after text on its line becomes a <br>. One with nothing
+-- before it is dropped, as tex4ht's \hfill\break in list labels
+-- (latex.4ht) and in the index (html4.4ht) starts a line.
 -- (Not in a heading: make4ht's sectionid makes the heading's anchor its id
 -- only while the anchor is the heading's child.)
 local function ends_line(node)
@@ -476,7 +476,7 @@ end
 
 function M.hfill(document)
   local parents, seen = {}, {}
-  for _, class in ipairs({"tex8web-hfill-mark", "tex8web-hfill-break"}) do
+  for _, class in ipairs({"tex8web-hfill-mark", "tex8web-break"}) do
     for _, mark in ipairs(document:query_selector("span." .. class)) do
       local parent = mark:get_parent()
       if not seen[parent] then seen[parent], parents[#parents + 1] = true, parent end
@@ -524,7 +524,7 @@ function M.hfill(document)
     for _, node in ipairs(parent:get_children()) do
       if dom.has_class(node, "tex8web-hfill-mark") then
         from = #out + 1
-      elseif dom.has_class(node, "tex8web-hfill-break") then
+      elseif dom.has_class(node, "tex8web-break") then
         local shown = false
         for k = line, #out do shown = shown or shows(out[k]) end
         if shown then close(parent:create_element("br", {class = "newline"})) end
@@ -536,6 +536,25 @@ function M.hfill(document)
     end
     close()
     dom.set_children(parent, out)
+  end
+end
+
+-- a paragraph cell's alignment (tex8web-text.tex), moved from the mark
+-- at the cell's end onto its <td>, in place of tex4ht's text-align:left
+function M.cell_align(document)
+  local marks = {}
+  document:traverse(function(node)
+    local align = (dom.comment_text(node) or ""):match("^tex8web%-cell%-align (%a+)$")
+    if align then marks[#marks + 1] = {node, align} end
+  end)
+  for _, entry in ipairs(marks) do
+    local mark, align = entry[1], entry[2]
+    local cell = mark:get_parent()
+    while cell:is_element() and cell:get_element_name() ~= "td" do cell = cell:get_parent() end
+    if cell:is_element() then
+      cell:set_attribute("style", ((cell:get_attribute("style") or ""):gsub("text%-align:%a+", "text-align:" .. align)))
+    end
+    mark:remove_node()
   end
 end
 

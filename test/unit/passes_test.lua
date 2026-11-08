@@ -99,12 +99,25 @@ return {
 
   ["text.hfill: a break mark after text on its line becomes a <br>, and one with nothing before it is dropped"] = function()
     local mark = [[<span class="tex8web-hfill-mark"></span>]]
-    local brk = [[<span class="tex8web-hfill-break"></span>]]
+    local brk = [[<span class="tex8web-break"></span>]]
     local fill = "<span class='tex8web-hfill-gap'> </span><span class='tex8web-hfill'>"
     local d = parse("<p>s " .. mark .. " u" .. brk .. "v</p><p>w " .. brk .. "x</p><dt><a id=\"a\"></a>" .. brk .. "y</dt><div><div>z</div>" .. brk .. "</div>")
     text.hfill(d)
     equal(body(d), "<p><span class='tex8web-hfill-line'>s" .. fill .. " u</span><br class='newline' /></span>v</p>"
       .. "<p>w <br class='newline' />x</p><dt><a id='a'></a>y</dt><div><div>z</div></div>")
+  end,
+
+  ["text.cell_align: the mark at a cell's end aligns its <td>, and a mark outside a cell is dropped"] = function()
+    -- (dom.parse, as make4ht's DOM filters use it: html_parse doubles the
+    -- letter after a - in a comment)
+    local d = dom.parse("<html><body>" .. [[<td style="white-space:normal; text-align:left;"><p>a<!--tex8web-cell-align center--></p></td>]]
+      .. [[<td style="white-space:normal; text-align:left;"><p>b</p><!--tex8web-cell-align right--></td>]]
+      .. [[<td style="white-space:normal; text-align:left;"><div><p>c<!--tex8web-cell-align center--></p></div></td>]]
+      .. [[<div><!--tex8web-cell-align center-->d</div>]] .. "</body></html>")
+    text.cell_align(d)
+    equal(body(d), "<td style='white-space:normal; text-align:center;'><p>a</p></td>"
+      .. "<td style='white-space:normal; text-align:right;'><p>b</p></td>"
+      .. "<td style='white-space:normal; text-align:center;'><div><p>c</p></div></td><div>d</div>")
   end,
 
   ["text.hfill: the space before a rest is trimmed at the end of an element too"] = function()

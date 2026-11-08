@@ -538,11 +538,49 @@ const hfill = {
     /<a href='#heading-at-its-right-or-below-it'[^>]*>Heading\s*<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'>at its right/,
     /<a href='https:\/\/example\.com'>in a link\s*<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'>linked<\/span><\/a>/,
     /^(?:(?!tex8web-hfill')[^])*(?:tex8web-hfill'(?:(?!tex8web-hfill')[^])*){22}$/,
-    /^(?![^]*tex8web-hfill-(?:mark|break))/,
+    /^(?![^]*tex8web-(?:hfill-mark|break))/,
   ],
   'examples/complex': [/^(?:(?!\(not differentiable)[^])*(?:<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'>\(not differentiable(?:(?!\(not differentiable)[^])*){2}$/],
   // (tcolorbox's after upper, from tex/tex8web-boxes.tex)
   'examples/custom': [/<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'><mjx-container/],
+};
+
+// \break, \linebreak, and \linebreak[4] end the line, in a paragraph, a
+// list item, a centered paragraph, and a paragraph cell. Nothing ends the
+// line at a \linebreak[2], in a box, between paragraphs, or at \hfil\break,
+// and \\ ends it once. A paragraph cell is aligned by the \centering or
+// \raggedleft in force at its end: from its start or its column, in a p, an
+// m, and a longtable column, but not after a \raggedright, from a group
+// closed before the end, from a centered environment around the table, or
+// in a table inside the cell. A row that array starts before an \hline is
+// still removed.
+const breaks = {
+  'test-breaks': [
+    /Before\s+a\s+break\s*<br class='newline' \/>\s*after the break\./,
+    /Before\s+a\s+linebreak\s*<br class='newline' \/>\s*after the linebreak\./,
+    /Before\s+a\s+spaced\s+linebreak\s*<br class='newline' \/>\s*after it\./,
+    /Before\s+a\s+demand\s*<br class='newline' \/>\s*after the demand\./,
+    /Before a hint after the hint/,
+    /In\s+an\s+item\s*<br class='newline' \/>\s*after the break\./,
+    /Centered before\s*<br class='newline' \/>\s*centered after/,
+    /in an mbox and on/,
+    /long\s+enough\s+to\s+wrap\s*<br class='newline' \/>\s*after a break/,
+    /^(?:(?!<br)[^])*(?:<br(?:(?!<br)[^])*){8}$/,
+    /<td [^>]*style='white-space:normal; text-align:center;'>\s*<p class='noindent'>A centered cell/,
+    /<td [^>]*style='white-space:normal; text-align:right;'>\s*<p class='noindent'>A\s+flush\s+right cell/,
+    /<td [^>]*style='white-space:normal; text-align:left;'>\s*<p class='noindent'>A\s+plain\s+cell/,
+    /<td [^>]*style='white-space:normal; text-align:center;'>\s*<p class='noindent'>Centered by the/,
+    /<td [^>]*style='white-space:normal; text-align:right;'>\s*<p class='noindent'>Flush\s+right by/,
+    /<td [^>]*style='white-space:normal; text-align:center; vertical-align:middle;'>\s*<p class='noindent'>Centered in an m/,
+    /Before an hfil\s+after it, on the same line/,
+    /<td [^>]*style='white-space:normal; text-align:left;'>\s*<p class='noindent'>Flush left in a centered/,
+    /<td [^>]*style='white-space:normal; text-align:left;'>\s*<p class='noindent'>Grouped,/,
+    /<td [^>]*style='white-space:normal; text-align:left;'>\s*inner/,
+    /<td [^>]*style='white-space:normal; text-align:left;'>\s*<p class='noindent'>Justified in a centered/,
+    /<td [^>]*style='white-space:normal; text-align:center;'>\s*<p class='noindent'>Centered in a longtable/,
+    /^(?![^]*<tr id=[^>]*><td [^>]*>\s*(?:<p class='noindent'><\/p>\s*)?<\/td><\/tr>)/,
+    /^(?![^]*tex8web-(?:break|cell-align))/,
+  ],
 };
 
 const algorithms = {
@@ -664,7 +702,7 @@ const patterns = [
   [typeset, 'in the typeset math'], [speech, 'in the speech'], [pictures, 'among the pictures'],
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
-  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
+  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'],
   [mdframed, "in mdframed's boxes", true],
 ];

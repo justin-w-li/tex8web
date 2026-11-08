@@ -237,39 +237,73 @@
 
 % --- \hfill -----------------------------------------------------------------
 
+% \break and \linebreak end the line but write nothing. They leave a break
+% mark, which text.hfill makes a <br> after text on its line. No mark is
+% left in a box (\ifinner), whose line is not the paragraph's, or after an
+% \hfil: LaTeX's \\ is \hfil\break (\@gnewline, latex.ltx), and tex4ht
+% writes \hfil\break after markup of its own (\CssFile and the index in
+% html4.4ht). A \linebreak[n] with n below 4 leaves no mark.
+\def\web@break@mark{\ifhmode\ifinner\else\ifnum\gluestretchorder\lastskip=1 \else
+    \HCode{<span class="tex8web-break"></span>}\fi\fi\fi}
+\protected\def\break{\web@break@mark\penalty-\@M}
+\NewCommandCopy\web@linebreak\linebreak
+\protected\def\linebreak{\@ifnextchar[\web@linebreak@opt{\web@break@mark\web@linebreak}}
+\def\web@linebreak@opt[#1]{\ifnum#1>3 \web@break@mark\fi \web@linebreak[#1]}
+
 % what follows an \hfill in a paragraph goes at the right of its line, as in
 % the PDF. tex4ht would write the glue as spaces. The \hfill leaves a mark
 % after its glue, since an \hfill in vertical mode starts the paragraph.
 % text.hfill puts the rest of the line in a span that css/tex8web.css
-% floats right. No mark is left in a box (\ifinner), whose line is not the
-% paragraph's. \break, \linebreak, and a \penalty of -10000 or less end
-% the line but write nothing. Before them, a break mark is left instead,
-% and text.hfill makes it a <br>. No mark is left before \nolinebreak or a
-% \linebreak[n] with n below 4, which remove the \hfill (\@no@lnbk,
-% latex.ltx), or in the leaders of \dotfill and \hrulefill, which tex4ht
-% draws as dots or drops. \HCode writes nothing in a picture.
+% floats right. No mark is left in a box. Before \break and \linebreak,
+% which leave a break mark, no mark is left either. A \penalty of -10000
+% or less ends the line too, and the \hfill leaves a break mark before it.
+% No mark is left before \nolinebreak or a \linebreak[n] with n below 4,
+% which remove the \hfill (\@no@lnbk, latex.ltx), or in the leaders of
+% \dotfill and \hrulefill, which tex4ht draws as dots or drops. \HCode
+% writes nothing in a picture.
 \let\web@hfill\hfill
 \protected\def\hfill{\web@hfill
     \ifhmode\ifinner\else\expandafter\expandafter\expandafter\web@hfill@peek\fi\fi}
 \def\web@hfill@peek{\futurelet\web@next\web@hfill@mark}
 \def\web@hfill@mark{\let\web@hfill@do\web@hfill@write
-    \ifx\web@next\break \let\web@hfill@do\web@hfill@break \fi
-    \ifx\web@next\linebreak \let\web@hfill@do\web@hfill@linebreak \fi
+    \ifx\web@next\break \let\web@hfill@do\relax \fi
+    \ifx\web@next\linebreak \let\web@hfill@do\relax \fi
     \ifx\web@next\nolinebreak \let\web@hfill@do\relax \fi
     \ifx\web@next\penalty \let\web@hfill@do\web@hfill@penalty \fi
     \web@hfill@do}
 \def\web@hfill@write{\HCode{<span class="tex8web-hfill-mark"></span>}}
-\def\web@hfill@break{\HCode{<span class="tex8web-hfill-break"></span>}}
 \newcount\web@hfill@count
 \def\web@hfill@penalty#1{\afterassignment\web@hfill@pen\web@hfill@count}
-\def\web@hfill@pen{\ifnum\web@hfill@count>-\@M \web@hfill@write \else \web@hfill@break \fi
+\def\web@hfill@pen{\ifnum\web@hfill@count>-\@M \web@hfill@write \else \web@break@mark \fi
     \penalty\web@hfill@count}
-\def\web@hfill@linebreak\linebreak{\@ifnextchar[\web@hfill@lb{\web@hfill@break\linebreak}}
-\def\web@hfill@lb[#1]{\ifnum#1>3 \web@hfill@break\fi \linebreak[#1]}
 \let\web@dotfill\dotfill
 \def\dotfill{{\let\hfill\web@hfill\web@dotfill}}
 \let\web@hrulefill\hrulefill
 \def\hrulefill{{\let\hfill\web@hfill\web@hrulefill}}
+
+% --- table cells ------------------------------------------------------------
+
+% a paragraph cell's lines centered or flush right, as in the PDF, when
+% \centering or \raggedleft is in force at the cell's end, as it is from
+% the column's >{\centering}. tex4ht has written the <td> with
+% text-align:left before the cell's contents (\Configure{halignTD},
+% html4.4ht), so the cell's end leaves a mark, which text.cell_align moves
+% onto the <td>. The cell ends with \@finalstrut\@arstrutbox (\@endpbox in
+% latex.ltx and array.sty, \LT@endpbox in longtable.sty). The mark is a
+% comment written by a \special: an element, or \HCode, which starts a
+% paragraph (tex4ht.sty), would keep make4ht's tablerows from removing the
+% row that array starts before an \hline.
+\let\web@cellalign\empty
+\g@addto@macro\@arrayparboxrestore{\let\web@cellalign\empty}
+\AddToHook{cmd/centering/after}{\def\web@cellalign{center}}
+\AddToHook{cmd/raggedleft/after}{\def\web@cellalign{right}}
+\AddToHook{cmd/raggedright/after}{\let\web@cellalign\empty}
+\let\web@finalstrut\@finalstrut
+\def\@finalstrut#1{%
+    \ifx#1\@arstrutbox\ifx\web@cellalign\empty\else
+        \special{t4ht=<!--tex8web-cell-align \web@cellalign-->}%
+    \fi\fi
+    \web@finalstrut#1}
 
 % --- terms ------------------------------------------------------------------
 

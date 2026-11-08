@@ -219,7 +219,15 @@ List labels, indents, and spacing are as in the PDF.
 
 ### `\hfill`
 
-After `\hfill` in a paragraph, a heading, or a caption, the rest of the line is at the right, as in the PDF. If the rest does not fit, it is at the right of the next line. A `\break` or `\linebreak` after `\hfill` ends the line.
+After `\hfill` in a paragraph, a heading, or a caption, the rest of the line is at the right, as in the PDF. If the rest does not fit, it is at the right of the next line.
+
+### Line breaks
+
+`\break`, `\linebreak`, and `\linebreak[4]` end the line, as in the PDF. `\linebreak` with a lower number does not.
+
+### Tables
+
+In a paragraph column, such as `p{3cm}`, `\centering` or `\raggedleft` centers a cell's lines or sets them flush right, as in the PDF. Put it at the start of the cell, or in the column's `>{}`.
 
 ### Footnotes
 
@@ -339,6 +347,8 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 ### Text and layout
 
 - **`\hfill`.** With several `\hfill` on a line, only the text after the last one is at the right, and the parts before it stay together at the left. Text after `\hfill` that is longer than a line starts at the left of the next line, where in the PDF it fills the rest of the line first. In a centered paragraph with an `\hfill` inside a link or a color, the paragraph's other lines are at the left too. In a caption that fits on a line, the text after `\hfill` is a quad from the text before it, where in the PDF `\hfill` adds no space.
+- **Line breaks.** A line ended by `\break` or `\linebreak` is not stretched to the full width in a justified paragraph, as it is in the PDF. `\hfil\break` does not end the line: use `\\`, `\break`, or `\hfill\break`.
+- **Paragraph cells.** All of a cell's paragraphs are aligned as its last one, for example all centered after a `\centering` between them.
 - **Minipages.** A paragraph with a minipage inside its text is broken around the minipage. `\centering` in a minipage applies only in a figure. Two minipages, each inside an `\fbox`, are one above the other instead of side by side.
 - **Colors in text.** `\color` for the whole document, in the preamble or in `\AtBeginDocument`, is ignored. Inside a colored group, the text color is not restored by `\normalcolor`.
 - **Chapters and parts.** A chapter label, such as "Chapter 1", is tex4ht's default label. Part and chapter headings have the sizes of the report and book classes, whatever the class, unless they are formatted with titlesec.
