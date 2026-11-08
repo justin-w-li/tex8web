@@ -197,3 +197,14 @@
 \AddToHook { env/document/before }
     { \@ifpackageloaded { color } { } { \bool_gset_true:N \g__web_late_color_bool } }
 \ExplSyntaxOff
+
+% report, book, and memoir: \@makechapterhead as the preamble leaves it,
+% for tex8web-page.tex to read the chapter's spacing. report.4ht and
+% book.4ht empty it at \begin{document}. tex4ht.sty's \document reads the
+% config, which runs \begin{document} again, so this hook runs twice: the
+% second time after the .4ht files.
+\AddToHook{env/document/before}{%
+    \ifdefined\web@makechapterhead\else
+        \global\let\web@makechapterhead\@makechapterhead
+    \fi
+}

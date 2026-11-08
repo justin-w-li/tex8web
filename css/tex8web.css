@@ -131,7 +131,10 @@ section.abstract { margin-inline: 0; }
 .abstract p { margin-inline: var(--tex8web-abstract-left, 0) var(--tex8web-abstract-right, 0); }
 /* (a part's or chapter's label, "Chapter 1", sits above the title in a
    separate size, unless titlesec formats it. An article's parts are not
-   measured, and keep the 2em default) */
+   measured, and keep the 2em default. A chapter's label is a block, to be
+   spaced from the title as in the class (tex8web-page.tex), in place of
+   the <br /> that html4.4ht puts after it. A part's <br /> is inside its
+   label) */
 .partHead, .likepartHead { font-size: var(--tex8web-part-size, 2em);
     font-family: var(--tex8web-part-family, inherit);
     font-weight: var(--tex8web-part-weight, bold);
@@ -141,7 +144,13 @@ section.abstract { margin-inline: 0; }
     font-family: var(--tex8web-chapter-family, inherit);
     font-weight: var(--tex8web-chapter-weight, bold);
     font-style: var(--tex8web-chapter-style, normal); }
-:is(.chapterHead, .appendixHead) .titlemark { font-size: var(--tex8web-chapter-label-size, 1em); }
+:is(.chapterHead, .appendixHead) .titlemark { font-size: var(--tex8web-chapter-label-size, 1em);
+    display: block; margin-bottom: var(--tex8web-chapter-label-after, 0); }
+:is(.chapterHead, .appendixHead) .titlemark + br { display: none; }
+/* (the link to a chapter on the label's line: in the label's size, the
+   link's line is as tall as the label's, and the two share a baseline) */
+:is(.chapterHead, .appendixHead):has(> .titlemark) > .tex8web-permalink {
+    font-size: var(--tex8web-chapter-label-size, 1em); }
 .sectionHead, .likesectionHead { font-size: var(--tex8web-section-size);
     font-family: var(--tex8web-section-family, inherit);
     font-weight: var(--tex8web-section-weight, bold);

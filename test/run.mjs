@@ -87,11 +87,16 @@ const measured = {
   // (float.sty's ruled style: rules of 0.8pt and 0.4pt, 2pt from the text)
   'test-algorithmic': { '--tex8web-float-rule': '0.08em', '--tex8web-float-midrule': '0.04em',
     '--tex8web-float-endrule': '0.04em', '--tex8web-float-sep': '0.2em', '--tex8web-float-bodysep': '0.2em' },
+  // (report's chapter: 50pt above and 40pt below, in ems of \Huge's 24.88pt,
+  // and 20pt from label to title, in ems of \huge's 20.74pt. No space below
+  // in ems of the text, which a framed box below would add)
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
     '--tex8web-toc-section-skip': '0em', '--tex8web-toc-section-weight': 'normal',
-    '--tex8web-chapter-size': '2.488em', '--tex8web-chapter-label-size': '0.8336em' },
+    '--tex8web-chapter-size': '2.488em', '--tex8web-chapter-label-size': '0.8336em',
+    '--tex8web-chapter-before': '2.00964em', '--tex8web-chapter-after': '1.60771em',
+    '--tex8web-chapter-after-text': null, '--tex8web-chapter-label-after': '0.96432em' },
   // (\WebLikePDF in an 11pt document: the font size, 10.95pt over 12pt,
   // \baselineskip 13.6pt, \parindent 17pt, the fixture's \parskip of 3pt,
   // and \topsep 9pt)
@@ -113,11 +118,20 @@ const measured = {
   // in ems of the heading: 5ex above a section, from the fixture, and
   // memoir's 2.3ex below it and 3.25ex above a subsection. A redefined
   // \paragraph with \par first, and a \subsubsection with \@startsection
-  // only inside \@ifstar's groups, which is skipped.
+  // only inside \@ifstar's groups, which is skipped. A chapter spaced by
+  // memoir's lengths: 50pt above and 40pt below, in ems of memoir's \Huge,
+  // 20.74pt, and the fixture's \midchapskip of 10pt, in ems of memoir's
+  // \huge, 17.28pt.
   'test-memoir': { '--tex8web-bibitem-sep': '0.99995em', '--tex8web-section-before': '1.79398em',
     '--tex8web-section-after': '0.82523em', '--tex8web-subsection-before': '1.27791em',
     '--tex8web-paragraph-before': '0.86111em', '--tex8web-paragraph-after': '0.43056em',
-    '--tex8web-subsubsection-before': null },
+    '--tex8web-subsubsection-before': null, '--tex8web-chapter-before': '2.4108em',
+    '--tex8web-chapter-after': '1.92863em', '--tex8web-chapter-label-after': '0.5787em' },
+  // (chapter styles left with the stylesheet's spacing: memoir's chappell,
+  // with four skips, one of them zero, and fncychap's Glenn, with a
+  // negative space between label and title)
+  'test-chapterstyle': { '--tex8web-chapter-before': null, '--tex8web-chapter-label-after': null },
+  'test-fncychap': { '--tex8web-chapter-before': null, '--tex8web-chapter-label-after': null },
   // (tocloft's \cft<level>font: \Large\scshape; \normalfont\itshape; \itshape;
   // \bfseries; \large\sffamily; \ttfamily; \slshape)
   'test-tocloft': { '--tex8web-toc-part-size': '1.44', '--tex8web-toc-part-variant': 'small-caps',

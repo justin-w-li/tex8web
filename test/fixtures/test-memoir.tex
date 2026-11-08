@@ -1,11 +1,14 @@
 % A memoir document: a chapter with lists, a bibliography with memoir's
 % \bibitemsep (memoir has no \bibparsep, which biblatex adds), and sections
-% spaced by memoir's \setbeforesecskip. Two headings are redefined: one with
-% \@startsection only inside \@ifstar's groups, and one with \par first.
+% spaced by memoir's \setbeforesecskip. A chapter's label and title are 10pt
+% apart, by \midchapskip in place of memoir's 20pt. Two headings are
+% redefined: one with \@startsection only inside \@ifstar's groups, and one
+% with \par first.
 \documentclass{memoir}
 \usepackage{hyperref}
 \setlength{\bibitemsep}{6pt}
 \setbeforesecskip{-5ex}
+\setlength{\midchapskip}{10pt}
 \makeatletter
 \renewcommand\subsubsection{\@ifstar{\@startsection{subsubsection}{3}{\z@}{1ex}{1ex}{\bfseries}*}%
     {\@startsection{subsubsection}{3}{\z@}{1ex}{1ex}{\bfseries}}}

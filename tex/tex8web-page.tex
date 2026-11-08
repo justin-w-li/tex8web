@@ -482,12 +482,46 @@
             \web@Css{:root { --tex8web-#1-label-size: \web@em\web@a; }}%
         \fi
     \endgroup}
+% without titlesec, a chapter's space above, between label and title, and
+% below, from the class's \@makechapterhead (kept in tex8web-hooks.sty).
+% report's, book's, and memoir's default style make three \vskip's, read
+% from a box that is thrown away, with the label on as in the main matter
+% (memoir's \ifm@m@And). \vspace is made a single \vskip, without the
+% \vskip\z@skip it ends with (latex.ltx), so that a zero space still
+% counts. Any other count, as from a style that sets the label in the
+% title's line, and a negative space, as from fncychap's styles, leave the
+% stylesheet's spacing. The title is not empty, as memoir's ger style ends
+% it with \\. The space before and after is in ems of the title's \Huge,
+% between label and title in ems of the label's \huge. No space below in
+% ems of the text, as for a section: the heading ends in a plain \vskip,
+% so the space of a framed box below is the larger, not the sum
+\newcommand\web@chapterskips{%
+    \web@needs{web@makechapterhead}%
+    \begingroup
+        \gdef\web@skips{}\gdef\web@nskips{0}%
+        \def\vskip{\afterassignment\web@noteskip\skip@}%
+        \def\web@noteskip{\xdef\web@skips{\web@skips{\the\skip@}}%
+            \xdef\web@nskips{\the\numexpr\web@nskips+1}}%
+        \def\@vspacer##1{\vskip##1\relax}\let\@vspace\@vspacer
+        \c@secnumdepth\z@ \csname m@m@Andtrue\endcsname
+        \setbox0\vbox{\web@makechapterhead{x}}%
+    \endgroup
+    \ifnum\web@nskips=3 \expandafter\web@chapterspacing\web@skips\fi}
+\def\web@chapterspacing#1#2#3{%
+    \ifdim#1<\z@\else\ifdim#2<\z@\else\ifdim#3<\z@\else
+        \begingroup
+            \huge\edef\web@a{--tex8web-chapter-label-after: \web@em{#2};}%
+            \Huge\web@Css{:root { --tex8web-chapter-before: \web@em{#1};
+                --tex8web-chapter-after: \web@em{#3}; \web@a }}%
+        \endgroup
+    \fi\fi\fi}
 \ifdefined\c@chapter
     \begingroup
         \expandafter\let\csname ttls@part\endcsname\@undefined
         \web@bighead{part}
     \endgroup
     \web@bighead{chapter}
+    \ifcsname web@titlefont@chapter\endcsname\else\web@chapterskips\fi
 \fi
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}

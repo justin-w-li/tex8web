@@ -44,6 +44,7 @@ tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 - The title is passed from one LaTeX run to the next by tex4ht, so the first draft build, with one LaTeX run, has no title.
 - With tocloft, the font of each table of contents level is read from `\cft<level>font` by `\web@tocfont`, as heading fonts are. The faces these fonts need are predicted in `lua/tex8web/assets.lua`, to be copied next to the page and listed for preloading.
 - Settings lost under tex4ht, for example titlesec formats and tcolorbox options, are recorded in `tex/tex8web-hooks.sty`, which is loaded before the preamble.
+- Without titlesec, a chapter's spacing is read from the class's `\@makechapterhead`, which is kept in `tex8web-hooks.sty` before tex4ht empties it at `\begin{document}`. The command is run in a box that is thrown away, and its `\vskip`s are counted, with each `\vspace` taken as one. Three are taken as the space above, between label and title, and below, as in report, book, and memoir. Any other count, or a negative space, leaves the stylesheet's spacing.
 - A warning from `\web@needs` is given when a command that tex8web patches is no longer defined in tex4ht or in a package. In the tests, this warning is a failure.
 
 ### 2. HTML passes
