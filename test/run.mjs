@@ -186,7 +186,7 @@ const speech = {
     /aria-label='3 times m s to the negative 1 power'/, /aria-label='2 percent'/, /aria-label='3 percent'/, /aria-label='1 K'/,
     /aria-label='30 degrees'/, /aria-label='4 degrees C'/, /aria-label='90 degrees'/,
     /aria-label='20 degrees C'/, /aria-label='25 degrees C'/, /aria-label='A raised to the composed with power'/,
-    /, 1\.5 m, /,
+    /, 1\.5\u202Fm, /,
     /aria-label='v equals 3 times m s to the negative 1 power'/,
     /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,
     /aria-label='E equals 1\.6 times 10 to the negative 19 power J Label 1'/],
@@ -614,8 +614,11 @@ const hfill = {
 // \justifying, from a group
 // closed before the end, from a centered environment around the table, or
 // in a table inside the cell. A row that array starts before an \hline is
-// still removed.
+// still removed. A \, in text is a narrow no-break space, as TeX never
+// breaks a line at a kern: also in italic, and in a quantity siunitx sets
+// as text.
 const breaks = {
+  'test-units': [/like 1\.5\u202Fm\. Thin\s+spaces in text: i\.\u202Fe\., <span class='cmti-10'>e\.<\/span>\u202F<span class='cmti-10'>g\.<\/span>, and 10\u202F000\./],
   'test-breaks': [
     /Before\s+a\s+break\s*<br class='newline' \/>\s*after the break\./,
     /Before\s+a\s+linebreak\s*<br class='newline' \/>\s*after the linebreak\./,
@@ -892,8 +895,9 @@ function check(doc, result, out, aux) {
     const bare = readFileSync(join(out, file), 'utf8').match(/class='caption'(?! style='--tex8web-caption-before: )/g)?.length;
     if (bare) problems.push(`${file}: ${bare} captions without their skips`);
   }
-  // (tex4ht's indentation, which the patterns do not pin)
-  const flat = html.replace(/\s+/g, ' ');
+  // (tex4ht's indentation, which the patterns do not pin, but not the
+  // narrow no-break space of \, in text)
+  const flat = html.replace(/[^\S\u202F]+/g, ' ');
   for (const [table, what, withStyles] of patterns) {
     for (const pattern of table[doc.name] ?? []) {
       if (!pattern.test(withStyles ? flat + styles : flat)) problems.push(`no ${pattern.source} ${what}`);
