@@ -146,6 +146,9 @@ section.abstract { margin-inline: 0; }
     font-variant: var(--tex8web-part-label-variant, inherit); }
 .partHead .titlemark:has(> br) { display: block;
     margin-bottom: var(--tex8web-part-label-after, 0); }
+/* (the space after a label on a line of its own, which would indent the
+   title, text.lua) */
+.partHead .titlemark:has(> br) + .tex8web-labelsep { display: none; }
 .chapterHead, .likechapterHead, .appendixHead { font-size: var(--tex8web-chapter-size);
     font-family: var(--tex8web-chapter-family, inherit);
     font-weight: var(--tex8web-chapter-weight, bold);
