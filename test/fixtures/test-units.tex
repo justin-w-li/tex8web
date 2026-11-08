@@ -6,8 +6,8 @@
 \usepackage{amsmath}
 \usepackage{nicefrac}
 \usepackage{xfrac}
-% siunitx.4ht loads color, which tex4ht then does not configure, so
-% tex8web would warn that \a:color is gone. xcolor brings \a:color.
+% siunitx.4ht loads color, which tex4ht then does not configure (see
+% test-units-nocolor). xcolor in the preamble keeps the colors.
 \usepackage{xcolor}
 \usepackage{siunitx}
 \DeclareSIUnit\pct{\%}

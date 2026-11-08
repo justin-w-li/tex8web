@@ -171,4 +171,10 @@
 \AddToHook { package/xcolor/after } { \web@needs { XC@logdef } \__web_record_colors: }
 \clist_map_inline:nn { dvipsnam.def, svgnam.def, x11nam.def }
     { \AddToHook { file/#1/before } { \__web_record_colors: } }
+% \g__web_late_color_bool: whether the color package was loaded after the
+% preamble, as siunitx.4ht loads it. tex4ht has then passed color.4ht, so it
+% configures no colors (tex8web-page.tex warns).
+\bool_new:N \g__web_late_color_bool
+\AddToHook { env/document/before }
+    { \@ifpackageloaded { color } { } { \bool_gset_true:N \g__web_late_color_bool } }
 \ExplSyntaxOff

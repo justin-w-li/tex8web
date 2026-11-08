@@ -153,7 +153,17 @@
         \exp_args:Nc \group_insert_after:N { __web_declared_ \int_use:N \g__web_declared_int : }
     }
 }
-\@ifpackageloaded{color}{\web@needs{a:color}}{}
+\@ifpackageloaded{color}{
+    \cs_if_exist:NF \a:color {
+        \bool_if:NTF \g__web_late_color_bool
+            {
+                \PackageWarningNoLine{tex8web}{The~color~package~was~loaded~after~the~preamble,~
+                    by~a~tex4ht~configuration~such~as~siunitx.4ht.~tex4ht~then~does~not~configure~
+                    it,~so~the~page~has~no~colors.~Load~xcolor~in~the~preamble}
+            }
+            { \web@needs{a:color} }
+    }
+}{}
 \cs_if_exist:NT \a:color {
     \web@needs{set@color}
     \web@needs{color@b@x}
