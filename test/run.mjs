@@ -3,7 +3,7 @@
 // run beside them. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build, expected, largestFirst, pool, root, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -871,6 +871,12 @@ function check(doc, result, out, aux) {
   // (with -p, or custom.cfg's \WebPDF)
   if (doc.pdf && !(html.includes("href='main.pdf'") && existsSync(join(out, 'main.pdf')))) problems.push('no link to the PDF beside it');
   if (doc.up && !html.includes(`class='tex8web-control tex8web-up' href='${doc.up}'`)) problems.push('no link up to the index');
+  // (each caption with its skips: text.block_spacing puts them from the
+  // mark of \@makecaption, which a caption's own macros might skip)
+  for (const file of existsSync(out) ? readdirSync(out).filter(f => f.endsWith('.html')) : []) {
+    const bare = readFileSync(join(out, file), 'utf8').match(/class='caption'(?! style='--tex8web-caption-before: )/g)?.length;
+    if (bare) problems.push(`${file}: ${bare} captions without their skips`);
+  }
   // (tex4ht's indentation, which the patterns do not pin)
   const flat = html.replace(/\s+/g, ' ');
   for (const [table, what, withStyles] of patterns) {

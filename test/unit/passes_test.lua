@@ -62,6 +62,14 @@ return {
     equal(#d:query_selector("span.tex8web-capskip"), 0)
   end,
 
+  ["text.block_spacing: a caption's mark outside a caption, a warning"] = function()
+    local d = parse([[<p><span class="tex8web-capskip" data-above="0.8em" data-below="0em" data-position="bottom"></span>A</p>]])
+    logged = {}
+    text.block_spacing(d)
+    equal(body(d), [[<p>A</p>]])
+    check(logged[1] and logged[1]:find("^warning: a caption's space is lost"), logged[1] or "nothing logged")
+  end,
+
   ["text.box_theorems: no empty paragraph after a theorem ending a box, only there"] = function()
     local d = parse([[<div class="mdframed"><div class="newtheorem"><p>T</p></div><p class="noindent">]]
       .. "\n" .. [[</p></div><div class="mdframed"><div class="newtheorem"><p>T</p></div><p>Text</p></div>]]

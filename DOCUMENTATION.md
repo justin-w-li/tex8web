@@ -138,6 +138,9 @@ Your document's measurements are CSS custom properties. To change them, set them
 | `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | a heading's font and alignment, with titlesec |
 | `--tex8web-<heading>-before`, `-after` | the space above and below a heading, from titlesec or the class |
 | `--tex8web-list-sep`, `--tex8web-item-sep`, `--tex8web-leftmargin` | the spacing and indent of a description list. Other lists have `--tex8web-list-*` properties on their element |
+| `--tex8web-intextsep`, `--tex8web-floatsep` | the space around a float, and between two floats in a row |
+| `--tex8web-caption-before`, `--tex8web-caption-after` | the space above and below a caption. Each caption also has them on its element, swapped for a caption at the top with the caption package |
+| `--tex8web-display-above`, `--tex8web-display-below` | the space above and below display math |
 | `--tex8web-bibitem-sep`, `--tex8web-biblabelsep` | the space between bibliography entries, and after their labels |
 | `--tex8web-footnote-leading`, `--tex8web-abstract-leading` | the line spacing of footnotes and the abstract, as a multiple of the text line spacing |
 | `--tex8web-abstract-left`, `--tex8web-abstract-right` | the abstract margins |

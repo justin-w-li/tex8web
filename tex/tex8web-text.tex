@@ -658,6 +658,12 @@
 % floats spaced as in the PDF: \intextsep above and below a float in the
 % text, and \floatsep between two (css/tex8web.css)
 \web@Css{:root { --tex8web-intextsep: \web@em\intextsep; --tex8web-floatsep: \web@em\floatsep; }}
+% (the caption skips of the document, for a caption without its own. A
+% class without floats, such as letter, has none)
+\ifdefined\abovecaptionskip
+    \web@Css{:root { --tex8web-caption-before: \web@bodyem\abovecaptionskip;
+        --tex8web-caption-after: \web@bodyem\belowcaptionskip; }}
+\fi
 % the space around a caption as \@makecaption puts it: \abovecaptionskip
 % above and \belowcaptionskip below, or with the caption package, swapped
 % for a caption at the top of its float (\caption@make@above in
@@ -672,7 +678,9 @@
 % not show this: a float starts with tex4ht's anchor (\@xfloat in
 % latex.4ht). So the mark gives the position as auto, for
 % text.block_spacing to tell from the page. The position is read in a
-% \vbox, where caption's test for vertical mode holds, as at its \par.
+% \vbox, where caption's test for vertical mode holds, as at its \par:
+% in the caption's text, caption.sty's auto takes the caption for one at
+% the bottom before \caption@autoposition is reached.
 \def\web@capmark#1{\edef\web@mark{\noexpand\HCode{<span class="tex8web-capskip"
     data-above="\web@bodyem\abovecaptionskip" data-below="\web@bodyem\belowcaptionskip"
     data-position="#1"></span>}}\web@mark}

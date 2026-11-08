@@ -2,6 +2,8 @@
 local dom = require "tex8web.dom"
 local files = require "tex8web.files"
 
+local log = logging.new("tex8web")
+
 local M = {}
 
 -- whether a node shows something: text, or a picture, table, or formula
@@ -36,36 +38,37 @@ end
 -- <span class="tex8web-thmskip"> in a theorem's heading, as margins of the
 -- theorem, and a <span class="tex8web-capskip"> in a caption, as custom
 -- properties of the caption, which the stylesheet's rules for ruled and
--- algorithm2e captions can then override. A caption at the top has the
--- skips the other way round.
-local spaced = {
-  {mark = "span.tex8web-thmskip",
-   block = function(el) return el:get_element_name() == "div" and dom.has_class(el, "newtheorem") end,
-   style = function(mark)
-     return ("margin-top: %s; margin-bottom: %s"):format(mark:get_attribute("data-before"),
-       mark:get_attribute("data-after"))
-   end},
-  {mark = "span.tex8web-capskip",
-   block = function(el)
-     local name = el:get_element_name()
-     return (name == "figcaption" or name == "div") and dom.has_class(el, "caption")
-   end,
-   style = function(mark, caption)
-     local before, after = mark:get_attribute("data-above"), mark:get_attribute("data-below")
-     local position = mark:get_attribute("data-position")
-     if position == "top" or position == "auto" and first_in_float(caption) then
-       before, after = after, before
-     end
-     return ("--tex8web-caption-before: %s; --tex8web-caption-after: %s"):format(before, after)
-   end},
-}
+-- algorithm2e captions can then override. With the caption package, a
+-- caption at the top has the skips the other way round. With position=auto,
+-- TeX fixes the position once for each float, and this pass decides it for
+-- each caption.
 function M.block_spacing(document)
-  for _, kind in ipairs(spaced) do
-    for _, mark in ipairs(document:query_selector(kind.mark)) do
-      local block = dom.closest(mark, kind.block)
-      if block then dom.add_style(block, kind.style(mark, block)) end
-      mark:remove_node()
+  for _, mark in ipairs(document:query_selector("span.tex8web-thmskip")) do
+    local theorem = dom.closest(mark, function(el)
+      return el:get_element_name() == "div" and dom.has_class(el, "newtheorem")
+    end)
+    if theorem then
+      dom.add_style(theorem, ("margin-top: %s; margin-bottom: %s"):format(mark:get_attribute("data-before"),
+        mark:get_attribute("data-after")))
     end
+    mark:remove_node()
+  end
+  for _, mark in ipairs(document:query_selector("span.tex8web-capskip")) do
+    local caption = dom.closest(mark, function(el)
+      local name = el:get_element_name()
+      return (name == "figcaption" or name == "div") and dom.has_class(el, "caption")
+    end)
+    if caption then
+      local before, after = mark:get_attribute("data-above"), mark:get_attribute("data-below")
+      local position = mark:get_attribute("data-position")
+      if position == "top" or position == "auto" and first_in_float(caption) then
+        before, after = after, before
+      end
+      dom.add_style(caption, ("--tex8web-caption-before: %s; --tex8web-caption-after: %s"):format(before, after))
+    else
+      log:warning("a caption's space is lost: no <figcaption> or <div> of class caption holds its mark")
+    end
+    mark:remove_node()
   end
 end
 

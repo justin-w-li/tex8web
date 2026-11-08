@@ -194,6 +194,22 @@ const tablesSpaced = `(() => {
   return { checked: divs.length, wrong };
 })()`;
 
+// a center, flushleft, flushright, or verbatim after a paragraph's
+// footnote, spaced as after the paragraph. Failures: [text, got, want]
+const blocksSpaced = `(() => {
+  const blocks = [...document.querySelectorAll(':where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div.center, div.flushleft, div.flushright, pre.verbatim)')];
+  const wrong = blocks.flatMap(d => {
+    const p = document.createElement('p');
+    p.textContent = 'x';
+    d.before(p);
+    const want = getComputedStyle(d).marginTop;
+    p.remove();
+    const got = getComputedStyle(d).marginTop;
+    return got === want ? [] : [[d.textContent.trim().slice(0, 30), got, want]];
+  });
+  return { checked: blocks.length, wrong };
+})()`;
+
 // algorithm2e's geometry, as in its PDF: a line number at the right
 // 1.2em + \skiptext - \algomargin from the algorithm's right edge
 // (\algocf@printnl), and a one-line caption of plain, boxed, or plainruled
@@ -389,7 +405,7 @@ const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).
 
 // the subjects each check found over the run: a check with none has
 // tested nothing
-const ran = { spaced: 0, tablesSpaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0 };
+const ran = { spaced: 0, tablesSpaced: 0, blocksSpaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0 };
 
 async function compare(chrome, doc, ok) {
   const dir = testDir(doc, 'visual');
@@ -438,6 +454,9 @@ async function compare(chrome, doc, ok) {
           const tables = await page.evaluate(tablesSpaced);
           ran.tablesSpaced += tables.checked;
           for (const [id, gap, want] of tables.wrong) problems.push(`${html}: #${id}: ${gap} above it, not ${want} as above a paragraph`);
+          const blocks = await page.evaluate(blocksSpaced);
+          ran.blocksSpaced += blocks.checked;
+          for (const [text, got, want] of blocks.wrong) problems.push(`${html}: "${text}": ${got} above it after a footnote, not ${want} as after a paragraph`);
           const rests = await page.evaluate(filled);
           ran.filled += rests.checked;
           for (const [name, what] of rests.wrong) problems.push(`${html}: the \\hfill before "${name}": ${what}`);
