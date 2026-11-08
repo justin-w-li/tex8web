@@ -114,6 +114,13 @@ return {
       .. "<span class='mathjax-inline'>\\(1\\)</span></span> and a<span class='tex8web-nbsp'>\u{A0}</span>b</p>")
   end,
 
+  ["text.no_break_spaces: a narrow no-break space kept with the math after it, and not narrowed"] = function()
+    local d = parse("<p>p.\u{202F}<span class=\"mathjax-inline\">\\(5\\)</span> and 10\u{202F}000</p>")
+    text.no_break_spaces(d)
+    equal(body(d), "<p>p.<span class='tex8web-nowrap'>\u{202F}<span class='mathjax-inline'>\\(5\\)</span></span>"
+      .. " and 10\u{202F}000</p>")
+  end,
+
   ["text.hfill: the rest of each line after its last \\hfill in a span, up to a <br>, a block or a display; in a paragraph, its line too"] = function()
     local mark = [[<span class="tex8web-hfill-mark"></span>]]
     local fill = "<span class='tex8web-hfill-gap'> </span><span class='tex8web-hfill'>"

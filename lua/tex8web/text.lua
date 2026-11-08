@@ -200,23 +200,37 @@ function M.sized_math_spaces(document)
   end
 end
 
--- the children of el, with each no-break space in a <span class="tex8web-nbsp">
+local narrow = "\u{202F}"
+
+-- where the next no-break space (~) or narrow no-break space (\, in text)
+-- in text is, from start
+local function next_space(text, start)
+  local i, j = text:find("\u{A0}", start, true)
+  local k, l = text:find(narrow, start, true)
+  if k and (not i or k < i) then return k, l end
+  return i, j
+end
+
+-- the children of el, with each no-break space in a <span class="tex8web-nbsp">,
+-- and each narrow no-break space in a text node of its own
 local function mark_nbsp(el)
   local children = {}
   for _, child in ipairs(el:get_children()) do
     local text = child:is_text() and child:get_text() or ""
-    if text:find("\u{A0}", 1, true) then
+    if next_space(text, 1) then
       local start = 1
       repeat
-        local i, j = text:find("\u{A0}", start, true)
+        local i, j = next_space(text, start)
         local run = text:sub(start, (i or 0) - 1)
         if run ~= "" then children[#children + 1] = el:create_text_node(run) end
-        if i then
+        if i and text:sub(i, j) == narrow then
+          children[#children + 1] = el:create_text_node(narrow)
+        elseif i then
           local nbsp = el:create_element("span", {class = "tex8web-nbsp"})
           nbsp:add_child_node(nbsp:create_text_node("\u{A0}"))
           children[#children + 1] = nbsp
-          start = j + 1
         end
+        start = (j or 0) + 1
       until not i
     else
       children[#children + 1] = child
@@ -227,7 +241,7 @@ end
 
 local function has_nbsp(el)
   for _, child in ipairs(el:get_children()) do
-    if child:is_text() and child:get_text():find("\u{A0}", 1, true) then return true end
+    if child:is_text() and next_space(child:get_text(), 1) then return true end
   end
   return false
 end
@@ -243,10 +257,15 @@ local function is_nbsp(node)
   return node:is_element() and node:get_attribute("class") == "tex8web-nbsp"
 end
 
+local function is_narrow(node)
+  return node:is_text() and node:get_text() == narrow
+end
+
 -- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
 -- as wide as a space, so each is marked for the CSS to narrow. A browser
--- still breaks the line between one and the math after it (Lemma~$1$), so
--- the two are wrapped together. Verbatim text, alltt, and listings are left
+-- still breaks the line between one and the math after it (Lemma~$1$), or
+-- between a narrow no-break space and the math (p.\,$5$), so the two are
+-- wrapped together. Verbatim text, alltt, and listings are left
 -- as they are.
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)
@@ -262,7 +281,7 @@ function M.no_break_spaces(document)
       while children[j] and not children[j]:is_element() and not children[j]:is_text() do
         j = j + 1
       end
-      if is_nbsp(children[i]) and children[j] and dom.has_class(children[j], "mathjax-inline") then
+      if (is_nbsp(children[i]) or is_narrow(children[i])) and children[j] and dom.has_class(children[j], "mathjax-inline") then
         local nowrap = el:create_element("span", {class = "tex8web-nowrap"})
         for k = i, j do nowrap:add_child_node(children[k]) end
         wrapped[#wrapped + 1] = nowrap

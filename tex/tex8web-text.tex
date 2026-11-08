@@ -253,10 +253,11 @@
 \protected\def\linebreak{\@ifnextchar[\web@linebreak@opt{\web@break@mark\web@linebreak}}
 \def\web@linebreak@opt[#1]{\ifnum#1>3 \web@break@mark\fi \web@linebreak[#1]}
 
-% \, in text as U+202F, the narrow no-break space. TeX never breaks a line
-% at the kern \, leaves, but tex4ht writes the kern as a plain space, where
-% a browser breaks, or as nothing in a font with a wider space, such as
-% italic. A picture keeps the kern.
+% \, and \thinspace (\let to \, in latex.ltx) in text as U+202F, the
+% narrow no-break space. TeX does not break a line at the kern \, leaves.
+% tex4ht.c writes the kern as a plain space, where a browser breaks, or as
+% nothing in a font with a wider space, such as italic. A picture keeps the
+% kern.
 \catcode58 11
 \NewCommandCopy\web@thinspace\,
 \DeclareRobustCommand\,{\ifhmode\ifx\EndPicture\:UnDef

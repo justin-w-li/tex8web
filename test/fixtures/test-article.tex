@@ -1,7 +1,7 @@
 % An article as LaTeX's standard classes set it, with no layout package:
 % two abstracts, headings, lists (an item that starts with a list or ends in
-% a block), a figure's caption, a footnote, an inline TikZ picture, the
-% LaTeX logo, and a bibliography.
+% a block), a figure's caption, a footnote, inline TikZ pictures (one with
+% \, in a node), the LaTeX logo, and a bibliography.
 \documentclass{article}
 \usepackage{tikz}
 \usepackage{hyperref}
@@ -44,6 +44,7 @@ Text with a footnote.\footnote{A note, \emph{emphasized}.}
 \end{description}
 \subsection{Pictures}
 A ball \tikz{\fill (0,0) circle (0.5);} in the text, as cited in \cite{book}.
+A node with a thin space, \tikz\node{10\,000};, as wide as in the PDF.
 \begin{figure}
     \centering
     \rule{1cm}{1cm}

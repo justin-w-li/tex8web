@@ -439,6 +439,15 @@ const lists = {
   ],
 };
 
+// \, and \thinspace in text as a narrow no-break space, where TeX does not
+// break: also in italic, in a quantity siunitx sets as text, and kept with
+// the math after it. In a picture, the kern, so a node is as wide as in the
+// PDF.
+const thin = {
+  'test-units': [/like 1\.5\u202Fm\. Thin\s+spaces in text: i\.\u202Fe\., <span class='cmti-10'>e\.<\/span>\u202F<span class='cmti-10'>g\.<\/span>, 10\u202F000, 10\u202F000, and p\.<span class='tex8web-nowrap'>\u202F<mjx-container /],
+  'test-article': [/<img alt='' src='test-article1x\.svg' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.0966\)' \/>/],
+};
+
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width
@@ -614,11 +623,8 @@ const hfill = {
 // \justifying, from a group
 // closed before the end, from a centered environment around the table, or
 // in a table inside the cell. A row that array starts before an \hline is
-// still removed. A \, in text is a narrow no-break space, as TeX never
-// breaks a line at a kern: also in italic, and in a quantity siunitx sets
-// as text.
+// still removed.
 const breaks = {
-  'test-units': [/like 1\.5\u202Fm\. Thin\s+spaces in text: i\.\u202Fe\., <span class='cmti-10'>e\.<\/span>\u202F<span class='cmti-10'>g\.<\/span>, and 10\u202F000\./],
   'test-breaks': [
     /Before\s+a\s+break\s*<br class='newline' \/>\s*after the break\./,
     /Before\s+a\s+linebreak\s*<br class='newline' \/>\s*after the linebreak\./,
@@ -854,7 +860,7 @@ const patterns = [
   [typeset, 'in the typeset math'], [speech, 'in the speech'], [pictures, 'among the pictures'],
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
-  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
+  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [thin, 'at the thin spaces'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [tables, 'among the tables'],
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
 ];
@@ -895,8 +901,7 @@ function check(doc, result, out, aux) {
     const bare = readFileSync(join(out, file), 'utf8').match(/class='caption'(?! style='--tex8web-caption-before: )/g)?.length;
     if (bare) problems.push(`${file}: ${bare} captions without their skips`);
   }
-  // (tex4ht's indentation, which the patterns do not pin, but not the
-  // narrow no-break space of \, in text)
+  // (tex4ht's indentation, which the patterns do not pin; U+202F is kept)
   const flat = html.replace(/[^\S\u202F]+/g, ' ');
   for (const [table, what, withStyles] of patterns) {
     for (const pattern of table[doc.name] ?? []) {

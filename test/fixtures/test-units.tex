@@ -1,7 +1,7 @@
 % Units as the PDF sets them: nicefrac's and xfrac's fractions with a
 % slash (MathJax has neither), and siunitx's numbers, units, and quantities
 % in text, in math, and in a display (MathJax has none of siunitx's
-% commands). \, in text, which TeX never breaks.
+% commands). \, and \thinspace in text, where TeX does not break.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{nicefrac}
@@ -22,7 +22,8 @@ Text: \num{12345.678}, \num{1.5e-3}, \SI{3}{\meter\per\second},
 
 At the end of a line, a quantity in text mode stays on one line, as it
 does in the PDF, like {\sisetup{mode=text}\qty{1.5}{\metre}}. Thin
-spaces in text: i.\,e., \textit{e.\,g.}, and 10\,000.
+spaces in text: i.\,e., \textit{e.\,g.}, 10\,000, 10\thinspace 000, and
+p.\,$5$.
 
 Math: $v = \SI{3}{\meter\per\second}$, $\qty[per-mode=fraction]{9.81}{\metre\per\square\second}$,
 $\num{1.5e-3} + \unit{\joule}$, $\num{1234567.89123}$, $\ang{30}$,
