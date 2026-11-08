@@ -541,8 +541,8 @@ span.tcolorbox > .tcolorbox-title { display: block; }
    \AlCapHSkip, with a hanging indent. A block is \skiprule in, its text
    \skiptext from its vertical line, which ends in a short rule (vlined).
    A line number ends \skiptotal before the text's margin, or is at the
-   right, 1.2em + \skiptext - \algomargin from the text's right edge,
-   in the 1.5em that algorithm2e keeps there for numbers */
+   right, 1.2em + \skiptext - \algomargin from the algorithm's right
+   edge, in the 1.5em that algorithm2e keeps there for numbers */
 .tex8web-a2e { position: relative; display: flex; flex-direction: column;
     margin-block: 1em; text-align: start; }
 .tex8web-a2e > figcaption { width: auto; margin: 0;

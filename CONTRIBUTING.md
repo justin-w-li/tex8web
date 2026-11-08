@@ -226,6 +226,8 @@ Differences from the PDF too small for the [known limitations](DOCUMENTATION.md#
 - **Math in a page built with Node is laid out from estimates**, not browser measurements, for example text in math without MathJax glyphs. A box can be a pixel or so off.
 - **Delimiters and radicals** can differ slightly in size from the PDF, as they come from the MathJax font.
 - **The space before inline math after a word in another font**, for example an algorithm2e keyword before its argument. It can be in the word's font without Node, and is in the text font with Node. The two pages can be a pixel apart, and neither always matches the PDF.
+- **Two [H] algorithms of algorithm2e in a row** are 2em apart, the margins of both. In the PDF, they are about 1em apart.
+- **A long caption of algorithm2e's plain, boxed, or plainruled style** ends short of the right edge where the PDF's caption reaches it.
 
 ### CI
 

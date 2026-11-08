@@ -3,8 +3,9 @@
 // JavaScript off. Both pages are checked for alignments that line up across
 // an \intertext, unclipped math characters, and footnotes in the text's
 // color. The prerendered page is also checked for a hidden theme button,
-// headings spaced as in LaTeX, the rest of each \hfill at the right, the
-// fonts of the table of contents, printing, and a width that fits a phone.
+// headings spaced as in LaTeX, the rest of each \hfill at the right,
+// algorithm2e's numbers and captions, the fonts of the table of contents,
+// printing, and a width that fits a phone.
 // Needs Chrome and the network. Differing screens are saved in
 // build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
@@ -173,6 +174,38 @@ const spaced = `(() => {
   return { checked, wrong };
 })()`;
 
+// algorithm2e's geometry, as in its PDF: a line number at the right
+// 1.2em + \skiptext - \algomargin from the algorithm's right edge
+// (\algocf@printnl), and a one-line caption of plain, boxed, or plainruled
+// centered over the algorithm less the 1.5em kept for numbers, and less
+// \algomargin in boxed (\algocf@makecaption). Failures: [id, what is wrong]
+const algorithms = `(() => {
+  const wrong = [];
+  let checked = 0;
+  for (const figure of document.querySelectorAll('figure.tex8web-a2e')) {
+    const style = getComputedStyle(figure), em = parseFloat(style.fontSize);
+    const length = name => parseFloat(style.getPropertyValue('--tex8web-a2e-' + name)) * em;
+    const box = figure.getBoundingClientRect();
+    for (const number of figure.querySelectorAll('.tex8web-a2e-nl-right')) {
+      checked++;
+      const gap = box.right - number.getBoundingClientRect().right;
+      const want = 1.2 * em + length('text') - length('margin');
+      if (Math.abs(gap - want) > 0.5) wrong.push([figure.id, 'a number ' + gap.toFixed(1) + 'px from the right, not ' + want.toFixed(1)]);
+    }
+    const centered = figure.matches('.tex8web-a2e-plain, .tex8web-a2e-boxed, .tex8web-a2e-plainruled');
+    if (centered) {
+      checked++;
+      const range = document.createRange();
+      range.selectNodeContents(figure.querySelector(':scope > figcaption'));
+      const text = range.getBoundingClientRect();
+      const width = box.width - 1.5 * em - (figure.matches('.tex8web-a2e-boxed') ? length('margin') : 0);
+      const shift = (text.left + text.right) / 2 - box.left - width / 2;
+      if (Math.abs(shift) > 0.5) wrong.push([figure.id, 'the caption ' + shift.toFixed(1) + 'px off center']);
+    }
+  }
+  return { checked, wrong };
+})()`;
+
 // The rest of each \hfill outside the table of contents (text.hfill), as
 // in the PDF: at the right of its block, inside it, and starting at the
 // left when it takes more than a line. The block is the line, paragraph,
@@ -296,7 +329,7 @@ const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).
 
 // the subjects each check found over the run: a check with none has
 // tested nothing
-const ran = { spaced: 0, misaligned: 0, sidenotes: 0, filled: 0 };
+const ran = { spaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0 };
 
 async function compare(chrome, doc, ok) {
   const dir = testDir(doc, 'visual');
@@ -345,6 +378,9 @@ async function compare(chrome, doc, ok) {
           const rests = await page.evaluate(filled);
           ran.filled += rests.checked;
           for (const [name, what] of rests.wrong) problems.push(`${html}: the \\hfill before "${name}": ${what}`);
+          const algorithm = await page.evaluate(algorithms);
+          ran.algorithms += algorithm.checked;
+          for (const [id, what] of algorithm.wrong) problems.push(`${html}: algorithm #${id}: ${what}`);
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {
