@@ -114,6 +114,16 @@ return {
     equal(assets.wide_screens(css), (css:gsub("%(%-%-tex8web%-wide%)", "(min-width: 79.00em)")))
   end,
 
+  -- (\WebLikePDF in a 14.4pt document: an em of the text is 1.2 of the
+  -- query's. A width in rems is the query's already)
+  ["assets.wide_screens: the text's ems at \\WebLikePDF's size"] = function()
+    local css = ":root { --tex8web-margin: 14rem; --tex8web-gap: 1.5rem; --tex8web-textwidth: 32.5em; }\n"
+      .. ":root { --tex8web-pdf-size: 14.4pt; }\n@media (--tex8web-wide) { x }"
+    equal(assets.wide_screens(css), (css:gsub("%(%-%-tex8web%-wide%)", "(min-width: 73.00em)")))
+    css = css:gsub("32%.5em", "40rem")
+    equal(assets.wide_screens(css), (css:gsub("%(%-%-tex8web%-wide%)", "(min-width: 74.00em)")))
+  end,
+
   ["assets.wide_screens: a width not in ems, a warning and no wide screens"] = function()
     local css = ":root { --tex8web-margin: 14rem; --tex8web-gap: 1.5rem; --tex8web-textwidth: 700px }\n"
       .. "@media (--tex8web-wide) { x }"

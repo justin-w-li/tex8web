@@ -410,16 +410,16 @@ function M.inline_colors(document)
   end
 end
 
--- the last value the stylesheet gives --tex8web-<name>, in ems or rems
--- (the same here; see wide_screens), or nil with a warning
+-- the last value the stylesheet gives --tex8web-<name>, in ems or rems,
+-- and its unit, or nil with a warning
 local function ems(css, name)
   local value = custom(css, name)
-  local n = tonumber((value or ""):match("^([%d.]+)r?em%f[^%w]"))
+  local n, unit = (value or ""):match("^([%d.]+)(r?em)%f[^%w]")
   if not n then
     log:warning("--tex8web-" .. name .. " is " .. (value or "not set") .. ", not a length in em "
       .. "or rem: every screen gets the narrow layout")
   end
-  return n
+  return tonumber(n), unit
 end
 
 -- css/tex8web.css's @media (--tex8web-wide): a screen with room for the
@@ -427,11 +427,15 @@ end
 -- set again) and, on each side, a column (--tex8web-margin) with a gap
 -- (--tex8web-gap) on either side of it. Media queries cannot read custom
 -- properties, so the query is written here. A media query's em is the
--- browser's default font size, 16px, which equals the page's 12pt and a
--- rem. Without the lengths, no screen is wide (the query is 10000em), and
--- the narrow layout is used at any width.
+-- browser's default font size, 16px, which equals a rem and the page's
+-- 12pt. With \WebLikePDF, an em of the text is the PDF's size instead
+-- (--tex8web-pdf-size). Without the lengths, no screen is wide (the query
+-- is 10000em), and the narrow layout is used at any width.
 function M.wide_screens(css)
-  local width, margin, gap = ems(css, "textwidth"), ems(css, "margin"), ems(css, "gap")
+  local width, unit = ems(css, "textwidth")
+  local margin, gap = ems(css, "margin"), ems(css, "gap")
+  local size = tonumber((custom(css, "pdf-size") or ""):match("^([%d.]+)pt$"))
+  if width and unit == "em" and size then width = width * size / 12 end
   local query = string.format("(min-width: %.2fem)",
     width and margin and gap and width + 2 * (margin + 2 * gap) or 10000)
   return (css:gsub("%(%-%-tex8web%-wide%)", query))
