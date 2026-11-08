@@ -986,6 +986,63 @@ async function sizing(chrome, file) {
   });
 }
 
+// The space in test-boxseps's tables, boxes, arrays, and description lists,
+// in pt of its 10.95pt text: \tabcolsep, \fboxsep, \fboxrule, \arraycolsep,
+// tcolorbox's boxsep plus middle, and \labelsep, each set away from its
+// default, and smaller in a group for the second table, an \fbox, and a
+// \colorbox. Only the space beside a column that the source sets with
+// @{} stays 0. A label starts at the margin. Within half a px, or a px for
+// each frame, which Chrome draws in whole px.
+const spaces = `(() => {
+  const pt = parseFloat(getComputedStyle(document.body).fontSize) / 10.95;
+  const all = selector => [...document.querySelectorAll(selector)];
+  const px = (el, property) => el ? parseFloat(getComputedStyle(el)[property]) : NaN;
+  const box = el => el ? el.getBoundingClientRect() : {};
+  const found = [];
+  const add = (what, value, wanted, frames = 0) => found.push([what, value / pt, wanted, (frames || 0.5) / pt]);
+  const sides = (what, el, wanted, sides = ['left', 'right']) => {
+    for (const side of sides) add(what + ' ' + side, px(el, 'padding-' + side), wanted[side] ?? wanted);
+  };
+  const [wide, narrow] = all('table.tabular');
+  sides('a cell', wide?.querySelector('td.td11'), 12);
+  sides('a cell before @{}', narrow?.querySelector('td.td10'), { left: 2, right: 0 });
+  sides('a cell after @{}', narrow?.querySelector('td.td01'), { left: 0, right: 2 });
+  const [framed, tight, small] = all('span.fbox');
+  for (const [what, el, sep] of [['an \\\\fbox', framed, 6], ['an \\\\fbox in a group', tight, 0],
+      ['an \\\\fbox in \\\\small', small, 6], ['an \\\\fbox alone', document.querySelector('div.fbox'), 6],
+      ['a \\\\colorbox', document.getElementById('colorbox1'), 6], ['an \\\\fcolorbox', document.getElementById('colorbox2'), 6],
+      ['a \\\\colorbox in a group', document.getElementById('colorbox3'), 0]]) {
+    sides(what, el, sep, ['top', 'right', 'bottom', 'left']);
+  }
+  for (const [what, el] of [['an \\\\fbox', framed], ['an \\\\fcolorbox', document.getElementById('colorbox2')]]) {
+    add(what + "'s frame", px(el, 'border-top-width'), 2, 1);
+  }
+  // (3cm, with \\fboxsep and \\fboxrule inside)
+  add('a \\\\framebox[3cm]', box(document.querySelector('.framebox-l')).width, 72.27 * 3 / 2.54);
+  const lower = document.querySelector('.tcolorbox .lowerbox');
+  add('a tcolorbox above its middle line', box(lower).top - box(lower?.previousElementSibling).bottom, 72.27 / 25.4 + 6);
+  add('a tcolorbox below its middle line', px(lower, 'padding-top'), 72.27 / 25.4 + 6);
+  all('dl.description').forEach((dl, i) => {
+    const label = dl.querySelector('dt > span'), text = dl.querySelector('dd p');
+    const range = document.createRange();
+    const start = text?.firstChild?.textContent.search(/\\S/);
+    if (start >= 0) range.setStart(text.firstChild, start), range.setEnd(text.firstChild, start + 1);
+    add(\`description \${i + 1}'s label after the margin\`, box(label).left - box(dl).left, 0);
+    add(\`description \${i + 1}'s text after the label\`, (start >= 0 ? range.getBoundingClientRect().left : NaN) - box(label).right, 10.95 * (i + 1));
+  });
+  const [array, matrix, given] = all('mjx-mtable').map(table => [...table.querySelectorAll('mjx-mtd')]);
+  sides('an array', array?.[0], 10);
+  sides('a pmatrix', matrix?.[0], { left: 0, right: 10 });
+  sides('an array with @{\\\\hspace{2em}}', given?.[0], { left: 10, right: 0 });
+  sides('an @{\\\\hspace{2em}} column', given?.[1], 0);
+  return found;
+})()`;
+async function spacing(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, {}, async page =>
+    (await page.evaluate(spaces)).filter(([, value, wanted, slack]) => !(Math.abs(value - wanted) <= slack))
+      .map(([what, value, wanted]) => `${what}: ${value.toFixed(2)}pt, not ${wanted.toFixed(2)}pt`));
+}
+
 // Each check, with the fixtures it runs on, which must have its feature:
 // - viewer: an SVG and a raster picture
 // - bar, fade, browsing, and one filter: test.tex's long page, with its
@@ -997,6 +1054,8 @@ async function sizing(chrome, file) {
 //   section
 // - fit: a short example whose one section with subsections is not the first
 // - sizes: \WebLikePDF at a size other than 12pt, and a table of contents
+// - spaces: a document with each length that spaces tables, boxes, arrays,
+//   and description lists set away from its default
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));
@@ -1020,6 +1079,7 @@ const checks = {
   preloads: [['test'], each(preloading)],
   transitions: [['examples/basic', 'test-generic'], navigating],
   sizes: [['test-likepdf'], each(sizing)],
+  spaces: [['test-boxseps'], each(spacing)],
 };
 
 const unknown = process.argv.slice(2).filter(name => !(name in checks));

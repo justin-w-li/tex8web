@@ -299,6 +299,12 @@
 
 % --- table cells ------------------------------------------------------------
 
+% the space at each side of a cell, \tabcolsep as in force at the table, on
+% each table (\Configure{halignTB}, html4.4ht). html4.4ht's stylesheet
+% gives 5pt.
+\Configure{halignTB}{\HCode{<table }}
+    {\HCode{ style="--tex8web-tabcolsep: \web@bodyem\tabcolsep">}}
+
 % a paragraph cell's lines centered or flush right, as in the PDF, when
 % \centering or \raggedleft, or ragged2e's \Centering or \RaggedLeft, is
 % in force at the cell's end, as it is from
@@ -511,14 +517,15 @@
 % --- lists ------------------------------------------------------------------
 
 % LaTeX's spacing of a list, for lists without their own: \topsep around it,
-% \itemsep and \parsep between items, and its left margin (see
-% css/tex8web.css). The bibliography's spacing comes from biblatex when
-% biblatex sets it. memoir has \bibitemsep but no \bibparsep, and keeps the
-% list's \parsep (memoir.cls).
+% \itemsep and \parsep between items, its left margin, and \labelsep after
+% a label (see css/tex8web.css). The bibliography's spacing comes from
+% biblatex when biblatex sets it. memoir has \bibitemsep but no \bibparsep,
+% and keeps the list's \parsep (memoir.cls).
 \begingroup\@listi
     \web@Css{:root { --tex8web-list-sep: \web@em\topsep;
         --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax};
         --tex8web-leftmargin: \web@em\leftmargin;
+        --tex8web-list-labelsep: \web@em\labelsep;
         --tex8web-biblabelsep: \web@em{\ifdefined\biblabelsep\biblabelsep\else\labelsep\fi};
         --tex8web-bibitem-sep: \web@em{\dimexpr\ifdefined\bibitemsep\bibitemsep\else\itemsep\fi
             +\ifdefined\bibparsep\bibparsep\else\parsep\fi\relax}; }}
@@ -595,6 +602,26 @@
 \fi
 \web@configurelist{itemize}{itemize}{ul}
 \web@configurelist{enumerate}{enumerate}{ol}
+% a description, as html4.4ht writes it, with the \labelsep that LaTeX puts
+% after each label. \descriptionlabel also starts with \hspace\labelsep,
+% which \@item takes back, so the label starts at the margin. tex4ht drops
+% the negative space and writes the \hspace as a no-break space per em
+% (\hsp:c, latex.4ht), so these are left out. Those in the label's text
+% are kept.
+\ConfigureList{description}
+    {\EndP\HCode{<dl \a:LRdir class="description"
+         style="--tex8web-list-labelsep: \web@bodyem\labelsep">}%
+     \PushMacro\end:itm \global\let\end:itm=\empty}
+    {\PopMacro\end:itm \global\let\end:itm \end:itm
+     \EndP\HCode{</dd></dl>}\ShowPar}
+    {\end:itm \global\def\end:itm{\EndP\Tg</dd>}%
+     \HCode{<dt class="description">}\AnchorLabel\bgroup}
+    {\egroup\EndP\HCode{</dt><dd\Hnewline class="description">}\par\ShowPar}
+\ifdefined\descriptionlabel
+    \let\web@descriptionlabel\descriptionlabel
+    \def\descriptionlabel#1{{\let\web@hspace\c:hspace \let\c:hspace\empty
+        \web@descriptionlabel{\let\c:hspace\web@hspace#1}}}
+\fi
 \@ifpackageloaded{enumitem}{%
     % html4.4ht's configuration expands \a:enumitemenv when a list is used,
     % so its class names the list made last. enumitem's \enit@type is 0 for
@@ -607,6 +634,46 @@
     \Configure{enumitemnewlist}{\web@needs{a:enumitemenv}\expandafter\web@newlist\expandafter{\a:enumitemenv}}%
 }{}
 \catcode58 12
+
+% --- \fbox and \colorbox -----------------------------------------------------
+
+% \fbox, \framebox, \colorbox, and \fcolorbox, with the \fboxsep and
+% \fboxrule in force at each box (css/tex8web.css). html4.4ht's stylesheet
+% has the lengths at the start of the document, and 1px for the frame of an
+% \fcolorbox.
+\catcode58 11
+\def\web@fbox{--tex8web-fboxsep: \web@bodyem\fboxsep; --tex8web-fboxrule: \web@bodyem\fboxrule}
+\Configure{fbox}
+    {\ifvmode \IgnorePar\EndP
+         \HCode{<div class="fbox" style="\web@fbox">}%
+         \def\end:bx{\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\par}%
+     \else
+         \HCode{<span class="fbox" style="\web@fbox">}%
+         \def\end:bx{\HCode{</span>}}%
+     \fi}
+    {\end:bx}
+\Configure{framebox}
+    {\HCode{<span class="framebox-\frameboxAlign" style="width:\frameboxWidth; \web@fbox">}}
+    {\HCode{</span>}}
+\catcode58 12
+% (regex #2 replaced by #3 in macro #1, also within braces, as etoolbox's
+% \patchcmd would, without etoolbox)
+\ExplSyntaxOn
+\cs_new_protected:Npn \web@replace #1#2#3
+    {
+        \cs_if_exist:NTF #1
+            { \regex_replace_once:nnNF {#2} {#3} #1 { \web@outdated { \token_to_str:N #1 } } }
+            { \web@outdated { \token_to_str:N #1 } }
+    }
+% (color.4ht defines \a:color, \a:colorbox, and \a:fcolorbox. Without it,
+% tex8web-page.tex warns or stops.)
+\cs_if_exist:NT \a:color
+    {
+        \web@replace \a:colorbox { id="colorbox\c{textcolorN}" } { \0\ style="\c{web@fbox}" }
+        \web@replace \a:fcolorbox { id="colorbox\c{textcolorN}" } { \0\ style="\c{web@fbox}" }
+        \web@replace \a:fcolorbox { solid\ 1px } { solid\ var\(--tex8web-fboxrule\) }
+    }
+\ExplSyntaxOff
 
 % --- framed -----------------------------------------------------------------
 

@@ -36,6 +36,7 @@ tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 - Equations are numbered as in TeX, so the numbers agree with `\eqref`.
 - Alignments are split at `\intertext`, and the parts are given the same columns in `js/tex8web.js`, so they line up as one alignment.
 - The document is measured in TeX: the text width, heading sizes, link colors, and the space around theorems, lists, floats, captions, and display math. The measurements are passed to the stylesheet as `--tex8web-*` custom properties, with the text width in ems, so the column scales with the text size. Every static rule is in `css/tex8web.css`.
+- A length that a document can change for one element is written on that element: `\tabcolsep` on each table, `\fboxsep` and `\fboxrule` on each `\fbox`, `\framebox`, `\colorbox`, and `\fcolorbox`, and `\labelsep` on each list.
 - A size change within the text, such as `\small` or a footnote, is written by tex4ht as spans around the words, and the blocks around them stay at the body size. So the spacing of a list, theorem, algorithm, or box is given in ems of the body size, and each formula in that text is given its size as `--tex8web-math-size`, a multiple of the body size.
 - List labels are typeset by TeX, so they match the PDF.
 - `\,` and `\thinspace` in text are written as U+202F, the narrow no-break space, and kept with the math after them. TeX does not break a line at their kern, which tex4ht writes as a space where a line can break, or as nothing in italic.
@@ -93,6 +94,7 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 - `\big` and its relatives
 - the 10pt delimiters and large operators of an 11pt or 12pt document
 - the rows of arrays and alignments
+- the space between the columns of arrays and matrices, and at the edges of an array, from `\arraycolsep` at the start of the document
 - line breaks in inline math, after relations and never at a space
 - the columns of an alignment split at `\intertext`
 
@@ -170,7 +172,7 @@ The checks of each test script are listed in its header comment.
   - `test-mathescape.tex` holds the formulas where tex8web's escaping of formula source (`\alteqtoks`) could differ from tex4ht's. It is built a second time by `run.mjs` with `test-mathescape-stock.cfg`, in which tex4ht's escaping is restored, and the two pages must be the same.
 - **`npm run test:visual`**: `test/visual.mjs`, then `test/page.mjs`, with Chrome and the network. `test/chrome.test.mjs` and `test/shots.test.mjs` run beside them, so their output is mixed in.
   - `visual.mjs`: each page, prerendered and typeset by MathJax in the browser, compared screen by screen
-  - `page.mjs`: the page script, the tint of a linked equation, and the text and controls at another default font size, tested on the fixtures that have each feature. Run it alone with `npm run test:page`.
+  - `page.mjs`: the page script, the tint of a linked equation, the text and controls at another default font size, and the space in tables, boxes, arrays, and description lists, tested on the fixtures that have each feature. Run it alone with `npm run test:page`.
   - `chrome.test.mjs`: tests of `test/lib/chrome.mjs`
   - `shots.test.mjs`: tests of the comparison of two builds in `shots.mjs`
 - **`npm run examples`**: the PDF and page of each example, built into `examples/<name>/build/`, and the published site, built into `build/site/`.
@@ -229,6 +231,7 @@ Differences from the PDF too small for the [known limitations](DOCUMENTATION.md#
 - **Math in a page built with Node is laid out from estimates**, not browser measurements, for example text in math without MathJax glyphs. A box can be a pixel or so off.
 - **Delimiters and radicals** can differ slightly in size from the PDF, as they come from the MathJax font.
 - **The space before inline math after a word in another font**, for example an algorithm2e keyword before its argument. It can be in the word's font without Node, and is in the text font with Node. The two pages can be a pixel apart, and neither always matches the PDF.
+- **An `\fbox` or `\colorbox` in a line** is a few points taller than in the PDF. Its text is as tall as a line of the font, where TeX's box is as tall as its letters.
 - **Two [H] algorithms of algorithm2e in a row** are 2em apart, the margins of both. In the PDF, they are about 1em apart.
 - **A long caption of algorithm2e's plain, boxed, or plainruled style** ends short of the right edge where the PDF's caption reaches it.
 - **Text in another size**, such as a footnote, is set by tex4ht at a whole percent of the body size, rounded down: 81% for 9pt text in an 11pt document, where the PDF has 82.2%. Its math is at the PDF's size, so the math can be up to 2% larger than the words around it.
@@ -295,7 +298,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, and prerendering |
 | `tex/tex8web-core.tex` | the entry point, with the four modules below |
 | `tex/tex8web-math.tex` | the MathJax configuration, `\WebMathMacros`, the escaping of formula source, siunitx, equation numbers, `\intertext`, TikZ in display math, and the space around display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, the alignment of paragraph cells, the table of contents, lists, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, the space in table cells and the alignment of paragraph cells, the table of contents, lists, `\fbox` and `\colorbox`, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, and the measurements and heading fonts of the document |
 | `tex/tex8web-boxes.tex` | tcolorbox boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: settings lost under tex4ht, dcolumn's old names for `dcolumn.4ht`, and `\web@needs` |

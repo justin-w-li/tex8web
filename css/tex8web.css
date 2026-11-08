@@ -390,8 +390,9 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
    - colors: --tcb-frame, --tcb-back, --tcb-text, --tcb-title-text,
      --tcb-title-back, and for a boxed title --tcb-title-frame
    - lengths: --tcb-rule-top (-right, -bottom, -left), --tcb-padding
-     (and --tcb-padding-left), --tcb-radius, --tcb-title-padding (and
-     --tcb-title-padding-left), and for a boxed title
+     (and --tcb-padding-left), --tcb-middle (the space on each side of
+     the line before the lower part), --tcb-radius, --tcb-title-padding
+     (and --tcb-title-padding-left), and for a boxed title
      --tcb-title-rule-top (...) and --tcb-title-radius
    - only where the box has them, and reset here so that a nested box
      does not inherit them: --tcb-line-top (...: a borderline),
@@ -410,8 +411,8 @@ mjx-container :is(mjx-mo, mjx-mi, mjx-mn, mjx-ms, mjx-mtext) > mjx-c { clip-path
     padding: var(--tcb-title-padding); }
 .tcolorbox-title p { margin: 0; text-indent: 0; }
 .tcolorbox-content { padding: var(--tcb-padding); display: flow-root; }
-.tcolorbox .lowerbox { display: flow-root; margin-top: 0.5em; padding-top: 0.5em;
-    border-top: 1px dashed var(--tcb-frame); }
+.tcolorbox .lowerbox { display: flow-root; margin-top: var(--tcb-middle);
+    padding-top: var(--tcb-middle); border-top: 1px dashed var(--tcb-frame); }
 [class*="tex8web-tcb-boxed-"] > .tcolorbox-title { width: fit-content;
     border-style: solid; border-color: var(--tcb-title-frame);
     border-width: var(--tcb-title-rule-top) var(--tcb-title-rule-right)
@@ -460,6 +461,23 @@ span.tcolorbox > .tcolorbox-title { display: block; }
     padding: var(--tex8web-mdf-padding); }
 .mdframed > :first-child { margin-top: 0 !important; }
 .mdframed > :last-child { margin-bottom: 0 !important; }
+/* \fbox, \framebox, \colorbox, and \fcolorbox: \fboxsep inside on each
+   side, and \fboxrule for the frame (tex8web-text.tex). A box in a line is
+   a block in that line, as TeX's box is, so the line makes room for the
+   box, and a \framebox has its width */
+:is(span.fbox, span.colorbox, .framebox-c, .framebox-l, .framebox-r) { display: inline-block; }
+.fbox, div.center div.fbox, .framebox-c, .framebox-l, .framebox-r, .colorbox, div.colorbox {
+    padding: var(--tex8web-fboxsep); }
+.fbox, div.center div.fbox, .framebox-c, .framebox-l, .framebox-r {
+    border-width: var(--tex8web-fboxrule); }
+/* (a \framebox's width includes its \fboxsep and \fboxrule, as in
+   latex.ltx's \@iframebox, and is at most the text's) */
+:is(.framebox-c, .framebox-l, .framebox-r) { box-sizing: border-box; max-width: 100%; }
+/* a table cell's space at each side, \tabcolsep (tex8web-text.tex): at the
+   left of td10, at the right of td01 */
+td.td11 { padding-inline: var(--tex8web-tabcolsep); }
+td.td10 { padding-left: var(--tex8web-tabcolsep); }
+td.td01 { padding-right: var(--tex8web-tabcolsep); }
 /* framed, as far from the text as in the PDF (tex8web-text.tex). Under a
    titlesec heading, the sum of this space and the heading's space below,
    not the larger: titlesec adds its space with \vspace, which ends in
@@ -648,7 +666,7 @@ span.tcolorbox > .tcolorbox-title { display: block; }
    first line. Spaced as a LaTeX list: \topsep around it, \itemsep and
    \parsep between items */
 dl.description { margin-block: var(--tex8web-list-sep); padding-left: var(--tex8web-leftmargin); }
-dl.description > dt { float: left; clear: left; margin-right: 0.5em;
+dl.description > dt { float: left; clear: left; margin-right: var(--tex8web-list-labelsep);
     margin-left: calc(-1 * var(--tex8web-leftmargin)); }
 dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 

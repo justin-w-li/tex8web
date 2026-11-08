@@ -147,6 +147,8 @@
     \web@tcb@text{text}{tcbcolupper}%
     \web@tcb@sides{padding}{\kvtcb@boxsep+\kvtcb@top}{\kvtcb@boxsep+\kvtcb@rightupper}%
         {\kvtcb@boxsep+\kvtcb@bottom}{\kvtcb@boxsep+\kvtcb@leftupper}%
+    % (the space on each side of the line between the upper and lower part)
+    \web@tcb@length{middle}{\kvtcb@boxsep+\kvtcb@middle}%
     \ifx\web@tcb@before\relax\else\web@tcb@length{before}\web@tcb@before\fi
     \ifx\web@tcb@after\relax\else\web@tcb@length{after}\web@tcb@after\fi
     % the title: its text color, and its background, which is the frame's

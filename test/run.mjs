@@ -315,6 +315,8 @@ const lightDark = (color, property) =>
   `light-dark\\(${color}, oklch\\(from ${color} var\\(--tex8web-dark-${property}\\) c h\\)\\)`;
 const dark = hex => `light-dark(${hex}, oklch(from ${hex} var(--tex8web-dark-color) c h))`;
 const text = (hex, html) => `<span style='color:${dark(hex)};'>${html}</span>`;
+// (\fboxsep and \fboxrule, in a box's style attribute)
+const fbox = "style='--tex8web-fboxsep: 0.3em; --tex8web-fboxrule: 0.04em'";
 // (the lengths in a list's style attribute, before its color)
 const list = '--tex8web-list-topsep: 0.8em; --tex8web-list-itemsep: 0.8em; --tex8web-list-indent: 2.5em; --tex8web-list-labelsep: 0.5em; ';
 const colors = {
@@ -322,7 +324,7 @@ const colors = {
     new RegExp(`<span style='color:${lightDark('#000080', 'color')};'>navy</span>`),
     /<span style='color:var\(--tex8web-text\);'>black<\/span>/,
     new RegExp(`#colorbox1\\{background-color:${lightDark('#FFFFB2', 'background')};\\}`),
-    new RegExp(`#colorbox2\\{border: solid 1px ${lightDark('#0000FF', 'border')};\\}`),
+    new RegExp(`#colorbox2\\{border: solid var\\(--tex8web-fboxrule\\) ${lightDark('#0000FF', 'border')};\\}`),
     new RegExp(`<mjx-mstyle style='color: ${lightDark('red', 'color')};'>`),
     /<mjx-mstyle style='color: var\(--tex8web-text\);'>/,
     new RegExp(`<mjx-mpadded style='background-color: ${lightDark('yellow', 'background')};'>`),
@@ -356,8 +358,8 @@ const colors = {
     `A ${text('#FF0000', 'red')} word, ${text('#000080', 'a mix')}, ${text('#008000', 'a model')} and `
       + `${text('#0A7828', `leaf ${text('#FF0000', 'red')} leaf`)}. `
       + `${text('#FF0000', "Red, <span style='color:var(--tex8web-text);'>black,</span> red")}, `
-      + `<span class='colorbox' id='colorbox1'>boxed</span>, `
-      + `<span class='colorbox' id='colorbox2'>${text('#FF0000', 'red boxed')}</span>,\n`
+      + `<span class='colorbox' id='colorbox1' ${fbox}>boxed</span>, `
+      + `<span class='colorbox' id='colorbox2' ${fbox}>${text('#FF0000', 'red boxed')}</span>,\n`
       + `<a href='#here'>${text('#FF0000', 'linked')}</a> after.`,
     `<p class='indent' style='color:${dark('#0A7828')};'>   A first paragraph in leaf.\n</p>`,
     `<p class='indent'>${text('#0A7828', '   A second paragraph in leaf.')}\n</p>`,
@@ -663,7 +665,7 @@ const breaks = {
 // line (a makecell's too), centered by center, \centering, and a float's
 // \centering, flush right by flushright, a longtable by \LTleft and
 // \LTright, and tabularx centered, whatever the tables in its cells.
-const placed = (cls, text) => new RegExp(`<table class='${cls}' id='[^']+'>(?:(?!<table)[^])*${text}`);
+const placed = (cls, text) => new RegExp(`<table class='${cls}' id='[^']+'[^>]*>(?:(?!<table)[^])*${text}`);
 const tables = {
   'test-tabular': [
     placed('tabular tex8web-indent', 'A table that starts a paragraph'),

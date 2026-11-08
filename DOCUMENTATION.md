@@ -230,9 +230,15 @@ After `\hfill` in a paragraph, a heading, or a caption, the rest of the line is 
 
 ### Tables
 
+Each cell has `\tabcolsep` at its sides, as in the PDF, unless `@{}` removes it.
+
 In a paragraph column, such as `p{3cm}`, `\centering` or `\raggedleft`, or ragged2e's `\Centering` or `\RaggedLeft`, centers a cell's lines or sets them flush right, as in the PDF. Put it at the start of the cell, or in the column's `>{}`.
 
 A table sits where it sits in the PDF. A tabular is at the left, at the paragraph's indent, unless `center`, `flushright`, `\centering`, or `\raggedleft` puts it elsewhere. A tabular in a table cell is placed by the cell's alignment. A longtable is centered, or placed by its `[l]` or `[r]` option, or by `\LTleft` and `\LTright` set to `\fill` or `0pt`. A tabularx is centered.
+
+### Boxes
+
+In text, `\fbox`, `\framebox`, `\colorbox`, and `\fcolorbox` have the `\fboxsep` and `\fboxrule` in force at each box, as in the PDF.
 
 ### Footnotes
 
@@ -349,6 +355,8 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **The separator of xfrac's `\sfrac`.** A fraction with a separator in brackets, such as `$\sfrac{1}[/]{2}$`, is set wrongly, as a fraction over the bracket. Leave the separator out.
 - **A TikZ picture in display math**, such as a `tikzcd` diagram, is drawn as one picture with the rest of the math in that display.
 - **The space above display math** is `\abovedisplayskip`, also after a short line, where the PDF has the smaller `\abovedisplayshortskip`.
+- **`\arraycolsep`** is taken at `\begin{document}`. A change to it for one formula is ignored.
+- **Boxes in math.** `\fbox`, `\colorbox`, and `\fcolorbox` in math have MathJax's space and frame, not `\fboxsep` and `\fboxrule`.
 - **Styles for `.mathjax-inline`** in a config apply only to a page built without Node, and to math in text of another size, such as a footnote.
 
 ### Text and layout
@@ -366,7 +374,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 
 ### Packages
 
-- **tcolorbox.** Boxes have their colors, rules, corners, shadow, spacing, and title. Anything drawn with TikZ in a skin, such as overlays and shadings, is shown as a plain frame. Pictures in side-by-side listing boxes are not converted. If the build fails on a fragile command in a box title, make the command robust with `\robustify` in your config.
+- **tcolorbox.** Boxes have their colors, rules, corners, shadow, spacing, and title. Anything drawn with TikZ in a skin, such as overlays and shadings, is shown as a plain frame. Pictures in side-by-side listing boxes are not converted. The line before the lower part of a box stops at the box's padding, where in the PDF it reaches the frame. If the build fails on a fragile command in a box title, make the command robust with `\robustify` in your config.
 - **enumitem.** `align=left`, `wide`, and `itemindent` are ignored. Labels are right-aligned and hang into the margin, as in standard LaTeX lists.
 - **Table colors.** With colortbl and without xcolor, `\textcolor` with colors defined in your document has no effect, because xcolor is loaded by tex4ht after these colors are defined. Load xcolor yourself, before you define the colors. In a table with `\hline`, the row colors of `\rowcolors` alternate wrongly.
 - **algorithm2e.** The `ruled` and `algoruled` styles have their rules, and every style has its caption in its place. `boxed`, `boxruled`, `tworuled`, and `plainruled` have no frame or rules. Block markers (`\AlgoDisplayBlockMarkers`) are not shown. A line wraps at the window width, not the PDF width, so a `\tcp*` comment can move to the next line.

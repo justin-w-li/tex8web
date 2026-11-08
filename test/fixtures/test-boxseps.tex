@@ -1,0 +1,53 @@
+% The space in tables, arrays, boxes, and description lists from TeX's
+% lengths, each set away from its default, in the document and in a group
+\documentclass[11pt]{article}
+\usepackage{amsmath,xcolor,tcolorbox}
+\setlength\tabcolsep{12pt}
+\setlength\arraycolsep{10pt}
+\setlength\fboxsep{6pt}
+\setlength\fboxrule{2pt}
+\setlength\labelsep{1em}
+\begin{document}
+
+\begin{tabular}{|l|c|r|}
+\hline
+left & center & right \\
+\hline
+\end{tabular}
+
+{\small\setlength\tabcolsep{2pt}
+\begin{tabular}{|l@{}c|r|}
+\hline
+narrow & joined & cells \\
+\hline
+\end{tabular}}
+
+\[ \begin{array}{cc} a & b \\ c & d \end{array}
+   \quad \begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix}
+   \quad \begin{array}{c@{\hspace{2em}}c} x & y \end{array}
+   \quad \left(\begin{array}{cc} e & f \end{array}\right) \]
+
+A \fbox{framed} word, a \framebox[3cm][l]{wide} one,
+a \colorbox{yellow}{colored} one, and an \fcolorbox{red}{yellow}{outlined} one.
+{\setlength\fboxsep{0pt}\colorbox{yellow}{tight} and \fbox{tight}.}
+{\small A \fbox{small} one.}
+
+\fbox{A box alone}
+
+\begin{tcolorbox}[middle=6pt]
+Upper part.
+\tcblower
+Lower part.
+\end{tcolorbox}
+
+\begin{description}
+\item[First] The first item, long enough to run onto a second line in a
+narrow window and show where the item's lines start.
+\item[Second] The second.
+\end{description}
+
+{\setlength\labelsep{2em}
+\begin{description}
+\item[Wide] A list with a wider gap.
+\end{description}}
+\end{document}

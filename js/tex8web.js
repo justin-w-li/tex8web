@@ -6,6 +6,7 @@
 //     large operators from it at its design size, 10pt, also in an 11pt
 //     document)
 //   baselineskip, jot: rows of arrays and alignments
+//   arraycolsep: the columns of arrays and matrices
 //   pt: 1pt (MathJax reads pt as a tenth of an em)
 // In a page, this file configures MathJax from the page's tex8web-config
 // (at the end); prerender.mjs calls tex8web() itself.
@@ -80,14 +81,17 @@ function tex8web(config, tex) {
   // 0.1em), and TeX's struts and space, for each environment.
   // tex8web-math.tex lists the environments it numbers.
   const alignment = {rowspacing: 0.3, stretch: 1, space: tex.jot};
-  const array = {rowspacing: 0.4, stretch: 1, space: 0};
+  // In arrays and matrices, \arraycolsep is on each side of a column
+  // (colsep), and also at an array's edges (edges).
+  const matrix = {rowspacing: 0.4, stretch: 1, space: 0, colsep: true};
+  const array = {...matrix, edges: true};
   const environments = {
     align: alignment, 'align*': alignment, alignat: alignment, 'alignat*': alignment,
     flalign: alignment, 'flalign*': alignment, gather: alignment, 'gather*': alignment,
     aligned: alignment, alignedat: alignment, gathered: alignment, split: alignment,
     multline: {...alignment, rowspacing: 0.5}, 'multline*': {...alignment, rowspacing: 0.5},
-    array: array, matrix: array, pmatrix: array, bmatrix: array, Bmatrix: array,
-    vmatrix: array, Vmatrix: array,
+    array: array, matrix: matrix, pmatrix: matrix, bmatrix: matrix, Bmatrix: matrix,
+    vmatrix: matrix, Vmatrix: matrix,
     // amsmath's cases sets \arraystretch to 1.2, and has two columns a
     // \quad apart, also when the second is empty
     cases: {rowspacing: 0.2, stretch: 1.2, space: 0, columns: 2},
@@ -146,6 +150,22 @@ function tex8web(config, tex) {
     mtable.attributes.set('rowspacing', spacing.join(' '));
   }
 
+  // TeX's \arraycolsep where MathJax has its 0.5em on each side of a
+  // column: 1em between columns, 0.5em at a !{} column, and 0.5em at an
+  // array's edges, written as data-array-padding only where an edge has
+  // @{}. An @{} column is a column of its own, with 0 around it, so the
+  // space that the source sets is kept.
+  function spaceColumns(mtable, env) {
+    const sep = {'1em': 2 * tex.arraycolsep, '.5em': tex.arraycolsep};
+    const space = list => String(list).split(/\s+/)
+      .map(s => s in sep ? sep[s].toFixed(3) + 'em' : s).join(' ');
+    mtable.attributes.set('columnspacing', space(mtable.attributes.get('columnspacing')));
+    if (env.edges) {
+      const padding = mtable.attributes.getExplicit('data-array-padding') ?? '.5em .5em';
+      mtable.attributes.set('data-array-padding', space(padding));
+    }
+  }
+
   // colors (\color, \colorbox, \fcolorbox: mathcolor, mathbackground, and a
   // border in style) at another lightness in dark mode (css/tex8web.css's
   // --tex8web-dark-*). Black text takes the text's color.
@@ -181,6 +201,7 @@ function tex8web(config, tex) {
       if (node.isKind('mtable')) {
         const env = environment(node);
         if (env) spaceRows(node, env, factory);
+        if (env?.colsep) spaceColumns(node, env);
       } else if (node.isKind('mspace') && !math.display && node.attributes.getExplicit('width')
           && !node.attributes.getExplicit('linebreak')) {
         // inline math never breaks at a space, such as the \, between a
