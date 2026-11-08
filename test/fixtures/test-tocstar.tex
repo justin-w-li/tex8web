@@ -1,24 +1,26 @@
 % Table of contents entries that \addcontentsline adds beside unnumbered
 % headings: before one, after one with text or a blank line after it, and
-% after a numbered heading, before the unnumbered one it names.
+% after a numbered heading, before the unnumbered one it names. The
+% filler lets each heading scroll to the top of the window.
 \documentclass{article}
+\usepackage{lipsum}
 \begin{document}
 \tableofcontents
 \addcontentsline{toc}{section}{Before}
 \section*{Before}
-Text.
+Text. \lipsum[1-6]
 
 \section*{After}
 \addcontentsline{toc}{section}{After}
-Text right after.
+Text right after. \lipsum[1-6]
 
 \section*{Blank}
 \addcontentsline{toc}{section}{Blank}
 
-Text after a blank line.
+Text after a blank line. \lipsum[1-6]
 
 \section{Results}
 \addcontentsline{toc}{subsection}{Overview}
 \subsection*{Overview}
-Text.
+Text. \lipsum[1-6]
 \end{document}
