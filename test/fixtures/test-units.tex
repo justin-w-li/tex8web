@@ -21,7 +21,13 @@ Text: \num{12345.678}, \num{1.5e-3}, \SI{3}{\meter\per\second},
 {\sisetup{mode=text}\qty{1.5}{\metre}}, \qty{3}{\pct}.
 
 Math: $v = \SI{3}{\meter\per\second}$, $\qty[per-mode=fraction]{9.81}{\metre\per\square\second}$,
-$\num{1.5e-3} + \unit{\joule}$, $\ang{30}$.
+$\num{1.5e-3} + \unit{\joule}$, $\num{1234567.89123}$, $\ang{30}$,
+$\qty{2}{\micro\metre}$, $\qty{4}{\degreeCelsius}$, $\qty{5}{\ohm}$.
+Ranges, lists, products, and complex numbers: $\numrange{1}{5}$,
+$\qtyrange{1}{5}{\kelvin}$, $\numlist{1;2;3}$, $\qtylist{1;2}{\metre}$,
+$\numproduct{2 x 3}$, $\qtyproduct{2 x 3}{\metre}$, $\complexnum{1+2i}$,
+$\complexqty{1+2i}{\ohm}$, and the older
+$\SIrange{2}{6}{\kelvin}$ and $\SIlist{3;4}{\metre}$.
 \begin{align}
   E &= \qty{1.6e-19}{\joule}
 \end{align}

@@ -18,6 +18,8 @@ local fallbacks = {
   -- "composed with", and for ° is "degrees".)
   ["\\TextOrMath"] = "\\newcommand{\\TextOrMath}[2]{#1}",
   ["\\ensuremath"] = "\\newcommand{\\ensuremath}[1]{#1}",
+  -- (textcomp's, in siunitx's \ohm, which is \TextOrMath{\textohm}{\Omega})
+  ["\\textohm"] = "\\newcommand{\\textohm}{\\Omega}",
   -- (xfrac's, as \nicefrac from MathJax's units extension, which
   -- tex8web-math.tex loads with xfrac)
   ["\\sfrac"] = "\\newcommand{\\sfrac}[3][]{\\nicefrac{#2}{#3}}",
