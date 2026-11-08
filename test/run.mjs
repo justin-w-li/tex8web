@@ -122,7 +122,7 @@ const measured = {
 //   extension font in an 11pt document
 // - a big bar a little taller, and a large operator scaled around it
 // - an align's rows on TeX's struts, \jot apart
-// - inline math broken after a relation
+// - inline math broken after a relation, and at \allowbreak
 const typeset = {
   'test': [
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 TEX-SO'>\(/,
@@ -134,13 +134,21 @@ const typeset = {
     /<mtable [^>]*data-tex8web-env='align'[^>]*rowspacing='0.274em'/,
     /<mspace depth='0.373em' height='0.869em' width='0em'>/,
     /<mo linebreakstyle='after'>=<\/mo>/,
+    /<mi>a<\/mi><mspace><\/mspace><mi>b<\/mi>/,
   ],
   // (a range without an empty \text before it, which would add an mrow and
-  // a break, and -- and \textendash in a phrase as an en dash)
+  // a break, and -- and \textendash in a phrase as an en dash; no break
+  // at a space in inline math, as between a number and its unit; the
+  // degree sign raised as in the PDF's math, not MathJax's small ring)
   'test-units': [
     /<math xmlns='[^']*'><mrow><mn>1<\/mn><mtext> to <\/mtext><mn>5<\/mn><\/mrow><\/math>/,
     /<math xmlns='[^']*'><mrow><mn>1<\/mn><mtext>–<\/mtext><mn>2<\/mn><\/mrow><\/math>/,
     /<math xmlns='[^']*'><mrow><mn>3<\/mn><mtext>–<\/mtext><mn>4<\/mn><\/mrow><\/math>/,
+    /<mn>1<\/mn><mspace linebreak='nobreak' width='0\.167em'><\/mspace><mrow data-mjx-texclass='ORD'><mi mathvariant='normal'>K<\/mi><\/mrow><mtext> to /,
+    /<mi mathvariant='normal'>m<\/mi><\/mrow><mspace linebreak='nobreak' width='0\.167em'><\/mspace><msup>/,
+    /^(?![^]*<math xmlns='[^']*'>(?:(?!<\/math>)[^])*<mspace (?![^>]*linebreak)[^>]*width=)/,
+    /<mn>30<\/mn><mrow data-mjx-texclass='ORD'><msup><mrow data-mjx-texclass='ORD'><\/mrow><mrow data-mjx-texclass='ORD'><mtext[^>]*>∘<\/mtext>/,
+    /^(?![^]*°)/,
   ],
 };
 
@@ -166,7 +174,7 @@ const speech = {
     /aria-label='2 times 3'/, /aria-label='2 m times 3 m'/, /aria-label='1 plus 2 i'/,
     /aria-label='open paren 1 plus 2 i close paren times Omega'/, /aria-label='2 mu m'/, /aria-label='5 Omega'/,
     /aria-label='3 times m s to the negative 1 power'/, /aria-label='2 percent'/, /aria-label='3 percent'/, /aria-label='1 K'/,
-    /aria-label='30 degrees'/,
+    /aria-label='30 degrees'/, /aria-label='4 degrees C'/,
     /, 1\.5 m, /,
     /aria-label='v equals 3 times m s to the negative 1 power'/,
     /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,

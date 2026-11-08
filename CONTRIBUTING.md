@@ -91,7 +91,7 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 - `\big` and its relatives
 - the 10pt delimiters and large operators of an 11pt or 12pt document
 - the rows of arrays and alignments
-- line breaks after relations
+- line breaks in inline math, after relations and never at a space
 - the columns of an alignment split at `\intertext`
 
 ### 4. Prerendering
@@ -108,7 +108,7 @@ By default, hidden MathML copies of the formulas are added by MathJax: a quarter
 
 #### Speech
 
-Each formula has `role="math"` and its speech as an `aria-label`. The speech is made by MathJax's semantic enrichment, and the math is changed by it. So the page is typeset a second time only for the speech, with the math adjusted for the speech rule engine. Without this adjustment, Γ would be spoken as "normal Gamma" and `^\top` as "raised to the down tack power".
+Each formula has `role="math"` and its speech as an `aria-label`. The speech is made by MathJax's semantic enrichment, and the math is changed by it. So the page is typeset a second time only for the speech, with the math adjusted for the speech rule engine. Without this adjustment, Γ would be spoken as "normal Gamma", `^\top` as "raised to the down tack power", and the degree sign `{}^\circ` as "composed with".
 
 Most of the prerendering time is spent in the speech rule engine, so each formula's speech is saved in a speech cache for the next build. The cache key is made of:
 

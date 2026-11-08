@@ -13,13 +13,11 @@ local M = {}
 local fallbacks = {
   ["\\bm"] = "\\newcommand{\\bm}[1]{\\boldsymbol{#1}}",
   ["\\qedhere"] = "\\newcommand{\\qedhere}{}",
-  -- (LaTeX's, in the units siunitx prints. siunitx's \degree is
-  -- \TextOrMath{°}{{}^{\circ}}. MathJax's speech for a raised ∘ is
-  -- "composed with", and for ° is "degrees".)
-  ["\\TextOrMath"] = "\\newcommand{\\TextOrMath}[2]{#1}",
+  -- (LaTeX's, in the units siunitx prints. siunitx's \degree reaches
+  -- MathJax as \TextOrMath{°}{{}^{\circ}} under pdfTeX, and in math the PDF
+  -- has the second. MathJax sets ° as a small ring accent.)
+  ["\\TextOrMath"] = "\\newcommand{\\TextOrMath}[2]{#2}",
   ["\\ensuremath"] = "\\newcommand{\\ensuremath}[1]{#1}",
-  -- (textcomp's, in siunitx's \ohm, which is \TextOrMath{\textohm}{\Omega})
-  ["\\textohm"] = "\\newcommand{\\textohm}{\\Omega}",
   -- (xfrac's, as \nicefrac from MathJax's units extension, which
   -- tex8web-math.tex loads with xfrac)
   ["\\sfrac"] = "\\newcommand{\\sfrac}[3][]{\\nicefrac{#2}{#3}}",

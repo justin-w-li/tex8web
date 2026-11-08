@@ -172,7 +172,7 @@ function tex8web(config, tex) {
   const wideAccents = ['^', '~'];
   let TEXCLASS;
 
-  function adjust({data}) {
+  function adjust({math, data}) {
     const factory = data.nodeFactory;
     const scale = (100 * tex.exscale).toFixed(1) + '%';
     const operators = [];
@@ -181,6 +181,12 @@ function tex8web(config, tex) {
       if (node.isKind('mtable')) {
         const env = environment(node);
         if (env) spaceRows(node, env, factory);
+      } else if (node.isKind('mspace') && !math.display && node.attributes.getExplicit('width')
+          && !node.attributes.getExplicit('linebreak')) {
+        // inline math never breaks at a space, such as the \, between a
+        // number and its unit, as TeX never breaks a formula at glue
+        // (\allowbreak is a space without a width)
+        node.attributes.set('linebreak', 'nobreak');
       } else if (node.isKind('mo')) {
         // inline math breaks after a relation or binary operator, as in TeX
         if (node.texClass === TEXCLASS.REL || node.texClass === TEXCLASS.BIN) {
