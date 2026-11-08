@@ -625,6 +625,31 @@ const breaks = {
   ],
 };
 
+// Where each table sits, from its class: at the indent of a paragraph it
+// starts, at the left after text or a \noindent, in a cell's line, centered
+// by center, \centering, and a float's \centering, flush right by
+// flushright, a longtable by \LTleft and \LTright, and tabularx centered.
+const placed = (cls, text) => new RegExp(`<table class='${cls}' id='[^']+'>(?:(?!<table)[^])*${text}`);
+const tables = {
+  'test-tabular': [
+    placed('tabular tex8web-indent', 'A table that starts a paragraph'),
+    placed('tabular', 'in the line'),
+    placed('tabular', 'After a noindent'),
+    placed('tabular tex8web-indent', '<div class=.tabular.>'),
+    placed('tabular tex8web-inline', 'in a p cell'),
+    placed('tabular tex8web-inline', 'in a c cell'),
+    placed('tabular tex8web-inline', 'in an r cell'),
+    placed('tabular tex8web-center', 'In center'),
+    placed('tabular tex8web-right', 'In flushright'),
+    placed('tabular tex8web-center', 'After centering'),
+    placed('tabular tex8web-center', 'In a centered float'),
+    placed('longtable tex8web-center', 'A longtable '),
+    placed('longtable', 'A longtable at the left'),
+    placed('longtable tex8web-right', 'A longtable at the right'),
+    placed('tabular tex8web-center', '<p class=.noindent.>A tabularx'),
+  ],
+};
+
 const algorithms = {
   // algorithm's ruled floats, with a space after the caption's label instead
   // of a colon. algorithmicx's lines, each with its number in its font
@@ -788,7 +813,7 @@ const patterns = [
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
-  [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'],
+  [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [tables, 'among the tables'],
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true],
 ];
 

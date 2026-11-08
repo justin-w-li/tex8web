@@ -1,0 +1,93 @@
+% Where a table sits, as in the PDF: in a paragraph, at its indent or
+% where \centering or \raggedleft puts it; in an l, c, or r cell, where the
+% cell's alignment puts it; a longtable, where \LTleft and \LTright put it.
+\documentclass{article}
+\usepackage{array,longtable,tabularx}
+\begin{document}
+A paragraph before the tables, long enough to wrap onto a second line, so
+that the left margin and the indent show.
+
+\begin{tabular}{|l|l|}
+    \hline
+    A table that starts a paragraph & b \\
+    \hline
+\end{tabular}
+
+Text before \begin{tabular}{|l|}\hline in the line\\\hline\end{tabular} and text after, in one paragraph.
+
+\noindent\begin{tabular}{|l|}
+    \hline
+    After a noindent \\
+    \hline
+\end{tabular}
+
+\begin{tabular}{|p{3cm}|c|r|}
+    \hline
+    \begin{tabular}{|l|}\hline in a p cell\\\hline\end{tabular} &
+    \begin{tabular}{|l|}\hline in a c cell\\\hline\end{tabular} &
+    \begin{tabular}{|l|}\hline in an r cell\\\hline\end{tabular} \\
+    \hline
+    A wide cell, long enough to wrap onto lines & a much wider c cell & a much wider r cell \\
+    \hline
+\end{tabular}
+
+\begin{center}
+    \begin{tabular}{|l|}
+        \hline
+        In center \\
+        \hline
+    \end{tabular}
+\end{center}
+
+\begin{flushright}
+    \begin{tabular}{|l|}
+        \hline
+        In flushright \\
+        \hline
+    \end{tabular}
+\end{flushright}
+
+{\centering
+\begin{tabular}{|l|}
+    \hline
+    After centering \\
+    \hline
+\end{tabular}\par}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|l|}
+        \hline
+        In a centered float \\
+        \hline
+    \end{tabular}
+    \caption{A float}
+\end{table}
+
+\begin{longtable}{|l|}
+    \hline
+    A longtable \\
+    \hline
+\end{longtable}
+
+{\setlength\LTleft{0pt}\setlength\LTright{\fill}
+\begin{longtable}{|l|}
+    \hline
+    A longtable at the left \\
+    \hline
+\end{longtable}}
+
+\begin{longtable}[r]{|l|}
+    \hline
+    A longtable at the right \\
+    \hline
+\end{longtable}
+
+\noindent\begin{tabularx}{\linewidth}{|X|X|}
+    \hline
+    A tabularx & at the line's width \\
+    \hline
+\end{tabularx}
+
+A paragraph after the tables.
+\end{document}

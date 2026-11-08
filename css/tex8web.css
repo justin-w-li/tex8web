@@ -263,6 +263,19 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 .mathjax-block img { display: block; margin: 0.7em auto; }
 /* a formula in resized text at the text's size (tex8web-math.tex) */
 :is(.mathjax-inline, .mathjax-block, .mathjax-env) { font-size: calc(var(--tex8web-math-size, 1) * 1em); }
+/* a table where it sits in the PDF, as its class says (tex8web-text.tex),
+   in place of html4.4ht's centering of every tabular and longtable. In
+   place of html4.4ht's 0.5em around a tabular, a tabular in a paragraph is
+   spaced as the paragraph is, as by html4.4ht's p + div, div + p, and p +
+   figcaption, and one in a cell has no space around it, as in the PDF */
+div.tabular, div.center div.tabular { text-align: inherit; margin-block: 0; }
+div + div.tabular, div.tabular + :is(div, figcaption) { margin-top: 1em; }
+:is(p, div.tabular) + div.tabular, div.tabular + p { margin-top: var(--tex8web-parskip, 1em); }
+table.tabular, table.longtable { margin-inline: 0; }
+table.tex8web-indent { margin-inline-start: var(--tex8web-parindent, 0); }
+table.tex8web-center { margin-inline: auto; }
+table.tex8web-right { margin-inline-start: auto; }
+table.tex8web-inline { display: inline-table; vertical-align: middle; }
 /* a tabular or verbatim too wide for a narrow screen scrolls sideways, as
    a wide display does, so that the page does not widen */
 @media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }

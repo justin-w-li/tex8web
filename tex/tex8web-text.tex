@@ -317,6 +317,45 @@
     \fi\fi
     \web@finalstrut#1}
 
+% where a table sits, as in the PDF, in place of html4.4ht's centering of
+% every tabular and longtable. The <table>'s class tells the stylesheet.
+% A tabular is centered or set flush right (tex8web-center or
+% tex8web-right) by the alignment in force (\web@cellalign above, as
+% tex4ht's \centering does not stretch \leftskip, latex.4ht). It sits at
+% the indent of a paragraph it starts (tex8web-indent). In a table's cell
+% (\ifweb@cell), it is a box in the cell's line (tex8web-inline): tex4ht
+% sets every cell in a paragraph, so \ifinner does not tell. The class is
+% chosen in before:begintabular (latex.4ht's \begin), as html4.4ht's
+% \ConfigureEnv{tabular} leaves vertical mode there. The table of
+% tabularx, narrower than the width it fills in the PDF, stays centered.
+% A longtable sits as TeX sets a box between \LTleft and \LTright,
+% stretching only the glue of the highest order.
+\newif\ifweb@cell
+\AddToHook{env/tabular/begin}{\web@celltrue}
+\AddToHook{env/tabular*/begin}{\web@celltrue}
+\AddToHook{env/longtable/begin}{\web@celltrue}
+\AddToHook{env/tabularx/begin}{\web@celltrue}
+\web@needs{before:begintabular}
+\expandafter\let\expandafter\web@tabular@before\csname before:begintabular\endcsname
+\expandafter\def\csname before:begintabular\endcsname{%
+    \xdef\web@tabular@class{%
+        \ifweb@cell \space tex8web-inline%
+        \else\ifx\web@cellalign\empty
+            \ifvmode\ifdim\parindent=\z@\else\space tex8web-indent\fi\fi
+        \else \space tex8web-\web@cellalign\fi\fi}%
+    \web@tabular@before}
+\AddToHook{env/tabularx/before}{\gdef\web@tabular@class{ tex8web-center}}
+\Configure{halignTB<>}{tabular}{\HCode{id="TBL-\TableNo" class="tabular\web@tabular@class"\Hnewline
+    \GROUPS\Hnewline}<>\HAlign}
+% (the stretch order of a glue, -1 without stretch, and the class of a box
+% between glues of orders #1 and #2)
+\def\web@order#1{\ifdim\gluestretch#1=\z@ -1\else\number\gluestretchorder#1\fi}
+\def\web@place#1#2{\ifnum#1>#2 \space tex8web-right\else
+    \ifnum#1=#2 \ifnum#1>-1 \space tex8web-center\fi\fi\fi}
+\Configure{halignTB<>}{longtable}{\HCode{id="TBL-\TableNo"
+    class="longtable\web@place{\web@order\LTleft}{\web@order\LTright}"\Hnewline
+    \GROUPS\Hnewline}<>\HAlign}
+
 % --- terms ------------------------------------------------------------------
 
 % \WebTerm\cs: what \cs{...} sets is a term, which the search field finds
