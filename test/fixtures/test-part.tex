@@ -1,7 +1,8 @@
 % Parts in an article: in the running text, flush left, with the label in
 % \Large and the title in \huge, 4ex above and 3ex below, and an unnumbered
-% part.
+% part. With hyperref, whose nameref wraps \@part.
 \documentclass{article}
+\usepackage{hyperref}
 \begin{document}
 Some text before the first part.
 \part{Beginnings}

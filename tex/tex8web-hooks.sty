@@ -211,5 +211,7 @@
     \ifdefined\web@part\else
         \global\let\web@part\part
         \global\let\web@@part\@part
+        % (nameref wraps the class's \@part, kept as \NR@part)
+        \ifdefined\NR@part\global\let\web@@part\NR@part\fi
     \fi
 }
