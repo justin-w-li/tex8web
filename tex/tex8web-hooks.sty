@@ -199,12 +199,17 @@
 \ExplSyntaxOff
 
 % report, book, and memoir: \@makechapterhead as the preamble leaves it,
-% for tex8web-page.tex to read the chapter's spacing. report.4ht and
-% book.4ht empty it at \begin{document}. tex4ht.sty's \document reads the
-% config, which runs \begin{document} again, so this hook runs twice: the
-% second time after the .4ht files.
+% for tex8web-page.tex to read the chapter's spacing, and \part and \@part
+% for a part's. report.4ht and book.4ht empty \@makechapterhead and replace
+% \@part at \begin{document}, as article.4ht replaces \@part. tex4ht.sty's
+% \document reads the config, which runs \begin{document} again, so this
+% hook runs twice: the second time after the .4ht files.
 \AddToHook{env/document/before}{%
     \ifdefined\web@makechapterhead\else
         \global\let\web@makechapterhead\@makechapterhead
+    \fi
+    \ifdefined\web@part\else
+        \global\let\web@part\part
+        \global\let\web@@part\@part
     \fi
 }

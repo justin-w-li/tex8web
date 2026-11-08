@@ -89,14 +89,23 @@ const measured = {
     '--tex8web-float-endrule': '0.04em', '--tex8web-float-sep': '0.2em', '--tex8web-float-bodysep': '0.2em' },
   // (report's chapter: 50pt above and 40pt below, in ems of \Huge's 24.88pt,
   // and 20pt from label to title, in ems of \huge's 20.74pt. No space below
-  // in ems of the text, which a framed box below would add)
+  // in ems of the text, which a framed box below would add. A part's label
+  // 20pt from its title too, and no space above or below, the fill of a
+  // page of its own)
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-indent': '1.5em',
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
     '--tex8web-toc-section-skip': '0em', '--tex8web-toc-section-weight': 'normal',
     '--tex8web-chapter-size': '2.488em', '--tex8web-chapter-label-size': '0.8336em',
     '--tex8web-chapter-before': '2.00964em', '--tex8web-chapter-after': '1.60771em',
-    '--tex8web-chapter-after-text': null, '--tex8web-chapter-label-after': '0.96432em' },
+    '--tex8web-chapter-after-text': null, '--tex8web-chapter-label-after': '0.96432em',
+    '--tex8web-part-label-after': '0.96432em', '--tex8web-part-before': null, '--tex8web-part-after': null },
+  // (article's part: the title in \huge, 20.74pt, the label in \Large,
+  // 14.4pt, flush left, and 4ex and 3ex of cmr10, 4.30554pt, above and
+  // below, in ems of the title. No space between label and title)
+  'test-part': { '--tex8web-part-size': '2.074em', '--tex8web-part-label-size': '0.6943em',
+    '--tex8web-part-align': 'left', '--tex8web-part-before': '0.83038em',
+    '--tex8web-part-after': '0.62279em', '--tex8web-part-label-after': '0em' },
   // (\WebLikePDF in an 11pt document: the font size, 10.95pt over 12pt,
   // \baselineskip 13.6pt, \parindent 17pt, the fixture's \parskip of 3pt,
   // and \topsep 9pt)
@@ -121,12 +130,15 @@ const measured = {
   // only inside \@ifstar's groups, which is skipped. A chapter spaced by
   // memoir's lengths: 50pt above and 40pt below, in ems of memoir's \Huge,
   // 20.74pt, and the fixture's \midchapskip of 10pt, in ems of memoir's
-  // \huge, 17.28pt.
+  // \huge, 17.28pt. A part's label 20pt from its title, by the default
+  // chapter style's \midpartskip, in ems of memoir's \huge, and no space
+  // above or below, from \beforepartskip's and \afterpartskip's \vfil.
   'test-memoir': { '--tex8web-bibitem-sep': '0.99995em', '--tex8web-section-before': '1.79398em',
     '--tex8web-section-after': '0.82523em', '--tex8web-subsection-before': '1.27791em',
     '--tex8web-paragraph-before': '0.86111em', '--tex8web-paragraph-after': '0.43056em',
     '--tex8web-subsubsection-before': null, '--tex8web-chapter-before': '2.4108em',
-    '--tex8web-chapter-after': '1.92863em', '--tex8web-chapter-label-after': '0.5787em' },
+    '--tex8web-chapter-after': '1.92863em', '--tex8web-chapter-label-after': '0.5787em',
+    '--tex8web-part-label-after': '1.15741em', '--tex8web-part-before': null },
   // (chapter styles left with the stylesheet's spacing: memoir's chappell,
   // with four skips, one of them zero, and fncychap's Glenn, with a
   // negative space between label and title)

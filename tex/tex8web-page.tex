@@ -510,6 +510,13 @@
             \fi
         \fi
     \endgroup}
+% a heading's \vskip's, recorded in \web@skips and counted in \web@nskips
+\def\web@noteskips{%
+    \gdef\web@skips{}\gdef\web@nskips{0}%
+    \def\vskip{\afterassignment\web@noteskip\skip@}%
+    \def\web@noteskip{\xdef\web@skips{\web@skips{\the\skip@}}%
+        \xdef\web@nskips{\the\numexpr\web@nskips+1}}%
+    \def\@vspacer##1{\vskip##1\relax}\let\@vspace\@vspacer}
 % without titlesec, a chapter's space above, between label and title, and
 % below, from the class's \@makechapterhead (kept in tex8web-hooks.sty).
 % report's, book's, and memoir's default style make three \vskip's, read
@@ -528,11 +535,7 @@
 \newcommand\web@chapterskips{%
     \web@needs{web@makechapterhead}%
     \begingroup
-        \gdef\web@skips{}\gdef\web@nskips{0}%
-        \def\vskip{\afterassignment\web@noteskip\skip@}%
-        \def\web@noteskip{\xdef\web@skips{\web@skips{\the\skip@}}%
-            \xdef\web@nskips{\the\numexpr\web@nskips+1}}%
-        \def\@vspacer##1{\vskip##1\relax}\let\@vspace\@vspacer
+        \web@noteskips
         \c@secnumdepth\z@ \csname m@m@Andtrue\endcsname
         \setbox0\vbox{\web@makechapterhead{x}}%
     \endgroup
@@ -547,6 +550,49 @@
                 --tex8web-chapter-after: \web@em{#3}; \web@a}}%
         \web@Css{:root { \web@a }}%
     \fi\fi\fi}
+% without a titlesec \titleformat, a part's spacing, read from the class's
+% \part (kept in tex8web-hooks.sty) as a chapter's is. Its page breaks,
+% page style, counter, marks, and table of contents line are turned off,
+% and \vfil is made a \vskip of fil, the fill of a page of its own (report's
+% \part and \@endpart, memoir's \beforepartskip and \afterpartskip). Three
+% skips are the space above, between label and title, and below, as in
+% report. Two are the space above and below, as in article, with no space
+% between label and title. A fill above or below is not written, and
+% the stylesheet gives the part a chapter's space there. #1 and #2 are the
+% label's and the title's size, for the ems
+\newcommand\web@partskips[2]{%
+    \web@needs{web@@part}%
+    \begingroup
+        \web@noteskips
+        \def\vfil{\vskip\z@\@plus1fil\relax}%
+        \let\clearpage\relax \let\cleardoublepage\relax \let\newpage\relax
+        \let\onecolumn\relax \let\twocolumn\relax \let\@afterheading\relax
+        \let\thispagestyle\@gobble \let\refstepcounter\@gobble
+        \let\addcontentsline\@gobblethree \let\markboth\@gobbletwo
+        \let\@part\web@@part \c@secnumdepth\z@
+        \setbox0\vbox{\web@part{x}}%
+    \endgroup
+    \ifnum\web@nskips=2 \edef\web@skips{\expandafter\web@twoskips\web@skips}\fi
+    \ifnum\web@nskips>1 \ifnum\web@nskips<4
+        \expandafter\web@partspacing\web@skips#1#2\fi\fi}
+\def\web@twoskips#1#2{{#1}{0pt}{#2}}
+% above, between label and title, below, the label's size, the title's size.
+% The sizes are read first, since a size command sets \@tempskipa
+\def\web@partspacing#1#2#3#4#5{%
+    \begingroup
+        #4\edef\web@a{\f@size pt}#5\edef\web@b{\f@size pt}%
+        \skip@#1\relax \@tempskipa#2\relax \@tempskipb#3\relax
+        \ifdim\skip@<\z@\else\ifdim\@tempskipa<\z@\else\ifdim\@tempskipb<\z@\else
+            \edef\web@c{--tex8web-part-label-after: \web@over\@tempskipa\web@a em;}%
+            \ifnum\gluestretchorder\skip@=\z@
+                \edef\web@c{\web@c --tex8web-part-before: \web@over\skip@\web@b em;}%
+            \fi
+            \ifnum\gluestretchorder\@tempskipb=\z@
+                \edef\web@c{\web@c --tex8web-part-after: \web@over\@tempskipb\web@b em;}%
+            \fi
+            \web@Css{:root { \web@c }}%
+        \fi\fi\fi
+    \endgroup}
 \ifdefined\c@chapter
     \begingroup
         \expandafter\let\csname ttls@part\endcsname\@undefined
@@ -554,7 +600,27 @@
     \endgroup
     \web@bighead{chapter}\chaptitlefont\chapnamefont
     \ifcsname web@titlefont@chapter\endcsname\else\web@chapterskips\fi
-\fi
+    \ifcsname web@titlefont@part\endcsname\else\web@partskips\huge\Huge\fi
+\else\ifdefined\@part
+    % article's part: the title in \huge and the label in \Large, and the
+    % alignment of the class's \@part (\raggedright in article.cls).
+    % amsart's \part is a \@startsection, with no \@part
+    \begingroup
+        \expandafter\let\csname ttls@part\endcsname\@undefined
+        \web@headsize{part}{\huge}%
+    \endgroup
+    \ifcsname web@titlefont@part\endcsname\else
+        \begingroup
+            \def\web@align{left}%
+            \edef\web@a{\noexpand\in@{\detokenize{\centering}}{\meaning\web@@part}}%
+            \web@a\ifin@\def\web@align{center}\fi
+            \Large\edef\web@a{\f@size pt}\huge
+            \web@Css{:root { --tex8web-part-label-size: \web@em\web@a;
+                --tex8web-part-align: \web@align; }}%
+        \endgroup
+        \web@partskips\Large\huge
+    \fi
+\fi\fi
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
 % \paragraph and \subparagraph in their font from titlesec or the class

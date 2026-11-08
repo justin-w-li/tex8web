@@ -131,10 +131,10 @@ section.abstract { margin-inline: 0; }
 .abstract p { margin-inline: var(--tex8web-abstract-left, 0) var(--tex8web-abstract-right, 0); }
 /* (a part's or chapter's label, "Chapter 1", sits above the title in a
    separate size, and in memoir in a separate font, unless titlesec formats
-   it. An article's parts are not measured, and keep the 2em default. A
-   chapter's label is a block, to be spaced from the title as in the class
-   (tex8web-page.tex), in place of the <br /> that html4.4ht puts after
-   it. A part's <br /> is inside its label) */
+   it. The label is a block, spaced from the title as in the class
+   (tex8web-page.tex). html4.4ht puts a <br /> after a chapter's label,
+   which is hidden, and at the end of a part's label, where it adds no
+   line. amsart's part label has no <br />, and stays on the title's line) */
 .partHead, .likepartHead { font-size: var(--tex8web-part-size, 2em);
     font-family: var(--tex8web-part-family, inherit);
     font-weight: var(--tex8web-part-weight, bold);
@@ -144,6 +144,8 @@ section.abstract { margin-inline: 0; }
     font-weight: var(--tex8web-part-label-weight, inherit);
     font-style: var(--tex8web-part-label-style, inherit);
     font-variant: var(--tex8web-part-label-variant, inherit); }
+.partHead .titlemark:has(> br) { display: block;
+    margin-bottom: var(--tex8web-part-label-after, 0); }
 .chapterHead, .likechapterHead, .appendixHead { font-size: var(--tex8web-chapter-size);
     font-family: var(--tex8web-chapter-family, inherit);
     font-weight: var(--tex8web-chapter-weight, bold);
@@ -173,10 +175,16 @@ section.abstract { margin-inline: 0; }
     font-style: var(--tex8web-subsubsection-style, normal); }
 /* (titlesec's variant and alignment, and the space around a heading from
    titlesec or the class (tex8web-page.tex), else the browser's h1 to h5
-   margins. :where lets a class's rules in html4.4ht take precedence, for
-   example amsart's centered sections and report's centered parts) */
+   margins, and for a part a chapter's space where it has a page of its
+   own in the PDF. :where lets a class's rules in html4.4ht take
+   precedence, for example amsart's centered sections) */
 :where(.partHead, .likepartHead) { font-variant: var(--tex8web-part-variant, normal);
-    text-align: var(--tex8web-part-align, left); }
+    text-align: var(--tex8web-part-align, left);
+    margin-block: var(--tex8web-part-before, var(--tex8web-chapter-before, 0.67em))
+        var(--tex8web-part-after, var(--tex8web-chapter-after, 0.67em)); }
+/* (html4.4ht's h1.partHead{text-align: center}, but under the alignment
+   read from the class or titlesec, and for \part* too, as in the PDF) */
+h1:is(.partHead, .likepartHead) { text-align: var(--tex8web-part-align, center); }
 :where(.chapterHead, .likechapterHead, .appendixHead) {
     font-variant: var(--tex8web-chapter-variant, normal);
     text-align: var(--tex8web-chapter-align, left);
