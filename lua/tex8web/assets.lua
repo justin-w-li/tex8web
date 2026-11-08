@@ -434,7 +434,7 @@ end
 function M.wide_screens(css)
   local width, unit = ems(css, "textwidth")
   local margin, gap = ems(css, "margin"), ems(css, "gap")
-  local size = tonumber((custom(css, "pdf-size") or ""):match("^([%d.]+)pt$"))
+  local size = tonumber((custom(css, "pdf-size") or ""):match("^([%d.]+)pt%f[^%w]"))
   if width and unit == "em" and size then width = width * size / 12 end
   local query = string.format("(min-width: %.2fem)",
     width and margin and gap and width + 2 * (margin + 2 * gap) or 10000)
