@@ -19,6 +19,8 @@
 //   --keep <n|all>  write at most the first n differing screens of each
 //                   width and scheme (default 8); all are listed
 //   --clip <sel>    one shot of the band holding the first match of sel
+//   --pad <px>      with --clip, the band this much taller above and below,
+//                   to show the space around the element
 //   --then <expr>   evaluated on each page before the shot; a promise and
 //                   the animations it starts are awaited
 //   --touch         a touch screen without a mouse
@@ -38,6 +40,8 @@ import { decode, encode } from './lib/png.mjs';
 const args = process.argv.slice(2);
 const option = name => args.includes(name) ? args.splice(args.indexOf(name), 2)[1] : undefined;
 const clip = option('--clip');
+const padOption = option('--pad');
+const pad = Number(padOption ?? 0);
 const expression = option('--eval');
 const then = option('--then');
 const touch = args.includes('--touch');
@@ -49,14 +53,15 @@ const windowOption = option('--window');
 const fontSizeOption = option('--font-size');
 const [out, ...builds] = expression === undefined ? args : [undefined, ...args];
 if ((!out && expression === undefined) || !builds.length || builds.length > (expression === undefined ? 2 : 1)) {
-  console.error('usage: node test/shots.mjs [--clip <selector>] [--then <expression>] [--touch] [--window <width>x<height>] [--font-size <px>] <out> <page.html | html directory> [<new html directory>]\n'
+  console.error('usage: node test/shots.mjs [--clip <selector> [--pad <px>]] [--then <expression>] [--touch] [--window <width>x<height>] [--font-size <px>] <out> <page.html | html directory> [<new html directory>]\n'
     + '       node test/shots.mjs --eval <expression> <page.html | html directory>');
   process.exit(2);
 }
 if ((expect !== undefined && expect !== 'look') || (keepOption !== undefined && !/^(\d+|all)$/.test(keepOption))
   || (windowOption !== undefined && !/^\d+x\d+$/.test(windowOption))
-  || (fontSizeOption !== undefined && !/^\d+$/.test(fontSizeOption))) {
-  console.error('--expect takes look, --keep a number or all, --window a width and height, as 1400x900, and --font-size a number of px');
+  || (fontSizeOption !== undefined && !/^\d+$/.test(fontSizeOption))
+  || (padOption !== undefined && !/^\d+$/.test(padOption))) {
+  console.error('--expect takes look, --keep a number or all, --window a width and height, as 1400x900, --font-size a number of px, and --pad a number of px');
   process.exit(2);
 }
 const keep = keepOption === undefined ? 8 : keepOption === 'all' ? Infinity : Number(keepOption);
@@ -217,6 +222,7 @@ async function band(tab, url) {
     const box = document.querySelector(${JSON.stringify(clip)})?.getBoundingClientRect();
     return box && { y: Math.floor(box.top + scrollY), h: Math.ceil(box.height) };
   })()`);
+  if (box) { box.y = Math.max(0, box.y - pad); box.h += 2 * pad; }
   if (!box) throw new Error(`${url}: nothing matches ${clip}`);
   return [await tab.screenshot(box.y, box.h)];
 }
