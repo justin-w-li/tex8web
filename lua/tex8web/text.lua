@@ -4,19 +4,68 @@ local files = require "tex8web.files"
 
 local M = {}
 
--- theorem spacing, which tex8web-text.tex writes in a
--- <span class="tex8web-thmskip"> in the heading, as TeX knows it only once
--- the theorem has started
-function M.theorem_spacing(document)
-  for _, mark in ipairs(document:query_selector("span.tex8web-thmskip")) do
-    local div = dom.closest(mark, function(el)
-      return el:get_element_name() == "div" and dom.has_class(el, "newtheorem")
-    end)
-    if div then
-      dom.add_style(div, "margin-top: " .. mark:get_attribute("data-before")
-        .. "; margin-bottom: " .. mark:get_attribute("data-after"))
+-- whether a node shows something: text, or a picture, table, or formula
+local pictures = {img = true, svg = true, table = true, ["mjx-container"] = true}
+local function shows(node)
+  if (node:get_text() or ""):find("%S") then return true end
+  return node:is_element() and (pictures[node:get_element_name()]
+    or #node:query_selector("img, svg, table, mjx-container") > 0)
+end
+
+-- whether a caption comes before anything else in its float, minipage, or
+-- subfigure, as caption's position=auto decides in TeX
+local function first_in_float(caption)
+  local node = caption
+  while true do
+    local parent = node:get_parent()
+    if not (parent and parent:is_element()) then return false end
+    for _, sibling in ipairs(parent:get_children()) do
+      if sibling == node then break end
+      if shows(sibling) then return false end
     end
-    mark:remove_node()
+    if parent:get_element_name() == "figure" or dom.has_class(parent, "minipage")
+        or dom.has_class(parent, "subfigure") then
+      return true
+    end
+    node = parent
+  end
+end
+
+-- the space around theorems and captions, which tex8web-text.tex writes
+-- in a mark inside each, as TeX knows it only there: a
+-- <span class="tex8web-thmskip"> in a theorem's heading, as margins of the
+-- theorem, and a <span class="tex8web-capskip"> in a caption, as custom
+-- properties of the caption, which the stylesheet's rules for ruled and
+-- algorithm2e captions can then override. A caption at the top has the
+-- skips the other way round.
+local spaced = {
+  {mark = "span.tex8web-thmskip",
+   block = function(el) return el:get_element_name() == "div" and dom.has_class(el, "newtheorem") end,
+   style = function(mark)
+     return ("margin-top: %s; margin-bottom: %s"):format(mark:get_attribute("data-before"),
+       mark:get_attribute("data-after"))
+   end},
+  {mark = "span.tex8web-capskip",
+   block = function(el)
+     local name = el:get_element_name()
+     return (name == "figcaption" or name == "div") and dom.has_class(el, "caption")
+   end,
+   style = function(mark, caption)
+     local before, after = mark:get_attribute("data-above"), mark:get_attribute("data-below")
+     local position = mark:get_attribute("data-position")
+     if position == "top" or position == "auto" and first_in_float(caption) then
+       before, after = after, before
+     end
+     return ("--tex8web-caption-before: %s; --tex8web-caption-after: %s"):format(before, after)
+   end},
+}
+function M.block_spacing(document)
+  for _, kind in ipairs(spaced) do
+    for _, mark in ipairs(document:query_selector(kind.mark)) do
+      local block = dom.closest(mark, kind.block)
+      if block then dom.add_style(block, kind.style(mark, block)) end
+      mark:remove_node()
+    end
   end
 end
 

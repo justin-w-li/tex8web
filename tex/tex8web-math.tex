@@ -77,6 +77,12 @@
     {\HCode{</span>}}
 \Configure{MathjaxBlock}{\web@mathopen{mathjax-block}}{\HCode{</\web@mathtag>}}
 \Configure{MathjaxEnv}{\web@mathopen{mathjax-env mathjax-\@currenvir}}{\HCode{</\web@mathtag>}}
+% the space above and below display math, as in the PDF at the normal
+% size (css/tex8web.css)
+\begingroup\normalsize
+    \web@Css{:root { --tex8web-display-above: \web@em\abovedisplayskip;
+        --tex8web-display-below: \web@em\belowdisplayskip; }}
+\endgroup
 % \WebMathMacros{definitions}: definitions for MathJax that replace the
 % ones macros.lua reads from the preamble and styles, for macros MathJax
 % cannot read as they are. tex8web-page.tex passes them on to macros.lua

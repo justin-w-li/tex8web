@@ -35,7 +35,7 @@ tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 - With tex4ht's `mathjax` option, the text is written as HTML, and the formula source stays in the page as LaTeX.
 - Equations are numbered as in TeX, so the numbers agree with `\eqref`.
 - Alignments are split at `\intertext`, and the parts are given the same columns in `js/tex8web.js`, so they line up as one alignment.
-- The document is measured in TeX: the text width, heading sizes, theorem and list spacing, and link colors. The measurements are passed to the stylesheet as `--tex8web-*` custom properties, with the text width in ems, so the column scales with the text size. Every static rule is in `css/tex8web.css`.
+- The document is measured in TeX: the text width, heading sizes, link colors, and the space around theorems, lists, floats, captions, and display math. The measurements are passed to the stylesheet as `--tex8web-*` custom properties, with the text width in ems, so the column scales with the text size. Every static rule is in `css/tex8web.css`.
 - A size change within the text, such as `\small` or a footnote, is written by tex4ht as spans around the words, and the blocks around them stay at the body size. So the spacing of a list, theorem, algorithm, or box is given in ems of the body size, and each formula in that text is given its size as `--tex8web-math-size`, a multiple of the body size.
 - List labels are typeset by TeX, so they match the PDF.
 - The title is passed from one LaTeX run to the next by tex4ht, so the first draft build, with one LaTeX run, has no title.
@@ -74,6 +74,7 @@ The other passes are for:
 
 - the color of text after a `\color` declaration
 - spacing
+- the space around theorems and captions, which TeX knows only inside them, moved from a mark onto the block. With the caption package's `position=auto`, a caption's place at the top or bottom of its float is told from the page: caption reads it from `\prevdepth`, which is changed by the anchor that tex4ht puts at the start of a float.
 - text after `\hfill`, which is set at the right, and line ends at `\break` and `\linebreak`
 - the alignment of a paragraph cell from its `\centering` or `\raggedleft`
 - the width of each picture drawn by dvisvgm, such as a TikZ picture, as a share of the text width, read from the SVG file
@@ -292,7 +293,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `tex8web.cfg` | the config for documents without a config |
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, and prerendering |
 | `tex/tex8web-core.tex` | the entry point, with the four modules below |
-| `tex/tex8web-math.tex` | the MathJax configuration, `\WebMathMacros`, the escaping of formula source, siunitx, equation numbers, `\intertext`, and TikZ in display math |
+| `tex/tex8web-math.tex` | the MathJax configuration, `\WebMathMacros`, the escaping of formula source, siunitx, equation numbers, `\intertext`, TikZ in display math, and the space around display math |
 | `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, the alignment of paragraph cells, the table of contents, lists, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, and the measurements and heading fonts of the document |
 | `tex/tex8web-boxes.tex` | tcolorbox boxes |

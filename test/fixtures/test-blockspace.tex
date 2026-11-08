@@ -1,0 +1,59 @@
+% The space around blocks, as in the PDF of a 12pt article: \intextsep
+% around floats and \floatsep between two, the caption skips of the
+% kernel's \@makecaption, \topsep and \parskip around center, flushleft,
+% flushright, and verbatim, and the display skips around display math, a
+% picture in display math, and an \intertext.
+\documentclass[12pt]{article}
+\usepackage{amsmath,graphicx,tikz-cd}
+\begin{document}
+A paragraph before the floats.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{test-picture.png}
+    \caption{A picture, with its caption below.}
+\end{figure}
+\begin{table}[h]
+    \centering
+    \caption{A table, with its caption above.}
+    \begin{tabular}{cc}
+        a & b \\
+        c & d
+    \end{tabular}
+\end{table}
+
+A paragraph after the floats.
+\begin{center}
+    Centered.
+\end{center}
+A paragraph after a center.
+\begin{flushleft}
+    At the left.
+\end{flushleft}
+A paragraph after a flushleft.
+\begin{flushright}
+    At the right.
+\end{flushright}
+A paragraph after a flushright.
+\begin{verbatim}
+verbatim text
+\end{verbatim}
+A paragraph after a verbatim.
+\begin{center}
+    One center.
+\end{center}
+\begin{center}
+    Another center.
+\end{center}
+A paragraph after two centers.
+\[ x^2 + y^2 = z^2 \]
+A paragraph after a display.
+\begin{align}
+    a &= b + c \\
+\intertext{and some text between the rows}
+    d &= e + f
+\end{align}
+A paragraph after an alignment.
+\[ \begin{tikzcd} A \arrow[r] & B \end{tikzcd} \]
+A paragraph after a diagram.
+\end{document}

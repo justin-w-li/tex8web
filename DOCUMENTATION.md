@@ -345,6 +345,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **siunitx in math.** Numbers, units, quantities, angles, ranges, lists, products, and complex numbers are set as in the PDF, in math. In text, each number of a range, list, or product is a formula of its own. A quantity set with `mode=text` may break between its number and its unit at the end of a line: leave out `mode=text` to keep it on one line. In math, a phrase with a text command other than `\textendash` or `\textemdash` is shown in red: write the phrase in plain words. If your document loads siunitx without xcolor, the page has no colors, and the build warns. Load xcolor to keep them.
 - **The separator of xfrac's `\sfrac`.** A fraction with a separator in brackets, such as `$\sfrac{1}[/]{2}$`, is set wrongly, as a fraction over the bracket. Leave the separator out.
 - **A TikZ picture in display math**, such as a `tikzcd` diagram, is drawn as one picture with the rest of the math in that display.
+- **The space above display math** is `\abovedisplayskip`, also after a short line, where the PDF has the smaller `\abovedisplayshortskip`.
 - **Styles for `.mathjax-inline`** in a config apply only to a page built without Node, and to math in text of another size, such as a footnote.
 
 ### Text and layout

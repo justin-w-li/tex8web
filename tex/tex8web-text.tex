@@ -143,7 +143,7 @@
 % theorems spaced as in the PDF, in place of tex4ht's 2em: the space above
 % and below from amsthm's theorem style, or LaTeX's \topsep. The style sets
 % these lengths only once the theorem has started, so the \edef leaves them
-% in the head, for text.theorem_spacing to move onto the theorem. \HCode
+% in the head, for text.block_spacing to move onto the theorem. \HCode
 % alone would expand them at shipout, too late.
 \ifdefined\thm@preskip
     \def\web@thmskip{\web@bodyem\thm@preskip}%
@@ -654,6 +654,45 @@
 % tex4ht's defaults, PIC and [Picture] (html4.4ht), aloud.
 \Configure{GraphicsAlt}{}
 \Configure{Picture-alt}{}
+
+% floats spaced as in the PDF: \intextsep above and below a float in the
+% text, and \floatsep between two (css/tex8web.css)
+\web@Css{:root { --tex8web-intextsep: \web@em\intextsep; --tex8web-floatsep: \web@em\floatsep; }}
+% the space around a caption as \@makecaption puts it: \abovecaptionskip
+% above and \belowcaptionskip below, or with the caption package, swapped
+% for a caption at the top of its float (\caption@make@above in
+% caption.sty). The skips are read in the caption, where subcaption sets
+% its skip of 6pt, and written at the start of its text, in ems of the
+% body, for text.block_spacing to put around the caption. caption.4ht
+% defines \@makecaption and \caption@makecaption apart, and a caption
+% calls one of them. A class without floats, such as letter, has neither.
+% caption's position=auto, its default, takes a caption for one at the top
+% when \prevdepth shows nothing above it (\caption@autoposition in
+% caption3.sty, called in vertical mode). Under tex4ht, \prevdepth does
+% not show this: a float starts with tex4ht's anchor (\@xfloat in
+% latex.4ht). So the mark gives the position as auto, for
+% text.block_spacing to tell from the page. The position is read in a
+% \vbox, where caption's test for vertical mode holds, as at its \par.
+\def\web@capmark#1{\edef\web@mark{\noexpand\HCode{<span class="tex8web-capskip"
+    data-above="\web@bodyem\abovecaptionskip" data-below="\web@bodyem\belowcaptionskip"
+    data-position="#1"></span>}}\web@mark}
+\@ifpackageloaded{caption}{%
+    \web@needs{caption@position}\web@needs{caption@autoposition}%
+    \def\web@capskip{%
+        \begingroup\setbox\z@\vbox{%
+            \caption@position
+            \def\caption@autoposition##1##2{\gdef\web@cappos{auto}}%
+            \caption@regular@position{\gdef\web@cappos{top}}{\gdef\web@cappos{bottom}}}%
+        \endgroup
+        \web@capmark\web@cappos}%
+    \web@needs{caption@makecaption}%
+    \let\web@caption@makecaption\caption@makecaption
+    \long\def\caption@makecaption#1#2{\web@caption@makecaption{#1}{\web@capskip#2}}%
+}{\def\web@capskip{\web@capmark{bottom}}}
+\ifdefined\@makecaption
+    \let\web@makecaption\@makecaption
+    \long\def\@makecaption#1#2{\web@makecaption{#1}{\web@capskip#2}}
+\fi
 
 % \tikz pictures, and the fonts after them. pgfsys-dvisvgm4ht.def also
 % starts a picture (\Picture+) in \pgfsys@beginpicture, so that what pgf

@@ -68,9 +68,16 @@ const measured = {
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
     '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
   // (also test.cfg's \WebColor, from an xcolor expression and an RGB color,
-  // and the link colors, which examples/basic has with only the color package)
+  // and the link colors, which examples/basic has with only the color
+  // package; \intextsep and \floatsep of 12pt, and display skips of 11pt,
+  // in an 11pt document)
   'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235',
-    '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
+    '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))',
+    '--tex8web-intextsep': '1.09589em', '--tex8web-floatsep': '1.09589em',
+    '--tex8web-display-above': '1.00456em', '--tex8web-display-below': '1.00456em' },
+  // (12pt: \intextsep 14pt, \floatsep 12pt, and display skips of 12pt)
+  'test-blockspace': { '--tex8web-intextsep': '1.16667em', '--tex8web-floatsep': '1em',
+    '--tex8web-display-above': '1em', '--tex8web-display-below': '1em' },
   'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, oklch(from #0000FF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
   // (linkcolor=.: no property, so a link is in the color of the text around it)
   'examples/complex': { '--tex8web-link': null },
@@ -89,13 +96,15 @@ const measured = {
     '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em' },
   // (an article without titlesec: \@startsection's space around a section,
   // 3.5ex and 2.3ex of the text, and a subsection, 3.25ex and 1.5ex, in ems
-  // of the heading; the margins of the abstract's quotation; and
-  // \footnotesize's leading, 9.5pt over 12pt)
+  // of the heading; the margins of the abstract's quotation;
+  // \footnotesize's leading, 9.5pt over 12pt; \intextsep and \floatsep of
+  // 12pt, and display skips of 10pt)
   'test-article': { '--tex8web-section-before': '1.0465em', '--tex8web-section-after': '0.6877em',
     '--tex8web-subsection-before': '1.16609em', '--tex8web-subsection-after': '0.5382em',
     '--tex8web-abstract-left': '2.5em', '--tex8web-abstract-right': '2.5em',
     '--tex8web-footnote-leading': '0.79167', '--tex8web-biblabelsep': '0.5em',
-    '--tex8web-leftmargin': '2.5em' },
+    '--tex8web-leftmargin': '2.5em', '--tex8web-intextsep': '1.2em', '--tex8web-floatsep': '1.2em',
+    '--tex8web-display-above': '1em', '--tex8web-display-below': '1em' },
   // memoir: the bibliography's \bibitemsep of 6pt, plus the list's \parsep,
   // a third of a 12pt line. The space around headings set after a \sechook,
   // in ems of the heading: 5ex above a section, from the fixture, and
@@ -559,7 +568,7 @@ const hfill = {
     /Centered left\s*<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'>centered right/,
     /<figure class='figure'>(?:(?!<\/figure>)[^])*<img [^>]*\/>\s*<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'><img /,
     /<figcaption [^>]*>(?:(?!<\/figcaption>)[^])*A caption<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'>with a note/,
-    /<div class='caption'>(?:(?!<\/div>)[^])*A subcaption<\/span><span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'><span class='cmr-9'>with a note/,
+    /<div class='caption'[^>]*>(?:(?!<\/div>)[^])*A subcaption<\/span><span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'><span class='cmr-9'>with a note/,
     /Before a break\s*<br class='newline' \/>\s*after the break/,
     /<p class='indent'>\s*Before a hint\s+after the hint\./,
     /in a paragraph cell\s*<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'>p/,
@@ -678,7 +687,7 @@ const algorithms = {
   'test-algorithm2e': [
     /^(?:(?!<figure class='tex8web-a2e )[^])*(?:<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'[^>]* style='--tex8web-a2e-margin: 1.5em; --tex8web-a2e-nlsep: 0.5em; --tex8web-a2e-hang: 0.5em; --tex8web-a2e-rule: 0.5em; --tex8web-a2e-text: 1em; --tex8web-a2e-vrule: 0.04em; --tex8web-a2e-hook: 0.34445em; --tex8web-a2e-caption: 0.75em; --tex8web-float-rule: 0.08em; --tex8web-float-midrule: 0.08em; --tex8web-float-endrule: 0.08em; --tex8web-float-sep: 0.2em; --tex8web-float-bodysep: 0.2em'>(?:(?!<figure class='tex8web-a2e )[^])*){3}(?:<figure class='tex8web-a2e (?:(?!<figure class='tex8web-a2e )[^])*){6}$/,
     /<figure class='tex8web-a2e tex8web-a2e-plain tex8web-a2e-caption-bottom'[^]*<figure class='tex8web-a2e tex8web-a2e-boxed tex8web-a2e-caption-under'[^]*<figure class='tex8web-a2e tex8web-a2e-boxruled tex8web-a2e-caption-above'[^]*<figure class='tex8web-a2e tex8web-a2e-plainruled tex8web-a2e-caption-under'[^]*<figure class='tex8web-a2e tex8web-a2e-tworuled tex8web-a2e-caption-top'[^]*<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-none'/,
-    /<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-none'[^>]*>(?:(?!<\/figure>)[^])*<figcaption class='caption'><span class='id'><a id='([^']+)'>[^]*See Algorithm<span class='tex8web-nbsp'>.<\/span><a href='#\1'>9</,
+    /<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-none'[^>]*>(?:(?!<\/figure>)[^])*<figcaption class='caption'[^>]*><span class='id'><a id='([^']+)'>[^]*See Algorithm<span class='tex8web-nbsp'>.<\/span><a href='#\1'>9</,
     /<figure class='tex8web-a2e tex8web-a2e-tworuled [^>]*>(?:(?!<\/figure>)[^])*<div class='tex8web-a2e-block'> <p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>2<\/span><\/span><span class='cmbx-10'>if<(?:(?!<\/figure>)[^])*<span class='cmbx-7'>6<\/span><\/span><span class='cmbx-10'>end<\/span> <\/p> <\/div> <p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>7<\/span><\/span><span class='cmbx-10'>end</,
     /<span class='id'><span class='cmbx-10'>Algorithm<span class='tex8web-nbsp'> <\/span>1:<\/span><span class='tex8web-nbsp'> <\/span><\/span><span class='content'>Binary search/,
     /<\/figcaption>(?:\s*<!--[^>]*-->)*\s*<p class='noindent'><span class='cmbx-10'>Input:/,
@@ -810,6 +819,17 @@ const sizes = {
   ],
 };
 
+// The space around captions, from \abovecaptionskip (10pt) and
+// \belowcaptionskip (0pt): the kernel's above a caption, whether it is
+// below a figure or above a table; with the caption package, the other way
+// round for the caption at the top of a table, and subcaption's skip of
+// 6pt above a subcaption
+const caption = (before, after, text) => new RegExp(`class='caption' style='--tex8web-caption-before: ${before}; --tex8web-caption-after: ${after}'>(?:(?!</(?:figcaption|div)>)[^])*${text}`);
+const captions = {
+  'test-blockspace': [caption('0\\.83333em', '0em', 'A picture, with'), caption('0\\.83333em', '0em', 'A table, with')],
+  'test': [caption('0em', '0\\.91324em', 'A table with math'), caption('0\\.54794em', '0em', 'One\\.')],
+};
+
 // Each table, with how a failure reads, and whether its patterns are also
 // matched against the stylesheet
 const patterns = [
@@ -818,7 +838,7 @@ const patterns = [
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [tables, 'among the tables'],
-  [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true],
+  [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
 ];
 
 // the problems in a built page's logs, the page, and the files beside it

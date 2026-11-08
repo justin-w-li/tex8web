@@ -213,12 +213,43 @@ section.abstract { margin-inline: 0; }
    clears the controls (page.lua), at the same height on any screen */
 html body { max-width: var(--tex8web-textwidth);
     margin-block-start: 4rem; margin-block-end: 4em; }
-/* \intertext (tex8web-math.tex) */
-.tex8web-intertext { display: block; margin-block: 0.5em; }
+/* display math with \abovedisplayskip above and \belowdisplayskip below
+   (tex8web-math.tex), less MathJax's padding, which keeps the ink of a
+   display that scrolls from being cut off. (This selector outweighs MathJax's,
+   whose stylesheet comes later) */
+:is(.mathjax-block, .mathjax-env) > mjx-container[display] {
+    margin-block: calc(var(--tex8web-display-above) - 0.3em) calc(var(--tex8web-display-below) - 0.3em); }
+/* \intertext (tex8web-math.tex): the margins of the displays around it
+   give \belowdisplayskip above the text and \abovedisplayskip below, as
+   amsmath does */
+.tex8web-intertext { display: block; margin-block: 0; }
 /* pictures no wider than the column. A picture in display math
-   (\[ \begin{tikzcd} .. \]) has the margin MathJax gives display math */
+   (\[ \begin{tikzcd} .. \]) has the space of display math */
 img { max-width: 100%; height: auto; }
-figure.figure { margin-block: 1.75em; }
+/* floats with \intextsep around them and \floatsep between two
+   (tex8web-text.tex), with a table float's inner figure.float holding no
+   margin of its own. Margins collapse to the larger, so the first float
+   of two has none below. A float is a block formatting context, so that
+   a caption's margin at its top or bottom adds to the float's, as in TeX.
+   A tabular in a float adds no space of its own, as in TeX: tex4ht's
+   margin around it would add to the float's */
+:is(figure.figure, div.table) { margin-block: var(--tex8web-intextsep); }
+:is(figure.figure, div.table) + :is(figure.figure, div.table) { margin-top: var(--tex8web-floatsep); }
+:is(figure.figure, div.table):has(+ :is(figure.figure, div.table)) { margin-bottom: 0; }
+div.table > figure.float { margin-block: 0; }
+:is(figure.figure, figure.float) { display: flow-root; }
+:is(figure.figure, figure.float) > div.tabular { margin-block: 0; }
+/* (tex4ht's div + p would add to the float's margin) */
+div.table + p { margin-top: 0; }
+/* center, flushleft, flushright, and verbatim with \topsep and the
+   paragraph space between them and a paragraph or another of them, as
+   \trivlist gives them. As with tex4ht's p + div, the space is set between
+   siblings: a block's own margins would stay inside a list item, a box, or
+   a float, where TeX sets no space at the edges */
+:is(div.center, div.flushleft, div.flushright, pre.verbatim) { margin-block: 0; }
+:is(p, div.center, div.flushleft, div.flushright, pre.verbatim) + :is(div.center, div.flushleft, div.flushright, pre.verbatim),
+:is(div.center, div.flushleft, div.flushright, pre.verbatim) + p {
+    margin-top: calc(var(--tex8web-list-sep) + var(--tex8web-parskip, 1em)); }
 /* (browsers indent a <figure>; LaTeX does not indent floats) */
 figure { margin-inline: 0; }
 /* a caption as LaTeX's \@makecaption sets it: centered while it fits on a
@@ -227,6 +258,10 @@ figure { margin-inline: 0; }
    already adds a bold span */
 :is(figcaption, div).caption { width: fit-content; margin-inline: auto; text-align: start;
     text-indent: 0; }
+/* the caption skips of \@makecaption (tex8web-text.tex), in place of
+   tex4ht's margins */
+:is(figcaption, div).caption {
+    margin-block: var(--tex8web-caption-before) var(--tex8web-caption-after); }
 :is(figcaption, div).caption span.id { font-weight: normal; }
 /* float.sty's ruled style, used by algorithm's floats, and algorithm2e's
    (tex8web-text.tex): the caption at the top left wherever \caption is,
@@ -260,7 +295,7 @@ figure .tex8web-minipages { justify-content: space-evenly; }
         (var(--tex8web-textwidth) + 2.5rem - 100vw) * 1000)); }
 .tex8web-minipages > .tex8web-minipage-t { align-self: baseline; }
 .tex8web-minipages > .tex8web-minipage-b { align-self: last baseline; }
-.mathjax-block img { display: block; margin: 0.7em auto; }
+.mathjax-block img { display: block; margin: var(--tex8web-display-above) auto var(--tex8web-display-below); }
 /* a formula in resized text at the text's size (tex8web-math.tex) */
 :is(.mathjax-inline, .mathjax-block, .mathjax-env) { font-size: calc(var(--tex8web-math-size, 1) * 1em); }
 /* a table where it sits in the PDF, as its class says (tex8web-text.tex),

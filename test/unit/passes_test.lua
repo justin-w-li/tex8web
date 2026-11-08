@@ -37,10 +37,29 @@ return {
     equal(body(d), [[<p><span class='cmr-9'>a </span><span class='mathjax-inline' style='--tex8web-math-size: 0.9'>\(x\) </span><span class='cmr-9'>b</span> <span class='mathjax-inline'>\(y\)</span> c</p>]])
   end,
 
-  ["text.theorem_spacing: the heading's spacing onto the theorem"] = function()
+  ["text.block_spacing: the heading's spacing onto the theorem"] = function()
     local d = parse([[<div class="newtheorem"><p><span class="head">Theorem 1.<span class="tex8web-thmskip" data-before="1em" data-after="2em"></span></span> Text</p></div>]])
-    text.theorem_spacing(d)
+    text.block_spacing(d)
     equal(body(d), [[<div class='newtheorem' style='margin-top: 1em; margin-bottom: 2em'><p><span class='head'>Theorem 1.</span> Text</p></div>]])
+  end,
+
+  ["text.block_spacing: a caption's skips onto the caption, swapped at the top"] = function()
+    local mark = [[<span class="tex8web-capskip" data-above="0.8em" data-below="0em" data-position="%s"></span>]]
+    local d = parse(([[<figure class="figure"><span id="a"></span><p><img src="a.png" /></p>]]
+      .. [[<figcaption class="caption"><span class="content">]] .. mark .. [[A</span></figcaption></figure>]]
+      .. [[<div class="table"><p><a id="b"></a></p><figure class="float"> <figcaption class="caption">]] .. mark
+      .. [[B</figcaption><div class="tabular"><table></table></div></figure></div>]]
+      .. [[<figure class="figure"><div class="subfigure"><p><img src="c.png" /></p><div class="caption">]] .. mark
+      .. [[C</div></div><figcaption class="caption">]] .. mark .. [[D</figcaption></figure>]])
+      :format("bottom", "auto", "auto", "top"))
+    text.block_spacing(d)
+    local styles = {}
+    for _, caption in ipairs(d:query_selector(".caption")) do styles[#styles + 1] = caption:get_attribute("style") end
+    equal(styles, {"--tex8web-caption-before: 0.8em; --tex8web-caption-after: 0em",
+      "--tex8web-caption-before: 0em; --tex8web-caption-after: 0.8em",
+      "--tex8web-caption-before: 0.8em; --tex8web-caption-after: 0em",
+      "--tex8web-caption-before: 0em; --tex8web-caption-after: 0.8em"})
+    equal(#d:query_selector("span.tex8web-capskip"), 0)
   end,
 
   ["text.box_theorems: no empty paragraph after a theorem ending a box, only there"] = function()
@@ -557,9 +576,9 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(description, string.rep("字", 197) .. "…")
   end,
 
-  ["text.theorem_spacing: a theorem with another class too"] = function()
+  ["text.block_spacing: a theorem with another class too"] = function()
     local d = parse([[<div class="newtheorem lemma"><p><span class="head">Lemma 1.<span class="tex8web-thmskip" data-before="1em" data-after="2em"></span></span></p></div>]])
-    text.theorem_spacing(d)
+    text.block_spacing(d)
     equal(d:query_selector("div")[1]:get_attribute("style"), "margin-top: 1em; margin-bottom: 2em")
   end,
 
@@ -605,10 +624,10 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(#d:query_selector("a.tex8web-permalink"), 3)
   end,
 
-  ["text.theorem_spacing: after a color's style, joined with a semicolon"] = function()
+  ["text.block_spacing: after a color's style, joined with a semicolon"] = function()
     local d = parse([[<div class="newtheorem" style="color:#FF0000;"><p><span class="head">Lemma 1.<span class="tex8web-thmskip" data-before="1em" data-after="2em"></span></span></p></div>]]
       .. [[<div class="newtheorem" style="color:#00FF00"><p><span class="head">Lemma 2.<span class="tex8web-thmskip" data-before="1em" data-after="2em"></span></span></p></div>]])
-    text.theorem_spacing(d)
+    text.block_spacing(d)
     equal(d:query_selector("div")[1]:get_attribute("style"), "color:#FF0000; margin-top: 1em; margin-bottom: 2em")
     equal(d:query_selector("div")[2]:get_attribute("style"), "color:#00FF00; margin-top: 1em; margin-bottom: 2em")
   end,
