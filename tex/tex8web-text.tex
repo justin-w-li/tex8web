@@ -517,15 +517,14 @@
 % --- lists ------------------------------------------------------------------
 
 % LaTeX's spacing of a list, for lists without their own: \topsep around it,
-% \itemsep and \parsep between items, its left margin, and \labelsep after
-% a label (see css/tex8web.css). The bibliography's spacing comes from
-% biblatex when biblatex sets it. memoir has \bibitemsep but no \bibparsep,
-% and keeps the list's \parsep (memoir.cls).
+% \itemsep and \parsep between items, and its left margin (see
+% css/tex8web.css). The bibliography's spacing comes from biblatex when
+% biblatex sets it. memoir has \bibitemsep but no \bibparsep, and keeps the
+% list's \parsep (memoir.cls).
 \begingroup\@listi
     \web@Css{:root { --tex8web-list-sep: \web@em\topsep;
         --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax};
         --tex8web-leftmargin: \web@em\leftmargin;
-        --tex8web-list-labelsep: \web@em\labelsep;
         --tex8web-biblabelsep: \web@em{\ifdefined\biblabelsep\biblabelsep\else\labelsep\fi};
         --tex8web-bibitem-sep: \web@em{\dimexpr\ifdefined\bibitemsep\bibitemsep\else\itemsep\fi
             +\ifdefined\bibparsep\bibparsep\else\parsep\fi\relax}; }}
@@ -619,8 +618,10 @@
     {\egroup\EndP\HCode{</dt><dd\Hnewline class="description">}\par\ShowPar}
 \ifdefined\descriptionlabel
     \let\web@descriptionlabel\descriptionlabel
+    % (protected, so that a label made with \MakeUppercase{#1} keeps it)
+    \protected\def\web@hspace@restore{\let\c:hspace\web@hspace}
     \def\descriptionlabel#1{{\let\web@hspace\c:hspace \let\c:hspace\empty
-        \web@descriptionlabel{\let\c:hspace\web@hspace#1}}}
+        \web@descriptionlabel{\web@hspace@restore#1}}}
 \fi
 \@ifpackageloaded{enumitem}{%
     % html4.4ht's configuration expands \a:enumitemenv when a list is used,
@@ -652,8 +653,11 @@
          \def\end:bx{\HCode{</span>}}%
      \fi}
     {\end:bx}
+% (latex.4ht gives \frameboxWidth in ems of the box's font, and the span is
+% at the body size)
 \Configure{framebox}
-    {\HCode{<span class="framebox-\frameboxAlign" style="width:\frameboxWidth; \web@fbox">}}
+    {\HCode{<span class="framebox-\frameboxAlign"
+         style="width: \web@bodyem{\dimexpr\frameboxWidth\relax}; \web@fbox">}}
     {\HCode{</span>}}
 \catcode58 12
 % (regex #2 replaced by #3 in macro #1, also within braces, as etoolbox's

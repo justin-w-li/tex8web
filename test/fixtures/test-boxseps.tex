@@ -7,6 +7,8 @@
 \setlength\fboxsep{6pt}
 \setlength\fboxrule{2pt}
 \setlength\labelsep{1em}
+% (a label in a macro that expands its argument)
+\renewcommand*\descriptionlabel[1]{\hspace\labelsep\bfseries\MakeUppercase{#1}}
 \begin{document}
 
 \begin{tabular}{|l|c|r|}
@@ -30,7 +32,7 @@ narrow & joined & cells \\
 A \fbox{framed} word, a \framebox[3cm][l]{wide} one,
 a \colorbox{yellow}{colored} one, and an \fcolorbox{red}{yellow}{outlined} one.
 {\setlength\fboxsep{0pt}\colorbox{yellow}{tight} and \fbox{tight}.}
-{\small A \fbox{small} one.}
+{\small A \fbox{small} one, and a \framebox[3cm][l]{small} one.}
 
 \fbox{A box alone}
 

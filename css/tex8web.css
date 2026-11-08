@@ -464,8 +464,10 @@ span.tcolorbox > .tcolorbox-title { display: block; }
 /* \fbox, \framebox, \colorbox, and \fcolorbox: \fboxsep inside on each
    side, and \fboxrule for the frame (tex8web-text.tex). A box in a line is
    a block in that line, as TeX's box is, so the line makes room for the
-   box, and a \framebox has its width */
-:is(span.fbox, span.colorbox, .framebox-c, .framebox-l, .framebox-r) { display: inline-block; }
+   box, and a \framebox has its width. The paragraph's indent stays outside
+   the box */
+:is(span.fbox, span.colorbox, .framebox-c, .framebox-l, .framebox-r) { display: inline-block;
+    text-indent: 0; }
 .fbox, div.center div.fbox, .framebox-c, .framebox-l, .framebox-r, .colorbox, div.colorbox {
     padding: var(--tex8web-fboxsep); }
 .fbox, div.center div.fbox, .framebox-c, .framebox-l, .framebox-r {

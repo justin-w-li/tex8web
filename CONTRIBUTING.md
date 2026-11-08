@@ -159,7 +159,7 @@ The checks of each test script are listed in its header comment.
   - `lua/tex8web/macros.lua`, `preamble.lua`, and `source.lua`
   - the scripts in `page.lua`
   - the MathJax version in `package.json`
-- Run `npm run test:visual` before a commit that touches `js/tex8web-page.js` or the styles of an [opened picture](DOCUMENTATION.md#opening-a-picture). The mouse and touch checks of an opened picture, and the checks of the bar, fade, theme, search field, transitions, and sizes at another default font size, run only in `test/page.mjs`.
+- Run `npm run test:visual` before a commit that touches `js/tex8web-page.js` or the styles of an [opened picture](DOCUMENTATION.md#opening-a-picture). The mouse and touch checks of an opened picture, and the checks of the bar, fade, theme, search field, transitions, and sizes at another default font size, run only in `test/page.mjs`. So does `spaces`, the check of the space in tables, boxes, arrays, and description lists.
 - For other changes, run `npm run test:visual` at the end of a batch and before opening a pull request.
 - Give a bug fix a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
 - Check a visual change with screenshots from `node test/shots.mjs`, wide and narrow, light and dark, next to the PDF.

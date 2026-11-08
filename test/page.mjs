@@ -991,13 +991,28 @@ async function sizing(chrome, file) {
 // tcolorbox's boxsep plus middle, and \labelsep, each set away from its
 // default, and smaller in a group for the second table, an \fbox, and a
 // \colorbox. Only the space beside a column that the source sets with
-// @{} stays 0. A label starts at the margin. Within half a px, or a px for
-// each frame, which Chrome draws in whole px.
+// @{} stays 0. A label starts at the margin, also when made with
+// \MakeUppercase. A \framebox in \small is as wide as in the body. A
+// box's text starts after its padding in an indented paragraph, as
+// \WebLikePDF indents it. Within half a px, or a px for each frame, which
+// Chrome draws in whole px.
 const spaces = `(() => {
   const pt = parseFloat(getComputedStyle(document.body).fontSize) / 10.95;
   const all = selector => [...document.querySelectorAll(selector)];
   const px = (el, property) => el ? parseFloat(getComputedStyle(el)[property]) : NaN;
   const box = el => el ? el.getBoundingClientRect() : {};
+  // (the left of an element's first character that is not a space)
+  const first = el => {
+    const walk = el && document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    while (walk?.nextNode()) {
+      const at = walk.currentNode.textContent.search(/\\S/);
+      if (at < 0) continue;
+      const range = document.createRange();
+      range.setStart(walk.currentNode, at), range.setEnd(walk.currentNode, at + 1);
+      return range.getBoundingClientRect().left;
+    }
+    return NaN;
+  };
   const found = [];
   const add = (what, value, wanted, frames = 0) => found.push([what, value / pt, wanted, (frames || 0.5) / pt]);
   const sides = (what, el, wanted, sides = ['left', 'right']) => {
@@ -1018,7 +1033,12 @@ const spaces = `(() => {
     add(what + "'s frame", px(el, 'border-top-width'), 2, 1);
   }
   // (3cm, with \\fboxsep and \\fboxrule inside)
-  add('a \\\\framebox[3cm]', box(document.querySelector('.framebox-l')).width, 72.27 * 3 / 2.54);
+  const [framebox, smallFramebox] = all('.framebox-l');
+  add('a \\\\framebox[3cm]', box(framebox).width, 72.27 * 3 / 2.54);
+  add('a \\\\framebox[3cm] in \\\\small', box(smallFramebox).width, 72.27 * 3 / 2.54);
+  const colorbox = document.getElementById('colorbox1');
+  if (colorbox) colorbox.closest('p').style.textIndent = '2em';
+  add('a \\\\colorbox in an indented paragraph', first(colorbox) - box(colorbox).left, 6);
   const lower = document.querySelector('.tcolorbox .lowerbox');
   add('a tcolorbox above its middle line', box(lower).top - box(lower?.previousElementSibling).bottom, 72.27 / 25.4 + 6);
   add('a tcolorbox below its middle line', px(lower, 'padding-top'), 72.27 / 25.4 + 6);
@@ -1027,7 +1047,7 @@ const spaces = `(() => {
     const range = document.createRange();
     const start = text?.firstChild?.textContent.search(/\\S/);
     if (start >= 0) range.setStart(text.firstChild, start), range.setEnd(text.firstChild, start + 1);
-    add(\`description \${i + 1}'s label after the margin\`, box(label).left - box(dl).left, 0);
+    add(\`description \${i + 1}'s label after the margin\`, first(dl.querySelector('dt')) - box(dl).left, 0);
     add(\`description \${i + 1}'s text after the label\`, (start >= 0 ? range.getBoundingClientRect().left : NaN) - box(label).right, 10.95 * (i + 1));
   });
   const [array, matrix, given] = all('mjx-mtable').map(table => [...table.querySelectorAll('mjx-mtd')]);

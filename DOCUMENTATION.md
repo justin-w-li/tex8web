@@ -137,7 +137,7 @@ Your document's measurements are CSS custom properties. To change them, set them
 | `--tex8web-<heading>-labelsep` | the space after a heading's number |
 | `--tex8web-<heading>-family`, `-weight`, `-style`, `-variant`, `-align` | a heading's font and alignment, with titlesec |
 | `--tex8web-<heading>-before`, `-after` | the space above and below a heading, from titlesec or the class |
-| `--tex8web-list-sep`, `--tex8web-item-sep`, `--tex8web-leftmargin` | the spacing and indent of a description list. Other lists have `--tex8web-list-*` properties on their element |
+| `--tex8web-list-sep`, `--tex8web-item-sep`, `--tex8web-leftmargin` | the spacing and indent of a description list. The space after a description's label, and the spacing of other lists, are `--tex8web-list-*` properties on each list's element |
 | `--tex8web-intextsep`, `--tex8web-floatsep` | the space around a float, and between two floats in a row |
 | `--tex8web-caption-before`, `--tex8web-caption-after` | the space above and below a caption. Each caption also has them on its element, swapped for a caption at the top with the caption package |
 | `--tex8web-display-above`, `--tex8web-display-below` | the space above and below display math |
@@ -355,7 +355,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **The separator of xfrac's `\sfrac`.** A fraction with a separator in brackets, such as `$\sfrac{1}[/]{2}$`, is set wrongly, as a fraction over the bracket. Leave the separator out.
 - **A TikZ picture in display math**, such as a `tikzcd` diagram, is drawn as one picture with the rest of the math in that display.
 - **The space above display math** is `\abovedisplayskip`, also after a short line, where the PDF has the smaller `\abovedisplayshortskip`.
-- **`\arraycolsep`** is taken at `\begin{document}`. A change to it for one formula is ignored.
+- **Space between array columns.** `\arraycolsep` is taken at `\begin{document}`, so a change to it for one formula is ignored. A rule `|` next to an `@{}` or `!{}` column has half an em of space beside it, where the PDF has `\arraycolsep`. mathtools' starred matrices, such as `pmatrix*`, have MathJax's space between columns.
 - **Boxes in math.** `\fbox`, `\colorbox`, and `\fcolorbox` in math have MathJax's space and frame, not `\fboxsep` and `\fboxrule`.
 - **Styles for `.mathjax-inline`** in a config apply only to a page built without Node, and to math in text of another size, such as a footnote.
 
@@ -368,6 +368,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **Table widths.** A tabularx is as wide as its contents, where in the PDF it fills its width. A longtable with a fixed `\LTleft`, such as `\parindent`, is at the left margin.
 - **Minipages.** A paragraph with a minipage inside its text is broken around the minipage. `\centering` in a minipage applies only in a figure. Two minipages, each inside an `\fbox`, are one above the other instead of side by side.
 - **A list item that starts with a box.** Beside a minipage or tabular aligned at its center or bottom, the item's label is at the box's first line. In the PDF, the label is at the middle of the box, or at its last line.
+- **Boxes in headings.** An `\fbox`, `\framebox`, `\colorbox`, or `\fcolorbox` in a heading has more space inside and a thicker frame than in the PDF, in proportion to the heading's size.
 - **Colors in text.** `\color` for the whole document, in the preamble or in `\AtBeginDocument`, is ignored. Inside a colored group, the text color is not restored by `\normalcolor`.
 - **Chapters and parts.** A chapter label, such as "Chapter 1", is tex4ht's default label. Part and chapter headings have the sizes of the report and book classes, whatever the class, unless they are formatted with titlesec.
 - **Text in `\scalebox` or `\resizebox`** is shown at its natural size. Only pictures in these boxes are scaled.
