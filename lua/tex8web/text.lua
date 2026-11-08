@@ -222,6 +222,16 @@ local function is_space(node)
   return not node:is_element() or is_nbsp(node)
 end
 
+local function is_empty_paragraph(node)
+  return node:is_element() and node:get_element_name() == "p" and dom.is_blank(node)
+end
+
+-- (an <a id> with nothing in it)
+local function is_anchor(node)
+  return node:is_element() and node:get_element_name() == "a" and not node:get_attribute("href")
+    and #node:get_children() == 0
+end
+
 function M.minipages(document)
   local parents, seen = {}, {}
   for _, el in ipairs(document:query_selector("div.minipage, div.subfigure")) do
@@ -246,11 +256,25 @@ function M.minipages(document)
           j = k + 1
         end
         -- (removes \noindent's empty paragraph before the row, which would
-        -- add a paragraph's space at the top of a box)
-        local k = #out
-        while k > 0 and is_space(out[k]) do k = k - 1 end
-        if k > 0 and out[k]:is_element() and out[k]:get_element_name() == "p" and dom.is_blank(out[k]) then
-          table.remove(out, k)
+        -- add a paragraph's space at the top of a box. The anchors a
+        -- \refstepcounter left before the row go to the top of its first
+        -- minipage: fixinlines would put them in a paragraph, which would
+        -- add the same space, for example between two [H] algorithms of
+        -- algorithm2e.)
+        local k, anchors = #out, {}
+        while k > 0 and (is_space(out[k]) or is_anchor(out[k]) or is_empty_paragraph(out[k])) do
+          if is_anchor(out[k]) then
+            table.insert(anchors, 1, table.remove(out, k))
+          elseif is_empty_paragraph(out[k]) then
+            table.remove(out, k)
+          end
+          k = k - 1
+        end
+        if #anchors > 0 then
+          local first = dom.elements(row)[1]
+          local inside = first:get_children()
+          for n = #anchors, 1, -1 do table.insert(inside, 1, anchors[n]) end
+          dom.set_children(first, inside)
         end
         out[#out + 1] = row
         i = j

@@ -1,0 +1,26 @@
+% algorithm2e's line numbers at the right (rightnl), as in the PDF: each
+% the same distance from the text's right edge, also in a block and on the
+% line of an until.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[ruled,vlined,linesnumbered,rightnl]{algorithm2e}
+\begin{document}
+\begin{algorithm}[H]
+\caption{Binary search}\label{alg:search}
+\KwIn{a sorted array $a_1 \le \dots \le a_n$ and a value $x$}
+$\ell \gets 1$, $h \gets n + 1$\tcp*{the answer lies between them}
+\While{$\ell < h$}{
+  $m \gets \lfloor (\ell + h)/2 \rfloor$\;
+  \eIf{$a_m < x$}{
+    $\ell \gets m + 1$\;
+  }{
+    $h \gets m$\;
+  }
+}
+\Repeat{no vertex is marked}{
+  remove the marked vertices\;
+}
+\Return{the index}\label{line:return}\;
+\end{algorithm}
+Line~\ref{line:return} returns the index.
+\end{document}

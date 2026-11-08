@@ -541,14 +541,28 @@ span.tcolorbox > .tcolorbox-title { display: block; }
    \AlCapHSkip, with a hanging indent. A block is \skiprule in, its text
    \skiptext from its vertical line, which ends in a short rule (vlined).
    A line number ends \skiptotal before the text's margin, or is at the
-   right */
+   right, 1.2em + \skiptext - \algomargin from the text's right edge,
+   in the 1.5em that algorithm2e keeps there for numbers */
 .tex8web-a2e { position: relative; display: flex; flex-direction: column;
     margin-block: 1em; text-align: start; }
 .tex8web-a2e > figcaption { width: auto; margin: 0;
     padding-inline-start: var(--tex8web-a2e-caption); }
+/* the caption of plain, boxed, and plainruled, as \algocf@makecaption sets
+   it: centered over the text less those 1.5em, and less \algomargin in
+   boxed, or from 0.5\algomargin if longer than a line */
+.tex8web-a2e:is(.tex8web-a2e-plain, .tex8web-a2e-boxed, .tex8web-a2e-plainruled) > figcaption {
+    width: fit-content; margin-inline: auto;
+    padding-inline: calc(var(--tex8web-a2e-margin) / 2) calc(var(--tex8web-a2e-margin) / 2 + 1.5em); }
+.tex8web-a2e.tex8web-a2e-boxed > figcaption {
+    padding-inline-end: calc(var(--tex8web-a2e-margin) * 1.5 + 1.5em); }
+/* \noalgocaption: the caption is not shown, but is kept as a link's
+   target, and the text is \interspacetitleruled below the rule */
+.tex8web-a2e-caption-none > figcaption { visibility: hidden; height: 0;
+    margin: 0 0 var(--tex8web-float-sep); padding: 0; border: 0; }
 .tex8web-a2e-caption-top > figcaption, .tex8web-a2e-caption-above > figcaption { order: -1; }
 .tex8web-a2e-caption-bottom > figcaption, .tex8web-a2e-caption-under > figcaption { order: 1; }
 .tex8web-a2e > :not(figcaption) { margin-inline-start: var(--tex8web-a2e-margin); }
+.tex8web-a2e:has(.tex8web-a2e-nl-right) > :not(figcaption) { margin-inline-end: 1.5em; }
 .tex8web-a2e > .tex8web-a2e-block {
     margin-inline-start: calc(var(--tex8web-a2e-margin) + var(--tex8web-a2e-rule)); }
 .tex8web-a2e :is(p, div) { margin-block: 0; }
@@ -563,7 +577,8 @@ span.tcolorbox > .tcolorbox-title { display: block; }
     border-top: var(--tex8web-a2e-vrule) solid; }
 .tex8web-a2e-nl { position: absolute; inset-inline-start: 0; text-indent: 0;
     width: calc(var(--tex8web-a2e-margin) - var(--tex8web-a2e-nlsep)); text-align: end; }
-.tex8web-a2e-nl.tex8web-a2e-nl-right { inset-inline: auto 0; width: auto; }
+.tex8web-a2e-nl.tex8web-a2e-nl-right { width: auto;
+    inset-inline: auto calc(1.2em + var(--tex8web-a2e-text) - var(--tex8web-a2e-margin)); }
 /* (an item copied into a preview by tex8web-page.js, without its list's
    marker) */
 .tex8web-preview > li { list-style: none; }

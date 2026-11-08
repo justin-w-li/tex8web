@@ -6,6 +6,12 @@
 % vertical line ends in a short rule unless an else follows. A \ref to an
 % algorithm or to one of its lines leads there. No math follows a keyword
 % or is in a comment: see "Small known differences" in CONTRIBUTING.md.
+% The other styles, set with \RestyleAlgo, have their caption below the
+% body, centered as in the PDF (plain, boxed, and plainruled), or above it
+% at the left (boxruled and tworuled). Their frames and rules are not
+% drawn: see DOCUMENTATION.md. \noalgocaption hides a ruled algorithm's
+% caption. With \SetAlgoNoLine, blocks have no lines and end in a
+% numbered end. No empty paragraph is between two [H] algorithms.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
@@ -48,4 +54,51 @@ Text after the algorithm.
 \caption{An \texttt{[H]} algorithm, its caption at the end}\label{alg:prune}
 \end{algorithm}
 See Algorithm~\ref{alg:prune}, line~\ref{line:remove}.
+
+\section{Other styles}
+{\RestyleAlgo{plain}
+\begin{algorithm}[H]
+\caption{A plain algorithm}\label{alg:plain}
+\eIf{$x > 0$}{
+  $y \gets x$\;
+}{
+  $y \gets -x$\;
+}
+\end{algorithm}}
+{\RestyleAlgo{boxed}
+\begin{algorithm}[H]
+\caption{A boxed algorithm}
+$y \gets |x|$\;
+\Return{the value}\;
+\end{algorithm}}
+{\RestyleAlgo{boxruled}
+\begin{algorithm}[H]
+$y \gets |x|$\;
+\Return{the value}\;
+\caption{A boxruled algorithm}
+\end{algorithm}}
+{\RestyleAlgo{plainruled}
+\begin{algorithm}[H]
+\caption{A plainruled algorithm}
+$y \gets |x|$\;
+\Return{the value}\;
+\end{algorithm}}
+{\RestyleAlgo{tworuled}
+\begin{algorithm}[H]
+\SetAlgoNoLine
+\caption{A tworuled algorithm without lines}
+\While{$\ell < h$}{
+  \eIf{$a_m < x$}{
+    $\ell \gets m + 1$\;
+  }{
+    $h \gets m$\;
+  }
+}
+\end{algorithm}}
+{\noalgocaption
+\begin{algorithm}[H]
+\caption{A caption that is not shown}\label{alg:nocaption}
+$y \gets |x|$\;
+\end{algorithm}}
+See Algorithm~\ref{alg:nocaption}.
 \end{document}

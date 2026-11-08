@@ -615,9 +615,14 @@ const algorithms = {
   // caption's label and separator, each line a paragraph numbered as in the
   // PDF (the one after the caption too), a block as a div with its vertical
   // line and closing rule, and a \ref to a line or to the [H] algorithm
-  // leading to it
+  // leading to it. Each \RestyleAlgo style's caption in its place, and
+  // \noalgocaption's caption still a link's target. With \SetAlgoNoLine, a
+  // block has no line, and its end is a numbered line.
   'test-algorithm2e': [
-    /^(?:(?!<figure class='tex8web-a2e )[^])*(?:<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'[^>]* style='--tex8web-a2e-margin: 1.5em; --tex8web-a2e-nlsep: 0.5em; --tex8web-a2e-hang: 0.5em; --tex8web-a2e-rule: 0.5em; --tex8web-a2e-text: 1em; --tex8web-a2e-vrule: 0.04em; --tex8web-a2e-hook: 0.34445em; --tex8web-a2e-caption: 0.75em; --tex8web-float-rule: 0.08em; --tex8web-float-midrule: 0.08em; --tex8web-float-endrule: 0.08em; --tex8web-float-sep: 0.2em; --tex8web-float-bodysep: 0.2em'>(?:(?!<figure class='tex8web-a2e )[^])*){2}$/,
+    /^(?:(?!<figure class='tex8web-a2e )[^])*(?:<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'[^>]* style='--tex8web-a2e-margin: 1.5em; --tex8web-a2e-nlsep: 0.5em; --tex8web-a2e-hang: 0.5em; --tex8web-a2e-rule: 0.5em; --tex8web-a2e-text: 1em; --tex8web-a2e-vrule: 0.04em; --tex8web-a2e-hook: 0.34445em; --tex8web-a2e-caption: 0.75em; --tex8web-float-rule: 0.08em; --tex8web-float-midrule: 0.08em; --tex8web-float-endrule: 0.08em; --tex8web-float-sep: 0.2em; --tex8web-float-bodysep: 0.2em'>(?:(?!<figure class='tex8web-a2e )[^])*){2}(?:<figure class='tex8web-a2e (?:(?!<figure class='tex8web-a2e )[^])*){6}$/,
+    /<figure class='tex8web-a2e tex8web-a2e-plain tex8web-a2e-caption-bottom'[^]*<figure class='tex8web-a2e tex8web-a2e-boxed tex8web-a2e-caption-under'[^]*<figure class='tex8web-a2e tex8web-a2e-boxruled tex8web-a2e-caption-above'[^]*<figure class='tex8web-a2e tex8web-a2e-plainruled tex8web-a2e-caption-under'[^]*<figure class='tex8web-a2e tex8web-a2e-tworuled tex8web-a2e-caption-top'[^]*<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-none'/,
+    /<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-none'[^>]*>(?:(?!<\/figure>)[^])*<figcaption class='caption'><span class='id'><a id='([^']+)'>[^]*See Algorithm<span class='tex8web-nbsp'>.<\/span><a href='#\1'>8</,
+    /<figure class='tex8web-a2e tex8web-a2e-tworuled [^>]*>(?:(?!<\/figure>)[^])*<div class='tex8web-a2e-block'> <p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>2<\/span><\/span><span class='cmbx-10'>if<(?:(?!<\/figure>)[^])*<span class='cmbx-7'>6<\/span><\/span><span class='cmbx-10'>end<\/span> <\/p> <\/div> <p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>7<\/span><\/span><span class='cmbx-10'>end</,
     /<span class='id'><span class='cmbx-10'>Algorithm<span class='tex8web-nbsp'> <\/span>1:<\/span><span class='tex8web-nbsp'> <\/span><\/span><span class='content'>Binary search/,
     /<\/figcaption>(?:\s*<!--[^>]*-->)*\s*<p class='noindent'><span class='cmbx-10'>Input:/,
     /<div class='tex8web-a2e-block tex8web-a2e-vline tex8web-a2e-hook'>(?:\s*<!--[^>]*-->)*\s*<p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>3<\/span><\/span>/,
@@ -625,6 +630,30 @@ const algorithms = {
     /line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>8<!--[^>]*--><\/a>[^]*<a id='\1'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>8<\/span><\/span><span class='cmbx-10'>return/,
     /<a id='([^']+)'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>9<\/span><\/span>remove[^]*line<span class='tex8web-nbsp'>.<\/span><a href='#\1'>9</,
     /^(?:(?!<figure class='tex8web-a2e )[^])*<figure class='tex8web-a2e [^>]*>(?:(?!<figure class='tex8web-a2e )[^])*<figure class='tex8web-a2e [^>]*>(?:(?!<\/figure>)[^])*<a id='([^']+)'>[^]*See Algorithm<span class='tex8web-nbsp'>.<\/span><a href='#\1'>2</,
+    // (an [H] algorithm after another: no empty paragraph between them,
+    // and the anchor that paragraph held at the top of the second)
+    /^(?:(?!<p><a id='[^']+'><\/a> <\/p><div class='tex8web-minipages'>)[^])*$/,
+    /<div class='tex8web-minipages'><div class='minipage [^>]*> ?<a id='[^']+r4'><\/a> ?<figure class='tex8web-a2e tex8web-a2e-boxed /,
+  ],
+  // the line numbers at the right
+  'test-algorithm2e-rightnl': [
+    /^(?:(?!<span class='tex8web-a2e-nl)[^])*(?:<span class='tex8web-a2e-nl tex8web-a2e-nl-right'><span class='cmbx-7'>\d+<\/span><\/span>(?:(?!<span class='tex8web-a2e-nl)[^])*){11}$/,
+  ],
+};
+
+// The stylesheet's rules for algorithm2e: the caption of plain, boxed, and
+// plainruled centered as \algocf@makecaption centers it, and
+// \noalgocaption's caption hidden. A number at the right is as far from
+// the text's right edge as in the PDF, in the 1.5em that algorithm2e keeps
+// for it, which no line's text, such as a \tcp* comment, enters.
+const algorithmRules = {
+  'test-algorithm2e': [
+    /\.tex8web-a2e:is\(\.tex8web-a2e-plain, \.tex8web-a2e-boxed, \.tex8web-a2e-plainruled\) > figcaption \{\s+width: fit-content; margin-inline: auto;\s+padding-inline: calc\(var\(--tex8web-a2e-margin\) \/ 2\) calc\(var\(--tex8web-a2e-margin\) \/ 2 \+ 1\.5em\); \}\s*\.tex8web-a2e\.tex8web-a2e-boxed > figcaption \{\s*padding-inline-end: calc\(var\(--tex8web-a2e-margin\) \* 1\.5 \+ 1\.5em\); \}/,
+    /\.tex8web-a2e-caption-none > figcaption \{ visibility: hidden; height: 0;\s+margin: 0 0 var\(--tex8web-float-sep\); padding: 0; border: 0; \}/,
+  ],
+  'test-algorithm2e-rightnl': [
+    /\.tex8web-a2e-nl\.tex8web-a2e-nl-right \{ width: auto;\s+inset-inline: auto calc\(1\.2em \+ var\(--tex8web-a2e-text\) - var\(--tex8web-a2e-margin\)\); \}/,
+    /\.tex8web-a2e:has\(\.tex8web-a2e-nl-right\) > :not\(figcaption\) \{ margin-inline-end: 1\.5em; \}/,
   ],
 };
 
@@ -718,7 +747,7 @@ const patterns = [
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
-  [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'],
+  [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [algorithmRules, "in algorithm2e's rules", true],
   [mdframed, "in mdframed's boxes", true],
 ];
 

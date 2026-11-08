@@ -144,6 +144,16 @@ return {
       .. [[<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c'>D</div></div><div class='minipage-like'>E</div>]])
   end,
 
+  ["text.minipages: the anchors before a row at the top of its first minipage"] = function()
+    local d = parse([[<div class="minipage tex8web-minipage-c">A</div> <a id="x1r4"></a> <!-- l. 1 --><p class="noindent"></p>]]
+      .. [[<div class="minipage tex8web-minipage-c"><figure>B</figure></div>]]
+      .. [[<a href="#x1r4"></a><div class="minipage tex8web-minipage-c">C</div>]])
+    text.minipages(d)
+    equal(body(d), [[<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c'>A</div></div>  <!--  l. 1  -->]]
+      .. [[<div class='tex8web-minipages'><div class='minipage tex8web-minipage-c'><a id='x1r4'></a><figure>B</figure></div></div>]]
+      .. [[<a href='#x1r4'></a><div class='tex8web-minipages'><div class='minipage tex8web-minipage-c'>C</div></div>]])
+  end,
+
   ["text.minipages: not a div that tex8web didn't write"] = function()
     local d = parse([[<div class="subfigure">A</div><div class="subfigure">B</div><div class="minipage">C</div>]])
     text.minipages(d)
