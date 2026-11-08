@@ -164,7 +164,8 @@ const speech = {
     /aria-label='2 lines Line 1: x equals y Label open paren 2\.4 close paren Line 2: z equals w'/],
   // (fractions of nicefrac and xfrac, and quantities of the units extension
   // and siunitx: each one formula in text, in math, and in a display, but
-  // text with mode=text; % read as "percent", and an angle in degrees;
+  // text with mode=text; % read as "percent", and an angle in degrees,
+  // also without siunitx, but not the interior A^\circ;
   // a number's digit groups as one number; ranges, lists, products, and
   // complex numbers in math with their words; micro and ohm)
   'test-units': [/aria-label='one half'/, /aria-label='one fourth'/,
@@ -174,7 +175,8 @@ const speech = {
     /aria-label='2 times 3'/, /aria-label='2 m times 3 m'/, /aria-label='1 plus 2 i'/,
     /aria-label='open paren 1 plus 2 i close paren times Omega'/, /aria-label='2 mu m'/, /aria-label='5 Omega'/,
     /aria-label='3 times m s to the negative 1 power'/, /aria-label='2 percent'/, /aria-label='3 percent'/, /aria-label='1 K'/,
-    /aria-label='30 degrees'/, /aria-label='4 degrees C'/,
+    /aria-label='30 degrees'/, /aria-label='4 degrees C'/, /aria-label='90 degrees'/,
+    /aria-label='20 degrees C'/, /aria-label='25 degrees C'/, /aria-label='A raised to the composed with power'/,
     /, 1\.5 m, /,
     /aria-label='v equals 3 times m s to the negative 1 power'/,
     /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,

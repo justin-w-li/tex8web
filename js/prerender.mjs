@@ -219,18 +219,22 @@ MathJax.texReset();
 // engine. TeX's upright letters (Γ, a \mathrm{d}) lose MathJax's
 // mathvariant="normal", spoken as "normal Gamma". A^\top, spoken as "A
 // raised to the down tack power", becomes A then the word "transpose",
-// except on an operator, as in \int^\top. {}^\circ, siunitx's degree sign
-// in math, spoken as "composed with", becomes °, spoken as "degrees".
+// except on an operator, as in \int^\top. ^\circ on a number or on nothing,
+// a degree sign (siunitx's is {}^\circ), spoken as "composed with", becomes
+// °, spoken as "degrees". On a letter, as in A^\circ, it may be an interior.
 const tex = MathJax.startup.document.inputJax.find(jax => jax.name === 'TeX');
 const { OP } = MathJax._.core.MmlTree.MmlNode.TEXCLASS;
 const tokenText = node => node.isToken ? node.getText() : node.childNodes.length === 1 ? tokenText(node.childNodes[0]) : '';
-const empty = node => !node.isToken && node.childNodes.every(empty);
+const empty = node => node.isToken ? !node.getText() : node.childNodes.every(empty);
 const forSpeech = ({ data }) => data.root.walkTree(node => {
   const factory = data.nodeFactory;
   if (node.isKind('mi') && node.attributes.getExplicit('mathvariant') === 'normal') {
     node.attributes.unset('mathvariant');
-  } else if (node.isKind('msup') && empty(node.childNodes[node.base]) && tokenText(node.childNodes[node.sup]) === '∘') {
-    node.parent.replaceChild(factory.create('token', 'mo', {}, '°'), node);
+  } else if (node.isKind('msup') && tokenText(node.childNodes[node.sup]) === '∘'
+      && (empty(node.childNodes[node.base]) || node.childNodes[node.base].isKind('mn'))) {
+    const base = node.childNodes[node.base];
+    const degree = factory.create('token', 'mo', {}, '°');
+    node.parent.replaceChild(empty(base) ? degree : factory.create('node', 'mrow', [base, degree]), node);
   } else if (node.isKind('msup') || node.isKind('msubsup')) {
     const [base, sub, sup] = [node.base, node.sub, node.sup].map(i => node.childNodes[i]);
     if (!sup || !['⊤', '⊺'].includes(tokenText(sup))) return;
