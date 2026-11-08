@@ -559,7 +559,8 @@
 % report. Two are the space above and below, as in article, with no space
 % between label and title. A fill above or below is not written, and
 % the stylesheet gives the part a chapter's space there. #1 and #2 are the
-% label's and the title's size, for the ems
+% label's and the title's font, for the ems: report's and book's \huge and
+% \Huge, or memoir's \partnamefont and \parttitlefont
 \newcommand\web@partskips[2]{%
     \begingroup
         \web@noteskips
@@ -573,9 +574,9 @@
     \endgroup
     \ifnum\web@nskips=2 \edef\web@skips{\expandafter\web@twoskips\web@skips}\fi
     \ifnum\web@nskips>1 \ifnum\web@nskips<4
-        \expandafter\web@partspacing\web@skips#1#2\fi\fi}
+        \expandafter\web@partspacing\web@skips{#1}{#2}\fi\fi}
 \def\web@twoskips#1#2{{#1}{0pt}{#2}}
-% above, between label and title, below, the label's size, the title's size.
+% above, between label and title, below, the label's font, the title's font.
 % The sizes are read first, since a size command sets \@tempskipa
 \def\web@partspacing#1#2#3#4#5{%
     \begingroup
@@ -595,13 +596,25 @@
 \ifdefined\c@chapter
     \begingroup
         \expandafter\let\csname ttls@part\endcsname\@undefined
+        % (memoir's \@part centers the part before \parttitlefont, whose
+        % commands are read for the alignment)
+        \ifdefined\parttitlefont\ifdefined\web@@part
+            \edef\web@a{\noexpand\in@{\detokenize{\centering}}{\meaning\web@@part}}%
+            \web@a\ifin@
+                \expandafter\def\expandafter\parttitlefont\expandafter
+                    {\expandafter\centering\parttitlefont}%
+            \fi
+        \fi\fi
         \web@bighead{part}\parttitlefont\partnamefont
     \endgroup
     \web@bighead{chapter}\chaptitlefont\chapnamefont
     \ifcsname web@titlefont@chapter\endcsname\else\web@chapterskips\fi
     % (mwrep's \part has no \@part)
     \ifcsname web@titlefont@part\endcsname\else
-        \ifdefined\web@@part\web@partskips\huge\Huge\fi
+        \ifdefined\web@@part
+            \web@partskips{\ifdefined\partnamefont\partnamefont{}\else\huge\fi}%
+                {\ifdefined\parttitlefont\parttitlefont{}\else\Huge\fi}%
+        \fi
     \fi
 \else
     % a class without chapters: its parts' alignment, from the class's \part

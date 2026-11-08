@@ -132,14 +132,15 @@ const measured = {
   // 20.74pt, and the fixture's \midchapskip of 10pt, in ems of memoir's
   // \huge, 17.28pt. A part's label 20pt from its title, by the default
   // chapter style's \midpartskip, in ems of memoir's \huge, and no space
-  // above or below, from \beforepartskip's and \afterpartskip's \vfil.
+  // above or below, from \beforepartskip's and \afterpartskip's \vfil,
+  // centered by memoir's \@part.
   'test-memoir': { '--tex8web-bibitem-sep': '0.99995em', '--tex8web-section-before': '1.79398em',
     '--tex8web-section-after': '0.82523em', '--tex8web-subsection-before': '1.27791em',
     '--tex8web-paragraph-before': '0.86111em', '--tex8web-paragraph-after': '0.43056em',
     '--tex8web-subsubsection-before': null, '--tex8web-chapter-before': '2.4108em',
     '--tex8web-chapter-after': '1.92863em', '--tex8web-chapter-label-after': '0.5787em',
     '--tex8web-part-label-after': '1.15741em', '--tex8web-part-before': null,
-    '--tex8web-part-after': null },
+    '--tex8web-part-after': null, '--tex8web-part-align': 'center' },
   // (chapter styles left with the stylesheet's spacing: memoir's chappell,
   // with four skips, one of them zero, and fncychap's Glenn, with a
   // negative space between label and title)
@@ -156,11 +157,12 @@ const measured = {
     '--tex8web-section-weight': 'normal', '--tex8web-section-style': 'italic',
     '--tex8web-section-align': 'left', '--tex8web-subsection-weight': 'bold',
     '--tex8web-paragraph-weight': 'normal', '--tex8web-paragraph-style': 'italic' },
-  // (amsart's section in centered small capitals at the text size, and its
-  // run-in paragraph in the text's font)
+  // (amsart's section in centered small capitals at the text size, its
+  // run-in paragraph in the text's font, and its part flush left, where
+  // html4.4ht centers parts)
   'test-amsart': { '--tex8web-section-size': '1em', '--tex8web-section-weight': 'normal',
     '--tex8web-section-variant': 'small-caps', '--tex8web-section-align': 'center',
-    '--tex8web-paragraph-weight': 'normal' },
+    '--tex8web-paragraph-weight': 'normal', '--tex8web-part-align': 'left' },
   // (memoir's fonts in a 10pt document: a part title in \huge small
   // capitals and a chapter title in \Large italic, both under a label in
   // \huge bold, a section in \normalsize italic, and a run-in paragraph in
