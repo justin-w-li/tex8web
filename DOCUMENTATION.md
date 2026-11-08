@@ -362,6 +362,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **A list item that starts with a box.** Beside a minipage or tabular aligned at its center or bottom, the item's label is at the box's first line. In the PDF, the label is at the middle of the box, or at its last line.
 - **Colors in text.** `\color` for the whole document, in the preamble or in `\AtBeginDocument`, is ignored. Inside a colored group, the text color is not restored by `\normalcolor`.
 - **Chapters and parts.** A chapter label, such as "Chapter 1", is tex4ht's default label. Part and chapter headings have the sizes of the report and book classes, whatever the class, unless they are formatted with titlesec.
+- **Text in `\scalebox` or `\resizebox`** is shown at its natural size. Only pictures in these boxes are scaled.
 
 ### Packages
 

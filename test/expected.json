@@ -15,12 +15,5 @@
     "allow": [
       "Package tex8web Warning: The color package was loaded after the preamble"
     ]
-  },
-  "test-tikzbox": {
-    "why": "tex4ht's TikZ driver (pgfsys-dvisvgm4ht.def) puts two spaces in a \\tikz picture's box, so \\resizebox makes the picture 1.2% narrower than in the PDF; an \\includegraphics in a \\scalebox or \\resizebox keeps the width of its own options, since text.pictures multiplies only the widths of dvisvgm's pictures",
-    "allow": [
-      "src='test-tikzbox2x\\.svg'",
-      "<img alt='halved'"
-    ]
   }
 }

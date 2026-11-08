@@ -214,15 +214,18 @@ const pictures = {
   'test': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.225\)'/,
     /<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.45\)'/],
   // (TikZ pictures as wide as in the PDF in boxes that resize them: half,
-  // the text width, 1cm high, a quarter, mirrored, and twice as wide only;
-  // as low as in the PDF with a baseline, also when scaled; with no
-  // baseline, around a picture with one, or in display math, and with no
-  // alt text; text in a scaled box left without marks)
-  'test-tikzbox': [drawn(0, '0.1655'), drawn(2, '1.0000'), drawn(3, '0.1644'), drawn(4, '0.0828'),
+  // the text width (a \tikz and an environment), 1cm high, a quarter,
+  // mirrored, twice as wide only, and an \includegraphics halved; as low
+  // as in the PDF with a baseline, also when scaled, and turned over; with
+  // no baseline, around a picture with one, or in display math, and with
+  // no alt text; a space after a \tikz; text in a scaled box, also in a
+  // picture, left without marks)
+  'test-tikzbox': [drawn(0, '0.1655'), drawn(2, '1.0000'), drawn(15, '1.0000'), drawn(3, '0.1644'), drawn(4, '0.0828'),
     drawn(5, '0.3310', '; transform:scale(-1, 1)'), drawn(6, '0.6621', '; aspect-ratio:3.9860'),
-    drawn(7, '0.0754', lower('0.0102')), drawn(8, '0.0506', lower('0.0191')), drawn(9, '0.0506'),
+    drawn(7, '0.0754', lower('0.0102')), /test-tikzbox7x\.svg'[^>]*\/> and/, drawn(8, '0.0506', lower('0.0191')), drawn(9, '0.0506'),
     drawn(10, '0.0742', lower('0.0097')), drawn(11, '0.0640', lower('0.0102')), drawn(12, '0.0518', lower('0.0134')),
-    drawn(13, '0.1662'), drawn(14, '0.1647'), share('halved', '0.1449'), /Text: Big/, /^(?![^]*tex8web-scale)/],
+    drawn(16, '0.1661', `${lower('0.0836')}; transform:scale(1, -1)`), drawn(13, '0.1662'), drawn(14, '0.1647'),
+    share('halved', '0.1449'), /Text: Big/, /^(?![^]*tex8web-scale)/],
 };
 
 // The title of a page without \maketitle, for the tab and link previews:

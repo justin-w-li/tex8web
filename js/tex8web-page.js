@@ -761,6 +761,9 @@
       // dark mode selects
       picture.setAttribute('src', img.getAttribute('src'));
       picture.alt = img.alt;
+      // (a mirrored or stretched TikZ picture: text.pictures in text.lua)
+      picture.style.transform = img.style.transform;
+      picture.style.aspectRatio = img.style.aspectRatio;
       plate.style.setProperty('--tex8web-ratio', box.width / box.height);
       natural = /\.svg$/i.test(img.getAttribute('src')) ? 0 : img.naturalWidth;
       zoom = 1;

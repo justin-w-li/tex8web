@@ -717,6 +717,15 @@
     \def\n:pgfsys@beginpicture:{%
         \Configure{Picture-alt}{}\protect\csname nested:math\endcsname
         \def\EndPicture{}\o:pgfsys@beginpicture:}
+    % pgfsys-dvisvgm4ht.def's versions, without the spaces that two of its
+    % line ends leave in a \tikz picture's box. They made the box wider than
+    % in the PDF, so \resizebox scaled the picture too little.
+    \web@needs{n:pgfsys@typesetpicturebox:}%
+    \def\texfourht@tikz@begin{%
+        \protect\csname nested:math\endcsname
+        \Picture+[\csname a:Picture-alt\endcsname]{}}
+    \def\n:pgfsys@typesetpicturebox:#1{%
+        \texfourht@tikz@begin\o:pgfsys@typesetpicturebox:{#1}\texfourht@tikz@end}
 \fi
 % a picture with a baseline (TikZ's baseline=) set on the text's baseline,
 % as pgf lowers or raises it. The baseline's position is written into the
@@ -787,18 +796,18 @@
 % \scalebox, \resizebox, and \reflectbox: dvisvgm draws a picture in such a
 % box at its natural size, since the driver's scale special lies outside
 % tex4ht's picture. Marks around the scaled box give text.pictures the
-% factors. In a picture, \HCode writes nothing (PictureAlt*+ in html4.4ht),
-% and the driver's special scales what is drawn.
+% factors. In a picture, \HCode writes nothing (its test of \EndPicture in
+% tex4ht.sty), and the driver's special scales what is drawn.
 \cs_if_exist:NT \Gscale@box
   {
     \cs_set_eq:NN \__web_scale_start: \Gscale@start
     \cs_set_eq:NN \__web_scale_end: \Gscale@end
     \cs_set:Npn \Gscale@start
       {
-        \HCode{<span~class="tex8web-scale"~data-x="\Gscale@x"~data-y="\Gscale@y"/>}
+        \HCode{<span~class="tex8web-scale"~data-x="\Gscale@x"~data-y="\Gscale@y"></span>}
         \__web_scale_start:
       }
-    \cs_set:Npn \Gscale@end { \__web_scale_end: \HCode{<span~class="tex8web-scale-end"/>} }
+    \cs_set:Npn \Gscale@end { \__web_scale_end: \HCode{<span~class="tex8web-scale-end"></span>} }
   }
 
 % a minipage, or subcaption's subfigure (a minipage inside), as wide as in

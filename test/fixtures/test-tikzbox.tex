@@ -1,7 +1,8 @@
-% TikZ pictures in boxes that resize them (nested, mirrored, and not
-% uniformly), an \includegraphics and text in such a box, inline pictures
-% with a baseline (one in a node of a picture without), and a commutative
-% diagram in display math.
+% TikZ pictures in boxes that resize them (nested, mirrored, turned over,
+% and not uniformly, also in a figure), an \includegraphics and text in
+% such a box, a scaled box in a picture, inline pictures with a baseline
+% (one in a node of a picture without), and a commutative diagram in
+% display math.
 \documentclass{article}
 \usepackage{tikz}
 \usepackage{tikz-cd}
@@ -41,4 +42,15 @@ Text \tikz{\node[draw] {in \tikz[baseline=-0.5ex]{\draw (0,0) circle (0.1);} a n
 A \arrow[r, "f"] & B
 \end{tikzcd}
 \]
+\section{More}
+\resizebox{\textwidth}{!}{\begin{tikzpicture}\draw (0,0) rectangle (20,2);\end{tikzpicture}}
+
+Turned over: \scalebox{1}[-1]{\tikz{\draw (0,0) rectangle (2,1); \node at (1,0.5) {Up};}} after.
+
+Node: \tikz\node{\scalebox{2}{x}};
+\begin{figure}
+\centering
+\scalebox{2}[1]{\tikz{\draw (0,0) rectangle (4,2); \node at (2,1) {Stretched};}}
+\reflectbox{\tikz{\draw (0,0) rectangle (4,2); \node at (2,1) {Mirrored};}}
+\end{figure}
 \end{document}
