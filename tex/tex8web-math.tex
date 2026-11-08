@@ -158,22 +158,29 @@
     \web@needs{fixmathjaxtoc}
     \web@needs{__siunitx_print_math_auxii:n}
     \cs_generate_variant:Nn \str_replace_all:Nnn { Nee }
-    % siunitx's \micro is \text{\textmu} with pdfTeX, which MathJax shows
-    % as it is. MathJax sets a micro sign (U+00B5) italic, and a Greek mu
-    % upright, as in the PDF
+    % - every % and \% as \%, in a string, because \tl_replace_all:Nnn
+    %   skips text in braces
+    % - a \, between digits, siunitx's digit group separator, as an empty mn
+    %   of its width: MathJax's speech reads an mspace between two numbers
+    %   as "times"
+    % - \micro's \text{\textmu} (pdfTeX) as \text{μ}: MathJax shows
+    %   \textmu as it is, and sets a micro sign (U+00B5) italic and a Greek
+    %   mu upright, as in the PDF
+    \regex_const:Nn \c__web_si_digits_regex { ([0-9]) \\, ([0-9]) }
+    \str_const:Ne \c__web_si_textmu_str { \tl_to_str:n { \text { \textmu } } }
+    \str_const:Ne \c__web_si_mu_str { \tl_to_str:n { \text { μ } } }
+    \str_const:Ne \c__web_si_thin_str { \tl_to_str:n { \, } }
     \AddToHook { begindocument/end } {
-        \DeclareSIPrefix \micro { \text { μ } } { -6 }
         \cs_set_eq:NN \__web_si_auxii:n \__siunitx_print_math_auxii:n
-        % (every % and \% as \%, in a string, because \tl_replace_all:Nnn
-        % skips text in braces.) A \, between digits, siunitx's digit group
-        % separator, is an empty mn of its width: MathJax's speech reads an
-        % mspace between two numbers as "times"
         \cs_gset_protected:Npn \__siunitx_print_math_auxii:n #1 {
             \str_set:Nn \l_tmpa_str {#1}
             \str_replace_all:Nee \l_tmpa_str { \c_backslash_str \c_percent_str } { \c_percent_str }
             \exp_args:NNV \str_replace_all:Nnn \l_tmpa_str \c_percent_str { \% }
-            \regex_replace_all:nnN { ([0-9]) \\, ([0-9]) }
-                { \1 \\mmlToken\{mn\}[style="padding-left:0.167em"]\{\} \2 } \l_tmpa_str
+            \exp_args:NNV \str_if_in:NnT \l_tmpa_str \c__web_si_thin_str {
+                \regex_replace_all:NnN \c__web_si_digits_regex
+                    { \1 \\mmlToken\{mn\}[style="padding-left:0.167em"]\{\} \2 } \l_tmpa_str
+            }
+            \exp_args:NNVV \str_replace_all:Nnn \l_tmpa_str \c__web_si_textmu_str \c__web_si_mu_str
             \a:MathjaxInline \exp_args:NV \__web_si_auxii:n \l_tmpa_str \b:MathjaxInline
         }
     }
@@ -189,27 +196,40 @@
                 mode = math ,
                 quantity-product = { \__web_si_keep:n { \exp_not:V \l__siunitx_quantity_product_tl } }
             }
-            \__web_si_phrases:
+            \cs_set_protected:Npn \__siunitx_compound_print_separator:n ##1 {
+                \bool_if:NTF \l__siunitx_compound_separator_text_bool
+                    { \__web_si_text:n {##1} } { \__web_si_separator:n {##1} }
+            }
+            \cs_set_protected:Npn \__siunitx_compound_print_boundary:n ##1 {
+                \bool_if:NTF \l__siunitx_compound_boundary_text_bool
+                    { \tl_if_blank:nF {##1} { \__web_si_text:n {##1} } }
+                    { \__web_si_boundary:n {##1} }
+            }
             #1
         }
     }
-    % the phrases of ranges and lists, kept as one \text with the spaces
+    % the text of ranges, lists, and products (their phrases and separators,
+    % and a range's opening phrase), kept as one \text with the spaces
     % around it, which MathJax keeps there and leaves out of the speech.
-    % (MathJax reads a \ as "empty".) Translations are expanded
-    \tl_new:N \g__web_si_phrase_tl
-    \cs_new_protected:Npn \__web_si_phrases: {
-        \clist_map_inline:nn {
-            \l_siunitx_range_phrase_tl, \l_siunitx_list_separator_tl,
-            \l_siunitx_list_separator_pair_tl, \l_siunitx_list_separator_final_tl
-        } {
-            \group_begin:
-                \cs_set_eq:NN \TextOrMath \use_i:nn
-                \cs_set_eq:NN \text \use:n
-                \tl_gset:Ne \g__web_si_phrase_tl {##1}
-            \group_end:
-            \tl_set:Ne ##1 { \exp_not:N \__web_si_keep:n { \exp_not:N \text { \exp_not:V \g__web_si_phrase_tl } } }
-        }
+    % (MathJax reads a \ as "empty".) Translations are expanded and font
+    % commands dropped. A text command such as \textendash is left as it
+    % is, which MathJax shows in red
+    \web@needs{__siunitx_compound_print_separator:n}
+    \web@needs{l__siunitx_compound_separator_text_bool}
+    \web@needs{l__siunitx_compound_boundary_text_bool}
+    \web@needs{__siunitx_compound_print_boundary:n}
+    \cs_set_eq:NN \__web_si_separator:n \__siunitx_compound_print_separator:n
+    \cs_set_eq:NN \__web_si_boundary:n \__siunitx_compound_print_boundary:n
+    \cs_new_protected:Npn \__web_si_text:n #1 {
+        \group_begin:
+            \cs_set_eq:NN \TextOrMath \use_i:nn
+            \cs_set_eq:NN \text \use:n
+            \tl_gset:Ne \g__web_si_phrase_tl { \text_purify:n {#1} }
+        \group_end:
+        \__web_si_keep:e { \exp_not:N \text { \exp_not:V \g__web_si_phrase_tl } }
     }
+    \tl_new:N \g__web_si_phrase_tl
+    \cs_generate_variant:Nn \__web_si_keep:n { e }
     \cs_set_eq:NN \__web_si_quantity:nn \siunitx_quantity_print:nn
     % siunitx puts this protected function, unexpanded, in the math of a
     % complex quantity in brackets, where it runs when typeset. MathJax
