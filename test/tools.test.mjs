@@ -1,9 +1,9 @@
-// Tests of diff.mjs, png.mjs and the name checks of the test scripts, run by
-// npm test:
+// Tests of tex8web --version, diff.mjs, png.mjs and the name checks of
+// the test scripts, run by npm test:
 // node --test test/tools.test.mjs
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -16,6 +16,33 @@ import { decode, encode } from './lib/png.mjs';
 const deadline = 60000;
 const here = dirname(fileURLToPath(import.meta.url));
 const node = (...args) => spawnSync(process.execPath, args, { cwd: join(here, '..'), encoding: 'utf8', timeout: deadline });
+
+test('tex8web --version prints the version, and the commit in a git checkout only', () => {
+  const root = join(here, '..');
+  const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
+  const run = dir => spawnSync(join(dir, 'bin/tex8web'), ['--version'], { encoding: 'utf8', timeout: deadline });
+  const result = run(root);
+  assert.equal(result.status, 0);
+  if (existsSync(join(root, '.git'))) {
+    const commit = spawnSync('git', ['-C', root, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
+    const dirty = spawnSync('git', ['-C', root, 'diff', '--quiet', 'HEAD']).status ? '-dirty' : '';
+    assert.equal(result.stdout, `tex8web ${version} (${commit}${dirty})\n`);
+  }
+  assert.match(result.stdout, /^tex8web \d+\.\d+\.\d+( \([0-9a-f]{7,}(-dirty)?\))?\n$/);
+  // a copy of tex8web inside another repository, whose commit is not tex8web's
+  const repo = mkdtempSync(join(tmpdir(), 'tex8webrepo')), copy = join(repo, 'tex8web');
+  try {
+    const git = (...args) => assert.equal(spawnSync('git', ['-C', repo, ...args], { timeout: deadline }).status, 0);
+    git('init', '-q');
+    git('-c', 'user.name=test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', 'commit', '-q', '--allow-empty', '-m', 'test');
+    mkdirSync(join(copy, 'bin'), { recursive: true });
+    copyFileSync(join(root, 'bin/tex8web'), join(copy, 'bin/tex8web'));
+    copyFileSync(join(root, 'package.json'), join(copy, 'package.json'));
+    assert.equal(run(copy).stdout, `tex8web ${version}\n`);
+  } finally {
+    rmSync(repo, { recursive: true });
+  }
+});
 
 test('diff.mjs compares the fonts', () => {
   const dir = mkdtempSync(join(tmpdir(), 'tex8webdiff'));

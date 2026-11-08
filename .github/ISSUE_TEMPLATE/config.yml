@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/justin-w-li/tex8web/blob/main/DOCUMENTATION.md
+    about: Building, configuring, and known limitations

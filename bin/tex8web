@@ -1,6 +1,7 @@
 #!/bin/sh
 # Builds a LaTeX document's web page with tex8web:
 #   tex8web [-c config] [-d out] [-B aux] [-p pdf] [-u url] [make4ht options] document.tex
+#   tex8web --version
 # The page goes to out (default: build/html beside the document) and
 # tex4ht's files to aux, relative to the document (default: build/tex4ht).
 # -p links the page to the document's PDF, as \WebPDF does, through
@@ -22,7 +23,23 @@ done
 root=$(cd "$(dirname "$self")/.." && pwd -P)
 
 absolute() { case $1 in /*) printf '%s\n' "$1" ;; *) printf '%s\n' "$PWD/$1" ;; esac; }
-usage="usage: tex8web [-c config] [-d out] [-B aux] [-p pdf] [-u url] [make4ht options] document.tex"
+usage="usage: tex8web [-c config] [-d out] [-B aux] [-p pdf] [-u url] [make4ht options] document.tex
+       tex8web --version"
+
+if [ "$1" = --version ]; then
+  version=$(sed -n 's/^  "version": "\(.*\)",$/\1/p' "$root/package.json")
+  # (tex8web's own .git, a file in a worktree, and not that of a
+  # repository tex8web was copied into)
+  if [ -e "$root/.git" ] &&
+    commit=$(git -C "$root" rev-parse --short HEAD 2>/dev/null); then
+    # (a checkout with uncommitted changes is not that commit)
+    git -C "$root" diff --quiet HEAD 2>/dev/null || commit=$commit-dirty
+    echo "tex8web $version ($commit)"
+  else
+    echo "tex8web $version"
+  fi
+  exit 0
+fi
 
 config=$root/tex8web.cfg out=build/html aux=build/tex4ht document=
 count=$#

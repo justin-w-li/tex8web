@@ -1,7 +1,7 @@
 {
   "name": "tex8web",
   "version": "0.1.0",
-  "description": "LaTeX to web pages that look like the PDF: tex4ht + MathJax, with the math typeset at build time",
+  "description": "Turns a LaTeX document into a web page that looks like its PDF",
   "license": "MIT",
   "private": true,
   "repository": {

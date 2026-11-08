@@ -1,0 +1,53 @@
+name: Bug report
+description: A page that is built wrong, or a build that fails
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: tex8web version
+      description: The output of `tex8web --version`
+    validations:
+      required: true
+  - type: input
+    id: texlive
+    attributes:
+      label: TeX Live
+      description: The TeX Live year, and the output of `make4ht -v`
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node
+      description: The output of `node -v`
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 26.1, Ubuntu 24.04
+    validations:
+      required: true
+  - type: textarea
+    id: document
+    attributes:
+      label: Document
+      description: The smallest .tex file with the problem, and your config, if any
+      render: tex
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: make4ht output
+      description: The output of the build
+      render: text
+  - type: textarea
+    id: problem
+    attributes:
+      label: Expected and actual result
+      description: What you expected, and what you see. A screenshot is welcome.
+    validations:
+      required: true
