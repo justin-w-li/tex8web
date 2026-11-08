@@ -335,10 +335,6 @@
     // sections the reader opened
     const kept = new Set();
     let current, opened;
-    // the layout, read once and on each resize: layout() in update(), after
-    // its changes, would restyle the whole page
-    let wide = layout() === 'wide';
-    addEventListener('resize', () => { wide = layout() === 'wide'; });
     const update = () => {
       const line = innerHeight / 4;
       let reading = entries[0];
@@ -362,10 +358,6 @@
         section.classList.add('tex8web-reading');
         opened = section;
       }
-      // Nothing to scroll in the closed drawer, which is not drawn. Its
-      // entries' boxes, read after the changes above, would lay out the
-      // whole page.
-      if (!wide && !toc.matches(':popover-open')) return;
       // the section's entry while its subsections are hidden; no scrolling
       // while search results replace the entries (a.height is 0)
       const shown = current.a.getClientRects().length ? current.a : opened.querySelector('a');
