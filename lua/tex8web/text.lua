@@ -132,6 +132,22 @@ local function is_math(el)
   return dom.class_starts(el, "mathjax-")
 end
 
+-- tex4ht writes the space after a formula outside both the formula and the
+-- span of the text's size, so in \small text or a footnote the space would
+-- be at the body size. After a formula given its size (tex8web-math.tex),
+-- the space goes in the formula's span. (Without prerendering, make4ht's
+-- joincharacters filter would move it there; after prerendering, it does
+-- not, as the span holds MathJax's elements.)
+function M.sized_math_spaces(document)
+  for _, el in ipairs(document:query_selector(".mathjax-inline")) do
+    local space = el:get_next_node()
+    if el:get_attribute("style") and space and space:is_text() and space:get_text():match("^%s+$") then
+      el:add_child_node(el:create_text_node(space:get_text()))
+      dom.set_node_text(space, "")
+    end
+  end
+end
+
 -- the children of el, with each no-break space in a <span class="tex8web-nbsp">
 local function mark_nbsp(el)
   local children = {}

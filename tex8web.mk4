@@ -102,6 +102,7 @@ local passes = {
   page.build_data,
   text.colors,
   source.spaces,
+  text.sized_math_spaces,
   text.theorem_spacing,
   text.box_theorems,
   text.heading_lists,

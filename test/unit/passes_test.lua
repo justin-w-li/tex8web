@@ -31,6 +31,12 @@ return {
     equal(body(d), [[<span class='mathjax-inline'>\(\abs[\big]{x} \alpha b\)</span>]])
   end,
 
+  ["text.sized_math_spaces: the space after a sized formula in its span"] = function()
+    local d = parse([[<p><span class="cmr-9">a </span><span class="mathjax-inline" style="--tex8web-math-size: 0.9">\(x\)</span> <span class="cmr-9">b</span> <span class="mathjax-inline">\(y\)</span> c</p>]])
+    text.sized_math_spaces(d)
+    equal(body(d), [[<p><span class='cmr-9'>a </span><span class='mathjax-inline' style='--tex8web-math-size: 0.9'>\(x\) </span><span class='cmr-9'>b</span> <span class='mathjax-inline'>\(y\)</span> c</p>]])
+  end,
+
   ["text.theorem_spacing: the heading's spacing onto the theorem"] = function()
     local d = parse([[<div class="newtheorem"><p><span class="head">Theorem 1.<span class="tex8web-thmskip" data-before="1em" data-after="2em"></span></span> Text</p></div>]])
     text.theorem_spacing(d)

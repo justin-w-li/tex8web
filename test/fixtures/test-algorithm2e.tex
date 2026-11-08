@@ -1,6 +1,7 @@
 % algorithm2e's ruled algorithms, with vertical lines along their blocks
-% and numbered lines, also in an [H] algorithm. As in the PDF, the caption
-% is at the left between two rules, at the top wherever \caption is, and a
+% and numbered lines, also in an [H] algorithm and in one in \small text,
+% which has the lengths of the others. As in the PDF, the caption is at the
+% left between two rules, at the top wherever \caption is, and a
 % rule ends the body, all three as wide as the text. Each line is a
 % paragraph, with its number in the margin and its keywords bold. A block's
 % vertical line ends in a short rule unless an else follows. A \ref to an
@@ -54,6 +55,12 @@ Text after the algorithm.
 \caption{An \texttt{[H]} algorithm, its caption at the end}\label{alg:prune}
 \end{algorithm}
 See Algorithm~\ref{alg:prune}, line~\ref{line:remove}.
+
+{\small
+\begin{algorithm}[H]
+$x \gets 1$\;
+\caption{A small algorithm}
+\end{algorithm}}
 
 \section{Other styles}
 {\RestyleAlgo{plain}

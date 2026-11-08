@@ -62,10 +62,9 @@
             "relax": ""}},
     "output": {"font": "mathjax-\web@mathfont", "displayOverflow": "scroll",
         "matchFontHeight": false}}}
-% each formula at the size of the text around it. tex4ht sets a size change
-% within the text (\small, a footnote) as spans around the words, and ends
-% the span before each formula, which would then be at the body size. These
-% are html4-math.4ht's elements, with the size as a multiple of the body's.
+% each formula at the size of the text around it, as a multiple of the body
+% size (\web@bodysize): tex4ht ends the span of the text's size before each
+% formula. These are html4-math.4ht's elements, with the size added.
 % tex8web-text.tex turns the size off in the title, where tex4ht drops the
 % fonts.
 \newcommand\web@mathsize{\ifdim\f@size pt=\web@bodysize\else

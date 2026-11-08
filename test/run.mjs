@@ -628,17 +628,18 @@ const algorithms = {
     /<div class='tex8web-alg-notext'>/,
     /line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>11[^]*<a id='\1'><\/a>\s*<span class='cmbx-10'>return/,
   ],
-  // algorithm2e's, [H] too: their style, caption position, and lengths, the
-  // caption's label and separator, each line a paragraph numbered as in the
-  // PDF (the one after the caption too), a block as a div with its vertical
-  // line and closing rule, and a \ref to a line or to the [H] algorithm
-  // leading to it. Each \RestyleAlgo style's caption in its place, and
-  // \noalgocaption's caption still a link's target. With \SetAlgoNoLine, a
-  // block has no line, and its end is a numbered line.
+  // algorithm2e's, [H] and in \small text too: their style, caption
+  // position, and lengths (at the body size), the caption's label and
+  // separator, each line a paragraph numbered as in the PDF (the one after
+  // the caption too), a block as a div with its vertical line and closing
+  // rule, and a \ref to a line or to the [H] algorithm leading to it. Each
+  // \RestyleAlgo style's caption in its place, and \noalgocaption's caption
+  // still a link's target. With \SetAlgoNoLine, a block has no line, and
+  // its end is a numbered line.
   'test-algorithm2e': [
-    /^(?:(?!<figure class='tex8web-a2e )[^])*(?:<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'[^>]* style='--tex8web-a2e-margin: 1.5em; --tex8web-a2e-nlsep: 0.5em; --tex8web-a2e-hang: 0.5em; --tex8web-a2e-rule: 0.5em; --tex8web-a2e-text: 1em; --tex8web-a2e-vrule: 0.04em; --tex8web-a2e-hook: 0.34445em; --tex8web-a2e-caption: 0.75em; --tex8web-float-rule: 0.08em; --tex8web-float-midrule: 0.08em; --tex8web-float-endrule: 0.08em; --tex8web-float-sep: 0.2em; --tex8web-float-bodysep: 0.2em'>(?:(?!<figure class='tex8web-a2e )[^])*){2}(?:<figure class='tex8web-a2e (?:(?!<figure class='tex8web-a2e )[^])*){6}$/,
+    /^(?:(?!<figure class='tex8web-a2e )[^])*(?:<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'[^>]* style='--tex8web-a2e-margin: 1.5em; --tex8web-a2e-nlsep: 0.5em; --tex8web-a2e-hang: 0.5em; --tex8web-a2e-rule: 0.5em; --tex8web-a2e-text: 1em; --tex8web-a2e-vrule: 0.04em; --tex8web-a2e-hook: 0.34445em; --tex8web-a2e-caption: 0.75em; --tex8web-float-rule: 0.08em; --tex8web-float-midrule: 0.08em; --tex8web-float-endrule: 0.08em; --tex8web-float-sep: 0.2em; --tex8web-float-bodysep: 0.2em'>(?:(?!<figure class='tex8web-a2e )[^])*){3}(?:<figure class='tex8web-a2e (?:(?!<figure class='tex8web-a2e )[^])*){6}$/,
     /<figure class='tex8web-a2e tex8web-a2e-plain tex8web-a2e-caption-bottom'[^]*<figure class='tex8web-a2e tex8web-a2e-boxed tex8web-a2e-caption-under'[^]*<figure class='tex8web-a2e tex8web-a2e-boxruled tex8web-a2e-caption-above'[^]*<figure class='tex8web-a2e tex8web-a2e-plainruled tex8web-a2e-caption-under'[^]*<figure class='tex8web-a2e tex8web-a2e-tworuled tex8web-a2e-caption-top'[^]*<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-none'/,
-    /<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-none'[^>]*>(?:(?!<\/figure>)[^])*<figcaption class='caption'><span class='id'><a id='([^']+)'>[^]*See Algorithm<span class='tex8web-nbsp'>.<\/span><a href='#\1'>8</,
+    /<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-none'[^>]*>(?:(?!<\/figure>)[^])*<figcaption class='caption'><span class='id'><a id='([^']+)'>[^]*See Algorithm<span class='tex8web-nbsp'>.<\/span><a href='#\1'>9</,
     /<figure class='tex8web-a2e tex8web-a2e-tworuled [^>]*>(?:(?!<\/figure>)[^])*<div class='tex8web-a2e-block'> <p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>2<\/span><\/span><span class='cmbx-10'>if<(?:(?!<\/figure>)[^])*<span class='cmbx-7'>6<\/span><\/span><span class='cmbx-10'>end<\/span> <\/p> <\/div> <p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>7<\/span><\/span><span class='cmbx-10'>end</,
     /<span class='id'><span class='cmbx-10'>Algorithm<span class='tex8web-nbsp'> <\/span>1:<\/span><span class='tex8web-nbsp'> <\/span><\/span><span class='content'>Binary search/,
     /<\/figcaption>(?:\s*<!--[^>]*-->)*\s*<p class='noindent'><span class='cmbx-10'>Input:/,
@@ -650,7 +651,7 @@ const algorithms = {
     // (an [H] algorithm after another: no empty paragraph between them,
     // and the anchor that paragraph held at the top of the second)
     /^(?:(?!<p><a id='[^']+'><\/a> <\/p><div class='tex8web-minipages'>)[^])*$/,
-    /<div class='tex8web-minipages'><div class='minipage [^>]*> ?<a id='[^']+r4'><\/a> ?<figure class='tex8web-a2e tex8web-a2e-boxed /,
+    /<div class='tex8web-minipages'><div class='minipage [^>]*> ?<a id='[^']+r5'><\/a> ?<figure class='tex8web-a2e tex8web-a2e-boxed /,
   ],
   // the line numbers at the right
   'test-algorithm2e-rightnl': [

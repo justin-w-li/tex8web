@@ -171,8 +171,8 @@ for (const problem of rules.problems) console.error(`MathJax: ${problem} in its 
 for (const math of flat ? adaptor.tags(root, 'mjx-math') : []) {
   for (const child of adaptor.childNodes(math)) if (isElement(child)) flatten(child);
 }
-// tex4ht's span around inline math: used by the earlier passes, and by
-// nothing after this one
+// tex4ht's span around inline math: used by the earlier passes, and after
+// this one only when it gives the math a size (tex8web-math.tex)
 for (const span of adaptor.tags(root, 'span')) {
   const [container, ...rest] = adaptor.childNodes(span);
   if (!rest.length && container && adaptor.kind(container) === 'mjx-container'

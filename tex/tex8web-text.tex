@@ -802,16 +802,16 @@
     \def\@algocf@start{%
         \web@algocode{<figure class="tex8web-a2e tex8web-a2e-\algocf@style\space tex8web-a2e-caption-%
             \csname @algocf@capt@\algocf@style\endcsname"
-            style="--tex8web-a2e-margin: \web@em\algomargin;
-            --tex8web-a2e-nlsep: \web@em\skiptotal; --tex8web-a2e-hang: \web@em\algocf@hangindent;
-            --tex8web-a2e-rule: \web@em\skiprule; --tex8web-a2e-text: \web@em\skiptext;
-            --tex8web-a2e-vrule: \web@em{0.4pt}; --tex8web-a2e-hook: \web@em\skiphlne;
-            --tex8web-a2e-caption: \web@em\AlCapHSkip;
-            --tex8web-float-rule: \web@em\algoheightrule;
-            --tex8web-float-midrule: \web@em\algotitleheightrule;
-            --tex8web-float-endrule: \web@em\algoheightrule;
-            --tex8web-float-sep: \web@em\interspacetitleruled;
-            --tex8web-float-bodysep: \web@em\interspacealgoruled">}%
+            style="--tex8web-a2e-margin: \web@bodyem\algomargin;
+            --tex8web-a2e-nlsep: \web@bodyem\skiptotal; --tex8web-a2e-hang: \web@bodyem\algocf@hangindent;
+            --tex8web-a2e-rule: \web@bodyem\skiprule; --tex8web-a2e-text: \web@bodyem\skiptext;
+            --tex8web-a2e-vrule: \web@bodyem{0.4pt}; --tex8web-a2e-hook: \web@bodyem\skiphlne;
+            --tex8web-a2e-caption: \web@bodyem\AlCapHSkip;
+            --tex8web-float-rule: \web@bodyem\algoheightrule;
+            --tex8web-float-midrule: \web@bodyem\algotitleheightrule;
+            --tex8web-float-endrule: \web@bodyem\algoheightrule;
+            --tex8web-float-sep: \web@bodyem\interspacetitleruled;
+            --tex8web-float-bodysep: \web@bodyem\interspacealgoruled">}%
         \bgroup
         \ifalgocf@algoH
             \def\cap:ref##1{\cur:lbl{}\Link{}{\cur:th\:currentlabel}##1\EndLink

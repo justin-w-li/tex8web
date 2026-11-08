@@ -229,6 +229,7 @@ Differences from the PDF too small for the [known limitations](DOCUMENTATION.md#
 - **The space before inline math after a word in another font**, for example an algorithm2e keyword before its argument. It can be in the word's font without Node, and is in the text font with Node. The two pages can be a pixel apart, and neither always matches the PDF.
 - **Two [H] algorithms of algorithm2e in a row** are 2em apart, the margins of both. In the PDF, they are about 1em apart.
 - **A long caption of algorithm2e's plain, boxed, or plainruled style** ends short of the right edge where the PDF's caption reaches it.
+- **Text in another size**, such as a footnote, is set by tex4ht at a whole percent of the body size, rounded down: 81% for 9pt text in an 11pt document, where the PDF has 82.2%. Its math is at the PDF's size, so the math can be up to 2% larger than the words around it.
 
 ### CI
 
