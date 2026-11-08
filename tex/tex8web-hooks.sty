@@ -1,7 +1,7 @@
-% tex8web: records of the preamble settings that tex4ht discards, and
-% \web@needs for every module. tex8web.mk4 loads this package with tex4ht,
-% before the preamble. The rest of tex8web is read after \begin{document}
-% (tex8web-core.tex).
+% tex8web: records of the preamble settings that tex4ht discards, the names
+% that dcolumn.4ht patches, and \web@needs for every module. tex8web.mk4
+% loads this package with tex4ht, before the preamble. The rest of tex8web
+% is read after \begin{document} (tex8web-core.tex).
 \ProvidesPackage{tex8web-hooks}
 
 % titlesec: tex4ht makes \titleformat do nothing and draws headings its own
@@ -96,6 +96,25 @@
     \web@needs{imki@finalmessage}%
     \def\imki@finalmessage#1{\immediate\write\@auxout{\@percentchar\space
         tex8web index: \imki@program\imki@options#1.idx}}%
+}
+
+% dcolumn of 2026-06-04 renamed \DC@centre and \DC@endcentre to
+% \DC@center and \DC@endcenter. dcolumn.4ht (2009) patches the old names,
+% and stops on them as undefined. tex4ht reads dcolumn.4ht at
+% \begin{document}, so the new macros are given the old names for it, and
+% its patched macros are copied back after it.
+\AddToHook{file/dcolumn.4ht/before}{%
+    \ifdefined\DC@centre\else
+        \web@needs{DC@center}\web@needs{DC@endcenter}%
+        \let\DC@centre\DC@center
+        \let\DC@endcentre\DC@endcenter
+    \fi
+}
+\AddToHook{file/dcolumn.4ht/after}{%
+    \ifdefined\DC@center
+        \let\DC@center\DC@centre
+        \let\DC@endcenter\DC@endcentre
+    \fi
 }
 
 % hyperref's hidelinks, under which tex8web-page.tex leaves links unmarked:
