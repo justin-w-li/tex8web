@@ -561,7 +561,6 @@
 % the stylesheet gives the part a chapter's space there. #1 and #2 are the
 % label's and the title's size, for the ems
 \newcommand\web@partskips[2]{%
-    \web@needs{web@@part}%
     \begingroup
         \web@noteskips
         \def\vfil{\vskip\z@\@plus1fil\relax}%
@@ -600,27 +599,40 @@
     \endgroup
     \web@bighead{chapter}\chaptitlefont\chapnamefont
     \ifcsname web@titlefont@chapter\endcsname\else\web@chapterskips\fi
-    \ifcsname web@titlefont@part\endcsname\else\web@partskips\huge\Huge\fi
-\else\ifdefined\@part
-    % article's part: the title in \huge and the label in \Large, and the
-    % alignment of the class's \@part (\raggedright in article.cls).
-    % amsart's \part is a \@startsection, with no \@part
-    \begingroup
-        \expandafter\let\csname ttls@part\endcsname\@undefined
-        \web@headsize{part}{\huge}%
-    \endgroup
+    % (mwrep's \part has no \@part)
     \ifcsname web@titlefont@part\endcsname\else
-        \begingroup
-            \def\web@align{left}%
-            \edef\web@a{\noexpand\in@{\detokenize{\centering}}{\meaning\web@@part}}%
-            \web@a\ifin@\def\web@align{center}\fi
-            \Large\edef\web@a{\f@size pt}\huge
-            \web@Css{:root { --tex8web-part-label-size: \web@em\web@a;
-                --tex8web-part-align: \web@align; }}%
-        \endgroup
-        \web@partskips\Large\huge
+        \ifdefined\web@@part\web@partskips\huge\Huge\fi
     \fi
-\fi\fi
+\else
+    % a class without chapters: its parts' alignment, from the class's \part
+    % and \@part (\raggedright in article.cls and amsart.cls), where html4.4ht
+    % centers parts
+    \ifcsname web@titlefont@part\endcsname\else\ifdefined\web@part
+        \begingroup
+            \edef\web@b{\meaning\web@part\ifdefined\web@@part\meaning\web@@part\fi}%
+            \edef\web@a{\noexpand\in@{\detokenize{\raggedright}}{\web@b}}%
+            \web@a\ifin@\web@Css{:root { --tex8web-part-align: left; }}\fi
+            \edef\web@a{\noexpand\in@{\detokenize{\centering}}{\web@b}}%
+            \web@a\ifin@\web@Css{:root { --tex8web-part-align: center; }}\fi
+        \endgroup
+    \fi\fi
+    % article's part: the title in \huge and the label in \Large. scrartcl
+    % sets its label in the title's size, and amsart's \part is a
+    % \@startsection, with no \@part
+    \ifcsname ver@article.cls\endcsname
+        \begingroup
+            \expandafter\let\csname ttls@part\endcsname\@undefined
+            \web@headsize{part}{\huge}%
+        \endgroup
+        \ifcsname web@titlefont@part\endcsname\else
+            \begingroup
+                \Large\edef\web@a{\f@size pt}\huge
+                \web@Css{:root { --tex8web-part-label-size: \web@em\web@a; }}%
+            \endgroup
+            \web@partskips\Large\huge
+        \fi
+    \fi
+\fi
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
 % \paragraph and \subparagraph in their font from titlesec or the class

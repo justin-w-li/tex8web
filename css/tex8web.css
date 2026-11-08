@@ -183,7 +183,7 @@ section.abstract { margin-inline: 0; }
     margin-block: var(--tex8web-part-before, var(--tex8web-chapter-before, 0.67em))
         var(--tex8web-part-after, var(--tex8web-chapter-after, 0.67em)); }
 /* (html4.4ht's h1.partHead{text-align: center}, but under the alignment
-   read from the class or titlesec, and for \part* too, as in the PDF) */
+   read from the class or titlesec, and for \part* too) */
 h1:is(.partHead, .likepartHead) { text-align: var(--tex8web-part-align, center); }
 :where(.chapterHead, .likechapterHead, .appendixHead) {
     font-variant: var(--tex8web-chapter-variant, normal);

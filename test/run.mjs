@@ -138,7 +138,8 @@ const measured = {
     '--tex8web-paragraph-before': '0.86111em', '--tex8web-paragraph-after': '0.43056em',
     '--tex8web-subsubsection-before': null, '--tex8web-chapter-before': '2.4108em',
     '--tex8web-chapter-after': '1.92863em', '--tex8web-chapter-label-after': '0.5787em',
-    '--tex8web-part-label-after': '1.15741em', '--tex8web-part-before': null },
+    '--tex8web-part-label-after': '1.15741em', '--tex8web-part-before': null,
+    '--tex8web-part-after': null },
   // (chapter styles left with the stylesheet's spacing: memoir's chappell,
   // with four skips, one of them zero, and fncychap's Glenn, with a
   // negative space between label and title)
