@@ -391,20 +391,18 @@
     // entries shown and the search results hidden, so the result does not
     // depend on what is open. The box is measured at its height with a
     // phone's URL bar shown: the box grows as the URL bar hides during
-    // scrolling, which must not change what is shown. The height is set to
-    // auto because the drawer's 100% would keep the margin from shrinking
-    // it. Measured again when fonts arrive and when MathJax in the browser
-    // typesets the entries, which changes their heights but not the box's.
+    // scrolling, which must not change what is shown. Measured again when
+    // fonts arrive and when MathJax in the browser typesets the entries,
+    // which changes their heights but not the box's.
     const list = toc.querySelector('.tableofcontents');
     const fit = () => {
       const results = toc.querySelector('.tex8web-toc-results');
       const filtering = list.hidden, top = toc.scrollTop;
       if (filtering) [list.hidden, results.hidden] = [false, true];
       toc.classList.add('tex8web-toc-all');
-      toc.style.height = 'auto';
       toc.style.marginBottom = 'calc(100dvh - 100svh)';
       const fits = toc.scrollHeight <= toc.clientHeight;
-      toc.style.height = toc.style.marginBottom = '';
+      toc.style.marginBottom = '';
       if (filtering) [list.hidden, results.hidden] = [true, false];
       toc.classList.toggle('tex8web-toc-all', fits);
       toc.scrollTop = top;

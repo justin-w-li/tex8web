@@ -676,7 +676,9 @@ async function opening(chrome, file) {
 
 // On a wide touch screen, with a closed section's chevron, whose tap area
 // is larger than its line, last in a column that scrolls: the column
-// scrolls no further than the entry
+// scrolls no further than the entry. On a narrow screen, the open drawer,
+// which scrolls, ends at the window's bottom, and its last entry can be
+// scrolled into view
 async function reaching(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 200, touch: true }, async page => {
     const [over, chevron] = await page.evaluate(`(() => {
@@ -687,7 +689,21 @@ async function reaching(chrome, file) {
         last.querySelector('.tex8web-toc-more')?.getAttribute('aria-expanded')];
     })()`);
     if (chevron !== 'false') return ['the last entry shown not a closed section'];
-    return over > 1 ? [`scrolled to the end, ${over}px below the last entry`] : [];
+    const problems = over > 1 ? [`scrolled to the end, ${over}px below the last entry`] : [];
+    await page.resize(400, 150);
+    await page.evaluate(`document.getElementById('tex8web-toc').showPopover()`);
+    await finished(page);
+    const drawer = await page.evaluate(`(() => {
+      const toc = document.getElementById('tex8web-toc');
+      const last = [...toc.querySelectorAll('.tableofcontents > span')].filter(entry => entry.checkVisibility()).at(-1);
+      const scrolls = toc.scrollHeight > toc.clientHeight;
+      toc.scrollTop = toc.scrollHeight;
+      return { scrolls, window: innerHeight, bottom: toc.getBoundingClientRect().bottom, last: last.getBoundingClientRect().bottom };
+    })()`);
+    if (!drawer.scrolls) return [...problems, 'the narrow drawer does not scroll'];
+    if (Math.abs(drawer.bottom - drawer.window) > 0.5) problems.push(`the drawer's bottom at ${drawer.bottom}px, in a window ${drawer.window}px tall`);
+    if (drawer.last > drawer.window) problems.push(`the drawer scrolled to its end, its last entry ${drawer.last - drawer.window}px below the window`);
+    return problems;
   });
 }
 

@@ -838,9 +838,11 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
    (tex8web-page.js). Lines close together, entries a little apart.
    tex8web-page.js marks the section being read, and shows its
    subsections and those the reader opens, or every entry if all fit.
-   The width is at most 85vw, padding included */
+   The width is at most 85vw, padding included. The height is auto,
+   between the insets, so that the drawer, padding included, is as tall as
+   the window (a popover is fit-content tall by default) */
 .tex8web-toc { --tex8web-toc-pad: 1.25rem; inset: 0 auto 0 0; font-size: 1rem;
-    width: min(var(--tex8web-margin), 85vw - 2 * var(--tex8web-toc-pad)); height: 100%;
+    width: min(var(--tex8web-margin), 85vw - 2 * var(--tex8web-toc-pad)); height: auto;
     max-height: none; margin: 0; padding: 4rem var(--tex8web-toc-pad) 2rem; border: 0;
     border-inline-end: 1px solid color-mix(in srgb, currentColor 15%, transparent);
     color: var(--tex8web-text); background-color: var(--tex8web-bg); overflow-y: auto;
@@ -936,7 +938,7 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
     :root:not(.tex8web-js) .tex8web-contents { display: none; }
     /* (its text 1.25rem in, where the drawer's text and the icons are) */
     .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
-        inset: var(--tex8web-column-inset); width: var(--tex8web-margin); height: auto;
+        inset: var(--tex8web-column-inset); width: var(--tex8web-margin);
         --tex8web-toc-pad: 0.5rem; padding: 0 var(--tex8web-toc-pad); border: 0; background: none; translate: none; transition: none; }
     .tex8web-toc-hidden .tex8web-toc { display: none; opacity: 0; }
     .tex8web-toc::backdrop { display: none; }
