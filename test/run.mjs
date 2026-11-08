@@ -96,9 +96,16 @@ const measured = {
     '--tex8web-abstract-left': '2.5em', '--tex8web-abstract-right': '2.5em',
     '--tex8web-footnote-leading': '0.79167', '--tex8web-biblabelsep': '0.5em',
     '--tex8web-leftmargin': '2.5em' },
-  // (memoir's bibliography: its \bibitemsep of 6pt, and the list's \parsep,
-  // a third of a 12pt line)
-  'test-memoir': { '--tex8web-bibitem-sep': '0.99995em' },
+  // memoir: the bibliography's \bibitemsep of 6pt, plus the list's \parsep,
+  // a third of a 12pt line. The space around headings set after a \sechook,
+  // in ems of the heading: 5ex above a section, from the fixture, and
+  // memoir's 2.3ex below it and 3.25ex above a subsection. A redefined
+  // \paragraph with \par first, and a \subsubsection with \@startsection
+  // only inside \@ifstar's groups, which is skipped.
+  'test-memoir': { '--tex8web-bibitem-sep': '0.99995em', '--tex8web-section-before': '1.79398em',
+    '--tex8web-section-after': '0.82523em', '--tex8web-subsection-before': '1.27791em',
+    '--tex8web-paragraph-before': '0.86111em', '--tex8web-paragraph-after': '0.43056em',
+    '--tex8web-subsubsection-before': null },
   // (tocloft's \cft<level>font: \Large\scshape; \normalfont\itshape; \itshape;
   // \bfseries; \large\sffamily; \ttfamily; \slshape)
   'test-tocloft': { '--tex8web-toc-part-size': '1.44', '--tex8web-toc-part-variant': 'small-caps',

@@ -416,23 +416,31 @@
 % the space above only says whether the text after is indented. Skipped for
 % a run-in heading, whose space below is negative. tex4ht keeps \no@<name>
 % for each heading of a class it has a .4ht for, and makes \<name> its
-% \rdef:sec
+% \rdef:sec. Whatever precedes \@startsection at the top level of
+% \no@<name> is skipped, as memoir's \sechook (memoir.cls). A body with
+% \@startsection only inside a group, as in \@ifstar{..}{..}, reaches the
+% empty arguments after it and is skipped. A macro with parameters is
+% skipped too
 \def\web@startsection#1{%
     \edef\web@a{\expandafter\noexpand\csname rdef:sec\endcsname{#1}}%
     \expandafter\ifx\csname#1\endcsname\web@a\web@needs{no@#1}\fi
-    \edef\web@a{\noexpand\in@{\detokenize{macro:->\@startsection}}%
+    \edef\web@a{\noexpand\in@{\detokenize{macro:->}}%
         {\expandafter\meaning\csname no@#1\endcsname}}%
     \web@a
-    \ifin@\expandafter\expandafter\expandafter\web@startsectionskips\csname no@#1\endcsname\fi}
-\def\web@startsectionskips#1#2#3#4#5#6#7{%
-    \@tempskipa#5\relax
-    \ifdim\@tempskipa<\z@ \@tempskipa-\@tempskipa \fi
-    \@tempskipb#6\relax
-    \ifdim\@tempskipb>\z@
-        \edef\web@before{\the\dimexpr\@tempskipa}%
-        \edef\web@after{\the\dimexpr\@tempskipb}%
-        \edef\web@aftertext{\web@em\web@after}%
-        \global\let\web@spacing\@empty
+    \ifin@\expandafter\@firstofone\else\expandafter\@gobble\fi
+        {\expandafter\expandafter\expandafter\web@startsectionskips
+            \csname no@#1\endcsname\@startsection{}{}{}{}{}{}\@nil}}
+\long\def\web@startsectionskips#1\@startsection#2#3#4#5#6#7#8\@nil{%
+    \if\relax\detokenize{#6}\relax\else
+        \@tempskipa#5\relax
+        \ifdim\@tempskipa<\z@ \@tempskipa-\@tempskipa \fi
+        \@tempskipb#6\relax
+        \ifdim\@tempskipb>\z@
+            \edef\web@before{\the\dimexpr\@tempskipa}%
+            \edef\web@after{\the\dimexpr\@tempskipb}%
+            \edef\web@aftertext{\web@em\web@after}%
+            \global\let\web@spacing\@empty
+        \fi
     \fi}
 % #2 if the heading's format (\web@font) holds the command #1
 \newcommand\web@formathas[2]{%

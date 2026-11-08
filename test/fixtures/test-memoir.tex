@@ -1,8 +1,16 @@
-% A memoir document: a chapter with lists, and a bibliography with memoir's
-% \bibitemsep (memoir has no \bibparsep, which biblatex adds).
+% A memoir document: a chapter with lists, a bibliography with memoir's
+% \bibitemsep (memoir has no \bibparsep, which biblatex adds), and sections
+% spaced by memoir's \setbeforesecskip. Two headings are redefined: one with
+% \@startsection only inside \@ifstar's groups, and one with \par first.
 \documentclass{memoir}
 \usepackage{hyperref}
 \setlength{\bibitemsep}{6pt}
+\setbeforesecskip{-5ex}
+\makeatletter
+\renewcommand\subsubsection{\@ifstar{\@startsection{subsubsection}{3}{\z@}{1ex}{1ex}{\bfseries}*}%
+    {\@startsection{subsubsection}{3}{\z@}{1ex}{1ex}{\bfseries}}}
+\renewcommand\paragraph{\par\@startsection{paragraph}{4}{\z@}{2ex}{1ex}{\bfseries}}
+\makeatother
 \title{Memoir}
 \author{Someone}
 \begin{document}
