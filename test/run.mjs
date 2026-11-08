@@ -125,6 +125,13 @@ const typeset = {
     /<mspace depth='0.373em' height='0.869em' width='0em'>/,
     /<mo linebreakstyle='after'>=<\/mo>/,
   ],
+  // (a range without an empty \text before it, which would add an mrow and
+  // a break, and -- and \textendash in a phrase as an en dash)
+  'test-units': [
+    /<math xmlns='[^']*'><mrow><mn>1<\/mn><mtext> to <\/mtext><mn>5<\/mn><\/mrow><\/math>/,
+    /<math xmlns='[^']*'><mrow><mn>1<\/mn><mtext>–<\/mtext><mn>2<\/mn><\/mrow><\/math>/,
+    /<math xmlns='[^']*'><mrow><mn>3<\/mn><mtext>–<\/mtext><mn>4<\/mn><\/mrow><\/math>/,
+  ],
 };
 
 // What screen readers hear: ClearSpeak's words, | as "given", no "normal"
@@ -641,22 +648,6 @@ const algorithms = {
   ],
 };
 
-// The stylesheet's rules for algorithm2e: the caption of plain, boxed, and
-// plainruled centered as \algocf@makecaption centers it, and
-// \noalgocaption's caption hidden. A number at the right is as far from
-// the text's right edge as in the PDF, in the 1.5em that algorithm2e keeps
-// for it, which no line's text, such as a \tcp* comment, enters.
-const algorithmRules = {
-  'test-algorithm2e': [
-    /\.tex8web-a2e:is\(\.tex8web-a2e-plain, \.tex8web-a2e-boxed, \.tex8web-a2e-plainruled\) > figcaption \{\s+width: fit-content; margin-inline: auto;\s+padding-inline: calc\(var\(--tex8web-a2e-margin\) \/ 2\) calc\(var\(--tex8web-a2e-margin\) \/ 2 \+ 1\.5em\); \}\s*\.tex8web-a2e\.tex8web-a2e-boxed > figcaption \{\s*padding-inline-end: calc\(var\(--tex8web-a2e-margin\) \* 1\.5 \+ 1\.5em\); \}/,
-    /\.tex8web-a2e-caption-none > figcaption \{ visibility: hidden; height: 0;\s+margin: 0 0 var\(--tex8web-float-sep\); padding: 0; border: 0; \}/,
-  ],
-  'test-algorithm2e-rightnl': [
-    /\.tex8web-a2e-nl\.tex8web-a2e-nl-right \{ width: auto;\s+inset-inline: auto calc\(1\.2em \+ var\(--tex8web-a2e-text\) - var\(--tex8web-a2e-margin\)\); \}/,
-    /\.tex8web-a2e:has\(\.tex8web-a2e-nl-right\) > :not\(figcaption\) \{ margin-inline-end: 1\.5em; \}/,
-  ],
-};
-
 // mdframed's boxes: each box's rules (the second's 2pt, the third's still
 // 0.4pt, the last's only at the sides), its space inside and around, and
 // its colors; a box that ends at its theorem's end ends there
@@ -747,7 +738,7 @@ const patterns = [
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
-  [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [algorithmRules, "in algorithm2e's rules", true],
+  [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'],
   [mdframed, "in mdframed's boxes", true],
 ];
 
