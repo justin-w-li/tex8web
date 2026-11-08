@@ -119,13 +119,12 @@ const measured = {
   'test-article': { '--tex8web-section-before': '1.0465em', '--tex8web-section-after': '0.6877em',
     '--tex8web-subsection-before': '1.16609em', '--tex8web-subsection-after': '0.5382em',
     '--tex8web-abstract-left': '2.5em', '--tex8web-abstract-right': '2.5em',
-    '--tex8web-footnote-leading': '0.79167', '--tex8web-biblabelsep': '0.5em',
+    '--tex8web-footnote-leading': '0.79167',
     '--tex8web-leftmargin': '2.5em', '--tex8web-intextsep': '1.2em', '--tex8web-floatsep': '1.2em',
     '--tex8web-display-above': '1em', '--tex8web-display-below': '1em', '--tex8web-list-sep': '0.8em' },
-  // memoir: the bibliography's \bibitemsep of 6pt, plus the list's \parsep,
-  // a third of a 12pt line. The space around headings set after a \sechook,
-  // in ems of the heading: 5ex above a section, from the fixture, and
-  // memoir's 2.3ex below it and 3.25ex above a subsection. A redefined
+  // memoir: the space around headings set after a \sechook, in ems of the
+  // heading: 5ex above a section, from the fixture, and memoir's 2.3ex
+  // below it and 3.25ex above a subsection. A redefined
   // \paragraph with \par first, and a \subsubsection with \@startsection
   // only inside \@ifstar's groups, which is skipped. A chapter spaced by
   // memoir's lengths: 50pt above and 40pt below, in ems of memoir's \Huge,
@@ -134,7 +133,7 @@ const measured = {
   // chapter style's \midpartskip, in ems of memoir's \huge, and no space
   // above or below, from \beforepartskip's and \afterpartskip's \vfil,
   // centered by memoir's \@part.
-  'test-memoir': { '--tex8web-bibitem-sep': '0.99995em', '--tex8web-section-before': '1.79398em',
+  'test-memoir': { '--tex8web-section-before': '1.79398em',
     '--tex8web-section-after': '0.82523em', '--tex8web-subsection-before': '1.27791em',
     '--tex8web-paragraph-before': '0.86111em', '--tex8web-paragraph-after': '0.43056em',
     '--tex8web-subsubsection-before': null, '--tex8web-chapter-before': '2.4108em',
@@ -146,10 +145,6 @@ const measured = {
   // negative space between label and title)
   'test-chapterstyle': { '--tex8web-chapter-before': null, '--tex8web-chapter-label-after': null },
   'test-fncychap': { '--tex8web-chapter-before': null, '--tex8web-chapter-label-after': null },
-  // (natbib's \bibsep of 0pt, and no \parsep, in place of the list's)
-  'test-natbib': { '--tex8web-bibitem-sep': '0em' },
-  // (memoir's openbib: the \bibitemsep of 6pt, and no \parsep)
-  'test-openbib': { '--tex8web-bibitem-sep': '0.6em' },
   // (the fonts of headings in their \@startsection: a section in \large
   // sans-serif italic, a subsection in article's bold, and a run-in
   // paragraph in italic)
@@ -515,6 +510,33 @@ const lists = {
     // (with Latin Modern in T1, a bullet that is \textbullet's •)
     new RegExp(`${item('•', true)}<a href='https:\\/\\/castel\\.dev\\/'>`),
   ],
+};
+
+// Each bibliography spaced as its list sets it where the list opens: \itemsep
+// plus \parsep between entries, and \labelsep after the label, read before
+// the class's \@openbib@code, to which tex4ht adds \labelsep\z@
+// (article.4ht), or biblatex's \biblabelsep. The list is html5.4ht's or
+// biblatex.4ht's.
+const bibliography = (sep, labelsep, attributes = '') =>
+  new RegExp(`<dl${attributes} style='--tex8web-bibitem-sep: ${sep.replace('.', '\\.')}; --tex8web-biblabelsep: ${labelsep.replace('.', '\\.')}'>`);
+const bibliographies = {
+  // (article's \itemsep of 4pt and \parsep of 4pt)
+  'test-article': [bibliography('0.8em', '0.5em')],
+  // (an 11pt document's list: 4.5pt and 4.5pt, over 10.95pt)
+  'test': [bibliography('0.82191em', '0.5em')],
+  // (natbib's \bibsep of 0pt, and no \parsep, in place of the list's, set
+  // in the preamble or in a group around the bibliography)
+  'test-natbib': [bibliography('0em', '0.5em')],
+  'test-natbib-group': [bibliography('0em', '0.5em')],
+  // (memoir's \bibitemsep of 6pt, plus the list's \parsep, a third of a
+  // 12pt line)
+  'test-memoir': [bibliography('0.99995em', '0.5em')],
+  // (memoir's openbib: the \bibitemsep of 6pt, set in the body, and no
+  // \parsep)
+  'test-openbib': [bibliography('0.6em', '0.5em')],
+  // (biblatex's \bibitemsep, the list's \itemsep of 4pt, its \bibparsep of
+  // 0pt, and its \biblabelsep, twice \labelsep)
+  'examples/complex': [bibliography('0.4em', '1em', " class='thebibliography'")],
 };
 
 // \, and \thinspace in text as a narrow no-break space, where TeX does not
@@ -972,6 +994,7 @@ const patterns = [
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [thin, 'at the thin spaces'], [ties, 'at the no-break spaces'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [tables, 'among the tables'],
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
+  [bibliographies, 'in the bibliography'],
 ];
 
 // the problems in a built page's logs, the page, and the files beside it

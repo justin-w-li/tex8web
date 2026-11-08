@@ -141,7 +141,7 @@ Your document's measurements are CSS custom properties. To change them, set them
 | `--tex8web-intextsep`, `--tex8web-floatsep` | the space around a float, and between two floats in a row |
 | `--tex8web-caption-before`, `--tex8web-caption-after` | the space above and below a caption. Each caption also has them on its element, swapped for a caption at the top with the caption package |
 | `--tex8web-display-above`, `--tex8web-display-below` | the space above and below display math |
-| `--tex8web-bibitem-sep`, `--tex8web-biblabelsep` | the space between bibliography entries, and after their labels |
+| `--tex8web-bibitem-sep`, `--tex8web-biblabelsep` | the space between bibliography entries, and after their labels, on each bibliography's list element. To change them, set `\bibsep` (natbib), `\bibitemsep`, or `\biblabelsep` (biblatex) in your document, before the bibliography |
 | `--tex8web-footnote-leading`, `--tex8web-abstract-leading` | the line spacing of footnotes and the abstract, as a multiple of the text line spacing |
 | `--tex8web-abstract-left`, `--tex8web-abstract-right` | the abstract margins |
 | `--tex8web-framed-sep` | the space above and below a box of the framed package |

@@ -1,0 +1,12 @@
+% An article with natbib whose \bibsep of 0pt is set in a group around the
+% bibliography, so that the entries are close together in the PDF.
+\documentclass{article}
+\usepackage[numbers]{natbib}
+\begin{document}
+Some text, as cited in \cite{book} and \cite{paper}.
+{\setlength{\bibsep}{0pt}
+\begin{thebibliography}{9}
+\bibitem{book} A.~Author. \emph{A Book}. 2000.
+\bibitem{paper} B.~Writer. A paper. 2001.
+\end{thebibliography}}
+\end{document}

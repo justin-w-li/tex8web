@@ -529,27 +529,11 @@
 
 % LaTeX's spacing of a list, for lists without their own: \topsep around it,
 % \itemsep and \parsep between items, and its left margin (see
-% css/tex8web.css). The bibliography's \itemsep and \parsep are then set as
-% its list sets them: biblatex's \bibitemsep and \bibparsep; natbib's \bibsep
-% and no \parsep, in every class (natbib.sty); or the list's, changed by the
-% class's openbib option, which sets \parsep to zero (\@openbib@code), and by
-% memoir's \biblistextra, which sets \itemsep to \bibitemsep (memoir.cls).
-% \labelsep is read before them, as tex4ht adds \labelsep\z@ to
-% \@openbib@code (article.4ht).
+% css/tex8web.css)
 \begingroup\@listi
     \web@Css{:root { --tex8web-list-sep: \web@em\topsep;
         --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax};
-        --tex8web-leftmargin: \web@em\leftmargin;
-        --tex8web-biblabelsep: \web@em{\ifdefined\biblabelsep\biblabelsep\else\labelsep\fi}; }}
-    \ifdefined\bibparsep
-        \itemsep\bibitemsep \parsep\bibparsep
-    \else\ifdefined\bibsep
-        \itemsep\bibsep \parsep\z@
-    \else
-        \csname @openbib@code\endcsname
-        \csname biblistextra\endcsname
-    \fi\fi
-    \web@Css{:root { --tex8web-bibitem-sep: \web@em{\dimexpr\itemsep+\parsep\relax}; }}
+        --tex8web-leftmargin: \web@em\leftmargin; }}
 \endgroup
 
 % itemize, enumerate, and enumitem's lists made with \newlist, as LaTeX sets
@@ -699,6 +683,32 @@
         \web@replace \a:fcolorbox { id="colorbox\c{textcolorN}" } { \0\ style="\c{web@fbox}" }
         \web@replace \a:fcolorbox { solid\ 1px } { solid\ var\(--tex8web-fboxrule\) }
     }
+\ExplSyntaxOff
+
+% --- bibliography -----------------------------------------------------------
+
+% each bibliography with the lengths its list has at the first \item, where
+% tex4ht opens the list (latex.4ht), so that lengths set in the body are
+% used: \itemsep plus \parsep between entries, and biblatex's \biblabelsep
+% or \labelsep after the label (css/tex8web.css). The list sets \itemsep and
+% \parsep to biblatex's \bibitemsep and \bibparsep, to natbib's \bibsep and
+% zero, or as the class's \@openbib@code and memoir's \biblistextra do.
+% tex4ht adds \labelsep\z@ to \@openbib@code (article.4ht, book.4ht), so
+% \labelsep is kept as that code starts. The list is html5.4ht's <dl>, for
+% the classes it knows, or biblatex.4ht's, which it configures again at
+% each \printbibliography. For other classes, such as mwart, html4.4ht's
+% list is a <div>, which the stylesheet leaves as it is.
+\def\web@biblengths{ style="--tex8web-bibitem-sep: \web@bodyem{\dimexpr\itemsep+\parsep\relax};
+    --tex8web-biblabelsep: \web@bodyem{\ifdefined\biblabelsep\biblabelsep\else\web@biblabelsep\fi}"}
+\def\web@biblabelsep{\labelsep}
+\catcode58 11
+\ifdefined\@openbib@code \pend:def\@openbib@code{\edef\web@biblabelsep{\the\labelsep}}\fi
+\catcode58 12
+\ExplSyntaxOn
+\cs_if_exist:cT { onthebibliography:list }
+    { \exp_args:Nnnc \regex_replace_once:nnN { <dl> } { <dl\c{web@biblengths}> } { onthebibliography:list } }
+\cs_if_exist:NT \bibConfigure
+    { \web@replace \bibConfigure { <dl\ class="thebibliography" } { \0\c{web@biblengths} } }
 \ExplSyntaxOff
 
 % --- framed -----------------------------------------------------------------
