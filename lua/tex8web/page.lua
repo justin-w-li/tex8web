@@ -232,6 +232,35 @@ function M.controls(document, context)
   dom.set_children(body, toc and {controls, toc, main} or {controls, main})
 end
 
+-- tex4ht's \addcontentsline puts the entry's anchor where it is called
+-- (latex.4ht), so an entry added before or after an unnumbered heading
+-- links to an empty paragraph beside the heading, which make4ht's sectionid
+-- filter then gives the entry's id. Such an entry is pointed at the
+-- heading's anchor instead: the heading before the paragraph, or else the
+-- one after it.
+local function is_heading(el)
+  return el and el:get_element_name():match("^h[1-6]$") ~= nil
+end
+
+function M.toc_targets(document)
+  local anchors = {}
+  for _, a in ipairs(document:query_selector("a[id]")) do anchors[a:get_attribute("id")] = a end
+  for _, link in ipairs(document:query_selector("nav.tex8web-toc div.tableofcontents a")) do
+    local target = anchors[(link:get_attribute("href") or ""):match("^#(.+)")]
+    local paragraph = target and target:get_parent()
+    if paragraph and paragraph:get_element_name() == "p" and not paragraph:get_text():find("%S") then
+      local siblings, heading = dom.elements(paragraph:get_parent())
+      for i, el in ipairs(siblings) do
+        if el == paragraph then
+          heading = is_heading(siblings[i - 1]) and siblings[i - 1] or is_heading(siblings[i + 1]) and siblings[i + 1]
+        end
+      end
+      local id = heading and anchor(heading)
+      if id then link:set_attribute("href", "#" .. id) end
+    end
+  end
+end
+
 -- tex4ht puts the anchor of an equation's number right before the display,
 -- with the anchors of an alignment's other lines, or, for a block display
 -- such as gather, at the end of the paragraph before. The stylesheet tints

@@ -117,6 +117,7 @@ local passes = {
   text.sidenotes,
   fixinlines,
   page.controls,
+  page.toc_targets,
   page.equation_anchors,
   macros.define,
   page.permalinks,

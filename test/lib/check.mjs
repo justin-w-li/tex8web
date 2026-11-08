@@ -80,6 +80,20 @@ const pageChecks = [
     return [...toc(html).matchAll(/<span class=['"](chapter|appendix|(?:sub)*(?:section|paragraph))Toc['"]>(?!<span class=['"]tocnumber)/g)]
       .map(([, level]) => `a ${level} entry in the table of contents without its number box`);
   },
+  // (an entry links to a heading, to an element in one, or to a run-in
+  // heading such as \paragraph's span.paragraphHead, so that the heading is
+  // in view and the entry is highlighted)
+  function tocTargets(html) {
+    const headings = [...html.matchAll(/<h[1-6][\s>][^]*?<\/h[1-6]>/g)].map(m => [m.index, m.index + m[0].length]);
+    const problems = [];
+    for (const [, id] of toc(html).matchAll(/<a href=['"]#([^'"]+)['"]/g)) {
+      const target = html.match(new RegExp(`<(\\w+)[^>]* id=['"]${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"][^>]*>`));
+      if (target && !/ class=['"]\w*Head['"]/.test(target[0]) && !headings.some(([start, end]) => start <= target.index && target.index < end)) {
+        problems.push(`the table of contents links #${id}, a <${target[1]}>, not a heading`);
+      }
+    }
+    return problems;
+  },
   // (a heading's mark holds its number from the table of contents, and may
   // add to it, as titlesec's \thesection. does)
   function headingNumbers(html) {
