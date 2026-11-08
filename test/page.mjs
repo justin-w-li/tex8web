@@ -674,6 +674,70 @@ async function opening(chrome, file) {
   });
 }
 
+// The table of contents follows the section being read: scrolled to its
+// top, the column on a wide screen and the open drawer on a narrow one
+// scroll to the entry of the last heading the page reaches. With the drawer
+// closed, from the page's load and as the page scrolls past each heading,
+// the entry is marked, but no entry of the drawer is measured, as the
+// measurement would lay out the whole page.
+async function following(chrome, file) {
+  const problems = [];
+  const links = `[...document.querySelectorAll('#tex8web-toc .tableofcontents a')]`;
+  // entry i's hash, with its heading scrolled to the top, or null if the
+  // page ends first
+  const to = i => `(() => {
+    const a = ${links}[${i}], heading = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+    scrollTo(0, scrollY + heading.getBoundingClientRect().top);
+    return Math.abs(heading.getBoundingClientRect().top) < 1 ? a.hash : null;
+  })()`;
+  const marked = (page, hash) => until(() => page.evaluate(`document.querySelector('#tex8web-toc [aria-current]')?.hash`), h => h === hash);
+  // (within a pixel: Chrome on Linux rounds the box's scroll extent to a
+  // whole pixel, which can leave a fraction of the last entry below it)
+  const seen = i => `(() => {
+    const box = document.getElementById('tex8web-toc').getBoundingClientRect(), a = ${links}[${i}].getBoundingClientRect();
+    return a.height > 0 && a.top > box.top - 1 && a.bottom < box.bottom + 1;
+  })()`;
+  const follows = async page => {
+    let last = await page.evaluate(`${links}.length`) - 1;
+    while (last > 0 && !await page.evaluate(to(last))) last--;
+    if (!await marked(page, await page.evaluate(to(0)))) return 'the first entry not marked';
+    await page.evaluate(`document.getElementById('tex8web-toc').scrollTop = 0`);
+    if (await page.evaluate(seen(last))) return 'the last entry reached shown at the top';
+    if (!await marked(page, await page.evaluate(to(last)))) return 'the last entry reached not marked';
+    if (!await until(() => page.evaluate(seen(last)))) return 'the last entry reached not scrolled into view';
+  };
+  await chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 150 }, async page => {
+    const problem = await follows(page);
+    if (problem) problems.push(`the column: ${problem}`);
+  });
+  const before = `window.tex8webReads = 0;
+    for (const name of ['getBoundingClientRect', 'getClientRects']) {
+      const method = Element.prototype[name];
+      Element.prototype[name] = function () {
+        if (this.closest('#tex8web-toc')) tex8webReads++;
+        return method.call(this);
+      };
+    }`;
+  await chrome.withPage(pathToFileURL(file).href, { width: 400, height: 150, before }, async page => {
+    const count = await page.evaluate(`${links}.length`);
+    let reached = 0;
+    for (let i = 0; i < count; i++) {
+      const hash = await page.evaluate(to(i));
+      if (!hash) continue;
+      reached++;
+      if (!await marked(page, hash)) problems.push(`the closed drawer: entry ${i + 1} not marked`);
+    }
+    if (reached < 2) problems.push(`the closed drawer: ${reached} headings reached`);
+    const reads = await page.evaluate('tex8webReads');
+    if (reads) problems.push(`the closed drawer: entries measured ${reads} times`);
+    await page.evaluate(`document.getElementById('tex8web-toc').showPopover()`);
+    await finished(page);
+    const problem = await follows(page);
+    if (problem) problems.push(`the open drawer: ${problem}`);
+  });
+  return problems;
+}
+
 // On a wide touch screen, with a closed section's chevron, whose tap area
 // is larger than its line, last in a column that scrolls: the column
 // scrolls no further than the entry. On a narrow screen, the open drawer,
@@ -1109,7 +1173,7 @@ const checks = {
   lazy: [['test-tocsub'], lazily],
   contents: [['test-tocsub'], each(opening)],
   reach: [['test-tocsub'], each(reaching)],
-  browsing: [['test'], each(browsing)],
+  browsing: [['test'], each(async (...args) => [...await browsing(...args), ...await following(...args)])],
   isolated: [['test-tocsub'], each(isolating)],
   fit: [['examples/footnotes'], each(fitting)],
   preloads: [['test'], each(preloading)],
