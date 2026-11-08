@@ -1,5 +1,6 @@
 -- The text around the math.
 local dom = require "tex8web.dom"
+local files = require "tex8web.files"
 
 local M = {}
 
@@ -259,6 +260,24 @@ function M.minipages(document)
       end
     end
     dom.set_children(parent, out)
+  end
+end
+
+-- pictures that dvisvgm draws for tex4ht (TikZ, as <document>0x.svg and so
+-- on), as wide as in the PDF, as a share of the PDF's text width, which the
+-- stylesheet's text width also is. So their labels are at the size of the
+-- text. dvisvgm writes the size in bp, scaled by 1.4 (tex4ht.env's
+-- -c 1.4,1.4), of what is drawn (--exact), which can differ from TeX's box
+function M.pictures(document, context)
+  for _, img in ipairs(document:query_selector("img")) do
+    local src = img:get_attribute("src") or ""
+    if src:sub(1, #context.input) == context.input and src:sub(#context.input + 1):match("^%d+x%.svg$") then
+      local svg = files.read(context.dir .. "/" .. src) or ""
+      local bp = tonumber(svg:match("<svg[^>]- width='([%d.]+)pt'"))
+      if not bp then error("no width in " .. src) end
+      local share = bp / 1.4 * 72.27 / 72 / context.textwidth
+      dom.add_style(img, string.format("width: calc(var(--tex8web-textwidth) * %.4f)", share))
+    end
   end
 end
 

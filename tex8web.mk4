@@ -111,6 +111,7 @@ local passes = {
   text.cell_align,
   text.no_break_spaces,
   text.minipages,
+  text.pictures,
   text.sidenotes,
   fixinlines,
   page.controls,

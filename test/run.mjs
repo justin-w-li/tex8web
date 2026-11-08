@@ -382,8 +382,9 @@ const lists = {
 };
 
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
-// tex4ht's SVG (from dvisvgm, scaled 1.4) is centered
-const tikz = { 'test-article': 'test-article0x.svg' };
+// tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
+// wide as in the PDF, 1cm of a 345pt text width
+const tikz = { 'test-article': ['test-article0x.svg', 0.0825] };
 
 // Terms (\WebTerm), with ids for the table of contents filter; in a heading,
 // only the term's text in the heading's id and table of contents entry
@@ -765,10 +766,14 @@ function check(doc, result, out, aux) {
     if (!(size < 60000)) problems.push(`fonts/${font} ${size ? 'not cut down' : 'missing'}`);
   }
   if (tikz[doc.name]) {
-    const svg = existsSync(join(out, tikz[doc.name])) ? readFileSync(join(out, tikz[doc.name]), 'utf8') : '';
+    const [file, share] = tikz[doc.name];
+    const svg = existsSync(join(out, file)) ? readFileSync(join(out, file), 'utf8') : '';
     const [x, , width] = (svg.match(/viewBox='([^']*)'/)?.[1] ?? '').split(' ').map(Number);
     const at = 1.4 * Number(svg.match(/translate\(([^,]+),/)?.[1]);
-    if (!(Math.abs(x + width / 2 - at) < 0.1)) problems.push(`${tikz[doc.name]} isn't centered on its circle`);
+    if (!(Math.abs(x + width / 2 - at) < 0.1)) problems.push(`${file} isn't centered on its circle`);
+    if (!html.includes(`src='${file}' style='width: calc(var(--tex8web-textwidth) * ${share})'`)) {
+      problems.push(`${file} isn't ${share} of the text width`);
+    }
   }
   // (prerender.mjs drops the element around a one-character token's mjx-c)
   if (/<mjx-m[ion](?: (?:space|size)='[^']*')*><mjx-c class='[^']*'>[^<]*<\/mjx-c><\/mjx-m[ion]>/.test(html)) {

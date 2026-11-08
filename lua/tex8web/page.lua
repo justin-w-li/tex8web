@@ -42,6 +42,7 @@ function M.build_data(document, context)
   context.up = up ~= "" and up or nil
   local body, roman, sans, mono = (element:get_attribute("data-fonts") or ""):match("(%S+) (%S+) (%S+) (%S+)")
   context.families = {body = body, roman = roman, sans = sans, mono = mono}
+  context.textwidth = tonumber(element:get_attribute("data-textwidth"))
   local classes = element:get_attribute("data-classes") or ""
   if classes ~= "" then document:query_selector("html")[1]:set_attribute("class", classes) end
   context.macros = element:get_text()
