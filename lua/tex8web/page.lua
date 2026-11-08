@@ -326,8 +326,9 @@ end
 -- - tex8web-page.js: the controls, the table of contents and its filter,
 --   previews, the picture viewer, and the fade at an edge
 -- - for MathJax in the browser: MathJax, and tex8web.js, which configures
---   it from tex8web-config and data-contents (both marked
---   data-tex8web-browser, for prerender.mjs to remove)
+--   it from tex8web-config and from whether the page has a table of
+--   contents (data-contents). These scripts and tex8web-config are marked
+--   data-tex8web-browser, for prerender.mjs to remove.
 function M.scripts(document, context)
   local head = document:query_selector("head")[1]
   local function script(attributes)

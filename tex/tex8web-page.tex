@@ -319,14 +319,14 @@
     \web@iffont\f@shape\scdefault{\gdef\web@variant{small-caps}}}
 
 % heading sizes relative to the text, as in the PDF (the standard classes'
-% sizes). With titlesec, a
-% heading's size, family, weight, style, and alignment come from its
-% \titleformat (tex8web-hooks.sty), tried in a box that is thrown away. Its
-% space above and below comes from its \titlespacing, or from the class,
-% which titlesec reads when it loads. The space between number and title,
-% as in the PDF: titlesec's space after the label, KOMA's (the glue its
-% \sectionformat ends with), amsart's \enspace (put there by its \@sect,
-% not \@seccntformat), or LaTeX's \quad (css/tex8web.css)
+% sizes), and a column as wide as the PDF's, in ems of the text. With
+% titlesec, a heading's size, family, weight, style, and alignment come
+% from its \titleformat (tex8web-hooks.sty), tried in a box that is thrown
+% away. Its space above and below comes from its \titlespacing, or from the
+% class, which titlesec reads when it loads. The space between number and
+% title, as in the PDF: titlesec's space after the label, KOMA's (the glue
+% its \sectionformat ends with), amsart's \enspace (put there by its
+% \@sect, not \@seccntformat), or LaTeX's \quad (css/tex8web.css)
 \newcommand\web@headsize[2]{% name, size command
     \begingroup
         \def\web@font{#2}%

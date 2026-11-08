@@ -13,7 +13,9 @@
 //   --cache <dir>   keep hashes of the old build's strips, so a later run
 //                   against the same old build does not shoot them again.
 //                   Checkouts may share dir
-//   --expect look   stop each width and scheme at the first differing strip
+//   --expect look   stop each width and scheme at the first differing strip,
+//                   and say from which screen the builds differ
+//                   (without it, every screen is compared)
 //   --keep <n|all>  write at most the first n differing screens of each
 //                   width and scheme (default 8); all are listed
 //   --clip <sel>    one shot of the band holding the first match of sel
@@ -116,8 +118,9 @@ async function shootStrips(file, at, { width, height, colorScheme }, { from = 0,
   });
 }
 
-// Cache key of the old build's strip hashes. All of the build's files are
-// hashed, as pictures may be anywhere in it.
+// Cache key of the old build's strip hashes: all of the build's files (as
+// pictures may be anywhere in it), the shooting options, this tool, and
+// Chrome's version.
 const tool = [import.meta.url, new URL('./lib/chrome.mjs', import.meta.url), new URL('./lib/png.mjs', import.meta.url)]
   .map(url => readFileSync(fileURLToPath(url), 'utf8'));
 const cacheKey = () => createHash('sha256').update(JSON.stringify([hashFiles(builds[0], [''], { outputs: true }),

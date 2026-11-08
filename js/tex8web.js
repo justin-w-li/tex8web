@@ -33,9 +33,9 @@ function tex8web(config, tex) {
 
   // each table row as high as MathJax means it to be. MathJax adds the rule
   // below a row to the row's height, and the last row has none (internal:
-  // the table wrapper's rLines, one short). So that row's height is NaN,
-  // which Node writes as NaNem and a browser ignores, keeping any height the
-  // row had from an earlier rendering.
+  // the table wrapper's rLines, one short). The last row's height is then
+  // NaN, which Node writes as NaNem and a browser ignores, keeping any height
+  // the row had from an earlier rendering.
   function fixRowHeights() {
     const Mtable = MathJax._.output.chtml.Wrappers.mtable.ChtmlMtable.prototype;
     const updateRowHeights = Mtable.updateRowHeights;
