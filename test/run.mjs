@@ -196,6 +196,8 @@ const speech = {
 // the PDF's text width, which keeps their size relative to the text on a
 // narrower screen
 const share = (alt, fraction) => new RegExp(`<img alt='${alt}' [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${fraction.replace('.', '\\.')}\\)'`);
+const drawn = (n, width, more = '') => new RegExp(`<img alt='' src='test-tikzbox${n}x\\.svg' style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${width.replace('.', '\\.')}\\)${more.replace(/[().*]/g, '\\$&')}' />`);
+const lower = share => `; vertical-align:calc(var(--tex8web-textwidth) * -${share})`;
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -211,6 +213,16 @@ const pictures = {
   // (in minipages, where \textwidth is the minipage's width)
   'test': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.225\)'/,
     /<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.45\)'/],
+  // (TikZ pictures as wide as in the PDF in boxes that resize them: half,
+  // the text width, 1cm high, a quarter, mirrored, and twice as wide only;
+  // as low as in the PDF with a baseline, also when scaled; with no
+  // baseline, around a picture with one, or in display math, and with no
+  // alt text; text in a scaled box left without marks)
+  'test-tikzbox': [drawn(0, '0.1655'), drawn(2, '1.0000'), drawn(3, '0.1644'), drawn(4, '0.0828'),
+    drawn(5, '0.3310', '; transform:scale(-1, 1)'), drawn(6, '0.6621', '; aspect-ratio:3.9860'),
+    drawn(7, '0.0754', lower('0.0102')), drawn(8, '0.0506', lower('0.0191')), drawn(9, '0.0506'),
+    drawn(10, '0.0742', lower('0.0097')), drawn(11, '0.0640', lower('0.0102')), drawn(12, '0.0518', lower('0.0134')),
+    drawn(13, '0.1662'), drawn(14, '0.1647'), share('halved', '0.1449'), /Text: Big/, /^(?![^]*tex8web-scale)/],
 };
 
 // The title of a page without \maketitle, for the tab and link previews:

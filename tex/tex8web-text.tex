@@ -718,6 +718,27 @@
         \Configure{Picture-alt}{}\protect\csname nested:math\endcsname
         \def\EndPicture{}\o:pgfsys@beginpicture:}
 \fi
+% a picture with a baseline (TikZ's baseline=) set on the text's baseline,
+% as pgf lowers or raises it. The baseline's position is written into the
+% SVG for text.pictures, which sets the picture's vertical-align from it.
+% pgf computes the shift (\pgf@ya) as here, with its dvisvgm driver, which
+% tex4ht loads unless the tikz+ option is given. A picture in another, such
+% as one in a node, writes nothing, as the outer picture is the one in the
+% text.
+\@ifundefined{ifpgf@sys@svg@inpicture}{}{%
+    \web@needs{o:pgfsys@typesetpicturebox:}%
+    \let\web@typesetpicturebox\o:pgfsys@typesetpicturebox:
+    \def\o:pgfsys@typesetpicturebox:#1{%
+        \pgf@ya=\pgf@shift@baseline\relax
+        \advance\pgf@ya by-\pgf@picminy\relax
+        \ifpgf@sys@svg@inpicture \else \ifdim\pgf@ya=0pt \else
+            \special{dvisvgm:raw <g class='tex8web-baseline' data-y='{?y}'/>}%
+        \fi \fi
+        \web@typesetpicturebox#1}%
+}
+% a tikzcd's picture, with no alt text: tikz-cd.4ht starts it with
+% \Picture+{}, which takes the diagram's labels as the alt text
+\ConfigureEnv{tikzcd}{\Picture+[]{}}{\EndPicture}{}{}
 \catcode58 12
 
 % an \includegraphics picture as wide as in the PDF, as a fraction of the
@@ -761,6 +782,23 @@
           { style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\web@textwidth,4)})" }
           { \__web_gin_dim: }
     }
+  }
+
+% \scalebox, \resizebox, and \reflectbox: dvisvgm draws a picture in such a
+% box at its natural size, since the driver's scale special lies outside
+% tex4ht's picture. Marks around the scaled box give text.pictures the
+% factors. In a picture, \HCode writes nothing (PictureAlt*+ in html4.4ht),
+% and the driver's special scales what is drawn.
+\cs_if_exist:NT \Gscale@box
+  {
+    \cs_set_eq:NN \__web_scale_start: \Gscale@start
+    \cs_set_eq:NN \__web_scale_end: \Gscale@end
+    \cs_set:Npn \Gscale@start
+      {
+        \HCode{<span~class="tex8web-scale"~data-x="\Gscale@x"~data-y="\Gscale@y"/>}
+        \__web_scale_start:
+      }
+    \cs_set:Npn \Gscale@end { \__web_scale_end: \HCode{<span~class="tex8web-scale-end"/>} }
   }
 
 % a minipage, or subcaption's subfigure (a minipage inside), as wide as in

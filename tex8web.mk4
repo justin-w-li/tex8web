@@ -88,8 +88,9 @@ Make:match("4idx$", function() return false end)
 
 -- Each pass is function(document, context). The order matters for:
 -- - page.build_data: first, as it fills context and removes its scripts
--- - text.colors: before the passes that look at what lies between
---   elements, as its marks are elements until it removes them
+-- - text.colors and text.pictures: before the passes that look at what
+--   lies between elements, as their marks are elements until they are
+--   removed
 -- - make4ht's fixinlines: before page.controls puts the text in <main>, as
 --   fixinlines looks only at the top level of the body
 -- - page.equation_anchors: after fixinlines, which puts a loose anchor in
@@ -101,6 +102,7 @@ Make:match("4idx$", function() return false end)
 local passes = {
   page.build_data,
   text.colors,
+  text.pictures,
   source.spaces,
   text.sized_math_spaces,
   text.block_spacing,
@@ -112,7 +114,6 @@ local passes = {
   text.cell_align,
   text.no_break_spaces,
   text.minipages,
-  text.pictures,
   text.sidenotes,
   fixinlines,
   page.controls,

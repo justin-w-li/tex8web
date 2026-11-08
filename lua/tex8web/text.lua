@@ -359,20 +359,52 @@ end
 -- on), as wide as in the PDF, as a share of the PDF's text width, which the
 -- stylesheet's text width also is. dvisvgm writes the size of what is
 -- drawn (--exact), which can differ from TeX's box, in bp and scaled by
--- tex4ht.env's -c (1.4), which it records as the page's matrix
+-- tex4ht.env's -c (1.4), which it records as the page's matrix. A picture
+-- between the marks of \scalebox or \resizebox (span.tex8web-scale, with
+-- the factors, and span.tex8web-scale-end) is drawn at its natural size,
+-- so its width is multiplied by the factors of the boxes around it. A
+-- picture that pgf lowers or raises has its baseline's y in the SVG
+-- (g.tex8web-baseline), from which its vertical-align is set.
 function M.pictures(document, context)
-  for _, img in ipairs(document:query_selector("img")) do
-    local src = img:get_attribute("src") or ""
+  local scales, marks = {{1, 1}}, {}
+  document:traverse_elements(function(el)
+    if dom.has_class(el, "tex8web-scale") then
+      local x, y = scales[#scales][1], scales[#scales][2]
+      scales[#scales + 1] = {x * tonumber(el:get_attribute("data-x")), y * tonumber(el:get_attribute("data-y"))}
+      marks[#marks + 1] = el
+    elseif dom.has_class(el, "tex8web-scale-end") then
+      scales[#scales] = nil
+      marks[#marks + 1] = el
+    end
+    local src = el:get_element_name() == "img" and el:get_attribute("src") or ""
     if src:sub(1, #context.input) == context.input and src:sub(#context.input + 1):match("^%d+x%.svg$") then
       local svg = files.read(context.dir .. "/" .. src)
       if not svg then error(src .. " is missing: dvisvgm did not write it") end
-      local bp = tonumber(svg:match("<svg[^>]- width='([%d.]+)pt'"))
-      if not bp then error("no width in " .. src) end
+      local _, top, bp, height = (svg:match("<svg[^>]- viewBox='([^']+)'") or ""):match("^(%S+) (%S+) (%S+) (%S+)$")
+      if not bp then error("no viewBox in " .. src) end
       local scale = tonumber(svg:match("<g id='page1' transform='matrix%(([%d.]+) 0 0 ")) or 1
-      local share = bp / scale * 72.27 / 72 / context.textwidth
-      dom.add_style(img, string.format("width:calc(var(--tex8web-textwidth) * %.4f)", share))
+      local x, y = math.abs(scales[#scales][1]), math.abs(scales[#scales][2])
+      local share = 72.27 / 72 / scale / context.textwidth -- of a bp of the SVG
+      dom.add_style(el, string.format("width:calc(var(--tex8web-textwidth) * %.4f)", share * x * bp))
+      local baseline = svg:match("<g class='tex8web%-baseline' data%-y='([-%d.]+)'")
+      -- (in display math, the picture is a block: css/tex8web.css)
+      if baseline and not dom.closest(el, function(block) return dom.has_class(block, "mathjax-block") end) then
+        local below = top + height - scale * baseline
+        dom.add_style(el, string.format("vertical-align:calc(var(--tex8web-textwidth) * %.4f)", -share * y * below))
+      end
+      if y ~= x then
+        if not svg:find("preserveAspectRatio") then
+          local f = io.open(context.dir .. "/" .. src, "w")
+          f:write((svg:gsub("<svg ", "<svg preserveAspectRatio='none' ", 1)))
+          f:close()
+        end
+        dom.add_style(el, string.format("aspect-ratio:%.4f", x * bp / (y * height)))
+      end
+      local sx, sy = scales[#scales][1] < 0 and -1 or 1, scales[#scales][2] < 0 and -1 or 1
+      if sx < 0 or sy < 0 then dom.add_style(el, string.format("transform:scale(%d, %d)", sx, sy)) end
     end
-  end
+  end)
+  for _, mark in ipairs(marks) do mark:remove_node() end
 end
 
 -- footnotes, which fn-in (tex8web.mk4) puts at the end of the page, each
