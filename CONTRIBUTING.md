@@ -36,6 +36,7 @@ tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 - Equations are numbered as in TeX, so the numbers agree with `\eqref`.
 - Alignments are split at `\intertext`, and the parts are given the same columns in `js/tex8web.js`, so they line up as one alignment.
 - The document is measured in TeX: the text width, heading sizes, theorem and list spacing, and link colors. The measurements are passed to the stylesheet as `--tex8web-*` custom properties, with the text width in ems, so the column scales with the text size. Every static rule is in `css/tex8web.css`.
+- A size change within the text, such as `\small` or a footnote, is written by tex4ht as spans around the words, and the blocks around them stay at the body size. So the spacing of a list, theorem, algorithm, or box is given in ems of the body size, and each formula in that text is given its size as `--tex8web-math-size`, a multiple of the body size.
 - List labels are typeset by TeX, so they match the PDF.
 - The title is passed from one LaTeX run to the next by tex4ht, so the first draft build, with one LaTeX run, has no title.
 - With tocloft, the font of each table of contents level is read from `\cft<level>font` by `\web@tocfont`, as heading fonts are. The faces these fonts need are predicted in `lua/tex8web/assets.lua`, to be copied next to the page and listed for preloading.

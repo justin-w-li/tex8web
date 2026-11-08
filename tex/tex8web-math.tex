@@ -62,6 +62,22 @@
             "relax": ""}},
     "output": {"font": "mathjax-\web@mathfont", "displayOverflow": "scroll",
         "matchFontHeight": false}}}
+% each formula at the size of the text around it. tex4ht sets a size change
+% within the text (\small, a footnote) as spans around the words, and ends
+% the span before each formula, which would then be at the body size. These
+% are html4-math.4ht's elements, with the size as a multiple of the body's.
+% tex8web-text.tex turns the size off in the title, where tex4ht drops the
+% fonts.
+\newcommand\web@mathsize{\ifdim\f@size pt=\web@bodysize\else
+    \space style="--tex8web-math-size: \web@over{\f@size pt}\web@bodysize"\fi}
+\newcommand\web@mathopen[1]{%
+    \ifvmode\IgnorePar\EndP\def\web@mathtag{div}\else\def\web@mathtag{span}\fi
+    \edef\web@a{\noexpand\HCode{<\web@mathtag\space class="#1"\web@mathsize>}}\web@a}
+\Configure{MathjaxInline}
+    {\edef\web@a{\noexpand\HCode{<span class="mathjax-inline"\web@mathsize>}}\web@a}
+    {\HCode{</span>}}
+\Configure{MathjaxBlock}{\web@mathopen{mathjax-block}}{\HCode{</\web@mathtag>}}
+\Configure{MathjaxEnv}{\web@mathopen{mathjax-env mathjax-\@currenvir}}{\HCode{</\web@mathtag>}}
 % \WebMathMacros{definitions}: definitions for MathJax that replace the
 % ones macros.lua reads from the preamble and styles, for macros MathJax
 % cannot read as they are. tex8web-page.tex passes them on to macros.lua

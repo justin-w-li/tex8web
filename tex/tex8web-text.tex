@@ -18,15 +18,18 @@
 
 % the title in the font that the document's or class's \maketitle sets it
 % in, when that font is not the standard \LARGE. tex4ht drops the title's
-% fonts (\NoFonts in html4.4ht's \Configure{maketitle}). In that case the
-% heading is at the text size, and tex4ht's spans set the title's font. The
-% letter class has no \maketitle, and so no \a:ttl.
+% fonts (\NoFonts in html4.4ht's \Configure{maketitle}), so in the standard
+% font the math is left at the heading's size, as the words are. In another
+% font, the heading is at the text size, and tex4ht's spans set the title's
+% font. The letter class has no \maketitle, and so no \a:ttl.
 \ifcsname a:ttl\endcsname
     \expandafter\let\expandafter\web@ttl\csname a:ttl\endcsname
     \expandafter\def\csname a:ttl\endcsname{%
         \edef\web@a{\f@family/\f@series/\f@shape/\f@size}%
         \begingroup\normalfont\LARGE\xdef\web@b{\f@family/\f@series/\f@shape/\f@size}\endgroup
-        \ifx\web@a\web@b\else
+        \ifx\web@a\web@b
+            \let\web@mathsize\@empty
+        \else
             \let\NoFonts\relax \let\EndNoFonts\relax
             \web@Css{:root { --tex8web-title-size: 1em; }}%
         \fi
@@ -143,10 +146,10 @@
 % in the head, for text.theorem_spacing to move onto the theorem. \HCode
 % alone would expand them at shipout, too late.
 \ifdefined\thm@preskip
-    \def\web@thmskip{\web@em\thm@preskip}%
-    \def\web@thmpostskip{\web@em\thm@postskip}%
+    \def\web@thmskip{\web@bodyem\thm@preskip}%
+    \def\web@thmpostskip{\web@bodyem\thm@postskip}%
 \else
-    \def\web@thmskip{\web@em\topsep}%
+    \def\web@thmskip{\web@bodyem\topsep}%
     \let\web@thmpostskip\web@thmskip
 \fi
 \Configure{newtheorem}
@@ -513,10 +516,10 @@
         {\EndP\PushMacro\web@listtag \xdef\web@listtag{#3}%
          \edef\web@list{\noexpand\HCode{<\web@listtag\space\noexpand\a:LRdir
              class="tex8web-list #2"\csname web@role@\web@listtag\endcsname
-             style="--tex8web-list-topsep: \web@em\topsep;
-             --tex8web-list-itemsep: \web@em{\dimexpr\itemsep+\parsep\relax};
-             --tex8web-list-indent: \web@em\leftmargin;
-             --tex8web-list-labelsep: \web@em\labelsep">}}\web@list
+             style="--tex8web-list-topsep: \web@bodyem\topsep;
+             --tex8web-list-itemsep: \web@bodyem{\dimexpr\itemsep+\parsep\relax};
+             --tex8web-list-indent: \web@bodyem\leftmargin;
+             --tex8web-list-labelsep: \web@bodyem\labelsep">}}\web@list
          \PushMacro\end:itm \global\let\end:itm=\empty}
         {\PopMacro\end:itm \global\let\end:itm \end:itm
          \EndP\HCode{\csname web@end@\web@listtag\endcsname</\web@listtag>}%
@@ -580,19 +583,19 @@
 \@ifpackageloaded{mdframed}{%
     \web@needs{mdf@middlelinewidth@length}\web@needs{mdf@innertopmargin@length}%
     \web@needs{mdf@skipabove@length}\web@needs{mdf@leftmargin@length}%
-    \def\web@mdf@rule#1{\ifbool{mdf@#1line}{\web@em\mdf@middlelinewidth@length}{0em}}%
+    \def\web@mdf@rule#1{\ifbool{mdf@#1line}{\web@bodyem\mdf@middlelinewidth@length}{0em}}%
     \Configure{mdframedstyle}{%
         \get:xcolorcss{\mdf@backgroundcolor}\mdf:bgcolor
         \get:xcolorcss{\mdf@linecolor}\mdf:bordercolor
         \get:xcolorcss{\mdf@fontcolor}\mdf:fontcolor
         \web@Css{\#\mdf:id{--tex8web-mdf-rules: \web@mdf@rule{top} \web@mdf@rule{right}
             \web@mdf@rule{bottom} \web@mdf@rule{left};
-            --tex8web-mdf-padding: \web@em\mdf@innertopmargin@length\space
-            \web@em\mdf@innerrightmargin@length\space \web@em\mdf@innerbottommargin@length\space
-            \web@em\mdf@innerleftmargin@length;
-            --tex8web-mdf-margin: \web@em\mdf@skipabove@length\space
-            \web@em\mdf@rightmargin@length\space \web@em\mdf@skipbelow@length\space
-            \web@em\mdf@leftmargin@length;
+            --tex8web-mdf-padding: \web@bodyem\mdf@innertopmargin@length\space
+            \web@bodyem\mdf@innerrightmargin@length\space \web@bodyem\mdf@innerbottommargin@length\space
+            \web@bodyem\mdf@innerleftmargin@length;
+            --tex8web-mdf-margin: \web@bodyem\mdf@skipabove@length\space
+            \web@bodyem\mdf@rightmargin@length\space \web@bodyem\mdf@skipbelow@length\space
+            \web@bodyem\mdf@leftmargin@length;
             border-color: \mdf:bordercolor; background-color: \mdf:bgcolor;
             color: \mdf:fontcolor;}}}%
 }{}
@@ -762,15 +765,15 @@
     \def\Statex{\global\let\web@algindent\z@\web@Statex}%
     \ConfigureList{algorithmic}
         {\EndP\HCode{<div class="algorithmic tex8web-list"
-             style="--tex8web-list-topsep: \web@em\topsep; --tex8web-list-itemsep: 0em;
-             --tex8web-list-indent: \web@em\leftmargin;
-             --tex8web-list-labelsep: \web@em\labelsep">}%
+             style="--tex8web-list-topsep: \web@bodyem\topsep; --tex8web-list-itemsep: 0em;
+             --tex8web-list-indent: \web@bodyem\leftmargin;
+             --tex8web-list-labelsep: \web@bodyem\labelsep">}%
          \PushMacro\end:itm \global\let\end:itm\empty}
         {\end:itm\PopMacro\end:itm \global\let\end:itm\end:itm \HCode{</div>}}
         {\end:itm \global\def\end:itm{\EndP\HCode{</div></div>}}%
          \HCode{<div\ifx\ALG@text\ALG@x@notext\space class="tex8web-alg-notext"\fi
              ><span class="tex8web-label">}}
-        {\HCode{</span><div style="--tex8web-alg-indent: \web@em\web@algindent">}%
+        {\HCode{</span><div style="--tex8web-alg-indent: \web@bodyem\web@algindent">}%
          \global\let\web@algindent\ALG@tlm \AnchorLabel}%
 }{}
 \catcode58 12

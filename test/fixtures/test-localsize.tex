@@ -1,0 +1,37 @@
+% Text in other sizes: each formula at the size of the text around it, and
+% the spacing of lists, theorems, algorithms, and boxes in a footnote or in
+% \small in ems of the body, the size of the blocks they are in
+\documentclass[11pt]{article}
+\usepackage{amsmath,amsthm,algpseudocode,tcolorbox,mdframed}
+\newtheorem{theorem}{Theorem}
+\title{Groups of order $p^2$}
+\author{A.~Writer}
+\begin{document}
+\maketitle
+\begin{abstract}
+An abstract with $x^2$ and a display
+\[ y = x^2. \]
+\end{abstract}
+
+\section{Sizes of $G$}
+A paragraph with a note.\footnote{A note with $a+b$ and a list:
+\begin{itemize}\item first\item second\end{itemize}}
+{\large Large text with $l$.}
+
+{\small Small text with $s$:
+\begin{itemize}\item one\item two\end{itemize}
+\begin{theorem}A small theorem with $t$.\end{theorem}
+\begin{algorithmic}[1]
+\State $x \gets 1$
+\If{$x > 0$}
+\State $y \gets x$
+\EndIf
+\end{algorithmic}
+\begin{align} u &= v \end{align}
+\begin{tcolorbox}A small box.\end{tcolorbox}
+\begin{mdframed}A small frame.\end{mdframed}
+}
+
+\begin{theorem}A theorem at the text size.\end{theorem}
+\begin{itemize}\item One at the text size.\end{itemize}
+\end{document}

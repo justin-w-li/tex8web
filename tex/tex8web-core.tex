@@ -19,10 +19,16 @@
 }
 \web@othercatcodes 33,34,39,58,59,60,61,62,63,96,\relax,
 
-% a length as a multiple of another length, of the body font size, and in ems
+% a length as a multiple of another length, of the current font size, and
+% in ems
 \newcommand\web@over[2]{\strip@pt\dimexpr#1*65536/\dimexpr#2\relax\relax}
 \newcommand\web@ratio[1]{\web@over{#1}{\f@size pt}}
 \newcommand\web@em[1]{\web@ratio{#1}em}
+% in ems of the body font size, which the config sees: tex4ht sets a size
+% change within the text as spans around the words, so a block such as a
+% list in a footnote stays at the body size
+\edef\web@bodysize{\f@size pt}
+\newcommand\web@bodyem[1]{\web@over{#1}\web@bodysize em}
 % the text width as the document begins (the config runs after every
 % \begin{document} hook, geometry's included)
 \newdimen\web@textwidth

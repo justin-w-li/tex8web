@@ -261,6 +261,8 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 .tex8web-minipages > .tex8web-minipage-t { align-self: baseline; }
 .tex8web-minipages > .tex8web-minipage-b { align-self: last baseline; }
 .mathjax-block img { display: block; margin: 0.7em auto; }
+/* a formula in resized text at the text's size (tex8web-math.tex) */
+:is(.mathjax-inline, .mathjax-block, .mathjax-env) { font-size: calc(var(--tex8web-math-size, 1) * 1em); }
 /* a tabular or verbatim too wide for a narrow screen scrolls sideways, as
    a wide display does, so that the page does not widen */
 @media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }

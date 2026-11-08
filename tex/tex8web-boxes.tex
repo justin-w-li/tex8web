@@ -76,7 +76,7 @@
 % - lengths in ems, a glue's natural length: four for the sides (top,
 %   right, bottom, left) or the corners (from the top left), and the left
 %   side also alone (-left)
-\def\web@tcb@em#1{\web@em{\dimexpr\glueexpr#1\relax\relax}}
+\def\web@tcb@em#1{\web@bodyem{\dimexpr\glueexpr#1\relax\relax}}
 \def\web@tcb@sides#1#2#3#4#5{%
     \web@tcb@add{--tcb-#1: \web@tcb@em{#2} \web@tcb@em{#3} \web@tcb@em{#4} \web@tcb@em{#5};
         --tcb-#1-left: \web@tcb@em{#5};}}

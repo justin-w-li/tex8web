@@ -741,6 +741,35 @@ const loose = {
   'test-tcolorbox': [/<\/div><p> See Theorem<span class='tex8web-nbsp'> <\/span>/],
 };
 
+// Text in other sizes in an 11pt document: each formula at the size of the
+// text around it, \small's 10pt, \large's 12pt, and \footnotesize's 9pt over
+// the body's 10.95pt, and none in the title or a heading, whose words are
+// at the heading's size. Lists, theorems, and algorithms in that text are
+// spaced in ems of the body, the size of the blocks they are in: a list's
+// \topsep of 4pt in a note and 6pt in \small, a theorem's 9pt, which
+// \small leaves, algorithmicx's 2pt and 15pt indent at \small, and the
+// padding of tcolorbox (3mm by 5mm) and mdframed (5.44pt by 10pt).
+const sized = size => `<span class='mathjax-inline' style='--tex8web-math-size: ${size.replace('.', '\\.')}'><mjx-container aria-label`;
+const sizes = {
+  'test-localsize': [
+    /<h1 class='titleHead'>Groups of order <mjx-container/, /<\/a>Sizes of <mjx-container/,
+    new RegExp(`An abstract with </span>${sized('0.91324')}`),
+    /and a display <\/span><span class='mathjax-block' style='--tex8web-math-size: 0\.91324'><mjx-container/,
+    new RegExp(`Large text with </span>${sized('1.09589')}`),
+    new RegExp(`A note with </span>${sized('0.82191')}`),
+    new RegExp(`Small text with </span>${sized('0.91324')}`),
+    new RegExp(`A small theorem with </span>${sized('0.91324')}`),
+    /<div class='mathjax-env mathjax-align' style='--tex8web-math-size: 0\.91324'><mjx-container/,
+    /--tex8web-list-topsep: 0\.3653em; --tex8web-list-itemsep: 0\.3653em; --tex8web-list-indent: 2\.5em; --tex8web-list-labelsep: 0\.5em'>[^]*?first/,
+    /--tex8web-list-topsep: 0\.54794em; --tex8web-list-itemsep: 0\.54794em; --tex8web-list-indent: 2\.5em; --tex8web-list-labelsep: 0\.5em'>[^]*?one/,
+    /<div class='newtheorem' style='margin-top: 0\.82191em; margin-bottom: 0\.82191em'>[^]*?A small theorem/,
+    /<div class='algorithmic tex8web-list' style='--tex8web-list-topsep: 0\.18265em; [^']*--tex8web-list-labelsep: 0\.45662em'>/,
+    /<div style='--tex8web-alg-indent: 1\.36986em'>/,
+    /--tcb-padding: 0\.77953em 1\.29921em 0\.77953em 1\.29921em;/,
+    /--tex8web-mdf-padding: 0\.4968em 0\.91324em 0\.4968em 0\.91324em;/,
+  ],
+};
+
 // Each table, with how a failure reads, and whether its patterns are also
 // matched against the stylesheet
 const patterns = [
@@ -749,7 +778,7 @@ const patterns = [
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
   [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'],
-  [mdframed, "in mdframed's boxes", true],
+  [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true],
 ];
 
 // the problems in a built page's logs, the page, and the files beside it
