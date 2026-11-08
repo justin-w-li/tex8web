@@ -351,6 +351,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **Line breaks.** A line ended by `\break` or `\linebreak` is not stretched to the full width in a justified paragraph, as it is in the PDF. `\hfil\break` does not end the line: use `\\`, `\break`, or `\hfill\break`.
 - **Paragraph cells.** All of a cell's paragraphs are aligned as its last one, for example all centered after a `\centering` between them.
 - **Minipages.** A paragraph with a minipage inside its text is broken around the minipage. `\centering` in a minipage applies only in a figure. Two minipages, each inside an `\fbox`, are one above the other instead of side by side.
+- **A list item that starts with a box.** Beside a minipage or tabular aligned at its center or bottom, the item's label is at the box's first line. In the PDF, the label is at the middle of the box, or at its last line.
 - **Colors in text.** `\color` for the whole document, in the preamble or in `\AtBeginDocument`, is ignored. Inside a colored group, the text color is not restored by `\normalcolor`.
 - **Chapters and parts.** A chapter label, such as "Chapter 1", is tex4ht's default label. Part and chapter headings have the sizes of the report and book classes, whatever the class, unless they are formatted with titlesec.
 

@@ -4,8 +4,9 @@
 // an \intertext, unclipped math characters, and footnotes in the text's
 // color. The prerendered page is also checked for a hidden theme button,
 // headings spaced as in LaTeX, the rest of each \hfill at the right,
-// algorithm2e's numbers and captions, the fonts of the table of contents,
-// printing, and a width that fits a phone.
+// algorithm2e's numbers and captions, list labels on their text's
+// baseline, the fonts of the table of contents, printing, and a width that
+// fits a phone.
 // Needs Chrome and the network. Differing screens are saved in
 // build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
@@ -270,6 +271,46 @@ const filled = `(() => {
   return { checked: floats.length, wrong };
 })()`;
 
+// Each list label on the baseline of its text's first line, as in LaTeX,
+// or at the top beside a display that starts the text. Each baseline is
+// found with a zero-size inline-block, put in the label and at the start
+// of the text's first line, past blocks of no height. The blocks are
+// removed again before the screens. Failures: [the text, what is wrong]
+const labeled = `(() => {
+  const wrong = [];
+  let checked = 0;
+  // (past a table's columns, which hold no lines)
+  const first = node => [...node.childNodes].find(n => n.nodeType === Node.TEXT_NODE ? n.data.trim()
+    : n.nodeType === Node.ELEMENT_NODE && n.getBoundingClientRect().height > 0
+      && !getComputedStyle(n).display.startsWith('table-column'));
+  const block = n => n?.nodeType === Node.ELEMENT_NODE && !getComputedStyle(n).display.startsWith('inline');
+  for (const item of document.querySelectorAll('.tex8web-list > *')) {
+    const label = item.firstElementChild, text = item.lastElementChild;
+    if (!item.checkVisibility() || !label.getBoundingClientRect().height) continue;
+    let line = text, next;
+    // (and into an inline that starts with a block, as MathJax's display)
+    while ((next = first(line)) && (block(next) || next.nodeType === Node.ELEMENT_NODE && block(first(next)))) line = next;
+    checked++;
+    const name = text.textContent.trim().replace(/\\s+/g, ' ').slice(0, 30);
+    if (line.closest('mjx-container[display]')) {
+      const below = label.getBoundingClientRect().top - text.getBoundingClientRect().top;
+      if (Math.abs(below) > 0.5) wrong.push([name, 'the label ' + below.toFixed(1) + 'px below the top of a display']);
+      continue;
+    }
+    const probes = [label, line].map(parent => {
+      // (an element of no other kind, which no rule's selector counts)
+      const probe = document.createElement('tex8web-probe');
+      probe.style.cssText = 'display: inline-block; width: 0; height: 0';
+      parent === label ? parent.append(probe) : parent.prepend(probe);
+      return probe;
+    });
+    const [a, b] = probes.map(probe => probe.getBoundingClientRect().bottom);
+    probes.forEach(probe => probe.remove());
+    if (Math.abs(a - b) > 0.5) wrong.push([name, 'the label ' + Math.abs(a - b).toFixed(1) + 'px ' + (a > b ? 'below' : 'above') + ' its baseline']);
+  }
+  return { checked, wrong };
+})()`;
+
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
 // multiples of the font size of the table of contents. The weights of each
@@ -329,7 +370,7 @@ const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).
 
 // the subjects each check found over the run: a check with none has
 // tested nothing
-const ran = { spaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0 };
+const ran = { spaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0 };
 
 async function compare(chrome, doc, ok) {
   const dir = testDir(doc, 'visual');
@@ -381,6 +422,9 @@ async function compare(chrome, doc, ok) {
           const algorithm = await page.evaluate(algorithms);
           ran.algorithms += algorithm.checked;
           for (const [id, what] of algorithm.wrong) problems.push(`${html}: algorithm #${id}: ${what}`);
+          const labels = await page.evaluate(labeled);
+          ran.labeled += labels.checked;
+          for (const [text, what] of labels.wrong) problems.push(`${html}: the item "${text}": ${what}`);
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {

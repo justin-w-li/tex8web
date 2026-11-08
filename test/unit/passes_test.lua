@@ -630,6 +630,19 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
       "e4 tex8web-eq-anchor-end", "e6 tex8web-eq-anchor"})
   end,
 
+  ["page.equation_anchors: a display with only anchors and space before it in its paragraph"] = function()
+    local d = parse([[<p> <a id="e1"></a><!-- c --><span class="mathjax-env">x</span></p>]]
+      .. [[<p>a <span class="mathjax-block">y</span></p><p><img src="p.png"/><span class="mathjax-block">z</span></p>]]
+      .. [[<p><a id="dx1"></a><span class="mathjax-block">w</span></p>]])
+    page.equation_anchors(d)
+    local classes = {}
+    for _, display in ipairs(d:query_selector(".mathjax-env, .mathjax-block")) do
+      classes[#classes + 1] = display:get_attribute("class")
+    end
+    equal(classes, {"mathjax-env tex8web-display-start", "mathjax-block", "mathjax-block",
+      "mathjax-block tex8web-display-start"})
+  end,
+
   ["text.line_comments: tex4ht's source line comments go, other comments stay"] = function()
     local d = parse("<!--  l. 52  --><p>a</p>\n<!--l. 7--><p>b</p><!-- keep --><p>c<!--  l. 9  -->d</p>")
     text.line_comments(d)

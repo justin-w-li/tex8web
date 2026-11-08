@@ -1,0 +1,42 @@
+% List labels where LaTeX sets them, checked by visual.mjs: in a note,
+% whose leading is smaller than the label's; in \small text; on an item
+% that starts with a display, a nested list, a picture, a top-aligned
+% minipage or tabular, or text or a picture before a display; in
+% enumerate, enumitem's lists, and a description; with a label wider than
+% its column; and in algorithmicx
+\documentclass[11pt]{article}
+\usepackage{amsmath,graphicx,enumitem,algpseudocode}
+\newlist{steps}{enumerate}{1}
+\setlist[steps]{label=Step \arabic*., leftmargin=*}
+\newlist{terms}{description}{1}
+\begin{document}
+A paragraph with a note.\footnote{A note with a list:
+\begin{itemize}\item first in a note\item second in a note\end{itemize}}
+
+{\small Small text:
+\begin{itemize}\item one in small\item two in small\end{itemize}}
+
+\begin{itemize}
+\item \[ x = y. \]
+\item \begin{align} a &= b \end{align}
+\item \begin{equation} c = d \end{equation}
+\item Text before \[ e = f. \]
+\item \includegraphics[alt={picture}, width=40pt]{test-picture.png} before \[ g = h. \]
+\item \begin{itemize}\item nested first\item nested second\end{itemize}
+\item \includegraphics[alt={picture}, width=40pt]{test-picture.png} after a picture
+\item \begin{minipage}[t]{100pt}a minipage of two lines, which is wrapped\end{minipage}
+\item \begin{tabular}[t]{ll} a & b\\ c & d \end{tabular}
+\item[A long label] wider than its column
+\end{itemize}
+
+\begin{enumerate}\item an enumerated item\end{enumerate}
+\begin{steps}\item a step\end{steps}
+\begin{itemize}[label=$\star$]\item a starred item\end{itemize}
+\begin{terms}\item[Term] a term of enumitem\end{terms}
+\begin{description}\item[Word] a description\end{description}
+
+\begin{algorithmic}[1]
+\Require $x > 0$
+\State $y \gets x$
+\end{algorithmic}
+\end{document}

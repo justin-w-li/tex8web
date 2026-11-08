@@ -520,14 +520,22 @@ span.tcolorbox > .tcolorbox-title { display: block; }
    An item, an li or a div in a dl, is a grid of its label (first child)
    and text (last child). The label is on one line, as in TeX's box,
    right-aligned \labelsep before the text, and sticks out to the left if
-   wider than its column. minmax keeps the text within its column, so that
-   a display too wide for it scrolls and the page does not widen */
+   wider than its column. The label is on the baseline of the text's first
+   line, as in LaTeX. This holds also where the text's leading differs
+   from the label's, as in a footnote, and puts the label at the bottom of
+   a picture that starts the text. Before a display that starts the text,
+   the label is at the top, as LaTeX sets it on an empty line above the
+   display (page.lua). minmax keeps the text within its column, so that a
+   display too wide for it scrolls and the page does not widen */
 .tex8web-list { margin-block: var(--tex8web-list-topsep); padding: 0; }
-.tex8web-list > * { display: grid; column-gap: var(--tex8web-list-labelsep);
+.tex8web-list > * { display: grid; align-items: baseline;
+    column-gap: var(--tex8web-list-labelsep);
     grid-template-columns: calc(var(--tex8web-list-indent) - var(--tex8web-list-labelsep))
         minmax(0, 1fr); }
 .tex8web-list > * + * { margin-top: var(--tex8web-list-itemsep); }
 .tex8web-list > * > :first-child { justify-self: end; white-space: nowrap; }
+.tex8web-list > :has(> :last-child > p:first-child > .tex8web-display-start) > :first-child {
+    align-self: start; }
 .tex8web-list > * > :last-child { margin-left: 0; }
 /* (LaTeX uses the larger of a nested list's space below and the next
    item's space) */
@@ -535,7 +543,7 @@ span.tcolorbox > .tcolorbox-title { display: block; }
 /* algorithmicx lines (tex8web-text.tex), each indented by its block's
    depth, and lines without text hidden. A label wider than its column,
    for example Require:, pushes the text over, as in a LaTeX list */
-.algorithmic > * { align-items: baseline; grid-template-columns:
+.algorithmic > * { grid-template-columns:
     minmax(calc(var(--tex8web-list-indent) - var(--tex8web-list-labelsep)), max-content)
     minmax(0, 1fr); }
 .algorithmic > * > :last-child { display: flow-root;

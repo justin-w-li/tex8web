@@ -239,7 +239,9 @@ end
 -- (dx..., latex.4ht's indexhaddr) also come before text and displays, so
 -- they are skipped, and only the others that space alone separates from a
 -- display are marked. Anchors that end a paragraph get another class, as a
--- paragraph may hold the anchors of several displays.
+-- paragraph may hold the anchors of several displays. A display with only
+-- such anchors before it in its paragraph is marked too, for the label of
+-- a list item that starts with it, which LaTeX sets on a line of its own.
 local function is_anchor(node)
   return node:is_element() and node:get_element_name() == "a" and node:get_attribute("id") ~= nil
     and dom.is_blank(node)
@@ -276,6 +278,10 @@ function M.equation_anchors(document)
       if node == display then at = i break end
     end
     local count, before = mark_anchors(nodes, at - 1, "tex8web-eq-anchor")
+    if before == 0 then
+      local class = display:get_attribute("class")
+      display:set_attribute("class", class .. " tex8web-display-start")
+    end
     if count == 0 and before > 0 and nodes[before]:is_element() and nodes[before]:get_element_name() == "p" then
       local inside = nodes[before]:get_children()
       mark_anchors(inside, #inside, "tex8web-eq-anchor-end")
