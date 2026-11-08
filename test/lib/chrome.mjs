@@ -4,7 +4,7 @@
 //   const page = await chrome.open('file:///…/page.html', { javascript: false });
 //   await page.evaluate('document.title'); await page.screenshot(y, height);
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { constants, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { takeSlot } from './slots.mjs';
@@ -76,12 +76,19 @@ const watch = `
     select undef, undef, undef, 0.1;
   }`;
 
-export async function launch() {
+export async function launch({ fontSize } = {}) {
   const binary = candidates.find(existsSync);
   if (!binary) throw new Error('no Chrome found; set CHROME to its executable');
   // (a Chrome holds a build slot like a build does, until it is closed)
   const release = await takeSlot();
   const profile = mkdtempSync(join(tmpdir(), 'tex8webchrome'));
+  // (the default font size in px, as a reader sets it in Chrome's
+  // settings, which a screenshot keeps)
+  if (fontSize) {
+    mkdirSync(join(profile, 'Default'));
+    writeFileSync(join(profile, 'Default', 'Preferences'),
+      JSON.stringify({ webkit: { webprefs: { default_font_size: fontSize } } }));
+  }
   // (Chrome refuses to run as root with its sandbox, as in a container)
   const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars',
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
@@ -128,7 +135,7 @@ export async function launch() {
   const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
   const browser = await connect(version.webSocketDebuggerUrl);
 
-  async function attach(targetId, url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before, touch = false }) {
+  async function attach(targetId, url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before, touch = false, fontSize }) {
     const page = await connect(`ws://127.0.0.1:${port}/devtools/page/${targetId}`);
     await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
     // (a touch screen, without a mouse: hover: none, pointer: coarse)
@@ -136,6 +143,9 @@ export async function launch() {
     await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
     if (!javascript) await page.send('Emulation.setScriptExecutionDisabled', { value: true });
     await page.send('Page.enable');
+    // (the default font size in px, for a check without screenshots: a
+    // capture beyond the window undoes it. See launch's fontSize)
+    if (fontSize) await page.send('Page.setFontSizes', { fontSizes: { standard: fontSize } });
     // (a script to run before the page's own)
     if (before) await page.send('Page.addScriptToEvaluateOnNewDocument', { source: before });
     await page.send('Page.navigate', { url });

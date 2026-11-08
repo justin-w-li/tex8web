@@ -115,10 +115,12 @@ return {
   end,
 
   -- (\WebLikePDF in a 14.4pt document: an em of the text is 1.2 of the
-  -- query's. A width in rems is not scaled)
+  -- query's, also when marked !important. A width in rems is not scaled)
   ["assets.wide_screens: the text's ems at \\WebLikePDF's size"] = function()
     local css = ":root { --tex8web-margin: 14rem; --tex8web-gap: 1.5rem; --tex8web-textwidth: 32.5em; }\n"
-      .. ":root { --tex8web-pdf-size: 14.4pt; }\n@media (--tex8web-wide) { x }"
+      .. ":root { --tex8web-pdf-scale: 1.2; }\n@media (--tex8web-wide) { x }"
+    equal(assets.wide_screens(css), (css:gsub("%(%-%-tex8web%-wide%)", "(min-width: 73.00em)")))
+    css = css:gsub("1%.2;", "1.2 !important;")
     equal(assets.wide_screens(css), (css:gsub("%(%-%-tex8web%-wide%)", "(min-width: 73.00em)")))
     css = css:gsub("32%.5em", "40rem")
     equal(assets.wide_screens(css), (css:gsub("%(%-%-tex8web%-wide%)", "(min-width: 74.00em)")))

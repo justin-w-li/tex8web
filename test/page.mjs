@@ -956,6 +956,36 @@ async function preloading(chrome, file) {
   return problems;
 }
 
+// For a reader whose default font size is 20px: the text at \WebLikePDF's
+// size, 10.95pt over 12pt of that default, and the controls and the table
+// of contents at the default. The wide layout starts where the text and,
+// on each side, a column and its gaps fit.
+async function sizing(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, fontSize: 20 }, async page => {
+    const problems = [];
+    const sizes = await page.evaluate(`(() => {
+      const size = selector => parseFloat(getComputedStyle(document.querySelector(selector)).fontSize);
+      const box = document.createElement('div');
+      box.style.width = 'calc(var(--tex8web-textwidth) + 2 * (var(--tex8web-margin) + 2 * var(--tex8web-gap)))';
+      document.body.append(box);
+      const wide = box.getBoundingClientRect().width;
+      box.remove();
+      return { text: size('body'), controls: size('.tex8web-controls'), toc: size('#tex8web-toc .tableofcontents'), wide };
+    })()`);
+    const wanted = { text: 0.9125 * 20, controls: 20, toc: 0.875 * 20 };
+    for (const [what, px] of Object.entries(wanted)) {
+      if (Math.abs(sizes[what] - px) > 0.01) problems.push(`${what} at ${sizes[what]}px, not ${px}px`);
+    }
+    for (const [width, layout] of [[Math.ceil(sizes.wide) + 1, 'wide'], [Math.floor(sizes.wide) - 1, 'narrow']]) {
+      await page.resize(width, 900);
+      await page.frame();
+      const found = await page.evaluate(`getComputedStyle(document.documentElement).getPropertyValue('--tex8web-layout').trim()`);
+      if (found !== layout) problems.push(`${width}px wide: the ${found} layout, not the ${layout} one (room from ${sizes.wide}px)`);
+    }
+    return problems;
+  });
+}
+
 // Each check, with the fixtures it runs on, which must have its feature:
 // - viewer: an SVG and a raster picture
 // - bar, fade, browsing, and one filter: test.tex's long page, with its
@@ -966,6 +996,7 @@ async function preloading(chrome, file) {
 // - contents, isolated, and lazy: a page with subsections before its first
 //   section
 // - fit: a short example whose one section with subsections is not the first
+// - sizes: \WebLikePDF at a size other than 12pt, and a table of contents
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));
@@ -988,6 +1019,7 @@ const checks = {
   fit: [['examples/footnotes'], each(fitting)],
   preloads: [['test'], each(preloading)],
   transitions: [['examples/basic', 'test-generic'], navigating],
+  sizes: [['test-likepdf'], each(sizing)],
 };
 
 const unknown = process.argv.slice(2).filter(name => !(name in checks));

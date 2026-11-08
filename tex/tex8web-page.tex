@@ -510,9 +510,10 @@
 \web@Css{:root { --tex8web-textwidth: \web@em\web@textwidth; }}
 % \WebLikePDF: the PDF's text size, leading, paragraph indent and space,
 % and justified, hyphenated text (css/tex8web.css), in place of the web
-% defaults. A config runs it as the document starts, at the normal size
+% defaults. A config runs it as the document starts, at the normal size.
+% The size is given over 12pt, the text size of the web defaults
 \newcommand\WebLikePDF{%
-    \web@Css{:root { --tex8web-pdf-size: \f@size pt;
+    \web@Css{:root { --tex8web-pdf-scale: \fpeval{\f@size/12};
         --tex8web-pdf-leading: \web@ratio\baselineskip;
         --tex8web-parindent: \web@em\parindent; --tex8web-parskip: \web@em\parskip; }}%
     \web@htmlclass{tex8web-like-pdf}}

@@ -23,6 +23,7 @@
 //                   the animations it starts are awaited
 //   --touch         a touch screen without a mouse
 //   --window <w>x<h>  only a window of this size
+//   --font-size <px>  the browser's default font size (16 by default)
 // Progress goes to stderr, a line a screen, so a stall shows where it was.
 // The PDF page to compare with: pdftoppm -png -r 100 -f <n> -l <n>
 // -singlefile <pdf> <out>/pdf
@@ -45,18 +46,21 @@ const cache = option('--cache');
 const expect = option('--expect');
 const keepOption = option('--keep');
 const windowOption = option('--window');
+const fontSizeOption = option('--font-size');
 const [out, ...builds] = expression === undefined ? args : [undefined, ...args];
 if ((!out && expression === undefined) || !builds.length || builds.length > (expression === undefined ? 2 : 1)) {
-  console.error('usage: node test/shots.mjs [--clip <selector>] [--then <expression>] [--touch] [--window <width>x<height>] <out> <page.html | html directory> [<new html directory>]\n'
+  console.error('usage: node test/shots.mjs [--clip <selector>] [--then <expression>] [--touch] [--window <width>x<height>] [--font-size <px>] <out> <page.html | html directory> [<new html directory>]\n'
     + '       node test/shots.mjs --eval <expression> <page.html | html directory>');
   process.exit(2);
 }
 if ((expect !== undefined && expect !== 'look') || (keepOption !== undefined && !/^(\d+|all)$/.test(keepOption))
-  || (windowOption !== undefined && !/^\d+x\d+$/.test(windowOption))) {
-  console.error('--expect takes look, --keep a number or all, and --window a width and height, as 1400x900');
+  || (windowOption !== undefined && !/^\d+x\d+$/.test(windowOption))
+  || (fontSizeOption !== undefined && !/^\d+$/.test(fontSizeOption))) {
+  console.error('--expect takes look, --keep a number or all, --window a width and height, as 1400x900, and --font-size a number of px');
   process.exit(2);
 }
 const keep = keepOption === undefined ? 8 : keepOption === 'all' ? Infinity : Number(keepOption);
+const fontSize = fontSizeOption && Number(fontSizeOption);
 const windows = windowOption ? [windowOption.split('x').map(Number)] : [[1400, 900], [390, 844]];
 // for the tests: only these views, as 1400-light,390-dark
 const views = process.env.TEX8WEB_SHOTS_VIEWS?.split(',');
@@ -124,7 +128,7 @@ async function shootStrips(file, at, { width, height, colorScheme }, { from = 0,
 const tool = [import.meta.url, new URL('./lib/chrome.mjs', import.meta.url), new URL('./lib/png.mjs', import.meta.url)]
   .map(url => readFileSync(fileURLToPath(url), 'utf8'));
 const cacheKey = () => createHash('sha256').update(JSON.stringify([hashFiles(builds[0], [''], { outputs: true }),
-  strip, windows, then, touch, ...tool, chrome.version])).digest('hex').slice(0, 16);
+  strip, windows, then, touch, fontSize, ...tool, chrome.version])).digest('hex').slice(0, 16);
 
 const cached = file => existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
 
@@ -218,7 +222,7 @@ async function band(tab, url) {
 }
 
 const names = new Set(builds.flatMap(build => pages(build).map(page => basename(page))));
-const chrome = await launch();
+const chrome = await launch({ fontSize });
 let differ = false;
 try {
   for (const page of builds.length === 1 ? pages(builds[0]) : [...names].map(name => join(builds[0], name))) {

@@ -154,7 +154,7 @@ The checks of each test script are listed in its header comment.
   - `lua/tex8web/macros.lua`, `preamble.lua`, and `source.lua`
   - the scripts in `page.lua`
   - the MathJax version in `package.json`
-- Run `npm run test:visual` before a commit that touches `js/tex8web-page.js` or the styles of an [opened picture](DOCUMENTATION.md#opening-a-picture). The mouse and touch checks of an opened picture, and the checks of the bar, fade, theme, search field, and transitions, run only in `test/page.mjs`.
+- Run `npm run test:visual` before a commit that touches `js/tex8web-page.js` or the styles of an [opened picture](DOCUMENTATION.md#opening-a-picture). The mouse and touch checks of an opened picture, and the checks of the bar, fade, theme, search field, transitions, and sizes at another default font size, run only in `test/page.mjs`.
 - For other changes, run `npm run test:visual` at the end of a batch and before opening a pull request.
 - Give a bug fix a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
 - Check a visual change with screenshots from `node test/shots.mjs`, wide and narrow, light and dark, next to the PDF.
@@ -167,11 +167,11 @@ The checks of each test script are listed in its header comment.
   - `test-mathescape.tex` holds the formulas where tex8web's escaping of formula source (`\alteqtoks`) could differ from tex4ht's. It is built a second time by `run.mjs` with `test-mathescape-stock.cfg`, in which tex4ht's escaping is restored, and the two pages must be the same.
 - **`npm run test:visual`**: `test/visual.mjs`, then `test/page.mjs`, with Chrome and the network. `test/chrome.test.mjs` and `test/shots.test.mjs` run beside them, so their output is mixed in.
   - `visual.mjs`: each page, prerendered and typeset by MathJax in the browser, compared screen by screen
-  - `page.mjs`: the page script, and the tint of a linked equation, tested on the fixtures that have each feature. Run it alone with `npm run test:page`.
+  - `page.mjs`: the page script, the tint of a linked equation, and the text and controls at another default font size, tested on the fixtures that have each feature. Run it alone with `npm run test:page`.
   - `chrome.test.mjs`: tests of `test/lib/chrome.mjs`
   - `shots.test.mjs`: tests of the comparison of two builds in `shots.mjs`
 - **`npm run examples`**: the PDF and page of each example, built into `examples/<name>/build/`, and the published site, built into `build/site/`.
-- **`node test/shots.mjs`**: screenshots of a page, a comparison of two builds, the band of one element (`--clip`), or a measurement (`--eval`). Other options: a script run on the page first (`--then`), an emulated touch screen (`--touch`), and one window of another size (`--window`). Progress is printed on stderr, as a long page takes minutes. Compare the screenshots with the PDF page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
+- **`node test/shots.mjs`**: screenshots of a page, a comparison of two builds, the band of one element (`--clip`), or a measurement (`--eval`). Other options: a script run on the page first (`--then`), an emulated touch screen (`--touch`), one window of another size (`--window`), and another default font size in px (`--font-size`). Progress is printed on stderr, as a long page takes minutes. Compare the screenshots with the PDF page, rendered with `pdftoppm -png -r 100 -f <n> -l <n> -singlefile <pdf> <out>/pdf`.
   - In a comparison, a page is shot in strips of several screens, because a Chrome capture costs the same at any height. Only differing strips are decoded (`test/lib/png.mjs`) and compared screen by screen, so each screen matches a separate shot of it. The first eight differing screens for each width and color scheme are written (`--keep <n | all>`), and all are listed.
   - With `--expect look`, the comparison of each width and color scheme ends at the first strip that differs.
   - With `--cache <dir>`, the comparison results for the old build's strips are saved as JSON, keyed by a hash of the old build's files, the `shots.mjs` options and sources, and the Chrome version. Checkouts can share the directory, which is never pruned: delete it when it grows.

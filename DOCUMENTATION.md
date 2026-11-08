@@ -122,7 +122,7 @@ The commands:
   - macros that tex8web does not find. tex8web collects definitions from your document, the local packages it loads, and the files these `\input` or `\include` by a path relative to your document's directory. Macros defined in loops or by other macros are not found.
 - **`\WebColor{name}{light}{dark}`**: Define the CSS variable `--name` as `light` in light mode and `dark` in dark mode.
 - **`\WebTerm\cs`**: Make the text of each `\cs{...}` a term in the search field. A term in a heading or a theorem note is found as that heading or theorem. Pass each command to `\WebTerm` once. A term's id, for links, is `term-` and the term's text in lower case, with a hyphen for each run of spaces or punctuation, and without math: `\term{Convex set}` has the id `term-convex-set`. Terms with the same text have `-2`, `-3`, and so on added to their ids.
-- **`\WebLikePDF`**: Set the text as in the PDF instead of with the [reading defaults](#reading-defaults). The column width scales with the text size. Paragraphs are spaced as in the PDF, usually with no space between them. The text is justified and hyphenated only on a wide screen, because formulas that cannot break would leave wide gaps on a narrow screen.
+- **`\WebLikePDF`**: Set the text as in the PDF instead of with the [reading defaults](#reading-defaults). The text is at the PDF's size when the reader's default font size is 12pt, and scales with that default. The column width scales with the text size. The controls and the table of contents stay at the reader's default font size. Paragraphs are spaced as in the PDF, usually with no space between them. The text is justified and hyphenated only on a wide screen, because formulas that cannot break would leave wide gaps on a narrow screen.
 - **`\WebPDF{path}`**: Add a PDF button, as with [`-p`](#building-a-page). The path is relative to your document.
 - **`\WebUp{url}`**: Add an up button, as with [`-u`](#building-a-page).
 - **`\Css{...}`**: Add a CSS style after the tex8web styles in `css/tex8web.css`. Inside `\Css`, write `#` as `\#` and `%` as `\%`.
@@ -267,7 +267,7 @@ A link to the page shared in a chat app or on a social site has a preview with t
 
 To set the text as in the PDF instead, use [`\WebLikePDF`](#your-own-config) in your config.
 
-- The text is 12pt, larger than in most PDFs, and everything else is scaled with it. The column is as wide as the PDF column, in ems.
+- The text is at the reader's default font size, set in the browser. This size is 12pt unless the reader changes it, larger than in most PDFs. Everything else is scaled with the text. The column is as wide as the PDF column, in ems.
 - The line spacing is the browser default, a little looser than in TeX.
 - Paragraphs are separated by space instead of indented.
 - The text is ragged right and not hyphenated.
