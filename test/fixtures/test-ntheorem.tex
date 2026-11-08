@@ -1,7 +1,7 @@
-% A test for tex8web: ntheorem's theorems, which can't share a document with
-% amsthm's. Numbered ones, one with a note, get a link at their head; an
-% unnumbered one (\newtheorem*) doesn't; a \ref leads to the numbered one's
-% head.
+% ntheorem's theorems, in a document of their own, as ntheorem cannot be
+% loaded with amsthm. Numbered theorems, one with a note, have a link at
+% their head, and an unnumbered one (\newtheorem*) does not. A \ref leads to
+% the numbered theorem's head.
 \documentclass{article}
 \usepackage[thmmarks]{ntheorem}
 \theorembodyfont{\itshape}

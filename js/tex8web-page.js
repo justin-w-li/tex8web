@@ -1,34 +1,33 @@
-// tex8web's page in the browser: the up link, the theme button, the
-// contents button on a wide screen, the controls' bar on a narrow screen,
-// smooth scrolling to links, footnotes lined up with their marks, the table
-// of contents following the section being read and its filter, previews of
-// what a link on the page leads to, a closer view of pictures, and a fade at
-// the edge of what scrolls sideways. page.lua and text.lua build what this
-// works on (and tex8web-head.js marks <html> tex8web-js before the page is
-// drawn), and the page reads fine without it (css/tex8web.css).
+// tex8web's page script: the up link, the theme button, the table of
+// contents (its button, the bar on a narrow screen, the current entry, and
+// the search field), smooth scrolling to links, footnotes beside their
+// marks, preview cards, opened pictures, and the fade at the edges of what
+// scrolls sideways. page.lua and text.lua build the elements used here, and
+// tex8web-head.js adds tex8web-js to <html> before the page is drawn. The
+// page is readable without this script (css/tex8web.css).
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
   const layout = () => getComputedStyle(root).getPropertyValue('--tex8web-layout').trim();
-  // twice css/tex8web.css's --tex8web-fade (in seconds), in ms: a little
-  // after the fades end
+  // twice css/tex8web.css's --tex8web-fade (in seconds), in ms: after the
+  // fades end
   const faded = () => 2000 * parseFloat(getComputedStyle(root).getPropertyValue('--tex8web-fade'));
-  // an element's text, without the MathML MathJax may add for screen
-  // readers, which repeats the formula
+  // an element's text, without the assistive MathML MathJax may add, which
+  // repeats the formula
   const text = el => {
     const copy = el.cloneNode(true);
     copy.querySelectorAll('.tex8web-permalink, mjx-assistive-mml').forEach(node => node.remove());
     return copy.textContent.replace(/\s+/g, ' ').trim();
   };
-  // an element as a line of text with its math typeset (copies of
-  // MathJax's), without the styles of the text around it, and without a
-  // last period (a theorem's head has one)
+  // an element as one line of text with copies of its typeset math, without
+  // the styles of the text around it, and without a final period (a
+  // theorem's head has one)
   const shown = el => {
     const line = document.createDocumentFragment();
     const add = el => {
       for (const node of el.childNodes) {
         if (node.nodeType === Node.TEXT_NODE) line.append(node.textContent.replace(/\s+/g, ' '));
-        // (and not tex4ht's comments, <!-- tex4ht:ref: x -->)
+        // skips tex4ht's comments, <!-- tex4ht:ref: x -->
         else if (node.nodeType !== Node.ELEMENT_NODE) continue;
         else if (node.matches('mjx-container')) line.append(node.cloneNode(true));
         else if (!node.matches('.tex8web-permalink, mjx-assistive-mml')) add(node);
@@ -51,13 +50,13 @@
     return line;
   };
 
-  // a page's address without its fragment, and a folder's index.html as the
-  // folder, as a server gives it (as tex8web-head.js's)
+  // a page's address without its fragment, with a folder's index.html as
+  // the folder, as a server gives it (same as in tex8web-head.js)
   const page = url => url.split('#')[0].replace(/\/index\.html$/, '/');
 
-  // the up link goes back in history when the page before this one is the
-  // page above, which keeps the reader's place there (with the Navigation
-  // API; without it, the link loads the page)
+  // The up link goes back in history when the last other page before this
+  // one is the page above, so the reader's place there is kept. Without the
+  // Navigation API, the link loads the page.
   function up() {
     const a = document.querySelector('.tex8web-up');
     if (!a || !window.navigation) return;
@@ -73,10 +72,9 @@
     });
   }
 
-  // the theme: light or dark as the reader last chose, on any tex8web page
-  // (a script in <head> applies it before the page is drawn), or else as
-  // the system is; the page fades from one to the other, unless the reader
-  // would rather not
+  // the theme: as the reader last chose on any tex8web page (applied by
+  // tex8web-head.js before the page is drawn), or else the system's. The
+  // switch fades unless the reader prefers reduced motion.
   function theme() {
     const button = document.querySelector('.tex8web-theme');
     if (!button) return;
@@ -101,10 +99,10 @@
     label();
   }
 
-  // on a wide screen, the contents button hides or shows the column of
-  // contents (css/tex8web.css), as the reader last chose on any tex8web
-  // page (a script in <head> applies it before the page is drawn); on a
-  // narrow one it opens the drawer, as its popovertarget does
+  // On a wide screen, the table of contents button hides or shows the column
+  // (css/tex8web.css), as the reader last chose on any tex8web page (applied
+  // by tex8web-head.js). On a narrow screen, the button opens the drawer
+  // through its popovertarget.
   function column() {
     const button = document.querySelector('.tex8web-contents');
     if (!button) return;
@@ -122,7 +120,7 @@
     };
     button.addEventListener('click', event => {
       if (layout() !== 'wide') return;
-      // (cancelling the click cancels the popovertarget's opening)
+      // cancelling the click cancels the popovertarget's opening
       event.preventDefault();
       clearTimeout(timer);
       root.classList.add('tex8web-toggling');
@@ -139,19 +137,19 @@
   }
 
   // the controls, in a bar across the top on a narrow screen
-  // (css/tex8web.css): out of the way while the reader scrolls down, back as
-  // soon as they scroll up; and as the window goes from wide to narrow,
-  // away, then back only at the page's top
+  // (css/tex8web.css): hidden while the reader scrolls down, shown as soon as
+  // they scroll up. When the window goes from wide to narrow, the bar is
+  // hidden unless the page is at its top.
   function bar() {
     const controls = document.querySelector('.tex8web-controls');
     if (!controls) return;
     const top = () => scrollY <= controls.offsetHeight;
     let was = layout(), width = innerWidth, last = scrollY;
     const atTop = () => root.classList.toggle('tex8web-top', scrollY <= 0);
-    // (the browser restores the reader's place, or follows a link's #, on
-    // its own just before the load event and tells the page a frame later:
-    // that is not the reader's scrolling, so the bar stays as it is, with
-    // no transitions, until two frames after the load)
+    // The browser restores the reader's place, or scrolls to a link's #,
+    // right before the load event, and fires the scroll event a frame later.
+    // That scroll is not the reader's, so the bar keeps its state, without
+    // transitions, until two frames after the load.
     let settled = false;
     controls.style.transition = 'none';
     atTop();
@@ -162,12 +160,12 @@
     }));
     if (document.readyState === 'complete') settle();
     else addEventListener('load', settle);
-    // (only on a narrow screen: the browser may restyle the page for a
-    // narrow one before the resize event, and a bar already away would
-    // then vanish there rather than fade; and not for the scrolling that
-    // keeps the reader's place as the width changes. Safari on iOS bounces
-    // past the page's ends and jitters a pixel or two back as its own bars
-    // grow or shrink, so a turn counts only once it has gone 10px)
+    // Hidden only on a narrow screen: the browser may restyle the page for a
+    // narrow screen before the resize event, and a bar already hidden would
+    // then vanish instead of fading. Ignored: the scrolling that keeps the
+    // reader's place as the width changes. Safari on iOS bounces past the
+    // page's ends and jitters a pixel or two back as its own bars grow or
+    // shrink, so a change of direction counts only after 10px.
     addEventListener('scroll', () => {
       atTop();
       const end = document.documentElement.scrollHeight - innerHeight;
@@ -179,8 +177,9 @@
         last = scrollY;
       }
     }, { passive: true });
-    // (the layouts switch at once as a window crosses the breakpoint: the
-    // column of contents would slide away as a drawer, the bar in)
+    // The layouts switch at once when the window crosses the breakpoint.
+    // With transitions, the table of contents column would slide away as a
+    // drawer, and the bar would slide in.
     const toc = document.getElementById('tex8web-toc');
     addEventListener('resize', () => {
       const now = layout();
@@ -197,18 +196,18 @@
     });
   }
 
-  // following a link scrolls smoothly once the reader has followed one
-  // (css/tex8web.css): not the browser going back to their place as the
-  // page reloads
+  // Scrolling to a link's target is smooth once the reader has followed a
+  // link (css/tex8web.css), so the return to the reader's place on a reload
+  // is not.
   function smooth() {
     document.addEventListener('click', event => {
       if (event.target.closest?.('a[href*="#"]')) root.classList.add('tex8web-smooth');
     });
   }
 
-  // footnotes beside the text (css/tex8web.css floats them there on a wide
-  // screen): each level with its mark, or below the one above it; again
-  // whenever the page's layout changes (pictures, fonts, the width)
+  // footnotes beside the text (floated there by css/tex8web.css on a wide
+  // screen): each level with its mark, or below the footnote above it.
+  // Placed again whenever the layout changes (pictures, fonts, the width).
   function sidenotes() {
     const notes = [...document.querySelectorAll('.tex8web-sidenote')]
       .map(note => {
@@ -232,17 +231,18 @@
     if (notes.length) new ResizeObserver(place).observe(document.body);
   }
 
-  // what scrolls sideways fades out at an edge where more of it is hidden
-  // (css/tex8web.css). Each such element is marked, with how much is hidden
-  // on each side. That is set again when the layout changes, and as the
-  // element scrolls, by a listener of its own: scrolling the page runs none
+  // What scrolls sideways fades out at each edge with more hidden past it
+  // (css/tex8web.css). Each such element is marked with how much is hidden
+  // on each side. The marks are updated when the layout changes, and by a
+  // scroll listener on each element, so scrolling the page runs none of
+  // these listeners.
   const scrolling = 'mjx-container[display], div.tabular, pre';
   const listening = new WeakSet();
   function fade(elements) {
-    // (all measured, then all marked: a mark between two measures would
-    // have the second restyle the page, a third of a second on a phone for
-    // a long page's displays. A wide screen's tabular or verbatim doesn't
-    // scroll but runs into the margin, which a mask would cut off)
+    // All measured, then all marked: a mark between two measures would make
+    // the second restyle the page, a third of a second on a phone for a long
+    // page's displays. On a wide screen, a tabular or verbatim does not
+    // scroll. It runs into the margin, and a mask would cut it off.
     const hidden = elements.map(element => {
       const width = element.scrollWidth - element.clientWidth;
       return width > 0 && getComputedStyle(element).overflowX !== 'visible' ? [width, element.scrollLeft] : null;
@@ -260,22 +260,22 @@
   }
 
   function edges() {
-    // (the elements each time: MathJax in the browser makes the math's
-    // containers after this runs, as ui/lazy brings it into view)
+    // queried each time: MathJax in the browser makes the math's containers
+    // later, as ui/lazy brings the math into view
     const all = () => fade([...document.querySelectorAll(scrolling)]);
     new ResizeObserver(all).observe(document.body);
-    // (fonts that arrive late change the math's width, but not always the
-    // page's size)
+    // late fonts change the math's width, but not always the page's size
     document.fonts.addEventListener('loadingdone', all);
   }
 
   // the table of contents: the entry of the section being read (the last
   // heading above the top quarter of the screen) is marked, and its
-  // section's subsections shown, and on a narrow screen it's in the bar
-  // (css/tex8web.css), once the first heading is read; as a drawer, it
-  // closes on following a link. A chevron after each section with
-  // subsections shows or hides them, sliding; what it opens stays open, while
-  // the section being read opens on reaching it and closes on leaving it
+  // section's subsections shown. On a narrow screen, that entry is copied
+  // into the bar (css/tex8web.css) once the first heading is reached. The
+  // drawer closes when a link is followed. A chevron after each section with
+  // subsections shows or hides them with a slide. Sections the reader opens
+  // stay open. The section being read opens on reaching it and closes on
+  // leaving it.
   function contents() {
     const toc = document.getElementById('tex8web-toc');
     if (!toc) return;
@@ -286,8 +286,8 @@
     const where = document.querySelector('.tex8web-where');
     const isSection = el => el.matches('.sectionToc, .likesectionToc, .chapterToc, .likechapterToc, .appendixToc, .partToc, .likepartToc');
     const motion = matchMedia('(prefers-reduced-motion: no-preference)');
-    // (tex4ht's entries are siblings, between <br />s: a section's, then
-    // its subsections')
+    // tex4ht's entries are siblings, between <br />s: a section's, then its
+    // subsections'
     const under = section => {
       const rows = [];
       for (let el = section.nextElementSibling; el && !isSection(el); el = el.nextElementSibling) {
@@ -298,8 +298,8 @@
     const show = (section, open, slide) => {
       const rows = under(section);
       section.querySelector('.tex8web-toc-more')?.setAttribute('aria-expanded', open);
-      // (the first entries, subsections before any section, are shown with
-      // the class on themselves)
+      // the first entries, subsections before any section, are shown by the
+      // class on each entry
       if (!isSection(section)) section.classList.toggle('tex8web-open', open);
       for (const row of rows) {
         row.getAnimations().forEach(animation => animation.cancel());
@@ -309,7 +309,8 @@
         if (!open) rows.forEach(row => row.classList.remove('tex8web-open'));
         return;
       }
-      // (clipped to the row as it grows, with clip-path, which animates)
+      // each row clipped to its box as it grows, with clip-path, which
+      // animates
       for (const row of rows) {
         const top = getComputedStyle(row).paddingTop;
         const shut = { height: '0px', paddingTop: '0px', clipPath: 'inset(0)' };
@@ -331,7 +332,7 @@
       button.setAttribute('aria-label', `Subsections of ${link ? entryText(link) : section.textContent.trim()}`);
       section.append(button);
     }
-    // (the sections the reader opened)
+    // sections the reader opened
     const kept = new Set();
     let current, opened;
     const update = () => {
@@ -347,7 +348,7 @@
       current = reading;
       current.a.setAttribute('aria-current', 'location');
       if (where) where.replaceChildren(entryShown(current.a));
-      // (subsections before the first section have none, so from the first)
+      // for subsections before the first section, the first entry
       let section = current.a.closest('.tableofcontents > span');
       while (section?.previousElementSibling && !isSection(section)) section = section.previousElementSibling;
       if (section !== opened) {
@@ -357,8 +358,8 @@
         section.classList.add('tex8web-reading');
         opened = section;
       }
-      // (the section's entry while its subsections are hidden; neither while
-      // the filter's results stand in for the entries)
+      // the section's entry while its subsections are hidden; no scrolling
+      // while search results replace the entries (a.height is 0)
       const shown = current.a.getClientRects().length ? current.a : opened.querySelector('a');
       const a = shown.getBoundingClientRect(), box = toc.getBoundingClientRect();
       if (a.height && (a.top < box.top || a.bottom > box.bottom)) toc.scrollTop += a.top - box.top - box.height / 3;
@@ -370,8 +371,8 @@
       requestAnimationFrame(() => { pending = false; update(); });
     }, { passive: true });
     update();
-    // (MathJax in the browser typesets an entry's math after the bar's copy
-    // of it is made, and an entry in the closed drawer only when it opens)
+    // MathJax in the browser typesets an entry's math after the bar's copy
+    // is made, and an entry in the closed drawer only when the drawer opens
     if (where) {
       new MutationObserver(() => where.replaceChildren(entryShown(current.a)))
         .observe(toc.querySelector('.tableofcontents'), { childList: true, subtree: true });
@@ -385,16 +386,15 @@
       }
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });
-    // every entry shown, without chevrons, where all of them fit in the
-    // column or drawer without scrolling (css/tex8web.css). Measured with
-    // all shown, which doesn't depend on what's open, and with the entries
-    // rather than the filter's results. The box is measured as tall as it
-    // is with a phone's URL bar shown, so the entries fit with it too: the
-    // box grows as the bar hides while the page scrolls, which mustn't
-    // change what's shown. (Its height auto, as the drawer's 100% would
-    // keep a margin from shrinking it.) Measured again as fonts arrive and
-    // as MathJax in the browser typesets the entries, which change their
-    // heights but not the box's
+    // Every entry is shown, without chevrons, when all entries fit in the
+    // column or drawer without scrolling (css/tex8web.css). Measured with all
+    // entries shown and the search results hidden, so the result does not
+    // depend on what is open. The box is measured at its height with a
+    // phone's URL bar shown: the box grows as the URL bar hides during
+    // scrolling, which must not change what is shown. The height is set to
+    // auto because the drawer's 100% would keep the margin from shrinking
+    // it. Measured again when fonts arrive and when MathJax in the browser
+    // typesets the entries, which changes their heights but not the box's.
     const list = toc.querySelector('.tableofcontents');
     const fit = () => {
       const results = toc.querySelector('.tex8web-toc-results');
@@ -414,11 +414,11 @@
     new MutationObserver(fit).observe(list, { childList: true, subtree: true });
   }
 
-  // the contents' filter: in place of the entries, the headings, theorems
-  // and boxes with # links, and terms (\WebTerm) whose text has every word
-  // typed, ignoring case, accents and the style of MathJax's letters (𝜎 is
-  // σ). The arrow keys choose among them, from the first, with the focus
-  // kept in the field (a combobox), and Enter follows the one chosen
+  // the search field: in place of the entries, the headings, theorems and
+  // boxes with # links, and terms (\WebTerm) whose text has every word typed,
+  // ignoring case, accents, and MathJax's letter styles (𝜎 is σ). The arrow
+  // keys choose a result, from the first, with the focus kept in the field
+  // (a combobox), and Enter follows the result chosen.
   function filter() {
     const toc = document.getElementById('tex8web-toc');
     const input = toc?.querySelector('.tex8web-toc-filter');
@@ -435,9 +435,9 @@
     input.setAttribute('aria-autocomplete', 'list');
     input.setAttribute('aria-expanded', 'false');
     const fold = s => s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
-    // (and a Greek letter or symbol by its name in TeX, which the page,
-    // typeset, no longer has: σ is also sigma, and ε varepsilon, which
-    // epsilon finds too)
+    // a Greek letter or symbol also by its TeX name, which the typeset page
+    // no longer has: σ by sigma, and ε by varepsilon, which epsilon also
+    // matches
     const names = { α: 'alpha', β: 'beta', γ: 'gamma', δ: 'delta', ε: 'varepsilon', ζ: 'zeta', η: 'eta',
       θ: 'vartheta', ι: 'iota', κ: 'kappa', λ: 'lambda', μ: 'mu', ν: 'nu', ξ: 'xi', π: 'varpi', ρ: 'varrho',
       σ: 'varsigma', τ: 'tau', υ: 'upsilon', φ: 'varphi', χ: 'chi', ψ: 'psi', ω: 'omega',
@@ -446,11 +446,11 @@
       const folded = fold(label);
       return `${folded}\n${[...folded].map(c => names[c] ?? c).join('')}`;
     };
-    // (numbered theorems and boxes, by their # links: page.lua)
+    // numbered theorems and boxes, found by their # links (page.lua)
     const theorems = '.newtheorem, .tcolorbox';
     const theoremLinks = '.newtheorem .head > .tex8web-permalink, .tcolorbox > .tcolorbox-title > .tex8web-permalink';
-    // (on first use, as the math is typeset by then if MathJax runs in the
-    // browser)
+    // collected on first use: by then, MathJax in the browser has typeset
+    // the math
     let items;
     function collect() {
       const all = [];
@@ -462,15 +462,16 @@
         all.push({ el: link.parentElement, href: link.hash, kind: 'theorem',
           label: text(link.parentElement).replace(/\.$/, ''), show: () => shown(link.parentElement) });
       }
-      // (not one in a heading or a theorem's head, which is found as that)
+      // not a term in a heading or a theorem's head, which is found as that
+      // heading or theorem
       for (const term of document.querySelectorAll('.tex8web-term[id]')) {
         if (!term.closest('h2, h3, h4, h5, h6, .head, .tcolorbox-title')) {
           all.push({ el: term, href: `#${term.id}`, kind: 'term', label: text(term), show: () => shown(term) });
         }
       }
       all.sort((a, b) => a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
-      // (a term is shown with the theorem it's in, or else its section, and
-      // once there)
+      // a term is shown with the theorem it is in, or else its section, and
+      // listed once for each
       let heading, theorem;
       const seen = new Set();
       return all.filter(item => {
@@ -510,7 +511,7 @@
       chosen.scrollIntoView({ block: 'nearest' });
     };
     input.addEventListener('input', () => {
-      // (\sigma as sigma)
+      // \sigma as sigma
       const words = fold(input.value).replaceAll('\\', '').split(/\s+/).filter(Boolean);
       list.hidden = words.length > 0;
       results.hidden = !words.length;
@@ -533,7 +534,7 @@
         choose(rows.indexOf(chosen) + (event.key === 'ArrowDown' ? 1 : -1));
       }
     });
-    // (naming only what the page has)
+    // the placeholder names only what the page has
     const kinds = ['section'];
     if (document.querySelector(theoremLinks)) kinds.push('theorem');
     if (document.querySelector('.tex8web-term[id]')) kinds.push('term');
@@ -541,17 +542,17 @@
     input.setAttribute('aria-label', input.placeholder);
   }
 
-  // previews: pointing at (or focusing, with the keyboard) a link to
-  // something on the page, a \ref, \eqref, \cite, footnote mark or section,
-  // shows a copy of it in a card; on a touch screen the first tap shows it
-  // and the second follows the link
+  // preview cards: pointing at a link to something on the page (a \ref,
+  // \eqref, \cite, footnote mark, or section), or focusing the link with the
+  // keyboard, shows a copy of the target in a card. On a touch screen, the
+  // first tap shows the card, and the second follows the link.
   const here = a => a.pathname === location.pathname && a.hash && target(a);
   const previewable = 'a[href*="#"]:not(.tex8web-permalink, #tex8web-toc a, .footnotetext .footnote-mark a, .tex8web-preview a)';
   const blank = el => !el.textContent.trim() && !el.querySelector('img, svg, mjx-container');
 
-  // what a link leads to: a theorem, box or table, an equation (tex4ht's
-  // anchor is just before it), a reference (its label and entry), a figure,
-  // a footnote, or a heading and what follows it
+  // a link's target: a theorem, box, or table, an equation (tex4ht's anchor
+  // is right before it), a reference (its label and entry), a figure, a
+  // footnote, or a heading and the element after it
   function previewOf(a) {
     let el = target(a);
     const next = el.nextElementSibling;
@@ -568,10 +569,10 @@
     return [el];
   }
 
-  // a copy of el for the card: without ids, which the page has already,
-  // but a box's, which its colors and frame hang on (the card comes last on
-  // the page, so the id still finds the box); and as a footnote in the
-  // text, not beside it
+  // a copy of el for the card, without ids, which the page already has,
+  // except a box's, which its colors and frame are styled by. The card is
+  // last on the page, so getElementById still finds the original box. A
+  // footnote is copied as in the text, not beside it.
   function copyOf(el) {
     const copy = el.cloneNode(true);
     if (!copy.matches('.tcolorbox')) copy.removeAttribute('id');
@@ -579,7 +580,8 @@
     copy.querySelectorAll('.tex8web-permalink').forEach(child => child.remove());
     copy.classList.remove('tex8web-sidenote');
     copy.style.top = '';
-    // (a picture's, which opens the viewer; the copy has no listeners)
+    // a picture's tabindex and role, for opening it: the copy has no
+    // listeners
     copy.querySelectorAll('[tabindex][role="button"]').forEach(child => {
       child.removeAttribute('tabindex');
       child.removeAttribute('role');
@@ -607,12 +609,12 @@
       card.replaceChildren(...previewOf(a).map(copyOf));
       card.style.left = card.style.top = '0';
       card.showPopover();
-      // (a copy keeps its original's fade, though the card may be wider)
+      // a copy has its original's fade marks, but the card may be wider
       fade([...card.querySelectorAll(scrolling)]);
       const link = a.getBoundingClientRect(), width = card.offsetWidth, height = card.offsetHeight;
       const below = link.bottom + 6 + height <= innerHeight || link.top - 6 - height < 0;
-      // (from the link, but over the text: past the body's right edge by 16px
-      // at most)
+      // from the link, but over the text: at most 16px past the body's right
+      // edge
       const text = document.body.getBoundingClientRect();
       const left = Math.max(text.left, Math.min(link.left, text.right + 16 - width));
       card.style.left = `${Math.max(8, Math.min(left, root.clientWidth - width - 8))}px`;
@@ -642,10 +644,10 @@
       if (a && a.matches(':focus-visible')) show(a);
       else if (!card.contains(event.target)) hide();
     });
-    // a touch beside the card closes it at once, as Safari on iOS sends no
-    // click for a tap on plain text; and that tap's click (caught on its way
-    // down to what was tapped, and not a later one from the keyboard, whose
-    // detail, the count of clicks, is 0) does nothing else
+    // A touch beside the card closes it at once, since Safari on iOS sends
+    // no click for a tap on plain text. That tap's click, caught in the
+    // capture phase, does nothing else. A later click from the keyboard is
+    // not blocked: its detail, the click count, is 0.
     let touch = false, closing = null;
     document.addEventListener('pointerdown', event => {
       touch = event.pointerType === 'touch';
@@ -666,23 +668,23 @@
       }
     }, true);
     document.addEventListener('keydown', event => { if (event.key === 'Escape') hide(); });
-    // (but not for the scroll that brings a focused link into view)
+    // but not on the scroll that brings a focused link into view
     addEventListener('scroll', () => { if (shown !== document.activeElement) hide(); }, { passive: true });
   }
 
-  // pictures, in a figure, in display math, or over twice as tall as the
-  // text (not an icon in a line), and not a link: clicking one shows it as
-  // large as the screen allows (css/tex8web.css), over the page. There the
-  // wheel or a pinch zooms in or out around the pointer, from half to 4
-  // times (room to overshoot, zooming out), a double-click in or back to
-  // where it started, and dragging moves it; clicking beside it, or
-  // Escape, closes it
+  // opened pictures: a picture in a figure or display math, or over twice as
+  // tall as the text (not an icon in a line), and not a link, opens on a
+  // click over the page, as large as the screen allows (css/tex8web.css).
+  // There the wheel or a pinch zooms around the pointer, from half to 4
+  // times (half leaves room to overshoot when zooming out). A double-click
+  // zooms in or back to the start, and dragging moves the picture. A click
+  // beside it, or Escape, closes it.
   function viewer() {
     if (!HTMLElement.prototype.showPopover) return;
-    // a popover covering the page, rather than a modal <dialog>, which
-    // makes the rest of the page inert and so restyles all of it as it
-    // opens and closes (20ms on a long page in Chrome on a laptop); it
-    // takes the pointer, as the darkened page around the picture
+    // a popover covering the page, instead of a modal <dialog>: a modal
+    // makes the rest of the page inert, which restyles all of it on opening
+    // and closing (20ms on a long page in Chrome on a laptop). The cover,
+    // the darkened page around the picture, takes the pointer.
     const cover = document.createElement('div');
     cover.className = 'tex8web-viewer';
     cover.popover = 'auto';
@@ -695,12 +697,12 @@
     picture.draggable = false;
     plate.append(picture);
     cover.append(plate);
-    // the plate (the picture's background, fitted to the screen at zoom 1) at
-    // x, y, zoom times as large: laid out at `laid` times, and the rest a
-    // transform, which the GPU draws smoothly, until the zoom has stopped
-    // for a moment and the layout catches up (an SVG drawn sharp again).
-    // It opens at zoom `home`: 1, but a picture of pixels at its own size,
-    // if the screen has room for it, rather than blurred, larger
+    // The plate (the picture's background, fitted to the screen at zoom 1)
+    // is at x, y, zoom times as large. It is laid out at `laid` times, with
+    // the rest a transform, drawn smoothly by the GPU, until the zoom stops
+    // for a moment and the plate is laid out again (an SVG drawn sharp
+    // again). It opens at zoom `home`: 1, or a bitmap's natural size if the
+    // screen has room for it, instead of larger and blurred.
     let zoom = 1, laid = 1, home = 1, x = 0, y = 0, fitted, natural, seen, timer;
     const show = () => { plate.style.transform = `translate(${x}px, ${y}px) scale(${zoom / laid})`; };
     const lay = () => {
@@ -709,8 +711,8 @@
       plate.style.setProperty('--tex8web-zoom', laid);
       show();
     };
-    // (a double-click's zoom stopped where it has got to, for what moves
-    // it next to start from there)
+    // stops a double-click's eased zoom where it has got to, so the next
+    // move starts from there
     const settle = () => {
       if (!plate.classList.contains('tex8web-easing')) return;
       const now = new DOMMatrix(getComputedStyle(plate).transform);
@@ -718,14 +720,14 @@
       [x, y, zoom] = [now.e, now.f, now.a * laid];
       show();
     };
-    // (at a scale of 1, the picture laid out as shown)
+    // fitted: the plate's size at zoom 1
     const measure = () => {
       const box = plate.getBoundingClientRect();
       fitted = [box.width / laid, box.height / laid];
       home = natural ? Math.min(1, natural / (picture.getBoundingClientRect().width / laid)) : 1;
     };
-    // (anywhere, as long as the picture covers the middle of the screen:
-    // zooming in on a point of the picture never moves it from there)
+    // anywhere, as long as the picture covers the middle of the screen, so
+    // zooming in on a point of the picture never moves it from there
     const place = (left, top) => {
       x = Math.min(innerWidth / 2, Math.max(innerWidth / 2 - fitted[0] * zoom, left));
       y = Math.min(innerHeight / 2, Math.max(innerHeight / 2 - fitted[1] * zoom, top));
@@ -740,22 +742,23 @@
       clearTimeout(timer);
       timer = setTimeout(lay, ease ? faded() : 150);
     };
-    // around the point px, py, which stays where it is
+    // around the point px, py, which stays in place
     const zoomTo = (to, px, py, ease) => {
       settle();
       to = Math.min(4, Math.max(home / 2, to));
       go(to, px - (px - x) * to / zoom, py - (py - y) * to / zoom, ease);
     };
     const center = ease => go(home, (innerWidth - fitted[0] * home) / 2, (innerHeight - fitted[1] * home) / 2, ease);
-    // (closing gives the focus back to the picture, as the popover does; but
-    // after a click it would put a focus ring on it, and Space, which pages
-    // down, would open it again: so only after the keyboard opened it)
+    // Closing gives the focus back to the picture, as a popover does. After
+    // a click, the picture would then show a focus ring, and Space, which
+    // pages down, would open it again. So the focus stays only when the
+    // keyboard opened the viewer.
     let clicked;
     const open = (img, byKey) => {
       const box = img.getBoundingClientRect();
       clicked = byKey ? null : img;
-      // (the same src, which tex8web-page.tex's rule for TikZ pictures in
-      // dark mode picks out)
+      // the same src, which tex8web-page.tex's rule for TikZ pictures in
+      // dark mode selects
       picture.setAttribute('src', img.getAttribute('src'));
       picture.alt = img.alt;
       plate.style.setProperty('--tex8web-ratio', box.width / box.height);
@@ -768,9 +771,9 @@
       center();
       lay();
     };
-    // (once each picture has its size; and a listener on each, as Safari on
-    // iOS may not pass a tap on an img, which isn't clickable, up to the
-    // document)
+    // marked once each picture has its size, with a listener on each: Safari
+    // on iOS may not pass a tap on an img, which is not clickable, up to the
+    // document
     const mark = img => {
       if (img.closest('a') || !(img.closest('figure, .mathjax-block')
         || img.offsetHeight > 2 * parseFloat(getComputedStyle(img).fontSize))) return;
@@ -779,7 +782,7 @@
       img.setAttribute('role', 'button');
       img.addEventListener('click', () => open(img));
       img.addEventListener('keydown', event => {
-        // (not Space after a click, which pages down, or with a modifier)
+        // not Space after a click, which pages down, nor with a modifier
         if ((event.key !== 'Enter' && event.key !== ' ') || event.shiftKey || event.ctrlKey
           || event.altKey || event.metaKey || !img.matches(':focus-visible')) return;
         event.preventDefault();
@@ -791,16 +794,17 @@
       else img.addEventListener('load', () => mark(img), { once: true });
     }
     document.body.append(cover);
-    // (the page behind isn't inert, as a modal dialog's is: the keyboard
-    // stays off it; and Escape fades it out too, rather than the popover's
-    // own closing, which the keydown's default action is)
+    // The page behind is not inert, as it is behind a modal dialog, so Tab
+    // is blocked to keep the keyboard off it. Escape fades the viewer out
+    // instead of the popover's closing, which is the keydown's default
+    // action.
     document.addEventListener('keydown', event => {
       if (!cover.matches(':popover-open') || !['Tab', 'Escape'].includes(event.key)) return;
       event.preventDefault();
       if (event.key === 'Escape') close();
     });
-    // (turning a phone, say: as far into the zoom from where it started,
-    // with the point at the middle of the screen still there)
+    // on a resize, turning a phone for example: the same zoom relative to
+    // home, with the same point at the middle of the screen
     addEventListener('resize', () => {
       if (!cover.matches(':popover-open')) return;
       settle();
@@ -814,14 +818,14 @@
     });
     cover.addEventListener('wheel', event => {
       event.preventDefault();
-      // (a pinch on a trackpad comes as a wheel with ctrl, in smaller steps;
-      // but a mouse's wheel with ctrl, no more than 100px a notch)
+      // A trackpad pinch comes as a wheel event with ctrl, in smaller steps.
+      // A mouse wheel with ctrl is held to 100px a notch.
       const pixels = event.deltaY * [1, 16, innerHeight][event.deltaMode];
       const step = Math.max(-100, Math.min(100, pixels)) * (event.ctrlKey ? 0.01 : 0.002);
       zoomTo(zoom * Math.exp(-step), event.clientX, event.clientY);
     }, { passive: false });
-    // Safari's pinch on a trackpad, which isn't a wheel (but not its pinch
-    // on a touch screen, which the pointers below follow)
+    // Safari's pinch on a trackpad, which is not a wheel event. Its pinch on
+    // a touch screen is handled by the pointer events below.
     const pointers = new Map();
     let pinched;
     cover.addEventListener('gesturestart', event => {
@@ -832,8 +836,8 @@
       event.preventDefault();
       if (!pointers.size) zoomTo(pinched * event.scale, event.clientX, event.clientY);
     });
-    // dragging moves the picture; two fingers also zoom, as they spread
-    // or close. A click ending a drag isn't one
+    // Dragging moves the picture. Two fingers also zoom as they spread or
+    // close. The click at the end of a drag is ignored.
     let dragged = false, touch = false, tapped = -Infinity, from, last;
     const both = () => {
       const [a, b = a] = pointers.values();
@@ -841,8 +845,8 @@
     };
     cover.addEventListener('pointerdown', event => {
       if (event.button !== 0) return;
-      // (a first finger starts afresh: one Safari on iOS lost track of, a
-      // press held for its menu, isn't still down)
+      // A first finger starts afresh: a pointer Safari on iOS lost track of,
+      // or a press held for its menu, is not still down.
       if (event.isPrimary) {
         pointers.clear();
         dragged = false;
@@ -864,21 +868,21 @@
       place(x + now.x - last.x, y + now.y - last.y);
       last = now;
     });
-    // (on pointerup or pointercancel, or the viewer closing mid-drag)
+    // on pointerup, pointercancel, or the viewer closing mid-drag
     cover.addEventListener('lostpointercapture', event => {
       pointers.delete(event.pointerId);
       if (pointers.size) last = both();
       else cover.classList.remove('tex8web-dragging');
     });
-    // (by where it is, not its target: the cover, holding the pointer,
-    // gets the click)
+    // by position, not target: the cover holds the pointer capture, so the
+    // click goes to the cover
     const on = event => {
       const box = picture.getBoundingClientRect();
       return event.clientX >= box.left && event.clientX <= box.right
         && event.clientY >= box.top && event.clientY <= box.bottom;
     };
-    // (as long as the fade out takes, which is none if the reader would
-    // rather not see one)
+    // waits as long as the fade out takes, which is 0 if the reader prefers
+    // reduced motion
     const close = () => {
       if (cover.classList.contains('tex8web-closing')) return;
       cover.classList.add('tex8web-closing');
@@ -893,8 +897,8 @@
       if (zoom > home) center(true);
       else zoomTo(2.5 * home, event.clientX, event.clientY, true);
     };
-    // (a double tap by its two clicks: Safari on iOS sends no dblclick
-    // where touch-action is none)
+    // a double tap found from its two clicks: Safari on iOS sends no
+    // dblclick where touch-action is none
     cover.addEventListener('click', event => {
       if (dragged) return;
       if (!on(event)) close();
@@ -906,9 +910,9 @@
     cover.addEventListener('dblclick', event => { if (!touch) twice(event); });
   }
 
-  // (each on its own: tex8web-head.js has already marked the page as
-  // scripted, and a feature that failed would leave the others' controls
-  // dead and the contents collapsed)
+  // each feature separately: tex8web-head.js has already marked the page as
+  // scripted, so one failed feature would leave the other features'
+  // controls dead and the table of contents collapsed
   for (const feature of [up, theme, column, bar, smooth, sidenotes, edges, contents, filter, previews, viewer]) {
     try {
       feature();

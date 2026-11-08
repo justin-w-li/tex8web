@@ -1,9 +1,8 @@
-% A test for tex8web: table colors as the PDF has them. xcolor's
-% \rowcolors (the table option) gives alternating rows a background;
-% colortbl loaded before xcolor, as some documents do; \cellcolor,
-% \rowcolor (also in HTML model) and \columncolor, and a \multicolumn
-% in a colored row; \rowcolors' commands for each row ([\hline]) left out,
-% and a \cellcolor and a \rowcolor over its rows.
+% Table colors as in the PDF: alternating rows from \rowcolors (xcolor's
+% table option), with colortbl loaded before xcolor, as some documents do;
+% \cellcolor, \rowcolor (also in the HTML model), and \columncolor; a
+% \multicolumn in a colored row; and \rowcolors with its command for each
+% row ([\hline]) left out, under a \cellcolor and a \rowcolor.
 \documentclass{article}
 \usepackage{colortbl}
 \usepackage[table]{xcolor}

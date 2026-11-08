@@ -1,14 +1,15 @@
-% tex8web: what tex8web needs to know of a document's preamble that tex4ht
-% throws away, and \web@needs for every module. tex8web.mk4 has LaTeX load
-% this with tex4ht, before the preamble; the rest of tex8web comes after it
+% tex8web: records of the preamble settings that tex4ht discards, and
+% \web@needs for every module. tex8web.mk4 loads this package with tex4ht,
+% before the preamble. The rest of tex8web is read after \begin{document}
 % (tex8web-core.tex).
 \ProvidesPackage{tex8web-hooks}
 
-% titlesec: tex4ht makes \titleformat do nothing, and draws headings its
-% own way; keep each heading's format (its font and alignment), shape,
-% label and the space after the label (which display and frame put
-% elsewhere), as \web@titlefont@<name>, \web@titleshape@<name>,
-% \web@titlelabel@<name> and \web@titlesep@<name>, for tex8web-page.tex
+% titlesec: tex4ht makes \titleformat do nothing and draws headings its own
+% way. Each heading's format (font and alignment), shape, label, and space
+% after the label are kept for tex8web-page.tex and tex8web-text.tex, as
+% \web@titlefont@<name>, \web@titleshape@<name>, \web@titlelabel@<name>,
+% and \web@titlesep@<name>. The shapes display and frame put the space
+% elsewhere, so it is not kept for them.
 \AddToHook{package/titlesec/after}{%
     \let\web@titleformat\titleformat
     \def\titleformat{\@ifstar\web@titleformat@s\web@titleformat@i}%
@@ -27,34 +28,35 @@
         \in@{,#2,}{,display,frame,}\ifin@\else\web@titlenote{sep}{#1}{#5}\fi}%
     \web@titleformat{#1}[#2]{#3}{#4}{#5}%
 }
-% (a heading named by a command, \section; titlesec's keys, name=\section,
-% aren't followed)
+% only for a heading named by one command, \section. titlesec's key form,
+% name=\section, is not handled.
 \def\web@titlenote#1#2#3{%
     \if\relax\detokenize\expandafter{\@gobble#2}\relax
         \expandafter\gdef\csname web@title#1@\expandafter\@gobble\string#2\endcsname{#3}%
     \fi
 }
-% #2 unless #1 holds a #, the title, which only titlesec's own heading code
-% (option explicit) fills in
+% #2 unless #1 holds a #. A # stands for the title, which only titlesec's
+% heading code fills in (option explicit).
 \ExplSyntaxOn
 \cs_new:Npn \web@unlesshash #1#2 { \str_if_in:nnF {#1} { \c_hash_str } {#2} }
 \ExplSyntaxOff
 
-% tcolorbox: the options of a box that leave nothing to read when tex4ht
-% draws it (tex8web-boxes.tex), noted as they're set, from the preamble on:
-% a hidden frame or interior, the space before and after, and where the
-% title goes. A box inside another starts again from tcolorbox's defaults
-% (reset), and so do these. (Once set, frame hidden and interior hidden
-% stay for the box: an option after them can't clear them)
+% tcolorbox: the options whose effect cannot be read from a box as tex4ht
+% draws it (tex8web-boxes.tex), recorded as they are set, from the preamble
+% on: a hidden frame or interior, the space before and after, and the
+% title's place. A box inside another starts again from tcolorbox's
+% defaults (\tcb@reset), and so do these records. Once set, frame hidden
+% and interior hidden stay for the box: a later option cannot clear them.
 \def\web@tcb@reset{%
     \let\web@tcb@framehidden\relax
     \let\web@tcb@interiorhidden\relax
     \let\web@tcb@before\relax
     \let\web@tcb@after\relax
-    \let\web@tcb@boxed\relax % a boxed title's place: left, center or right
+    \let\web@tcb@boxed\relax % a boxed title's place: left, center, or right
     \let\web@tcb@inline\relax % the title starts the text
 }
-% #2 when option #1 is set, once tcolorbox (or a library it loads) has it
+% runs #2 when option #1 is set. Each option is hooked once, as soon as
+% tcolorbox or one of its libraries defines it.
 \def\web@tcb@note#1#2{%
     \pgfkeysifdefined{/tcb/#1/.@cmd}{\pgfkeysifdefined{/tcb/#1/web@noted}{}{%
         \pgfkeyssetvalue{/tcb/#1/web@noted}{}%
@@ -85,55 +87,58 @@
 }
 \AddToHook{package/tcolorbox/after}{\web@tcb@install}
 
-% imakeidx: under tex4ht it runs no index program (imakeidx-hooks.4ht passes
-% it noautomatic), but calls \imki@finalmessage for each index \printindex
-% prints, with the index's program and options set; note the command it
-% would run in the .aux, as a comment, for index.lua. (After the package's
-% own option quiet, which makes it do nothing)
+% imakeidx: under tex4ht, imakeidx runs no index program (imakeidx-hooks.4ht
+% passes it noautomatic). It still calls \imki@finalmessage for each index
+% that \printindex prints, with the program and options set. The command
+% it would run is written to the .aux as a comment, for index.lua. The hook
+% runs after the option quiet, which sets \imki@finalmessage to \@gobble.
 \AddToHook{package/imakeidx/after}{%
     \web@needs{imki@finalmessage}%
     \def\imki@finalmessage#1{\immediate\write\@auxout{\@percentchar\space
         tex8web index: \imki@program\imki@options#1.idx}}%
 }
 
-% hyperref's hidelinks, whose links tex8web-page.tex leaves unmarked: as a
-% package option, or later in \hypersetup (kvoptions' \KV@Hyp@hidelinks).
-% Its colors and \@pdfborder can't tell: they are the same without it
+% hyperref's hidelinks, under which tex8web-page.tex leaves links unmarked:
+% as a package option, or later in \hypersetup (kvoptions'
+% \KV@Hyp@hidelinks). The link colors and \@pdfborder cannot show it,
+% since they are the same without it.
 \AddToHook{package/hyperref/after}{%
     \@ifpackagewith{hyperref}{hidelinks}{\gdef\web@hidelinks{}}{}%
     \expandafter\let\expandafter\web@hidelinks@kv\csname KV@Hyp@hidelinks\endcsname
     \expandafter\def\csname KV@Hyp@hidelinks\endcsname{\gdef\web@hidelinks{}\web@hidelinks@kv}%
 }
 
-% \@title before any \title (the kernel's error), for tex8web-text.tex to
-% tell whether the document has one
+% \@title before any \title, which is the kernel's error. tex8web-text.tex
+% compares \@title with it to tell whether the document has a title.
 \let\web@notitle\@title
 
-% \web@needs{name}: a warning, which npm test fails on, unless \<name>,
-% which tex8web patches or calls, is defined: a new tex4ht or package that
-% drops it then shows in the tests, not as a page quietly wrong. (A name
-% rather than a command, for tex4ht's, such as :tableofcontents)
+% \web@needs{name}: a warning unless \<name>, which tex8web patches or
+% calls, is defined. npm test fails on the warning, so a tex4ht or package
+% release that drops the command shows in the tests instead of as a wrong
+% page. The argument is a name so that tex4ht's commands, such as
+% :tableofcontents, can be given.
 \def\web@needs#1{\ifcsname#1\endcsname\else\web@outdated{\@backslashchar#1}\fi}
 \def\web@outdated#1{\PackageWarningNoLine{tex8web}{#1 has changed or gone,
     and tex8web needs updating for it}}
 
 % xcolor: the names of the colors the document defines, once each, for
 % tex8web-page.tex to give MathJax their values. \definecolor, \colorlet,
-% \providecolor and the color sets all log the name, expanded, with
-% \XC@logdef. The options dvipsnames, svgnames and x11names define their
-% colors while xcolor loads, before its hook below. So the wrapper also goes
-% in as their files are read. (The color package's dvips driver reads
-% dvipsnam.def too, before xcolor defines \XC@logdef)
+% \providecolor, and the color sets all log the name, expanded, with
+% \XC@logdef. The options dvipsnames, svgnames, and x11names define their
+% colors while xcolor loads, before its after hook, so the wrapper is also
+% installed as their files are read. The test for \XC@logdef is for the
+% color package's dvips driver, which reads dvipsnam.def before xcolor
+% defines \XC@logdef.
 % \g__web_xcolor_bool: whether xcolor came before colortbl, for colortbl's
-% cells. colortbl doesn't load xcolor, but colortbl.4ht does. It loads it
-% after the color package has made the document's colors, which xcolor
-% then can't read.
+% cells. colortbl does not load xcolor, but colortbl.4ht does, after the
+% color package has made the document's colors, which xcolor then cannot
+% read.
 \ExplSyntaxOn
 \clist_new:N \g__web_colors_clist
 \bool_new:N \g__web_xcolor_bool
-% (xcolor's table option requires colortbl again, when xcolor is done, which
-% makes tex4ht input colortbl-hooks.4ht a second time, and its \newcommand
-% fail: colortbl-hooks.4ht is only for the first time)
+% xcolor's table option requires colortbl again once xcolor is done. tex4ht
+% would then input colortbl-hooks.4ht a second time, and its \newcommand
+% would fail, so the hook is removed when colortbl is already loaded.
 \AddToHook { package/xcolor/before }
     {
         \@ifpackageloaded { colortbl }

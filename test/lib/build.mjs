@@ -1,5 +1,6 @@
-// Building the test documents and examples with make4ht, for the tests and
-// for npm run examples.
+// Builds of the test documents and examples with make4ht and latexmk, for
+// the tests, npm run examples, and npm run regress. Reuse of builds is
+// described in CONTRIBUTING.md, "Reused builds".
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -13,20 +14,19 @@ export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // the problems a document is known to have (test/expected.json)
 export const expected = JSON.parse(readFileSync(join(root, 'test/expected.json'), 'utf8'));
 
-// where a test (npm test's, or test:visual's in build/visual) builds a
-// document
+// a document's build directory, build/<base>/<name>: base test for npm
+// test, visual for visual.mjs
 export const testDir = (doc, base = 'test') => join(root, 'build', base, doc.name.replace(/[^A-Za-z0-9]/g, '_'));
 
-// the date TeX gives \today and \year in the test documents, so that a
-// build kept from another day is still the page a build today would give
-// (web2c's SOURCE_DATE_EPOCH, with FORCE_SOURCE_DATE). Not the examples',
-// which are published beside their PDF
+// the date of \today and \year in the test fixtures, January 1, 2000
+// (web2c's SOURCE_DATE_EPOCH, with FORCE_SOURCE_DATE), so that a build
+// reused from another day matches a build made today. The examples keep the
+// real date, as they are published beside their PDF
 const fixedDate = { SOURCE_DATE_EPOCH: '946684800', FORCE_SOURCE_DATE: '1' };
 
-// test/fixtures/*.tex and examples/*/main.tex, each with its config: the
-// document's own <name>.cfg if it has one, otherwise tex8web.cfg. A
-// fixture has the fixed date. An example links its PDF, which it is published with, and the
-// site's index above it
+// test/fixtures/*.tex and examples/*/main.tex, each with the <name>.cfg
+// beside it, else tex8web.cfg. A fixture has the fixed date. An example
+// links its PDF, and the index of the site as its up link
 export function documents() {
   const docs = [];
   const fixtures = join(root, 'test/fixtures');
@@ -58,27 +58,28 @@ export function select(names) {
   return names.length ? all.filter(doc => names.includes(doc.name)) : all;
 }
 
-// the keys of tables of per-document checks that match no document: a table
-// keyed by a document that isn't there checks nothing. A key may have
-// a parenthesis after the name, as run.mjs's second build of a document
+// the keys of per-document check tables that match no document, and so
+// check nothing. A key may end in a parenthesis, as for run.mjs's second
+// build of a document
 export function strayKeys(...tables) {
   const names = new Set(documents().map(doc => doc.name));
   return tables.flatMap(table => Object.keys(table)).filter(key => !names.has(key.replace(/ \(.*\)$/, '')));
 }
 
-// the documents largest first, so that the longest build doesn't hold up
-// the end
+// the documents largest first, so that the longest build does not start
+// last
 export const largestFirst = docs => docs.map(doc => [doc, statSync(join(doc.dir, doc.tex)).size])
   .sort((a, b) => b[1] - a[1]).map(([doc]) => doc);
 
-// builds at once from one tool: a build runs mostly on one core, and four
-// leave the rest of the machine to other work (a laptop's performance cores
-// are often four). The slots limit all the tools together
+// builds at once from one tool: a build runs mostly on one core, and at
+// most four leave the rest of the machine to other work (a laptop often has
+// four performance cores). The slots limit all tools together
 export const workers = Math.min(4, Math.max(2, availableParallelism() >> 1));
 
-// commands running, each in a process group of its own (so that one that
-// hangs is killed with what it started: LaTeX, Node, dvisvgm), which Ctrl-C
-// doesn't reach: killed as this process ends, unless it is killed outright
+// the running commands, each in a separate process group, so that a hung
+// command is killed with what it started (LaTeX, Node, dvisvgm). Ctrl-C does
+// not reach these groups, so they are killed when this process exits, unless
+// this process is killed outright
 const running = new Set();
 const kill = pid => { try { process.kill(-pid, 'SIGKILL'); } catch {} };
 process.on('exit', () => running.forEach(kill));
@@ -88,21 +89,21 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => p
 // what a slotted command prints when it holds its slot (see execute)
 const held = 'tex8web-slot-held';
 
-// runs a command, killing its process group if it prints nothing for idle
-// seconds, or runs for total: it has hung. A loaded machine slows a build
-// without silencing it for long, so the idle limit is the tight one. The
-// total limit stops one that loops while printing. With slot, the command
-// holds a build slot (slots.mjs) from when it starts, and waiting for the
-// slot isn't timed. TEX8WEB_SLOTS_HELD tells it so: its takeSlot() has that
-// slot without waiting for another. Resolves to { code, log }, the log
-// being stdout and stderr in order
+// Runs a command, and kills its process group as hung if the command prints
+// nothing for idle seconds or runs for total. A loaded machine slows
+// a build without silencing it for long, so the idle limit is the tight
+// one. The total limit stops a command that loops while printing. With
+// slot, the command holds a build slot (slots.mjs) from its start, and the
+// wait for the slot is not timed. TEX8WEB_SLOTS_HELD tells the command that
+// it holds the slot, so its first takeSlot() does not wait for another.
+// Resolves to { code, log }, the log being stdout and stderr in order
 export const run = (command, args, { slot = false, ...options } = {}) => slot && !noLockf()
   ? inSlots(slotFile => execute(command, args, { ...options, env: { ...options.env ?? process.env, TEX8WEB_SLOTS_HELD: '1' }, slotFile }))
   : execute(command, args, options);
 
-// Runs the command under a watchdog that ends it, with its process group,
-// when it has run for the total limit and two seconds more, or when this
-// process is gone: a build with no one to time it is not left holding a slot
+// a watchdog that runs the command and kills its process group after the
+// total limit plus two seconds, or when this process is gone, so that a
+// build with no one timing it does not keep holding a slot
 const watchdog = `
   use POSIX ':sys_wait_h';
   my $end = time + shift;
@@ -115,14 +116,14 @@ const watchdog = `
   }
   exit($? & 127 ? 128 + ($? & 127) : $? >> 8);`;
 
-// With slotFile, runs the command as a child of the watchdog and lockf,
-// which holds the lock on that file until the command has ended. The timers
-// start when the command's first line, held, says it has the lock. Resolves
-// to null if the lock is busy (75, EX_TEMPFAIL)
+// With slotFile, runs the command under the watchdog and lockf, which holds
+// the lock on slotFile until the command ends. The timers start at the
+// first line, held, printed once the lock is taken. Resolves to null if the
+// lock is busy (lockf exits with 75, EX_TEMPFAIL)
 function execute(command, args, { idle = 180, total = 900, slotFile, ...options }) {
   return new Promise(done => {
-    // (its stderr into its stdout, so that the log has the two in the order
-    // they reached it, not the order two pipes were read in)
+    // (stderr into stdout, so that the log keeps the order in which the
+    // command wrote them, which reading two pipes would lose)
     const child = slotFile
       ? spawn('perl', ['-e', watchdog, total + 2, 'lockf', '-k', '-t', '0', slotFile, 'sh', '-c', `echo ${held}; exec "$@" 2>&1`,
         'sh', command, ...args], { ...options, detached: true })
@@ -169,9 +170,9 @@ function execute(command, args, { idle = 180, total = 900, slotFile, ...options 
   });
 }
 
-// a hash of the files under the paths (relative to base): their names and
-// contents, leaving out dotfiles and build directories, which hold outputs
-// (with outputs, build directories too)
+// a hash of the names, sizes, and contents of the files under paths
+// (relative to base), without dotfiles, and without build directories,
+// which hold outputs, unless outputs is set
 export function hashFiles(base, paths, { outputs = false } = {}) {
   const hash = createHash('sha256');
   const add = file => hash.update(`${relative(base, file)}\0${statSync(file).size}\0`).update(readFileSync(file));
@@ -183,23 +184,23 @@ export function hashFiles(base, paths, { outputs = false } = {}) {
   return hash.digest('hex');
 }
 
-// what bin/tex8web reads of tex8web's own
+// the tex8web files a build reads
 const sources = ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'package.json', 'package-lock.json'];
 export const sourceHash = base => hashFiles(base, sources);
-// what LaTeX's runs read of it, with the Lua that runs between them, which
-// makes the bibliography and the index LaTeX reads (tex8web.mk4)
+// the tex8web files the LaTeX runs read, with the Lua run between them,
+// which makes the bibliography and index for LaTeX (tex8web.mk4)
 export const latexSources = ['bin', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'lua/tex8web/bibliography.lua',
   'lua/tex8web/files.lua', 'lua/tex8web/index.lua'];
 export const latexSourceHash = base => hashFiles(base, latexSources);
 
-// what a build is made from besides the document, as a hash: tex8web's
-// sources, and the tools it uses, which change its output when they change:
-// MathJax and subset-font, if they are there to prerender with
-// (lua/tex8web/prerender.lua), TeX Live, and make4ht and tex4ht, which
-// change within a TeX Live year (the version, when tex4ht.sty was
-// installed, and when tlmgr last changed TeX Live: it keeps each file's own
-// date). LaTeX's runs have their own, narrower stamp (latex): only the
-// sources they read, and TeX's tools
+// the inputs of a build other than the document: tex8web's sources, the
+// versions of MathJax and subset-font if installed for prerendering
+// (lua/tex8web/prerender.lua), and TeX Live. make4ht and tex4ht change
+// within a TeX Live year, so the TeX and make4ht versions, the date of
+// tex4ht.sty, and the date of texlive.tlpdb, which tlmgr changes on every
+// update, are included: tlmgr keeps each installed file's original date.
+// The stamp of the LaTeX runs (latex) is narrower: only latexSources and
+// the TeX tools
 let toolchain;
 function tools() {
   if (toolchain) return toolchain;
@@ -216,16 +217,16 @@ function tools() {
     latex: JSON.stringify([latexSourceHash(root), ...tex]) };
 }
 
-// the whole stamp of a build (page): those, the document's directory and
-// config (which may be elsewhere), the command and the environment
-// variables the build reads, and the PDF the page links: a page built
-// before it was there lacks the link. The files themselves, not the commit,
-// so that an edit not yet committed, or a file git doesn't know, is part of
-// it. And the stamp of its LaTeX part (latex), with LaTeX's tools and the
-// day, which \today gives, unless the date is fixed
+// the stamps of a build. page: the tools above, the files in the document's
+// directory, the config (which may be elsewhere), the arguments, the
+// environment variables the build reads, and the size and time of the
+// linked PDF, as a page built before the PDF existed lacks the link. The
+// files are hashed, so uncommitted edits and files unknown to git count.
+// latex: the LaTeX tools, the same document inputs, and the day, for
+// \today, unless the date is fixed
 function stamps(doc, args, env, pdf) {
   const all = { ...process.env, ...env };
-  // (the slots and the speech kept from the last build change no page)
+  // (TEX8WEB_SLOTS* and TEX8WEB_SPEECH_CACHE change no page)
   const vars = Object.entries(all)
     .filter(([name]) => /^(TEX8WEB_(?!SLOTS|SPEECH_CACHE)|TEXINPUTS$|TEXMF|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).sort();
   const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
@@ -234,22 +235,21 @@ function stamps(doc, args, env, pdf) {
   return { page: hash(tools().page), latex: hash(tools().latex, day) };
 }
 
-// runs bin/tex8web on a document, with the page in out and tex4ht's files
+// Runs bin/tex8web on a document, with the page in out and tex4ht's files
 // in aux (both absolute). make4ht reads the -B directory as a Lua pattern
-// when it copies to -d, so it is passed relative to the document, where
-// characters like - in the path above don't matter.
-// The build is kept with a stamp of what it was made from (out.stamp) and
-// its log (out.log), and a later build from the same stamp is not run: it
-// resolves to { code: 0, log, reused: true }. A build that failed leaves no
-// stamp. One at a time for each out, so that tools running at once share it.
-// What LaTeX left in aux is kept too (aux.latex), with the stamp of what
-// LaTeX read and its part of the log. A build from the same stamp starts
-// from it rather than running LaTeX (tex8web.mk4), and resolves with
+// when it copies to -d, so -B is passed relative to the document, where a
+// character such as - in the path above cannot break the pattern.
+// A successful build is saved with its stamp (out.stamp) and log (out.log).
+// A later build with the same stamp is not run, and resolves to
+// { code: 0, log, reused: true }. One build at a time for each out, so that
+// tools running at once share it. LaTeX's output is saved in aux.latex,
+// with its stamp and its part of the log. A build with the same LaTeX stamp
+// starts from it instead of running LaTeX (tex8web.mk4), and resolves with
 // latexReused: true.
-// The document's own variables (doc.env) come before env's.
-// A draft document (doc.draft) is built in make4ht's draft mode, which
-// needs tex4ht's files from the build before in aux. A document with
-// noLatexmk has its PDF built elsewhere: a missing one isn't built here
+// Variables in env replace those in doc.env. A draft document (doc.draft)
+// is built in make4ht's draft mode, which needs tex4ht's files from the
+// previous build in aux. For a document with noLatexmk, the PDF is built
+// elsewhere, and a missing PDF is not built here
 export async function build(doc, out, aux, env = {}) {
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
@@ -262,13 +262,13 @@ export async function build(doc, out, aux, env = {}) {
 
 async function buildHere(doc, out, aux, env) {
   env = { ...doc.env, ...env };
-  // the PDF the page links, if it isn't built yet: with -p, unless the
-  // config links it with \WebPDF, which keeps that tested
+  // the PDF the page links, which may not be built yet: passed with -p,
+  // unless the config links it with \WebPDF, so that \WebPDF stays tested
   const own = readFileSync(doc.cfg, 'utf8').match(/^\\WebPDF\{([^}]+)\}/m)?.[1];
   const pdf = own ?? doc.pdf;
-  // (-a info has make4ht print each step. By default it is silent from its
-  // first lines to its last: run()'s idle limit would time the whole build,
-  // and a build that stalls wouldn't say where)
+  // (-a info makes make4ht print each step. By default make4ht is silent
+  // between its first and last lines, so run()'s idle limit would time the
+  // whole build, and a stalled build would not show where)
   const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
     ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], ...doc.draft ? ['-m', 'draft'] : [],
     '-a', 'info', doc.tex];
@@ -286,10 +286,11 @@ async function buildHere(doc, out, aux, env) {
   if (pdf && !doc.noLatexmk && !existsSync(join(doc.dir, pdf))) {
     const { code, log } = await latexmk(doc, dirname(pdf));
     if (code !== 0) return { code, log: `latexmk exited with ${code}\n${log}` };
-    // (the PDF is there now, as the next build will find it)
+    // (the stamp again, with the new PDF, as the next build will see it)
     wanted = stampNow();
   }
-  // (not in draft mode, which runs LaTeX once on the last build's files)
+  // (never in draft mode, which runs LaTeX once on the previous build's
+  // files)
   const stage = { dir: `${aux}.latex`, stamp: `${aux}.latex.stamp`, log: `${aux}.latex.log` };
   const reuse = !doc.draft && existsSync(stage.stamp) && readFileSync(stage.stamp, 'utf8') === wanted.latex
     && existsSync(stage.dir) && existsSync(stage.log);
@@ -303,17 +304,17 @@ async function buildHere(doc, out, aux, env) {
   }
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
-  // (the speech is kept beside the document, so that the builds of a
-  // document outside tex8web share it with every checkout: it is keyed by
-  // the formulas, which another version of tex8web mostly keeps)
+  // (the speech cache is kept beside the document, so that every checkout
+  // shares it for a document outside tex8web. The cache is keyed by formula,
+  // and most formulas stay the same in another version of tex8web)
   mkdirSync(join(doc.dir, 'build'), { recursive: true });
   const speech = join(doc.dir, 'build', doc.tex.replace(/\.tex$/, '.speech.json'));
   const result = await run(join(root, 'bin/tex8web'), args, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
     TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? stage.dir : undefined,
     TEX8WEB_LATEX_SAVE: doc.draft || reuse ? undefined : stage.dir } });
   // (the marks around LaTeX's part of the log, which a reused run takes from
-  // the run that was kept. A run that stopped in LaTeX has only the first,
-  // and one that ran LaTeX in place of a kept run with no DVI has none)
+  // the saved run. A run that stopped in LaTeX has only the first mark. A
+  // run that ran LaTeX because the saved run had no DVI has neither)
   const parts = result.log.split(/^tex8web-latex-(?:begin|end)\n/m);
   const latexLog = parts.length === 3 ? parts[1] : undefined;
   if (reuse && latexLog !== undefined) parts[1] = readFileSync(stage.log, 'utf8');
@@ -329,9 +330,9 @@ async function buildHere(doc, out, aux, env) {
   return reuse && latexLog !== undefined ? { ...result, latexReused: true } : result;
 }
 
-// builds a document's PDF in outdir (relative to it) with latexmk: its exit
-// code and log. Once for each PDF, as both of a document's test builds may want it
-// at once
+// builds a document's PDF with latexmk in outdir (relative to the
+// document); resolves to { code, log }. Once for each PDF, as both test
+// builds of a document may need it at once
 const pdfs = new Map();
 export function latexmk(doc, outdir) {
   const key = join(doc.dir, outdir, doc.tex);

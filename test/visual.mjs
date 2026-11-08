@@ -1,10 +1,11 @@
-// npm run test:visual: each test document and example, prerendered, compared
-// screen by screen with the same page typeset by MathJax in the browser,
-// JavaScript off in both, and checked for alignments that line up across an
-// \intertext, math characters not clipped, footnotes in the text's color,
-// headings spaced as in LaTeX, what follows an \hfill at the right, the
-// contents' fonts, printing and a page that fits a phone; it needs Chrome
-// and the network, and saves the screens that differ in
+// npm run test:visual: each test document and example, prerendered and
+// typeset by MathJax in the browser, compared screen by screen with
+// JavaScript off. Both pages are checked for alignments that line up across
+// an \intertext, unclipped math characters, and footnotes in the text's
+// color. The prerendered page is also checked for a hidden theme button,
+// headings spaced as in LaTeX, the rest of each \hfill at the right, the
+// fonts of the table of contents, printing, and a width that fits a phone.
+// Needs Chrome and the network. Differing screens are saved in
 // build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -16,10 +17,10 @@ import { launch } from './lib/chrome.mjs';
 const only = process.argv.slice(2);
 const screen = 900;
 
-// the browser's typeset page as it stands, without its scripts and with
-// MathJax's styles (which it adds through the CSSOM) written out. The page
-// is a copy without tex8web-page.js, so that only MathJax and
-// tex8web-head.js, whose classes on <html> are taken off, have changed it
+// The page as typeset in the browser: no scripts, MathJax's styles (added
+// through the CSSOM) written out, and no classes from tex8web-head.js on
+// <html>. The page is a copy without tex8web-page.js, so only MathJax and
+// tex8web-head.js have changed it.
 const typesetPage = `(async () => {
   // (MathJax's script, from the network, may not have run yet)
   for (let t = 0; !MathJax.startup.promise; t += 100) {
@@ -45,13 +46,14 @@ const typesetPage = `(async () => {
   return '<!DOCTYPE html>' + html.outerHTML;
 })()`;
 
-// MathJax in the browser measuring as MathJax in Node does, which can't
-// measure but estimates: text in math that MathJax has no glyphs for (as
-// \text's in a \colorbox), the font's size, which lengths in pt convert by,
-// and the room for a formula. So the two pages compare exactly, checking
-// all prerendering does but measure. Run before the page's scripts, it
-// sets the measures once the adaptor exists, at pageReady (internal: the
-// lite adaptor's nodeSize, and its nodeBBox of nothing)
+// Makes MathJax in the browser measure as MathJax in Node, which cannot
+// measure and estimates instead: text in math without MathJax glyphs (as
+// \text in a \colorbox), the font size that converts pt lengths, and the
+// width available to a formula. The two pages then compare exactly, and
+// all of prerendering is checked except measuring. The script runs
+// before the page's scripts and replaces the measures at pageReady, once
+// the adaptor exists (internal: the lite adaptor's nodeSize, and its
+// nodeBBox of zeros).
 const nodeMeasures = `(() => {
   const cjk = new RegExp(["[","\\u1100-\\u115f","\\u2329\\u232a","\\u2e80-\\u303e","\\u3040-\\u3247","\\u3250-\\u4dbf",
     "\\u4e00-\\ua4c6","\\ua960-\\ua97c","\\uac00-\\ud7a3","\\uf900-\\ufaff","\\ufe10-\\ufe19","\\ufe30-\\ufe6b",
@@ -74,9 +76,9 @@ const nodeMeasures = `(() => {
   } });
 })()`;
 
-// the alignments split at an \intertext whose columns don't line up across
-// it: for each, the left edges of the columns before and after (the row
-// with the most cells, in px)
+// the alignments split by an \intertext whose columns do not line up
+// across it: for each, the left edges in px of the columns before and after,
+// in the row with the most cells
 const misaligned = `(() => {
   const edges = c => {
     const table = c.querySelector('mjx-mtable');
@@ -94,10 +96,10 @@ const misaligned = `(() => {
   return { checked: found.length, wrong: found.filter(f => f[1].join() !== f[2].join()) };
 })()`;
 
-// printed (css/tex8web.css), from a wide screen in dark mode (the system's
-// and the reader's): light mode's colors and pictures, and none of the
-// page's own controls; then on a sheet of paper (Letter inside Chrome's
-// margins), footnotes after their paragraph and nothing cut off on the right
+// Printing (css/tex8web.css) from a wide screen, with dark mode set by both
+// the system and the reader: light mode's colors and pictures, and no page
+// controls. Then at the width of Letter paper inside Chrome's margins:
+// footnotes after their paragraph, and nothing cut off on the right.
 async function printed(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, colorScheme: 'dark' }, async page => {
     await page.media('print');
@@ -128,8 +130,8 @@ async function printed(chrome, file) {
   });
 }
 
-// the page no wider than a phone's screen (a display too wide scrolls on
-// its own)
+// the page no wider than a phone screen (a display that is too wide
+// scrolls inside itself)
 async function fits(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 390, height: 844 }, async page => {
     const [width, room] = await page.evaluate('[document.documentElement.scrollWidth, document.documentElement.clientWidth]');
@@ -137,18 +139,18 @@ async function fits(chrome, file) {
   });
 }
 
-// footnotes beside the text not in the text's color: there should be none,
-// also in a block a \color colors (test-declared.tex)
+// footnotes beside the text not in the text's color, also in a block
+// colored by \color (test-declared.tex)
 const offColor = `(notes => ({ checked: notes.length,
   wrong: notes.filter(el => getComputedStyle(el).color !== getComputedStyle(document.body).color).length }))(
   [...document.querySelectorAll('.tex8web-sidenote')])`;
-// math characters with a clip (css/tex8web.css): there should be none
+// math characters with a clip-path (css/tex8web.css)
 const clipped = `[...document.querySelectorAll('mjx-c')].filter(c => getComputedStyle(c).clipPath !== 'none').length`;
 
-// just under a heading (css/tex8web.css): a theorem or list only the
-// heading's space below it, as LaTeX adds no \topsep there; a framed box
-// framed's space more, as far as titlesec's space below (in the text's
-// ems) adds to it
+// Space below a heading (css/tex8web.css). A theorem or list right after
+// a heading has only the heading's margin above it, as LaTeX adds no
+// \topsep there. A framed box has the larger of that margin and titlesec's
+// space below plus framed's separation, both in ems of the text.
 const spaced = `(() => {
   const em = parseFloat(getComputedStyle(document.body).fontSize);
   const length = name => (parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0) * em;
@@ -171,12 +173,12 @@ const spaced = `(() => {
   return { checked, wrong };
 })()`;
 
-// each \hfill's rest (text.hfill) where the PDF has it, outside the
-// contents: at the right of the block that holds it (its line, paragraph or
-// heading, or an algorithmicx line, a div of its own) and inside it; when
-// it takes more than a line, starting at the left. And its line's first
-// letter, picture or formula at the left, past the first line's indent.
-// What fails: [the rest's first words, what is wrong]
+// The rest of each \hfill outside the table of contents (text.hfill), as
+// in the PDF: at the right of its block, inside it, and starting at the
+// left when it takes more than a line. The block is the line, paragraph,
+// heading, or algorithmicx line (a separate div). The line's first letter,
+// picture, or formula must be at the left, past the first-line indent.
+// Failures: [the rest's first words, what is wrong]
 const filled = `(() => {
   const wrong = [];
   // a letter's box, and the text nodes an element shows outside its math
@@ -234,11 +236,11 @@ const filled = `(() => {
   return { checked: floats.length, wrong };
 })()`;
 
-// the table of contents' entries in their fonts (css/tex8web.css), each
-// level's as the browser computes it, with JavaScript off, when every
-// entry is shown: sizes and the indent as multiples of the contents' own,
-// and the weight of the entry's link and number, which html4.4ht's rules
-// for the link can override
+// The computed fonts of the table of contents entries (css/tex8web.css),
+// with JavaScript off and every entry shown. Sizes and indents are
+// multiples of the font size of the table of contents. The weights of each
+// entry's link and number are included, as html4.4ht's rules for the link
+// can override them.
 const entryFonts = `(() => {
   const base = parseFloat(getComputedStyle(document.querySelector('.tableofcontents')).fontSize);
   return Object.fromEntries([...document.querySelectorAll('.tableofcontents > span')].map(entry => {
@@ -252,11 +254,11 @@ const entryFonts = `(() => {
       numberWeight: number?.fontWeight }];
   }));
 })()`;
-// (with tocloft, test-tocloft's: the part's \Large\scshape; chapters'
-// \normalfont\itshape; sections' \itshape; subsections' \bfseries;
-// subsubsections' \large\sffamily, whose indent is still the 3.8em that TeX
-// measures; paragraphs' \ttfamily; subparagraphs' \slshape. Without it,
-// html4.4ht's: a part bold at 110%, a chapter bold)
+// test-tocloft sets the fonts with tocloft: the part \Large\scshape,
+// chapters \normalfont\itshape, sections \itshape, subsections \bfseries,
+// subsubsections \large\sffamily (whose indent is still the 3.8em that TeX
+// measures), paragraphs \ttfamily, and subparagraphs \slshape. test-report
+// has html4.4ht's fonts: a part bold at 110%, and a chapter bold.
 const roman = /Latin Modern Roman/, sans = /Latin Modern Sans/, mono = /Latin Modern Mono/;
 const tocFonts = {
   'test-tocloft': {
@@ -277,11 +279,11 @@ const tocFonts = {
   },
 };
 
-// (test-split and test-cutat are refused; npm test checks that)
+// test-split and test-cutat are refused by tex8web; npm test checks that
 const docs = select(only).filter(doc => !['test-split', 'test-cutat'].includes(doc.name));
-// each document built twice, prerendered (html) and for the browser
-// (fallback), a few builds at a time, the largest first. The prerendered build is
-// npm test's, reused if it has just made it
+// Each document is built twice, prerendered (html) and for MathJax in the
+// browser (fallback), a few builds at a time, the largest first. The
+// prerendered build is npm test's, reused if npm test has made it.
 const variants = [[testDir, 'html', 'aux', { TEX8WEB_MATHML: '1' }],
   [doc => testDir(doc, 'visual'), 'fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
 const builds = largestFirst(docs).flatMap(doc => variants.map(([dir, out, aux, env]) =>
@@ -291,24 +293,22 @@ const building = pool(builds, workers, async ({ doc, dir, out, aux, env, resolve
 });
 const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).map(b => b.promise))).every(code => code === 0);
 
-// how many times each check had something to check, over the whole run:
-// one that never did has checked nothing
+// the subjects each check found over the run: a check with none has
+// tested nothing
 const ran = { spaced: 0, misaligned: 0, sidenotes: 0, filled: 0 };
 
-// a document's two pages compared: its report's lines, and whether it failed
 async function compare(chrome, doc, ok) {
   const dir = testDir(doc, 'visual');
   const [pre, browser] = [join(testDir(doc), 'html'), join(dir, 'fallback')];
   const visual = join(dir, 'visual');
   rmSync(visual, { recursive: true, force: true });
-  // (the build's own problems are npm test's; this needs only the pages)
+  // build failures are reported by npm test; this test needs only the pages
   if (!ok && !existsSync(join(pre, `${doc.tex.replace(/\.tex$/, '')}.html`))) {
     return { lines: [`not ok - ${doc.name}`, '    build failed'], failed: true };
   }
   const problems = [];
   for (const html of readdirSync(pre).filter(f => f.endsWith('.html'))) {
-    // (the copy without tex8web-page.js, which would change the page after
-    // MathJax has)
+    // without tex8web-page.js, which would change the page after MathJax
     const source = readFileSync(join(browser, html), 'utf8');
     const copy = source.replace(/<script [^>]*src='tex8web-page\.js'[^>]*><\/script>/, '');
     if (copy === source) problems.push(`${html}: no script for tex8web-page.js to leave out`);
@@ -317,8 +317,8 @@ async function compare(chrome, doc, ok) {
     const typeset = join(browser, html.replace(/\.html$/, '.typeset.html'));
     writeFileSync(typeset, await chrome.withPage(pathToFileURL(bare).href, { before: nodeMeasures }, page => page.evaluate(typesetPage))
       .finally(() => rmSync(bare)));
-    // each page as compared, JavaScript off: what only reads it, then its
-    // screens (whose capture beyond the window resizes it)
+    // JavaScript off. The read-only checks run before the screens, as a
+    // capture beyond the window resizes the page.
     const shots = [];
     for (const file of [typeset, join(pre, html)]) {
       shots.push(await chrome.withPage(pathToFileURL(file).href, { javascript: false, height: screen }, async page => {
@@ -334,7 +334,7 @@ async function compare(chrome, doc, ok) {
         if (file !== typeset) ran.sidenotes += notes.checked;
         if (notes.wrong) problems.push(`${name}: ${notes.wrong} footnotes not in the text's color`);
         if (file !== typeset) {
-          // (it needs tex8web-page.js, which isn't running)
+          // the theme button needs tex8web-page.js, which is not running
           if (await page.evaluate(`document.querySelector('.tex8web-theme').checkVisibility()`)) {
             problems.push(`${html}: the theme button shown with JavaScript off`);
           }
@@ -377,10 +377,10 @@ async function compare(chrome, doc, ok) {
     failed: problems.length > 0 };
 }
 
-// the documents in Chrome, one at a time: with several tabs at once,
-// headless Chrome sometimes draws a screen garbled
-// (after the builds: a Chrome holds a slot, and a tool that holds one while it
-// waits for a build to get another can wait for good)
+// One document at a time in Chrome: with several tabs at once, headless
+// Chrome sometimes draws a garbled screen. Chrome starts after the builds,
+// as Chrome holds a build slot, and a process that holds a slot while it
+// waits for a build to take another can wait forever.
 await building;
 const chrome = await launch();
 let failures = 0;
@@ -388,13 +388,13 @@ const waiting = new Map(docs.map(doc => [doc, built(doc).then(ok => [doc, ok])])
 while (waiting.size) {
   const [doc, ok] = await Promise.race(waiting.values());
   waiting.delete(doc);
-  // (a page that can't be read fails, not the whole run)
+  // an error fails the document, not the whole run
   const { lines, failed } = await compare(chrome, doc, ok)
     .catch(error => ({ lines: [`not ok - ${doc.name}`, `    ${error.message}`], failed: true }));
   console.log(lines.join('\n'));
   failures += failed ? 1 : 0;
 }
-// (with all the documents: a subset may lack what a check looks for)
+// only with every document: a subset may lack what a check looks for
 const never = only.length ? [] : Object.entries(ran).filter(([, count]) => !count).map(([name]) => `no document for the ${name} check to check`);
 const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);

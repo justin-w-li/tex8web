@@ -1,6 +1,6 @@
-// Tests of tex8web --version, diff.mjs, png.mjs and the name checks of
-// the test scripts, run by npm test:
-// node --test test/tools.test.mjs
+// Tests of tex8web --version, diff.mjs, png.mjs, and the name checks of
+// the test scripts. Run by npm test, or alone:
+//   node --test test/tools.test.mjs
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -92,7 +92,7 @@ test('png.mjs reads every filter a PNG row can have, and writes rows of a pictur
   assert.deepEqual([picture.width, picture.height, picture.channels], [width, height, channels]);
   assert.ok(picture.rows.equals(rows));
 
-  // rows 1 to 3 come back as a picture of their own
+  // rows 1 to 3 come back as a separate picture
   const part = decode(encode(picture, 1, 4));
   assert.equal(part.height, 3);
   assert.ok(part.rows.equals(rows.subarray(stride, 4 * stride)));

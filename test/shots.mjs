@@ -1,36 +1,29 @@
-// Screenshots of built pages, as a visual change is checked: each page at
-// 1400 and 390px wide, light and dark, with JavaScript on, whole, a screen
-// at a time.
+// Screenshots of built pages, for checking a visual change: each page whole,
+// a screen at a time, 1400 and 390px wide, light and dark, with JavaScript.
 //   node test/shots.mjs <out> <page.html | html directory>
 //     writes <page>-<width>-<scheme>-<n>.png into out
 //   node test/shots.mjs <out> <old html directory> <new html directory>
-//     compares the pages of two builds screen by screen, writes the screens
-//     that differ as <page>-<width>-<scheme>-<n>-old.png and -new.png (the
-//     first few, see --keep), and exits 1 if any do or a page is in only one
-//     build (2 if it couldn't compare)
-//   --cache <dir>, before either: where the old build's screens are kept, as
-//     what they came to, so that a later run against the same old build
-//     doesn't shoot them again. Checkouts may share it
-//   --expect look, before either: the builds are expected to look different,
-//     so stop each width and scheme at the first strip of screens that
-//     differs and say from which screen. Without it every screen is compared
-//   --keep <n | all>, before either: write the old and new screens for at
-//     most n differing screens of each width and scheme, the first ones
-//     (default 8). The output lists all that differ
-//   --clip <selector>, before either: only the band of the page holding the
-//     first element the selector matches, in one shot
-//   --then <expression>, before either: evaluated on each page (a promise
-//     awaited, then the animations it starts) before it's shot
-//   --touch, before either: on a touch screen without a mouse
-//   --window <width>x<height>, before either: in a window of that size
-//     only, as views named by its width
+//     compares two builds screen by screen and writes the differing screens
+//     as <page>-<width>-<scheme>-<n>-old.png and -new.png. Exits 1 if a
+//     screen differs or a page is in only one build, 2 on a failure
 //   node test/shots.mjs --eval <expression> <page.html | html directory>
-//     prints, for each page, width and scheme, the expression's value on the
-//     page, as JSON (a promise is awaited)
-// It prints its progress on stderr, a line a screen, so that a stall says
-// where it was.
-// The PDF's page beside them: pdftoppm -png -r 100 -f <n> -l <n> -singlefile
-// <pdf> <out>/pdf
+//     prints the expression's value as JSON for each page, width, and
+//     scheme (a promise is awaited)
+// Options:
+//   --cache <dir>   keep hashes of the old build's strips, so a later run
+//                   against the same old build does not shoot them again.
+//                   Checkouts may share dir
+//   --expect look   stop each width and scheme at the first differing strip
+//   --keep <n|all>  write at most the first n differing screens of each
+//                   width and scheme (default 8); all are listed
+//   --clip <sel>    one shot of the band holding the first match of sel
+//   --then <expr>   evaluated on each page before the shot; a promise and
+//                   the animations it starts are awaited
+//   --touch         a touch screen without a mouse
+//   --window <w>x<h>  only a window of this size
+// Progress goes to stderr, a line a screen, so a stall shows where it was.
+// The PDF page to compare with: pdftoppm -png -r 100 -f <n> -l <n>
+// -singlefile <pdf> <out>/pdf
 import { createHash } from 'node:crypto';
 import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -63,21 +56,20 @@ if ((expect !== undefined && expect !== 'look') || (keepOption !== undefined && 
 }
 const keep = keepOption === undefined ? 8 : keepOption === 'all' ? Infinity : Number(keepOption);
 const windows = windowOption ? [windowOption.split('x').map(Number)] : [[1400, 900], [390, 844]];
-// (the tests' hook: only the views a test looks at, as 1400-light,390-dark)
+// for the tests: only these views, as 1400-light,390-dark
 const views = process.env.TEX8WEB_SHOTS_VIEWS?.split(',');
 const known = windows.flatMap(([width]) => [`${width}-light`, `${width}-dark`]);
 if (views?.some(view => !known.includes(view))) {
   console.error(`TEX8WEB_SHOTS_VIEWS lists some of ${known.join(',')}`);
   process.exit(2);
 }
-// (a failure isn't a difference)
+// exit 2, since exit 1 means a difference
 process.on('uncaughtException', error => { console.error(error); process.exit(2); });
 const pages = path => statSync(path).isDirectory()
   ? readdirSync(path).filter(f => /^[^.]+\.html$/.test(f)).map(f => join(path, f)) : [resolve(path)];
 const save = (name, shot) => writeFileSync(join(out, `${name}.png`), Buffer.from(shot, 'base64'));
 if (out) mkdirSync(out, { recursive: true });
 
-// what --then has the page do before it is shot
 async function prepare(tab) {
   if (then === undefined) return;
   await tab.evaluate(then);
@@ -85,14 +77,13 @@ async function prepare(tab) {
   await tab.frame();
 }
 
-// A comparison shoots a page in strips of this many screens, as a capture
-// costs Chrome up to a second more than its height does, and the screens
-// of a strip are what they would be one by one. That cost is
-// captureBeyondViewport's resize of the page to 1x1 and back
-// (crbug.com/40727379). A wide page switches layouts each time. A strip
-// that is the same in both builds settles its screens; only the screens of
-// the others are cut out and compared. The tests make a strip a few screens
-// (TEX8WEB_SHOTS_STRIP), so that their pages can be short.
+// A comparison shoots a page in strips of this many screens. Each capture
+// has a fixed cost of up to a second, from captureBeyondViewport's resize
+// of the page to 1x1 and back (crbug.com/40727379); a wide page switches
+// layouts each time. The screens cut from a strip match separate shots.
+// Only strips whose hashes differ are decoded and compared screen by
+// screen. The tests set a few screens (TEX8WEB_SHOTS_STRIP), so that their
+// pages can be short.
 const strip = Number(process.env.TEX8WEB_SHOTS_STRIP ?? 20);
 if (!Number.isInteger(strip) || strip < 1) {
   console.error('TEX8WEB_SHOTS_STRIP is a number of screens, 1 or more');
@@ -103,9 +94,8 @@ const report = (label, differing, before, after, height, early) =>
   console.log(`${label}: ${differing.length ? `${early ? `differs from screen ${differing[0]} of ${after}, shots stopped there`
     : `screens ${differing.join(', ')} of ${after} differ`}${before === after ? '' : ` (${before} before)`}, ${height}px each` : 'identical'}`);
 
-// The strips of one page, as PNGs (base64) by number: those from `from` on,
-// or those in `which`, up to the first that stop(number, PNG) says to stop
-// at. Resolves to { total, shots, stopped }, total being the page's height
+// Base64 PNGs of a page's strips by number: those from `from` on, or those
+// in `which`, until stop(number, PNG) is true. `total` is the page height.
 async function shootStrips(file, at, { width, height, colorScheme }, { from = 0, which, stop } = {}) {
   return chrome.withPage(pathToFileURL(file).href, { width, height, colorScheme, touch }, async tab => {
     await prepare(tab);
@@ -126,20 +116,17 @@ async function shootStrips(file, at, { width, height, colorScheme }, { from = 0,
   });
 }
 
-// What the old build's strips came to, kept in the cache directory under a
-// key made of what decides them: the old build's files (all of them, as
-// pictures may be anywhere in it), this tool, Chrome
+// Cache key of the old build's strip hashes. All of the build's files are
+// hashed, as pictures may be anywhere in it.
 const tool = [import.meta.url, new URL('./lib/chrome.mjs', import.meta.url), new URL('./lib/png.mjs', import.meta.url)]
   .map(url => readFileSync(fileURLToPath(url), 'utf8'));
 const cacheKey = () => createHash('sha256').update(JSON.stringify([hashFiles(builds[0], [''], { outputs: true }),
   strip, windows, then, touch, ...tool, chrome.version])).digest('hex').slice(0, 16);
 
-// the cached strips of a page at one width and scheme, if there are any
 const cached = file => existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
 
-// Keeps an entry for the next run, whole: written beside the file, then
-// linked to it. A run that was first has its entry kept, and this one's,
-// which is the same, is dropped
+// Written beside the file, then linked, so a reader never sees a partial
+// entry. If another run linked first, its entry is the same and is kept.
 function keepEntry(file, entry) {
   mkdirSync(dirname(file), { recursive: true });
   const staged = `${file}.${process.pid}`;
@@ -153,24 +140,21 @@ function keepEntry(file, entry) {
   }
 }
 
-// Compares one page of the old and new builds at one width and scheme:
-// the numbers of the screens that differ, and how many screens each build has.
-// With --expect look it stops at the first strip whose screens differ
-// (when the cached strips of the old build say it differs, but the screens
-// don't, they are wrong and are shot again), and the numbers are those of
-// that strip
+// One page at one width and scheme: the differing screens, and the screen
+// count of each build. With --expect look, only the first differing strip.
+// A cached strip hash that differs while the screens do not means a wrong
+// cache entry: the entry is deleted and the old build is shot again.
 async function compare(page, label, view) {
   const { height } = view;
   const [oldPage, newPage] = builds.map(build => join(build, basename(page)));
   const screens = total => Math.ceil(total / height);
   const differing = [];
-  // the screens of strip k that differ, from its two PNGs. One strip's pictures
-  // at a time: a strip of a wide page is 100 MB
+  // Decodes one strip at a time: a strip of a wide page is 100 MB.
   const compareStrip = (k, oldShot, newShot) => {
     const [a, b] = [oldShot, newShot].map(shot => shot && decode(Buffer.from(shot, 'base64')));
     let found = 0;
     for (let i = k * strip; i < Math.min((k + 1) * strip, Math.max(screens(old.total), screens(current.total))); i++) {
-      // (a screen's rows in its strip's picture, if the build has the screen)
+      // the screen's rows in the strip, if the build has the screen
       const rows = picture => picture && i * height - k * strip * height < picture.height
         && [i * height - k * strip * height, Math.min((i + 1) * height - k * strip * height, picture.height)];
       const [from, to] = [a, b].map(rows);
@@ -197,7 +181,7 @@ async function compare(page, label, view) {
       const shot = await shootStrips(oldPage, `${label}: old, `, view);
       oldShots = shot.shots;
       old = { total: shot.total, hashes: [...oldShots.values()].map(hash) };
-      // (not if the build was replaced meanwhile: these are not what the key says)
+      // not if the build changed during the shots: the key would be wrong
       if (cache && cacheKey() === key) keepEntry(file, old);
     }
     current = await shootStrips(newPage, `${label}: new, `, view,
@@ -211,7 +195,6 @@ async function compare(page, label, view) {
     const alike = unlike.filter(k => !compareStrip(k, again.get(k), current.shots.get(k)));
     if (!alike.length) break;
     if (!oldShots) {
-      // the cached strips said these differ, and they don't: the entry is wrong
       rmSync(file, { force: true });
       old = null;
       differing.length = 0;
@@ -222,7 +205,6 @@ async function compare(page, label, view) {
   return [differing, screens(old.total), screens(current.total)];
 }
 
-// the band of the page holding the selector's element, as one screen
 async function band(tab, url) {
   const box = await tab.evaluate(`(() => {
     const box = document.querySelector(${JSON.stringify(clip)})?.getBoundingClientRect();
@@ -232,7 +214,6 @@ async function band(tab, url) {
   return [await tab.screenshot(box.y, box.h)];
 }
 
-// the pages of the one build, or those of either of two
 const names = new Set(builds.flatMap(build => pages(build).map(page => basename(page))));
 const chrome = await launch();
 let differ = false;
@@ -258,8 +239,8 @@ try {
         const shots = [];
         for (const file of [page, ...builds.slice(1).map(dir => join(dir, basename(page)))]) {
           const url = pathToFileURL(file).href;
-          // (a long page takes minutes, and run() kills a command that is
-          // silent for long)
+          // progress lines: a long page takes minutes, and run() in
+          // lib/build.mjs kills a command that prints nothing for too long
           const at = `${label}: ${builds.length === 1 ? '' : file === page ? 'old, ' : 'new, '}`;
           console.error(`${at}loading`);
           await chrome.withPage(url, { width, height, colorScheme, touch }, async tab => {

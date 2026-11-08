@@ -1,12 +1,13 @@
-% tex8web: tex4ht configuration for HTML that looks like the PDF, with MathJax
-% reading the math's LaTeX source. A tex4ht config \input's this after
-% \begin{document} (see tex8web.cfg); tex8web.mk4 puts this directory on TeX's
+% tex8web: the tex4ht configuration for HTML that looks like the PDF, with
+% the math left as LaTeX source for MathJax. A config \input's this file
+% after \begin{document} (see tex8web.cfg). tex8web.mk4 puts tex/ on TeX's
 % search path.
 \makeatletter
 
-% babel may have made some punctuation active by now (" in German, : ; ! ?
-% in French); read the modules with these characters ordinary, and restore
-% them after. (This file avoids them, and = in particular)
+% babel may have made some punctuation active by now: " in German, and
+% : ; ! ? in French. The modules are read with these characters ordinary,
+% and the catcodes are restored after. Until the call below, this file
+% avoids these characters, = in particular.
 \def\web@restorecatcodes{}
 \def\web@othercatcodes#1,{%
     \ifx\relax#1\else
@@ -18,7 +19,7 @@
 }
 \web@othercatcodes 33,34,39,58,59,60,61,62,63,96,\relax,
 
-% a length as a multiple of another, of the body font size, and in ems of it
+% a length as a multiple of another length, of the body font size, and in ems
 \newcommand\web@over[2]{\strip@pt\dimexpr#1*65536/\dimexpr#2\relax\relax}
 \newcommand\web@ratio[1]{\web@over{#1}{\f@size pt}}
 \newcommand\web@em[1]{\web@ratio{#1}em}
@@ -28,13 +29,13 @@
 \web@textwidth\textwidth
 % \Css, with its argument expanded now rather than when tex4ht writes it
 \newcommand\web@Css[1]{\edef\web@css{\noexpand\Css{#1}}\web@css}
-% the place of the static styles: tex8web.mk4 puts css/tex8web.css here,
-% after tex4ht's own rules and before a config's
+% the place of the static styles: lua/tex8web/assets.lua puts
+% css/tex8web.css here, after tex4ht's rules and before a config's
 \Css{/* tex8web.css */}
 \makeatother
 
-% tex4ht's split options (1 to 7, or splitat= with a level name) write a
-% page per section, and the build makes one page
+% tex4ht's split options (1 to 7, or splitat= with a level name) write one
+% page per section. tex8web builds one page per document.
 \ExplSyntaxOn
 \msg_new:nnn { tex8web } { split }
     { tex8web~makes~one~page~per~document;~remove~tex4ht's~split~option~(a~number~or~splitat=~in~\token_to_str:N \Preamble) }

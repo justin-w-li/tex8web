@@ -1,7 +1,7 @@
 // Unit tests for js/prerender-rules.mjs and prerender.mjs, run by npm test:
 // node --test test/unit/prerender.test.mjs
-// The rules prerender.mjs reads from MathJax's CSS, and what it says when
-// MathJax changes one; and the speech it keeps.
+// The rules prerender.mjs reads from MathJax's CSS, the problems it reports
+// when MathJax changes one, and its speech cache.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -55,16 +55,16 @@ test('a math that does not line up on the left', () => {
   assert.match(problems(css.replace('line-height: 0', 'line-height: 1'))[0], /^mjx-math isn't/);
 });
 
-// prerender.mjs's speech kept from one build to the next: a page built
-// with it is the page built without, and a formula whose MathML changed,
-// by a \def or a label elsewhere, is spoken anew
+// the speech cache of prerender.mjs: a page built with the cache is the
+// page built without it, and a formula whose MathML changed, by a \def or a
+// label elsewhere, is given new speech
 const page = body => `<!DOCTYPE html>
 <html><head><title>speech</title>
 <script data-tex8web-browser='' id='tex8web-config' type='application/json'>{"mathjax": {"loader": {"load": []}, "options": {}, "tex": {"tags": "ams"}, "output": {"font": "mathjax-tex"}}, "tex": {"exscale": 1, "baselineskip": 1.2, "jot": 0.3, "pt": 0.1}}</script>
 <script id='tex8web-fonts'></script>
 </head><body>${body}</body></html>`;
 const before = page(String.raw`<p>\(\def\f{x}\f + 1\) \(\f\) \(\,\) \(y\)</p>\begin{equation}\label{a}z\end{equation}<p>\(\eqref{a}\)</p>`);
-// (\f and \eqref{a} the same TeX, but not the same math)
+// (\f and \eqref{a}: the same TeX as before, with different math)
 const after = page(String.raw`<p>\(\def\f{w}\f + 1\) \(\f\) \(\,\) \(y\)</p>\begin{equation}v\end{equation}\begin{equation}\label{a}z\end{equation}<p>\(\eqref{a}\)</p>`);
 
 test('the speech kept from a build gives the same page, and only what changed is spoken anew', () => {
@@ -87,25 +87,26 @@ test('the speech kept from a build gives the same page, and only what changed is
     const cold = prerender(before, 'speech.json');
     assert.deepEqual(speech(cold).slice(0, 4), ['x plus 1', 'x', 'hidden', 'y']);
     assert.match(cold, /<script [^>]*data-fonts="fonts\/mathjax\/mjx-tex-zero\.woff2 [^"]*"/);
-    // (with assistive MathML, the same speech, kept by the same keys)
+    // (with assistive MathML: the same speech, cached under the same keys)
     const kept = readFileSync(join(dir, 'speech.json'), 'utf8');
     const mathml = prerender(before, 'speech.json', true);
     assert.match(mathml, /<mjx-assistive-mml/);
     assert.deepEqual(speech(mathml), speech(cold));
     assert.deepEqual(keys('speech.json'), Object.keys(JSON.parse(kept)).sort());
-    // (one written part way is as none)
+    // (a partly written cache counts as none)
     writeFileSync(join(dir, 'fresh.json'), '{"');
     const changed = prerender(after, 'fresh.json');
     writeFileSync(join(dir, 'partial.json'), kept);
     assert.equal(prerender(after, 'partial.json'), changed);
-    // (the kept speech marked, to tell it from the speech rule engine's)
+    // (the cached speech replaced by 'kept', to tell it from the speech rule
+    // engine's)
     writeFileSync(join(dir, 'speech.json'), JSON.stringify(Object.fromEntries(Object.keys(JSON.parse(kept)).map(key => [key, 'kept']))));
     const warm = speech(prerender(after, 'speech.json'));
     const fresh = speech(changed);
     assert.deepEqual(warm, ['w plus 1', 'w', 'kept', 'kept', fresh[4], fresh[5], fresh[6]]);
     assert.deepEqual(fresh.slice(0, 4), ['w plus 1', 'w', 'hidden', 'y']);
     assert.notDeepEqual(speech(cold).at(-1), fresh.at(-1));
-    // (only this build's)
+    // (the cache holds only the formulas of this build)
     assert.deepEqual(keys('speech.json'), keys('fresh.json'));
   } finally {
     rmSync(dir, { recursive: true });

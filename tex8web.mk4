@@ -1,16 +1,14 @@
 -- make4ht build file for tex8web: HTML that looks like the PDF, with MathJax
--- typesetting the math from its LaTeX source. Use with tex8web.cfg (or a
--- config of your own that \input's tex8web-core.tex):
+-- typesetting the math from its LaTeX source. Use with tex8web.cfg, or a
+-- config that \inputs tex8web-core.tex:
 --   make4ht -c path/to/tex8web.cfg -e path/to/tex8web.mk4 -B build/tex4ht -d build/html document.tex
--- It puts this directory on TeX's and Lua's search paths, runs bibtex or
--- biber when the document has a bibliography and makeindex when it has an
--- index, runs the HTML passes (lua/tex8web/), copies the files the page
--- needs next to it, and typesets the math with MathJax in Node, if it can
--- (prerender.lua).
+-- Sets TeX's and Lua's search paths and the build steps, and runs the HTML
+-- passes (lua/tex8web/) and prerendering (prerender.lua). See "How it works"
+-- in CONTRIBUTING.md.
 -- (make4ht runs this file from a string; settings.build_file is its path)
 local root = settings.build_file:match("^(.*)[/\\]") or "."
--- (texlua's require doesn't look at package.path; add a searcher that does
--- the same for lua/)
+-- (texlua's require does not search package.path, so a searcher for lua/
+-- is added)
 table.insert(package.searchers, 2, function(name)
   local path, message = package.searchpath(name, root .. "/lua/?.lua")
   if not path then return message end
@@ -30,19 +28,19 @@ local prerender = require "tex8web.prerender"
 local source = require "tex8web.source"
 local text = require "tex8web.text"
 
--- LaTeX, with tex/tex8web-hooks.sty loaded before the preamble and
--- tex4ht's fn-in option, which keeps footnotes on the page (text.lua puts
--- them beside the text); then the bibliography and the index, if the
--- document has them, which make4ht doesn't run itself; and LaTeX until the
--- cross-references settle. (The parameters build on settings: Make.params
--- is still empty)
+-- LaTeX, with tex/tex8web-hooks.sty loaded before the preamble and tex4ht's
+-- fn-in option, which keeps footnotes on the page (text.lua moves them
+-- beside the text); then bibtex or biber and makeindex, which make4ht does
+-- not run, if the document needs them; then LaTeX until the
+-- cross-references settle. (The parameters extend settings, because
+-- Make.params is still empty here.)
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
--- The tests' builds (test/lib/build.mjs) keep what LaTeX left in the build
--- directory, in TEX8WEB_LATEX_SAVE, a path not there yet. When nothing
--- LaTeX reads has changed, they name that copy in TEX8WEB_LATEX_REUSE, which
--- is copied back in place of running LaTeX if it has LaTeX's DVI. The marks
--- around LaTeX's part of the log let them keep that part too
+-- The tests' builds (test/lib/build.mjs) copy LaTeX's build directory to
+-- TEX8WEB_LATEX_SAVE, a path that must not exist yet. When nothing LaTeX
+-- reads has changed, they pass that copy as TEX8WEB_LATEX_REUSE, which is
+-- copied back in place of running LaTeX if it holds the DVI. The marks
+-- around LaTeX's part of the log let the tests save that part too.
 local save, reuse = os.getenv("TEX8WEB_LATEX_SAVE"), os.getenv("TEX8WEB_LATEX_REUSE")
 if reuse and not lfs.attributes(reuse .. "/" .. settings.input .. "." .. settings.dvi) then reuse = nil end
 local function mark(name)
@@ -51,8 +49,8 @@ local function mark(name)
   io.stdout:flush()
 end
 if reuse then
-  -- (with LaTeX's parameters, which make4ht keeps for the commands after
-  -- it: correct_exit makes a failed tex4ht or t4ht fatal)
+  -- (given LaTeX's parameters, which make4ht keeps for the commands after
+  -- it; correct_exit makes a failed tex4ht or t4ht fatal)
   Make:add("latex_reused", function(par)
     mark("begin")
     mark("end")
@@ -83,21 +81,23 @@ else
     Make:latex_save {}
   end
 end
--- (tex4ht's class files list \jobname.4idx among the page's files, for its
--- own index script (\warn:idx in article.4ht); make4ht never makes it, and
--- copying it to -d logs an error)
+-- (tex4ht's class files list \jobname.4idx among the page's files, for
+-- tex4ht's index script: \warn:idx in article.4ht. make4ht never makes the
+-- file, and copying it to -d logs an error.)
 Make:match("4idx$", function() return false end)
 
--- each pass is function(document, context), in this order. What the order
--- depends on: page.build_data first (it fills context and removes
--- its scripts); text.colors before the passes that look at what lies
--- between elements (its marks are elements until it removes them);
--- make4ht's fixinlines, which only looks at the top of the body, before
--- page.controls puts the text in <main>; page.equation_anchors after
--- fixinlines, which gives a loose anchor a paragraph of its own;
--- text.line_comments after the passes that look at what lies between nodes
--- (a removed comment stays among its parent's children); and assets.copy
--- last (it reads the finished page)
+-- Each pass is function(document, context). The order matters for:
+-- - page.build_data: first, as it fills context and removes its scripts
+-- - text.colors: before the passes that look at what lies between
+--   elements, as its marks are elements until it removes them
+-- - make4ht's fixinlines: before page.controls puts the text in <main>, as
+--   fixinlines looks only at the top level of the body
+-- - page.equation_anchors: after fixinlines, which puts a loose anchor in
+--   a paragraph
+-- - text.line_comments: after the passes that look at what lies between
+--   nodes, as LuaXML's remove_node leaves a placeholder among the parent's
+--   children (luaxml-domobject.lua)
+-- - assets.copy: last, as it reads the finished page
 local passes = {
   page.build_data,
   text.colors,
@@ -125,8 +125,8 @@ local passes = {
 }
 
 -- what the passes know about the page: tex8web's directory (root), the
--- page's (dir), the document's name (input) and file (tex_file), the
--- MathJax version; and what page.build_data adds
+-- page's directory (dir), the document's name (input) and file (tex_file),
+-- the MathJax version, and what page.build_data and assets.copy add
 local context
 local fix_html = domfilter({function(document)
   for _, pass in ipairs(passes) do pass(document, context) end

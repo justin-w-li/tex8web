@@ -1,6 +1,6 @@
-// Tests of what lib/build.mjs keeps a build by, its stamp, and when it reuses
-// one, run by npm test:
-// node --test test/builds.test.mjs
+// Tests of the build stamps of lib/build.mjs, and of when a build is
+// reused. Run by npm test, or alone:
+//   node --test test/builds.test.mjs
 // make4ht is a stand-in (test/lib/stubs.mjs).
 import assert from 'node:assert/strict';
 import { appendFileSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
@@ -56,7 +56,7 @@ test('what LaTeX reads of tex8web, and only that, is in the stamp of its LaTeX r
 });
 
 test('the Lua that runs between LaTeX runs, and what it requires, is in the stamp of LaTeX\'s run', () => {
-  // (tex8web.mk4 runs these two between LaTeX's runs)
+  // tex8web.mk4 runs these two between LaTeX runs
   const files = new Set();
   const add = file => {
     if (files.has(file)) return;
@@ -70,7 +70,7 @@ test('the Lua that runs between LaTeX runs, and what it requires, is in the stam
 });
 
 test('a build is reused only while nothing it was built from has changed', { timeout: 30000 }, async () => {
-  // (the real path: make4ht gets the config's path relative to it)
+  // realpath, as make4ht is given the config's path relative to dir
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webreuse')));
   try {
     const tex = join(dir, 'doc.tex');
@@ -83,7 +83,7 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal((await make()).reused, undefined);
     assert.equal((await make()).reused, true);
     assert.match(html(), /first/);
-    // (a touch, and nothing else, leaves the document as it was)
+    // a new modification time alone is not a change
     const now = new Date();
     utimesSync(tex, now, now);
     assert.equal((await make()).reused, true);
@@ -92,7 +92,7 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal((await make()).reused, undefined);
     assert.match(html(), /second/);
 
-    // the config's content counts too, where it is not in the document's directory
+    // the config's content counts too, when it is outside the document's directory
     const cfgDir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webcfg')));
     try {
       doc.cfg = join(cfgDir, 'other.cfg');
@@ -108,16 +108,16 @@ test('a build is reused only while nothing it was built from has changed', { tim
 
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1' })).reused, undefined);
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1' })).reused, true);
-    // (the slots' settings change no page)
+    // TEX8WEB_SLOTS changes no page
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1', TEX8WEB_SLOTS: '9' })).reused, true);
-    // (the date TeX is given does, from the command or the document)
+    // SOURCE_DATE_EPOCH does, from the environment or from doc.env
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1', SOURCE_DATE_EPOCH: '946684800' })).reused, undefined);
     doc.env = { SOURCE_DATE_EPOCH: '946684800' };
     assert.equal((await make({ TEX8WEB_NO_PRERENDER: '1' })).reused, true);
     delete doc.env;
 
-    // LaTeX's run is reused while nothing LaTeX reads has changed (the page's
-    // stamp gone, as a change to css/ would make it), with its part of the log
+    // With the page's stamp removed, as by a change to css/, the LaTeX run is
+    // reused while nothing LaTeX reads has changed, and its part of the log too
     assert.equal((await make()).latexReused, undefined);
     rmSync(join(dir, 'build/html.stamp'));
     const latex = await make();
@@ -125,7 +125,7 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal(latex.log.match(/LaTeX ran/g)?.length, 1);
     assert.doesNotMatch(latex.log, /tex8web-latex/);
     assert.equal((await make()).reused, true);
-    // (but not on another day, which \today would show, unless the date is fixed)
+    // not on another day, as \today would differ, unless the date is fixed
     const nextDay = async env => {
       rmSync(join(dir, 'build/html.stamp'));
       const day = mock.method(Date.prototype, 'toDateString', () => 'another day');
@@ -139,7 +139,7 @@ test('a build is reused only while nothing it was built from has changed', { tim
     const fixed = { SOURCE_DATE_EPOCH: '946684800', FORCE_SOURCE_DATE: '1' };
     assert.equal((await make(fixed)).latexReused, undefined);
     assert.equal(await nextDay(fixed), true);
-    // (nor when part of it is gone)
+    // nor when part of the LaTeX run's output is gone
     rmSync(join(dir, 'build/html.stamp'));
     rmSync(join(dir, 'build/aux.latex.log'));
     const partial = await make(fixed);
@@ -149,7 +149,7 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal((await make()).latexReused, undefined);
     assert.match(html(), /third/);
 
-    // a build that failed isn't reused
+    // a build that failed is not reused
     write('\\undefinedcs');
     assert.notEqual((await make()).code, 0);
     const again = await make();

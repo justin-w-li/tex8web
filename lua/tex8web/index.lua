@@ -1,6 +1,6 @@
--- The indexes, which make4ht leaves alone: after the first LaTeX run,
--- makeindex on each, with each number in the index a link back to its
--- \index, numbering them as tex4ht does rather than by page.
+-- The indexes, which make4ht does not build: after the first LaTeX run,
+-- makeindex on each. Each number in an index counts \index commands and
+-- links back to its \index (see "Indexes" in CONTRIBUTING.md).
 local files = require "tex8web.files"
 local indexing = require "make4ht-indexing"
 
@@ -8,17 +8,17 @@ local log = logging.new("tex8web")
 
 local M = {}
 
--- makeindex gets each \index's number past this in place of its page:
--- numbers an entry's text won't hold, so M.link can link each wherever it
--- is. (make4ht-indexing.lua's fix_idx_pages looks for the pages after the
--- entry's first ^, [ or comma, which takes a number in $L^2$ or "Theorem,
--- 2nd form" for one)
+-- makeindex is given offset + n in place of each \index's page: a number
+-- no entry's text holds, so M.link can replace each one wherever it is.
+-- (make4ht-indexing.lua's fix_idx_pages, not used here, takes the numbers
+-- after an entry's first ^, [, or comma as its pages, so it misreads a
+-- number in $L^2$ or "Theorem, 2nd form".)
 local offset = 1000000
 
 -- the indexes the document prints, as {name =, options =}: imakeidx's, from
--- the commands tex8web-hooks.sty notes in the .aux (makeindex's options
--- only: makeindex runs in place of xindy); otherwise makeidx's, the
--- document's .idx, if it has one
+-- the commands tex8web-hooks.sty records in the .aux, or else makeidx's
+-- .idx, if there is one. Only makeindex's options are kept, as makeindex
+-- runs in place of xindy.
 function M.indexes(aux, input, has_idx)
   local found = {}
   for program, options, name in aux:gmatch("%% tex8web index: (%S+) +(.-) *(%S+)%.idx\n") do
@@ -28,8 +28,8 @@ function M.indexes(aux, input, has_idx)
   return found
 end
 
--- the .ind with each of the numbers M.prepare gave makeindex a link to its
--- \index (map: make4ht-indexing.lua's parse_idx's, by those numbers)
+-- the .ind with each number from M.prepare made a link to its \index
+-- (map: make4ht-indexing.lua's parse_idx map, keyed by those numbers)
 function M.link(ind, map)
   return (ind:gsub("%d+", function(number)
     local entry = map[tonumber(number)]
@@ -38,13 +38,13 @@ function M.link(ind, map)
   end))
 end
 
--- the .idx for makeindex, with the numbers past offset, and the map
--- M.link takes, from tex4ht's .idx (a \beforeentry before each \indexentry)
+-- the .idx for makeindex, with the numbers past offset, and the map for
+-- M.link, from tex4ht's .idx (a \beforeentry before each \indexentry)
 function M.prepare(idx)
   local parsed = indexing.parse_idx(idx)
   local map = {}
   for n, entry in pairs(parsed.map) do
-    -- (a locator is \Configure{makeindex}'s)
+    -- (entry.locator comes from \Configure{makeindex})
     entry.locator = entry.locator or tostring(n)
     map[offset + n] = entry
   end
@@ -53,12 +53,12 @@ function M.prepare(idx)
   end)), map
 end
 
--- runs makeindex on each index the document prints, in the build directory,
--- with the options imakeidx was given (a style file found in the directory
--- make4ht runs in, the document's). (makeindex won't write the .ind to a
--- build directory above it: openout_any = p. -r: three \index in a row
--- aren't a range, as their numbers aren't pages. A failed run is a warning,
--- as for the bibliography)
+-- runs makeindex on each index with imakeidx's options. A style file is
+-- found in the document's directory, where make4ht runs. makeindex runs in
+-- the build directory because it does not write the .ind to a directory
+-- above it (openout_any = p). -r: the numbers are not pages, so three
+-- \index in a row are not a range. A failed run is a warning, as for the
+-- bibliography.
 function M.run(par)
   local dir = (par.builddir ~= "" and par.builddir) or "."
   local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""

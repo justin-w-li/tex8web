@@ -1,10 +1,9 @@
-% A test for tex8web: algorithm's ruled float with algpseudocode's lines.
-% The caption is at the left between two rules, at the top wherever
-% \caption is, and a rule ends the body, as in the PDF, also in an [H]
-% float. Each line is indented by its block's depth, with its number in
-% the PDF's size; \Statex has neither, and a line without text (\algtext*)
-% is left out. A \ref to the algorithm and to one of its lines leads
-% there.
+% The algorithm package's ruled float with algpseudocode's lines, also in
+% an [H] float. As in the PDF, the caption is at the left between two
+% rules, at the top wherever \caption is, and a rule ends the body. Each
+% line is indented by its block's depth, with its number in the PDF's size.
+% A \Statex line has neither, and a line without text (\algtext*) is left
+% out. A \ref to the algorithm or to one of its lines leads there.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage[ruled]{algorithm}

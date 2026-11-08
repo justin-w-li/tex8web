@@ -1,9 +1,8 @@
-% A test for tex8web's index: makeidx's \makeindex and \printindex, with
-% entries on several pages, a subentry, a page range and a "see" entry; each
-% number links back to its \index. Entries whose text has numbers (after ^
-% or a comma, as an entry's or a subentry's) keep them, unlinked. An entry
-% indexed three times in a row has three numbers, not a range. An entry
-% before an equation doesn't make a link to it tint the equation.
+% makeidx's index, with entries on several pages, a subentry, a page range,
+% and a "see" entry. Each number links back to its \index. Numbers in an
+% entry's or a subentry's text (after ^ or a comma) stay, unlinked. An
+% entry indexed three times in a row has three numbers, not a range. A
+% link to an entry placed before an equation does not tint the equation.
 \documentclass{article}
 \usepackage{makeidx}
 \makeindex

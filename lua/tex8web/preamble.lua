@@ -1,13 +1,13 @@
--- Reading macro definitions from LaTeX source: the document's own and
--- those of the local packages it loads. Plain string work, without the
--- page, so it can be tested on its own (test/unit/).
+-- Reading macro definitions from LaTeX source: the document's and those of
+-- the local packages it loads. String work only, without the page, so that
+-- test/unit/ can test it alone.
 local files = require "tex8web.files"
 
 local log = logging and logging.new("tex8web")
 
 local M = {}
 
--- commands MathJax doesn't have; a definition that uses one can't be
+-- commands MathJax does not have; a definition that uses one cannot be
 -- given to MathJax as it is (it needs a \WebMathMacros version)
 local unsupported = {}
 for _, name in ipairs({
@@ -67,10 +67,10 @@ local function trim(s)
   return s:match("^%s*(.-)%s*$")
 end
 
--- the definition commands this understands. Each reads its arguments from
--- after the command (and its star) and returns the macro's name, the
--- definition for MathJax, and the text it expands to (to find the macros
--- it uses in turn)
+-- readers by definition command. Each reads the arguments after the
+-- command and its star, and returns the macro's name, the definition for
+-- MathJax, the text it expands to (to find the macros it uses), the index
+-- after it, and, for a definition MathJax cannot have, why
 local readers = {}
 
 function readers.newcommand(s, i)
@@ -89,8 +89,8 @@ readers.providecommand = readers.newcommand
 
 -- xparse's commands, for argument specs \newcommand can express: mandatory
 -- arguments, after at most one optional argument with a default (O{..}).
--- Others are kept with the reason MathJax can't have them, for define to
--- report if the math uses them
+-- Others are kept with the reason MathJax cannot have them, for
+-- macros.define to report if the math uses them
 function readers.NewDocumentCommand(s, i)
   local name, spec, body
   name, i = argument(s, i)
@@ -196,12 +196,12 @@ local function loads(command, s, i)
   return names, i
 end
 
--- the definitions in a source file: name -> {def, body}, read in order,
--- so that the last wins (except a \providecommand's, which keeps one
--- already made); and the files it loads, which may hold more: its local
--- packages and what it \inputs or \includes. load, if given, is called
--- with each and the command that loads it, at the place it loads, before
--- the definitions after it
+-- reads the definitions in a source file into definitions, as name ->
+-- {def, body, problem}, in order: later definitions replace earlier ones,
+-- except that \providecommand keeps an existing one. Returns the files the
+-- source loads, which may hold more: local packages, and what it \inputs
+-- or \includes. load, if given, is called with each file and the command
+-- that loads it, where it is loaded, before the definitions after it.
 function M.read(s, definitions, load)
   s = strip_comments(s)
   local i, loaded = 1, {}
@@ -233,9 +233,9 @@ function M.read(s, definitions, load)
   return loaded
 end
 
--- the definitions in the document, the local packages it loads and the
+-- the definitions in the document, the local packages it loads, and the
 -- files it inputs, in the order TeX reads them: each file where it is
--- loaded, a package once and an \input file each time, but not inside
+-- loaded, a package once, and an \input file each time, but never inside
 -- itself
 function M.document(tex_file)
   local definitions, packages, reading = {}, {}, {}
@@ -263,7 +263,7 @@ function M.uses(text)
   return names
 end
 
--- why MathJax can't use a definition, if it can't
+-- why MathJax cannot use a definition, or nil
 function M.problem(body)
   if body:find("\\[%a]*@") then return "uses an internal (@) macro" end
   for _, name in ipairs(M.uses(body)) do

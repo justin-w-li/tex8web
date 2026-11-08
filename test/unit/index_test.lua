@@ -1,4 +1,4 @@
--- The indexes: which ones, and their links
+-- index.lua: which indexes, and their links
 local index = require "tex8web.index"
 
 return {

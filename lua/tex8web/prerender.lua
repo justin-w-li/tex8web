@@ -1,22 +1,22 @@
 -- Typesetting the math at build time: js/prerender.mjs, with MathJax from
--- node_modules (npm ci). Without it, or with TEX8WEB_NO_PRERENDER set,
--- MathJax typesets the math in the reader's browser.
+-- node_modules (npm ci). Without MathJax and subset-font in node_modules,
+-- with a MathJax other than the version package.json pins, or with
+-- TEX8WEB_NO_PRERENDER set, MathJax typesets the math in the browser.
 local files = require "tex8web.files"
 
 local log = logging.new("tex8web")
 
 local M = {}
 
--- the MathJax version tex8web works with: package.json's, which both
--- prerendering and the page's script use (tex8web.js relies on MathJax's
--- internals)
+-- the MathJax version package.json pins, used in prerendering and by the
+-- page's script (tex8web.js depends on MathJax internals)
 function M.mathjax_version(root)
   return assert(files.read(root .. "/package.json")):match('"mathjax":%s*"([^"]+)"')
 end
 
--- the MathJax in node_modules, which may not be the version package.json
--- pins: node_modules can be installed for an older package.json, or shared
--- with another checkout
+-- the version of the MathJax in node_modules, which may differ from the
+-- pinned one: node_modules may be installed for an older package.json, or
+-- shared with another checkout
 local function installed_version(context)
   local json = files.read(context.root .. "/node_modules/mathjax/package.json")
   return json and json:match('"version":%s*"([^"]+)"')
@@ -37,7 +37,7 @@ function M.available(context)
   return not os.getenv("TEX8WEB_NO_PRERENDER") and installed(context) and pinned(context)
 end
 
--- typesets the page's math; false if it couldn't, and the page needs
+-- typesets the page's math; false if it could not, and the page needs
 -- MathJax in the browser
 function M.run(context, filename)
   if os.getenv("TEX8WEB_NO_PRERENDER") then return false end
@@ -53,8 +53,8 @@ function M.run(context, filename)
   end
   local node = io.popen("node " .. files.quote(context.root .. "/js/prerender.mjs") .. " "
     .. files.quote(filename))
-  -- (it prints the files it made: MathJax's styles and fonts, and TeX
-  -- Gyre's)
+  -- (prerender.mjs prints the files it made: MathJax's styles and fonts,
+  -- and the TeX Live fonts, TeX Gyre and XCharter)
   local made = {}
   for path in node:lines() do made[#made + 1] = path end
   if not node:close() then

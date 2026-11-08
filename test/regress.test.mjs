@@ -1,5 +1,5 @@
-// Tests of regress.mjs, run by npm test:
-// node --test test/regress.test.mjs
+// Tests of regress.mjs. Run by npm test, or alone:
+//   node --test test/regress.test.mjs
 // make4ht is a stand-in (test/lib/stubs.mjs). Chrome is real, for the screens.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -14,7 +14,7 @@ import { stubbed } from './lib/stubs.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const lockf = existsSync('/usr/bin/lockf');
 
-// regress.mjs, run from a temporary directory as npm does (in tex8web's, told where from)
+// runs regress.mjs as npm does: in tex8web's directory, with INIT_CWD set to cwd
 const regress = (cwd, ...args) => new Promise(done => {
   const child = spawn(process.execPath, [join(here, 'regress.mjs'), ...args], { cwd: root, timeout: 120000,
     env: { ...process.env, ...stubbed, npm_lifecycle_event: 'regress', INIT_CWD: cwd } });
@@ -33,7 +33,7 @@ function scratch(names) {
   return dir;
 }
 
-// (the screens' Chrome is the slow part, so these run at once)
+// Chrome for the screens is slow, so these tests run concurrently
 describe('regress.mjs', { concurrency: true }, () => {
   test('regress.mjs says what changed in each document since its accepted build', { skip: !lockf }, async () => {
     const dir = scratch({ 'one/main.tex': article('First'), 'two/note.tex': article('Second') });
@@ -58,7 +58,7 @@ describe('regress.mjs', { concurrency: true }, () => {
       assert.equal(result.status, 3, result.stderr + result.stdout);
       assert.match(result.stdout, /^one: unchanged/m);
       assert.match(result.stdout, /^two: looks different: .*-light/m);
-      // (shots.mjs's progress isn't part of the outcome)
+      // shots.mjs's progress lines are not in the outcome
       assert.doesNotMatch(result.stdout, /^two: .*(loading|screen \d+ of)/m);
       assert.ok(readdirSync(join(out, 'compare/two')).some(file => file.endsWith('-new.png')));
       assert.ok(readdirSync(join(out, 'shots-cache')).length > 0, 'no cache');
@@ -85,7 +85,7 @@ describe('regress.mjs', { concurrency: true }, () => {
       let result = await regress(dir, '--accept', 'two');
       assert.equal(result.status, 0, result.stderr + result.stdout);
 
-      // a document that doesn't build fails the run and keeps the rest from being accepted
+      // a document that does not build fails the run, and no document is accepted
       result = await regress(dir, '--accept', 'three', 'bad');
       assert.equal(result.status, 1, result.stderr + result.stdout);
       assert.match(result.stdout, /^bad: failed to build/m);
@@ -111,7 +111,7 @@ describe('regress.mjs', { concurrency: true }, () => {
       const result = await regress(dir, '--latexmk', 'one', 'bad');
       assert.equal(result.status, 1, result.stderr + result.stdout);
       assert.ok(existsSync(join(dir, 'one/main.pdf')), 'no PDF');
-      // (without lockf, as on Linux, there are no locks)
+      // without lockf, as on Linux, there are no locks
       if (lockf) assert.ok(existsSync(join(dir, 'one/build/pdf.lock')), 'no lock');
       assert.ok(existsSync(join(dir, 'build/regress/html/one/main.html')));
       assert.match(result.stdout, /^one: no baseline/m);

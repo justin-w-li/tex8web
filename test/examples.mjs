@@ -1,8 +1,8 @@
-// npm run examples: builds each example into examples/<name>/build: its
-// page in html/ and its PDF in pdf/. Then builds the site CI publishes in
-// build/site: the index (examples/index.tex), and each example's page in
-// a folder of its own. Fails if a build does, or if the index links to a
-// file the site lacks.
+// npm run examples: builds each example's page and PDF into
+// examples/<name>/build/{html,pdf}, then the site CI publishes into
+// build/site: the index (examples/index.tex), with each example's page in
+// a folder named after the example. Fails if a build fails, or if the index
+// links to a file missing from the site.
 import { cpSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { build, documents, latexmk, pool, root, workers } from './lib/build.mjs';
@@ -10,7 +10,7 @@ import { build, documents, latexmk, pool, root, workers } from './lib/build.mjs'
 const examples = documents().filter(doc => doc.name.startsWith('examples/'));
 let failed = false;
 await pool(examples, workers, async doc => {
-  // (the PDF first, as the page has a copy of it)
+  // (the PDF first, as the page build copies it)
   const pdf = (await latexmk(doc, 'build/pdf')).code;
   const html = (await build(doc, join(doc.dir, 'build/html'), join(doc.dir, 'build/tex4ht'))).code;
   const missing = ['build/html/main.html', 'build/pdf/main.pdf'].filter(file => !existsSync(join(doc.dir, file)));
@@ -20,8 +20,8 @@ await pool(examples, workers, async doc => {
   console.log(`${doc.name}: ${wrong.join(', ') || 'built'} (${join(doc.dir, 'build')})`);
 });
 
-// (the index, as built, copied into a site of its own: a site built before may
-// hold an example that has gone)
+// (the index is built apart and copied into a new build/site, as an older
+// site may hold a removed example)
 const site = join(root, 'build/site');
 const index = { name: 'examples/index', dir: join(root, 'examples'), tex: 'index.tex', cfg: join(root, 'tex8web.cfg') };
 const indexOut = join(root, 'build/siteindex');

@@ -1,4 +1,4 @@
--- The stylesheet's rewriting
+-- assets.lua: the fonts a page needs, and the rewriting of the stylesheet
 local dom = require "luaxml-domobject"
 local assets = require "tex8web.assets"
 

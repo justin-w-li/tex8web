@@ -1,6 +1,6 @@
-// What the tests of the test tools share: a pool of build slots of their own,
-// in a temporary $TMPDIR, so that they never wait for other sessions' builds,
-// and a stand-in for make4ht. Importing it sets them up for the process.
+// Set-up for the tests of the test tools, applied on import: a separate
+// pool of build slots in a temporary $TMPDIR, so that the tests never wait
+// for other sessions' builds, and a stand-in for make4ht.
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,15 +8,15 @@ import { after } from 'node:test';
 
 const pooled = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webtools')));
 process.env.TMPDIR = pooled;
-// (two, as the shared pool still limits the builds of the documents beside them)
+// (two, as the shared pool still limits the document builds beside them)
 process.env.TEX8WEB_SLOTS = '2';
 after(() => rmSync(pooled, { recursive: true, force: true }));
 
 // The stand-in is first on the PATH of the builds and regress.mjs runs that
 // pass `stubbed`, for the tests of what happens around a build. bin/tex8web
-// runs it as it runs make4ht. The page is the document's text, and a
-// document with \undefinedcs fails. It keeps and reuses LaTeX's run as
-// tex8web.mk4 does, saying 'LaTeX ran' in LaTeX's part of the log.
+// runs it as make4ht. Its page is the document's text, and a document with
+// \undefinedcs fails. It saves and reuses the LaTeX run as tex8web.mk4 does,
+// printing 'LaTeX ran' in LaTeX's part of the log when not reusing it.
 const stubs = join(pooled, 'stubs');
 mkdirSync(stubs);
 writeFileSync(join(stubs, 'make4ht'), `#!/bin/sh

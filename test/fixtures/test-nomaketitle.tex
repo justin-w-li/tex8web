@@ -1,6 +1,5 @@
-% A test for tex8web's title in a class without \maketitle, as a letter's:
-% it builds without errors or warnings, and \title still gives the page's
-% title.
+% A class without \maketitle, as in a letter: the document builds without
+% errors or warnings, and \title still gives the page's title.
 \documentclass{article}
 \makeatletter\AtBeginDocument{\let\maketitle\@undefined}\makeatother
 \title{Without a maketitle}

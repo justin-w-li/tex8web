@@ -1,5 +1,5 @@
-// What's wrong with a built page: for npm test's documents, and for any
-// other build (test/check.mjs).
+// The generic checks of a built page, for the documents of npm test and for
+// any other build (test/check.mjs).
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, join, relative } from 'node:path';
 
@@ -22,13 +22,13 @@ export function checkTexLog(path) {
 
 // make4ht's warnings and errors in its log
 export function checkLog(log) {
-  // (MathJax's own warnings, from prerendering, start with "MathJax:", and
-  // tex8web.js's, as a macro MathJax can't define, with "tex8web:")
+  // (the warnings of MathJax in prerendering start with "MathJax:", and those
+  // of tex8web.js, such as a macro MathJax cannot define, with "tex8web:")
   return log.split('\n').filter(l => /\[(WARNING|ERROR|FATAL)\]|^(MathJax|tex8web):/.test(l))
     .map(line => line.trim());
 }
 
-// the pages in out, and the files with them
+// the pages in out, and the files beside them
 export function checkOutput(out) {
   if (!existsSync(out)) return ['no output directory'];
   const problems = [];
@@ -43,17 +43,18 @@ export function checkOutput(out) {
   return problems;
 }
 
-// each page's checks: html, the page's path -> its problems
+// the checks of each page: (html, page path) -> problems
 const toc = html => html.match(/<nav[^>]*id=['"]tex8web-toc['"][^]*?<\/nav>/)?.[0] ?? '';
 const count = (html, pattern) => (html.match(pattern) || []).length;
 const pageChecks = [
-  // (only tex8web's: the inline one, and tex8web-head.js and tex8web-page.js)
+  // (only tex8web's: the inline font script, tex8web-head.js, and
+  // tex8web-page.js)
   function scripts(html) {
     const scripts = [...html.matchAll(/<script([^>]*)>/g)].map(m => m[1]);
     return scripts.some(s => !/src=['"]tex8web-(head|page)\.js['"]|id=['"]tex8web-fonts['"]/.test(s)) ? ["has a <script> besides tex8web's"] : [];
   },
-  // (the inline script's text whole, in its CDATA section: the serializer
-  // escapes the <, > and & of a script's text)
+  // (the inline script's text, unescaped and all in its CDATA section: the
+  // serializer escapes <, >, and & in a script's text)
   function fontsScript(html) {
     const body = html.match(/<script [^>]*id=['"]tex8web-fonts['"][^>]*>([^]*?)<\/script>/)?.[1];
     return body !== undefined && /^\/\*<!\[CDATA\[\*\/[^]*\/\*\]\]>\*\/$/.test(body) && !/&(amp|lt|gt);/.test(body)
@@ -79,8 +80,8 @@ const pageChecks = [
     return [...toc(html).matchAll(/<span class=['"](chapter|appendix|(?:sub)*(?:section|paragraph))Toc['"]>(?!<span class=['"]tocnumber)/g)]
       .map(([, level]) => `a ${level} entry in the table of contents without its number box`);
   },
-  // (a heading's label may add to its number, as titlesec's \thesection.
-  // does, but holds it)
+  // (a heading's mark holds its number from the table of contents, and may
+  // add to it, as titlesec's \thesection. does)
   function headingNumbers(html) {
     const problems = [];
     for (const [, number, id] of toc(html).matchAll(/<span class=['"]tocnumber['"]>([^<]+)<\/span><a href=['"]#([^'"]+)['"]/g)) {
@@ -101,17 +102,17 @@ const pageChecks = [
     const merrors = count(html, /<mjx-merror/g);
     return merrors ? [`${merrors} MathJax error(s)`] : [];
   },
-  // (MathJax draws a macro it doesn't know as its name, in red, which
-  // tex8web.js makes light-dark(red, ...))
+  // (MathJax draws an unknown macro as its name, in red, which tex8web.js
+  // makes light-dark(red, ...))
   function unknownMacros(html) {
     const unknown = [...html.matchAll(/<mjx-mtext style=['"]color: (?:red|light-dark\(red,[^'"]*);['"]>(.*?)<\/mjx-mtext>/g)]
       .map(m => m[1].replace(/<[^>]+>/g, ''));
     return unknown.length ? [`macros MathJax doesn't know: ${[...new Set(unknown)].join(', ')}`] : [];
   },
-  // (in a formula's MathML, \hat and \tilde aren't stretchy; their
-  // glyph is the one without a size, and TeX's wide ones are the next
-  // three; TeX Gyre's math fonts, whose accent is the combining one, have
-  // more sizes, any of which tex8web.js's minsize and maxsize allow)
+  // (in a formula's MathML, \hat and \tilde are not stretchy, and their
+  // glyph is the unsized one. TeX's wide accents are the next three sizes.
+  // The TeX Gyre math fonts, whose accent is the combining one, have more
+  // sizes, any of which the minsize and maxsize of tex8web.js allow)
   function wideAccents(html) {
     for (const [formula] of html.matchAll(/<mjx-container[^]*?<\/mjx-container>/g)) {
       const wide = formula.match(/<mo(?![^>]*stretchy=['"]false)[^>]*>[\^~]<\/mo>/g) || [];
@@ -125,9 +126,9 @@ const pageChecks = [
     const math = count(html, /<mjx-container/g), mathml = count(html, /<mjx-assistive-mml/g);
     return mathml && math !== mathml ? [`${math} formulas, ${mathml} with MathML for screen readers`] : [];
   },
-  // (prerendering's speech, on the formula's container, or the formula
-  // hidden if it has no character to say but in a \phantom; and none of
-  // the semantic enrichment speech comes from, which would add elements)
+  // (prerendering's speech on each formula's container, or the formula
+  // hidden if its only characters are in a \phantom. None of the semantic
+  // enrichment the speech comes from, which would add elements)
   function speech(html) {
     const formulas = [...html.matchAll(/<mjx-container([^>]*)>(<mjx-math[^>]*>)?([^]*?)<\/mjx-container>/g)];
     const named = (container, math) => / role=['"]math['"]/.test(container)
@@ -142,7 +143,7 @@ const pageChecks = [
   function links(html, page) {
     const problems = [];
     const ids = new Set([...html.matchAll(/ (?:id|name)=['"]([^'"]+)['"]/g)].map(m => m[1]));
-    // (but the up link's, to the site around the page)
+    // (except the up link, to the site around the page)
     const own = html.replace(/<a [^>]*class=['"]tex8web-control tex8web-up['"][^>]*>/, '');
     for (const [, ref] of own.matchAll(/ (?:href|src)=['"]([^'"]+)['"]/g)) {
       if (/^[a-z]+:/i.test(ref)) continue;

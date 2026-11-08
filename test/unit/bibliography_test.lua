@@ -1,4 +1,4 @@
--- The bibliography's run of bibtex or biber
+-- bibliography.lua: the run of bibtex or biber
 local bibliography = require "tex8web.bibliography"
 
 return {

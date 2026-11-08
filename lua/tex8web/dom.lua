@@ -1,5 +1,6 @@
--- Helpers over LuaXML's DOM. LuaXML can't replace an element's children or
--- a text node's text, so those reach into its fields here, and nowhere else.
+-- Helpers for LuaXML's DOM. LuaXML cannot replace an element's children or
+-- a text node's text, so set_children and set_node_text write its fields,
+-- and no other file does.
 local M = {}
 
 -- the nearest ancestor (or el itself) that satisfies predicate
@@ -18,12 +19,10 @@ local function any_class(el, matches)
   return false
 end
 
--- whether one of el's classes is name
 function M.has_class(el, name)
   return any_class(el, function(class) return class == name end)
 end
 
--- whether one of el's classes starts with prefix
 function M.class_starts(el, prefix)
   return any_class(el, function(class) return class:sub(1, #prefix) == prefix end)
 end
@@ -33,7 +32,6 @@ function M.class_matches(el, pattern)
   return any_class(el, function(class) return class:match("^" .. pattern .. "$") ~= nil end)
 end
 
--- el's children that are elements
 function M.elements(el)
   local elements = {}
   for _, node in ipairs(el:get_children()) do
@@ -42,8 +40,8 @@ function M.elements(el)
   return elements
 end
 
--- whether el has no elements in it and no text but space (comments don't
--- show)
+-- whether el holds no elements and no text but space (comments are
+-- ignored)
 function M.is_blank(el)
   return #M.elements(el) == 0 and not el:get_text():find("%S")
 end

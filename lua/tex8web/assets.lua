@@ -1,7 +1,7 @@
 -- The files a page needs next to it: fonts, the document's pictures and
--- PDF, tex8web.js, and the static styles in the stylesheet, where tex4ht's
--- rules are also drawn in the text's color. Each file is listed with
--- tex4ht's output files, so make4ht -d copies it too.
+-- PDF, and tex8web.js; and the stylesheet, with css/tex8web.css, the font
+-- rules, and tex4ht's colors adjusted for dark mode. Each file is listed
+-- with tex4ht's output files, so make4ht -d copies it too.
 local files = require "tex8web.files"
 local prerender = require "tex8web.prerender"
 
@@ -34,14 +34,14 @@ local function gyre(name, families, classes)
     classes = classes or families, files = files}
 end
 
--- the fonts in TeX Live that a page shows for the fonts a document may set
--- its text in: TeX Gyre's equivalents of Times (times, mathptmx, txfonts,
+-- the TeX Live fonts a page shows for the fonts a document may set its
+-- text in: TeX Gyre's equivalents of Times (times, mathptmx, txfonts,
 -- newtx), Palatino (palatino, mathpazo, pxfonts, newpx), Helvetica
--- (helvet), Courier and the other standard PostScript fonts (fouriernc's
--- fnc too), with TeX Gyre's own packages; and XCharter for Charter
--- (charter, XCharter). Each with its name, the font families it shows,
--- how tex4ht's classes for them start or go on (ptmri7t-, ec-qtmr-10,
--- ntx-Italic-tlf-t1-), from the fonts' file names, and its files
+-- (helvet), Courier, and the other standard PostScript fonts (also
+-- fouriernc's fnc), with TeX Gyre's packages; and XCharter for Charter
+-- (charter, XCharter). Each has its name, the font families it is shown
+-- for, how tex4ht's classes for it start or continue (ptmri7t-, ec-qtmr-10,
+-- ntx-Italic-tlf-t1-), from the fonts' file names, and its files.
 local known = {
   gyre("termes", {"ptm", "qtm", "txr", "ntxtlf", "ntxlf", "ntxosf", "ntxtosf"},
     {"ptm", "qtm", "txr", "txb", "txi", "ntx-"}),
@@ -60,8 +60,8 @@ local by_family = {}
 for _, font in ipairs(known) do
   for _, family in ipairs(font.families) do by_family[family] = font end
 end
--- (Latin Modern's and Computer Modern's roman, for a document whose text
--- is in another role: \textrm, \textbf)
+-- (the classes of Latin Modern's and Computer Modern's roman, for \textrm
+-- and \textbf in a document whose text is in another role)
 local roman_classes = {"-lmr", "-lmb", "-lmcsc", "cmr", "cmbx", "cmti", "cmsl", "cmcsc", "ecrm", "ecbx",
   "ecti", "ecsl", "eccc"}
 
@@ -71,7 +71,8 @@ local function installed(font)
   log:warning(file .. " not found in TeX Live: the page shows Latin Modern for " .. font.name)
 end
 
--- whether class is one of starts' (as selector has it)
+-- whether class starts with one of starts or has it after a hyphen, as in
+-- selector
 local function matches(class, starts)
   for _, start in ipairs(starts) do
     start = start:gsub("^%-", ""):gsub("%-", "%%-")
@@ -79,10 +80,11 @@ local function matches(class, starts)
   end
 end
 
--- the page's fonts (known) for roman, sans-serif and typewriter text, where
--- the document's family (tex8web-page.tex's build element) has one; which
--- role the text itself is in (\familydefault); and the others whose
--- classes the page has, from a family chosen in the text (\fontfamily)
+-- the page's fonts (from known) for roman, sans-serif, and typewriter text,
+-- where the document's family (from tex8web-page.tex's build element) has
+-- one; the role the text itself is in (\familydefault); and the other known
+-- fonts whose classes the page has, from a family chosen in the text
+-- (\fontfamily)
 local function roles_of(context, document)
   local families = context.families or {}
   local roles = {body = "roman", others = {}}
@@ -113,7 +115,7 @@ local function roles_of(context, document)
   return roles
 end
 
--- the fonts of roles: their roles', then the others
+-- the fonts in roles: roman, sans, and mono, then the others
 local function fonts_of(roles)
   local list = {}
   for _, role in ipairs({"roman", "sans", "mono"}) do list[#list + 1] = roles[role] end
@@ -131,11 +133,12 @@ local function selector(starts)
   return table.concat(each, ", ")
 end
 
--- the stylesheet's rules for those fonts: each font's faces (cut down as
--- WOFF2 by prerender.mjs, or else whole, M.originals), the roles' custom
+-- the stylesheet rules for those fonts: each font's faces (as WOFF2 cut
+-- down by prerender.mjs, or else whole, M.originals), the roles' custom
 -- properties (css/tex8web.css), the text's role, and tex4ht's classes for
--- each font in its role (its htf files call Times monospace) or in its
--- own. With the text in sans-serif, Latin Modern's roman classes in roman
+-- each font, in its role (its htf files call Times monospace) or in its
+-- own family. With the text in sans-serif, Latin Modern's roman classes are
+-- set in roman.
 local function font_css(roles)
   local css = {}
   local stacks = {roman = '"Latin Modern Roman", serif', sans = '"Latin Modern Sans", sans-serif',
@@ -171,7 +174,7 @@ local function exists(path)
   return lfs.attributes(path) ~= nil
 end
 
--- copies source to path, a file of the page
+-- copies source to path and lists path among the page's files
 function M.add(source, path)
   copy(source, path)
   Make:add_file(path)
@@ -186,18 +189,19 @@ local function custom(css, name)
   return value
 end
 
--- the faces of Latin Modern the page's text is set in, by the rules that
--- set its font: tex4ht's for its font classes (.ec-lmbx-10 bold,
--- .ec-lmro-10 oblique, which is the italic), css/tex8web.css's for their
--- families, for headings and for the contents' entries (in the fonts
--- tex8web-page.tex gives them in the stylesheet, css), and the browser's
--- for other elements; or another font's (roles_of), for a role in it or a
--- class of it. A set of font files, with the text's regular face, which
--- the page's controls use
+-- the set of font files the page's text uses, with the text's regular
+-- face, which the page's controls use. Faces of Latin Modern are found
+-- from the rules that set the font: tex4ht's for its font classes
+-- (.ec-lmbx-10 bold, .ec-lmro-10 oblique, which is the italic),
+-- css/tex8web.css's for their families, headings, and table of contents
+-- entries (in the fonts tex8web-page.tex gives them in css), and the
+-- browser's for other elements. A role or class of another font (roles_of)
+-- gives that font's face.
 function M.faces(document, css, roles)
   roles = roles or {body = "roman", others = {}}
-  -- (each rule a face, of what it sets: bold, italic and the family, mono
-  -- and sans in Latin Modern, or system for the browser's monospace)
+  -- (each rule a face: what it sets of bold, italic, and family, where the
+  -- family is mono or sans in Latin Modern, or system for the browser's
+  -- monospace)
   local rules = {
     h1 = {bold = true}, h2 = {bold = true}, h3 = {bold = true}, h4 = {bold = true},
     h5 = {bold = true}, h6 = {bold = true}, b = {bold = true}, strong = {bold = true},
@@ -206,7 +210,8 @@ function M.faces(document, css, roles)
     kbd = {family = "system"}, samp = {family = "system"},
   }
   local classes = {titleHead = {bold = false}, id = {bold = true}, ["tex8web-toc-title"] = {bold = true}}
-  -- (what the stylesheet sets, from its --tex8web-<prefix>-weight and so on)
+  -- (the face the stylesheet sets from --tex8web-<prefix>-weight, -style,
+  -- and -family)
   local function font_of(prefix, default_weight)
     local family = custom(css, prefix .. "-family") or ""
     return {bold = (custom(css, prefix .. "-weight") or default_weight) == "bold",
@@ -239,14 +244,14 @@ function M.faces(document, css, roles)
   end
   for class, rule in css:gmatch("%.([%w-]+%-%d[%w-]*)%s*(%b{})") do read(class, rule) end
   for class, rule in css:gmatch("%.([%w-]+%-)%s*(%b{})") do read(class, rule) end
-  -- (css/tex8web.css's, after tex4ht's)
+  -- (css/tex8web.css's family rules, which come after tex4ht's)
   for class, face in pairs(classes) do
     if class:find("%-lmtt") or class:find("^cmtt%-") or class:find("^ectt%-") then face.family = "mono"
     elseif class:find("%-lmss") or class:find("^cmss") or class:find("^ecss") then face.family = "sans"
     elseif class:find("^ptmr7t%-") then face.family = nil end
   end
-  -- (a class of a font in a role, or of another in roman, as font_css has
-  -- it)
+  -- (the role of a class: a role's font, or another font set in roman, as
+  -- in font_css)
   local function role_of(class)
     for _, role in ipairs({"roman", "sans", "mono"}) do
       if roles[role] and matches(class, roles[role].classes) then return role end
@@ -267,8 +272,8 @@ function M.faces(document, css, roles)
   end
   local body = {family = roles.body ~= "roman" and roles.body or nil}
   local used = {[file(body)] = true}
-  -- (the text of each element, but scripts' and the math's, which MathJax
-  -- sets in its own fonts)
+  -- (the text of each element except scripts, styles, and the math, which
+  -- MathJax sets in its fonts)
   local function walk(el, inherited)
     local face = {}
     for key, value in pairs(inherited) do face[key] = value end
@@ -294,17 +299,17 @@ function M.faces(document, css, roles)
   return used
 end
 
--- the fonts, and the pictures, which the page references relative to the
+-- copies the fonts, and the pictures the page references relative to the
 -- document (\includegraphics), unless tex4ht made them. The faces the text
--- uses are listed for tex8web-fonts.js to preload (M.faces): fetched as the
--- page loads, not as each is first laid out (prerender.mjs says why)
+-- uses (M.faces) are listed for tex8web-fonts.js to preload (see "Preloaded
+-- fonts" in CONTRIBUTING.md).
 function M.copy(document, context)
   local function add_font(font)
     M.add(context.root .. "/fonts/" .. font, context.dir .. "/fonts/" .. font)
   end
   for _, font in ipairs(fonts) do add_font(font) end
-  -- (their copyright, licenses and changes, which the licenses ask a copy
-  -- to come with)
+  -- (the fonts' copyright, licenses, and changes, which the licenses
+  -- require with each copy)
   add_font("LICENSE.txt")
   local roles = roles_of(context, document)
   context.roles = roles
@@ -338,8 +343,8 @@ function M.copy(document, context)
   end
 end
 
--- the fonts of context.roles (M.copy's) whole, from TeX Live, for a page
--- that prerender.mjs didn't cut them down for
+-- copies the fonts of context.roles (set in M.copy) whole from TeX Live,
+-- for a page whose fonts prerender.mjs did not cut down
 function M.originals(context)
   for _, font in ipairs(fonts_of(context.roles)) do
     for _, shape in ipairs(shapes) do
@@ -349,8 +354,9 @@ function M.originals(context)
   end
 end
 
--- M.copy lists the cut-down TeX Live faces to preload (prerender.mjs writes
--- them); when it failed, the page shows the whole fonts, and they go
+-- removes the cut-down TeX Live faces, which M.copy lists for preloading
+-- and prerender.mjs writes, from the list; without prerendering, the page
+-- uses the whole fonts
 function M.drop_preloads(filename, roles)
   local gone = {}
   for _, font in ipairs(fonts_of(roles)) do
@@ -369,19 +375,19 @@ function M.drop_preloads(filename, roles)
   f:close()
 end
 
--- tex4ht draws rules (\hline, \fbox, a table's | columns) in black; in the
--- text's color instead, so they show in dark mode
+-- tex4ht draws rules (\hline, \fbox, a table's | columns) in black. They
+-- are set in the text's color instead, so they show in dark mode.
 function M.rules_in_text_color(css)
   return (css:gsub("border[%w-]*%s*:[^;{}]*", function(declaration)
     return (declaration:gsub("%f[%w]black%f[%W]", "currentColor"))
   end))
 end
 
--- tex4ht's colors, in its stylesheet (\colorbox's and \fcolorbox's, soul's
--- highlights) and in style attributes (\textcolor's, listings'), in dark
--- mode at another lightness (css/tex8web.css's --tex8web-dark-*); black text
+-- tex4ht's colors, in its stylesheet (\colorbox, \fcolorbox, soul's
+-- highlights) and in style attributes (\textcolor, listings), at another
+-- lightness in dark mode (css/tex8web.css's --tex8web-dark-*); black text
 -- and rules in the text's color. (Without xcolor, tex4ht writes rgb(r,g,b):
--- html4.4ht's \Configure{HColor:rgb} and its gray and cmyk ones)
+-- html4.4ht's \Configure{HColor:rgb} and its gray and cmyk ones.)
 local kinds = {color = true, background = true, border = true}
 local black = {color = "var(--tex8web-text)", border = "currentColor"}
 function M.colors_in_dark_mode(css)
@@ -418,11 +424,12 @@ end
 
 -- css/tex8web.css's @media (--tex8web-wide): a screen with room for the
 -- text (--tex8web-textwidth, which tex8web-page.tex sets and a config may
--- set again) and on each side a column (--tex8web-margin) with a gap on
--- either side of it (--tex8web-gap). (Media queries can't read custom
--- properties; the em of one is the browser's default font size, 16px, as
--- large as the page's 12pt and as a rem.) Without the lengths, no screen is
--- wide (none is 10000em): the narrow layout reads at any width
+-- set again) and, on each side, a column (--tex8web-margin) with a gap
+-- (--tex8web-gap) on either side of it. Media queries cannot read custom
+-- properties, so the query is written here. A media query's em is the
+-- browser's default font size, 16px, which equals the page's 12pt and a
+-- rem. Without the lengths, no screen is wide (the query is 10000em), and
+-- the narrow layout is used at any width.
 function M.wide_screens(css)
   local width, margin, gap = ems(css, "textwidth"), ems(css, "margin"), ems(css, "gap")
   local query = string.format("(min-width: %.2fem)",
@@ -430,9 +437,9 @@ function M.wide_screens(css)
   return (css:gsub("%(%-%-tex8web%-wide%)", query))
 end
 
--- html4.4ht's rules for the paragraphs and blocks in an <li>, which space
--- and indent them unlike LaTeX, kept from tex8web's own lists
--- (tex8web-text.tex) but not from other packages', such as paralist's
+-- html4.4ht's rules for paragraphs and blocks in an <li>, which space and
+-- indent them unlike LaTeX, limited to lists other than tex8web's
+-- (tex8web-text.tex), such as paralist's
 function M.other_lists(css)
   return (css:gsub("[^\n]+", function(line)
     local selectors, rule = line:match("^(li [^{]-)%s*({.*)$")
@@ -443,8 +450,9 @@ function M.other_lists(css)
   end))
 end
 
--- css/tex8web.css, where tex8web-core.tex marks its place in the document's
--- stylesheet
+-- inserts css/tex8web.css and the font rules where tex8web-core.tex marks
+-- their place in the document's stylesheet, then adjusts the colors and the
+-- wide-screen query
 function M.stylesheet(context)
   local path = context.dir .. "/" .. context.input .. ".css"
   local css = assert(files.read(path))

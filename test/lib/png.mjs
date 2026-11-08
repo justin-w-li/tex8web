@@ -1,6 +1,6 @@
-// The little of PNG that shots.mjs needs: the pixels of a screenshot, and a
-// picture made from some of its rows. Chrome writes 8-bit RGB or RGBA,
-// not interlaced.
+// The parts of PNG that shots.mjs needs: the pixels of a screenshot, and a
+// picture made from some of its rows. Only 8-bit RGB or RGBA, not
+// interlaced, as Chrome writes.
 import { deflateSync, inflateSync } from 'node:zlib';
 
 const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -14,8 +14,8 @@ const crc = bytes => {
   return (c ^ 0xffffffff) >>> 0;
 };
 
-// { width, height, channels, rows } of a PNG, rows being its pixels, row by
-// row, with no filter bytes
+// { width, height, channels, rows } of a PNG, rows being its pixels row by
+// row, without filter bytes
 export function decode(png) {
   if (!png.subarray(0, 8).equals(signature)) throw new Error('not a PNG');
   let header;
@@ -33,14 +33,14 @@ export function decode(png) {
     throw new Error(`unsupported PNG: ${header[8]}-bit, color type ${header[9]}, interlace ${header[12]}`);
   }
   const stride = width * channels;
-  // (the rows are made in place, each a byte nearer the start than its
-  // filtered one, as a picture of a long page is 100 MB)
+  // (the rows are unfiltered in place, without their filter bytes, as the
+  // picture of a long page is 100 MB)
   const raw = inflateSync(Buffer.concat(data)), zeros = Buffer.alloc(stride);
   if (raw.length !== height * (stride + 1)) throw new Error('truncated PNG');
   const rows = raw;
   for (let y = 0; y < height; y++) {
     const filter = raw[y * (stride + 1)], from = y * (stride + 1) + 1, to = y * stride;
-    // (the row above, which the first row has all zero)
+    // (the row above, all zeros for the first row)
     const above = y ? rows : zeros, at = y ? to - stride : 0;
     if (filter === 0) raw.copyWithin(to, from, from + stride);
     else if (filter === 2) {

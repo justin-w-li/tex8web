@@ -1,8 +1,8 @@
 // tex8web: loaded in <head> without defer (page.lua), so that the reader's
-// theme and hidden table of contents (which tex8web-page.js keeps) apply
-// before the page is drawn, and so that pagereveal, which fires before
-// then, is heard.
-// (tex8web-top: the page starts at its top, which tex8web-page.js keeps true)
+// theme and hidden table of contents, saved by tex8web-page.js, apply before
+// the page is drawn, and the pagereveal listener exists before pagereveal
+// fires. tex8web-top marks the page as scrolled to its top; tex8web-page.js
+// updates the class on scroll.
 document.documentElement.classList.add('tex8web-js', 'tex8web-top');
 try {
   const theme = localStorage.getItem('tex8web-theme');
@@ -12,12 +12,12 @@ try {
   }
 } catch {}
 
-// the change from one of a site's tex8web pages to another (css/tex8web.css's
-// @view-transition): back when it's to the page above (\WebUp) or the
-// browser goes back in history, or else forward. The page left knows
-// which, and tells the page it leads to
+// direction of the view transition between two tex8web pages of a site
+// (@view-transition in css/tex8web.css): back to the page above (\WebUp) or
+// back in history, else forward. The direction is known only on the old
+// page, so the pageswap handler stores it in sessionStorage for the new one.
 {
-  // (as tex8web-page.js's)
+  // as in tex8web-page.js
   const page = url => url.split('#')[0].replace(/\/index\.html$/, '/');
   addEventListener('pageswap', event => {
     const { entry, from, navigationType } = event.activation ?? {};

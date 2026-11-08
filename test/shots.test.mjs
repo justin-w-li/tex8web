@@ -1,5 +1,6 @@
-// Tests of shots.mjs's comparison, which need Chrome, run by npm run
-// test:visual: node --test test/shots.test.mjs
+// Tests of the comparison in shots.mjs. They need Chrome, so npm run
+// test:visual runs them, not npm test. Alone:
+//   node --test test/shots.test.mjs
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -11,15 +12,15 @@ import { decode } from './lib/png.mjs';
 import './lib/stubs.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-// (in the temporary directory lib/stubs.mjs makes, and removes)
+// inside the temporary directory that lib/stubs.mjs makes and removes
 const dir = mkdtempSync(join(tmpdir(), 'tex8webshots'));
 
 // A page with a bar fixed to the top, a footer fixed to the bottom, a sticky
-// header, a block as high as the window, and a line of text. Short, it is
-// 9 screens high at 900px, 3 strips of 3, with the text at 4400px. Long,
-// it is 45 screens high, more than a strip of the tool's own, with the text
-// at 25000px. Each test writes its pages in a directory of its own (pages()),
-// as the tests run at once
+// header, a block as high as the window, and a line of text. A short page
+// is 9 screens high at 900px, 3 strips of 3, with the text at 4400px. A long
+// page is 45 screens high, more than one default strip of 20, with the text
+// at 25000px. Each test writes its pages in a separate directory (pages()),
+// as the tests run concurrently.
 const pages = () => {
   const root = mkdtempSync(join(dir, 'pages'));
   return (name, { extra = '', more = 0, color = 'black', background = 'white', style = '', long = false } = {}) => {
@@ -37,15 +38,15 @@ const pages = () => {
 const run = (env, args) => new Promise(resolve => execFile(process.execPath, [join(here, 'shots.mjs'), ...args],
   { env: { ...process.env, ...env }, timeout: 300000, maxBuffer: 2 ** 26 },
   (error, stdout, stderr) => resolve({ status: error ? error.code : 0, stdout, stderr })));
-// shots.mjs at only the views given (as 1400-light,390-dark), with strips
+// shots.mjs with only the given views (as 1400-light,390-dark), and strips
 // of 3 screens for the short pages
 const shots = (views, ...args) => run({ TEX8WEB_SHOTS_VIEWS: views, TEX8WEB_SHOTS_STRIP: '3' }, args);
-// with the tool's own strips, for the long pages
+// with the default strips, for the long pages
 const realShots = (views, ...args) => run({ TEX8WEB_SHOTS_VIEWS: views }, args);
 const all = '1400-light,1400-dark,390-light,390-dark';
 const lines = result => result.stdout.trim().split('\n');
 
-// (two at a time: without lockf, as on Linux, no slot limits their Chromes)
+// two at a time: without lockf, as on Linux, no build slot limits the Chromes
 describe('shots.mjs', { concurrency: 2 }, () => {
   test('a comparison says which screens differ, and writes them', async () => {
     const page = pages();
@@ -57,13 +58,13 @@ describe('shots.mjs', { concurrency: 2 }, () => {
 
     result = await shots('1400-light,390-dark', join(dir, 'out-changed'), old, changed);
     assert.equal(result.status, 1, result.stderr);
-    // (the text is at 4400px, in screen 4 of 9 at 900px, 5 of 9 at 844px)
+    // the text is at 4400px, in screen 4 of 9 at 900px, 5 of 9 at 844px
     assert.match(lines(result)[0], /^main-1400-light: screens 4 of 9 differ, 900px each$/);
     assert.match(lines(result)[1], /^main-390-dark: screens 5 of 9 differ, 844px each$/);
     const written = readdirSync(join(dir, 'out-changed')).sort();
     assert.deepEqual(written.filter(file => file.startsWith('main-1400-light')), ['main-1400-light-004-new.png', 'main-1400-light-004-old.png']);
 
-    // the screens written are the page's, as one-by-one shots (a single build) have them
+    // the written screens match those of a single build, shot one at a time
     await shots('1400-light', join(dir, 'out-one'), join(changed, 'main.html'));
     const one = decode(readFileSync(join(dir, 'out-one/main-1400-light-004.png')));
     const compared = decode(readFileSync(join(dir, 'out-changed/main-1400-light-004-new.png')));
@@ -96,9 +97,9 @@ describe('shots.mjs', { concurrency: 2 }, () => {
 
   test('only the first few differing screens are written, and the output lists them all', async () => {
     const page = pages();
-    // (11 screens, so that more than 8 differ)
+    // 11 screens, so that more than 8 differ
     const [old, other] = [page('old', { more: 2000 }), page('other', { more: 2000, background: '#eef' })];
-    // (all but the first, which a block as high as the window covers)
+    // all but the first, which the block as high as the window covers
     const everything = Array.from({ length: 10 }, (_, i) => i + 1).join(', ');
     let result = await shots('1400-light', join(dir, 'out-8'), old, other);
     assert.equal(result.status, 1, result.stderr);
@@ -122,10 +123,10 @@ describe('shots.mjs', { concurrency: 2 }, () => {
     assert.match(lines(result)[0], /^main-1400-light: differs from screen 1 of 9, shots stopped there, 900px each$/);
     assert.match(result.stderr, /main-1400-light: new, strip 1 of 3/);
     assert.doesNotMatch(result.stderr, /main-1400-light: new, strip 2 of 3/);
-    // (screens 1 and 2 of the first strip, old and new)
+    // screens 1 and 2 of the first strip, old and new
     assert.equal(readdirSync(join(dir, 'out-look')).filter(file => file.startsWith('main-1400-light-')).length, 4);
 
-    // (the text is in the second strip, screens 3 to 5)
+    // the text is in the second strip, screens 3 to 5
     result = await shots('1400-light', '--expect', 'look', join(dir, 'out-late'), old, late);
     assert.match(lines(result)[0], /^main-1400-light: differs from screen 4 of 9, shots stopped there, 900px each$/);
     assert.match(result.stderr, /main-1400-light: new, strip 2 of 3/);
@@ -168,7 +169,7 @@ describe('shots.mjs', { concurrency: 2 }, () => {
     const wrong = JSON.parse(right);
     wrong.hashes[0] = 'not the strip';
     writeFileSync(entry, JSON.stringify(wrong));
-    // (the first strip differs from the entry's, and from nothing else)
+    // the first strip differs only from the wrong entry
     const result = await shots('1400-light', '--cache', cache, '--expect', 'look', join(dir, 'out-t'), old, late);
     assert.equal(result.status, 1, result.stderr);
     assert.match(lines(result)[0], /^main-1400-light: differs from screen 4 of 9, shots stopped there/);
@@ -176,7 +177,7 @@ describe('shots.mjs', { concurrency: 2 }, () => {
   });
 
   test('an old build replaced during the run is not kept under the key of what it was', async () => {
-    // (long, so that the old build is changed while its first strips are shot)
+    // long, so that the old build is changed while its first strips are shot
     const page = pages();
     const [old, cache] = [page('old', { long: true }), join(dir, 'cache-race')];
     const child = spawn(process.execPath, [join(here, 'shots.mjs'), '--cache', cache, join(dir, 'out-race'), old, page('same', { long: true })],
@@ -194,12 +195,12 @@ describe('shots.mjs', { concurrency: 2 }, () => {
   });
 
   test('screens beyond the first are those of a page shot one screen at a time, with fixed and sticky elements', async () => {
-    // (with the tool's own strips, as a capture that tall is what it makes)
+    // with the default strips, as real comparisons capture that tall
     const page = pages();
     const [old, other] = [page('old', { long: true }), page('other', { long: true, background: '#eef' })];
     await Promise.all([realShots('1400-light,390-dark', '--keep', 'all', join(dir, 'out-fixed'), old, other),
       realShots('1400-light,390-dark', join(dir, 'out-single'), join(other, 'main.html'))]);
-    // (the first and last screens of a strip, and the last of the page)
+    // the first and last screens of a strip, and the last of the page
     for (const [label, screens] of [['main-1400-light', [1, 19, 20, 21, 39, 40, 44]], ['main-390-dark', [1, 19, 20, 21, 39, 40, 47]]]) {
       for (const i of screens) {
         const n = String(i).padStart(3, '0');
@@ -212,13 +213,13 @@ describe('shots.mjs', { concurrency: 2 }, () => {
   test('--then runs on each page before it is shot, and --touch makes it a touch screen', async () => {
     const page = pages();
     const [old, other] = [page('old'), page('other', { background: '#eef' })];
-    // (inline style beats both pages' sheets, so the pages are the same once it has run)
+    // the inline style overrides both pages' style sheets, so the pages match after --then
     const result = await shots('1400-light', '--then', "document.body.style.background = '#ccc'", join(dir, 'out-then'), old, other);
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(lines(result), ['main-1400-light: identical']);
 
-    // (without --touch the page isn't checked for a mouse: headless Chrome
-    // on Linux has none, so it matches hover: none either way)
+    // no check without --touch: headless Chrome on Linux has no mouse, so
+    // the page matches hover: none either way
     const touchy = page('touchy', { style: '@media (hover: none) { body { background: #000; } }' });
     const touched = await shots('1400-light', '--touch', '--expect', 'look', join(dir, 'out-touch'), old, touchy);
     assert.equal(touched.status, 1, touched.stderr);

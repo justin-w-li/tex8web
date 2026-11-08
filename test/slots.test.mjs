@@ -1,6 +1,6 @@
-// Tests of the build slots (test/lib/slots.mjs) and of the commands that run
-// in them (run() in test/lib/build.mjs), run by npm test:
-// node --test test/slots.test.mjs
+// Tests of the build slots (test/lib/slots.mjs) and of the commands run in
+// them (run() in test/lib/build.mjs). Run by npm test, or alone:
+//   node --test test/slots.test.mjs
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -13,15 +13,15 @@ import { until } from './lib/chrome.mjs';
 // every command has a deadline, as a hung one would hold up the other tests
 const deadline = 60000;
 
-// (each has a pool or a deadline of its own, and most only wait, so these run at once)
+// each test has a separate pool or deadline, and most only wait, so the tests run concurrently
 describe('slots and run()', { concurrency: true }, () => {
   test('a command that prints nothing for the deadline is killed with what it started', async () => {
     const { code, log } = await run('sh', ['-c', 'sleep 60 & echo $!; wait'], { idle: 0.5 });
     assert.notEqual(code, 0);
     assert.match(log, /\[FATAL\] sh printed nothing for 0\.5s/);
     const child = Number(log.split('\n')[0]);
-    // (kill(pid, 0) finds a killed process until it is reaped, which in a
-    // container whose init doesn't reap, as CI's, is never: a zombie is gone)
+    // kill(pid, 0) finds a killed process until it is reaped. A container
+    // whose init does not reap, as in CI, never reaps it, so a zombie is gone.
     const zombie = () => existsSync('/proc') ? /^\d+ \(.*\) Z/.test(readFileSync(`/proc/${child}/stat`, 'utf8'))
       : spawnSync('ps', ['-o', 'stat=', '-p', String(child)], { encoding: 'utf8', timeout: deadline }).stdout.startsWith('Z');
     const gone = () => { try { process.kill(child, 0); return zombie(); } catch (e) { return e.code === 'ESRCH'; } };
@@ -39,8 +39,8 @@ describe('slots and run()', { concurrency: true }, () => {
     assert.match(log, /\[FATAL\] sh ran over 0\.5s/);
   });
 
-  // the slots, each test with a pool of its own in a temporary directory, as
-  // processes: a slot is held by a process
+  // The slot tests run child processes, as a slot is held by a process. Each
+  // test has a separate pool in a temporary directory.
   const lockf = existsSync('/usr/bin/lockf');
   function child(script, env) {
     const proc = spawn(process.execPath, ['--input-type=module', '-e', script],
@@ -69,7 +69,7 @@ describe('slots and run()', { concurrency: true }, () => {
       await Promise.all(Array.from({ length: 6 }, () => child(holder, env).done));
       let now = 0, most = 0;
       for (const sign of readFileSync(env.LOG, 'utf8').trim().split('\n')) most = Math.max(most, now += sign === '+' ? 1 : -1);
-      // (at least one: starts a second apart on a loaded machine may not overlap)
+      // at least one: on a loaded machine, starts a second apart may not overlap
       assert.ok(most >= 1 && most <= 2, `${most} slots held at once`);
     } finally {
       rmSync(tmp, { recursive: true });
@@ -91,8 +91,8 @@ describe('slots and run()', { concurrency: true }, () => {
     }
   });
 
-  // a tool that runs a silent build of its own in a slot, with a total limit of
-  // total seconds; the build writes its pid to pid, and the slot is file
+  // A tool that runs a silent build in a slot, with a total limit of total
+  // seconds. The build writes its pid to pid, and the slot's lock file is file.
   async function silentBuild(total) {
     const { tmp, env } = pool(1);
     const file = join(tmp, 'tex8web-slots/0');
@@ -119,7 +119,7 @@ describe('slots and run()', { concurrency: true }, () => {
   test('a build is ended by its own total limit when the tool is stopped', { skip: !lockf, timeout: 30000 }, async () => {
     const { tmp, tool, free } = await silentBuild(2);
     try {
-      // (its timers stopped with it; the limit is 2 s more than the tool's)
+      // the tool's timers stop with it; the watchdog's limit is 2 s more
       tool.kill('SIGSTOP');
       assert.ok(await free(10000), 'the build or its slot is left');
     } finally {
@@ -128,7 +128,8 @@ describe('slots and run()', { concurrency: true }, () => {
     }
   });
 
-  // (lines in turn, faster than a reader of two pipes could keep their order)
+  // lines alternating between stderr and stdout, faster than a reader of two
+  // pipes could keep in order
   const interleaved = ['sh', ['-c', 'i=0; while [ $i -lt 200 ]; do echo e$i >&2; echo o$i; i=$((i + 1)); done']];
   const inTurn = Array.from({ length: 200 }, (_, i) => `e${i}\no${i}\n`).join('');
 
@@ -162,7 +163,7 @@ describe('slots and run()', { concurrency: true }, () => {
       const first = child(`import { takeSlot } from './test/lib/slots.mjs';
         await takeSlot(); console.log('held'); await new Promise(done => setTimeout(done, 3500)); process.exit();`, env);
       assert.ok(await first.printed('held'));
-      // (it waits about 3 s, over its idle limit of 2 s, and runs for 1 s)
+      // the command waits about 3 s, over its idle limit of 2 s, then runs 1 s
       const second = child(`import { run } from './test/lib/build.mjs';
         const { code } = await run('sh', ['-c', 'sleep 1; echo ok'], { idle: 2, slot: true });
         console.log('exit', code); process.exit();`, env);
@@ -178,9 +179,10 @@ describe('slots and run()', { concurrency: true }, () => {
       const first = child(`import { takeSlot } from './test/lib/slots.mjs';
         await takeSlot(); console.log('held'); await new Promise(done => setTimeout(done, 8000)); process.exit();`, env);
       assert.ok(await first.printed('held'));
-      // (it waits for the slot, then has it for its first takeSlot() and
-      // again once that gives it back. A total of 5 s, less than the wait,
-      // ends it if a slot's wait is timed or if it waits for a second slot)
+      // The command waits for the slot, then has it for its first
+      // takeSlot(), and again once that one is released. The total limit of
+      // 5 s, less than the wait, ends the command if the wait is timed or if
+      // the command waits for a second slot.
       const command = `import { takeSlot } from './test/lib/slots.mjs';
         const chrome = await takeSlot();
         let second = false;

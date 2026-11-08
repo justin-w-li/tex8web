@@ -1,7 +1,6 @@
-% A test for tex8web: the \qedsymbol in force where the box is set, whether
-% a proof ends in text or in a display: amsthm's, thmtools' qed= for a
-% theorem style, one an environment sets, and one set in the text. An
-% earlier proof keeps its own.
+% The box is the \qedsymbol in force where the box is set, after text and in
+% a display: amsthm's, thmtools' qed= for a theorem style, one set by an
+% environment, and one set in the text. An earlier proof keeps its symbol.
 \documentclass{article}
 \usepackage{amsmath,amsthm,thmtools}
 \declaretheorem[qed=$\diamond$]{remark}

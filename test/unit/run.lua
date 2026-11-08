@@ -1,6 +1,6 @@
--- Unit tests for the Lua side: texlua test/unit/run.lua
--- Each *_test.lua file here returns a table of name -> function, which
--- fails by raising an error (see check and equal below).
+-- Runs the Lua unit tests: texlua test/unit/run.lua
+-- Each *_test.lua file here returns a table of name -> function. A test
+-- fails by raising an error (check and equal below).
 kpse.set_program_name("luatex")
 local here = arg[0]:match("^(.*)/") or "."
 local root = here .. "/../.."
@@ -10,7 +10,8 @@ table.insert(package.searchers, 2, function(name)
   return loadfile(path), path
 end)
 
--- make4ht's logging, keeping what was logged, for the tests to look at
+-- a stand-in for make4ht's logging that keeps each message in logged, for
+-- the tests to read
 logged = {}
 logging = {new = function()
   local function keep(level)

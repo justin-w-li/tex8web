@@ -1,13 +1,8 @@
-// npm run test:page: what the page's script does that no screenshot shows,
-// driven in headless Chrome on the pages of the fixtures that have the
-// feature: the picture viewer by mouse, by finger and by keyboard, the narrow
-// screen's bar, the fade of a display that scrolls, the theme button, the
-// contents (its filter, the subsections shown, its chevrons, and every
-// entry where all fit), the page when one feature of the script fails, the
-// fonts' preloads, and the transition from one page of a site to another.
-// Each check fails if its fixture lacks what it drives, and waits for a
-// state the page reaches rather than for a time. The checks run once the
-// builds are done.
+// npm run test:page: what the page script does that no screenshot shows,
+// driven in headless Chrome on the fixtures that have each feature (see
+// `checks` at the end). Each check fails if its fixture lacks the feature,
+// and waits for a state the page reaches, not for a time. The checks start
+// once the builds are done.
 //   node test/page.mjs [check names...]
 import { cpSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -20,8 +15,8 @@ import { launch, until } from './lib/chrome.mjs';
 const finished = page => page.evaluate(
   'Promise.all(document.getAnimations().map(a => a.finished.catch(() => {}))).then(() => true)');
 
-// where, in the picture's closer view (tex8web-page.js), the picture is, and
-// whether the view is open
+// the picture's place in the viewer (tex8web-page.js), and whether the
+// viewer is open
 const viewState = `(() => {
   const cover = document.querySelector('.tex8web-viewer'), img = cover.querySelector('img');
   const box = img.getBoundingClientRect(), plate = img.parentElement.getBoundingClientRect();
@@ -41,11 +36,11 @@ const zoomableAt = `(() => {
   return [box.left + box.width / 2, box.top + box.height / 2];
 })()`;
 
-// the closer view with the mouse: which pictures open it, and on the first,
-// that it fits the screen, that the wheel and a double-click zoom around the
-// pointer (the latter in one motion, which is paused at three points to
-// look at it), that the picture is dragged, but not off the middle of the
-// screen, and laid out again when the zoom stops, and that it closes
+// The viewer by mouse: which pictures open it, and, on the first, that the
+// picture fits the screen, that the wheel and a double-click zoom around the
+// pointer (the double-click in one motion, paused at three points to measure
+// it), that the picture is laid out again when the zoom stops, is dragged
+// but not off the middle of the screen, and that the viewer closes
 async function viewing(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, {}, async page => {
     const problems = [];
@@ -54,12 +49,12 @@ async function viewing(chrome, file) {
       await page.mouse('released', x, y, { clickCount: count });
     };
     const state = () => page.evaluate(viewState);
-    // where the plate should be, from where it would be: anywhere the
-    // picture still covers the middle of the screen
+    // where the plate should be, given where it would go: clamped so that
+    // the picture still covers the middle of the screen
     const placed = (s, at) => at.map((a, i) => Math.min(s.view[i] / 2, Math.max(s.view[i] / 2 - s.plate[2 + i], a)));
     const off = (s, want) => Math.max(...want.slice(0, 2).map((w, i) => Math.abs(s.plate[i] - w)));
-    // (a picture in a figure or display math opens it; an icon in the text,
-    // up to one and a half times as tall, doesn't)
+    // (a picture in a figure or display math opens the viewer; an icon in
+    // the text, up to 1.5 times the font size tall, does not)
     const wrong = await page.evaluate(`[...document.querySelectorAll('img:not(.tex8web-viewer img, a img)')]
       .filter(img => img.closest('figure, .mathjax-block') ? !img.classList.contains('tex8web-zoomable')
         : img.classList.contains('tex8web-zoomable') && img.offsetHeight <= 1.5 * parseFloat(getComputedStyle(img).fontSize))
@@ -68,8 +63,8 @@ async function viewing(chrome, file) {
     const at = await page.evaluate(zoomableAt);
     if (!at) return [...problems, 'no picture that opens the viewer'];
     await click(...at);
-    // as large as the screen allows (zoom 1), or a picture of pixels at its
-    // own size if smaller (home)
+    // as large as the screen allows (zoom 1), or a raster picture at its
+    // natural size if that is smaller (home)
     const fit = await until(state, s => s.open && s.natural > 0);
     if (!fit) return [...problems, 'a picture clicked: no viewer'];
     const fitted = Math.min(fit.room[0], fit.room[1] * fit.size[0] / fit.size[1]);
@@ -87,7 +82,7 @@ async function viewing(chrome, file) {
         problems.push(`${what}: zoom ${zoom(now).toFixed(3)} (not ${z.toFixed(3)}), at ${now.plate.slice(0, 2).join(', ')} (not ${want.join(', ')})`);
       }
     };
-    // (a notch at a time, as each may be kept to the middle of the screen)
+    // (a notch at a time, as each may be clamped to the middle of the screen)
     const wheel = async (s, deltaY, notches, what) => {
       for (let i = 0; i < notches; i++) {
         await page.mouse('wheel', ...p, { deltaY });
@@ -98,14 +93,14 @@ async function viewing(chrome, file) {
       return s;
     };
     const wheeled = await wheel(fit, -100, 3, 'the wheel turned');
-    // once the zoom has stopped, laid out again, where it was
+    // once the zoom stops: laid out again, at the same size and place
     const settled = await until(state, s => Math.abs(s.laid - zoom(s)) < 0.001);
     if (!settled || Math.abs(settled.width - settled.size[0]) > 0.5
       || Math.abs(settled.size[0] - wheeled.size[0]) > 0.5
       || !(Math.max(...settled.at.map((at, i) => Math.abs(at - wheeled.at[i]))) <= 0.5)) {
       problems.push(`the wheel stopped: ${settled ? `${settled.width}px wide laid out, ${settled.size[0]}px shown at ${settled.at.join(', ')}` : 'not laid out again'}, from ${wheeled.size[0]}px at ${wheeled.at.join(', ')}`);
     }
-    // (far enough to reach the middle of the screen)
+    // (far enough to be clamped at the middle of the screen)
     await page.mouse('pressed', ...p);
     for (let i = 1; i <= 8; i++) await page.mouse('moved', p[0] + 100 * i, p[1] + 100 * i);
     await page.mouse('released', p[0] + 800, p[1] + 800);
@@ -114,13 +109,13 @@ async function viewing(chrome, file) {
     if (Math.abs(zoom(dragged) - zoom(wheeled)) > 0.001 || !(off(dragged, want) <= 0.5)) {
       problems.push(`dragged by 800px: zoom ${zoom(dragged)}, at ${dragged.plate.slice(0, 2).join(', ')} (not ${want.join(', ')})`);
     }
-    // (past where it started, to half that)
+    // (zoomed out past the start, down to half of home)
     const out = await wheel(dragged, 100, 8, 'the wheel turned back');
-    // a double-click on the picture, where the drag left it: the point stays
-    // under the pointer all the way (css/tex8web.css eases it), in one
-    // motion. That is a transition, which is paused at a quarter, a half and
-    // three quarters of it as it starts, so that the picture isn't laid out
-    // again between them
+    // a double-click on the picture where the drag left it: the point stays
+    // under the pointer all the way, in one motion (css/tex8web.css eases
+    // it). The transition is paused as it starts and set to a quarter, a
+    // half, and three quarters, so that the picture is not laid out again
+    // between them.
     const q = out.at.map((a, i) => Math.round(a + out.size[i] / 2));
     await page.evaluate(`(() => {
       const plate = document.querySelector('.tex8web-plate');
@@ -152,15 +147,15 @@ async function viewing(chrome, file) {
     if (!back || !(off(back, centered(back)) <= 0.5)) {
       problems.push(`a second double-click: ${back ? `at ${back.plate.slice(0, 2).join(', ')}` : `not at zoom ${home}`}`);
     }
-    // (from beside the picture to beside it, the picture moving along: a
-    // drag, not a click beside it; then a click beside it)
+    // (a drag from beside the picture to beside it, moving the picture
+    // along, is not a click beside it, so the viewer stays open)
     await page.mouse('pressed', 2, 2);
     for (let i = 1; i <= 4; i++) await page.mouse('moved', 2 + 10 * i, 2 + 10 * i);
     await page.mouse('released', 42, 42);
     const beside = await state();
     if (beside.at[0] <= 42 && beside.at[1] <= 42) problems.push('a drag beside the picture: ended on it');
     else if (!beside.open) problems.push('a drag ending beside the picture closed the viewer');
-    // (the keyboard stays off the page behind)
+    // (Tab does not move the focus on the page behind the viewer)
     const focused = await page.evaluate('document.activeElement.outerHTML.slice(0, 80)');
     await page.press('Tab', 9);
     if (await page.evaluate('document.activeElement.outerHTML.slice(0, 80)') !== focused) problems.push('Tab: the focus behind the viewer moved');
@@ -170,8 +165,8 @@ async function viewing(chrome, file) {
     await click(...at);
     if (!await until(state, s => s.open)) problems.push('a picture clicked again: no viewer');
     await finished(page);
-    // (fading out still open, in the top layer: Safari would draw it under
-    // the page's bar, or, on iOS, not at all)
+    // (the viewer fades out while still open, in the top layer: otherwise
+    // Safari would draw it under the page's bar, or, on iOS, not at all)
     await click(2, 2);
     const fading = await page.evaluate(`(() => {
       const cover = document.querySelector('.tex8web-viewer');
@@ -187,13 +182,13 @@ async function viewing(chrome, file) {
   });
 }
 
-// the closer view with a finger, on a phone's screen: a double tap zooms
-// in (Safari on iOS sends no dblclick) but a single one, however soon after
-// the page loads, doesn't, and turning the phone keeps the point at the
-// middle of the screen where it was in the picture
+// The viewer by touch on a phone screen: a double tap zooms in (Safari on
+// iOS sends no dblclick), a single tap does not, however soon after the page
+// loads, and turning the phone keeps the same point of the picture at the
+// middle of the screen
 async function touching(chrome, file) {
-  // (every event stamped 100 ms, so that a first tap is "soon after the
-  // page loaded" whenever it comes, and two taps are always one apart)
+  // (every event stamped 100 ms: a first tap always counts as soon after the
+  // page loads, and any two taps as a double tap)
   const before = `Object.defineProperty(Event.prototype, 'timeStamp', { get: () => 100 })`;
   return chrome.withPage(pathToFileURL(file).href, { width: 400, height: 800, before }, async page => {
     const problems = [];
@@ -228,11 +223,11 @@ async function touching(chrome, file) {
   });
 }
 
-// the contents' filter: a named theorem found by its head (or a numbered
-// box by its title), first among what matches, and Enter going to it;
-// then, among the many with an e, down twice and up once choosing the
-// second, which Enter goes to; and test.tex's ε-ball found by \epsilon,
-// its ε typeset
+// The table of contents filter: a named theorem found by its head (or a
+// numbered box by its title), first among the results, and Enter going to
+// it; then, with "e" typed, which many entries match, ArrowDown twice and
+// ArrowUp once choosing the second, which Enter goes to; and test.tex's
+// ε-ball found by \epsilon, with its ε typeset
 async function filtering(chrome, file, doc) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
     const problems = [];
@@ -252,7 +247,7 @@ async function filtering(chrome, file, doc) {
     if (!head) return ['filter: no named theorem or titled box to find'];
     const first = await page.evaluate(`document.querySelector('.tex8web-toc-results a')?.hash`);
     if (first !== head) problems.push(`filter: ${first} first, not the theorem ${head}`);
-    // (naming what the page has)
+    // (the placeholder names the kinds of entries the page has)
     const placeholder = await page.evaluate(`document.querySelector('.tex8web-toc-filter').placeholder`);
     if (doc.name === 'test' && placeholder !== 'Find a section, theorem, or term') problems.push(`filter: placeholder "${placeholder}"`);
     const label = await page.evaluate(`document.querySelector('.tex8web-toc-filter').getAttribute('aria-label')`);
@@ -289,11 +284,11 @@ async function filtering(chrome, file, doc) {
   });
 }
 
-// on a phone's screen, the bar naming the section being read: nothing
-// before the first heading, then a section halfway down scrolled just above
-// the top quarter, where the page starts naming it (higher, a short section
-// would bring the next heading above that line too); and tapped, opening
-// the table of contents
+// On a phone screen, the bar naming the section being read: empty before
+// the first heading; a section halfway down named once it is scrolled a
+// little above the top quarter (with a higher line, the next heading after a
+// short section would cross the line too); and the bar, tapped, opening the
+// table of contents
 async function naming(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 390, height: 844 }, async page => {
     const problems = [];
@@ -318,7 +313,7 @@ async function naming(chrome, file) {
     if (before) problems.push(`bar: "${before}" before the first heading`);
     const got = await until(() => page.evaluate(shown), name => name.endsWith(want));
     if (got === null) problems.push(`bar: "${await page.evaluate(shown)}", not the section "${want}"`);
-    // (as MathJax typesetting the entry would change it)
+    // (a change to the entry, as MathJax typesetting it would make)
     await page.evaluate(`document.querySelector('#tex8web-toc [aria-current] ').append(' (changed)')`);
     if (!await until(() => page.evaluate(shown), name => name.endsWith('(changed)'))) {
       problems.push('bar: not following a change in its entry');
@@ -332,8 +327,8 @@ async function naming(chrome, file) {
   });
 }
 
-// on a phone's screen, the controls' bar (tex8web-page.js) away scrolling
-// down, back scrolling up, but not for a pixel or two the other way
+// On a phone screen, the bar of controls (tex8web-page.js): away on
+// scrolling down, back on scrolling up, but not on a reversal of a few pixels
 async function hiding(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 390, height: 844 }, async page => {
     const away = await page.evaluate(`(async () => {
@@ -349,7 +344,7 @@ async function hiding(chrome, file) {
     if (!away) return ['the bar: a page too short to scroll'];
     const problems = away.join() === 'true,true,true,false,false'
       ? [] : [`the bar away ${away.join(', ')} scrolling to 300, 600, 597, 560 and 563px`];
-    // its line and background: clear at the top, drawn once the page has scrolled (and faded in)
+    // the bar's line and background: transparent at the top, drawn (after a fade) once the page scrolls
     const clear = 'rgba(0, 0, 0, 0)';
     const look = async y => {
       await page.evaluate(`scrollTo(0, ${y})`);
@@ -364,7 +359,8 @@ async function hiding(chrome, file) {
     if (top[1] !== clear) problems.push(`the bar's background ${top[1]} at the top`);
     if (down[0] === clear) problems.push("the bar's line clear 20px down");
     if (down[1] === clear) problems.push("the bar's background clear 20px down");
-    // from a wide window, scrolled down, to a narrow one: away at once
+    // a wide window, scrolled down, narrowed: the bar away at once, and no
+    // transition then or on widening
     await page.resize(1600, 900);
     await page.frame();
     await page.evaluate('scrollTo(0, 600)');
@@ -382,9 +378,9 @@ async function hiding(chrome, file) {
   });
 }
 
-// on a phone's screen, a page that lands partway down, by a link's # or by
-// the browser's reload, keeps its bar shown with its line, and nothing
-// moves: the browser's own scrolling is not the reader's
+// On a phone screen, a page opened partway down, by a link's # or a reload,
+// keeps its bar shown with its line, and nothing moves: the browser's
+// scrolling is not the reader's
 async function landing(chrome, file) {
   const url = pathToFileURL(file).href;
   const size = { width: 390, height: 844 };
@@ -418,13 +414,13 @@ async function landing(chrome, file) {
   return problems;
 }
 
-// the fade of a display that scrolls on a phone's screen, by its two masks'
-// positions. At its start, only the right edge fades; 20px in, the left
-// fades halfway; in the middle, both; 20px from its end, the right
-// halfway; at its end, only the left. Nothing that doesn't scroll is
-// masked: one that fits, one that stops scrolling at its end on a wider
-// screen or in print, and one the keyboard has focused. A display copied
-// into a preview card fades as it scrolls there
+// The fade of a display that scrolls on a phone screen, measured by its two
+// masks' positions. At its start, only the right edge fades; 20px in, the
+// left fades halfway; in the middle, both; 20px from its end, the right
+// halfway; at its end, only the left. Not masked: a display that fits, one
+// scrolled to its end that then fits a wider screen or is printed, and one
+// with keyboard focus, whose focus ring the mask would hide. A display
+// copied into a preview card fades as it scrolls there.
 async function fading(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 390, height: 844 }, async page => {
     // (a display's copy in a preview card, which may be wider than the text)
@@ -490,9 +486,9 @@ async function fading(chrome, file) {
   });
 }
 
-// the theme button there before tex8web-page.js runs, with the other controls
-// (a long page is drawn well before its deferred scripts run). With
-// JavaScript off it is hidden, which visual.mjs checks on every page
+// The theme button shown before tex8web-page.js runs, with the other
+// controls: a long page is drawn well before its deferred scripts run. With
+// JavaScript off, the button is hidden (checked by visual.mjs on every page).
 async function themed(chrome, file) {
   const early = file.replace(/\.html$/, '.early.html');
   const html = readFileSync(file, 'utf8');
@@ -508,15 +504,17 @@ async function themed(chrome, file) {
   }
 }
 
-// a link to an equation tints it, as it does a heading, once whether tex4ht's
-// anchor is just before it, first among the anchors of an alignment's lines
-// or, for a gather, last in the paragraph before; and not the others around,
-// nor a link to another anchor, such as an \index's (dx...) before an equation
+// A link to an equation tints the equation, as a link to a heading tints
+// the heading, whether tex4ht's anchor is right before it, first among the
+// anchors of an alignment's lines, or, for a gather, last in the paragraph
+// before. No other equation is tinted, and a link to another anchor, for
+// example an \index's (dx...) before an equation, tints nothing.
 async function targeting(chrome, file, doc) {
   const displays = `document.querySelectorAll('.mathjax-env, .mathjax-block')`;
   const tinted = `[...${displays}].map(el => getComputedStyle(el.querySelector('mjx-container')).backgroundColor !== 'rgba(0, 0, 0, 0)')`;
-  // (the anchors with only space and comments between them and the display,
-  // or, failing those, ending the paragraph before it; and every other)
+  // (for each display, the anchors with only space and comments between them
+  // and the display, or else those ending the paragraph before it; and all
+  // other anchors)
   const anchors = `(() => {
     const skip = n => n && (n.nodeType === 8 || (n.nodeType === 3 && !n.textContent.trim()));
     const before = n => { n = n.previousSibling; while (skip(n)) n = n.previousSibling; return n; };
@@ -536,7 +534,7 @@ async function targeting(chrome, file, doc) {
   return chrome.withPage(pathToFileURL(file).href, {}, async page => {
     const { belong, others } = await page.evaluate(anchors);
     if (!belong.some(ids => ids.length)) return ['no equation with an anchor'];
-    // (the index's anchors just before the equation, and after some text before it)
+    // (the index's anchors right before the equation, and after some text before it)
     if (doc.name === 'test-index' && !(belong[0].length === 1 && others.filter(id => id.startsWith('dx')).length > 5)) {
       return [`test-index: the equation's anchors ${belong[0]}, and the others ${others.length}`];
     }
@@ -553,11 +551,12 @@ async function targeting(chrome, file, doc) {
   });
 }
 
-// the closer view from the keyboard: a picture takes the focus, Enter or
-// Space opens the view with the focus inside it, and closing it, by Escape,
-// gives the focus back to the picture (which the popover does itself, so
-// this can't tell the page's own focus() from that). Space, which pages
-// down, doesn't open it again after the picture was clicked, or with Shift
+// The viewer from the keyboard: a picture takes the focus, Enter or Space
+// opens the viewer with the focus inside it, and Escape closes it and gives
+// the focus back to the picture. The popover gives the focus back too, so
+// this check cannot tell the page's focus() from the popover's. Space, which
+// pages down, does not open the viewer again after the picture was clicked,
+// and Shift-Enter does not open it.
 async function keying(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, {}, async page => {
     const problems = [];
@@ -582,7 +581,8 @@ async function keying(chrome, file) {
         && document.activeElement === document.querySelector('.tex8web-zoomable')`));
       if (!back) problems.push(`Escape after ${name}: the focus not back on the picture`);
     }
-    // (clicked open, clicked closed beside the picture, the focus back on it)
+    // (opened by a click, then closed by a click beside the picture, with the
+    // focus back on the picture)
     const [x, y] = await page.evaluate(zoomableAt);
     for (const type of ['pressed', 'released']) await page.mouse(type, x, y);
     if (!await until(state, s => s.open)) return [...problems, 'a picture clicked: no viewer'];
@@ -601,12 +601,12 @@ async function keying(chrome, file) {
   });
 }
 
-// the page typeset by MathJax in the browser (built with
-// TEX8WEB_NO_PRERENDER), which comes after the page's script has run, as it
-// does on a slow network: the bar's copy of a heading with math is typeset
-// while the contents are closed, and a display that scrolls fades at its edge.
-// MathJax is loaded by the check, once the page's script has run. The build
-// is made here, as only this check wants it
+// The page typeset by MathJax in the browser (built with
+// TEX8WEB_NO_PRERENDER) after the page script has run, as on a slow
+// network: the bar's copy of a heading with math is typeset while the table
+// of contents is closed, and a display that scrolls fades at its edge. The
+// check loads MathJax once the page script has run, and makes its build, as
+// no other check uses that build.
 async function lazily(chrome, [doc]) {
   const dir = testDir(doc, 'pagelazy');
   const out = join(dir, 'html');
@@ -628,8 +628,8 @@ async function lazily(chrome, [doc]) {
       })()`);
       const typeset = await until(() => page.evaluate(`!!window.MathJax?.startup?.promise`), Boolean, 30000);
       if (!typeset) return ["MathJax didn't load in 30s (offline?)"];
-      // (ui/lazy leaves the closed drawer's math a placeholder, mjx-lazy,
-      // which the bar copies)
+      // (ui/lazy leaves the math in the closed table of contents as a
+      // placeholder, mjx-lazy, which the bar copies)
       await page.evaluate(`MathJax.startup.promise.then(() => {
         const heading = document.querySelector('.subsectionHead');
         scrollTo(0, scrollY + heading.getBoundingClientRect().top - (innerHeight / 4 - 10));
@@ -655,10 +655,10 @@ async function lazily(chrome, [doc]) {
   }
 }
 
-// the contents of a page whose first headings are subsections, before its
-// first section, in a window too short for all of them: while one is read,
-// those and the section's are shown, and then only the subsections of the
-// section being read
+// The table of contents of a page whose first headings are subsections,
+// before its first section, in a window too short for all entries: while
+// one of those subsections is read, they and the first section are shown,
+// and later only the subsections of the section being read
 async function opening(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 200 }, async page => {
     const shown = () => page.evaluate(`[...document.querySelectorAll('#tex8web-toc .tableofcontents > span')]
@@ -674,9 +674,9 @@ async function opening(chrome, file) {
   });
 }
 
-// on a wide touch screen, a closed section's chevron (its tap area larger
-// than its line) last in a column that scrolls: the column scrolls no
-// further than the entry
+// On a wide touch screen, with a closed section's chevron, whose tap area
+// is larger than its line, last in a column that scrolls: the column
+// scrolls no further than the entry
 async function reaching(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 200, touch: true }, async page => {
     const [over, chevron] = await page.evaluate(`(() => {
@@ -691,13 +691,14 @@ async function reaching(chrome, file) {
   });
 }
 
-// the contents' chevrons, by mouse. There's one on each section with
-// subsections, at the column's inner edge. A section the reader opens
-// slides open, and stays open as the page scrolls to a third section. That
-// one opens without a slide, and the first, being left, closes. The section
-// being read, once closed, stays closed while it's read, its entry marked.
-// The opened section still stays open as a contents link leads back. (In
-// a window too short for all the entries, which would show them all)
+// The table of contents chevrons, by mouse. Each section with subsections
+// has one, at the column's inner edge. A section the reader opens slides
+// open, and stays open as the page scrolls to a third section. The third
+// opens without a slide, and the first, as the reader leaves it, closes.
+// The section being read, once closed, stays closed while it is read, with
+// its entry marked. The opened section stays open when a link in the table
+// of contents leads back. The window is too short for all entries, which
+// would otherwise all be shown.
 async function browsing(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 700 }, async page => {
     const problems = [];
@@ -775,12 +776,12 @@ async function browsing(chrome, file) {
   });
 }
 
-// the contents of a short page. Where all of them fit, in the column and
-// in the narrow screen's open drawer, every entry is shown, and no chevron.
-// Where they don't, a section neither read nor opened shows no subsections,
-// and its chevron opens it. That section stays open as the window grows
-// to fit them all and shrinks again, also while the filter's results stand
-// in for the entries
+// The table of contents of a short page. Where all entries fit, in the
+// column and in the open drawer on a narrow screen, every entry is shown,
+// and no chevron. Where they do not, a section neither read nor opened shows
+// no subsections, and its chevron opens it. That section stays open as the
+// window grows to fit all entries and shrinks again, also while the
+// filter's results replace the entries.
 async function fitting(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600 }, async page => {
     const problems = [];
@@ -818,8 +819,8 @@ async function fitting(chrome, file) {
     await at('a section opened, room for all', all);
     await page.resize(1600, 150);
     await at('a section opened, too short again', s => s.shown === s.entries && s.seen === s.chevrons && s.open === 'true');
-    // (measured with the entries, not the filter's results, which fit in
-    // a window as tall as this)
+    // (whether all fit is measured with the entries, not with the filter's
+    // results, which fit in a window this tall)
     const typed = text => page.evaluate(`(() => {
       const input = document.querySelector('.tex8web-toc-filter');
       input.value = '${text}';
@@ -841,10 +842,11 @@ async function fitting(chrome, file) {
   });
 }
 
-// one feature of the page's script failing (here, the fade at an edge,
-// whose ResizeObserver throws) leaves the others working: the contents
-// showing the subsections being read, and the filter set up. (The contents'
-// own ResizeObserver throws too, but last, once the rest is set up)
+// One feature of the page script failing (here the fade at an edge, whose
+// ResizeObserver throws) leaves the others working: the table of contents
+// shows the subsections being read, and the filter is set up. The
+// ResizeObserver of the table of contents throws too, but last, once the
+// rest is set up.
 async function isolating(chrome, file) {
   const before = `window.ResizeObserver = class { constructor() { throw new Error('a feature fails'); } }`;
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, before }, async page => {
@@ -857,7 +859,6 @@ async function isolating(chrome, file) {
   });
 }
 
-// a folder served over HTTP
 const served = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2' };
 async function serve(site) {
   const server = createServer((request, response) => {
@@ -871,15 +872,15 @@ async function serve(site) {
   return server;
 }
 
-// from one page of a site to another, served over HTTP as a file has no
-// origin to share: from another page, as the site's index at /, to an
+// Moving between pages of a site, served over HTTP, as pages opened from
+// files share no origin: from another page, as the site's index at /, to an
 // example (which links up to ../index.html, the same page), then up again.
-// The first change runs css/tex8web.css's view transition forward and the
+// The first move runs css/tex8web.css's view transition forward and the
 // second back (tex8web-head.js), and the up link goes back in history
-// rather than to a new entry (tex8web-page.js). Then the browser's buttons:
-// forward is forward, back is back whichever page it is to
-// (each page's transition, once tex8web-head.js, which listens after this,
-// has named it)
+// instead of adding an entry (tex8web-page.js). Then by history: forward
+// is forward, and back is back, whichever page it leads to.
+// seenTypes records each page's transition types after a timeout, once
+// tex8web-head.js, whose listener is added later, has set them.
 const seenTypes = `addEventListener('pagereveal', event => setTimeout(() => {
   const types = event.viewTransition ? [...event.viewTransition.types].join() || 'untyped' : 'none';
   const seen = JSON.parse(sessionStorage.getItem('seen') ?? '[]');
@@ -894,8 +895,8 @@ async function navigating(chrome, [example, index]) {
   const server = await serve(site);
   try {
     return await chrome.withPage(`http://127.0.0.1:${server.address().port}/`, { before: seenTypes }, async page => {
-      // at a page, its transition (the nth) seen and over; the page's
-      // evaluate fails while the next page loads
+      // at the page at path, with its transition (the nth) recorded and over;
+      // evaluate fails while the next page loads, hence the catch
       const arrive = async (path, n) => {
         const there = await until(() => page.evaluate(`location.pathname === '${path}' && document.readyState === 'complete'
           && JSON.parse(sessionStorage.getItem('seen') ?? '[]').length === ${n}
@@ -908,9 +909,10 @@ async function navigating(chrome, [example, index]) {
       await page.evaluate(`document.querySelector('.tex8web-up').click()`);
       await arrive('/', 3);
       const entry = await page.evaluate('navigation.currentEntry.index');
-      // then by the browser's buttons: forward to the example, a new entry
-      // up to the index (back, as it is the page above), and back to the
-      // example, which is back though it is not the page above
+      // then forward to the example by history; a new entry up to the
+      // index, a back transition as it is the page above; and back to the
+      // example by history, a back transition although it is not the page
+      // above
       await page.evaluate('history.forward()');
       await arrive('/example/main.html', 4);
       await page.evaluate(`location.href = '/'`);
@@ -930,9 +932,10 @@ async function navigating(chrome, [example, index]) {
   }
 }
 
-// the fonts the inline script lists, preloaded over HTTP and not from a file
-// (CONTRIBUTING.md says why). Chrome doesn't refuse them there, so this
-// guards the mechanism and not Safari
+// The fonts the inline script lists are preloaded over HTTP, and not on a
+// page opened from a file (CONTRIBUTING.md, "Preloaded fonts", says why).
+// Chrome does not refuse preloads from a file, so this check tests the
+// mechanism, not Safari.
 const preloaded = `[...document.querySelectorAll('link[rel=preload]')]
   .map(link => [link.getAttribute('href'), link.as, link.type, link.crossOrigin].join(' '))`;
 async function preloading(chrome, file) {
@@ -953,14 +956,16 @@ async function preloading(chrome, file) {
   return problems;
 }
 
-// each check, with the fixtures it runs on, which must have its feature
-// (the viewer: an SVG and a raster picture; the bar, fade, chevrons and
-// one filter: test.tex's long page, with its display that scrolls, its
-// previews, its term and its sections' subsections; the filter's other: a
-// titled box; transitions: an example and the page that links it; the
-// contents, the failing feature and the fade of the browser's math: a page
-// with subsections before its first section; the contents that fit: a short
-// example whose one section with subsections isn't the first)
+// Each check, with the fixtures it runs on, which must have its feature:
+// - viewer: an SVG and a raster picture
+// - bar, fade, browsing, and one filter: test.tex's long page, with its
+//   display that scrolls, its previews, its term, and its sections'
+//   subsections
+// - the other filter: a titled box
+// - transitions: an example and the page that links to it
+// - contents, isolated, and lazy: a page with subsections before its first
+//   section
+// - fit: a short example whose one section with subsections is not the first
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));
@@ -995,10 +1000,10 @@ const wanted = [...new Set(names.flatMap(name => checks[name][0]))];
 const docs = new Map(select(wanted).map(doc => [doc.name, doc]));
 const pageFile = doc => join(testDir(doc, 'page'), 'html', doc.tex.replace(/\.tex$/, '.html'));
 
-// the fixtures built, prerendered, before any check runs: a build slows the
-// machine, and a check that waits for a state would take longer. They are
-// npm test's builds, reused if it has just made them, and copied: a check
-// writes beside the page it drives
+// The fixtures are built and prerendered before any check runs, as a build
+// slows the machine and a check that waits for a state would take longer.
+// The builds are npm test's, reused if their stamp is unchanged, and
+// copied, as a check writes files beside the page it drives.
 const built = new Map(await pool([...docs.values()], workers, async doc => {
   const code = (await build(doc, join(testDir(doc), 'html'), join(testDir(doc), 'aux'), { TEX8WEB_MATHML: '1' })).code;
   const copy = join(testDir(doc, 'page'), 'html');

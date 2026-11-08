@@ -1,12 +1,11 @@
-% A test for tex8web: algorithm2e's algorithms, ruled, with vertical lines
-% along their blocks and numbered lines. The caption is at the left
-% between two rules, at the top wherever \caption is, and a rule ends the
-% body, all three as wide as the text, as in the PDF, also in an [H]
-% algorithm. Each line is a line of its own, its number in the margin and
-% its keywords bold; a block's line ends in a short rule unless an else
-% follows. A \ref to an algorithm and to one of its lines leads there.
-% (No math after a keyword or in a comment: see "Small known differences"
-% in CONTRIBUTING.md.)
+% algorithm2e's ruled algorithms, with vertical lines along their blocks
+% and numbered lines, also in an [H] algorithm. As in the PDF, the caption
+% is at the left between two rules, at the top wherever \caption is, and a
+% rule ends the body, all three as wide as the text. Each line is a
+% paragraph, with its number in the margin and its keywords bold. A block's
+% vertical line ends in a short rule unless an else follows. A \ref to an
+% algorithm or to one of its lines leads there. No math follows a keyword
+% or is in a comment: see "Small known differences" in CONTRIBUTING.md.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}

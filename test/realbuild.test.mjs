@@ -1,7 +1,8 @@
-// Tests of what lib/build.mjs does with a real make4ht, run by npm test:
-// node --test test/realbuild.test.mjs
-// A file of their own gives them a pool of slots of their own, which the
-// tests with a stand-in for make4ht then needn't wait for.
+// Tests of lib/build.mjs with a real make4ht. Run by npm test, or alone:
+//   node --test test/realbuild.test.mjs
+// A separate file runs in a separate process, with a separate pool of slots
+// (test/lib/stubs.mjs), so the tests with a stand-in for make4ht do not
+// wait for these.
 import assert from 'node:assert/strict';
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,9 +11,9 @@ import { describe, test } from 'node:test';
 import { build, hashFiles, root, run } from './lib/build.mjs';
 import './lib/stubs.mjs';
 
-// (the real builds are the slow part, so these run at once)
+// the real builds are slow, so these tests run concurrently
 describe('real builds', { concurrency: true }, () => {
-  // a document in a directory of its own, with a config that links its PDF
+  // a document in a separate directory, with a config that links its PDF
   function pdfDoc(extra) {
     const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webpdf')));
     mkdirSync(join(dir, 'doc'));
@@ -22,8 +23,8 @@ describe('real builds', { concurrency: true }, () => {
     return { dir, doc, make: env => build(doc, join(dir, 'html'), join(dir, 'aux'), env) };
   }
 
-  // the one test with a real make4ht: a file it leaves in the document's
-  // directory would change the stamp and the build would never be reused
+  // a file that make4ht leaves in the document's directory would change the
+  // stamp, and the build would never be reused
   test('a page built without its PDF links it once it is there, and a real build is reused', { timeout: 180000 }, async () => {
     const { dir, doc, make } = pdfDoc({ noLatexmk: true });
     try {
@@ -31,7 +32,7 @@ describe('real builds', { concurrency: true }, () => {
       const first = await make();
       assert.equal(first.code, 0, first.log);
       assert.equal(first.reused, undefined);
-      // (which keep run()'s idle limit from timing the whole build)
+      // make4ht's steps keep run()'s idle limit from timing the whole build
       assert.match(first.log, /^\[INFO\] +htlatex: LaTeX call/m, "make4ht's steps are not in the log");
       assert.equal(existsSync(join(doc.dir, 'build/pdf')), false, 'something built the PDF');
       assert.doesNotMatch(page(), /doc\.pdf/);
@@ -50,23 +51,23 @@ describe('real builds', { concurrency: true }, () => {
     const { dir, doc, make } = pdfDoc({ noLatexmk: true });
     try {
       const page = () => hashFiles(join(dir, 'html'), ['']);
-      // (on a fixed date, so that midnight between builds doesn't run LaTeX)
+      // a fixed date, so that midnight between builds does not make LaTeX run
       const fixed = { SOURCE_DATE_EPOCH: '946684800', FORCE_SOURCE_DATE: '1' };
       const first = await make(fixed);
       assert.equal(first.code, 0, first.log);
       assert.equal(first.latexReused, undefined);
       const full = page();
-      // (as a change to css/ would: in the page's stamp, not in LaTeX's)
+      // as a change to css/ would, which is in the page's stamp, not LaTeX's
       rmSync(join(dir, 'html.stamp'));
-      // (which LaTeX, had it run, would write again)
+      // a mark that LaTeX would overwrite if it ran
       appendFileSync(join(dir, 'aux.latex/doc.aux'), '% kept\n');
       const second = await make(fixed);
       assert.equal(second.code, 0, second.log);
       assert.equal(second.latexReused, true);
       assert.match(readFileSync(join(dir, 'aux/doc.aux'), 'utf8'), /% kept/);
       assert.equal(page(), full);
-      // (LaTeX's part of the log is the kept run's, its calls included.
-      // make4ht's other steps differ without LaTeX)
+      // LaTeX's part of the log is the kept run's, with its calls. The
+      // [INFO] lines of make4ht's other steps differ without LaTeX.
       const calls = log => log.match(/htlatex: LaTeX call/g)?.length;
       const output = log => log.replace(/^\[INFO\].*\n/gm, '');
       assert.equal(calls(second.log), calls(first.log));
@@ -82,8 +83,8 @@ describe('real builds', { concurrency: true }, () => {
     }
   });
 
-  // the tests' variables as one might leave them in a shell, in runs of
-  // bin/tex8web on a document of one's own
+  // the tests' variables, as someone might leave them set in a shell, in
+  // runs of bin/tex8web on another document
   test('the tests\' LaTeX variables neither skip LaTeX nor remove a file of one\'s own', { timeout: 180000 }, async () => {
     const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webdirect')));
     try {
@@ -98,14 +99,14 @@ describe('real builds', { concurrency: true }, () => {
       };
       await direct('first');
       assert.deepEqual(readdirSync(join(dir, 'kept')), ['mine']);
-      // (the first run's DVI is in the build directory now)
+      // LaTeX runs again, although the first run's DVI is in the build directory
       assert.match(await direct('second'), /second/);
     } finally {
       rmSync(dir, { recursive: true });
     }
   });
 
-  // (regress.mjs --draft: make4ht's draft mode, from the tex4ht files of the build before)
+  // regress.mjs --draft: make4ht's draft mode, from the tex4ht files of the build before
   test('a real draft build follows a full one', { timeout: 180000 }, async () => {
     const { dir, doc, make } = pdfDoc({ noLatexmk: true });
     try {

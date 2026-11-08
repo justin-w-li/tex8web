@@ -1,11 +1,10 @@
-% A test for tex8web: colors in dark mode. \textcolor, \colorbox's and
-% \fcolorbox's, listings' and those in math each get another lightness in
-% dark mode (a light-dark() of the color); black text is the page's text
-% color. Colors in math and table cells as the PDF has them: a document's
-% own, an xcolor mix and complement, mixes in CMYK, xcolor's names that CSS
-% gives other values and those its options define, one a macro is given,
-% and the models MathJax lacks; and
-% colortbl's \rowcolor and \cellcolor.
+% Colors in dark mode. The colors of \textcolor, \colorbox, \fcolorbox,
+% listings, and math each have another lightness in dark mode, as a
+% light-dark() of the color. Black text has the page's text color. Math and
+% table cells have the PDF's colors: a color the document defines, an xcolor
+% mix and complement, mixes in CMYK, xcolor names that CSS gives other
+% values, names from xcolor's options, a color passed to a macro, the models
+% MathJax lacks, and colortbl's \rowcolor and \cellcolor.
 \documentclass{article}
 \usepackage[dvipsnames,svgnames,x11names]{xcolor}
 \usepackage{listings}

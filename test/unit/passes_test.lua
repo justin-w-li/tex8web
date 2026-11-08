@@ -446,7 +446,7 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     for _, line in ipairs({"\\definecolor{ink}{RGB}{200,0,100}", "\\definecolor{green}{RGB}{0,255,0}",
         "\\definecolor{teal}{RGB}{0,128,128}", "\\definecolor{red!50}{RGB}{255,128,128}",
         "\\definecolor{ink!50!yellow}{RGB}{228,128,50}",
-        -- (as xcolor has them: mixed unrounded, a complement of the whole, a share past 100 held at the end)
+        -- (as xcolor gives them: mixed unrounded, - complementing the whole mix, a share over 100 clamped at the end)
         "\\definecolor{gray!50}{RGB}{191,191,191}", "\\definecolor{ink!50!yellow!50}{RGB}{241,191,152}",
         "\\definecolor{-ink}{RGB}{55,255,155}", "\\definecolor{-red!50!black}{RGB}{128,255,255}",
         "\\definecolor{red!50!-blue}{RGB}{255,128,0}", "\\definecolor{--ink}{RGB}{200,0,100}",
@@ -478,8 +478,8 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
       .. "Mahogany 0,0.85,0.87,0.35 Goldenrod 0,0.10,0.84,0 gray 0.5 red 1,0,0 black 0 white 1 blue 0,0,1 "})
     os.remove(tex)
     local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
-    -- (each as xcolor has it: \convertcolorspec to HTML; a converted value
-    -- held to 0 to 1, a share of 100 that keeps the first color's model)
+    -- (each as xcolor gives it: \convertcolorspec to HTML, converted values
+    -- clamped to 0 to 1, and a share of 100 keeping the first color's model)
     for _, line in ipairs({"\\definecolor{olive!50}{RGB}{191,191,64}", "\\definecolor{BrickRed!30}{RGB}{234,165,162}",
         "\\definecolor{Mahogany!40!Goldenrod}{RGB}{219,117,2}", "\\definecolor{-BrickRed!40}{RGB}{29,119,124}",
         "\\definecolor{gray!50!BrickRed}{RGB}{156,42,36}", "\\definecolor{red!50!olive}{RGB}{191,64,0}",

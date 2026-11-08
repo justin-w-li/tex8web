@@ -11,8 +11,9 @@ local function each_text(el, f)
 end
 
 -- tex4ht writes each formula through \detokenize, which puts a space after
--- every control word. TeX skips it, but MathJax doesn't before an optional
--- argument (\abs [\big ]{x}); drop it where no letter follows
+-- every control word. TeX ignores the space, but MathJax does not before an
+-- optional argument (\abs [\big ]{x}), so the space is dropped where no
+-- letter follows.
 function M.spaces(document)
   for _, el in ipairs(document:query_selector(".mathjax-inline, .mathjax-block, .mathjax-env")) do
     each_text(el, function(node)

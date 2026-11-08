@@ -1,38 +1,38 @@
-% tex8web: tcolorbox's boxes, as near the PDF as CSS draws them: the frame
-% (rules, round or sharp corners, borderlines, shadow), the colors, with
-% darker ones for dark mode, the space around and inside, and the title (its
-% font, a boxed title, a title that starts the text). tex4ht's own boxes keep
-% only the colors and padding. What a skin draws freehand with TikZ
-% (interior code, frame code, shadings) comes out as a plain frame. The
-% static styles are in css/tex8web.css.
+% tex8web: tcolorbox boxes, as close to the PDF as CSS can draw them: the
+% frame (rules, round or sharp corners, borderlines, shadow), the colors,
+% with other lightnesses for dark mode, the space around and inside, and the
+% title (its font, a boxed title, a title that starts the text). tex4ht's
+% boxes keep only the colors and padding. What a skin draws with TikZ code
+% (interior code, frame code, shadings) comes out as a plain frame. Static
+% styles are in css/tex8web.css.
 \makeatletter
 \@ifpackageloaded{tcolorbox}{}{\makeatother\endinput}
 
 % --- what tex4ht leaves out -------------------------------------------------
 
-% the measures of a boxed title, which tex4ht never sets (styles use them:
-% yshift=-\tcboxedtitleheight)
+% the size of a boxed title, which tex4ht never sets, though styles use it
+% (yshift=-\tcboxedtitleheight)
 \providecommand\tcboxedtitleheight{0pt}
 \providecommand\tcboxedtitlewidth{0pt}
 
 % tex4ht closes a box before tcolorbox adds its after upper (a proof's
-% \hfill$\square$), which then follows the box: add it first
+% \hfill$\square$), which then lands after the box, so it is added first
 \web@needs{tcb@endboxanddraw}
 \let\web@tcb@endboxanddraw\tcb@endboxanddraw
 \def\tcb@endboxanddraw{%
     \tcb@insert@after@part
     \let\tcb@insert@after@part\relax
     \web@tcb@endboxanddraw}
-% and what follows an \hfill in an after upper or lower goes at the right:
-% in macro #1, \web@hfillright before #2
+% text after an \hfill in an after upper or lower is set at the right: in
+% macro #1, \web@hfillright before #2
 \def\web@tcb@hfillafter#1#2{%
     \patchcmd#1{#2}{\web@hfillright#2}{}{\web@outdated{\string#1}}}
 \web@tcb@hfillafter\tcb@insert@after@upper@unskip\kvtcb@after@upper
 \web@tcb@hfillafter\tcb@insert@after@upper@nounskip\kvtcb@after@upper
 \web@tcb@hfillafter\tcb@insert@after@lower@unskip\kvtcb@after@lower
 \web@tcb@hfillafter\tcb@insert@after@lower@nounskip\kvtcb@after@lower
-% #1, with what follows its first \hfill in a span css/tex8web.css puts at
-% the right
+% #1, with the text after its first \hfill in a span that css/tex8web.css
+% floats right
 \let\web@endhfill\relax
 \newcommand\web@hfillright[1]{%
     \begingroup
@@ -48,18 +48,18 @@
 
 % --- a box's style ----------------------------------------------------------
 
-% (the options that leave nothing to read now, such as frame hidden, are
-% noted as they're set, by tex8web-hooks.sty; a frame or interior is also
-% hidden when the skin doesn't draw it, as with blanker)
+% (options that leave nothing to read afterwards, such as frame hidden, are
+% recorded by tex8web-hooks.sty as they are set. A frame or interior is
+% also hidden when the skin does not draw it, as with blanker)
 
-% custom properties on the box's element, collected in \web@tcb@css (each
-% helper appends one or more):
-% - colors: a color in light mode, and in dark mode the same color at
-%   another lightness, css/tex8web.css's for a border, a background or
-%   text; the page's text color for black text
+% custom properties on the box's element, collected in \web@tcb@css, to
+% which each helper appends:
+% - colors: the color in light mode, and in dark mode the same color at the
+%   lightness css/tex8web.css sets for a border, a background, or text.
+%   Black text gets the page's text color
 \def\web@tcb@add#1{\xdef\web@tcb@css{\web@tcb@css#1}}
 \def\web@tcb@lightdark#1#2{light-dark(\##1, oklch(from \##1 var(--tex8web-dark-#2) c h))}
-\def\web@tcb@color#1#2#3{% name, color, the property it's for
+\def\web@tcb@color#1#2#3{% name, color, and the property it is for
     \web@hex{#2}\web@tcb@hex
     \web@tcb@add{--tcb-#1: \web@tcb@lightdark\web@tcb@hex{#3};}}
 \def\web@tcb@frame#1#2{\web@tcb@color{#1}{#2}{border}}
@@ -73,9 +73,9 @@
         \web@tcb@color{#1}{#2}{color}%
     \fi}
 \def\web@tcb@transparent#1{\web@tcb@add{--tcb-#1: transparent;}}
-% - lengths, in ems (of a glue, its natural length): four of them, for the
-%   sides (top, right, bottom, left) or the corners (from the top left);
-%   the left side also on its own (-left)
+% - lengths in ems, a glue's natural length: four for the sides (top,
+%   right, bottom, left) or the corners (from the top left), and the left
+%   side also alone (-left)
 \def\web@tcb@em#1{\web@em{\dimexpr\glueexpr#1\relax\relax}}
 \def\web@tcb@sides#1#2#3#4#5{%
     \web@tcb@add{--tcb-#1: \web@tcb@em{#2} \web@tcb@em{#3} \web@tcb@em{#4} \web@tcb@em{#5};
@@ -104,8 +104,8 @@
         \web@tcb@add{--tcb-#1shadow: 0.2em 0.25em 0.4em rgb(0 0 0 / 0.3);}%
     \fi\fi
 }
-% - borderlines, which take the place of the frame on their side (the last
-%   one there, if there are several)
+% - borderlines, which replace the frame on their side (the last one on a
+%   side, if there are several)
 \def\web@tcb@borderlines{%
     \ifcsname kvtcb@borderline\endcsname
         \begingroup
@@ -120,8 +120,8 @@
         \endgroup
     \fi
 }
-% (a borderline's last argument is TikZ options, which are often just a
-% color; other options get the frame's color)
+% (a borderline's last argument is TikZ options, often a color alone. Any
+% other options get the frame's color)
 \def\web@tcb@line#1#2#3{%
     \def\web@tcb@linecolor{tcbcolframe}%
     \in@{=}{#3}\ifin@\else\in@{,}{#3}\ifin@\else
@@ -149,9 +149,9 @@
         {\kvtcb@boxsep+\kvtcb@bottom}{\kvtcb@boxsep+\kvtcb@leftupper}%
     \ifx\web@tcb@before\relax\else\web@tcb@length{before}\web@tcb@before\fi
     \ifx\web@tcb@after\relax\else\web@tcb@length{after}\web@tcb@after\fi
-    % the title: its text's color, and its background, the frame's color
-    % unless it has its own; a boxed title is a box of its own, which
-    % tcolorbox draws with the frame's color, the title's background and
+    % the title: its text color, and its background, which is the frame's
+    % color unless the title has a color. tcolorbox draws a boxed title as
+    % a separate box, with the frame's color, the title's background, and
     % the boxed title style
     \web@tcb@text{title-text}{tcbcoltitle}%
     \iftcb@titlefilled
@@ -171,8 +171,8 @@
             \expandafter\tcbset\expandafter{\web@tcb@boxedstyle}%
             \web@tcb@frameof{title-}%
             \ifx\tcb@interior@code\@empty\let\web@tcb@interiorhidden\@empty\fi
-            % (a boxed title that doesn't draw its interior has most likely
-            % a frame code of its own that fills it)
+            % (a boxed title that does not draw its interior most likely
+            % has a frame code that fills it)
             \ifx\web@tcb@interiorhidden\relax
                 \web@tcb@back{title-back}{tcbcolback}%
             \else\ifx\web@tcb@framehidden\relax
@@ -191,10 +191,10 @@
     \web@Css{\#\csname :tcbcolid\endcsname\space{\web@tcb@css}}%
 }
 
-% whether the box steps a counter (\web@tcb@numbered empty), its own or
-% one named by step, which tcolorbox does in the box's phantom; tex4ht never
-% puts the phantom on the page, so the counter's anchor is lost. (A raster
-% steps a counter of its own there for each box, which doesn't count)
+% whether the box steps a counter (\web@tcb@numbered empty), its own or one
+% named by step. tcolorbox steps it in the box's phantom, which tex4ht never
+% puts on the page, so the counter's anchor is lost. A raster's step of
+% tcbrasternum for each box does not count
 \web@needs{tcb@set@@phantom}
 \let\web@tcb@setphantom\tcb@set@@phantom
 \ExplSyntaxOn
@@ -208,12 +208,12 @@
     \web@tcb@keep}
 \ExplSyntaxOff
 
-% tcolorbox.4ht keeps a box's label, from its phantom to its drawing, after
-% its contents, in one global macro, which a box inside it takes or
-% replaces with its own. So the box keeps it, locally, until it's drawn
-% (\Configure{tcolorbox}); and its number for the title (a theorem's
-% \thetcbcounter), which tex4ht writes then too, after a box inside it has
-% stepped the counter
+% tcolorbox.4ht keeps a box's label from its phantom until the box is drawn,
+% after its contents, in one global macro, which a box inside it takes or
+% replaces. So the label is kept locally until the box is drawn
+% (\Configure{tcolorbox}). The number for the title (a theorem's
+% \thetcbcounter) is kept too, because tex4ht writes it then, after a box
+% inside has stepped the counter
 \let\web@tcb@label\relax
 \def\web@tcb@keep{%
     \ifcsname tcolorbox:label:key\endcsname
@@ -231,8 +231,8 @@
         \global\expandafter\let\csname tcolorbox:currentlabel\endcsname\web@tcb@currentlabel
         \global\expandafter\let\csname tcolorbox:cref@currentlabel\endcsname\web@tcb@crefcurrentlabel
     \fi}
-% \let#1 to the macro named #2, which may be undefined (\csname would make
-% it \relax)
+% \let#1 to the macro named #2, which may be undefined (a bare \csname would
+% make it \relax)
 \def\web@tcb@letcs#1#2{%
     \ifcsname#2\endcsname
         \expandafter\let\expandafter#1\csname#2\endcsname
@@ -240,12 +240,13 @@
         \let#1\undefined
     \fi}
 
-% tex4ht's box, with that style; the title in its font (fonttitle), which
-% tex4ht leaves out; and an anchor for a numbered box, where tcolorbox.4ht
-% puts a label's, for page.lua's link. A \tcbox in its line (on line, or
-% another way to have nothing before and after it) is in its line, as in
-% the PDF: spans in the paragraph, which it doesn't end. (Its end comes
-% after tcolorbox's group, so its start pushes its tag)
+% tex4ht's box, with that style, the title in its font (fonttitle), which
+% tex4ht leaves out, and an anchor for a numbered box, where tcolorbox.4ht
+% puts a label's, for page.lua's link. A \tcbox set in its line (on line,
+% or another way to have nothing before and after it) stays in its line, as
+% in the PDF: it is written as spans and does not end the paragraph. The
+% end hook runs after tcolorbox's group, so the start pushes the tag on a
+% stack
 \def\web@tcb@hbox{hbox}
 \def\web@tcb@span{span}
 \ExplSyntaxOn

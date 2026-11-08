@@ -1,5 +1,6 @@
-// Tests of lib/chrome.mjs, which need Chrome, run by npm run test:visual:
-// node --test test/chrome.test.mjs
+// Tests of lib/chrome.mjs. They need Chrome, so npm run test:visual runs
+// them, not npm test. Alone:
+//   node --test test/chrome.test.mjs
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
@@ -17,11 +18,11 @@ let chrome;
 before(async () => { chrome = await launch(); });
 after(() => { chrome.close(); rmSync(dir, { recursive: true }); });
 
-// a font that doesn't load makes open() fail
+// a font that does not load makes open() fail
 const broken = () => write('broken.html', `<style>@font-face { font-family: x; src: url(missing.woff2); }
   p { font-family: x; }</style><p>text</p>`);
 
-// (the tab is gone a moment after closeTarget answers)
+// the tab is gone only a moment after closeTarget answers
 const closed = async tabs => assert.equal(await until(() => chrome.tabs(), n => n === tabs), tabs);
 
 test('a tab that fails to open is closed', async () => {
@@ -53,7 +54,7 @@ test('a signal ends the process with 128 plus its number, and the profile is rem
       `import { launch } from './test/lib/chrome.mjs'; await launch(); process.kill(process.pid, 'SIGTERM'); await new Promise(() => {});`],
     { cwd: join(here, '..'), env: { ...process.env, TMPDIR: temp }, encoding: 'utf8' });
     assert.equal(result.status, 143);
-    // (the build slots are there too)
+    // filtered, as the build slots are in TMPDIR too
     assert.deepEqual(readdirSync(temp).filter(name => name.startsWith('tex8webchrome')), []);
   } finally {
     rmSync(temp, { recursive: true });
@@ -65,8 +66,8 @@ test('Chrome and its profile go with the process that started it, however it end
   // the processes whose command line names the profile, by pid
   const left = () => spawnSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8', maxBuffer: 1 << 28 }).stdout
     .split('\n').filter(line => line.includes(temp)).map(line => Number(line.trim().split(' ')[0]));
-  // (in a group of its own, killed outright, as build.mjs's run() kills a
-  // command that hangs)
+  // in a separate process group, killed with SIGKILL, as build.mjs's run()
+  // kills a command that hangs
   const child = spawn(process.execPath, ['--input-type=module', '-e',
     `import { launch } from './test/lib/chrome.mjs'; await launch(); console.log('up'); await new Promise(() => {});`],
   { cwd: join(here, '..'), env: { ...process.env, TMPDIR: temp }, stdio: ['ignore', 'pipe', 'inherit'], detached: true });

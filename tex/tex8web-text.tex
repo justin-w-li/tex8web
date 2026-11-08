@@ -1,12 +1,12 @@
-% tex8web: text, cross-references, theorems, the table of contents, lists and
-% figures. (tcolorbox's boxes are in tex8web-boxes.tex)
+% tex8web: text, cross-references, theorems, the table of contents, lists,
+% and figures. tcolorbox's boxes are in tex8web-boxes.tex.
 \makeatletter
 
 % --- title ------------------------------------------------------------------
 
-% a \thanks's mark where it is, as in the PDF: tex4ht (latex.4ht) puts it
-% there only where \footnote is \thanks, which LaTeX's \maketitle makes it
-% but titling's doesn't; and the marks not links, as in the PDF
+% each \thanks mark where the \thanks is, as in the PDF. tex4ht (latex.4ht)
+% puts it there only where \footnote is \thanks: LaTeX's \maketitle makes
+% it so, and titling's does not. The marks are not links, as in the PDF.
 \let\web@thanks\thanks
 \def\thanks#1{{\let\footnote\thanks\web@thanks{#1}}}
 \web@needs{a:thank-mark}
@@ -16,11 +16,11 @@
     {\HCode{<p>}\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
     {\HCode{</p>}}
 
-% the title in the font that a document's or class's \maketitle sets it in,
-% where that isn't the standard title's \LARGE. tex4ht drops the title's
-% fonts (\NoFonts in html4.4ht's \Configure{maketitle}). Here the heading
-% is at the text's size, and tex4ht's spans set the title's. (A class
-% without \maketitle, letter, has no \a:ttl)
+% the title in the font that the document's or class's \maketitle sets it
+% in, when that font is not the standard \LARGE. tex4ht drops the title's
+% fonts (\NoFonts in html4.4ht's \Configure{maketitle}). In that case the
+% heading is at the text size, and tex4ht's spans set the title's font. The
+% letter class has no \maketitle, and so no \a:ttl.
 \ifcsname a:ttl\endcsname
     \expandafter\let\expandafter\web@ttl\csname a:ttl\endcsname
     \expandafter\def\csname a:ttl\endcsname{%
@@ -33,10 +33,10 @@
         \web@ttl}
 \fi
 
-% the page's title without \maketitle: the \title's text, written as for
-% \maketitle's <title> (\a:mktl is the first argument of its
-% \Configure{maketitle}, run here without its markup). A config's own
-% \Configure{TITLE+} still wins.
+% without \maketitle, the page's <title> is the \title's text, written as
+% \maketitle would write it: the first argument of html4.4ht's
+% \Configure{maketitle} (\a:mktl) runs without its markup. A
+% \Configure{TITLE+} in a config takes precedence.
 \newif\ifweb@titled
 \ifdefined\maketitle
     \AddToHook{cmd/maketitle/before}{\global\web@titledtrue}
@@ -52,18 +52,18 @@
 % --- links ------------------------------------------------------------------
 
 \@ifpackageloaded{hyperref}{%
-    % tex4ht's \nolinkurl chokes on "_" inside \author. (A # comes out
-    % doubled)
+    % tex4ht's \nolinkurl fails on "_" inside \author. With this definition,
+    % a # comes out doubled.
     \renewcommand\nolinkurl[1]{\texttt{\detokenize{#1}}}%
     % tex4ht writes the table of contents with \texorpdfstring's plain-text
-    % argument, meant for PDF bookmarks; use the TeX one, as the PDF's table
-    % of contents does
+    % argument, meant for PDF bookmarks. The TeX argument is used instead,
+    % as in the PDF's table of contents.
     \Configure{writetoc}{\let\texorpdfstring\@firstoftwo}%
 }{}
 
-% tex4ht's cleveref links only the number of \cref; hand cleveref the link
-% start and end instead, so that with nameinlink all of "Lemma 1" is the
-% link, as in the PDF
+% tex4ht's cleveref support links only the number of a \cref. cleveref is
+% given the link start and end instead, so that with nameinlink all of
+% "Lemma 1" is the link, as in the PDF.
 \@ifpackageloaded{cleveref}{%
     \web@needs{@@@setcref}%
     \web@needs{cref@getlabel}%
@@ -81,11 +81,11 @@
 
 % --- logos ------------------------------------------------------------------
 
-% \TeX and \LaTeX as LaTeX draws them, with letters raised, lowered and kerned
-% in css/tex8web.css, rather than html4.4ht's plain words; still the words in
-% a picture, where there's no markup, and written as themselves into the
-% table of contents. (html4.4ht's own markup, its fancylogo option, starts no
-% paragraph)
+% \TeX and \LaTeX as LaTeX draws them, with letters raised, lowered, and
+% kerned in css/tex8web.css, in place of html4.4ht's plain words. A picture
+% has no markup, so it gets the plain words. The commands are written as
+% themselves into the table of contents. The markup of html4.4ht's
+% fancylogo option starts no paragraph, and \leavevmode here does.
 \catcode58 11
 \protected\def\TeX{\ifx\EndPicture\:UnDef
     \leavevmode\HCode{<span class="tex8web-tex">}T\HCode{<span
@@ -97,18 +97,19 @@
 
 % --- bibliography -----------------------------------------------------------
 
-% biblatex's heading in the table of contents only where the PDF has it, when
-% the heading asks (heading=bibintoc) or the document adds it: biblatex.4ht
-% (\bibSecConfigure) makes its \section* a \section without a number, which
-% tex4ht lists
+% biblatex's heading in the table of contents only where the PDF has it:
+% when the heading asks (heading=bibintoc) or the document adds it.
+% biblatex.4ht (\bibSecConfigure) makes its \section* a \section without a
+% number, which tex4ht would list.
 \ifdefined\bibSecConfigure \let\bibSecConfigure\relax \fi
 
 % --- headings ---------------------------------------------------------------
 
-% a heading's number as titlesec's \titleformat labels it (\thesection.,
-% say), not as LaTeX's \@seccntformat does, which tex4ht uses (it draws
-% headings with LaTeX's commands, titlesec-hooks.4ht). (titlesec defines
-% \thetitle only in its own heading code)
+% a heading's number as titlesec's \titleformat labels it, for example
+% "\thesection.". tex4ht draws headings with LaTeX's commands
+% (titlesec-hooks.4ht), so it numbers them with LaTeX's \@seccntformat.
+% \thetitle is set here because titlesec defines it only in its heading
+% code.
 \let\web@seccntformat\@seccntformat
 \def\@seccntformat#1{%
     \ifcsname web@titlelabel@#1\endcsname
@@ -118,7 +119,7 @@
         \web@seccntformat{#1}%
     \fi}
 % with titlesec, \paragraph and \subparagraph in their \titleformat's font
-% (css/tex8web.css) rather than in bold, as html4.4ht has them
+% (css/tex8web.css), in place of html4.4ht's bold
 \ifcsname web@titlefont@paragraph\endcsname
     \Configure{paragraph}{}{}
         {\ShowPar\IgnoreIndent
@@ -136,11 +137,11 @@
 
 % --- theorems ---------------------------------------------------------------
 
-% spaced as in the PDF rather than tex4ht's 2em: amsthm's theorem style's
-% space above and below, or LaTeX's \topsep. The style sets the space only
-% once the theorem has started, so leave it in the heading, for
-% text.theorem_spacing to move onto the theorem (\HCode would expand it at
-% shipout, too late)
+% theorems spaced as in the PDF, in place of tex4ht's 2em: the space above
+% and below from amsthm's theorem style, or LaTeX's \topsep. The style sets
+% these lengths only once the theorem has started, so the \edef leaves them
+% in the head, for text.theorem_spacing to move onto the theorem. \HCode
+% alone would expand them at shipout, too late.
 \ifdefined\thm@preskip
     \def\web@thmskip{\web@em\thm@preskip}%
     \def\web@thmpostskip{\web@em\thm@postskip}%
@@ -155,11 +156,11 @@
          data-before="\web@thmskip" data-after="\web@thmpostskip"></span>}}%
      \web@mark\HCode{</span>}}
     {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}\par\indent\ShowPar}
-% ntheorem's number gets its anchor in the head, as amsthm's does
-% (amsthm.4ht), for page.lua's link: latex.4ht leaves it for a \label to
-% make after the head. Not when the head leaves the number out, as
-% ntheorem's nonumber styles (\newtheorem*) do: their \@begintheorem has
-% no #2
+% ntheorem's number is given its anchor in the head, as amsthm's is
+% (amsthm.4ht), for page.lua's link. latex.4ht leaves the anchor for a
+% \label to make after the head. No anchor is made when the head leaves the
+% number out, as ntheorem's nonumber styles (\newtheorem*) do: their
+% \@begintheorem has no #2.
 \ExplSyntaxOn
 \web@needs{:thm}
 \@ifpackageloaded{ntheorem}
@@ -173,10 +174,10 @@
       }
   }
   {}
-% LaTeX's own theorems, likewise: their \@thm (ltthm.dtx) steps the counter
-% with \@kernel@refstepcounter, which tex4ht doesn't patch as it does
-% \refstepcounter (latex.4ht), so they would get no anchor, and a \label
-% in one would lead to the section
+% the same for LaTeX's theorems. Their \@thm (ltthm.dtx) steps the counter
+% with \@kernel@refstepcounter, which tex4ht does not patch as it patches
+% \refstepcounter (latex.4ht). Without this, they would have no anchor, and
+% a \label in one would link to the section.
 \web@needs{o:@thm:}
 \exp_args:Nee \str_if_in:nnT { \cs_replacement_spec:N \o:@thm: }
   { \token_to_str:N \@kernel@refstepcounter }
@@ -189,25 +190,27 @@
         \__web_kernel_thm:
       }
   }
-% hyperref's tex4ht driver stops early (hyperref.sty's \MaybeStopEarly):
-% after its \MakeLinkTarget, which LaTeX's theorems call, tests amsmath's
-% \ifmeasuring@, but before it defines \ifmeasuring@ for want of amsmath
+% hyperref's tex4ht driver stops early (\MaybeStopEarly in hyperref.sty).
+% It stops after defining \MakeLinkTarget, which LaTeX's theorems call and
+% which tests amsmath's \ifmeasuring@, but before defining \ifmeasuring@
+% for documents without amsmath.
 \@ifpackageloaded{hyperref}
   { \cs_if_exist:cF { ifmeasuring@ } { \cs_set_eq:cN { ifmeasuring@ } \if_false: } }
   {}
 \ExplSyntaxOff
 
-% amsthm's \qed puts \qedsymbol at the right of the line with an \hfill, which
-% tex4ht turns into spaces. Put it in a span that css/tex8web.css floats
-% right, in a block of its own when it follows a list. amsthm's own \openbox
-% is drawn with rules and comes out as a small glyph of whatever font has
-% one: set MathJax's \square, as in a display's \qedhere, which is the size
-% of the PDF's.
-% tex4ht's \qedsymbol would draw either as a picture or glyph of its own;
-% \o:qedsymbol: (amsthm.4ht) is the definition it started from. Where the
-% document has set \qedsymbol since (thmtools' qed=, a \renewcommand before
-% a proof), \qedsymbol is not tex4ht's any more and is set as it is.
-% \web@qed@choose leaves the symbol in force in \web@qedsym
+% amsthm's \qed puts \qedsymbol at the right of the line with an \hfill,
+% which tex4ht turns into spaces. The symbol goes in a span that
+% css/tex8web.css floats right, in a div of its own in vertical mode, as
+% after a list. amsthm's \openbox is drawn with rules and comes out as a
+% small glyph from whichever font has one, so MathJax's \square is set
+% instead, as in a display's \qedhere. \square is the size of the PDF's
+% box.
+% tex4ht's \qedsymbol would draw a picture or a glyph of its own.
+% \o:qedsymbol: (amsthm.4ht) is the definition tex4ht started from. Where
+% the document has set \qedsymbol since (thmtools' qed=, a \renewcommand
+% before a proof), \qedsymbol is no longer tex4ht's and is set as it is.
+% \web@qed@choose puts the symbol in force in \web@qedsym.
 \def\web@openbox{\openbox}
 \def\web@square{\(\square\)}
 \@ifpackageloaded{amsthm}
@@ -235,16 +238,16 @@
 % --- \hfill -----------------------------------------------------------------
 
 % what follows an \hfill in a paragraph goes at the right of its line, as in
-% the PDF, where tex4ht writes the glue as spaces: the \hfill leaves a mark
-% after its glue (which starts the paragraph in vertical mode), and
-% text.hfill puts the rest of the line in a span css/tex8web.css floats
-% right. No mark in a box (\ifinner), whose line isn't the paragraph's;
-% before \break or a \penalty of -10000 or less, which end the line
-% (tex4ht's own \hfill\break in list labels, latex.4ht, and the index,
-% html4.4ht) but write nothing; before \linebreak or \nolinebreak, which
-% remove the \hfill (\@no@lnbk, latex.ltx); or in \dotfill's and
-% \hrulefill's leaders, which tex4ht draws as dots or drops. \HCode writes
-% nothing in a picture
+% the PDF. tex4ht would write the glue as spaces. The \hfill leaves a mark
+% after its glue, since an \hfill in vertical mode starts the paragraph.
+% text.hfill puts the rest of the line in a span that css/tex8web.css
+% floats right. No mark is left in a box (\ifinner), whose line is not the
+% paragraph's. None is left before \break or a \penalty of -10000 or less,
+% which end the line but write nothing (tex4ht's \hfill\break in list
+% labels, latex.4ht, and in the index, html4.4ht). None is left before
+% \linebreak or \nolinebreak, which remove the \hfill (\@no@lnbk,
+% latex.ltx), or in the leaders of \dotfill and \hrulefill, which tex4ht
+% draws as dots or drops. \HCode writes nothing in a picture.
 \let\web@hfill\hfill
 \protected\def\hfill{\web@hfill
     \ifhmode\ifinner\else\expandafter\expandafter\expandafter\web@hfill@peek\fi\fi}
@@ -266,14 +269,15 @@
 
 % --- terms ------------------------------------------------------------------
 
-% \WebTerm\cs: what \cs{...} sets is a term, which the contents' filter finds
+% \WebTerm\cs: what \cs{...} sets is a term, which the search field finds
 % (page.terms gives it an id). In math, which the mathjax option passes to
-% MathJax as source, \cs is the bridge's. Written to a file, as a heading
-% is to the contents, it is only what \cs sets: the span would give the
-% heading's id (make4ht's sectionid) the letters of its TeX, and its entry
-% in the contents a term the filter would find. (A robust \cs's copy is
-% written as its own name, \webterm<cs>: one of letters only, which reads
-% back as one name and which sectionid leaves out of the id)
+% MathJax as source, \cs is the definition that macros.lua translates for
+% MathJax. Written to a file, as a heading is written for the table of
+% contents, \cs gives only what it sets. The span's TeX would add letters
+% to the heading's id (make4ht's sectionid), and a term that the search
+% field would find to the table of contents entry. A robust \cs's copy is
+% written as its name, \webterm<cs>. The name has letters only, so it is
+% read back as one name, and sectionid leaves it out of the id.
 \NewDocumentCommand\WebTerm{m}{%
     \edef\web@a{\expandafter\@gobble\string#1}%
     \expandafter\NewCommandCopy\csname webterm\web@a\endcsname#1%
@@ -288,12 +292,12 @@
 % --- table of contents ------------------------------------------------------
 
 % numbers in a box as wide as in the PDF (tocloft's widths, or the class's),
-% so titles line up whether a number has one digit or two; entries indented
-% as in the PDF, from the top level's indent (chapters', or sections'); and
-% the space above each entry as in the PDF: tocloft's, or the class's.
-% Without tocloft, entries are bold as in the PDF; with it, they are in its
-% fonts (tex8web-page.tex). (The third argument would add page numbers; see
-% css/tex8web.css)
+% so titles line up whether a number has one digit or two. Entries are
+% indented as in the PDF, from the top level's indent (chapters' or
+% sections'), with the space above each entry from tocloft or the class.
+% Without tocloft, entries are bold as in the PDF. With tocloft, they are in
+% its fonts (tex8web-page.tex). The third argument, for page numbers, is
+% empty: a page has none.
 \def\web@toc#1{%
     \ConfigureToc{#1}
         {\HCode{<span class="#1Toc"><span class="tocnumber">}}
@@ -307,14 +311,14 @@
 \web@toc{subsubsection}
 \web@toc{paragraph}
 \web@toc{subparagraph}
-% (each value, of a level and a name, as \web@toc@<level>@<name>)
+% each value of a level, by name, as \web@toc@<level>@<name>
 \def\web@tocset#1#2#3{\expandafter\xdef\csname web@toc@#1@#2\endcsname{#3}}
 \def\web@tocget#1#2{\csname web@toc@#1@#2\endcsname}
 \def\web@toctop{section}
 \ifdefined\c@chapter\def\web@toctop{chapter}\fi
 \ifdefined\cftsecnumwidth
-    % tocloft's indent, number width and space above, for a level and
-    % tocloft's name for it
+    % tocloft's indent, number width, and space above, for a level and
+    % tocloft's name for the level
     \def\web@tocloft#1#2{%
         \web@tocset{#1}{indent}{\the\csname cft#2indent\endcsname}%
         \web@tocset{#1}{number}{\the\csname cft#2numwidth\endcsname}%
@@ -326,20 +330,21 @@
     \web@tocloft{paragraph}{para}
     \web@tocloft{subparagraph}{subpara}
 \else
-    % each level's indent, number width, space above and weight: article's,
-    % unless the class's \l@<level>, typeset in a box that's thrown away,
-    % shows its own. The space above is the last skip as the entry's
-    % paragraph starts, not as a \makebox in it starts another. As the
-    % entry's text starts, \@tempdima is the number's width and \leftskip
-    % the indent and that, as \@dottedtocline and the standard classes'
-    % hand-written levels set them. A class that sets neither, as titletoc's
-    % entries, keeps article's. (tex4ht has a \@dottedtocline of its own,
-    % article.4ht and report.4ht; and a font loaded here would renumber
-    % those of the page's pictures)
+    % each level's indent, number width, space above, and weight: article's,
+    % unless the class's \l@<level>, typeset in a box that is discarded,
+    % shows others. The space above is \lastskip at the \leavevmode that
+    % starts the entry's paragraph. A later \leavevmode, from a \makebox in
+    % the entry, is ignored. As the entry's text starts, \@tempdima is the
+    % number width and \leftskip the indent plus that width, as
+    % \@dottedtocline and the standard classes' hand-written levels set
+    % them. Entries that set neither, for example titletoc's, keep article's
+    % values. \@dottedtocline is redefined because tex4ht replaces it
+    % (article.4ht, report.4ht). \selectfont is disabled because a font
+    % loaded here would renumber the fonts of the page's pictures.
     \def\web@tocmeasure#1#2#3#4#5{%
         \web@tocset{#1}{indent}{\the\dimexpr#2}\web@tocset{#1}{number}{\the\dimexpr#3}%
         \web@tocset{#1}{skip}{\the\dimexpr#4}\web@tocset{#1}{weight}{#5}%
-        % (the AMS classes' \@tocline sets a number in the line, not in a box)
+        % the AMS classes' \@tocline sets the number in the line, without a box
         \ifdefined\@tocline\else\ifcsname l@#1\endcsname\begingroup
             \c@tocdepth\@M \everypar{}\let\selectfont\relax
             \web@tocset{#1}{skip}{0pt}\web@tocset{#1}{weight}{normal}%
@@ -382,9 +387,9 @@
         --tex8web-toc-chapter-skip: \web@em{\web@tocget{chapter}{skip}}; }}
 \fi
 
-% a table of contents a document makes with \@starttoc{toc} itself (in a box,
-% say) is tex4ht's, as \tableofcontents makes without its heading. (tex4ht
-% writes the entries in its own form, which only it reads)
+% a table of contents that a document makes with \@starttoc{toc} (in a box,
+% for example) becomes tex4ht's, as \tableofcontents makes it without its
+% heading. tex4ht writes the entries in a form that only tex4ht reads.
 \let\web@starttoc\@starttoc
 \def\@starttoc#1{%
     \def\web@a{#1}\def\web@b{toc}%
@@ -397,9 +402,10 @@
 
 % --- lists ------------------------------------------------------------------
 
-% LaTeX's spacing of a list: \topsep around it, \itemsep and \parsep between
-% items, and its left margin (see css/tex8web.css), for the lists that don't
-% have their own; and the bibliography's, biblatex's if it has its own
+% LaTeX's spacing of a list, for lists without their own: \topsep around it,
+% \itemsep and \parsep between items, and its left margin (see
+% css/tex8web.css). The bibliography's spacing comes from biblatex when
+% biblatex sets it.
 \begingroup\@listi
     \web@Css{:root { --tex8web-list-sep: \web@em\topsep;
         --tex8web-item-sep: \web@em{\dimexpr\itemsep+\parsep\relax};
@@ -409,17 +415,17 @@
             \else\itemsep+\parsep\fi\relax}; }}
 \endgroup
 
-% itemize and enumerate as LaTeX sets them, and enumitem's lists made with
-% \newlist: html4.4ht's grid of labels and items (as enumitem has it), each
-% label as TeX typesets it rather than the browser's, with each list's own
-% lengths, set by the first \item, where tex4ht opens the list (latex.4ht).
-% A list is a ul or an ol; or, for enumitem's description kind, a dl.
-% Screen readers skip the class's bullets, which say nothing, and read
-% any other label. (WebKit reads a list whose items show no marker as no
-% list, unless its role says so)
-% #3 gives its element as the list opens: tex4ht opens it in \everypar,
-% maybe in a group, so the element and the item's end are kept globally.
-% (tex4ht's names need : a letter)
+% itemize, enumerate, and enumitem's lists made with \newlist, as LaTeX sets
+% them: a grid of labels and items, as html4.4ht lays out enumitem's lists,
+% with each label as TeX typesets it in place of the browser's marker. Each
+% list has the lengths in force at its first \item, where tex4ht opens the
+% list (latex.4ht). A list is a ul or an ol, or a dl for enumitem's
+% description kind. The class's bullets, which say nothing, are hidden from
+% screen readers, and other labels are read. (WebKit treats a list whose
+% items show no marker as no list unless its role says so.)
+% #3 gives the list's element as the list opens. tex4ht opens the list in
+% \everypar, perhaps inside a group, so the element and the item's end are
+% kept globally. tex4ht's names need : as a letter.
 \catcode58 11
 \def\web@role@ul{ role="list"}
 \def\web@item@ul{<li><span class="tex8web-label"\web@ownlabel>}
@@ -433,10 +439,11 @@
 \def\web@label@dl{</dt><dd\Hnewline>}
 \def\web@end@dl{</dd></div>}
 \let\web@listtag\empty
-% (whether an \item has the class's bullet: no label of its own, and
-% \labelitemi to iv as the document starts. LaTeX's \@item clears
-% \if@noitemarg as it starts, before tex4ht opens the item. enumitem's
-% label= redefines \labelitemi and so on)
+% whether an \item has the class's bullet: no label of its own, and
+% \labelitemi to \labelitemiv as at the start of the document. LaTeX's
+% \@item clears \if@noitemarg as it starts, before tex4ht opens the item,
+% so the test comes first. enumitem's label= redefines \labelitemi and the
+% others.
 \def\web@bullet#1{%
     \edef\web@bulletlabel{\expandafter\noexpand\csname labelitem#1\endcsname}%
     \ifx\web@bulletlabel\@itemlabel
@@ -469,9 +476,9 @@
         {\end:itm \global\def\end:itm{\EndP\HCode{\csname web@end@\web@listtag\endcsname}}%
          \HCode{\csname web@item@\web@listtag\endcsname}\bgroup}
         {\egroup\EndP\HCode{\csname web@label@\web@listtag\endcsname}\par\ShowPar}}
-% (\textbullet as LaTeX draws it, •: tex4ht's Latin Modern TS1 font,
-% lm-ts1.htf, gives it as ∙, the smaller bullet operator. A picture keeps
-% the font's)
+% \textbullet as LaTeX draws it, •. tex4ht's file for the Latin Modern TS1
+% font, lm-ts1.htf, gives ∙, the smaller bullet operator. A picture keeps
+% the font's glyph.
 \ifcsname TS1\string\textbullet\endcsname
     \expandafter\let\expandafter\web@textbullet\csname TS1\string\textbullet\endcsname
     \expandafter\def\csname TS1\string\textbullet\endcsname{%
@@ -480,10 +487,11 @@
 \web@configurelist{itemize}{itemize}{ul}
 \web@configurelist{enumerate}{enumerate}{ol}
 \@ifpackageloaded{enumitem}{%
-    % (html4.4ht's own names the list last made, not this one. enumitem's
-    % \enit@type is 0 for its enumerate kind, 1 for itemize, 2 for
-    % description. It exists only once a list is made, so the guard checks
-    % the name of its setter, \enit@prelist)
+    % html4.4ht's configuration expands \a:enumitemenv when a list is used,
+    % so its class names the list made last. enumitem's \enit@type is 0 for
+    % its enumerate kind, 1 for itemize, and 2 for description. \enit@type
+    % exists only once a list is made, so the guard checks \enit@prelist,
+    % which sets it.
     \web@needs{enit@prelist}%
     \def\web@newlist#1{\web@configurelist{#1}{enumitem-#1}
         {\ifcase\enit@type ol\or ul\else dl\fi}}%
@@ -493,10 +501,11 @@
 
 % --- framed -----------------------------------------------------------------
 
-% framed's space above and below its boxes, every \MakeFramed (framedenv in
-% html4.4ht): \OuterFrameSep, or \topsep while that is \maxdimen. And
-% html4.4ht's box, but counted globally: its \advance is local to the
-% environment, which gave every box the same id
+% framed's space above and below its boxes, for every \MakeFramed
+% (framedenv in html4.4ht): \OuterFrameSep, or \topsep while \OuterFrameSep
+% is \maxdimen. The box is html4.4ht's, with its counter advanced globally.
+% html4.4ht's \advance is local to the environment, which gave every box
+% the same id.
 \catcode58 11
 \@ifpackageloaded{framed}{%
     \begingroup\@listi
@@ -514,11 +523,11 @@
 
 % --- mdframed ---------------------------------------------------------------
 
-% mdframed's boxes, each with its lines (only the middle one, the
-% linewidth), the space inside and around them, and its colors, as
-% tex4ht's mdframed.4ht and html4.4ht write them. Theirs had no space
-% inside, and a box after one with its own linewidth had none
-% (html4.4ht's \mdfl@linewidth, set to \relax)
+% mdframed's boxes, as mdframed.4ht and html4.4ht write them, with each
+% box's lines, the space inside and around it, and its colors. Of the
+% lines, only the middle one (linewidth) is used. html4.4ht's style had no
+% space inside, and a box after one with its own linewidth lost its line
+% width (html4.4ht sets \mdfl@linewidth to \relax after each box).
 \catcode58 11
 \@ifpackageloaded{mdframed}{%
     \web@needs{mdf@middlelinewidth@length}\web@needs{mdf@innertopmargin@length}%
@@ -543,19 +552,19 @@
 
 % --- figures ----------------------------------------------------------------
 
-% no alt text but the author's (graphicx's alt key): tex4ht's own, PIC and
-% [Picture] (html4.4ht), are read aloud by screen readers
+% no alt text but the author's (graphicx's alt key). Screen readers read
+% tex4ht's defaults, PIC and [Picture] (html4.4ht), aloud.
 \Configure{GraphicsAlt}{}
 \Configure{Picture-alt}{}
 
-% \tikz's pictures, and the fonts after them: pgfsys-dvisvgm4ht.def starts a
-% picture (\Picture+) in \pgfsys@beginpicture too, so that what pgf typesets
-% into its box is set as a picture's. Outside a tikzpicture environment's own
-% picture, pgf's group ends before that picture does, so it never ends: its
-% \NoFonts (tex4ht.sty) holds for the rest of the page, and the next picture
-% is cut short at the right. Instead, tex4ht is only told it is in a picture
-% (\EndPicture), until the group ends. (The version \HLet runs outside a
-% picture)
+% \tikz pictures, and the fonts after them. pgfsys-dvisvgm4ht.def also
+% starts a picture (\Picture+) in \pgfsys@beginpicture, so that what pgf
+% typesets into its box is set as a picture. Outside a tikzpicture
+% environment's picture, pgf's group ends before that picture does, so the
+% picture never ends. Its \NoFonts (tex4ht.sty) then holds for the rest of
+% the page, and the next picture is cut short at the right. Instead, tex4ht
+% is only told that it is in a picture (\EndPicture), until the group ends.
+% \n:pgfsys@beginpicture: is the version that \HLet runs outside a picture.
 \catcode58 11
 \ifdefined\texfourht@tikz@begin
     \web@needs{n:pgfsys@beginpicture:}%
@@ -566,23 +575,24 @@
 \fi
 \catcode58 12
 
-% \includegraphics keeps the PDF's width beside the text, as a fraction of
-% the PDF's text width, and shrinks only with a column narrower than it
-% (img's max-width). The width is the one graphicx works out from width,
-% height and scale. Only a width is written, so a height never squashes the
-% picture. tex4ht's size is kept when no size is asked for, when graphicx
-% resizes a box around the picture instead (a size after angle, or scale
-% with a size: \Gin@@ewidth or \Gin@@eheight, which graphicx sets only in
-% the other case, is missing), and when the width depends on a natural size
-% that tex4ht doesn't know (no .xbb file beside a bitmap: \noBoundingBox in
-% graphics.4ht). (\web@textwidth, as a minipage, and so a tcolorbox or
-% subfigure, sets \textwidth to its own)
+% an \includegraphics picture as wide as in the PDF, as a fraction of the
+% PDF's text width. The picture shrinks only in a column narrower than that
+% (img's max-width). The width is the one graphicx computes from width,
+% height, and scale. Only a width is written, so a height never squashes
+% the picture. tex4ht's size is kept when no size is asked for. It is kept
+% when graphicx resizes a box around the picture instead (a size after
+% angle, or scale with a size): then \Gin@@ewidth or \Gin@@eheight is
+% missing, since graphicx sets them only in the other case. It is kept when
+% the width depends on a natural size that tex4ht does not know (no .xbb
+% file beside a bitmap: \noBoundingBox in graphics.4ht). \web@textwidth is
+% used because a minipage, and so a tcolorbox or subfigure, sets \textwidth
+% to its width.
 \ExplSyntaxOn
 \cs_if_exist:NT \Gin@req@width
   {
     \web@needs{a:Gin-dim}
     \cs_set_eq:Nc \__web_gin_dim: { a:Gin-dim }
-    % (the graphics package alone never sets them, graphicx.4ht does)
+    % graphicx.4ht defines these, and the graphics package alone does not
     \cs_if_exist:NF \Gin:ewidth { \cs_set_eq:NN \Gin:ewidth \Gin@exclamation }
     \cs_if_exist:NF \Gin:eheight { \cs_set_eq:NN \Gin:eheight \Gin@exclamation }
     \Configure{Gin-dim}{%
@@ -609,12 +619,13 @@
   }
 
 % a minipage, or subcaption's subfigure (a minipage inside), as wide as in
-% the PDF, as a share of the text width, with its position (t, c or b) and
-% whether it starts a line (begins a paragraph), for text.lua and the
-% stylesheet to set it beside the next. html4.4ht writes the div as the
-% environment begins, before the minipage's arguments are read; here, once
-% they are, with the class \web@minipage{..} asked for. tcolorbox's
-% minipages ask for none: its box is its own markup
+% the PDF, as a share of the text width. Its classes give its position (t,
+% c, or b) and whether it starts a line (begins a paragraph), for text.lua
+% and the stylesheet to set it beside the next. html4.4ht writes the div as
+% the environment begins, before the minipage's arguments are read. Here
+% the div is written once they are read, with the class that
+% \web@minipage{..} asks for. tcolorbox's minipages ask for none, since the
+% box has its own markup.
 \web@needs{@iiiminipage}
 \cs_set_eq:NN \__web_minipage:w \@iiiminipage
 \tl_new:N \g__web_minipage_class_tl
@@ -638,7 +649,7 @@
     {\web@minipage{minipage}\ifvmode\IgnorePar\fi\EndP{\ifnum0=`}\fi}
     {\ifnum0=`{\fi}\EndP\HCode{</div>}}
     {}{}
-% (and the rest of html4.4ht's subfigure, for subcaption)
+% the rest of html4.4ht's subfigure configuration, for subcaption
 \@ifpackageloaded{subcaption}{%
     \Configure{subfigure}
         {\web@minipage{subfigure}\ifvmode\IgnorePar\fi\EndP
@@ -648,14 +659,14 @@
         {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}%
 }{}
 
-% --- algorithms ---------------------------------------------------------------
+% --- algorithms -------------------------------------------------------------
 
-% float.sty's floats, such as algorithm's, in their style: the figure's class
-% names it (tex8web-float-ruled, say), for the stylesheet to draw its rules
-% and place its caption. tex4ht sets the caption as LaTeX's (float.4ht), not
-% float.sty's: a ruled one's label is followed by a space, not a colon
-% (\floatc@ruled). This is html5.4ht's \Configure{float}, the same for every
-% class, with the class added
+% float.sty's floats, such as algorithm's, in their style: the figure's
+% class names the style (tex8web-float-ruled, for example), for the
+% stylesheet to draw its rules and place its caption. tex4ht sets the
+% caption as LaTeX does (float.4ht). In float.sty's ruled style, the label
+% is followed by a space instead of a colon (\floatc@ruled). Otherwise this
+% is html5.4ht's \Configure{float}, which is the same for every style.
 \ExplSyntaxOn
 \@ifpackageloaded { float }
   {
@@ -684,12 +695,13 @@
   { }
 \ExplSyntaxOff
 
-% algorithmicx's lines as LaTeX's list sets them (.tex8web-list): each number
-% in its own font, right-aligned \labelsep before its line, and the line
-% indented by its block's depth, \ALG@tlm, which tex4ht writes as spaces.
-% A line without text, such as algpseudocode's noend makes of \EndIf, is
-% left out, as in the PDF; \Statex has neither number nor indent. (In place
-% of html4.4ht's, whose \NoFonts loses the numbers' size)
+% algorithmicx's lines as LaTeX's list sets them (.tex8web-list): each
+% number in its font, right-aligned \labelsep before its line, and the line
+% indented by its block's depth (\ALG@tlm), which tex4ht would write as
+% spaces. A line without text, such as algpseudocode's noend makes of
+% \EndIf, is left out, as in the PDF. \Statex has neither number nor
+% indent. This replaces html4.4ht's configuration, whose \NoFonts loses
+% the numbers' size.
 \catcode58 11
 \@ifpackageloaded{algorithmicx}{%
     \web@needs{ALG@tlm}\web@needs{ALG@x@notext}\web@needs{Statex}%
@@ -715,19 +727,20 @@
 }{}
 \catcode58 12
 
-% algorithm2e's algorithms, which it sets in boxes tex4ht can't follow (the
-% lines run together), as HTML: a figure with its style's class (ruled, say),
-% where its caption goes (top) and its lengths, its lines as paragraphs and
-% its blocks as divs, with a vertical line where the style has one (vlined)
-% and the short rule ending such a block. A line's number goes in the
-% margin, as \algocf@printnl puts it (css/tex8web.css). The caption is
-% tex4ht's, with algorithm2e's label and separator; \algocf@latexcaption
-% ends it with \IgnorePar, which would leave the next line out of a <p>.
-% algorithm2e's \everypar replaces tex4ht's: \HtmlPar goes first in it,
-% and the tags between lines are written where no line is started, as
-% \HCode would start one. An [H] algorithm isn't a float, whose head
-% latex.4ht gives its caption's anchor (\get:cptg): its caption has its
-% own, as with the refcaption option
+% algorithm2e's algorithms as HTML. algorithm2e sets them in boxes that
+% tex4ht cannot follow, so the lines run together. Each algorithm is a
+% figure whose classes give its style (ruled, for example) and its
+% caption's place (top). Lines are paragraphs, and blocks are divs, with a
+% vertical line where the style has one (vlined) and the short rule that
+% ends such a block. A line's number goes in the margin, as
+% \algocf@printnl puts it (css/tex8web.css). The caption is tex4ht's, with
+% algorithm2e's label and separator. \algocf@latexcaption ends the caption
+% with \IgnorePar, which would leave the next line out of a <p>, so
+% \ShowPar follows it. algorithm2e's \everypar replaces tex4ht's, so
+% \HtmlPar goes first in it. The tags between lines are written where no
+% line is started, since \HCode would start one. An [H] algorithm is not a
+% float, whose head latex.4ht gives the caption's anchor (\get:cptg), so
+% its caption makes its own anchor, as with the refcaption option.
 \catcode58 11
 \@ifpackageloaded{algorithm2e}{%
     \web@needs{@algocf@start}\web@needs{@algocf@finish}\web@needs{algocf@everypar}%

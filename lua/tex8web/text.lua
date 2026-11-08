@@ -3,8 +3,9 @@ local dom = require "tex8web.dom"
 
 local M = {}
 
--- theorem spacing, which the cfg leaves in a <span class="tex8web-thmskip"> in the
--- heading (TeX knows it only once the theorem has started)
+-- theorem spacing, which tex8web-text.tex writes in a
+-- <span class="tex8web-thmskip"> in the heading, as TeX knows it only once
+-- the theorem has started
 function M.theorem_spacing(document)
   for _, mark in ipairs(document:query_selector("span.tex8web-thmskip")) do
     local div = dom.closest(mark, function(el)
@@ -18,9 +19,10 @@ function M.theorem_spacing(document)
   end
 end
 
--- an mdframed box ending at its theorem (\newmdtheoremenv's), without the
--- empty paragraph tex8web-text.tex starts after a theorem for the text
--- that follows (\indent), whose margin would add to the box's padding
+-- removes, from an mdframed box that ends with its theorem
+-- (\newmdtheoremenv), the empty paragraph tex8web-text.tex starts after a
+-- theorem for the text that follows (\indent). Its margin would add to the
+-- box's padding.
 function M.box_theorems(document)
   for _, box in ipairs(document:query_selector("div.mdframed")) do
     local elements = dom.elements(box)
@@ -32,13 +34,13 @@ function M.box_theorems(document)
   end
 end
 
--- a list just under a heading, without the empty paragraph html4.4ht opens
--- there before an enumerate or a description, through which the list's
--- margin would still collapse with the heading's (css/tex8web.css sets it
--- as LaTeX does, with no \topsep under a heading)
+-- removes the empty paragraph html4.4ht opens between a heading and an
+-- enumerate or a description. Through that paragraph, the list's margin
+-- would still collapse with the heading's (css/tex8web.css sets that
+-- margin as LaTeX does, with no \topsep under a heading).
 function M.heading_lists(document)
-  -- (each parent's elements once; a paragraph removed from them is before
-  -- only the list it was found for)
+  -- (each parent's elements are listed once; the list goes stale, but a
+  -- removed paragraph was before only the list it was found for)
   local siblings = {}
   local function before(el)
     local parent = el:get_parent()
@@ -60,10 +62,10 @@ function M.heading_lists(document)
   end
 end
 
--- links to the page by its file name, as biblatex.4ht writes citations
--- (page.html#X0-key), as links within it, which the stylesheet's citation
--- color and tex8web-page.js's previews look for (#X0-key); and no link on
--- its anchor (page.html, around nothing)
+-- rewrites links to the page by file name, as biblatex.4ht writes
+-- citations (page.html#X0-key), as links within it (#X0-key), which the
+-- stylesheet's citation color and tex8web-page.js's previews look for; and
+-- removes the href of an empty link to page.html
 function M.same_page_links(document, context)
   local page = context.input .. ".html"
   for _, a in ipairs(document:query_selector("a[href]")) do
@@ -78,8 +80,8 @@ end
 
 -- the space between a heading's number and its title, as one space in a
 -- <span class="tex8web-labelsep">, which css/tex8web.css makes as wide as
--- in the PDF: tex4ht writes it as spaces (and KOMA's as no-break spaces),
--- in the number and after it, which the browser would collapse into one
+-- in the PDF. tex4ht writes it as spaces (KOMA's as no-break spaces) in the
+-- number and after it, which the browser would collapse into one.
 local function last_text(el)
   local children = el:get_children()
   local last = children[#children]
@@ -173,9 +175,10 @@ local function is_nbsp(node)
 end
 
 -- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
--- as wide as a space; mark each so the CSS can narrow it. A browser still
--- breaks the line between one and the math after it (Lemma~$1$), so wrap the
--- two together. Verbatim text, alltt and listings keep theirs as they are
+-- as wide as a space, so each is marked for the CSS to narrow. A browser
+-- still breaks the line between one and the math after it (Lemma~$1$), so
+-- the two are wrapped together. Verbatim text, alltt, and listings are left
+-- as they are.
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)
     local class = el:get_attribute("class")
@@ -205,8 +208,8 @@ function M.no_break_spaces(document)
 end
 
 -- minipages and subfigures side by side (tex8web-text.tex): each run of
--- them on one line of the PDF, with nothing but space between, in one row.
--- One that begins a paragraph (tex8web-par) starts a new line
+-- them with only space between, on one line in the PDF, goes in one row.
+-- One that begins a paragraph (tex8web-par) starts a new row.
 local function is_minipage(node)
   return node:is_element() and node:get_element_name() == "div"
     and dom.class_starts(node, "tex8web-minipage-")
@@ -241,8 +244,8 @@ function M.minipages(document)
           row:add_child_node(children[k])
           j = k + 1
         end
-        -- (\noindent's empty paragraph before it, which would only add
-        -- the space between paragraphs at the top of a box)
+        -- (removes \noindent's empty paragraph before the row, which would
+        -- add a paragraph's space at the top of a box)
         local k = #out
         while k > 0 and is_space(out[k]) do k = k - 1 end
         if k > 0 and out[k]:is_element() and out[k]:get_element_name() == "p" and dom.is_blank(out[k]) then
@@ -259,11 +262,11 @@ function M.minipages(document)
   end
 end
 
--- footnotes (tex4ht's, at the end of the page with fn-in, which
--- tex8web.mk4 sets) each after the paragraph, list or theorem that holds
--- its mark, in order; css/tex8web.css puts them beside it on a wide
--- screen. A footnote in a table, a figure, a box or math stays where it
--- was. \thanks, which fn-in also puts there, goes back under the title
+-- footnotes, which fn-in (tex8web.mk4) puts at the end of the page, each
+-- moved after the paragraph, list, or theorem that holds its mark, in
+-- order; css/tex8web.css sets them beside the text on a wide screen. A
+-- footnote in a table, a figure, a box, or math stays. \thanks, which fn-in
+-- also puts there, goes back under the title.
 local function stays(el)
   local name = el:get_element_name()
   return name == "table" or name == "figure" or dom.class_starts(el, "tcolorbox") or is_math(el)
@@ -312,14 +315,14 @@ end
 
 -- \color as a declaration ({\color{red} text}): tex8web-page.tex marks
 -- where it is set (span.tex8web-color, with the color) and where its group
--- ends (span.tex8web-color-end), each pair with its own id. What lies
--- between takes the color: a block wholly between them on itself, and each
--- run of inline content in a span. Inner colors go first and win: a block
--- keeps a color it has. tcolorbox's boxes keep their own colors, a float
--- and the footnotes the text's (LaTeX's \@xfloat and \@makecol set
--- \normalcolor; tex4ht's table float is a div.table) and listings' tokens
--- html4.4ht's. tex4ht's link text isn't a group, as hyperref's is in the
--- PDF, so a color set in a link ends with it
+-- ends (span.tex8web-color-end), each pair with an id. What lies between
+-- takes the color: a block wholly between them in its style, and each run
+-- of inline content in a span. Inner colors are applied first, and a block
+-- keeps a color it has. tcolorbox's boxes keep their colors; floats and
+-- footnotes keep the text's (LaTeX's \@xfloat and \@makecol set
+-- \normalcolor; tex4ht's table float is a div.table); listings' tokens keep
+-- html4.4ht's. tex4ht's link text is not a group, as hyperref's is in the
+-- PDF, so a color set in a link ends with the link.
 local blocks = {p = true, div = true, ul = true, ol = true, li = true, dl = true, dt = true,
   dd = true, h1 = true, h2 = true, h3 = true, h4 = true, h5 = true, h6 = true, table = true,
   caption = true, colgroup = true, col = true, thead = true, tbody = true, tr = true, td = true,
@@ -341,7 +344,7 @@ local function index(node)
   end
 end
 
--- parent's children i to j, all between the marks
+-- colors parent's children i to j, which are all between the marks
 local function paint(parent, i, j, value)
   local children, out, run = parent:get_children(), {}, nil
   for k, node in ipairs(children) do
@@ -354,7 +357,7 @@ local function paint(parent, i, j, value)
         node:set_attribute("style", (style:gsub(";?%s*$", "; ", 1):gsub("^; $", ""))
           .. "color:" .. value .. ";")
       end
-    -- (a run starts at what shows: not at a mark, nor a space or ~)
+    -- (a run starts at visible content: not at a mark, a space, or a ~)
     elseif run or node:is_element() and not is_mark(node)
         or node:is_text() and node:get_text():gsub("\u{A0}", " "):find("%S") then
       if not run then
@@ -369,9 +372,9 @@ local function paint(parent, i, j, value)
   dom.set_children(parent, out)
 end
 
--- from from to to (or to the end of limit, without it): the nodes after
--- from up to the child of the ancestor they share, those before to up to
--- it, and the children of that ancestor between the two
+-- colors from the mark from to the mark to, or without to, to the end of
+-- limit: at each level below the common ancestor, the siblings after from's
+-- side and before to's side, and the ancestor's children between the sides
 local function color(from, to, limit, value)
   local holds, up = {}, to
   while up do
@@ -404,7 +407,8 @@ function M.colors(document)
       if is_mark(node) then marks[#marks + 1] = node else walk(node) end
     end
   end
-  -- (also in the page's <title>, which takes no color)
+  -- (from <html>: the <title> holds marks too, which are removed but color
+  -- nothing)
   walk(document:query_selector("html")[1])
   local function start(from, to)
     if not dom.closest(from, function(el) return el == body end)
@@ -415,8 +419,8 @@ function M.colors(document)
     if link and to and not dom.closest(to, function(el) return el == link end) then to = nil end
     color(from, to, to and body or link or body, from:get_attribute("data-color"))
   end
-  -- (a box used twice has its marks twice; one copied after its group
-  -- ended has its end first, and colors nothing)
+  -- (a box used twice has its marks twice; a copy made after its group
+  -- ended has its end mark first, and colors nothing)
   for _, mark in ipairs(marks) do
     local id = mark:get_attribute("data-id")
     if dom.has_class(mark, "tex8web-color") then
@@ -435,7 +439,7 @@ function M.colors(document)
     local from = open[k]
     if starts[from:get_attribute("data-id")] == from then start(from) end
   end
-  -- (a mark set between paragraphs can be alone in one)
+  -- (a mark set between paragraphs can be alone in a paragraph)
   for _, mark in ipairs(marks) do
     local parent = mark:get_parent()
     mark:remove_node()
@@ -446,15 +450,16 @@ function M.colors(document)
   end
 end
 
--- what follows an \hfill at the right of its line, as in the PDF:
+-- what follows an \hfill, set at the right of its line as in the PDF.
 -- tex8web-text.tex marks each \hfill in a paragraph (span.tex8web-hfill-mark).
--- What follows the last mark on a line, up to a \\ (<br>), a block or a
--- display, goes in a span css/tex8web.css floats right, after one that
--- holds the space before it and keeps it a quad from the text. In a paragraph, the whole line goes
--- in a span too, with its <br>, which the stylesheet makes a block: one
--- that holds the float, and that can be aligned on its own. (Not in a
--- heading, whose anchor make4ht's sectionid makes its id only as the
--- heading's child)
+-- What follows the last mark on a line, up to a \\ (<br>), a block, or a
+-- display, goes in a span that css/tex8web.css floats right, after a gap
+-- span that holds the space before the floated part and keeps that part a
+-- quad from the text. In a paragraph, the whole line and its <br> also go
+-- in a span, which the stylesheet makes a block that holds the float and
+-- can be aligned alone.
+-- (Not in a heading: make4ht's sectionid makes the heading's anchor its id
+-- only while the anchor is the heading's child.)
 local function ends_line(node)
   return node:is_element() and (node:get_element_name() == "br" or blocks[node:get_element_name()]
     or is_math(node) and not dom.has_class(node, "mathjax-inline"))
@@ -487,7 +492,7 @@ function M.hfill(document)
       for k = from or #out + 1, #out do shown = shown or shows(out[k]) end
       if shown then
         -- (the space before the rest goes in the gap, so that a line
-        -- can't break between the text and the gap)
+        -- cannot break between the text and the gap)
         if out[from - 1] and out[from - 1]:is_text() then
           dom.set_node_text(out[from - 1], (out[from - 1]:get_text():gsub("%s+$", "")))
         end
@@ -517,8 +522,8 @@ function M.hfill(document)
   end
 end
 
--- tex4ht's <!--l. 65--> before each paragraph says where in the .tex it
--- came from, which readers don't need and which makes the page larger
+-- tex4ht's <!--l. 65--> before each paragraph gives its line in the .tex,
+-- which readers do not need and which makes the page larger
 function M.line_comments(document)
   document:traverse(function(node)
     if (dom.comment_text(node) or ""):match("^%s*l%.%s*%d+%s*$") then

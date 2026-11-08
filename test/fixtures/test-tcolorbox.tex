@@ -1,13 +1,13 @@
-% A test for tex8web: which tcolorbox boxes get a link at their title. A
-% numbered theorem, labelled or not, a box numbered by step and a labelled
-% box do, where a \ref to them leads; an unnumbered theorem, a box in a
-% raster (which numbers its boxes for itself) and a box without a title
-% don't. A numbered or labelled box holding another keeps its own link,
-% \ref and number. A boxed title at the left, in the middle and at the
-% right has its link beside it (labelled, for the link). A \tcbox on line,
-% with a title or in a box, stays in its line; one with tcolorbox's space
-% around it doesn't. (Its table of
-% contents gives test:visual's filter check a box to find)
+% Which tcolorbox boxes have a link at their title. A numbered theorem,
+% labelled or not, a box numbered by step, and a labelled box have one,
+% where a \ref to them leads. An unnumbered theorem, a box in a raster
+% (which numbers its boxes itself), and a box without a title do not. A
+% numbered or labelled box that holds another keeps its link, \ref, and
+% number. A boxed title at the left, center, and right has its link beside
+% it (the boxes are labelled to have a link). A \tcbox on line, with a
+% title or in a box, stays in its line; a \tcbox with tcolorbox's space
+% around it does not. The table of contents gives the filter check in
+% test/page.mjs a box to find.
 \documentclass{article}
 \usepackage[most]{tcolorbox}
 \newtcbtheorem{theorem}{Theorem}{}{thm}

@@ -1,31 +1,32 @@
 % tex8web: math. tex4ht's mathjax option leaves each formula's LaTeX source
-% in the page, for MathJax to typeset.
+% in the page, for MathJax to typeset. This file configures MathJax and
+% adapts that source where MathJax differs from TeX.
 \makeatletter
 
-% MathJax's configuration, as JSON (tex8web-page.tex puts it in the page,
-% for tex8web.js):
-% - the extensions for the packages the document loads that MathJax has
-%   (others load when a macro needs them), and always mathtools, for
+% the MathJax configuration, as JSON, put in the page by tex8web-page.tex:
+% - extensions for the packages the document loads that MathJax has (others
+%   load when a macro needs them), and always mathtools, for
 %   \DeclarePairedDelimiter in macros.lua's definitions
 % - no automatic equation numbers (see \__web_part:nn below)
-% - \colon as amsmath has it (MathJax's is a plain punctuation colon), and
-%   \relax, which MathJax doesn't have (macros often end in it)
-% - MathJax's Computer Modern font (its default, New Computer Modern, is
+% - \colon as in amsmath (MathJax's is a plain punctuation colon), and
+%   \relax, which MathJax lacks and macros often end in
+% - MathJax's Computer Modern font: its default, New Computer Modern, is
 %   heavier than the PDF, and its Latin Modern misplaces accents on Greek
-%   letters), or its TeX Gyre font for math the PDF sets in Times, Palatino
-%   or New Century Schoolbook (\web@mathfont); display math that doesn't
-%   fit scrolls; math at the size of the text, as TeX does (rather than
-%   matching x-heights, which comes out a bit small)
-% - for speed, when MathJax typesets in the browser: math typeset as it
-%   scrolls into view (ui/lazy), and no speech or braille (MathJax's
-%   semantic enrichment for them took 90% of the time, 20s for a long
-%   document; readers can turn speech on in MathJax's menu). Screen readers
-%   get each formula as MathML (assistiveMml, which MathJax leaves off when
-%   speech is on by default)
-% - speech, prerendered or from the menu, in ClearSpeak's words, with |
-%   read as "given", as in P(A | B), rather than "divides", and \Delta as
-%   "Delta" rather than "triangle". The menu's own setting would otherwise
-%   replace the speech's rules with ClearSpeak's defaults
+%   letters. For math the PDF sets in Times, Palatino, or New Century
+%   Schoolbook, its TeX Gyre font (\web@mathfont)
+% - display math that does not fit scrolls
+% - math at the text size, as in TeX. Matching x-heights makes it a bit
+%   small
+% - for speed when MathJax typesets in the browser: math typeset as it
+%   scrolls into view (ui/lazy), and no speech or braille. The semantic
+%   enrichment they need took 90% of the time, 20s for a long document.
+%   Readers can turn speech on in MathJax's menu. Screen readers get each
+%   formula as MathML (assistiveMml, which MathJax leaves off when speech
+%   is on by default)
+% - speech, prerendered or from the menu, in ClearSpeak's words, with | read
+%   as "given", as in P(A | B), not "divides", and \Delta as "Delta", not
+%   "triangle". The rules are also set in the menu settings, because the
+%   menu's setting would replace them with ClearSpeak's defaults
 \def\web@extensions{"mathtools"}
 \def\web@load{"[tex]/mathtools"}
 \@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
@@ -34,8 +35,8 @@
         {\edef\web@extensions{\web@extensions, "\web@package"}%
          \edef\web@load{\web@load, "[tex]/\web@package"}}{}%
 }
-% (and the units extension's \nicefrac for nicefrac's, and for xfrac's
-% \sfrac in macros.lua)
+% the units extension: its \nicefrac stands for nicefrac's, and macros.lua
+% defines xfrac's \sfrac with it
 \let\web@units\empty
 \@for\web@package:=units,nicefrac,xfrac\do{\@ifpackageloaded\web@package{\def\web@units{, "units"}}{}}
 \edef\web@extensions{\web@extensions\web@units}
@@ -61,30 +62,30 @@
             "relax": ""}},
     "output": {"font": "mathjax-\web@mathfont", "displayOverflow": "scroll",
         "matchFontHeight": false}}}
-% \WebMathMacros{definitions}: macros for MathJax, in place of the
-% document's own (which macros.lua reads from its preamble and styles), for
-% macros MathJax can't read as they are. tex8web-page.tex passes them on to
-% macros.lua
+% \WebMathMacros{definitions}: definitions for MathJax that replace the
+% ones macros.lua reads from the preamble and styles, for macros MathJax
+% cannot read as they are. tex8web-page.tex passes them on to macros.lua
 \ExplSyntaxOn
 \tl_new:N \g__web_macros_tl
 \NewDocumentCommand\WebMathMacros{+m}{\tl_gput_right:Nn \g__web_macros_tl {#1}}
 
 % tex4ht escapes each formula's source (\alteqtoks, mathjax-latex-4ht.4ht)
-% with four \regex_replace_all, most of a long document's LaTeX run. Here
-% \detokenize's output, characters of catcode 12 and spaces, gets the same
-% replacements and the same tokens:
-% - &, < and > as the regex does: its & has the catcode that & has when it
-%   runs (a letter in display math, where tex4ht reads & as one)
-% - \par where the regex does, before a space, any character but a letter,
-%   a digit or _, or the end of the formula (its \b). \detokenize ends a
-%   control word with a space, so that is \par and \\par; \partial and
-%   \parbox are left. A regex costs as much for a formula with \partial as
-%   for any, so each \par is found with a delimited argument instead
-% - \par first, as the loop reads the formula unbraced, where a catcode 4 &
-%   would end a table cell
-% test-mathescape.tex has them all; test/run.mjs builds it with tex4ht's own
-% escaping, kept as \web@alteqtoks, and compares the pages. Not under
-% fastmathjax, which escapes nothing.
+% with four \regex_replace_all, which take most of a long document's LaTeX
+% run. Here the output of \detokenize, catcode 12 characters and spaces,
+% gets the same replacements, with the same tokens:
+% - &, <, and > as the regex does. Its & has the catcode that & has when it
+%   runs: a letter in display math, where tex4ht reads & as one
+% - \par where the regex matches it: before a space, before any character
+%   but a letter, a digit, or _, or at the end of the formula (its \b).
+%   \detokenize ends a control word with a space, so this matches \par and
+%   \\par, and leaves \partial and \parbox. A regex costs as much for a
+%   formula with \partial as for any other, so each \par is found with a
+%   delimited argument instead
+% - \par first, because the loop reads the formula unbraced, where a
+%   catcode 4 & would end a table cell
+% test-mathescape.tex has every case. test/run.mjs also builds it with
+% tex4ht's escaping, kept as \web@alteqtoks, and compares the pages. Not
+% under fastmathjax, which escapes nothing.
 \web@needs{alteqtoks}
 \:CheckOption{fastmathjax}\if:Option\else
 \let\web@alteqtoks\alteqtoks
@@ -99,7 +100,7 @@
 \cs_generate_variant:Nn \tl_replace_all:Nnn { NVe }
 \tl_new:N \l__web_rest_tl
 \cs_new_protected:Npn \__web_par_blank: { \tl_put_right:NV \l_tmpa_tl \c__web_newlines_tl }
-% \__web_par:w #1 \par #2 \q_stop, the delimiter being a catcode 12 \par
+% \__web_par:w #1 \par #2 \q_stop, delimited by a catcode 12 \par
 \cs_new_protected:Npn \__web_par_define:n #1 {
     \cs_new_protected:Npn \__web_par:w ##1 #1 ##2 \q_stop {
         \tl_put_right:Nn \l_tmpa_tl {##1}
@@ -131,17 +132,16 @@
 }
 \fi
 
-% siunitx. tex4ht writes each number and unit siunitx prints as a formula
-% of its own (\__siunitx_print_math_auxii:n, html4.4ht). But a quantity in
-% text is \ensuremath around an internal command, which tex4ht's mathjax
-% option passes to MathJax as it is. And MathJax knows none of siunitx's
-% commands in a formula. So each quantity in text, and each command in a
-% formula, is run in a box, keeping what it prints: its numbers, units and
-% product, as math. The quantity is then one formula, as in the PDF, and
-% the formula gets what the command printed. A quantity siunitx sets as
-% text is left to tex4ht. Ranges and lists in a formula are left: their
-% phrases are text, with translations. The unit \percent prints a %,
-% which starts a comment for MathJax.
+% siunitx. tex4ht writes each number and unit siunitx prints as a separate
+% formula (\__siunitx_print_math_auxii:n, html4.4ht). A quantity in text
+% is \ensuremath around an internal command, which tex4ht's mathjax option
+% passes to MathJax unchanged, and MathJax knows none of siunitx's commands
+% in a formula. So each quantity in text, and each siunitx command in a
+% formula, is run in a box, and what it prints is kept as math: numbers,
+% units, and product. A quantity in text is then one formula, as in the
+% PDF. A quantity siunitx sets as text is left to tex4ht. Ranges and lists
+% in a formula are left, because their phrases are text, with translations.
+% The unit \percent prints a %, which starts a comment for MathJax.
 \@ifpackageloaded{siunitx}{
     \web@needs{l__siunitx_quantity_product_tl}
     \web@needs{siunitx_quantity_print:nn}
@@ -154,14 +154,14 @@
     \box_new:N \l__web_si_box
     \quark_new:N \q__web_si
     \clist_new:N \l__web_si_clist
-    % (after tex4ht's, set in begindocument under \fixmathjaxtoc)
+    % (after tex4ht's definition, made in begindocument under \fixmathjaxtoc)
     \web@needs{fixmathjaxtoc}
     \web@needs{__siunitx_print_math_auxii:n}
     \cs_generate_variant:Nn \str_replace_all:Nnn { Nee }
     \AddToHook { begindocument/end } {
         \cs_set_eq:NN \__web_si_auxii:n \__siunitx_print_math_auxii:n
-        % (a unit's \% too, as a %; \tl_replace_all:Nnn leaves what is in
-        % braces)
+        % (every % and \% as \%, in a string, because \tl_replace_all:Nnn
+        % skips text in braces)
         \cs_gset_protected:Npn \__siunitx_print_math_auxii:n #1 {
             \str_set:Nn \l_tmpa_str {#1}
             \str_replace_all:Nee \l_tmpa_str { \c_backslash_str \c_percent_str } { \c_percent_str }
@@ -185,7 +185,7 @@
         }
     }
     \cs_set_eq:NN \__web_si_quantity:nn \siunitx_quantity_print:nn
-    % (siunitx's own test for \ensuremath)
+    % (siunitx's test for whether it uses \ensuremath)
     \cs_set_protected:Npn \siunitx_quantity_print:nn #1#2 {
         \bool_lazy_any:nTF {
             { \mode_if_math_p: }
@@ -208,8 +208,8 @@
         }
         \bool_if:NTF \l__web_si_bool
             {
-                % (displays come as their source, detokenized; & as a
-                % letter, which the walk can read unbraced)
+                % (a display comes as its source, detokenized. & is
+                % rescanned as a letter, so the walk can read it unbraced)
                 \tl_set_rescan:Nno \l_tmpa_tl { \char_set_catcode_letter:N \& } \l__web_si_str
                 \exp_args:NV \__web_si_walk:n \l_tmpa_tl
                 \exp_args:NV \__web_si_alteqtoks:n \l__web_si_tl
@@ -245,8 +245,8 @@
         \tl_put_right:Nn \l__web_si_tl { ~ }
         \__web_si_loop:
     }
-    % each command, with its arguments as siunitx reads them (but \qty,
-    % which is physics's with physics, where siunitx leaves it)
+    % each command, with its arguments as siunitx reads them. Not \qty under
+    % physics, because siunitx then leaves \qty to physics
     \cs_new_protected:Npn \__web_si_command:Nnn #1#2#3 {
         \clist_put_right:Nn \l__web_si_clist {#1}
         \exp_args:Nc \NewDocumentCommand { __web_si_ \token_to_str:N #1 } {#2} {
@@ -265,9 +265,9 @@
         { [ \exp_not:n {#1} ] { \exp_not:n {#2} } \IfValueT {#3} { [ \exp_not:n {#3} ] } { \exp_not:n {#4} } }
 }{}
 
-% a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, not math
-% for MathJax: typeset it, re-reading the source, which tex4ht read with &
-% as a letter
+% a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, so TeX
+% typesets it, rescanning the source, which tex4ht read with & as a letter.
+% A \[ \] with a \qedhere is walked for its box (see \__web_part:nn)
 \web@needs{AltlDisplay}
 \web@needs{VerbMathToks}
 \cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
@@ -286,18 +286,18 @@
 }
 
 % amsmath's displays, which tex4ht passes to MathJax as they are, except:
-% - MathJax has no \intertext: split the alignment there, giving MathJax
-%   the parts, and typeset the text between them here, as text, in a group
-%   (amsmath sets it in a \vbox, so its font commands end with it). Each part
-%   starts with \webalignment{n}, n numbering the split alignments, and
-%   tex8web.js gives the parts of one alignment the same columns. (Each
-%   part of an alignat gets its number of columns)
-% - equation numbers: MathJax would number the equations itself, from 1,
-%   while \eqref and \ref print TeX's numbers (and tex4ht steps the counter
-%   once per environment). Number each row here, and give MathJax the
+% - MathJax has no \intertext, so the alignment is split there. MathJax
+%   gets the parts, and the text between them is typeset here, in a group,
+%   because amsmath sets it in a \vbox that ends its font commands. Each
+%   part starts with \webalignment{n}, n numbering the split alignments,
+%   and tex8web.js gives the parts of one alignment the same columns. Each
+%   part of an alignat gets its number of columns
+% - equation numbers: MathJax would number the equations from 1, while
+%   \eqref and \ref print TeX's numbers, and tex4ht steps the counter once
+%   per environment. So each row is numbered here, and MathJax gets the
 %   number as a \tag
 % - amsmath starts each right-hand column (&= b, &-c) with {}, so a
-%   relation or binary operator there is spaced as one; MathJax doesn't
+%   relation or binary operator there is spaced as one. MathJax does not
 \int_new:N \g__web_alignment_int
 \tl_new:N \l__web_alignment_tl
 \cs_new_protected:Npn \__web_display:nn #1#2 {
@@ -331,9 +331,9 @@
     \tl_if_blank:nF {#4} { \__web_alignment:nn {#1} {#4} }
 }
 
-% a part of a display: walk its tokens, numbering rows, and hand it to
-% MathJax as tex4ht's mathjax option does. (\[ \] with a \qedhere is
-% walked as equation*, but stays a \[ \] for MathJax)
+% a part of a display: its tokens are walked to number the rows, and the
+% part is passed to MathJax as tex4ht's mathjax option does. A \[ \] with a
+% \qedhere is walked as equation*, but stays a \[ \] for MathJax
 \tl_new:N \l__web_body_tl
 \tl_new:N \l__web_label_tl
 \tl_new:N \l__web_tag_tl
@@ -350,8 +350,7 @@
 \tl_new:N \l__web_next_tl
 \tl_new:N \l__web_count_tl
 \tl_new:N \l__web_env_tl
-% (tex8web.js has its own table of these environments, for their row
-% spacing)
+% (tex8web.js has a table of these environments too, for their row spacing)
 \clist_const:Nn \c__web_numbered_clist { equation, multline, align, gather, alignat, flalign }
 \clist_const:Nn \c__web_rows_clist { align, gather, alignat, flalign }
 \clist_const:Nn \c__web_alignments_clist
@@ -388,7 +387,7 @@
     \tl_clear:N \l__web_label_tl
     \tl_clear:N \l__web_tag_tl
 }
-% at the end of a row (or of a display numbered as a whole): its number
+% the number at the end of a row, or of a display numbered as a whole
 \cs_new_protected:Npn \__web_row_end: {
     \tl_if_empty:NF \l__web_tag_tl
         { \protected@edef\@currentlabel{\l__web_tag_tl} }
@@ -455,8 +454,7 @@
         \__web_walk:w
     }
 }
-% \\: a new row, which in amsmath's alignments numbered by row has its own
-% number
+% \\: a new row, with a number in the environments numbered by row
 \cs_new_protected:Npn \__web_newline: {
     \seq_pop:NN \l__web_columns_seq \l__web_count_tl
     \seq_push:Nn \l__web_columns_seq {0}
@@ -475,16 +473,16 @@
             { \tl_put_right:Nn \l__web_body_tl { {} } }
     }
 }
-% amsthm's \qedhere in a display, which TeX never runs (MathJax gets the
-% source). Without this the proof ends with its own box below the display.
-% At the end of the row, or of the \[ \] display, take the box off the proof's
-% stack, as \qedhere does, and give the display a tag of the box, where
-% amsthm puts it: at the right of the last row, which has no number then, or
-% under the number of an equation. Not in a row with a \tag of its own: the
-% box stays on the stack, below the display. The tag has a \label of its own,
-% unless the row has one, since MathJax names an unlabelled tag's element
-% after its text, and two boxes would share an id. The box is the
-% \qedsymbol in force now, as the text sets it (\web@qed@choose,
+% amsthm's \qedhere in a display, which TeX never runs, because MathJax gets
+% the source. Without this code, the proof's box is set below the display.
+% At the end of the row, or of the \[ \] display, the box is taken off the
+% proof's stack, as \qedhere does, and the display gets the box as a tag
+% where amsthm puts it: at the right of the last row, which then has no
+% number, or under an equation's number. In a row with its own \tag, the
+% box stays on the stack and is set below the display. The tag gets a
+% \label unless the row has one, because MathJax names an unlabelled tag's
+% element after its text, and two boxes would share an id. The box is the
+% \qedsymbol in force, chosen as for the text (\web@qed@choose,
 % tex8web-text.tex)
 \int_new:N \g__web_qed_int
 \@ifpackageloaded{amsthm}{ \web@needs{QED@stack} }{}

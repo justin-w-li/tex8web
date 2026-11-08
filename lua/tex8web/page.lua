@@ -1,7 +1,6 @@
--- The page around the text: what tex8web-page.tex hands on, links to
--- headings, theorems and boxes, the controls (up, contents, PDF, theme)
--- and the table of contents beside the text, meta tags for link previews,
--- and the scripts.
+-- The page around the text: the build data from tex8web-page.tex, links to
+-- headings, theorems, and boxes, the controls, the table of contents beside
+-- the text, meta tags for link previews, and the scripts.
 local assets = require "tex8web.assets"
 local dom = require "tex8web.dom"
 local files = require "tex8web.files"
@@ -19,18 +18,19 @@ local function text_of(element)
   return trim((element:get_text():gsub("%s+", " ")))
 end
 
--- tex8web-page.tex's build elements, for the later passes: the PDF
--- (context.pdf: TEX8WEB_PDF, which tex8web's -p sets, or else \WebPDF's),
+-- moves tex8web-page.tex's build elements into context, for the later
+-- passes: the PDF (context.pdf: TEX8WEB_PDF, set by -p, or else \WebPDF's),
 -- the page above (context.up: TEX8WEB_UP, from -u, or else \WebUp's), the
--- \WebMathMacros definitions (context.macros), the colors for math
--- (context.colors) and \contentsname (context.contents) as tex4ht writes it.
--- It also gives <html> its classes, which html5.4ht's tag has no hook for
+-- font families (context.families), the \WebMathMacros definitions
+-- (context.macros), the colors for math (context.colors), and \contentsname
+-- as tex4ht writes it (context.contents). Also gives <html> its classes, as
+-- html5.4ht's tag has no hook for them.
 function M.build_data(document, context)
   local element = document:query_selector("script[type='text/x-tex8web-build']")[1]
   local name = document:query_selector("script[type='text/x-tex8web-contents']")[1]
   local colors = document:query_selector("script[type='text/x-tex8web-colors']")[1]
-  -- (tex8web-page.tex writes all three in the one page; a page without
-  -- them is one tex4ht split off, as a config's \CutAt does)
+  -- (tex8web-page.tex writes all three in one page; a page without them
+  -- was split off by tex4ht, as with a config's \CutAt)
   if not (element and name and colors) then
     error("tex8web makes one page per document; remove \\CutAt or the split option")
   end
@@ -68,15 +68,15 @@ local function anchor(el)
   end
 end
 
--- a # before each heading, each theorem's head and each box's title, which
--- links to it (make4ht later gives headings ids from their titles, and
--- rewrites links to their anchors to those)
+-- a # link before each heading, theorem head, and box title, to its anchor
+-- (make4ht later gives headings ids from their titles, and rewrites links
+-- to their anchors to use those ids)
 function M.permalinks(document)
   for _, head in ipairs(document:query_selector(".newtheorem span.head, h2, h3, h4, h5, h6")) do
     local id = anchor(head)
     if id then permalink(head, id) end
   end
-  -- (a box's anchors are before its title, in the box; with a label
+  -- (a box's anchors are in the box, before its title; with a label,
   -- tcolorbox.4ht can make two, and \ref leads to the last)
   for _, title in ipairs(document:query_selector("div.tcolorbox > div.tcolorbox-title")) do
     local id
@@ -88,9 +88,9 @@ function M.permalinks(document)
   end
 end
 
--- an id for each term (\WebTerm's), for the contents' filter to link to:
--- term-<its text>, without its math, which would show its source (and
--- with letters beyond ASCII, as make4ht's ids for headings have them)
+-- an id for each \WebTerm, for the table of contents filter to link to:
+-- term-<text>, without the math, which would show its source. Letters
+-- beyond ASCII are kept, as in make4ht's ids for headings.
 function M.terms(document)
   local used = {}
   for _, term in ipairs(document:query_selector("span.tex8web-term")) do
@@ -114,8 +114,8 @@ local icons = {
   pdf = '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>'
     .. '<path d="M14 3v5h5M9 13h6M9 17h4"/>',
   theme = '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',
-  -- (Feather's, MIT License; at 80%, with the others' stroke, as it fills
-  -- the box)
+  -- (Feather's, MIT License; at 80%, as it fills the box, with stroke-width
+  -- raised to match the others)
   github = '<g transform="translate(2.4 2.4) scale(0.8)" stroke-width="1.875"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7'
     .. 'A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0'
     .. 'C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7'
@@ -129,7 +129,7 @@ local function control(parent, name, attributes)
   parent:add_child_node(el)
 end
 
--- whether a list of tex4ht's is the table of contents: \listoffigures and
+-- whether a tex4ht list is the table of contents: \listoffigures and
 -- \listoftables make a div.tableofcontents too, of lofToc and lotToc
 -- entries
 local function holds_contents(list)
@@ -140,11 +140,11 @@ local function holds_contents(list)
   end
 end
 
--- the table of contents (tex4ht's, from \tableofcontents) out of the text,
--- into a sidebar, which on a narrow screen is a drawer (a popover, which
--- the contents button opens); with the unnumbered heading above it, or the
--- box around it if it's all the box holds, or titled \contentsname.
--- Returns the sidebar and its title
+-- moves tex4ht's table of contents out of the text into a sidebar, which
+-- on a narrow screen is a drawer: a popover opened by the contents button.
+-- The title is that of the unnumbered heading above the list, or of the
+-- box around it if the list is all the box holds, or else \contentsname;
+-- the heading or box is removed. Returns the sidebar and its title.
 local function contents(document, body, title)
   local list
   for _, candidate in ipairs(document:query_selector("div.tableofcontents")) do
@@ -167,7 +167,8 @@ local function contents(document, body, title)
   end
   local nav = body:create_element("nav", {id = "tex8web-toc", class = "tex8web-toc",
     popover = "auto", ["aria-labelledby"] = "tex8web-toc-title"})
-  -- (the document's title, above the contents', takes the reader to the top)
+  -- (the document's title, above the table of contents title, links to the
+  -- top)
   local document_title = document:query_selector("title")[1]
   if document_title and trim(document_title:get_text()) ~= "" then
     local a = nav:create_element("a", {class = "tex8web-toc-doctitle", href = "#"})
@@ -177,19 +178,20 @@ local function contents(document, body, title)
   local p = nav:create_element("p", {id = "tex8web-toc-title", class = "tex8web-toc-title"})
   p:add_child_node(p:create_text_node(title))
   nav:add_child_node(p)
-  -- (it needs tex8web-page.js, which says what it finds)
+  -- (the filter: tex8web-page.js runs it and sets its placeholder to what
+  -- it can find)
   nav:add_child_node(nav:create_element("input", {type = "search", class = "tex8web-toc-filter"}))
   nav:add_child_node(list)
   return nav, title
 end
 
--- the controls at the top left: the page above (-u, \WebUp), the table
--- of contents (as a drawer, on a narrow screen; hidden or shown, on a wide
--- one), the PDF (-p, \WebPDF), copied next to the page, the theme, which
--- needs tex8web-page.js, and tex8web's repository, and on a narrow screen
--- the section being read, which tex8web-page.js fills in and which opens
--- the table of contents too; then the table of contents, and the text in a
--- <main>, which screen readers jump to
+-- the controls at the top left: the page above (-u, \WebUp), the table of
+-- contents (a drawer on a narrow screen; hidden or shown on a wide one),
+-- the PDF (-p, \WebPDF, copied next to the page), the theme (needs
+-- tex8web-page.js), tex8web's repository, and, on a narrow screen, the
+-- section being read, which tex8web-page.js fills in and which also opens
+-- the table of contents. Then the table of contents, and the text in a
+-- <main>, which screen readers can jump to.
 function M.controls(document, context)
   local body = document:query_selector("body")[1]
   local controls = body:create_element("div", {class = "tex8web-controls"})
@@ -219,7 +221,8 @@ function M.controls(document, context)
     local where = controls:create_element("button", {class = "tex8web-control tex8web-where",
       type = "button", popovertarget = "tex8web-toc", hidden = "hidden",
       ["aria-describedby"] = "tex8web-toc-title"})
-    -- (or LuaXML writes <button/>, which HTML reads as an open tag)
+    -- (without a child, LuaXML writes <button/>, which HTML parses as an
+    -- open tag)
     where:add_child_node(where:create_text_node(""))
     controls:add_child_node(where)
   end
@@ -228,13 +231,14 @@ function M.controls(document, context)
   dom.set_children(body, toc and {controls, toc, main} or {controls, main})
 end
 
--- tex4ht puts the anchor of an equation's number just before the display
--- (with the anchors of an alignment's other lines), or, for a block display
--- such as gather, at the end of the paragraph before. The anchors of
--- \index (dx..., latex.4ht's indexhaddr) come before text and displays
--- too, so mark the others that only space separates from a display: the
--- stylesheet tints it when one is the :target. (The ones that end a paragraph differ in name, as a
--- paragraph may hold the anchors of several displays)
+-- tex4ht puts the anchor of an equation's number right before the display,
+-- with the anchors of an alignment's other lines, or, for a block display
+-- such as gather, at the end of the paragraph before. The stylesheet tints
+-- a display when one of its anchors is the :target. The anchors of \index
+-- (dx..., latex.4ht's indexhaddr) also come before text and displays, so
+-- they are skipped, and only the others that space alone separates from a
+-- display are marked. Anchors that end a paragraph get another class, as a
+-- paragraph may hold the anchors of several displays.
 local function is_anchor(node)
   return node:is_element() and node:get_element_name() == "a" and node:get_attribute("id") ~= nil
     and dom.is_blank(node)
@@ -244,8 +248,8 @@ local function is_index_anchor(node)
   return is_anchor(node) and node:get_attribute("id"):find("^dx") ~= nil
 end
 
--- marks the anchors that end nodes[1..last] (not counting space and
--- comments); how many, and where the node before them is
+-- marks the anchors that end nodes[1..last], ignoring space and comments;
+-- returns how many, and the index of the node before them (0 if none)
 local function mark_anchors(nodes, last, name)
   local count = 0
   for i = last, 1, -1 do
@@ -293,7 +297,7 @@ local function abstract_text(document)
   return text
 end
 
--- og:title (if the title isn't empty) and og:type, and from the abstract,
+-- og:title (if the title is not empty), og:type, and, from the abstract,
 -- if there is one, the description
 function M.meta_tags(document)
   local head = document:query_selector("head")[1]
@@ -311,18 +315,19 @@ function M.meta_tags(document)
   end
 end
 
--- tex8web-fonts.js, written into the page before the stylesheet's link,
--- which preloads the fonts: they then start as the parser reaches it, not
--- after a download. It stays small because a large script ahead of the
--- link delays the stylesheet's request. Then tex8web-head.js (the
--- reader's theme, before the page is drawn, and the transition from the
--- page before), after the link, in a file of its own. Inline before the
--- link it delayed the stylesheet like that. And after the link it waits
--- for the stylesheet, as preloads in it would. Then tex8web-page.js (the
--- controls, the table of contents and its filter, previews, the picture
--- viewer, the fade at an edge). And for MathJax in the browser, MathJax
--- and tex8web.js, which configures it from tex8web-config and whether
--- the page has contents (marked for prerender.mjs, which removes them)
+-- the scripts:
+-- - tex8web-fonts.js, inline before the stylesheet link: inserts the font
+--   preloads, so the fonts are requested as soon as the parser reaches it.
+--   It must stay small: a large script there delays the stylesheet request.
+-- - tex8web-head.js (the reader's theme before the page is drawn, and the
+--   transition from the previous page), a file after the link. Inline
+--   before the link, it delayed the stylesheet. A script after the link
+--   waits for the stylesheet, so the preloads are not in this file.
+-- - tex8web-page.js: the controls, the table of contents and its filter,
+--   previews, the picture viewer, and the fade at an edge
+-- - for MathJax in the browser: MathJax, and tex8web.js, which configures
+--   it from tex8web-config and data-contents (both marked
+--   data-tex8web-browser, for prerender.mjs to remove)
 function M.scripts(document, context)
   local head = document:query_selector("head")[1]
   local function script(attributes)
@@ -335,7 +340,8 @@ function M.scripts(document, context)
   end
   local inline = head:create_element("script", {id = "tex8web-fonts"})
   -- (in a CDATA section behind comment marks: the serializer would escape
-  -- the <, > and & of its text, and make4ht's later XML parse needs them whole)
+  -- the <, >, and & of the code, and make4ht's later XML parse needs them
+  -- whole)
   local code = inline:create_text_node("*/\n" .. assert(files.read(context.root .. "/js/tex8web-fonts.js")) .. "\n/*")
   code._type = "CDATA"
   inline:add_child_node(inline:create_text_node("/*"))

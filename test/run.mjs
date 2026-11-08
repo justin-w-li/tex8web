@@ -1,6 +1,6 @@
-// npm test: the Lua unit tests, then every test document and example built
-// with make4ht and checked, while the tools' tests run beside them. Pages go
-// to build/test/<document>/html.
+// npm test: the Lua unit tests, then every document in test/fixtures/ and
+// examples/ built with make4ht and checked, while the tests of the test tools
+// run beside them. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -12,9 +12,9 @@ const only = process.argv.slice(2);
 const docs = select(only);
 let failures = 0;
 
-// problems test/expected.json lists for a document (allow: substrings of
-// them, why: the reason) are reported but don't fail it; one listed that
-// no longer happens does, so that the list stays true
+// Problems that test/expected.json allows for a document (allow: substrings
+// of them, why: the reason) are reported without failing it. An allowed
+// problem that no longer occurs fails, so that the list stays current.
 function report(name, problems) {
   const { allow = [], why } = expected[name] || {};
   const known = problems.filter(p => allow.some(a => p.includes(a)));
@@ -33,9 +33,9 @@ if (!only.length) {
   failures += unit.status === 0 ? 0 : 1;
 }
 
-// the tools' tests, which take their build slots from a pool of their own and
-// so don't wait for the builds below, or for anyone's. Their report comes at
-// the end
+// The tests of the test tools take build slots from a separate pool
+// (test/lib/stubs.mjs), so they wait neither for the builds below nor for
+// other sessions. Their report is printed at the end.
 const tools = only.length ? null : new Promise(done => {
   const files = ['unit/prerender', 'slots', 'builds', 'realbuild', 'regress', 'tools'].map(name => join(root, `test/${name}.test.mjs`));
   const child = spawn(process.execPath, ['--test', ...files], { timeout: 300000 });
@@ -46,18 +46,18 @@ const tools = only.length ? null : new Promise(done => {
 
 // --- builds ----------------------------------------------------------------
 
-// what tex8web measures in a document, as custom properties in its
-// stylesheet. Each test document sets what it measures:
+// Custom properties that tex8web measures in a document and writes into its
+// stylesheet:
 // - titlesec's spacing in its *n form, and a \titleformat's space after the
-//   label, in the bold font's ems;
-// - a title's own size, and framed's space around its box (\topsep);
-// - report's contents, with sections indented from chapters, and a chapter's
-//   title and label;
-// - the abstract's leading, \small's 12pt over the text's 13.6pt;
-// - tocloft's font for each level of the contents.
-// <html>'s classes: \WebLikePDF's justified, hyphenated text, and links
-// not underlined, colored with colorlinks or hidden with hidelinks.
-// (Every other document has none: test-generic's boxed links underlined)
+//   label, in ems of the bold font
+// - a title's size, and framed's space around its box (\topsep)
+// - report's table of contents, with sections indented from chapters, and a
+//   chapter's title and label
+// - the abstract's leading: \small's 12pt over the text's 13.6pt
+// - tocloft's font for each level of the table of contents
+// Classes on <html>: \WebLikePDF's justified, hyphenated text, and links not
+// underlined, colored with colorlinks or hidden with hidelinks. Every other
+// document has none: test-generic's links are boxed, so underlined.
 const switched = {
   'test': 'tex8web-plain-links', 'test-hidelinks': 'tex8web-plain-links',
   'test-declared': 'tex8web-plain-links', 'examples/basic': 'tex8web-plain-links',
@@ -67,15 +67,15 @@ const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
     '--tex8web-title-size': '1.44em', '--tex8web-framed-sep': '0.8em' },
-  // (and test.cfg's \WebColor, from an xcolor expression and an RGB color)
-  // (the link colors, also with only the color package, in the example)
+  // (also test.cfg's \WebColor, from an xcolor expression and an RGB color,
+  // and the link colors, which examples/basic has with only the color package)
   'test': { '--highlight': 'light-dark(#FFFFCC, #4A4325)', '--tex8web-abstract-leading': '0.88235',
     '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
   'examples/basic': { '--tex8web-url': 'light-dark(#0000FF, oklch(from #0000FF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
-  // (linkcolor=.: none, so the link takes the color around it)
+  // (linkcolor=.: no property, so a link is in the color of the text around it)
   'examples/complex': { '--tex8web-link': null },
   'test-tocentry': { '--tex8web-toc-chapter-skip': '1em' },
-  // (float.sty's rules, 0.8pt and 0.4pt, and their 2pt from the text)
+  // (float.sty's ruled style: rules of 0.8pt and 0.4pt, 2pt from the text)
   'test-algorithmic': { '--tex8web-float-rule': '0.08em', '--tex8web-float-midrule': '0.04em',
     '--tex8web-float-endrule': '0.04em', '--tex8web-float-sep': '0.2em', '--tex8web-float-bodysep': '0.2em' },
   'test-report': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
@@ -83,13 +83,13 @@ const measured = {
     '--tex8web-toc-section-number': '2.3em', '--tex8web-toc-subsection-indent': '3.8em',
     '--tex8web-toc-section-skip': '0em', '--tex8web-toc-section-weight': 'normal',
     '--tex8web-chapter-size': '2.488em', '--tex8web-chapter-label-size': '0.8336em' },
-  // (\WebLikePDF in an 11pt document: its size, \baselineskip 13.6pt,
-  // \parindent 17pt and \parskip 0pt)
+  // (\WebLikePDF in an 11pt document: the font size, \baselineskip 13.6pt,
+  // \parindent 17pt, and \parskip 0pt)
   'test-likepdf': { '--tex8web-pdf-size': '10.95pt', '--tex8web-pdf-leading': '1.242',
     '--tex8web-parindent': '1.5525em', '--tex8web-parskip': '0em' },
-  // (an article without titlesec: its \@startsection's space around a
-  // section, 3.5ex and 2.3ex of the text, and a subsection, 3.25ex and
-  // 1.5ex, in the heading's ems; the abstract's quotation's margins; and
+  // (an article without titlesec: \@startsection's space around a section,
+  // 3.5ex and 2.3ex of the text, and a subsection, 3.25ex and 1.5ex, in ems
+  // of the heading; the margins of the abstract's quotation; and
   // \footnotesize's leading, 9.5pt over 12pt)
   'test-article': { '--tex8web-section-before': '1.0465em', '--tex8web-section-after': '0.6877em',
     '--tex8web-subsection-before': '1.16609em', '--tex8web-subsection-after': '0.5382em',
@@ -106,13 +106,13 @@ const measured = {
     '--tex8web-toc-paragraph-family': 'var(--tex8web-mono)', '--tex8web-toc-subparagraph-style': 'italic' },
 };
 
-// what tex8web.js makes of test.tex's math through MathJax's internals,
-// which a new MathJax must keep:
+// test.tex's math as tex8web.js typesets it through MathJax's internals,
+// which a new MathJax version must keep working:
 // - \bigl( to \Biggl\langle in TeX's four sizes, scaled to the 10pt
-//   extension font in an 11pt document;
-// - a big bar a little taller, and a large operator scaled around it;
-// - an align's rows on TeX's struts, \jot apart;
-// - inline math broken after a relation.
+//   extension font in an 11pt document
+// - a big bar a little taller, and a large operator scaled around it
+// - an align's rows on TeX's struts, \jot apart
+// - inline math broken after a relation
 const typeset = {
   'test': [
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 TEX-SO'>\(/,
@@ -127,19 +127,19 @@ const typeset = {
   ],
 };
 
-// what screen readers hear: ClearSpeak's words, | as "given", no "normal"
+// What screen readers hear: ClearSpeak's words, | as "given", no "normal"
 // before an upright letter, Δ as "Delta", and A^\top as "A transpose"; a
-// numbered equation as one without a number, then its label, and an
-// alignment of several lines as one
+// numbered equation without its number, then its label; an alignment of
+// several lines as one formula
 const speech = {
   'test': [/aria-label='P of open paren A given B close paren'/, /aria-label='Gamma of z'/,
     /aria-label='d x'/, /aria-label='Delta of S'/, /aria-label='A transpose'/,
     /^(?![^]*down tack)/, /aria-label='x sub i transpose'/],
   'test-generic': [/aria-label='double struck P of [^']* over t Label open paren 2\.1 close paren'/,
     /aria-label='2 lines Line 1: x equals y Label open paren 2\.4 close paren Line 2: z equals w'/],
-  // (nicefrac's and xfrac's fractions, the units extension's, and siunitx's
-  // quantities, one formula each, in text, in math and in a display, but
-  // as text with mode=text; a % read as one, and an angle in degrees)
+  // (fractions of nicefrac and xfrac, and quantities of the units extension
+  // and siunitx: each one formula in text, in math, and in a display, but
+  // text with mode=text; % read as "percent", and an angle in degrees)
   'test-units': [/aria-label='one half'/, /aria-label='one fourth'/,
     /aria-label='3 times m s to the negative 1 power'/, /aria-label='2 percent'/, /aria-label='3 percent'/, /aria-label='1 K'/,
     /aria-label='30 degrees'/,
@@ -149,42 +149,43 @@ const speech = {
     /aria-label='E equals 1\.6 times 10 to the negative 19 power J Label 1'/],
 };
 
-// pictures sized by \includegraphics's width, scale or height: a share of
-// the PDF's text width, which holds as a narrower screen reflows the text
+// Pictures sized by \includegraphics's width, scale, or height: a share of
+// the PDF's text width, which keeps their size relative to the text on a
+// narrower screen
 const share = (alt, fraction) => new RegExp(`<img alt='${alt}' [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${fraction.replace('.', '\\.')}\\)'`);
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
-  // times its size, 96pt high so 128pt wide, 100pt by 40pt with
-  // keepaspectratio and without, which never squashes it; and one
-  // without a size, as tex4ht writes it)
+  // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
+  // keepaspectratio (never squashed) and with it; one without a size as
+  // tex4ht writes it)
   'test-graphics': [share('width', '0.2899'), share('scale', '0.2793'), share('height', '0.371'),
     share('both', '0.2899'), share('fitted', '0.1546'), share('angle last', '0.2899'), /<img alt='bare' (?:(?!style=)[^>])*\/>/,
-    // (a size after angle, scale with a size: tex4ht's)
+    // (a size after angle, and scale with a size: left to tex4ht)
     ...['rotated', 'scaled first', 'scaled last'].map(alt => new RegExp(`<img alt='${alt}' (?:(?!style=)[^>])*\\/>`))],
-  // (the graphics package: a bare picture without a .xbb, tex4ht's size)
+  // (the graphics package: a picture without a size or a .xbb, left to tex4ht)
   'test-graphics-only': [/<img (?:(?!style=)[^>])*\/>/],
   'examples/basic': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.25\)'/],
-  // (in minipages, whose \textwidth is their own)
+  // (in minipages, where \textwidth is the minipage's width)
   'test': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.225\)'/,
     /<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.45\)'/],
 };
 
-// the title of a page without \maketitle: \title's text, as \maketitle
-// gives it (without the \thanks), for the tab and the link preview
+// The title of a page without \maketitle, for the tab and link previews:
+// \title's text as \maketitle sets it, without the \thanks.
 const titles = {
   'test-title': [/<title>Notes on Groups\s+and Rings<\/title>/,
     /<meta content='Notes on Groups\s+and Rings' property='og:title' \/>/],
   'test-nomaketitle': [/<title>Without a maketitle<\/title>/],
 };
 
-// \today, as lib/build.mjs's fixed date
+// \today, at the fixed date set in lib/build.mjs
 const dates = {
   'test-letter': [/January 1, 2000/],
   'test-declared': [/January 1, 2000/],
 };
 
-// minipages and subfigures, two in one row, each with its share of the
-// PDF's text width and its position
+// Minipages and subfigures, two in a row, each with its share of the PDF's
+// text width and its vertical position (t, c, or b)
 const minipages = {
   'test': [
     /<div class='tex8web-minipages'><div class='minipage[^']* tex8web-minipage-c' style='--tex8web-share: 0\.45'>(?:(?!tex8web-minipages)[^])*<div class='minipage tex8web-minipage-c' style='--tex8web-share: 0\.45'>/,
@@ -192,8 +193,8 @@ const minipages = {
   ],
 };
 
-// the index's entries, a subentry, a range and a "see", each number a
-// link back to where its \index is (numbered as tex4ht does, not by page)
+// Index entries, a subentry, a range, and a "see". Each number links back to
+// its \index, and is numbered as tex4ht numbers them, not by page.
 const index = {
   'test-index': [
     /A group<a id='([^']+)'>[^]*<div class='index-item'>group, <a href='#\1'>1<\/a>, <a href='#[^']+'>5<\/a>/,
@@ -204,11 +205,11 @@ const index = {
     /The space<a id='([^']+)'>[^]*<div class='index-item'>(?:(?!<a |<\/div>)[^])*<msup><mi>L<\/mi><mn>2<\/mn><\/msup>(?:(?!<a |<\/div>)[^])* space, <a href='#\1'>8<\/a> <\/div>/,
     /theorem<a id='([^']+)'><\/a><a id='([^']+)'>[^]*<div class='index-item'>Theorem, 2nd form, <a href='#\1'>9<\/a> <\/div>/,
     /theorem<a id='([^']+)'><\/a><a id='([^']+)'>[^]*<div class='index-subitem'>cyclic, of order 2, <a href='#\2'>10<\/a> <\/div>/,
-    // (three in a row, three links: not a range, as makeindex -r)
+    // (three consecutive numbers as three links, as with makeindex -r)
     /<div class='index-item'>set, <a href='#[^']+'>11<\/a>, <a href='#[^']+'>12<\/a>, <a href='#[^']+'>13<\/a> <\/div>/,
   ],
-  // imakeidx's: the main index, and one of names with its title and style
-  // file (" : " before the numbers)
+  // imakeidx: the main index, and an index of names with its title and a
+  // style file that puts " : " before the numbers
   'test-imakeidx': [
     /Groups<a id='([^']+)'>[^]*>Index<\/h3>\s*<div class='theindex'>(?:(?!<h3)[^])*<div class='index-item'>group, <a href='#\1'>1<\/a> <\/div>/,
     /Galois<a id='([^']+)'>[^]*>Index of names<\/h3>[^]*<div class='index-item'>Galois : <a href='#\1'>1<\/a> <\/div>/,
@@ -216,14 +217,14 @@ const index = {
   ],
 };
 
-// the table of contents beside the text, under the document's title (a link
-// to the top). It is titled by its heading, or by \contentsname in the
-// document's letters, and has chapters' numbers in their boxes. A list of
-// figures before it stays in the text.
+// The table of contents beside the text, under the document title (a link
+// to the top), titled by its heading or by \contentsname in the document's
+// language, with chapter numbers in their boxes. A list of figures before
+// it stays in the text.
 const titled = name => [new RegExp(`<button aria-label='${name}' class='tex8web-control tex8web-contents'[^>]* title='${name}'`),
   new RegExp(`<p class='tex8web-toc-title' id='tex8web-toc-title'>${name}</p>`)];
 const contents = {
-  // (and test.cfg's \WebUp, the first of the controls, with its # and &)
+  // (also test.cfg's \WebUp: the first control, with a # and an & in its URL)
   'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/\?a=1&amp;b=2#top'/],
   'test-russian': titled('Содержание'),
   'test-greek': titled('Περιεχόμενα'),
@@ -233,30 +234,30 @@ const contents = {
   ],
 };
 
-// the text in its own font, after font commands the PDF keeps in a group:
-// a \contentsname in small capitals, and an \intertext in italics
+// Text back in its font after a font command that the PDF keeps in a
+// group: a \contentsname in small capitals, and an \intertext in italics
 const fonts = {
-  // (and after a \tikz picture, a footnote's emphasis; the LaTeX logo's
-  // letters, each where the stylesheet moves it)
+  // (also a footnote's emphasis after a \tikz picture, and the letters of
+  // the LaTeX logo, each in a span the stylesheet positions)
   'test-article': [/<span class='cmti-8'>emphasized<\/span>/,
     /<span class='tex8web-latex'>L<span class='tex8web-a'>A<\/span><span class='tex8web-tex'>T<span class='tex8web-e'>E<\/span>X<\/span><\/span>/],
   'test-fonts': [/<p class='noindent'>The text, in its own font\./,
     /<span class='tex8web-intertext'>Another note\.\s*<\/span>/],
-  // (a title in the font a redefined \maketitle sets, in a heading at the
-  // text's size)
+  // (a title in the font that a redefined \maketitle sets, in a heading at
+  // the text size)
   'test-titlefont': [/<h1 class='titleHead'><span\s+class='bchb7t-x-x-240'>A title in its own font<\/span><\/h1>/],
 };
 
-// colors in dark mode: at another lightness, as a light-dark() of the
-// color, and black text in the page's text color. That holds for
-// \textcolor, \colorbox, \fcolorbox, listings and math, a \rule too.
-// Math and table cells have the colors xcolor gives them: a document's own
-// (ink), a \colorlet (ember), a mix, and green, which CSS has darker.
+// Colors in dark mode: a light-dark() of the color at another lightness,
+// and black text in the page's text color. This holds for \textcolor,
+// \colorbox, \fcolorbox, listings, math, and \rule. Math and table cells
+// have the colors xcolor gives them: a color the document defines (ink), a
+// \colorlet (ember), a mix, and green, which is darker in CSS.
 const lightDark = (color, property) =>
   `light-dark\\(${color}, oklch\\(from ${color} var\\(--tex8web-dark-${property}\\) c h\\)\\)`;
 const dark = hex => `light-dark(${hex}, oklch(from ${hex} var(--tex8web-dark-color) c h))`;
 const text = (hex, html) => `<span style='color:${dark(hex)};'>${html}</span>`;
-// (a list's own lengths, before its color)
+// (the lengths in a list's style attribute, before its color)
 const list = '--tex8web-list-topsep: 0.8em; --tex8web-list-itemsep: 0.8em; --tex8web-list-indent: 2.5em; --tex8web-list-labelsep: 0.5em; ';
 const colors = {
   'test-color': [
@@ -273,9 +274,8 @@ const colors = {
     ...['#c80064', '#800000', '#00ff00', '#640032', '#ff8000'].map(hex =>
       new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'color')};'>`)),
     // (gray!50, ink!50!yellow!50, -ink, -red!50!black; Apricot, Blue!50, Azure3; HTML, cmyk, Gray;
-    // in CMYK as xcolor has them, olive!50, BrickRed!30, Mahogany!40!Goldenrod (svgnames' rgb one),
-    // -BrickRed!40;
-    // BrickRed, given to a macro)
+    // in CMYK as xcolor has them: olive!50, BrickRed!30, Mahogany!40!Goldenrod (svgnames' rgb one),
+    // -BrickRed!40; BrickRed given to a macro)
     ...['#bfbfbf', '#f1bf98', '#37ff9b', '#80ffff', '#ffad7a', '#8080ff', '#c1cdcd', '#3366cc', '#803399', '#888888',
       '#bfbf40', '#eaa5a2', '#c54f00', '#1d777c', '#b80000'].map(hex =>
       new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'color')};'>`)),
@@ -286,11 +286,11 @@ const colors = {
     new RegExp(`#TBL-1-3-2\\{ background-color:${lightDark('#37FF9B', 'background')}\\}`),
     /<pre class='lstlisting'[^>]*>(?:(?!<\/pre>)[^])*<span style='color:var\(--tex8web-text\)'>/,
   ],
-  // \color as a declaration: in spans that end with its group, a block
-  // wholly in it colored itself, nothing left open past an element tex4ht
-  // closes. The theorem's head isn't colored, as in the PDF; a footnote, a
-  // link (urlcolor) and a box keep their own colors. (The author, with \and,
-  // \\ and \thanks, is in article's tabular)
+  // \color as a declaration: spans end with its group, a block wholly in the
+  // color is colored itself, and no span stays open past an element tex4ht
+  // closes. The theorem's head is not colored, as in the PDF. A footnote, a
+  // link (urlcolor), and a box keep their colors. The author, with \and, \\,
+  // and \thanks, is in article's tabular.
   'test-declared': [
     `<h1 class='titleHead'>${text('#0000FF', 'Colors')}<span class='thank-mark'>`,
     `<div class='author'>${text('#FF0000', "<span class='cmr-12'>Someone</span>")} <br class='and' />`,
@@ -313,12 +313,12 @@ const colors = {
     `<span class='cmr-8'>In the text’s color.</span></p></aside>`,
     `and <a href='https://example.com'>a link</a>, by <a href='#x1-1001r1'>${text('#008080', 'theorem')}`,
     `In the box’s colors, ${text('#FF0000', 'and red')}.</p>`,
-    // (an inner color on a block wins; a color set at a box's start, whose
-    // group tex4ht ends after the box; a theorem and minipages wholly in a
-    // color; a float, which LaTeX sets in the text's color; a box copied
-    // after its group ended, which colors nothing after it; a color never
-    // closed, which leaves the footnotes in the text's color, as LaTeX's
-    // \@makecol does, also one test:visual finds in the abstract it colors)
+    // (a block's inner color over its outer one; a color set at a box's
+    // start, whose group tex4ht ends after the box; a theorem and minipages
+    // wholly in a color; a float, which LaTeX sets in the text color; a box
+    // copied after its group ended, which colors nothing after it; a color
+    // never closed, which leaves the footnotes in the text color, as LaTeX's
+    // \@makecol does, and colors the abstract, which test:visual also checks)
     `<p class='indent' style='color:${dark('#FF0000')};'>   Red. </p>\n     <ul class='tex8web-list itemize' role='list' style='${list}color:${dark('#0000FF')};'>`,
     `<div class='newtheorem' style='color:${dark('#FF0000')}; margin-top:`,
     `<p class='noindent' style='color:${dark('#FF0000')};'>Red from the box’s start.</p>`,
@@ -328,17 +328,16 @@ const colors = {
     `<p class='indent' style='color:${dark('#FF00FF')};'>   Magenta to the end.\n</p>\n   <section class='abstract' role='doc-abstract' style='color:${dark('#FF00FF')};'>`,
     `</section>\n   <div class='footnotes'>`,
   ].map(html => new RegExp(html.replace(/\s+/g, ' ').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).concat(/<head>\s*<title>Colors<\/title>/),
-  // table colors as the PDF has them (the document loads colortbl before
-  // xcolor's table option, which the build errors on without the fix):
-  // \rowcolors' alternating rows, from the row it starts at, then
-  // \columncolor, \rowcolor[HTML], \cellcolor, and a \rowcolor on a
-  // \multicolumn's row
-  // (xcolor without colortbl, whose extension would bring MathJax's color
-  // extension with it: a document's color, one \colorlet names, a model)
+  // (xcolor without colortbl, whose extension would load MathJax's color
+  // extension with it: a color the document defines, a \colorlet, a model)
   'test-color-math': ['#c80064', '#00ff00', '#3366cc'].map(hex =>
     new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'color')};'>`)),
+  // Table colors as in the PDF: \rowcolors' alternating rows, from the row
+  // it starts at, then \columncolor, \rowcolor[HTML], \cellcolor, and a
+  // \rowcolor on a \multicolumn's row. The document loads colortbl before
+  // xcolor's table option, which fails the build without the fix.
   'test-colortbl': [
-    // (\rowcolors' on the rows, under the cells' colors)
+    // (\rowcolors' colors on the rows, under the cells' colors)
     ...[['1-1-', 'FFE5E5'], ['1-2-', 'E5E5FF'], ['1-3-', 'FFE5E5'], ['2-2-', 'E5FFE5'], ['2-4-', 'E5FFE5'],
       ['6-1-', 'FFE5E5'], ['6-2-', 'E5E5FF'], ['4-1- td', 'DDEEFF'], ['5-2- td', 'BFFFBF'], ['6-2- td', '00FF00'],
       ['3-1-1', 'CCFFCC'], ['3-2-1', 'CCFFCC'], ['4-2-1', 'F1BFD8'], ['5-1-1', 'F1BFD8'], ['6-1-2', 'FFFF00']]
@@ -349,13 +348,13 @@ const colors = {
   ],
 };
 
-// lists as LaTeX sets them: each label as TeX typesets it (article's bullet
-// and dash, an \item's own, enumerate's (a)), and each list with its own
-// lengths. Screen readers skip itemize's own bullets, which say nothing,
-// and read every other label; role='list' keeps VoiceOver reading a list
-// whose items show no marker. Also a citation in biblatex's form, a link
-// within the page, and the bibliography's heading once in the contents,
-// where the document adds it.
+// Lists as LaTeX sets them: each label as TeX typesets it (article's bullet
+// and dash, an \item's optional label, enumerate's (a)), and each list with
+// its lengths. Screen readers skip itemize's bullets, which say nothing, and
+// read every other label. role='list' keeps VoiceOver reading a list whose
+// items show no marker. Also a citation in biblatex's form, a link within
+// the page without the file name, and the bibliography's heading once in the
+// table of contents, where the document adds it.
 const item = (label, hidden) => `<li><span ${hidden ? "aria-hidden='true' " : ''}class='tex8web-label'>\\s*${label}\\s*<\\/span><div>\\s*<p class='noindent'>`;
 const lists = {
   'test-article': [
@@ -364,11 +363,11 @@ const lists = {
     new RegExp(`${item("<mjx-container aria-label='star'[^]*?")}A label of its own\\.`),
     new RegExp(`<ol class='tex8web-list enumerate' role='list' [^>]*>${item('1\\.')}First,`),
     new RegExp(`${item('\\(a\\)')}inside\\.`),
-    // (an \item's own label, read though a list follows at once)
+    // (an \item's optional label, read although a list follows at once)
     new RegExp(`${item('Case 1')}\\s*<\\/p>\\s*<ul`),
   ],
-  // (an item's paragraphs, each a paragraph of its own; enumitem's
-  // description kind as a description list, whose terms are read)
+  // (an item's paragraphs, kept separate; a list of enumitem's description
+  // type as a <dl>, whose terms are read)
   'test': [/<p class='noindent'>Bullet with a second paragraph\.\s*<\/p><p class='noindent'>The second paragraph\./],
   'test-generic': [new RegExp(`<ol class='tex8web-list enumitem-steps' [^>]*>${item('Step 1\\.')}First\\.`),
     new RegExp(`${item('Note:')}A label of the list’s own\\.`), new RegExp(`${item('•', true)}The class’s bullet\\.`),
@@ -382,21 +381,21 @@ const lists = {
   ],
 };
 
-// a \tikz picture as wide as what it draws: a circle at its origin, which
-// tex4ht's SVG (dvisvgm's, scaled 1.4) centers on it
+// A \tikz picture as wide as what it draws: a circle at the origin, on which
+// tex4ht's SVG (from dvisvgm, scaled 1.4) is centered
 const tikz = { 'test-article': 'test-article0x.svg' };
 
-// a term (\WebTerm), with its id for the contents' filter; in a heading,
-// only its text in the heading's id and contents entry
+// Terms (\WebTerm), with ids for the table of contents filter; in a heading,
+// only the term's text in the heading's id and table of contents entry
 const terms = {
   'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
   'test-term': [/<h3 class='sectionHead' id='the-group-law'>/, /<a href='#the-group-law' id='[^']*'>The <span class='cmbx-10'>group\s*<\/span>\s*law<\/a>/,
     /<h3 class='sectionHead' id='the-ring-law'>/, /<a href='#the-ring-law' id='[^']*'>The <span class='cmbx-10'>ring\s*<\/span>\s*law<\/a>/],
 };
 
-// links at the heads of numbered theorems and the titles of numbered or
-// labelled boxes, to the anchor a \ref to one leads to; none at an
-// unnumbered one's
+// Links at the heads of numbered theorems and the titles of numbered or
+// labelled boxes, to the anchor that a \ref to them leads to. Unnumbered
+// theorems and boxes have none.
 const permalinks = {
   'test-tcolorbox': [
     /<a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<p[^>]*>\s*Theorem<span class='tex8web-nbsp'>.<\/span>1:[^]*<a href='#\1'>1</,
@@ -406,16 +405,16 @@ const permalinks = {
     /<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink'[^>]*>#<\/a>\s*<p[^>]*>\s*Exercise/,
     /<div class='tcolorbox-title'>\s*<p[^>]*>\s*In a raster/,
     /<div class='tcolorbox-title'>\s*<p[^>]*>\s*Also in a raster/,
-    // (a box inside another, each with its own anchor, \ref and number)
+    // (a box inside another, each with its anchor, \ref, and number)
     /<a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<p[^>]*>\s*Theorem<span class='tex8web-nbsp'>.<\/span>3:<span class='tex8web-nbsp'>.<\/span>Outer[^]*<a href='#\1'>3</,
     /<a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<p[^>]*>\s*Theorem<span class='tex8web-nbsp'>.<\/span>4:<span class='tex8web-nbsp'>.<\/span>Inner/,
     /<a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<p[^>]*>\s*Outer box[^]*<a href='#\1'>1<!--\s*tex4ht:ref: outerbox /,
     /<a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>\s*<p[^>]*>\s*Inner box[^]*<a href='#\1'>1<!--\s*tex4ht:ref: innerbox /,
-    // (a \tcbox on line in its paragraph's line, with a title and in a
-    // box; one with tcolorbox's space around it a block of its own)
+    // (a \tcbox on line inside its paragraph's line, also with a title and
+    // inside a box; one with tcolorbox's space around it is a separate block)
     /A word <span class='tcolorbox tcbox' id='[^']+'>\s*<span class='tcolorbox-content'>boxed<\/span><\/span> in its line, <span class='tcolorbox tcbox' id='[^']+'>\s*<span class='tcolorbox-title'>T\s*<\/span><span class='tcolorbox-content'>titled<\/span><\/span> one too, and <\/p><div class='tcolorbox [^']*' id='[^']+'>\s*<div class='tcolorbox-content'>alone/,
     /<p[^>]*>And <span class='tcolorbox tcbox' id='[^']+'>\s*<span class='tcolorbox-content'>one<\/span><\/span> in a box\./,
-    // (and a boxed title's)
+    // (and on a boxed title)
     /<div class='tcolorbox tcolorbox tex8web-tcb-boxed-center' id='[^']+'><a id='([^']+)'><\/a>\s*<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#\1'>#<\/a>/,
   ],
   'examples/custom': [
@@ -430,8 +429,8 @@ const permalinks = {
     /<span class='head'><a [^>]*class='tex8web-permalink'[^>]*>#<\/a><a id='[^']+'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1\.2/,
     /<span class='head'>\s*<span class='cmbx-10'>Remark</,
   ],
-  // (LaTeX's own: one with a note, one sharing its counter, one numbered
-  // within sections; and with hyperref, which adds an anchor of its own)
+  // (LaTeX's \newtheorem: one with a note, one sharing a counter, one
+  // numbered within sections; and with hyperref, which adds a second anchor)
   'test-newtheorem': [
     /<span class='head'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#<\/a><a id='\1'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>1<\/span>[^]*<a href='#\1'>1</,
     /<span class='head'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#<\/a><a id='\1'><\/a>\s*<span class='cmbx-10'>Theorem<span class='tex8web-nbsp'>.<\/span>2<span class='tex8web-nbsp'>.<\/span>\(A note\)<\/span>[^]*<a href='#\1'>2</,
@@ -443,10 +442,10 @@ const permalinks = {
   ],
 };
 
-// amsthm's QED box. After text, in a display's last line or on a list item,
-// it is a right-floated span of MathJax's \square (c25FB), as big as the
-// PDF's. With \qedhere in a display it is the display's tag at the right
-// and no box follows; a proof without \qedhere keeps its own box
+// amsthm's QED box. After text, in a display's last line, or on a list
+// item, the box is a right-floated span of MathJax's \square (c25FB), as big
+// as the PDF's. With \qedhere in a display, the box is the display's tag at
+// the right and no box follows. A proof without \qedhere keeps its box.
 const inProof = title => `>${title}\\.<\\/span>(?:(?!<\\/div>)[^])*`;
 const box = "<span class='tex8web-qed'><mjx-container[^>]*><mjx-math[^>]*><mjx-c class='mjx-c25FB";
 const tagged = title => new RegExp(`${inProof(title)}<mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FB(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/p>\\s*<\\/div>`);
@@ -460,7 +459,7 @@ const qed = {
     // (eleven squares: seven tags, four boxes)
     /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){11}$/,
   ],
-  // a document's own \qedsymbol, set as it is, after text and in a tag
+  // a \qedsymbol the document defines, after text and in a tag
   'test-qedsymbol': [
     new RegExp(`${inProof('After text')}<span class='tex8web-qed'><mjx-container[^>]*><mjx-math[^>]*><mjx-c class='mjx-c25FC`),
     new RegExp(`${inProof('In a display')}<mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FC(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/p>\\s*<\\/div>`),
@@ -480,7 +479,7 @@ const qed = {
   // in a display, twice, or outside a proof; and a proof ending in a list
   'test-qedrow': [
     ...['Label', 'Label align', 'No tag align', 'Aligned', 'Text', 'Bracket label'].map(tagged),
-    // (a \tag of the row's own keeps the box on the proof, below the display)
+    // (a \tag on the row keeps the box on the proof, below the display)
     new RegExp(`${inProof('Tag')}<\\/mjx-container><\\/span>\\s*${box}`),
     // (the second \qedhere finds no box)
     new RegExp(`${inProof('Twice')}mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FB(?:(?!<\\/div>)[^])*B\\.\\s*<span class='mathjax-block'>(?:(?!mjx-labels)(?!<\\/div>)[^])*<\\/p>`),
@@ -494,23 +493,23 @@ const qed = {
     // (nine squares: seven tags, the box after the \tag and the one after the list)
     /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){9}$/,
   ],
-  // equation* through the walker: a \ref to its \label leads to the
-  // section, and the three relations of the page's math, one in the split's
-  // second column, are spaced
+  // equation*: a \ref to its \label leads to the section, and the three
+  // relations of the page's math, one in the split's second column, are
+  // spaced
   'test-equationstar': [
     /See <a href='#s'>1</,
     /^(?:(?!mjx-c class='mjx-c3D' space)[^])*(?:mjx-c class='mjx-c3D' space='4'(?:(?!mjx-c class='mjx-c3D' space)[^])*){3}$/,
   ],
 };
 
-// what follows an \hfill, in a span the stylesheet floats right. It runs to
-// the end of the paragraph or of the line (\\), after the last \hfill of
-// a line; in a paragraph, the line is in a span of its own, and in a
-// centered one, only that line. It is found in a list item, a centered
-// paragraph, a figure, a paragraph cell, a proof before its QED box, a
-// heading and its entry in the contents, and a link. Nothing is moved in a
-// box, a label, a cell of one line, \dotfill, \hrulefill, or before \break,
-// \linebreak or a \penalty that ends the line, and no mark is left.
+// Text after the last \hfill of a line, up to the end of the paragraph or of
+// the line (\\), goes in a span that the stylesheet floats right. In a
+// paragraph, the line is wrapped in a span, and in a centered paragraph,
+// only that line. Covered: a list item, a centered paragraph, a figure, a
+// paragraph cell, a proof before its QED box, a heading and its table of
+// contents entry, and a link. Nothing is moved in a box, a label, a cell of
+// one line, \dotfill, \hrulefill, or before \break, \linebreak, or a
+// \penalty that ends the line, and no mark is left.
 const hfill = {
   'test-hfill': [
     /<p class='noindent'><span class='tex8web-hfill-line'>Name\s*<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'>Date\s*<\/span><\/span><\/p>/,
@@ -537,15 +536,15 @@ const hfill = {
     /^(?![^]*tex8web-hfill-mark)/,
   ],
   'examples/complex': [/^(?:(?!\(not differentiable)[^])*(?:<span class='tex8web-hfill-gap'> <\/span><span class='tex8web-hfill'>\(not differentiable(?:(?!\(not differentiable)[^])*){2}$/],
-  // (tcolorbox's after upper, tex8web-boxes.tex)
+  // (tcolorbox's after upper, from tex/tex8web-boxes.tex)
   'examples/custom': [/<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'><mjx-container/],
 };
 
 const algorithms = {
-  // algorithm's ruled floats: the caption's label followed by a space, not
-  // a colon. algorithmicx's lines, each with its number in its own font and
-  // indented by its block's depth; \Statex has neither, a line without text
-  // is marked to be left out, and a \ref to a line leads to it
+  // algorithm's ruled floats, with a space after the caption's label instead
+  // of a colon. algorithmicx's lines, each with its number in its font
+  // and indented by its block's depth. \Statex has neither, a line without
+  // text is marked to be left out, and a \ref to a line leads to the line.
   'test-algorithmic': [
     /^(?:(?!<figure class='float tex8web-float-ruled'>)[^])*(?:<figure class='float tex8web-float-ruled'>(?:(?!<figure)[^])*){2}$/,
     /<span class='id'>Algorithm 1 <\/span><span class='content'>Binary search/,
@@ -554,9 +553,9 @@ const algorithms = {
     /<div class='tex8web-alg-notext'>/,
     /line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>11[^]*<a id='\1'><\/a>\s*<span class='cmbx-10'>return/,
   ],
-  // algorithm2e's, [H] too: their style, caption place and lengths, the
-  // caption's label and separator, each line a paragraph (the one after the
-  // caption too) numbered as in the PDF, a block a div with its vertical
+  // algorithm2e's, [H] too: their style, caption position, and lengths, the
+  // caption's label and separator, each line a paragraph numbered as in the
+  // PDF (the one after the caption too), a block as a div with its vertical
   // line and closing rule, and a \ref to a line or to the [H] algorithm
   // leading to it
   'test-algorithm2e': [
@@ -571,9 +570,9 @@ const algorithms = {
   ],
 };
 
-// mdframed's boxes: each its lines (the second's 2pt; the third's still
-// 0.4pt; the last only at the sides), its space inside and around, and
-// its colors; a box ending at its theorem ends there
+// mdframed's boxes: each box's rules (the second's 2pt, the third's still
+// 0.4pt, the last's only at the sides), its space inside and around, and
+// its colors; a box that ends at its theorem's end ends there
 const mdframed = {
   'test-mdframed': [
     /#mdframed-1\{--tex8web-mdf-rules: 0.04em 0.04em 0.04em 0.04em; --tex8web-mdf-padding: 0.48em 1em 0.48em 1em; --tex8web-mdf-margin: 0.8em 0em 0.8em 0em; border-color: currentColor;/,
@@ -584,19 +583,19 @@ const mdframed = {
   ],
 };
 
-// the spaces of verbatim text, alltt and \verbatiminput, which keep the
-// font's width: only the ~ in the text is narrowed
+// Spaces in verbatim, alltt, and \verbatiminput keep the font's width. Only
+// the ~ in the text is narrowed.
 const verbatim = {
   'test-verbatim': [/^(?:(?!tex8web-nbsp)[^])*Plain<span class='tex8web-nbsp'>(?:(?!tex8web-nbsp)[^])*$/,
     /<div class='alltt'>/, /<div class='verbatiminput'>/, /<pre class='verbatim'/],
 };
 
-// (listed in data-fonts on the inline script, which preloads them over HTTP)
+// the fonts listed in data-fonts on the inline script
 const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1] ?? '').split(/\s+/).filter(Boolean);
 
-// the fonts preloaded, and no others: the faces of the text (bold
-// headings, italic, \texttt; but not \verb, in the browser's monospace)
-// and MathJax's that the math uses
+// The fonts preloaded, and no others: the text's faces (bold headings,
+// italic, \texttt, but not \verb, which is in the browser's monospace) and
+// the MathJax fonts that the math uses
 const preloads = {
   'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmroman10-bolditalic',
     'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'b', 'c', 'mi', 'v', 'lo', 'so', 's3', 's4', 'brk']
@@ -606,9 +605,8 @@ const preloads = {
     'lmsans10-regular'],
   // (a chapter's \titleformat, in sans-serif's regular face)
   'test-titlechapter': ['lmroman10-regular', 'lmroman10-bold', 'lmsans10-regular'],
-  // (in Times, Helvetica and Courier: TeX Gyre's faces, for the controls
-  // too, as for the text in sans-serif; and MathJax's Termes, as the math
-  // is in Times)
+  // (Times, Helvetica, and Courier: TeX Gyre's faces, for the controls too,
+  // as for sans-serif text; MathJax's Termes, as the math is in Times)
   'test-times': ['texgyretermes-regular', 'texgyretermes-bold', 'texgyretermes-italic',
     'texgyreheros-regular', 'texgyrecursor-regular', 'mathjax/mjx-gt-zero', 'mathjax/mjx-gt-n'],
   'test-sans': ['lmroman10-regular', 'lmsans10-regular', 'lmsans10-bold', 'lmsans10-oblique'],
@@ -625,10 +623,10 @@ const preloads = {
   'test-schola': ['texgyreschola-regular', ...['zero', 'brk', 'n', 'so'].map(font => `mathjax/mjx-gs-${font}`)],
 };
 
-// the text's fonts, each in its role, with tex4ht's classes for them: TeX
-// Gyre's for Times, Helvetica and Courier, and XCharter for Charter. A font
-// chosen in the text keeps its own, and the text is in sans-serif when
-// \familydefault is.
+// The text fonts, each in its role, with rules for tex4ht's classes of
+// them: TeX Gyre for Times, Helvetica, and Courier, and XCharter for
+// Charter. A font chosen in the text keeps its family, and the text is in
+// sans-serif when \familydefault is.
 const families = {
   'test-times': ['@font-face { font-family: "TeX Gyre Termes"; src: url("fonts/texgyretermes-regular.woff2") format("woff2"), url("fonts/texgyretermes-regular.otf") format("opentype"); }',
     ':root { --tex8web-roman: "TeX Gyre Termes", "Latin Modern Roman", serif; }',
@@ -642,21 +640,21 @@ const families = {
   'test-charter': [':root { --tex8web-roman: "XCharter", "Latin Modern Roman", serif; }',
     '[class^="bch"], [class*="-bch"], [class^="XCharter"], [class*="-XCharter"] { font-family: var(--tex8web-roman); }',
     '[class*="-ntx-"] { font-family: "TeX Gyre Termes"; }'],
-  // (its title's \fontfamily{bch})
+  // (the title's \fontfamily{bch})
   'examples/complex': ['[class*="-XCharter"] { font-family: "XCharter"; }'],
   'test-titlefont': ['[class^="bch"], [class*="-bch"]', ':root { --tex8web-title-size: 1em; }'],
 };
 
-// text between blocks at the top of the page, which make4ht puts in a
-// paragraph (its fixinlines runs on the page before the text goes in
-// <main>, where it would no longer find it)
+// Text between blocks at the top of the page, which make4ht's fixinlines
+// puts in a paragraph. fixinlines runs before the text is moved into
+// <main>, as fixinlines looks only at the top level of the body.
 const loose = {
   'test-generic': [/<\/div><p> See \(<a href=/],
   'test-tcolorbox': [/<\/div><p> See Theorem<span class='tex8web-nbsp'> <\/span>/],
 };
 
-// the patterns each table holds, matched against the page (and its
-// stylesheet, for the colors), each with how a failure reads
+// Each table, with how a failure reads, and whether its patterns are also
+// matched against the stylesheet
 const patterns = [
   [typeset, 'in the typeset math'], [speech, 'in the speech'], [pictures, 'among the pictures'],
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
@@ -666,10 +664,10 @@ const patterns = [
   [mdframed, "in mdframed's boxes", true],
 ];
 
-// what's wrong with a built page: its log, the page and the files with it
+// the problems in a built page's logs, the page, and the files beside it
 function check(doc, result, out, aux) {
   const problems = [];
-  // (unless an error in its log, which checkLog reports, says why)
+  // (unless an [ERROR] or [FATAL] in the log, which checkLog reports, says why)
   if (result.code !== 0 && !/\[(ERROR|FATAL)\]/.test(result.log)) problems.push(`make4ht exited with ${result.code}`);
   const css = join(out, doc.tex.replace(/\.tex$/, '.css'));
   const styles = existsSync(css) ? readFileSync(css, 'utf8') : '';
@@ -678,25 +676,25 @@ function check(doc, result, out, aux) {
       problems.push(value === null ? `${property} is set` : `${property} isn't ${value}`);
     }
   }
-  // (each abstract's, which are the same)
+  // (once, not once for each abstract)
   if (styles.split('--tex8web-abstract-leading:').length > 2) problems.push("the abstract's leading set twice");
-  // (html4.4ht's rules for the paragraphs in an <li>, which other packages'
-  // lists, such as paralist's, need)
+  // (html4.4ht's rules for paragraphs in an <li>, which the lists of other
+  // packages need, for example paralist)
   if (styles && !/^li p:last-child/m.test(styles)) problems.push("no html4.4ht's rules for <li>");
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
   const classes = html.match(/<html[^>]*\sclass='([^']*)'/)?.[1] ?? '';
   if (classes !== (switched[doc.name] ?? '')) problems.push(`<html> has classes '${classes}'`);
-  // (the examples are published: a browser's tab and link previews show it)
+  // (the examples are published: the title is shown in tabs and link previews)
   if (doc.name.startsWith('examples/') && !/<title>\s*\S/.test(html)) problems.push('no <title>');
-  // (the text, for a screen reader to jump to)
+  // (one <main>, for screen readers to jump to the text)
   if ((html.match(/<main[\s>]/g) || []).length !== 1) problems.push('not one <main>');
   // (tex4ht's <!--l. 65-->, which text.line_comments removes)
   if (/<!--\s*l\.\s*\d+\s*-->/.test(html)) problems.push("tex4ht's source line comments");
   // (with -p, or custom.cfg's \WebPDF)
   if (doc.pdf && !(html.includes("href='main.pdf'") && existsSync(join(out, 'main.pdf')))) problems.push('no link to the PDF beside it');
   if (doc.up && !html.includes(`class='tex8web-control tex8web-up' href='${doc.up}'`)) problems.push('no link up to the index');
-  // (the page's whitespace is tex4ht's indentation, which the patterns don't pin)
+  // (tex4ht's indentation, which the patterns do not pin)
   const flat = html.replace(/\s+/g, ' ');
   for (const [table, what, withStyles] of patterns) {
     for (const pattern of table[doc.name] ?? []) {
@@ -711,7 +709,7 @@ function check(doc, result, out, aux) {
   for (const rule of families[doc.name] ?? []) {
     if (!styles.includes(rule)) problems.push(`no ${rule} among the font rules`);
   }
-  // (prerender.mjs makes TeX Live's, cut down)
+  // (TeX Live's fonts, cut down by prerender.mjs)
   for (const [, font] of styles.matchAll(/url\("fonts\/([\w-]+\.woff2)"\) format\("woff2"\), url/g)) {
     const size = statSync(join(out, 'fonts', font), { throwIfNoEntry: false })?.size;
     if (!(size < 60000)) problems.push(`fonts/${font} ${size ? 'not cut down' : 'missing'}`);
@@ -722,7 +720,7 @@ function check(doc, result, out, aux) {
     const at = 1.4 * Number(svg.match(/translate\(([^,]+),/)?.[1]);
     if (!(Math.abs(x + width / 2 - at) < 0.1)) problems.push(`${tikz[doc.name]} isn't centered on its circle`);
   }
-  // (prerender.mjs leaves out a token of one character)
+  // (prerender.mjs drops the element around a one-character token's mjx-c)
   if (/<mjx-m[ion](?: (?:space|size)='[^']*')*><mjx-c class='[^']*'>[^<]*<\/mjx-c><\/mjx-m[ion]>/.test(html)) {
     problems.push('a token of one character left in the typeset math');
   }
@@ -734,7 +732,7 @@ function check(doc, result, out, aux) {
     problems.push(`Latin Modern Roman ${size ? 'not cut down to the page\'s characters' : 'missing'}`);
   }
   if (!existsSync(join(out, 'fonts/LICENSE.txt'))) problems.push('no fonts/LICENSE.txt with the fonts');
-  // (checkOutput checks that every formula has it, once one does)
+  // (once one formula has it, checkOutput checks that every formula does)
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
     problems.push('no MathML for screen readers, with TEX8WEB_MATHML');
   }
@@ -747,7 +745,6 @@ if (!only.length) {
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 
-// each document built and checked, a few at a time
 const refused = new Set(['test-split', 'test-cutat']);
 const jobs = largestFirst(docs).map(doc => async () => {
   const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
@@ -761,7 +758,8 @@ const jobs = largestFirst(docs).map(doc => async () => {
   report(doc.name, check(doc, result, out, aux));
 });
 
-// and the page MathJax typesets in the browser, without node_modules
+// test-generic built without prerendering, as without node_modules: MathJax
+// typesets the page in the browser
 if (!only.length) jobs.push(async () => {
   const doc = docs.find(d => d.name === 'test-generic');
   const out = join(testDir(doc), 'fallback'), aux = join(testDir(doc), 'fallbackaux');
@@ -769,7 +767,8 @@ if (!only.length) jobs.push(async () => {
   const html = existsSync(join(out, `${doc.name}.html`)) ? readFileSync(join(out, `${doc.name}.html`), 'utf8') : '';
   const problems = [];
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
-  // (data-mathjax: the version tex8web.js pins MathJax's font extensions to)
+  // (data-mathjax: the MathJax version that tex8web.js pins the font
+  // extensions to)
   for (const needed of ['id=\'tex8web-config\'', 'src=\'tex8web.js\'', 'data-mathjax=\'', '/tex-chtml.js']) {
     if (!html.includes(needed)) problems.push(`page lacks ${needed}`);
   }
@@ -779,8 +778,8 @@ if (!only.length) jobs.push(async () => {
   report(`${doc.name} (MathJax in the browser)`, problems);
 });
 
-// and a page whose prerendering fails (node can't start): the math is left
-// for the browser, and no font to preload is one that wasn't written
+// test-pagella with prerendering failing (node cannot start): the math is
+// left for the browser, and every font listed for preloading was written
 const failing = docs.find(d => d.name === 'test-pagella');
 if (failing) jobs.push(async () => {
   const out = join(testDir(failing), 'failing'), aux = join(testDir(failing), 'failingaux');
@@ -791,14 +790,14 @@ if (failing) jobs.push(async () => {
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
   if (!result.log.includes('prerender.mjs failed')) problems.push('no warning that prerendering failed');
   for (const href of fontsListed(html).filter(href => !existsSync(join(out, href)))) problems.push(`${href} preloaded, not written`);
-  // (the page still has TeX Live's font, whole, to show)
+  // (the whole TeX Live font, for the page to show)
   if (!existsSync(join(out, 'fonts/texgyrepagella-regular.otf'))) problems.push('no whole TeX Gyre Pagella beside the page');
   report(`${failing.name} (prerendering fails)`, problems);
 });
 
-// and the same page with tex4ht's own escaping of each formula's source,
-// which tex8web-math.tex replaces with a faster one: both, left as source
-// for MathJax, must be the same page
+// test-mathescape built twice, without prerendering: with tex8web-math.tex's
+// escaping of each formula's source, and with tex4ht's slower escaping. The
+// two pages must be the same.
 const escaping = docs.find(d => d.name === 'test-mathescape');
 if (escaping) jobs.push(async () => {
   const pages = [];

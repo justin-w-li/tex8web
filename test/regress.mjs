@@ -1,33 +1,31 @@
-// What a change to tex8web does to your own documents: builds each one,
-// checks the page as npm test checks its own, and says what changed since the
-// baseline (the last build you accepted): the HTML (test/diff.mjs), then, if
-// that changed, how the page looks (test/shots.mjs), while the other
-// documents are still building.
+// What a change to tex8web does to your documents. Each document is built
+// and checked as npm test checks its pages, then compared with its baseline
+// (the last accepted build): the HTML with test/diff.mjs, then, if the HTML
+// changed, the screens with test/shots.mjs, while other documents build.
 //   node test/regress.mjs [options] <dir or .tex file>...
 // A directory means its main.tex, or its only .tex file. Documents build in
-// parallel, within the build slots (test/lib/slots.mjs). Each is named by its
-// directory, and the names must differ. Exits 1 if a build or check failed,
+// parallel within the build slots (test/lib/slots.mjs). Each is named by its
+// directory, so the names must differ. Exits 1 if a build or check failed,
 // 3 if a page looks different from its baseline, 2 on a usage error, else 0.
 //   -c <config>        build every document with this config
-//   --out <dir>        where the builds go, default build/regress:
-//                      html/<name>, compare/<name> (the screens that differ),
-//                      logs/, tex4ht/ and, by default, accepted/<name>
-//   --baseline <dir>   compare with the pages in <dir>/<name> instead, such as
-//                      another checkout's html directory
-//   --accept           make this run's pages the baseline, without comparing
-//                      the screens: a change is looked at before it is
-//                      accepted. Refused with --draft, and not done when any
+//   --out <dir>        default build/regress, holding html/<name>,
+//                      compare/<name> (differing screens), logs/, tex4ht/,
+//                      and by default accepted/<name>
+//   --baseline <dir>   compare with <dir>/<name> instead, as another
+//                      checkout's html directory
+//   --accept           make this run's pages the baseline without comparing
+//                      screens, as a change is looked at before it is
+//                      accepted. Refused with --draft, and skipped if a
 //                      document failed
-//   --draft            make4ht's draft mode, quicker and not to be trusted
-//   --shots-cache <dir>  where shots.mjs keeps what the baseline's screens
-//                      came to, by what decides them, so that every run and
-//                      checkout using the directory shoots a baseline once.
-//                      Default <out>/shots-cache
-//   --latexmk          build each document's PDF first, with latexmk in the
-//                      document's directory, holding its build/pdf.lock so
-//                      that no two runs of latexmk share a build/pdf. A
-//                      document whose PDF fails isn't built. Without it
-//                      the PDFs are the caller's to build
+//   --draft            make4ht's draft mode: quicker, not to be trusted
+//   --shots-cache <dir>  passed to shots.mjs as --cache, so every run and
+//                      checkout using dir shoots a baseline once. Default
+//                      <out>/shots-cache
+//   --latexmk          build each PDF first with latexmk in the document's
+//                      directory, holding its build/pdf.lock so no two
+//                      latexmk runs share a build/pdf. A document whose PDF
+//                      fails is not built. Without --latexmk, build the
+//                      PDFs first
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -35,7 +33,8 @@ import { build, pool, root, run, workers } from './lib/build.mjs';
 import { lock } from './lib/slots.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
-// (npm runs a script in tex8web's directory, and says where it was run from)
+// npm runs a script in tex8web's directory and sets INIT_CWD to where npm
+// was run
 const at = path => resolve(process.env.npm_lifecycle_event ? process.env.INIT_CWD ?? process.cwd() : process.cwd(), path);
 const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--shots-cache <dir>] <dir or .tex file>...';
 const refuse = message => {
@@ -76,8 +75,8 @@ function document(arg) {
     tex = files.includes('main.tex') ? 'main.tex' : files.length === 1 ? files[0] : null;
     if (!tex) refuse(`${arg} has no main.tex and not exactly one .tex file; name the file`);
   }
-  // (the PDFs, which a config's \WebPDF links, are the caller's to build,
-  // unless it says --latexmk)
+  // build() does not build the PDFs a config's \WebPDF links; latexmk()
+  // builds them with --latexmk
   return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true };
 }
 
@@ -101,13 +100,13 @@ const started = Date.now();
 const here = dirname(new URL(import.meta.url).pathname);
 const node = (script, ...args) => run(process.execPath, [join(here, script), ...args]);
 
-// builds a document's PDF as a wrapper script does, or says why it couldn't:
-// the lock first, then a slot, so that a run waiting for the lock holds none
+// Builds a document's PDF, or resolves to why it failed. The lock is taken
+// before the slot, so a run waiting for the lock holds no slot.
 async function latexmk(doc) {
   mkdirSync(join(doc.dir, 'build'), { recursive: true });
   const release = await lock(join(doc.dir, 'build/pdf.lock'));
   try {
-    // (latexmk is silent for a while on a long document)
+    // latexmk can print nothing for minutes on a long document
     const result = await run('latexmk', ['-interaction=nonstopmode', '-halt-on-error', doc.tex], { cwd: doc.dir, slot: true, idle: 900 });
     writeFileSync(join(logs, `${doc.name}.pdf.log`), result.log);
     if (result.code !== 0) return `failed to build its PDF, exit ${result.code} (log: ${join(logs, `${doc.name}.pdf.log`)})`;
@@ -116,7 +115,7 @@ async function latexmk(doc) {
   }
 }
 
-// builds and checks one document, and finds out what changed since its baseline
+// builds and checks one document, and compares its HTML with its baseline
 async function regress(doc) {
   const html = join(out, 'html', doc.name), aux = auxFor(doc), kept = join(baseline, doc.name);
   rmSync(join(out, 'compare', doc.name), { recursive: true, force: true });
@@ -141,13 +140,13 @@ async function regress(doc) {
   return { ...found, kind: 'changed', files, outcome: `changed: ${files.slice(0, 6).join(', ')}${files.length > 6 ? ` and ${files.length - 6} more` : ''}` };
 }
 
-// the screens of a changed page, as soon as it is built, in a Chrome of its
-// own, which holds a slot like a build: the one shots.mjs runs in
+// Compares the screens of a changed page as soon as the page is built.
+// shots.mjs launches a separate Chrome, which holds a build slot like a build.
 async function screens(result) {
   const compare = join(out, 'compare', result.doc.name);
   console.error(`${result.doc.name}: comparing the screens`);
-  // (a long page takes shots.mjs minutes for each width and scheme, when
-  // the machine is busy, and more than run()'s 15 minutes in all)
+  // on a busy machine, a long page takes minutes for each width and scheme,
+  // more than run()'s default limit of 15 minutes in all
   const shots = await run(process.execPath, [join(here, 'shots.mjs'), '--cache', shotsCache, compare, result.kept, result.html],
     { slot: true, total: 3600 });
   writeFileSync(join(logs, `${result.doc.name}.shots.log`), shots.log);
@@ -163,7 +162,7 @@ async function screens(result) {
 
 const results = await pool(docs, workers, async doc => {
   const result = await regress(doc);
-  // (not awaited: the pool goes on to build the next document)
+  // not awaited, so the next document builds meanwhile
   if (result.kind === 'changed' && !options.accept) result.shots = screens(result);
   return result;
 });
@@ -182,7 +181,8 @@ console.log(`pages in ${join(out, 'html')}, logs in ${logs}`);
 if (options.accept && failed) console.log('not accepting: a document failed');
 else if (options.accept) {
   mkdirSync(baseline, { recursive: true });
-  // (whole, as another run may be comparing with it)
+  // copied beside the baseline, then renamed, as another run may be
+  // comparing with the baseline
   for (const { doc, html } of results) {
     const target = join(baseline, doc.name), staged = join(baseline, `.${doc.name}`);
     rmSync(staged, { recursive: true, force: true });

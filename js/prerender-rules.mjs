@@ -1,9 +1,8 @@
-// What prerender.mjs's pass over MathJax's output assumes of its CSS, read
-// from the CSS, with a list of what differs. Dropping an element is right
-// only while its rule says what the pass has in mind.
+// The MathJax CSS rules that the removal of elements in prerender.mjs relies
+// on, read from MathJax's CSS, with a list of the rules that differ. An
+// element may be removed only while its rule is as expected.
 
-// the tags the pass removes: each lines up what's in it on the left, as an
-// inline block
+// the tags prerender.mjs removes: each is a left-aligned inline block
 export const tokens = ['mjx-mi', 'mjx-mo', 'mjx-mn'];
 export const wrappers = ['mjx-TeXAtom', 'mjx-msub', 'mjx-msup', 'mjx-msubsup', 'mjx-mrow'];
 
@@ -16,10 +15,10 @@ function rule(css, selector) {
     .filter(([name]) => name));
 }
 
-// { sizes, padding: { left, right }, problems }: sizes (font-size of each
-// [size] as a multiple), a script's padding in ems, and in problems what's
-// not as expected for the tags among used (MathJax writes the rules of the
-// tags a page has)
+// { sizes, padding: { left, right }, problems }: the font-size of each [size]
+// as a multiple, a script's padding in em, and the rules that differ from
+// those expected. Only tags in used are checked: MathJax writes rules only for
+// the tags on the page.
 export function readRules(css, used) {
   const problems = [];
   const expect = (selector, wanted, exact) => {
@@ -36,7 +35,7 @@ export function readRules(css, used) {
   }
   if (used.includes('mjx-math')) expect('mjx-math', { 'line-height': '0', 'text-align': 'left' });
   const script = used.includes('mjx-script') ? expect('mjx-script', { display: 'inline-block' }) : {};
-  // (the pass deletes the script's element, so no other property may be lost)
+  // mjx-script elements are removed, so any other property would be lost
   const extra = Object.keys(script).filter(name => !['display', 'padding-left', 'padding-right'].includes(name));
   if (extra.length) problems.push(`mjx-script has ${extra.join(', ')}, besides display and padding`);
   const padding = {};

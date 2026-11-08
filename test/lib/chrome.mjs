@@ -18,8 +18,8 @@ const candidates = [
 
 const sleep = ms => new Promise(done => setTimeout(done, ms));
 
-// read() until wanted(its value) holds: that value, or null after ms. For
-// a state the page reaches, rather than a wait for a time
+// calls read() until wanted(value) holds; resolves to that value, or to
+// null after ms. For waiting on a state of the page in place of a delay
 export async function until(read, wanted = Boolean, ms = 5000) {
   const end = Date.now() + ms;
   for (;;) {
@@ -31,7 +31,7 @@ export async function until(read, wanted = Boolean, ms = 5000) {
 }
 
 // a DevTools connection: send(method, params) -> result, failing if Chrome
-// doesn't answer in two minutes (it has crashed)
+// does not answer in two minutes, as Chrome has then crashed
 async function connect(url) {
   const ws = new WebSocket(url);
   await new Promise((done, fail) => { ws.onopen = done; ws.onerror = fail; });
@@ -56,9 +56,10 @@ async function connect(url) {
   };
 }
 
-// Waits while Chrome, a group's leader, runs. If the Node process that
-// launched it is gone first, kills Chrome's group and removes the profile,
-// once the group is gone: a helper may still be writing into it
+// Waits while Chrome, its process group's leader, runs. If the Node process
+// that launched Chrome is gone first, kills the group, and removes the
+// profile once the group is gone (up to 5 s): a helper may still be
+// writing into the profile
 const watch = `
   my ($parent, $chrome, $profile) = @ARGV;
   while (kill 0 => $chrome) {
@@ -79,14 +80,15 @@ export async function launch() {
   // (a Chrome holds a build slot like a build does, until it is closed)
   const release = await takeSlot();
   const profile = mkdtempSync(join(tmpdir(), 'tex8webchrome'));
-  // (Chrome won't run as root, as in a container, with its sandbox)
+  // (Chrome refuses to run as root with its sandbox, as in a container)
   const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars',
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'],
     { stdio: ['ignore', 'ignore', openSync(`${profile}.log`, 'w')], detached: true });
-  // Chrome has a group of its own, so it outlives this process when that
-  // is killed outright and no handler runs. build.mjs's run() kills a
-  // command that hangs so. The watcher, in a third group, ends Chrome then
+  // Chrome has a separate process group, so it outlives this process when
+  // this process is killed outright, with no handler run, as run() in
+  // build.mjs kills a hung command. The watcher, in a third group, ends
+  // Chrome then
   const watcher = spawn('perl', ['-MFile::Path=rmtree', '-e', watch, process.pid, proc.pid, profile],
     { stdio: 'ignore', detached: true });
   let cleaned = false;
@@ -94,8 +96,8 @@ export async function launch() {
     if (cleaned) return;
     cleaned = true;
     try { watcher.kill('SIGKILL'); } catch {}
-    // (the whole group: on Linux, Chrome's helpers outlive it otherwise and
-    // keep writing into the profile)
+    // (the whole group: on Linux, Chrome's helpers otherwise outlive Chrome
+    // and keep writing into the profile)
     try { process.kill(-proc.pid, 'SIGKILL'); } catch {}
     try {
       rmSync(`${profile}.log`, { force: true });
@@ -110,7 +112,7 @@ export async function launch() {
   // as "screens differ")
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => process.exit(128 + constants.signals[signal]));
 
-  // (up to 30s: a first start, beside builds using every core, is slow)
+  // (up to 30 s: a first start beside builds that use every core is slow)
   let port;
   for (let i = 0; i < 300 && !port && proc.exitCode === null; i++) {
     const file = join(profile, 'DevToolsActivePort');
@@ -140,8 +142,8 @@ export async function launch() {
       if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
       return r.result.value;
     };
-    // loaded, and its fonts: one is fetched only once layout needs it
-    // (hence the offsetHeight), which may be after the load event
+    // the load event and the fonts. A font is fetched only once layout needs
+    // it, which may be after the load event, so offsetHeight forces a layout
     let loaded = false;
     for (let i = 0; i < 300 && !loaded; i++) {
       loaded = await evaluate(`document.readyState === 'complete'
@@ -151,8 +153,8 @@ export async function launch() {
     if (!loaded) throw new Error(`${url}: not loaded in 30s`);
     const failed = await evaluate(`[...document.fonts].filter(f => f.status === 'error').map(f => f.family)`);
     if (failed.length) throw new Error(`${url}: fonts not loaded: ${failed.join(', ')}`);
-    // two frames, for what scripts do once the page is in (as the sidenotes'
-    // ResizeObserver, a frame later) or after a resize
+    // two frames, for what scripts do after the load (the ResizeObserver of
+    // the sidenotes acts a frame later) or after a resize
     const frame = () => evaluate('new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))');
     if (javascript) await frame();
     // (not optimizeForSpeed: with it, a repeated capture can antialias a
@@ -160,8 +162,8 @@ export async function launch() {
     const capture = async (y, h) => (await page.send('Page.captureScreenshot', { format: 'png',
       captureBeyondViewport: true, clip: { x: 0, y, width, height: h, scale: 1 } })).data;
     // a PNG (base64) of the page from y down, h high, once two captures in
-    // a row agree: the first of a part beyond the window can miss what
-    // Chrome hasn't painted there yet, such as a display
+    // a row agree: the first capture of a part beyond the window can miss
+    // what Chrome has not painted there yet, such as a display
     const screenshot = async (y, h) => {
       let last;
       for (let i = 0; i < 4; i++) {
@@ -175,8 +177,8 @@ export async function launch() {
       evaluate,
       frame,
       screenshot,
-      // the whole page, a window's height at a time, calling shot(i, n)
-      // after each of the n
+      // the whole page, one window height at a time, calling shot(i, n)
+      // after each of the n screens
       async screens(shot = () => {}) {
         const total = await evaluate('document.documentElement.scrollHeight');
         const shots = [];
@@ -187,7 +189,7 @@ export async function launch() {
         return shots;
       },
       // the mouse at x, y in the window: type is pressed, moved (with the
-      // left button held), released or wheel; extra is more of DevTools'
+      // left button held), released, or wheel. extra adds fields of DevTools'
       // Input.dispatchMouseEvent (clickCount, deltaY)
       async mouse(type, x, y, extra = {}) {
         await page.send('Input.dispatchMouseEvent', { type: `mouse${type[0].toUpperCase()}${type.slice(1)}`,
@@ -201,18 +203,18 @@ export async function launch() {
           await page.send('Input.dispatchKeyEvent', { type, key, code: key, windowsVirtualKeyCode: keyCode, modifiers });
         }
       },
-      // a finger's tap at x, y (a touch screen from the first on)
+      // a finger's tap at x, y (touch emulation stays on from the first tap)
       async tap(x, y) {
         if (!touch) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true });
         touch = true;
         await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
         await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       },
-      // the window's size changed, as turning a phone changes it
+      // a new window size, as when a phone is turned
       async resize(w, h) {
         await page.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
       },
-      // the page as on another medium ('print')
+      // the page on another medium ('print')
       async media(type) {
         await page.send('Emulation.setEmulatedMedia', { media: type,
           features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
@@ -226,7 +228,7 @@ export async function launch() {
 
   const open = async (url, options = {}) => {
     const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
-    // (a tab left open garbles the screenshots of the next)
+    // (a tab left open garbles the screenshots of the next tab)
     try {
       return await attach(targetId, url, options);
     } catch (error) {

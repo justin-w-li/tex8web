@@ -1,5 +1,5 @@
-% A class for test-ownclass.tex: one tex4ht has no .4ht for, and that loads
-% no standard class, with sections of its own from \@startsection.
+% The class of test-ownclass.tex: tex4ht has no .4ht file for it, it loads
+% no standard class, and it defines its sections with \@startsection.
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{test-ownclass}[2026/11/06 tex8web test class]
 \renewcommand\normalsize{\fontsize{10}{12}\selectfont}

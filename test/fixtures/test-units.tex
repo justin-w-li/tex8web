@@ -1,13 +1,13 @@
-% A test for tex8web: units as the PDF sets them. nicefrac's and xfrac's
-% fractions with a slash (MathJax has neither), and siunitx's numbers,
-% units and quantities, in text, in math and in a display (MathJax has none
-% of siunitx's commands).
+% Units as the PDF sets them: nicefrac's and xfrac's fractions with a
+% slash (MathJax has neither), and siunitx's numbers, units, and quantities
+% in text, in math, and in a display (MathJax has none of siunitx's
+% commands).
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{nicefrac}
 \usepackage{xfrac}
-% (siunitx.4ht loads color, which tex4ht then doesn't configure: tex8web
-% would warn that \a:color is gone; xcolor brings it)
+% siunitx.4ht loads color, which tex4ht then does not configure, so
+% tex8web would warn that \a:color is gone. xcolor brings \a:color.
 \usepackage{xcolor}
 \usepackage{siunitx}
 \DeclareSIUnit\pct{\%}

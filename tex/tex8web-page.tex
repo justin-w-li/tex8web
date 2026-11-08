@@ -1,25 +1,21 @@
-% tex8web: the page: <head>, colors and layout. The static styles are in
-% css/tex8web.css.
+% tex8web: the page's <head>, colors, and the measurements of the document
+% as --tex8web-* custom properties. Static styles are in css/tex8web.css.
 \makeatletter
 
 % --- <head> -----------------------------------------------------------------
 
-% rebuilt with what the page needs, and with elements for the rest of
-% tex8web:
-% - tex8web-config (JSON), for tex8web.js, in the browser or when
-%   prerendering: MathJax's configuration (tex8web-math.tex), and lengths
-%   from the document, in ems of its body font, for MathJax's sizes (see
-%   tex8web.js). page.lua adds the scripts that read it
-% - two build elements, for the HTML passes, which remove them. The first
-%   holds the PDF (\WebPDF), the page above (\WebUp), the font families
-%   of the text and of roman, sans-serif and typewriter text (assets.lua)
-%   and the \WebMathMacros definitions. The second holds \contentsname,
-%   typeset, so that tex4ht writes its letters (babel's are font commands,
-%   \CYRS, of which \text_purify:n knows only Latin's), in a group: the
-%   head is written as the document starts, so a \contentsname's font
-%   commands (\scshape) would set the whole text
-% \WebPDF{path}: an icon linking to the document's PDF; tex8web.mk4
-% copies the file (path from the document's directory) next to the page
+% The <head>, with elements for the rest of tex8web:
+% - tex8web-config (JSON), read by tex8web.js in the browser and when
+%   prerendering: the MathJax configuration (tex8web-math.tex), and lengths
+%   in ems of the body font, for MathJax's sizes. page.lua adds the scripts
+% - two build elements, read and removed by page.lua's build_data, which
+%   lists what they hold. The second holds \contentsname, typeset so that
+%   tex4ht writes its letters: babel's are font commands (\CYRS), and
+%   \text_purify:n knows only Latin ones. It is typeset in a group, because
+%   the head is written as the document starts, and font commands in
+%   \contentsname (\scshape) would set the whole text
+% \WebPDF{path}: an icon linking to the PDF, which page.lua copies next to
+% the page (path from the document's directory)
 % \WebUp{url}: an icon linking to the page above this one on its site
 \setbox\z@\hbox{\everymath{}$\xdef\web@exscale{\web@ratio{\fontdimen6\textfont3}}$}
 \ExplSyntaxOn
@@ -33,14 +29,14 @@
     \regex_replace_all:nnN { \x{3E} } { &gt; } #1
     \regex_replace_all:nnN { \x{22} } { &quot; } #1
 }
-% a token list as text for the page: a # as one (\detokenize doubles it),
-% and escaped
+% #2 as escaped text for the page, in #1. \detokenize doubles each #, so
+% ## becomes # again
 \cs_new_protected:Npn \__web_text:NN #1 #2 {
     \tl_set:Ne #1 {\exp_args:NV \detokenize #2}
     \regex_replace_all:nnN { \x{23}\x{23} } { \cO\x{23} } #1
     \__web_escape:N #1
 }
-% a class for <html>, for a switch the stylesheet's rules read
+% a class for <html>, for a switch in the stylesheet
 \clist_new:N \g__web_classes_clist
 \cs_new_protected:Npn \web@htmlclass #1
     { \clist_if_in:NnF \g__web_classes_clist {#1} { \clist_gput_right:Nn \g__web_classes_clist {#1} } }
@@ -71,17 +67,16 @@
 
 % --- colors -----------------------------------------------------------------
 
-% \WebColor{name}{light color}{dark color} makes the CSS variable --name,
-% which is one or the other (see css/tex8web.css)
+% \WebColor{name}{light color}{dark color}: the CSS variable --name
 \newcommand\WebColor[3]{%
     \web@hex{#2}\web@light
     \web@hex{#3}\web@dark
     \web@Css{:root { --#1: light-dark(\#\web@light, \#\web@dark); }}%
 }
-% \web@hex{color}\macro: the color's hex code, which xcolor converts; with
-% only the color package (which hyperref's colorlinks load), read from the
-% driver's form color keeps (rgb r g b, gray g or cmyk c m y k). The color
-% . is the current one
+% \web@hex{color}\macro: the color's hex code, converted by xcolor. With
+% only the color package (loaded by hyperref's colorlinks), the code is read
+% from the driver's form that color keeps: rgb r g b, gray g, or
+% cmyk c m y k. The color . is the current one
 \ExplSyntaxOn
 \tl_new:N \l__web_color_tl
 \tl_new:N \l__web_hex_tl
@@ -122,14 +117,14 @@
 }
 \cs_new:Npn \__web_hex_pad:n #1 { \int_compare:nNnT { \tl_count:n {#1} } = 1 {0} #1 }
 % \color as a declaration ({\color{red} text}), which html4.4ht drops: its
-% \a:color, tex4ht's hook in \color, is empty. Instead, a mark where the
-% color is set and one with the same id where its group ends, which
-% text.lua's colors turns into spans. The color is read once it is set
-% (\set@color), as xcolor's \color{red!50!black} goes through \a:color
-% twice. Some colors aren't the text's. tcolorbox's own (tcbcol...) are its
-% box's, which tex8web-boxes.tex sets. A link's is the stylesheet's
-% (hyperref's \HyColor@UseColor). A \colorbox's background is html4.4ht's
-% (color.4ht's \color@b@x)
+% \a:color, tex4ht's hook in \color, is empty. tex8web writes a mark where
+% the color is set and one with the same id where its group ends, and
+% text.lua's colors turns the pair into a span. The color is read in
+% \set@color, because xcolor's \color{red!50!black} calls \a:color twice.
+% Colors that are not the text's get no mark: tcolorbox's (tcbcol...) are
+% set on the box by tex8web-boxes.tex, a link's comes from the stylesheet
+% (hyperref's \HyColor@UseColor), and a \colorbox's background is written
+% by html4.4ht (color.4ht's \color@b@x)
 \bool_new:N \l__web_declared_bool
 \bool_new:N \l__web_own_bool
 \int_new:N \g__web_declared_int
@@ -148,7 +143,7 @@
         \bool_set_false:N \l__web_declared_bool
         \web@hex{.}\l__web_declared_tl
         \int_gincr:N \g__web_declared_int
-        % (\Tg doesn't leave vertical mode, which \HCode would)
+        % (\Tg, because \HCode would leave vertical mode)
         \Tg<span~class="tex8web-color"~data-id="\int_use:N \g__web_declared_int"
             ~data-color="\#\l__web_declared_tl"/>
         \cs_gset:cpe { __web_declared_ \int_use:N \g__web_declared_int : } {
@@ -172,12 +167,11 @@
         \cs_set:Npn \HyColor@UseColor #1 { \__web_own:n { \__web_HyColor_UseColor:n {#1} } }
     }
 }
-% the colors MathJax's math can name, for macros.lua to give it (it has no
-% xcolor): "name v,v,v" (values as xcolor has them, which macros.lua mixes
-% and rounds once) for each the document defines and each of xcolor's own
-% (which mixes like red!50!black start from), as the page ends. xcolor
-% mixes in a color's model, so gray and cmyk ones keep theirs; the rest,
-% which mix as rgb does, are in rgb
+% the colors the math can name, for macros.lua to define in MathJax:
+% "name v,v,v" for each color the document defines and each xcolor base
+% color, which mixes start from. Values are unrounded, in gray or cmyk for
+% those models and otherwise in rgb, because macros.lua mixes them as
+% xcolor does ("Macros in math" in CONTRIBUTING.md)
 \clist_const:Nn \c__web_colors_clist
     { black, blue, brown, cyan, darkgray, gray, green, lightgray, lime, magenta,
       olive, orange, pink, purple, red, teal, violet, white, yellow }
@@ -201,13 +195,13 @@
         }
 }
 \AtEndDocument{\__web_colors_element:}
-% colortbl's colors: \cellcolor, \rowcolor and \columncolor. tex4ht writes
-% the cell's rule with its own conversion (colortbl.4ht and html4.4ht's
-% \add:color). It gives a wrong rgb() for a name xcolor or dvips has and
-% CSS lacks, and truncates other colors. Either way the cell misses the
-% page's hex colors, which dark mode follows. So a color xcolor knows, a
-% name or an expression, goes through \web@hex. The colors tex4ht makes
-% itself, such as tblcol-1 or a color with a model, stay as they are.
+% colortbl's \cellcolor, \rowcolor, and \columncolor. tex4ht converts the
+% color for the cell's CSS rule itself (colortbl.4ht, html4.4ht's
+% \add:color): it writes a wrong rgb() for a name that xcolor or dvips has
+% and CSS lacks, and truncates other colors. Dark mode needs the hex colors
+% the rest of the page has, so a name or expression that xcolor knows goes
+% through \web@hex. Colors tex4ht makes, such as tblcol-1 or a color with a
+% model, stay as they are.
 \@ifpackageloaded{colortbl}{\web@needs{add:color}}{}
 \cs_if_exist:NT \add:color
     {
@@ -245,14 +239,14 @@
                 \web@needs{@rowc@lors}
                 \web@needs{halignTR}
                 \web@needs{o:noalign:}
-                % \rowcolors colors a row from array's row hooks. They run in
-                % array's own \halign, as old array's \everycr, which xcolor.4ht
-                % uses, did. tex4ht builds another \halign, so the color is set
-                % as tex4ht starts a row, in \halignTR. (html4.4ht's
-                % \Configure{rowcolors} never draws it) The color goes on the row,
-                % under a \rowcolor or \cellcolor on its cells, as in the PDF.
-                % \rowcolors' commands for each row, such as [\hline], are
-                % dropped: they can't run there.
+                % \rowcolors colors a row from array's row hooks, which run in
+                % array's \halign, as old array's \everycr did (xcolor.4ht
+                % relies on \everycr). tex4ht builds another \halign, so the
+                % color is set as tex4ht starts a row, in \halignTR; html4.4ht's
+                % \Configure{rowcolors} never draws it. The color goes on the
+                % row, under a \rowcolor or \cellcolor on its cells, as in the
+                % PDF. \rowcolors' commands for each row, such as [\hline], are
+                % dropped, because they cannot run there.
                 \cs_new_protected:Npn \__web_row_color:n #1
                     { \add:color { background-color } {#1} { \HRow - } }
                 \Configure { rowcolors } { \__web_row_color:n }
@@ -269,13 +263,13 @@
             }
     }
 \ExplSyntaxOff
-% links: hyperref's colors with colorlinks; otherwise the PDF draws boxes,
-% and the links keep the color of the text, underlined (css/tex8web.css).
-% In dark mode they are at another lightness, as the document's other
-% colors are. A link in color . keeps the color around it, as in the PDF.
-% Colored links and hidelinks' need no underline. tex4ht turns colorlinks
-% on itself, so count it as the document's when its hyperref options name
-% it, or its link colors aren't hyperref's defaults
+% links: hyperref's colors with colorlinks. Otherwise the PDF has boxes,
+% and the links keep the text color, underlined (css/tex8web.css). In dark
+% mode, link colors get another lightness and chroma. A link in color .
+% keeps the color around it, as in the PDF. Colored links and hidelinks get
+% no underline. tex4ht turns colorlinks on itself, so colorlinks counts as
+% the document's only when the hyperref options name it or the link colors
+% are not hyperref's defaults
 \ExplSyntaxOn
 \bool_new:N \l__web_colorlinks_bool
 \cs_new_protected:Npn \web@linkcolors {
@@ -302,16 +296,16 @@
 }
 \ExplSyntaxOff
 \@ifpackageloaded{hyperref}{\web@linkcolors}{}
-% pictures tex4ht generates (TikZ; \jobname0x.svg and so on) follow the
-% theme. (tex4ht inverts every picture named after the job in dark mode,
-% also when the page is set to light)
+% Pictures tex4ht generates (TikZ, as \jobname0x.svg and so on) follow the
+% theme. html5.4ht inverts every image named after the job under a dark
+% system setting, even when the reader picks the light theme
 \Css{img[src\string^="\jobname"] { filter: none; }}
 \Css{img[src\string^="\jobname"][src\string$="x.svg"] { filter: var(--tex8web-picture-filter, none); }}
 
 % --- layout -----------------------------------------------------------------
 
-% the current font's size, family, weight, style and variant as CSS, set
-% globally for after the box it's tried out in
+% the current font's size, family, weight, style, and variant as CSS, set
+% globally so they outlast the box the font is tried in
 \newcommand\web@readfont{%
     \xdef\web@size{\f@size pt}%
     \gdef\web@family{inherit}%
@@ -324,16 +318,15 @@
     \gdef\web@variant{normal}%
     \web@iffont\f@shape\scdefault{\gdef\web@variant{small-caps}}}
 
-% headings as much larger than the text as in the PDF (in the standard
-% classes' sizes), and a column as wide as the PDF's, in ems of the text.
-% With titlesec, a heading's size, family, weight, style and alignment are
-% those of its \titleformat (tex8web-hooks.sty), tried out in a box that's
-% thrown away, and the space above and below it that of its \titlespacing
-% (or the class's, which titlesec reads when it loads). A number as far
-% from its title as in the PDF: titlesec's space after the label, KOMA's
-% (the glue its \sectionformat ends with), amsart's \enspace (which its
-% \@sect puts there, not \@seccntformat), or LaTeX's \quad
-% (css/tex8web.css)
+% heading sizes relative to the text, as in the PDF (the standard classes'
+% sizes). With titlesec, a
+% heading's size, family, weight, style, and alignment come from its
+% \titleformat (tex8web-hooks.sty), tried in a box that is thrown away. Its
+% space above and below comes from its \titlespacing, or from the class,
+% which titlesec reads when it loads. The space between number and title,
+% as in the PDF: titlesec's space after the label, KOMA's (the glue its
+% \sectionformat ends with), amsart's \enspace (put there by its \@sect,
+% not \@seccntformat), or LaTeX's \quad (css/tex8web.css)
 \newcommand\web@headsize[2]{% name, size command
     \begingroup
         \def\web@font{#2}%
@@ -367,8 +360,8 @@
                 \fi\fi\fi
             \fi
             \web@readfont}%
-        % (by the commands in the format: tex4ht's \centering leaves the
-        % line's skips alone, latex.4ht)
+        % (alignment read from the commands in the format, because tex4ht's
+        % \centering leaves the line's skips alone, latex.4ht)
         \gdef\web@align{left}%
         \web@formathas\center{\gdef\web@align{center}}%
         \web@formathas\centering{\gdef\web@align{center}}%
@@ -387,8 +380,8 @@
             --tex8web-#1-variant: \web@variant; --tex8web-#1-align: \web@align; }}%
     \fi
 }
-% a \paragraph or \subparagraph that titlesec gives any shape but runin, on
-% a line of its own
+% a \paragraph or \subparagraph with a titlesec shape other than runin is
+% set on a line of its own
 \newcommand\web@headdisplay[1]{%
     \ifcsname web@titleshape@#1\endcsname
         \edef\web@a{\csname web@titleshape@#1\endcsname}\def\web@b{runin}%
@@ -396,10 +389,9 @@
     \fi
 }
 % titlesec's {left}{right}{before}{after}{afterindent}: before and after
-% as \web@before and \web@after, in the text's font, as titlesec sets them,
-% and after in the text's ems, as \web@aftertext
-% (\ttl@assign reads its *n form). (Not left in \@tempskipa: a format's
-% \center sets it)
+% in \web@before and \web@after, read in the text's font as titlesec reads
+% them (\ttl@assign handles the *n form), and after in the text's ems in
+% \web@aftertext. Not kept in \@tempskipa, which a format's \center sets
 \def\web@titlespacing#1#2#3#4#5{%
     \ttl@assign\@tempskipa#3\relax\beforetitleunit
     \edef\web@before{\the\dimexpr\@tempskipa}%
@@ -409,10 +401,11 @@
     \global\let\web@spacing\@empty}
 % without titlesec, the class's \@startsection{name}{level}{indent}{before}
 % {after}{style}, which tex4ht keeps as \no@<name> (latex.4ht): the space
-% above (whose sign only says whether the text after is indented) and
-% below, read in the text's font, as LaTeX reads them. Not for a run-in
-% heading, whose space below is negative. (tex4ht keeps one for each
-% heading of a class it has a .4ht for, which makes \<name> its \rdef:sec)
+% above and below, read in the text's font as LaTeX reads them. The sign of
+% the space above only says whether the text after is indented. Skipped for
+% a run-in heading, whose space below is negative. tex4ht keeps \no@<name>
+% for each heading of a class it has a .4ht for, and makes \<name> its
+% \rdef:sec
 \def\web@startsection#1{%
     \edef\web@a{\expandafter\noexpand\csname rdef:sec\endcsname{#1}}%
     \expandafter\ifx\csname#1\endcsname\web@a\web@needs{no@#1}\fi
@@ -434,13 +427,13 @@
 \newcommand\web@formathas[2]{%
     \def\web@a{\in@#1}\expandafter\web@a\expandafter{\web@font}\ifin@#2\fi}
 % #3 if font macros #1 and #2 name the same font (\ifx alone would also
-% compare whether they're \long)
+% compare whether they are \long)
 \newcommand\web@iffont[3]{%
     \edef\web@a{#1}\edef\web@b{#2}\ifx\web@a\web@b#3\fi}
-% (and the title in the size its text starts with, \title{\Large ..}, as
-% in \maketitle's {\LARGE \@title}; \in@ is given the text as characters,
-% as a group in it, \title{{\color{blue} ..}}, would end \in@'s own
-% definition early and typeset the rest before <title>)
+% the title in the size its text starts with (\title{\Large ..}), as in
+% \maketitle's {\LARGE \@title}. \in@ is given the text detokenized: a
+% group in it, \title{{\color{blue} ..}}, would end the definition of \in@
+% early and typeset the rest before <title>
 \long\def\web@titlefirst#1#2\@nil{%
     \edef\web@a{\noexpand\in@{\detokenize{#1}}%
         {\detokenize{\tiny\scriptsize\footnotesize\small\normalsize\large\Large\LARGE\huge\Huge}}}%
@@ -453,12 +446,12 @@
 \web@headsize{subsubsection}{\normalsize}
 \web@headsize{paragraph}{\normalsize}
 \web@headsize{subparagraph}{\normalsize}
-% (and in a class with chapters, a part's or chapter's title in report's and
-% book's \Huge, its label in \huge, as their \@part and \@makechapterhead
-% set them; tex4ht replaces these, report.4ht. Under a \titleformat, the
-% label is in the format's font. titlesec's spacing of a chapter holds only
-% under its \titleformat, and a part's is the fill of a page of its own,
-% titlesec.sty)
+% in a class with chapters, a part or chapter title in report's and book's
+% \Huge, and its label in \huge, as their \@part and \@makechapterhead set
+% them; tex4ht replaces these commands (report.4ht). Under a \titleformat,
+% the label is in the format's font. titlesec's spacing applies to a
+% chapter only under its \titleformat, and a part's spacing is the fill of
+% a page of its own (titlesec.sty)
 \newcommand\web@bighead[1]{%
     \begingroup
         \ifcsname web@titlefont@#1\endcsname
@@ -479,11 +472,11 @@
 \fi
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
-% With tocloft, each level's entries in the font of its \cft<level>font,
-% tried out as a heading's is, and its size as a multiple of the text's.
-% (tex4ht's own entries don't use it, so the class's fonts are in
-% tex/tex8web-text.tex. The lists of figures and tables stay in the text's
-% font)
+% With tocloft, the table of contents entries of each level in the font of
+% its \cft<level>font, tried as a heading font is, with the size as a
+% multiple of the text size. tex4ht's entries do not use \cft<level>font,
+% so the class's fonts are in tex/tex8web-text.tex. The lists of figures
+% and tables stay in the text font
 \newcommand\web@tocfont[2]{% tocloft's name, level
     \ifcsname cft#1font\endcsname
         \begingroup
@@ -505,24 +498,25 @@
 \fi
 \web@Css{:root { --tex8web-textwidth: \web@em\web@textwidth; }}
 % \WebLikePDF: the PDF's text size, leading, paragraph indent and space,
-% and justified, hyphenated text (css/tex8web.css), in place of the page's
-% own. (A config runs it as the document starts, at its normal size)
+% and justified, hyphenated text (css/tex8web.css), in place of the web
+% defaults. A config runs it as the document starts, at the normal size
 \newcommand\WebLikePDF{%
     \web@Css{:root { --tex8web-pdf-size: \f@size pt;
         --tex8web-pdf-leading: \web@ratio\baselineskip;
         --tex8web-parindent: \web@em\parindent; --tex8web-parskip: \web@em\parskip; }}%
     \web@htmlclass{tex8web-like-pdf}}
-% A footnote's leading as in the PDF, as the abstract's below
+% footnote leading as in the PDF, a fraction of the text's, as the
+% abstract's below
 \begingroup
     \dimen@\baselineskip
     \footnotesize
     \web@Css{:root { --tex8web-footnote-leading: \web@over\baselineskip\dimen@; }}
 \endgroup
-% The abstract's leading as in the PDF, a fraction of the text's: tex4ht
-% sets \small as a span, which leaves the paragraph's own line height at the
-% text's. And its margins, in ems of the text, when it is a list, as
-% article's quotation is. (The class's \abstract sets the size; a second
-% abstract is set as the first)
+% abstract leading as in the PDF, as a fraction of the text's: tex4ht sets
+% \small as a span, which leaves the paragraph's line height at the text's.
+% When the abstract is a list, as article's quotation is, also its margins
+% in ems of the text. The class's \abstract sets the size. A second
+% abstract is set as the first
 \ifdefined\abstract
     \let\web@abstract\abstract
     \renewcommand\abstract{%

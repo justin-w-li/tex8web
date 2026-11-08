@@ -1,7 +1,7 @@
 -- Reading files, and quoting their names for the shell.
 local M = {}
 
--- the file's text, or nil if it can't be read
+-- the file's text, or nil if it cannot be read
 function M.read(path)
   local f = io.open(path)
   if not f then return end

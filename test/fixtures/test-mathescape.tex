@@ -1,11 +1,11 @@
-% A test for tex8web: the escaping of each formula's source for the page,
-% which tex8web-math.tex does in place of tex4ht's (\alteqtoks). Every
-% input where the two could differ is here: &, < and > in every kind of
-% math, \par followed by a space (as \detokenize writes a control word), by
-% a letter (\partial, \parallel, \parity), by a character that isn't one
-% (\\par in a matrix is a row end and the letters par), at the end of a
-% source (\\par before an \end), and non-ASCII text. test/run.mjs builds
-% the page a second time with tex4ht's own escaping and compares them.
+% The escaping of each formula's source, which tex8web-math.tex does in
+% place of tex4ht's \alteqtoks. Every input where the two could differ is
+% here: &, <, and > in every kind of math; \par followed by a space (as
+% \detokenize writes a control word), by a letter (\partial, \parallel,
+% \parity), or by a character that is not a letter (\\par in a matrix is a
+% row end and the letters par); \\par at the end of a source, before an
+% \end; and non-ASCII text. test/run.mjs builds the page again with
+% tex4ht's escaping (test-mathescape-stock.cfg) and compares the two.
 \documentclass{article}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
