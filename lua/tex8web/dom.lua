@@ -32,6 +32,12 @@ function M.class_matches(el, pattern)
   return any_class(el, function(class) return class:match("^" .. pattern .. "$") ~= nil end)
 end
 
+-- whether a class is one of tex4ht's font classes (cmti-10, ptmr7t-,
+-- ec-qtmr-10)
+function M.is_font_class(class)
+  return class:find("%-$") ~= nil or class:find("%-%d") ~= nil
+end
+
 function M.elements(el)
   local elements = {}
   for _, node in ipairs(el:get_children()) do

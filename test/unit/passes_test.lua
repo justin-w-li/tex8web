@@ -131,12 +131,30 @@ return {
       .. "<span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span><span class='tex8web-nbsp'>\u{A0}</span>(<a href='#e'>1</a>)</span> and <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(z\\)</span><span class='tex8web-nbsp'>\u{A0}</span></span><em>a phrase</em></p>")
   end,
 
-  ["text.no_break_spaces: letters right after the math kept with it, also in a span of their font"] = function()
-    local d = parse("<p>the <span class=\"mathjax-inline\">\\(i\\)</span>th row and "
-      .. "<span class=\"cmti-10\">the </span><span class=\"mathjax-inline\">\\(n\\)</span><span class=\"cmti-10\">th row</span></p>")
+  ["text.no_break_spaces: the characters right before and after the math, up to whitespace, kept with it, also in a span of their font"] = function()
+    local d = parse("<p>the <span class=\"mathjax-inline\">\\(i\\)</span>th row, an (<span class=\"mathjax-inline\">\\(n\\)</span>-cell) and "
+      .. "<span class=\"cmti-10\">the (</span><span class=\"mathjax-inline\">\\(n\\)</span><span class=\"cmti-10\">th row</span></p>")
     text.no_break_spaces(d)
-    equal(body(d), "<p>the <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(i\\)</span>th</span> row and "
-      .. "<span class='cmti-10'>the </span><span class='tex8web-nowrap'><span class='mathjax-inline'>\\(n\\)</span><span class='cmti-10'>th</span></span><span class='cmti-10'> row</span></p>")
+    equal(body(d), "<p>the <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(i\\)</span>th</span> row, an "
+      .. "<span class='tex8web-nowrap'>(<span class='mathjax-inline'>\\(n\\)</span>-cell)</span> and "
+      .. "<span class='cmti-10'>the </span><span class='tex8web-nowrap'><span class='cmti-10'>(</span><span class='mathjax-inline'>\\(n\\)</span><span class='cmti-10'>th</span></span><span class='cmti-10'> row</span></p>")
+  end,
+
+  ["text.no_break_spaces: a ~ in a span of its font, before or after the math, kept with it"] = function()
+    local d = parse("<p><span class=\"cmti-10\">For all</span><span class=\"cmti-10\">\u{A0}</span><span class=\"mathjax-inline\">\\(x\\)</span>"
+      .. "<span class=\"cmti-10\">\u{A0}and so on</span></p>")
+    text.no_break_spaces(d)
+    local nbsp = "<span class='tex8web-nbsp'>\u{A0}</span>"
+    equal(body(d), "<p><span class='cmti-10'>For all</span><span class='tex8web-nowrap'><span class='cmti-10'>" .. nbsp .. "</span>"
+      .. "<span class='mathjax-inline'>\\(x\\)</span><span class='cmti-10'>" .. nbsp .. "and</span></span><span class='cmti-10'> so on</span></p>")
+  end,
+
+  ["text.no_break_spaces: a box or a term after the math not split"] = function()
+    local d = parse("<p>the <span class=\"mathjax-inline\">\\(i\\)</span><span class=\"fbox\">th row</span> and "
+      .. "<span class=\"mathjax-inline\">\\(m\\)</span><span class=\"tex8web-term\">th power</span></p>")
+    local before = body(d)
+    text.no_break_spaces(d)
+    equal(body(d), before)
   end,
 
   ["text.hfill: the rest of each line after its last \\hfill in a span, up to a <br>, a block or a display; in a paragraph, its line too"] = function()

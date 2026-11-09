@@ -206,7 +206,7 @@ const measured = {
 // mhchem's \ce, in text and in a heading, is an inline formula without
 // tex4ht's \texttt, whose span tex4ht splits at a line break of the HTML.
 const typeset = {
-  'test-mhchem': [/<\/a>The <mjx-container/, /forms acid: <mjx-container/],
+  'test-mhchem': [/<\/a>The <mjx-container/, /forms acid: <span class='tex8web-nowrap'><mjx-container/],
   'test': [
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 TEX-SO'>\(/,
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c5B TEX-LO'>\[/,
@@ -265,7 +265,7 @@ const speech = {
     /aria-label='3 times m s to the negative 1 power'/, /aria-label='2 percent'/, /aria-label='3 percent'/, /aria-label='1 K'/,
     /aria-label='30 degrees'/, /aria-label='4 degrees C'/, /aria-label='90 degrees'/,
     /aria-label='20 degrees C'/, /aria-label='25 degrees C'/, /aria-label='A raised to the composed with power'/,
-    /, 1\.5\u202Fm, /,
+    / 1\.5\u202Fm, /,
     /aria-label='v equals 3 times m s to the negative 1 power'/,
     /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,
     /aria-label='E equals 1\.6 times 10 to the negative 19 power J Label 1'/],
@@ -588,8 +588,8 @@ const thin = {
 const math = "<mjx-container(?:(?!</mjx-container>)[^])*</mjx-container>";
 const tie = "<span class='tex8web-nbsp'>.</span>";
 const ties = {
-  'test-nowrap': [new RegExp(`value of<span class='tex8web-nowrap'>${tie}${math}</span>, keeps`),
-    new RegExp(`p\\.<span class='tex8web-nowrap'>\u202F${math}</span>\\. A`),
+  'test-nowrap': [new RegExp(`value of<span class='tex8web-nowrap'>${tie}${math},</span> keeps`),
+    new RegExp(`p\\.<span class='tex8web-nowrap'>\u202F${math}\\.</span> A`),
     new RegExp(`as in <span class='tex8web-nowrap'>${math}${tie}and,</span> <span class='tex8web-nowrap'>${math}\u202Fcm,</span> and\\s+<span class='tex8web-nowrap'>${math}${tie}${math}\\.</span>`),
     new RegExp(`the set of<span class='tex8web-nowrap'>${tie}${math}${tie}elements</span> is <span class='tex8web-nowrap'>${math}${tie}times</span> the`),
     new RegExp(`and <span class='tex8web-nowrap'>${math}\u202Fm<sup class='textsuperscript'><span class='cmr-9'>2</span></sup></span> is`)],
@@ -603,7 +603,15 @@ const ties = {
     // their font after the math
     new RegExp(`<span class='cmti-10'>The </span><span class='tex8web-nowrap'>${math}<span class='cmti-10'>th</span></span><span class='cmti-10'> row is zero\\.</span>`),
     new RegExp(`<span class='cmti-10'>the </span><span class='tex8web-nowrap'>${math}<span class='cmti-10'>th</span></span><span class='cmti-10'> term </span>of`),
-    new RegExp(`<span class='cmr-8'>See the </span><span class='tex8web-nowrap'><span class='mathjax-inline'[^>]*>${math}</span><span class='cmr-8'>th</span></span><span class='cmr-8'> entry\\.</span>`)],
+    new RegExp(`<span class='cmr-8'>See the </span><span class='tex8web-nowrap'><span class='mathjax-inline'[^>]*>${math}</span><span class='cmr-8'>th</span></span><span class='cmr-8'> entry\\.</span>`),
+    // the characters right before and after the math, up to whitespace
+    new RegExp(`an <span class='tex8web-nowrap'>${math}-dimensional</span> space, the <span class='tex8web-nowrap'>${math}\u00E8me</span> terme, the vector <span class='tex8web-nowrap'>\\(${math},</span> <span class='tex8web-nowrap'>${math}\\),</span> and <span class='tex8web-nowrap'>${math}\u2019s</span> value\\.`),
+    // a ~ in a span of its font, in a theorem or a footnote
+    new RegExp(`<span class='cmti-10'>For all</span><span class='tex8web-nowrap'><span class='cmti-10'>${tie}</span>${math}<span class='cmti-10'>${tie}and</span></span><span class='cmti-10'> so on\\.</span>`),
+    new RegExp(`<span class='cmr-8'>See Lemma</span><span class='tex8web-nowrap'><span class='cmr-8'>${tie}</span><span class='mathjax-inline'[^>]*>${math} </span></span>`),
+    // but a box or a term after the math is not split, which would give
+    // two boxes, or a term with two ids
+    new RegExp(`the ${math}<span class='fbox'[^>]*>th row</span>, the ${math}<span class='framebox-l'[^>]*>two words</span>, and\\s+the ${math}<span class='tex8web-term' id='term-th-power'>th power</span> of it\\.`)],
   // a ~ in a span of its font, in \small text, kept with the math
   'test-localsize': [new RegExp(`<span class='cmbx-10'>if</span><span class='tex8web-nowrap'><span class='cmr-10'>${tie}</span><span class='mathjax-inline'[^>]*>${math}</span><span class='cmr-10'>${tie}</span><span class='cmbx-10'>then</span></span>`)],
 };
@@ -1055,10 +1063,10 @@ const sizes = {
     /<h1 class='titleHead'>Groups of order <mjx-container/, /<\/a>Sizes of <mjx-container/,
     new RegExp(`An abstract with </span>${sized('0.91324')}`),
     /and a display <\/span><span class='mathjax-block' style='--tex8web-math-size: 0\.91324'><mjx-container/,
-    new RegExp(`Large text with </span>${sized('1.09589')}`),
+    new RegExp(`Large text with </span><span class='tex8web-nowrap'>${sized('1.09589')}`),
     new RegExp(`A note with </span>${sized('0.82191')}`),
-    new RegExp(`Small text with </span>${sized('0.91324')}`),
-    new RegExp(`A small theorem with </span>${sized('0.91324')}`),
+    new RegExp(`Small text with </span><span class='tex8web-nowrap'>${sized('0.91324')}`),
+    new RegExp(`A small theorem with </span><span class='tex8web-nowrap'>${sized('0.91324')}`),
     /<div class='mathjax-env mathjax-align' style='--tex8web-math-size: 0\.91324'><mjx-container/,
     /--tex8web-list-topsep: 0\.3653em; --tex8web-list-itemsep: 0\.3653em; --tex8web-list-indent: 2\.5em; --tex8web-list-labelsep: 0\.5em'>[^]*?first/,
     /--tex8web-list-topsep: 0\.54794em; --tex8web-list-itemsep: 0\.54794em; --tex8web-list-indent: 2\.5em; --tex8web-list-labelsep: 0\.5em'>[^]*?one/,

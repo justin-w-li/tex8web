@@ -1,5 +1,6 @@
 \documentclass{article}
 \newtheorem{theorem}{Theorem}
+\newcommand{\term}[1]{#1}
 \begin{document}
 Letters right after inline math stay on the line of the math, as in the
 $i$th row, the $n$th and $(n+1)$st terms, and a gap of $-4$pt. So do
@@ -10,4 +11,14 @@ entry.
 
 So is \emph{the $n$th term} of the sequence, and the last
 entry.\footnote{See the $k$th entry.}
+
+So do the characters right before and after the math up to the next
+space, as in an $n$-dimensional space, the $n$\`eme terme, the vector
+($x$, $y$), and $x$'s value.
+
+\begin{theorem}For all~$x$~and so on.\end{theorem}
+And a tie in a footnote.\footnote{See Lemma~$2$ and $3$.}
+
+A box or a term right after the math stays whole: the $i$\fbox{th row},
+the $j$\framebox[3cm][l]{two words}, and the $m$\term{th power} of it.
 \end{document}

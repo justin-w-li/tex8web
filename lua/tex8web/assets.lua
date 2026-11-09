@@ -2,6 +2,7 @@
 -- PDF, and tex8web.js; and the stylesheet, with css/tex8web.css, the font
 -- rules, and tex4ht's colors adjusted for dark mode. Each file is listed
 -- with tex4ht's output files, so make4ht -d copies it too.
+local dom = require "tex8web.dom"
 local files = require "tex8web.files"
 local prerender = require "tex8web.prerender"
 
@@ -95,11 +96,10 @@ local function roles_of(context, document)
     if font and installed(font) then roles[role] = font end
     if font then chosen[font] = true end
   end
-  -- (tex4ht's font classes: ptmr7t-, ec-qtmr-10)
   local classes = {}
   document:traverse_elements(function(el)
     for class in (el:get_attribute("class") or ""):gmatch("%S+") do
-      if class:find("%-$") or class:find("%-%d") then classes[#classes + 1] = class end
+      if dom.is_font_class(class) then classes[#classes + 1] = class end
     end
   end)
   for _, font in ipairs(known) do

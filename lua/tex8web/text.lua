@@ -254,11 +254,15 @@ local function is_narrow(node)
   return node:is_text() and node:get_text() == narrow
 end
 
--- the text of a span that holds only text, as tex4ht writes a font
--- (<span class="cmti-10">), or nil. A span with an id, or of math, is left
--- out, as it may not be split.
+-- the text of a span of tex4ht's fonts (<span class="cmti-10">) that holds
+-- only text, or nil. Other spans, as an \fbox or a term, are left out, as
+-- splitting one would give two boxes or two terms.
 local function span_text(node)
-  if not node:is_element() or node:get_element_name() ~= "span" or node:get_attribute("id") or is_math(node) then return end
+  local classes = node:is_element() and node:get_element_name() == "span" and node:get_attribute("class")
+  if not (classes and classes:find("%S")) then return end
+  for class in classes:gmatch("%S+") do
+    if not dom.is_font_class(class) then return end
+  end
   local children = node:get_children()
   return #children == 1 and children[1]:is_text() and children[1]:get_text() or nil
 end
@@ -288,10 +292,23 @@ local function next_child(children, i)
   return i
 end
 
--- (text, or a span of text, that starts with a letter, as "th" after $i$)
+-- the text of node, if it is text or a span of text in tex4ht's fonts
+local function text_of(node)
+  return node and (node:is_text() and node:get_text() or span_text(node))
+end
+
+-- (text, or a span of text, that starts with a character other than
+-- whitespace, as "th" after $i$)
 local function is_suffix(node)
-  local text = node and (node:is_text() and node:get_text() or span_text(node))
-  return text and text:find("^%a") ~= nil
+  return (text_of(node) or ""):find("^%S") ~= nil
+end
+
+-- a node like node, text or a span of text in tex4ht's fonts, with text
+local function with_text(el, node, text)
+  if node:is_text() then return el:create_text_node(text) end
+  local copy = node:copy_node()
+  dom.set_children(copy, {copy:create_text_node(text)})
+  return copy
 end
 
 -- the index of the last child, from i on, before the first whitespace. A
@@ -300,20 +317,11 @@ end
 local function word_end(el, children, i)
   while children[i] do
     local child = children[i]
-    local text = span_text(child)
-    if child:is_text() then
-      local head, rest = child:get_text():match("^(%S*)(.*)$")
-      if rest ~= "" then
-        children[i] = el:create_text_node(head)
-        table.insert(children, i + 1, el:create_text_node(rest))
-        return i
-      end
-    elseif text and text:find("^%S+%s") then
-      local head, rest = text:match("^(%S+)(.*)$")
-      local tail = child:copy_node()
-      dom.set_children(tail, {tail:create_text_node(rest)})
-      dom.set_node_text(child:get_children()[1], head)
-      table.insert(children, i + 1, tail)
+    local head, rest = (text_of(child) or ""):match("^(%S*)(%s.*)$")
+    if head == "" then return i - 1 end
+    if head then
+      children[i] = with_text(el, child, head)
+      table.insert(children, i + 1, with_text(el, child, rest))
       return i
     elseif child:is_element() and child:get_text():find("%s") then
       return i - 1
@@ -323,13 +331,28 @@ local function word_end(el, children, i)
   return i - 1
 end
 
+-- the characters other than whitespace at the end of the last node in
+-- wrapped, if it is text or a span of text, taken out of wrapped
+local function word_start(el, wrapped)
+  local node = wrapped[#wrapped]
+  local head, tail = (text_of(node) or ""):match("^(.-)(%S+)$")
+  if not tail then return end
+  if head == "" then
+    wrapped[#wrapped] = nil
+    return node
+  end
+  wrapped[#wrapped] = with_text(el, node, head)
+  return with_text(el, node, tail)
+end
+
 -- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
 -- as wide as a space, so each is marked for the CSS to narrow. A browser
 -- may break a line before and after an atomic inline, as MathJax's
 -- inline-block mjx-math is, even next to a no-break space or a letter
 -- (CSS Text 3, section 5.1). So a no-break space or a narrow one before
 -- inline math (Lemma~$1$, p.\,$5$) is wrapped with the math, and so are
--- letters right after it ($i$th). Safari (26.5 and 27.0) also breaks
+-- the characters right before and after it, up to whitespace ($i$th,
+-- ($x$), $n$-dimensional). Safari (26.5 and 27.0) also breaks
 -- between inline math and a no-break space after it ($x$~and), even when
 -- the two are wrapped, unless the wrapper reaches the next whitespace.
 -- Verbatim text, alltt, and listings are left as they are.
@@ -345,11 +368,18 @@ function M.no_break_spaces(document)
       local j = next_child(children, i)
       local inline = is_tie(children[i]) and is_inline_math(children[j]) and j
         or is_inline_math(children[i]) and i
-      local after = inline and next_child(children, inline)
-      local last = inline and (is_tie(children[after]) or is_suffix(children[after]))
-        and word_end(el, children, after) or inline ~= i and inline
-      if last then
+      local last, before
+      if inline then
+        local after = next_child(children, inline)
+        last = inline
+        if is_tie(children[after]) or is_suffix(children[after]) then
+          last = word_end(el, children, after)
+        end
+        if inline == i then before = word_start(el, wrapped) end
+      end
+      if last and (last ~= i or before) then
         local nowrap = el:create_element("span", {class = "tex8web-nowrap"})
+        if before then nowrap:add_child_node(before) end
         for n = i, last do nowrap:add_child_node(children[n]) end
         wrapped[#wrapped + 1] = nowrap
         i = last + 1
