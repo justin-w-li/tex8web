@@ -720,6 +720,13 @@ const qed = {
     /See <a href='#s'>1</,
     /^(?:(?!mjx-c class='mjx-c3D' space)[^])*(?:mjx-c class='mjx-c3D' space='4'(?:(?!mjx-c class='mjx-c3D' space)[^])*){3}$/,
   ],
+  // eqnarray: a number on each row but the one with \nonumber, and none in
+  // eqnarray*. A \ref to a row's \label gives its number and leads to it,
+  // and the equation after is the third, as in the PDF
+  'test-eqnarray': [
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*See <a href='#\1'>1<!--[^>]*--><\/a>, <a href='#\2'>2<!--[^>]*--><\/a>, and <a href='#[^']+'>3<!--/,
+    /^(?:(?!<mjx-labels)[^])*(?:<mjx-labels(?:(?!<mjx-labels)[^])*){2}$/,
+  ],
 };
 
 // Text after the last \hfill of a line, up to the end of the paragraph or of

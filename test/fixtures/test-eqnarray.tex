@@ -1,0 +1,18 @@
+% LaTeX's eqnarray as in the PDF: each row numbered, unless it has
+% \nonumber, and a \ref to a row's \label gives the row's number.
+% eqnarray* numbers no row.
+\documentclass{article}
+\begin{document}
+\section{S}
+\begin{eqnarray}
+a & = & b \label{eq:first} \\
+  & = & c \nonumber \\
+  & = & d \label{eq:last}
+\end{eqnarray}
+\begin{eqnarray*}
+e & = & f \\
+  & = & g
+\end{eqnarray*}
+\begin{equation} h = i \label{eq:after} \end{equation}
+See \ref{eq:first}, \ref{eq:last}, and \ref{eq:after}.
+\end{document}
