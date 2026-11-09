@@ -239,13 +239,6 @@ local function mark_nbsp(el)
   return children
 end
 
-local function has_nbsp(el)
-  for _, child in ipairs(el:get_children()) do
-    if child:is_text() and next_space(child:get_text(), 1) then return true end
-  end
-  return false
-end
-
 -- (a narrowed space would misalign the columns of code)
 local function is_verbatim(el)
   local name = el:get_element_name()
@@ -261,12 +254,31 @@ local function is_narrow(node)
   return node:is_text() and node:get_text() == narrow
 end
 
+-- the text of a span that holds only text, as tex4ht writes a font
+-- (<span class="cmti-10">), or nil. A span with an id, or of math, is left
+-- out, as it may not be split.
+local function span_text(node)
+  if not node:is_element() or node:get_element_name() ~= "span" or node:get_attribute("id") or is_math(node) then return end
+  local children = node:get_children()
+  return #children == 1 and children[1]:is_text() and children[1]:get_text() or nil
+end
+
+-- (also a ~ alone in a span of its font, as in \small text)
 local function is_tie(node)
-  return node and (is_nbsp(node) or is_narrow(node))
+  if not node then return false end
+  local text = span_text(node)
+  return is_nbsp(node) or is_narrow(node) or text == "\u{A0}" or text == narrow
 end
 
 local function is_inline_math(node)
   return node and dom.has_class(node, "mathjax-inline")
+end
+
+local function has_nbsp_or_math(el)
+  for _, child in ipairs(el:get_children()) do
+    if is_inline_math(child) or child:is_text() and next_space(child:get_text(), 1) then return true end
+  end
+  return false
 end
 
 -- the index of the first text or element child after i (the math may
@@ -276,25 +288,19 @@ local function next_child(children, i)
   return i
 end
 
--- (text that starts with a letter, as "th" after $i$)
+-- (text, or a span of text, that starts with a letter, as "th" after $i$)
 local function is_suffix(node)
-  return node and node:is_text() and node:get_text():find("^%a") ~= nil
-end
-
-local function has_suffix(el)
-  local children = el:get_children()
-  for i, child in ipairs(children) do
-    if is_inline_math(child) and is_suffix(children[next_child(children, i)]) then return true end
-  end
-  return false
+  local text = node and (node:is_text() and node:get_text() or span_text(node))
+  return text and text:find("^%a") ~= nil
 end
 
 -- the index of the last child, from i on, before the first whitespace. A
--- text child is split there, and an element with whitespace in it ends
--- the run before it.
+-- text child, or a span of text, is split there. Another element with
+-- whitespace in it ends the run before it.
 local function word_end(el, children, i)
   while children[i] do
     local child = children[i]
+    local text = span_text(child)
     if child:is_text() then
       local head, rest = child:get_text():match("^(%S*)(.*)$")
       if rest ~= "" then
@@ -302,6 +308,13 @@ local function word_end(el, children, i)
         table.insert(children, i + 1, el:create_text_node(rest))
         return i
       end
+    elseif text and text:find("^%S+%s") then
+      local head, rest = text:match("^(%S+)(.*)$")
+      local tail = child:copy_node()
+      dom.set_children(tail, {tail:create_text_node(rest)})
+      dom.set_node_text(child:get_children()[1], head)
+      table.insert(children, i + 1, tail)
+      return i
     elseif child:is_element() and child:get_text():find("%s") then
       return i - 1
     end
@@ -312,18 +325,18 @@ end
 
 -- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
 -- as wide as a space, so each is marked for the CSS to narrow. A browser
--- still breaks the line between one and the math after it (Lemma~$1$), or
--- between a narrow no-break space and the math (p.\,$5$), so the two are
--- wrapped together. Safari (26.5 and 27.0) also breaks between inline math
--- and a no-break space after it ($x$~and), even when the two are wrapped,
--- unless the wrapper reaches the next whitespace. A browser also breaks
--- between inline math and letters right after it ($i$th), where TeX does
--- not, so those letters are wrapped with the math too. Verbatim text,
--- alltt, and listings are left as they are.
+-- may break a line before and after an atomic inline, as MathJax's
+-- inline-block mjx-math is, even next to a no-break space or a letter
+-- (CSS Text 3, section 5.1). So a no-break space or a narrow one before
+-- inline math (Lemma~$1$, p.\,$5$) is wrapped with the math, and so are
+-- letters right after it ($i$th). Safari (26.5 and 27.0) also breaks
+-- between inline math and a no-break space after it ($x$~and), even when
+-- the two are wrapped, unless the wrapper reaches the next whitespace.
+-- Verbatim text, alltt, and listings are left as they are.
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)
     local class = el:get_attribute("class")
-    if class == "tex8web-nbsp" or class == "tex8web-nowrap" or not (has_nbsp(el) or has_suffix(el))
+    if class == "tex8web-nbsp" or class == "tex8web-nowrap" or not has_nbsp_or_math(el)
         or dom.closest(el, function(up) return is_math(up) or is_verbatim(up) end) then
       return
     end

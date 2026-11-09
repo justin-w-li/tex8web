@@ -598,7 +598,14 @@ const ties = {
   'test-mathsuffix': [new RegExp(`the\\s+<span class='tex8web-nowrap'>${math}th</span> row`),
     new RegExp(`the <span class='tex8web-nowrap'>${math}th</span>\\s+and <span class='tex8web-nowrap'>${math}st</span> terms`),
     new RegExp(`of <span class='tex8web-nowrap'>${math}pt\\.</span> So`),
-    new RegExp(`the<span class='tex8web-nowrap'>${tie}${math}th</span>\\s+entry`)],
+    new RegExp(`the<span class='tex8web-nowrap'>${tie}${math}th</span>\\s+entry`),
+    // and in italic or a smaller size, where the letters are in a span of
+    // their font after the math
+    new RegExp(`<span class='cmti-10'>The </span><span class='tex8web-nowrap'>${math}<span class='cmti-10'>th</span></span><span class='cmti-10'> row is zero\\.</span>`),
+    new RegExp(`<span class='cmti-10'>the </span><span class='tex8web-nowrap'>${math}<span class='cmti-10'>th</span></span><span class='cmti-10'> term </span>of`),
+    new RegExp(`<span class='cmr-8'>See the </span><span class='tex8web-nowrap'><span class='mathjax-inline'[^>]*>${math}</span><span class='cmr-8'>th</span></span><span class='cmr-8'> entry\\.</span>`)],
+  // a ~ in a span of its font, in \small text, kept with the math
+  'test-localsize': [new RegExp(`<span class='cmbx-10'>if</span><span class='tex8web-nowrap'><span class='cmr-10'>${tie}</span><span class='mathjax-inline'[^>]*>${math}</span><span class='cmr-10'>${tie}</span><span class='cmbx-10'>then</span></span>`)],
 };
 
 // A \tikz picture as wide as what it draws: a circle at the origin, on which

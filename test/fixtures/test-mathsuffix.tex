@@ -1,7 +1,13 @@
 \documentclass{article}
+\newtheorem{theorem}{Theorem}
 \begin{document}
 Letters right after inline math stay on the line of the math, as in the
 $i$th row, the $n$th and $(n+1)$st terms, and a gap of $-4$pt. So do
 the letters after math that follows a no-break space, as in the~$k$th
 entry.
+
+\begin{theorem}The $i$th row is zero.\end{theorem}
+
+So is \emph{the $n$th term} of the sequence, and the last
+entry.\footnote{See the $k$th entry.}
 \end{document}

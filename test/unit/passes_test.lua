@@ -131,6 +131,14 @@ return {
       .. "<span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span><span class='tex8web-nbsp'>\u{A0}</span>(<a href='#e'>1</a>)</span> and <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(z\\)</span><span class='tex8web-nbsp'>\u{A0}</span></span><em>a phrase</em></p>")
   end,
 
+  ["text.no_break_spaces: letters right after the math kept with it, also in a span of their font"] = function()
+    local d = parse("<p>the <span class=\"mathjax-inline\">\\(i\\)</span>th row and "
+      .. "<span class=\"cmti-10\">the </span><span class=\"mathjax-inline\">\\(n\\)</span><span class=\"cmti-10\">th row</span></p>")
+    text.no_break_spaces(d)
+    equal(body(d), "<p>the <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(i\\)</span>th</span> row and "
+      .. "<span class='cmti-10'>the </span><span class='tex8web-nowrap'><span class='mathjax-inline'>\\(n\\)</span><span class='cmti-10'>th</span></span><span class='cmti-10'> row</span></p>")
+  end,
+
   ["text.hfill: the rest of each line after its last \\hfill in a span, up to a <br>, a block or a display; in a paragraph, its line too"] = function()
     local mark = [[<span class="tex8web-hfill-mark"></span>]]
     local fill = "<span class='tex8web-hfill-gap'> </span><span class='tex8web-hfill'>"
