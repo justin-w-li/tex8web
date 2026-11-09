@@ -233,6 +233,11 @@ const typeset = {
     /<mn>30<\/mn><mrow data-mjx-texclass='ORD'><msup><mrow data-mjx-texclass='ORD'><\/mrow><mrow data-mjx-texclass='ORD'><mtext[^>]*>∘<\/mtext>/,
     /^(?![^]*°)/,
   ],
+  // eqnarray's rows \jot apart, as an align's
+  'test-eqnarray': [
+    /<mtable [^>]*data-tex8web-env='eqnarray'[^>]*rowspacing='0.274em'/,
+    /<mtable [^>]*data-tex8web-env='eqnarray\*'[^>]*rowspacing='0.274em'/,
+  ],
 };
 
 // What screen readers hear: ClearSpeak's words, | as "given", no "normal"
@@ -713,6 +718,8 @@ const qed = {
     // (nine squares: seven tags, the box after the \tag and the one after the list)
     /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){9}$/,
   ],
+  // a \qedhere in an eqnarray: the box is set below the display
+  'test-eqnarray': [/<\/mjx-container><\/span><\/div>\s*<div class='tex8web-qed-line'>/],
   // equation*: a \ref to its \label leads to the section, and the three
   // relations of the page's math, one in the split's second column, are
   // spaced
@@ -726,12 +733,13 @@ const qed = {
 const numbers = {
   // eqnarray: a \ref to a row's \label gives its number and leads to it.
   // The equation after an eqnarray whose row has a \qedhere is the fourth:
-  // the row keeps its number, and the box is set below the display
+  // the row keeps its number. A \label on a \nonumber row gets the next
+  // row's number and leads to an anchor of its own
   'test-eqnarray': [
     /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*See <a href='#\1'>1<!--[^>]*--><\/a>, <a href='#\2'>2<!--[^>]*--><\/a>, and <a href='#[^']+'>4<!--/,
-    /<\/mjx-container><\/span><\/div>\s*<div class='tex8web-qed-line'>/,
-    // (four numbered rows: none for the \nonumber row or in eqnarray*)
-    /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){4}$/,
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='[^']+'><\/a>[^]*Then <a href='#\1'>5<!--/,
+    // (five numbered rows: none for the \nonumber rows or in eqnarray*)
+    /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){5}$/,
   ],
 };
 

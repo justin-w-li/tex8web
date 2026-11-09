@@ -514,9 +514,30 @@
                 { \__web_qed_row:e { (\theequation) \exp_not:N \\ } }
                 { \tl_put_right:Ne \l__web_body_tl { \exp_not:N \tag {\theequation} } }
         }
-        { \bool_if:NT \l__web_qed_bool { \__web_qed_row:n {} } }
+        {
+            \bool_if:NT \l__web_qed_bool { \__web_qed_row:n {} }
+            \__web_eqnarray_label:
+        }
     \tl_if_empty:NF \l__web_label_tl { \exp_args:No \label {\l__web_label_tl} }
     \__web_row_start:
+}
+% A \label on an unnumbered row of an eqnarray gets the number the next row
+% would get, as in the PDF, where the counter is stepped after each numbered
+% row (\@@eqncr, latex.ltx). It leads to an anchor of its own, which
+% \refstepcounter makes, without hyperref's, whose name the next row takes
+\cs_new_protected:Npn \__web_eqnarray_label: {
+    \bool_lazy_and:nnT
+        { \str_if_eq_p:ee { \seq_item:Nn \l__web_envs_seq { -1 } } { eqnarray } }
+        { ! \tl_if_empty_p:N \l__web_label_tl }
+        {
+            \group_begin:
+                \cs_set_eq:NN \hyper@refstepcounter \use_none:n
+                \refstepcounter{equation}
+                \exp_args:No \label {\l__web_label_tl}
+                \addtocounter{equation}{-1}
+            \group_end:
+            \tl_clear:N \l__web_label_tl
+        }
 }
 \cs_new_protected:Npn \__web_walk:w {
     \peek_remove_spaces:n {
