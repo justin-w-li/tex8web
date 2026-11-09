@@ -378,9 +378,10 @@ async function hiding(chrome, file) {
   });
 }
 
-// On a phone screen, a page opened partway down, by a link's # or a reload,
-// keeps its bar shown with its line, and nothing moves: the browser's
-// scrolling is not the reader's
+// On a phone screen, a page opened partway down, and nothing moves: by a
+// link's #, with its bar hidden, as after any link's jump, and the heading
+// at the top; by a reload, with its bar shown with its line, as the
+// browser's return to the reader's place is not the reader's scrolling
 async function landing(chrome, file) {
   const url = pathToFileURL(file).href;
   const size = { width: 390, height: 844 };
@@ -391,16 +392,23 @@ async function landing(chrome, file) {
   if (!id) return ['landing: no heading far enough down to link to'];
   const state = `new Promise(done => setTimeout(() => {
     const controls = document.querySelector('.tex8web-controls');
-    done([scrollY, controls.classList.contains('tex8web-away'), getComputedStyle(controls).borderBottomColor, __runs.join()]);
+    done([scrollY, controls.classList.contains('tex8web-away'), getComputedStyle(controls).borderBottomColor, __runs.join(),
+      document.getElementById(${JSON.stringify(id)}).getBoundingClientRect().top]);
   }, 500))`;
   const problems = [];
   const judge = (how, [y, away, line, moved]) => {
     if (y < 500) problems.push(`landing by ${how}: at ${y}px, not partway down`);
+    if (moved) problems.push(`landing by ${how}: moving (${moved})`);
+    if (how === 'a link') return;
     if (away) problems.push(`landing by ${how}: the bar away`);
     if (line === 'rgba(0, 0, 0, 0)') problems.push(`landing by ${how}: no line under the bar`);
-    if (moved) problems.push(`landing by ${how}: moving (${moved})`);
   };
-  await chrome.withPage(`${url}#${id}`, { ...size, before: runs }, async page => judge('a link', await page.evaluate(state)));
+  await chrome.withPage(`${url}#${id}`, { ...size, before: runs }, async page => {
+    const got = await page.evaluate(state);
+    judge('a link', got);
+    if (!got[1]) problems.push('landing by a link: the bar shown');
+    if (got[4] > 17) problems.push(`landing by a link: the heading ${Math.round(got[4])}px down`);
+  });
   await chrome.withPage(url, { ...size, before: runs }, async page => {
     await page.evaluate('scrollTo(0, 1500)');
     await page.frame();
@@ -412,6 +420,92 @@ async function landing(chrome, file) {
     judge('reload', await page.evaluate(state));
   });
   return problems;
+}
+
+// On a phone screen, every entry of the table of contents followed down from
+// the top by a tap in the drawer, up from the end by a change of the hash,
+// then Back to the end and Forward again. After each jump the bar is away,
+// and the heading lands its space before it, at most one body em, below the
+// window's top, with the block above it off the screen; or lower, with the
+// page at its end.
+async function jumping(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 400, height: 800 }, async page => {
+    const problems = [];
+    const count = await page.evaluate(`document.querySelectorAll('#tex8web-toc .tableofcontents a[href^="#"]').length`);
+    if (count < 2) return ['jumps: fewer than two entries'];
+    const still = `new Promise(done => {
+      let y = -1, same = 0;
+      const frame = () => {
+        same = scrollY === y ? same + 1 : 0;
+        y = scrollY;
+        if (same < 5) requestAnimationFrame(frame);
+        else done();
+      };
+      requestAnimationFrame(frame);
+    })`;
+    const max = 'document.documentElement.scrollHeight - innerHeight';
+    // where entry i's heading is, and what is above it
+    const landed = i => page.evaluate(`(async () => {
+      await ${still};
+      const a = document.querySelectorAll('#tex8web-toc .tableofcontents a[href^="#"]')[${i}];
+      const h = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+      const room = Math.min(parseFloat(getComputedStyle(h).marginTop), parseFloat(getComputedStyle(document.body).fontSize));
+      // the nearest block before the heading with a height, outside it and
+      // the controls (not the empty paragraph of a \\phantomsection's anchor)
+      const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+      walk.currentNode = h;
+      let above;
+      while ((above = walk.previousNode())) {
+        if (above.contains(h) || above.closest('#tex8web-toc, .tex8web-controls')) continue;
+        if (!getComputedStyle(above).display.startsWith('inline') && above.getBoundingClientRect().height) break;
+      }
+      return { hash: a.hash, top: h.getBoundingClientRect().top, room, above: above?.getBoundingClientRect().bottom ?? -Infinity,
+        end: scrollY >= ${max} - 1, away: document.querySelector('.tex8web-controls').classList.contains('tex8web-away') };
+    })()`);
+    const judge = (how, at) => {
+      if (!at.away) problems.push(`${how}: the bar shown`);
+      if (at.end ? at.top < at.room - 1 : Math.abs(at.top - at.room) > 1) {
+        problems.push(`${how}: the heading ${Math.round(at.top)}px down, not ${Math.round(at.room)}px`);
+      }
+      if (at.above > 0.5) problems.push(`${how}: the block above shown to ${Math.round(at.above)}px`);
+    };
+    const settle = `(async () => { await ${still}; return [scrollY, ${max}, document.querySelector('.tex8web-controls').classList.contains('tex8web-away')]; })()`;
+    for (let i = 0; i < count; i++) {
+      await page.evaluate(`history.replaceState(null, '', location.pathname); scrollTo({ top: 0, behavior: 'instant' }); ${still}`);
+      // down: the contents button, then the entry in the drawer
+      const button = await page.evaluate(`(() => {
+        const box = document.querySelector('.tex8web-contents').getBoundingClientRect();
+        return [box.left + box.width / 2, box.top + box.height / 2];
+      })()`);
+      await page.tap(...button);
+      await finished(page);
+      const entry = await page.evaluate(`(() => {
+        const a = document.querySelectorAll('#tex8web-toc .tableofcontents a[href^="#"]')[${i}];
+        a.scrollIntoView({ block: 'center' });
+        const box = a.getBoundingClientRect();
+        return a.checkVisibility() ? [box.left + Math.min(box.width / 2, 20), box.top + box.height / 2] : null;
+      })()`);
+      if (!entry) {
+        problems.push(`entry ${i + 1} not shown in the drawer`);
+        continue;
+      }
+      await page.tap(...entry);
+      const down = await landed(i);
+      judge(`entry ${i + 1} (${down.hash}) followed down`, down);
+      // up: from the end, by the hash
+      await page.evaluate(`history.replaceState(null, '', location.pathname); scrollTo({ top: ${max}, behavior: 'instant' }); ${still}`);
+      await page.evaluate(`location.hash = ${JSON.stringify(down.hash)}`);
+      judge(`entry ${i + 1} followed up`, await landed(i));
+      // Back to the end, and Forward to the heading
+      await page.evaluate('history.back()');
+      const [y, end, away] = await page.evaluate(settle);
+      if (Math.abs(y - end) > 1) problems.push(`entry ${i + 1}, Back: at ${Math.round(y)}px, not at the end`);
+      if (!away) problems.push(`entry ${i + 1}, Back: the bar shown`);
+      await page.evaluate('history.forward()');
+      judge(`entry ${i + 1}, Forward`, await landed(i));
+    }
+    return problems;
+  });
 }
 
 // The fade of a display that scrolls on a phone screen, measured by its two
@@ -1506,6 +1600,8 @@ async function hang(chrome, file, doc) {
 //   section
 // - tint: a page with a run-in heading in its table of contents
 // - fit: a short example whose one section with subsections is not the first
+// - jumps: an example with sections and subsections, each heading far
+//   enough from the end to be scrolled to
 // - ending: two examples, each with a heading that stays below the window's
 //   top quarter at the end, and one with two
 // - sizes: \WebLikePDF at a size other than 12pt, and a table of contents
@@ -1532,6 +1628,7 @@ const checks = {
   reach: [['test-tocsub'], each(reaching)],
   browsing: [['test'], each(async (...args) => [...await browsing(...args), ...await following(...args)])],
   ending: [['examples/complex', 'examples/footnotes'], ending],
+  jumps: [['examples/complex'], each(jumping)],
   isolated: [['test-tocsub'], each(isolating)],
   fit: [['examples/footnotes'], each(fitting)],
   preloads: [['test'], each(preloading)],

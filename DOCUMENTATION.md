@@ -171,7 +171,7 @@ The controls are small buttons at the top left of the page, in this order:
 4. the theme button
 5. a link to tex8web
 
-On a narrow screen, the controls are in a bar across the top, with the name of the section being read. Readers click the name to open the table of contents. The bar is hidden while readers scroll down, and shown when they scroll up. Away from the top of the page, the bar has a line under it.
+On a narrow screen, the controls are in a bar across the top, with the name of the section being read. Readers click the name to open the table of contents. The bar is hidden while readers scroll down, and shown when they scroll up. After a link, Back, or Forward takes readers to another place on the page, the bar stays hidden until they scroll. Away from the top of the page, the bar has a line under it.
 
 ### Between pages
 

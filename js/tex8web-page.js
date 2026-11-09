@@ -54,6 +54,20 @@
   // the folder, as a server gives it (same as in tex8web-head.js)
   const page = url => url.split('#')[0].replace(/\/index\.html$/, '/');
 
+  // the reader's own scrolling, told apart from a followed link's smooth
+  // scroll, which fires only scroll events. A tap, as on the bar, and
+  // scrolling the table of contents leave the page where the link led.
+  const keys = [' ', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+  const scrolled = handler => {
+    for (const type of ['wheel', 'touchmove', 'keydown']) {
+      addEventListener(type, event => {
+        if (type === 'keydown' ? !keys.includes(event.key) || event.target.closest?.('input, textarea')
+          : event.target.closest?.('#tex8web-toc')) return;
+        handler();
+      }, { passive: true });
+    }
+  };
+
   // The up link goes back in history when the last other page before this
   // one is the page above, so the reader's place there is kept. Without the
   // Navigation API, the link loads the page.
@@ -138,14 +152,32 @@
 
   // the controls, in a bar across the top on a narrow screen
   // (css/tex8web.css): hidden while the reader scrolls down, shown as soon as
-  // they scroll up. When the window goes from wide to narrow, the bar is
-  // hidden unless the page is at its top.
+  // they scroll up. A link's jump is not the reader's scrolling: after a
+  // followed link, Back or Forward, or a load with a hash, the bar is hidden
+  // until the reader scrolls, as the target lands where the bar would be,
+  // unless the page is at its very top. When the window goes from wide to
+  // narrow, the bar is hidden unless the page is at its top.
   function bar() {
     const controls = document.querySelector('.tex8web-controls');
     if (!controls) return;
     const top = () => scrollY <= controls.offsetHeight;
     let was = layout(), width = innerWidth, last = scrollY;
     const atTop = () => root.classList.toggle('tex8web-top', scrollY <= 0);
+    let jumped = false;
+    const jump = () => {
+      jumped = true;
+      controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > 0);
+    };
+    try {
+      jumped = performance.getEntriesByType('navigation')[0]?.type === 'navigate' && Boolean(target(location));
+    } catch {}
+    document.addEventListener('click', event => {
+      const a = event.target.closest?.('a[href*="#"]');
+      if (a && !event.defaultPrevented && here(a)) jump();
+    });
+    addEventListener('hashchange', jump);
+    addEventListener('popstate', jump);
+    scrolled(() => { jumped = false; });
     // The browser restores the reader's place, or scrolls to a link's #,
     // right before the load event, and fires the scroll event a frame later.
     // That scroll is not the reader's, so the bar keeps its state, without
@@ -153,11 +185,15 @@
     let settled = false;
     controls.style.transition = 'none';
     atTop();
-    const settle = () => requestAnimationFrame(() => requestAnimationFrame(() => {
-      settled = true;
-      last = scrollY;
-      controls.style.transition = '';
-    }));
+    // (a load with a hash: the bar hidden a frame before transitions return)
+    const settle = () => requestAnimationFrame(() => {
+      if (jumped) controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > 0);
+      requestAnimationFrame(() => {
+        settled = true;
+        last = scrollY;
+        controls.style.transition = '';
+      });
+    });
     if (document.readyState === 'complete') settle();
     else addEventListener('load', settle);
     // Hidden only on a narrow screen: the browser may restyle the page for a
@@ -171,6 +207,9 @@
       const end = document.documentElement.scrollHeight - innerHeight;
       if (innerWidth !== width || !settled) {
         width = innerWidth;
+        last = scrollY;
+      } else if (jumped) {
+        controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > 0);
         last = scrollY;
       } else if (scrollY >= 0 && scrollY <= end && (Math.abs(scrollY - last) >= 10 || top())) {
         controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > last && !top());
@@ -421,19 +460,11 @@
       const a = event.target.closest?.('a[href*="#"]');
       if (a && !event.defaultPrevented && here(a)) follow(here(a));
     });
-    // the reader's scrolling, told apart from a followed link's smooth
-    // scroll, which fires only scroll events. A tap, as on the bar, and
-    // scrolling the table of contents leave the page where the link led.
-    const keys = [' ', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
-    for (const type of ['wheel', 'touchmove', 'keydown']) {
-      addEventListener(type, event => {
-        if (!followed || (type === 'keydown'
-          ? !keys.includes(event.key) || event.target.closest?.('input, textarea')
-          : event.target.closest?.('#tex8web-toc'))) return;
-        followed = null;
-        update();
-      }, { passive: true });
-    }
+    scrolled(() => {
+      if (!followed) return;
+      followed = null;
+      update();
+    });
     // MathJax in the browser typesets an entry's math after the bar's copy
     // is made, and an entry in the closed drawer only when the drawer opens
     if (where) {

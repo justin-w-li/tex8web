@@ -183,7 +183,8 @@ section.abstract { margin-inline: 0; }
    precedence, for example amsart's centered sections) */
 :where(.partHead, .likepartHead) { font-variant: var(--tex8web-part-variant, normal);
     text-align: var(--tex8web-part-align, left);
-    margin-block: var(--tex8web-part-before, var(--tex8web-chapter-before, 0.67em))
+    --tex8web-head-before: var(--tex8web-part-before, var(--tex8web-chapter-before, 0.67em));
+    margin-block: var(--tex8web-head-before)
         var(--tex8web-part-after, var(--tex8web-chapter-after, 0.67em)); }
 /* (html4.4ht's h1.partHead{text-align: center}, but under the alignment
    read from the class or titlesec, and for \part* too) */
@@ -191,17 +192,21 @@ h1:is(.partHead, .likepartHead) { text-align: var(--tex8web-part-align, center);
 :where(.chapterHead, .likechapterHead, .appendixHead) {
     font-variant: var(--tex8web-chapter-variant, normal);
     text-align: var(--tex8web-chapter-align, left);
-    margin-block: var(--tex8web-chapter-before, 0.83em) var(--tex8web-chapter-after, 0.83em); }
+    --tex8web-head-before: var(--tex8web-chapter-before, 0.83em);
+    margin-block: var(--tex8web-head-before) var(--tex8web-chapter-after, 0.83em); }
 :where(.sectionHead, .likesectionHead) { font-variant: var(--tex8web-section-variant, normal);
     text-align: var(--tex8web-section-align, left);
-    margin-block: var(--tex8web-section-before, 1em) var(--tex8web-section-after, 1em); }
+    --tex8web-head-before: var(--tex8web-section-before, 1em);
+    margin-block: var(--tex8web-head-before) var(--tex8web-section-after, 1em); }
 :where(.subsectionHead, .likesubsectionHead) { font-variant: var(--tex8web-subsection-variant, normal);
     text-align: var(--tex8web-subsection-align, left);
-    margin-block: var(--tex8web-subsection-before, 1.33em) var(--tex8web-subsection-after, 1.33em); }
+    --tex8web-head-before: var(--tex8web-subsection-before, 1.33em);
+    margin-block: var(--tex8web-head-before) var(--tex8web-subsection-after, 1.33em); }
 :where(.subsubsectionHead, .likesubsubsectionHead) {
     font-variant: var(--tex8web-subsubsection-variant, normal);
     text-align: var(--tex8web-subsubsection-align, left);
-    margin-block: var(--tex8web-subsubsection-before, 1.67em) var(--tex8web-subsubsection-after, 1.67em); }
+    --tex8web-head-before: var(--tex8web-subsubsection-before, 1.67em);
+    margin-block: var(--tex8web-head-before) var(--tex8web-subsubsection-after, 1.67em); }
 /* a theorem or list right under a heading: only the heading's space, as
    LaTeX's \@item adds no \topsep after a heading (\if@nobreak). !important
    outweighs a theorem's inline margin from text.lua, which also removes
@@ -749,8 +754,13 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     .tex8web-tcb-inline > .tcolorbox-title > .tex8web-permalink {
         margin-inline-start: calc(-1 * (var(--tcb-padding-left) + var(--tcb-rule-left))); }
 }
-/* a link's target: a little space above it, and the highlight */
-:target { scroll-margin-top: 1em; }
+/* a link's target: the highlight, and one em of the body text as space
+   above it. Above a heading, its space before if that is less, so that
+   nothing above the heading shows (--tex8web-head-before, above) */
+:root { --tex8web-text-em: calc(var(--tex8web-pdf-scale, 1) * 1rem); }
+:target { scroll-margin-top: var(--tex8web-text-em); }
+:is(h1, h2, h3, h4, h5, h6):target {
+    scroll-margin-top: min(var(--tex8web-head-before, var(--tex8web-text-em)), var(--tex8web-text-em)); }
 :is(h2, h3, h4, h5, h6, .paragraphHead, .likeparagraphHead, .subparagraphHead, .likesubparagraphHead,
     .tex8web-term):target, .newtheorem:has(.head > a:target), .tcolorbox:has(> a:target) {
     background-color: var(--tex8web-highlight); }
@@ -802,10 +812,12 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
 .tex8web-control svg { width: 1.25rem; height: 1.25rem; fill: none;
     stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 @media not (--tex8web-wide) {
-    /* (room for the bar above a link's target or the keyboard focus. As
-       scroll-padding on html, it would also shift where Chrome restores
-       the page on reload) */
-    :is(:target, :focus-visible) { scroll-margin-top: calc(3.5rem + 1em); }
+    /* (room for the bar, 3.25rem and its line, above the keyboard focus.
+       A link's target needs none, as the bar is hidden after a link's jump
+       (tex8web-page.js). As scroll-padding on html, it would also shift
+       where Chrome restores the page on reload) */
+    :focus-visible { scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 3.25rem + 1px
+        + var(--tex8web-text-em)); }
     .tex8web-where:not([hidden]) { display: block; flex: 1; min-width: 0; overflow: hidden;
         font: inherit; font-size: 0.875em; line-height: 1.25rem; text-align: start;
         white-space: nowrap; text-overflow: ellipsis;
