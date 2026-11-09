@@ -292,15 +292,21 @@ local function next_child(children, i)
   return i
 end
 
+local blocks = {p = true, div = true, ul = true, ol = true, li = true, dl = true, dt = true,
+  dd = true, h1 = true, h2 = true, h3 = true, h4 = true, h5 = true, h6 = true, table = true,
+  caption = true, colgroup = true, col = true, thead = true, tbody = true, tr = true, td = true,
+  th = true, figure = true, figcaption = true, aside = true, blockquote = true, pre = true,
+  section = true, hr = true}
+
+-- (a <br>, a block, or display math)
+local function ends_line(node)
+  return node:is_element() and (node:get_element_name() == "br" or blocks[node:get_element_name()]
+    or is_math(node) and not dom.has_class(node, "mathjax-inline"))
+end
+
 -- the text of node, if it is text or a span of text in tex4ht's fonts
 local function text_of(node)
   return node and (node:is_text() and node:get_text() or span_text(node))
-end
-
--- (text, or a span of text, that starts with a character other than
--- whitespace, as "th" after $i$)
-local function is_suffix(node)
-  return (text_of(node) or ""):find("^%S") ~= nil
 end
 
 -- a node like node, text or a span of text in tex4ht's fonts, with text
@@ -311,19 +317,25 @@ local function with_text(el, node, text)
   return copy
 end
 
--- the index of the last child, from i on, before the first whitespace. A
--- text child, or a span of text, is split there. Another element with
--- whitespace in it ends the run before it.
+-- the index of the last child, from i on, before the first whitespace or
+-- empty text (where a pass took the whitespace out). A text child, or a
+-- span of text, is split at the whitespace. Inline math with a space
+-- at its end (sized_math_spaces) ends the run with it. Another element
+-- with whitespace in it, or where a line ends or an \hfill starts, ends
+-- the run before it. (The whitespace in a formula's source is not text.)
 local function word_end(el, children, i)
   while children[i] do
-    local child = children[i]
-    local head, rest = (text_of(child) or ""):match("^(%S*)(%s.*)$")
-    if head == "" then return i - 1 end
+    local child, text = children[i], text_of(children[i])
+    local head, rest = (text or ""):match("^(%S*)(%s.*)$")
+    if head == "" or text == "" then return i - 1 end
     if head then
       children[i] = with_text(el, child, head)
       table.insert(children, i + 1, with_text(el, child, rest))
       return i
-    elseif child:is_element() and child:get_text():find("%s") then
+    elseif is_inline_math(child) then
+      if child:get_text():find("%s$") then return i end
+    elseif child:is_element() and (child:get_text():find("%s") or ends_line(child)
+        or dom.has_class(child, "tex8web-hfill-gap")) then
       return i - 1
     end
     i = i + 1
@@ -351,8 +363,8 @@ end
 -- inline-block mjx-math is, even next to a no-break space or a letter
 -- (CSS Text 3, section 5.1). So a no-break space or a narrow one before
 -- inline math (Lemma~$1$, p.\,$5$) is wrapped with the math, and so are
--- the characters right before and after it, up to whitespace ($i$th,
--- ($x$), $n$-dimensional). Safari (26.5 and 27.0) also breaks
+-- the characters right before it and what follows it, up to whitespace
+-- ($i$th, ($x$), $n$-dimensional, $n$\textsuperscript{th}). Safari (26.5 and 27.0) also breaks
 -- between inline math and a no-break space after it ($x$~and), even when
 -- the two are wrapped, unless the wrapper reaches the next whitespace.
 -- Verbatim text, alltt, and listings are left as they are.
@@ -370,11 +382,7 @@ function M.no_break_spaces(document)
         or is_inline_math(children[i]) and i
       local last, before
       if inline then
-        local after = next_child(children, inline)
-        last = inline
-        if is_tie(children[after]) or is_suffix(children[after]) then
-          last = word_end(el, children, after)
-        end
+        last = word_end(el, children, inline)
         if inline == i then before = word_start(el, wrapped) end
       end
       if last and (last ~= i or before) then
@@ -591,12 +599,6 @@ end
 -- \normalcolor; tex4ht's table float is a div.table); listings' tokens keep
 -- html4.4ht's. tex4ht's link text is not a group, as hyperref's is in the
 -- PDF, so a color set in a link ends with the link.
-local blocks = {p = true, div = true, ul = true, ol = true, li = true, dl = true, dt = true,
-  dd = true, h1 = true, h2 = true, h3 = true, h4 = true, h5 = true, h6 = true, table = true,
-  caption = true, colgroup = true, col = true, thead = true, tbody = true, tr = true, td = true,
-  th = true, figure = true, figcaption = true, aside = true, blockquote = true, pre = true,
-  section = true, hr = true}
-
 local function is_mark(node)
   return dom.has_class(node, "tex8web-color") or dom.has_class(node, "tex8web-color-end")
 end
@@ -731,11 +733,6 @@ end
 -- (latex.4ht) and in the index (html4.4ht) starts a line.
 -- (Not in a heading: make4ht's sectionid makes the heading's anchor its id
 -- only while the anchor is the heading's child.)
-local function ends_line(node)
-  return node:is_element() and (node:get_element_name() == "br" or blocks[node:get_element_name()]
-    or is_math(node) and not dom.has_class(node, "mathjax-inline"))
-end
-
 -- (an empty anchor, as before a theorem's head, shows nothing)
 local function shows(node)
   return node:is_text() and node:get_text():find("%S")

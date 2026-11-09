@@ -605,7 +605,7 @@ const ties = {
     new RegExp(`<span class='cmti-10'>the </span><span class='tex8web-nowrap'>${math}<span class='cmti-10'>th</span></span><span class='cmti-10'> term </span>of`),
     new RegExp(`<span class='cmr-8'>See the </span><span class='tex8web-nowrap'><span class='mathjax-inline'[^>]*>${math}</span><span class='cmr-8'>th</span></span><span class='cmr-8'> entry\\.</span>`),
     // the characters right before and after the math, up to whitespace
-    new RegExp(`an <span class='tex8web-nowrap'>${math}-dimensional</span> space, the <span class='tex8web-nowrap'>${math}\u00E8me</span> terme, the vector <span class='tex8web-nowrap'>\\(${math},</span> <span class='tex8web-nowrap'>${math}\\),</span> and <span class='tex8web-nowrap'>${math}\u2019s</span> value\\.`),
+    new RegExp(`an <span class='tex8web-nowrap'>${math}-dimensional</span> space, the <span class='tex8web-nowrap'>${math}\u00E8me</span> terme, the vector <span class='tex8web-nowrap'>\\(${math},</span> <span class='tex8web-nowrap'>${math}\\),</span> <span class='tex8web-nowrap'>${math}\u2019s</span> value, the <span class='tex8web-nowrap'>${math}<sup class='textsuperscript'><span class='cmr-9'>th</span></sup></span> power, and <span class='tex8web-nowrap'>${math}\\(${math}\\)</span>\\s+itself\\.`),
     // a ~ in a span of its font, in a theorem or a footnote
     new RegExp(`<span class='cmti-10'>For all</span><span class='tex8web-nowrap'><span class='cmti-10'>${tie}</span>${math}<span class='cmti-10'>${tie}and</span></span><span class='cmti-10'> so on\\.</span>`),
     new RegExp(`<span class='cmr-8'>See Lemma</span><span class='tex8web-nowrap'><span class='cmr-8'>${tie}</span><span class='mathjax-inline'[^>]*>${math} </span></span>`),

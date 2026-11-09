@@ -140,6 +140,18 @@ return {
       .. "<span class='cmti-10'>the </span><span class='tex8web-nowrap'><span class='cmti-10'>(</span><span class='mathjax-inline'>\\(n\\)</span><span class='cmti-10'>th</span></span><span class='cmti-10'> row</span></p>")
   end,
 
+  ["text.no_break_spaces: the run after the math goes through elements and formulas, up to whitespace, a line end, an \\hfill, or a space at a formula's end"] = function()
+    local m = function(tex, style) return "<span class=\"mathjax-inline\"" .. (style or "") .. ">\\(" .. tex .. "\\)" .. (style and " " or "") .. "</span>" end
+    local d = parse("<p>the " .. m("n") .. "<sup class=\"textsuperscript\">th</sup> term, " .. m("a") .. "(" .. m("b + c") .. ") x, "
+      .. m("x") .. ".<br/>next " .. m("y", " style=\"s\"") .. "and "
+      .. m("z") .. ".<span class=\"tex8web-hfill-gap\"></span><span class=\"tex8web-hfill\">q</span></p>")
+    text.no_break_spaces(d)
+    equal(body(d), "<p>the <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(n\\)</span><sup class='textsuperscript'>th</sup></span> term, "
+      .. "<span class='tex8web-nowrap'><span class='mathjax-inline'>\\(a\\)</span>(<span class='mathjax-inline'>\\(b + c\\)</span>)</span> x, "
+      .. "<span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span>.</span><br />next <span class='mathjax-inline' style='s'>\\(y\\) </span>and "
+      .. "<span class='tex8web-nowrap'><span class='mathjax-inline'>\\(z\\)</span>.</span><span class='tex8web-hfill-gap'></span><span class='tex8web-hfill'>q</span></p>")
+  end,
+
   ["text.no_break_spaces: a ~ in a span of its font, before or after the math, kept with it"] = function()
     local d = parse("<p><span class=\"cmti-10\">For all</span><span class=\"cmti-10\">\u{A0}</span><span class=\"mathjax-inline\">\\(x\\)</span>"
       .. "<span class=\"cmti-10\">\u{A0}and so on</span></p>")
