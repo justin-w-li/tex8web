@@ -317,17 +317,21 @@ local function with_text(el, node, text)
   return copy
 end
 
--- the index of the last child, from i on, before the first whitespace or
--- empty text (where a pass took the whitespace out). A text child, or a
--- span of text, is split at the whitespace. Inline math with a space
--- at its end (sized_math_spaces) ends the run with it. Another element
--- with whitespace in it, or where a line ends or an \hfill starts, ends
--- the run before it. (The whitespace in a formula's source is not text.)
+-- the index of the last child that shows something, from i on, before
+-- the first whitespace. A text child, or a span of text, is split at the
+-- whitespace. Inline math with a space at its end (sized_math_spaces) ends
+-- the run with it. These end the run before them:
+-- - empty text, where text.hfill took the whitespace out
+-- - an element with whitespace in it, or where a line ends
+-- - an \hfill's gap, or a qed box, which the stylesheet needs as a child of
+--   its paragraph
+-- (The whitespace in a formula's source is not text.)
 local function word_end(el, children, i)
+  local last = i - 1
   while children[i] do
     local child, text = children[i], text_of(children[i])
     local head, rest = (text or ""):match("^(%S*)(%s.*)$")
-    if head == "" or text == "" then return i - 1 end
+    if head == "" or text == "" then break end
     if head then
       children[i] = with_text(el, child, head)
       table.insert(children, i + 1, with_text(el, child, rest))
@@ -335,12 +339,13 @@ local function word_end(el, children, i)
     elseif is_inline_math(child) then
       if child:get_text():find("%s$") then return i end
     elseif child:is_element() and (child:get_text():find("%s") or ends_line(child)
-        or dom.has_class(child, "tex8web-hfill-gap")) then
-      return i - 1
+        or dom.has_class(child, "tex8web-hfill-gap") or dom.has_class(child, "tex8web-qed")) then
+      break
     end
+    if shows(child) then last = i end
     i = i + 1
   end
-  return i - 1
+  return last
 end
 
 -- the characters other than whitespace at the end of the last node in
@@ -364,9 +369,10 @@ end
 -- (CSS Text 3, section 5.1). So a no-break space or a narrow one before
 -- inline math (Lemma~$1$, p.\,$5$) is wrapped with the math, and so are
 -- the characters right before it and what follows it, up to whitespace
--- ($i$th, ($x$), $n$-dimensional, $n$\textsuperscript{th}). Safari (26.5 and 27.0) also breaks
--- between inline math and a no-break space after it ($x$~and), even when
--- the two are wrapped, unless the wrapper reaches the next whitespace.
+-- ($i$th, ($x$), $n$-dimensional, $n$\textsuperscript{th}). Safari (26.5
+-- and 27.0) also breaks between inline math and a no-break space after it
+-- ($x$~and), even when the two are wrapped, unless the wrapper reaches the
+-- next whitespace.
 -- Verbatim text, alltt, and listings are left as they are.
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)

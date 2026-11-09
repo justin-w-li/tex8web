@@ -609,6 +609,8 @@ const ties = {
     // a ~ in a span of its font, in a theorem or a footnote
     new RegExp(`<span class='cmti-10'>For all</span><span class='tex8web-nowrap'><span class='cmti-10'>${tie}</span>${math}<span class='cmti-10'>${tie}and</span></span><span class='cmti-10'> so on\\.</span>`),
     new RegExp(`<span class='cmr-8'>See Lemma</span><span class='tex8web-nowrap'><span class='cmr-8'>${tie}</span><span class='mathjax-inline'[^>]*>${math} </span></span>`),
+    // a qed box left a child of its paragraph, for the stylesheet
+    new RegExp(`after <span class='tex8web-nowrap'>${math}\\.</span><span class='tex8web-qed'>`),
     // but a box or a term after the math is not split, which would give
     // two boxes, or a term with two ids
     new RegExp(`the ${math}<span class='fbox'[^>]*>th row</span>, the ${math}<span class='framebox-l'[^>]*>two words</span>, and\\s+the ${math}<span class='tex8web-term' id='term-th-power'>th power</span> of it\\.`)],
