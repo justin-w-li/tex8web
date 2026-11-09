@@ -269,7 +269,7 @@
   }
 
   // the table of contents: the entry of the section being read (the last
-  // heading above the top quarter of the screen) is marked, and its
+  // heading above a line, or the heading a link led to) is marked, and its
   // section's subsections shown. On a narrow screen, that entry is copied
   // into the bar (css/tex8web.css) once the first heading is reached. The
   // drawer closes when a link is followed. A chevron after each section with
@@ -334,7 +334,9 @@
     }
     // sections the reader opened
     const kept = new Set();
-    let current, opened;
+    // followed: the entry a link led to, kept until the reader scrolls or
+    // its heading, once seen, leaves the screen
+    let current, opened, followed, seen;
     // the layout, read once and on each resize: layout() in update(), after
     // its changes, would restyle the whole page
     let wide = layout() === 'wide';
@@ -348,13 +350,23 @@
       if (a.height && (a.top < box.top || a.bottom > box.bottom)) toc.scrollTop += a.top - box.top - box.height / 3;
     };
     const update = () => {
-      const line = innerHeight / 4;
+      // The line is a quarter down the screen, and moves to the bottom over
+      // the last screen of scrolling, or over all of it if shorter, so that
+      // each heading crosses it, the last at the end.
+      const max = root.scrollHeight - innerHeight, ramp = Math.min(max, innerHeight);
+      const line = innerHeight / 4 + (ramp > 0 ? 0.75 * innerHeight * Math.max(0, scrollY - max + ramp) / ramp : 0);
+      if (followed) {
+        const box = followed.heading.getBoundingClientRect();
+        if (box.bottom > 0 && box.top < innerHeight) seen = true;
+        else if (seen) followed = null;
+      }
       let reading = entries[0];
       for (const entry of entries) {
         if (entry.heading.getBoundingClientRect().top > line) break;
         reading = entry;
       }
-      if (where) where.hidden = reading.heading.getBoundingClientRect().top > line;
+      if (where) where.hidden = !followed && reading.heading.getBoundingClientRect().top > line;
+      reading = followed || reading;
       if (reading === current) return;
       current?.a.removeAttribute('aria-current');
       current = reading;
@@ -382,7 +394,46 @@
       pending = true;
       requestAnimationFrame(() => { pending = false; update(); });
     }, { passive: true });
+    const follow = heading => {
+      followed = entries.find(entry => entry.heading === heading);
+      seen = false;
+      update();
+    };
+    // the heading in the address, where a hash typed by the reader may not
+    // decode
+    const hashed = () => {
+      try { return target(location); } catch { return null; }
+    };
     update();
+    // A page loaded with a hash: its heading, if it is on screen once the
+    // page is scrolled to it, or back to the reader's place on a reload
+    // (bar())
+    const loaded = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+      const box = hashed()?.getBoundingClientRect();
+      if (box && box.bottom > 0 && box.top < innerHeight) follow(hashed());
+    }));
+    if (document.readyState === 'complete') loaded();
+    else addEventListener('load', loaded);
+    addEventListener('hashchange', () => follow(hashed()));
+    // also a link to the heading already in the address, which changes no
+    // hash; not one a preview card's first tap kept from being followed
+    document.addEventListener('click', event => {
+      const a = event.target.closest?.('a[href*="#"]');
+      if (a && !event.defaultPrevented && here(a)) follow(here(a));
+    });
+    // the reader's scrolling, told apart from a followed link's smooth
+    // scroll, which fires only scroll events. A tap, as on the bar, and
+    // scrolling the table of contents leave the page where the link led.
+    const keys = [' ', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    for (const type of ['wheel', 'touchmove', 'keydown']) {
+      addEventListener(type, event => {
+        if (!followed || (type === 'keydown'
+          ? !keys.includes(event.key) || event.target.closest?.('input, textarea')
+          : event.target.closest?.('#tex8web-toc'))) return;
+        followed = null;
+        update();
+      }, { passive: true });
+    }
     // MathJax in the browser typesets an entry's math after the bar's copy
     // is made, and an entry in the closed drawer only when the drawer opens
     if (where) {

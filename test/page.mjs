@@ -959,6 +959,138 @@ async function browsing(chrome, file) {
   });
 }
 
+// The entry marked at the end of the page, wide and narrow, where headings
+// stay below the window's top quarter, the line a heading crosses as it is
+// reached. Scrolled to the end, the last entry is marked, and named in the
+// bar on a narrow screen. Through the last screen, the marked entry moves
+// forward only, to each entry in turn. Where two headings stay below the
+// line, a link followed to the second-to-last marks its entry, also once
+// the smooth scroll ends and after a tap, until the reader turns the mouse
+// wheel. A page loaded with that hash marks its entry, but not when it is
+// reloaded at the top. Fails unless a heading stays below the line on each
+// page at one size, and two do on one page. A size where every heading
+// reaches the line is skipped.
+async function ending(chrome, docs) {
+  const problems = [];
+  const tested = new Set();
+  const hashes = [];
+  let followed = 0;
+  // the load, and the frames page.js waits for after it
+  const settled = `new Promise(done => {
+    const go = () => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(done)));
+    if (document.readyState === 'complete') go();
+    else addEventListener('load', go);
+  })`;
+  const setup = `const entries = [...document.querySelectorAll('#tex8web-toc a[href^="#"]')]
+      .filter(a => document.getElementById(decodeURIComponent(a.hash.slice(1))));
+    const top = a => document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top + scrollY;
+    const marked = () => entries.findIndex(a => a.hasAttribute('aria-current'));
+    const max = document.documentElement.scrollHeight - innerHeight;
+    const frames = () => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+    // the bar's text and the marked entry's, as the bar shows it
+    const bar = () => {
+      const where = document.querySelector('.tex8web-where'), a = entries[marked()];
+      const squeeze = s => s.replace(/\\s+/g, '').replace(/\\.$/, '');
+      return where && getComputedStyle(where).display !== 'none'
+        && [squeeze(where.textContent), squeeze((a.parentElement.querySelector('.tocnumber')?.textContent ?? '') + a.textContent)];
+    };`;
+  for (const doc of docs) for (const [how, size] of [['wide', { width: 1600, height: 900 }], ['narrow', { width: 400, height: 800 }]]) {
+    await chrome.withPage(pathToFileURL(pageFile(doc)).href, size, async page => {
+      const say = problem => problems.push(`${doc.name}: ${how}: ${problem}`);
+      const [count, late] = await page.evaluate(`(() => { ${setup}
+        return [entries.length, entries.filter(a => top(a) > max + innerHeight / 4).length]; })()`);
+      if (late < 1) return;
+      tested.add(doc.name);
+      const end = await page.evaluate(`(async () => { ${setup}
+        scrollTo(0, max);
+        await frames();
+        return [marked(), bar()]; })()`);
+      if (end[0] !== count - 1) say(`scrolled to the end, entry ${end[0]} of ${count} marked, not the last`);
+      if (how === 'narrow' && !end[1]) say('scrolled to the end, no bar');
+      if (end[1] && end[1][0] !== end[1][1]) say(`scrolled to the end, the bar names ${end[1][0]}, not ${end[1][1]}`);
+      const steps = await page.evaluate(`(async () => { ${setup}
+        const steps = [];
+        for (let y = Math.max(0, max - innerHeight); y <= max; y += innerHeight / 100) {
+          scrollTo(0, y);
+          await frames();
+          steps.push(marked());
+        }
+        scrollTo(0, max);
+        await frames();
+        return [...steps, marked()]; })()`);
+      if (steps.some((n, i) => n < steps[i - 1])) say(`through the last screen, the entries marked go back: ${steps.join()}`);
+      const skipped = Array.from({ length: count - steps[0] }, (_, i) => steps[0] + i).filter(n => !steps.includes(n));
+      if (skipped.length) say(`through the last screen, entries ${skipped} never marked`);
+      if (late < 2) return;
+      followed++;
+      // followed from the top: by a click in the column, or by the address
+      const entry = count - 2;
+      const at = await page.evaluate(`(async () => { ${setup}
+        scrollTo(0, 0);
+        await frames();
+        const a = entries[${entry}], toc = document.getElementById('tex8web-toc');
+        if (${how === 'narrow'}) {
+          location.hash = a.hash;
+          return null;
+        }
+        toc.scrollTop += a.getBoundingClientRect().top - toc.getBoundingClientRect().top - toc.clientHeight / 2;
+        const box = a.getBoundingClientRect();
+        return a.checkVisibility() ? [box.left + box.width / 2, box.top + box.height / 2] : [];
+      })()`);
+      if (at?.length === 0) return say(`entry ${entry} not shown in the table of contents to click`);
+      if (at) {
+        await page.mouse('pressed', ...at);
+        await page.mouse('released', ...at);
+      }
+      const moved = [];
+      const done = await until(() => page.evaluate(`(async () => { ${setup}
+        await frames();
+        return [scrollY >= max - 1, marked(), bar()]; })()`), ([there, n, named]) => {
+        moved.push(n);
+        if (named && named[0] !== named[1]) moved.push(named.join(' for '));
+        return there;
+      });
+      if (!done) return say('the followed link not scrolled to the end');
+      if (moved.some(n => n !== entry)) say(`following entry ${entry}, entries ${[...new Set(moved)]} marked or named`);
+      await page.evaluate(`(async () => { ${setup} await frames(); })()`);
+      if (await page.evaluate(`(() => { ${setup} return marked(); })()`) !== entry) say(`the scroll ended, entry ${entry} not marked`);
+      if (how === 'narrow') {
+        // on the heading's right, past its text
+        await page.tap(...await page.evaluate(`(() => { ${setup}
+          const box = document.getElementById(decodeURIComponent(entries[${entry}].hash.slice(1))).getBoundingClientRect();
+          return [box.right - 2, box.top + box.height / 2]; })()`));
+        await page.evaluate(`(async () => { ${setup} await frames(); })()`);
+        if (await page.evaluate(`(() => { ${setup} return marked(); })()`) !== entry) say(`a tap on the page, entry ${entry} not marked`);
+      }
+      await page.mouse('wheel', size.width / 2, size.height / 2, { deltaY: 100 });
+      if (!await until(() => page.evaluate(`(() => { ${setup} return marked(); })()`), n => n === count - 1)) {
+        say('the wheel turned at the end, the last entry not marked');
+      }
+      // reloaded at the top, the hash still in the address
+      await page.evaluate(`scrollTo({ top: 0, behavior: 'instant' }); window.tex8webOld = true; setTimeout(() => location.reload())`);
+      if (!await until(() => page.evaluate(`!window.tex8webOld && document.readyState === 'complete'`).catch(() => false))) return say('not reloaded');
+      const reloaded = await page.evaluate(`(async () => { ${setup} await ${settled}; return [scrollY, marked()]; })()`);
+      if (reloaded[0] !== 0 || reloaded[1] !== 0) say(`reloaded at the top, at ${reloaded[0]}px with entry ${reloaded[1]} marked`);
+      hashes.push([doc, how, size, entry, await page.evaluate(`location.hash`)]);
+    });
+  }
+  // loaded with the hash, its entry marked
+  for (const [doc, how, size, entry, hash] of hashes) {
+    await chrome.withPage(pathToFileURL(pageFile(doc)).href + hash, size, async page => {
+      const n = await page.evaluate(`(async () => { ${setup} await ${settled}; return marked(); })()`);
+      if (n !== entry) problems.push(`${doc.name}: ${how}: loaded with entry ${entry}'s hash, entry ${n} marked`);
+    });
+  }
+  // a hash that does not decode, as a reader may type
+  await chrome.withPage(`${pathToFileURL(pageFile(docs[0])).href}#50%`, {}, async page => {
+    const n = await page.evaluate(`(async () => { ${setup} await ${settled}; return marked(); })()`);
+    if (n !== 0) problems.push(`${docs[0].name}: loaded with the hash #50%, entry ${n} marked`);
+  });
+  for (const doc of docs) if (!tested.has(doc.name)) problems.push(`${doc.name}: at no size a heading below the top quarter at the end`);
+  if (!followed) problems.push('on no page two headings below the top quarter at the end, to follow a link to');
+  return problems;
+}
+
 // The table of contents of a short page. Where all entries fit, in the
 // column and in the open drawer on a narrow screen, every entry is shown,
 // and no chevron. Where they do not, a section neither read nor opened shows
@@ -1351,6 +1483,8 @@ async function hang(chrome, file, doc) {
 // - contents, isolated, and lazy: a page with subsections before its first
 //   section
 // - fit: a short example whose one section with subsections is not the first
+// - ending: two examples, each with a heading that stays below the window's
+//   top quarter at the end, and one with two
 // - sizes: \WebLikePDF at a size other than 12pt, and a table of contents
 // - spaces: a document with each length that spaces tables, boxes, arrays,
 //   and description lists set away from its default
@@ -1373,6 +1507,7 @@ const checks = {
   contents: [['test-tocsub'], each(opening)],
   reach: [['test-tocsub'], each(reaching)],
   browsing: [['test'], each(async (...args) => [...await browsing(...args), ...await following(...args)])],
+  ending: [['examples/complex', 'examples/footnotes'], ending],
   isolated: [['test-tocsub'], each(isolating)],
   fit: [['examples/footnotes'], each(fitting)],
   preloads: [['test'], each(preloading)],
