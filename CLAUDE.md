@@ -100,6 +100,7 @@ For docs, comments, and commit messages:
 - Before committing:
   - `npm test` passes.
   - `npm run test:visual` passes when the change touches a file listed in [Which checks to run](CONTRIBUTING.md#which-checks-to-run). Otherwise, run it at the end of a batch and before opening a pull request.
+  - Before opening a pull request, check with `npm run test:compare` that your branch changed only the test pages it meant to. See [Commands](CONTRIBUTING.md#commands).
   - A bug fix has a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
   - Check visual changes with `node test/shots.mjs`: headless Chrome screenshots, wide and narrow, light and dark, next to the PDF. Also use it to compare two builds, shoot one element's band (`--clip`), or print a measurement (`--eval`). Extend it instead of writing a separate script.
 - At each milestone, or more often for risky changes, have a subagent with no context review the diff as a senior engineer, for correctness and cleanliness. Give it the diff and the files, not your conclusions. Fix what is warranted, and say what you did not fix and why in the pull request or your report.
