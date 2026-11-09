@@ -293,6 +293,7 @@ These differences cannot be turned off.
 
 - On a wide screen, the table of contents and the footnotes are beside the text. See [On the page](#on-the-page).
 - Without the `colorlinks` option of hyperref, a link is in the text color with a faint underline, where the PDF has a box around it. With `hidelinks`, links are unmarked, as in the PDF.
+- A URL set with `\url`, `\path`, or `\nolinkurl` breaks after the characters where url.sty breaks it, such as a slash or a period, but more often than in the PDF, where a URL is often moved to the next line whole.
 - A picture given a `width` and a `height` without `keepaspectratio` has its original proportions, not stretched as in the PDF.
 - Dark mode has separate background, text, and link colors.
 
@@ -390,6 +391,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **algorithm2e.** The `ruled` and `algoruled` styles have their rules, and every style has its caption in its place. `boxed`, `boxruled`, `tworuled`, and `plainruled` have no frame or rules. Block markers (`\AlgoDisplayBlockMarkers`) are not shown. A line wraps at the window width, not the PDF width, so a `\tcp*` comment can move to the next line.
 - **float styles.** Only `ruled` is drawn. A `boxed` float has no frame, and the caption of a `plaintop` float stays where `\caption` is.
 - **mdframed.** A box has its middle line (`linewidth`), its colors, and its space inside and around it. Inner and outer lines, rounded corners, shadows, and anything drawn with TikZ or PSTricks are missing. A `frametitle` is inside the box padding, without a separate title bar.
+- **URL breaks.** A URL breaks only after url.sty's default characters. Characters added to `\UrlBreaks` or `\UrlBigBreaks`, the `hyphens` option of url, and xurl are ignored.
 - **`\FrameSep` of framed.** A framed box has no padding between its rule and its text.
 - **tocloft fonts for lists of figures and tables.** `\cftfigfont` and `\cfttabfont` are ignored, and these lists are in the text font.
 

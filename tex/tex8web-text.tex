@@ -56,8 +56,10 @@
 
 \@ifpackageloaded{hyperref}{%
     % tex4ht's \nolinkurl fails on "_" inside \author. With this definition,
-    % a # comes out doubled.
-    \renewcommand\nolinkurl[1]{\texttt{\detokenize{#1}}}%
+    % a # comes out doubled. The span marks the text as a URL, for
+    % text.url_breaks.
+    \DeclareRobustCommand\nolinkurl[1]{\leavevmode\HCode{<span class="tex8web-nolinkurl">}%
+        \texttt{\detokenize{#1}}\HCode{</span>}}%
     % tex4ht writes the table of contents with \texorpdfstring's plain-text
     % argument, meant for PDF bookmarks. The TeX argument is used instead,
     % as in the PDF's table of contents.

@@ -835,6 +835,86 @@ function M.cell_align(document)
   end
 end
 
+-- url.sty sets the characters of \UrlBreaks as binary operators, those of
+-- \UrlBigBreaks as relations, and those of \UrlNoBreaks as opening atoms
+local function url_atom(c)
+  if c == ":" then return "rel" end
+  if c:match("[%.@\\/!_|;>%]%),%?&'+=#%%]") then return "bin" end
+  if c:match("[%(%[{<]") then return "open" end
+  return "ord"
+end
+
+-- the positions in url after which TeX may end a line: after a binary
+-- operator, and after a relation not followed by another. A binary operator
+-- that comes first, or after another operator, a relation, or an opening
+-- atom, is an ordinary one, and so is one before a relation (The TeXbook,
+-- appendix G, rules 5, 6, and 20).
+local function url_break_points(url)
+  local atoms, points = {}, {}
+  for i = 1, #url do
+    local atom = url_atom(url:sub(i, i))
+    local before = atoms[i - 1]
+    if atom == "bin" and (i == 1 or before == "bin" or before == "rel" or before == "open") then atom = "ord" end
+    if atom == "rel" and before == "bin" then atoms[i - 1] = "ord" end
+    atoms[i] = atom
+  end
+  for i = 1, #url - 1 do
+    points[i] = atoms[i] == "bin" or atoms[i] == "rel" and atoms[i + 1] ~= "rel"
+  end
+  return points
+end
+
+local function text_nodes(el, nodes)
+  for _, child in ipairs(el:get_children()) do
+    if child:is_text() then nodes[#nodes + 1] = child
+    elseif child:is_element() then text_nodes(child, nodes) end
+  end
+  return nodes
+end
+
+-- A <wbr> where url.sty lets a line end, in a \url, a \path, and a
+-- \nolinkurl (tex8web-text.tex). Without one, a URL is a single word to a
+-- browser: it moves to the next line whole, or breaks at any character
+-- (html4.4ht's overflow-wrap). No <wbr> goes in a scheme or right after its
+-- //, where "https://" would end a line alone, or after the last character,
+-- where the punctuation after a URL would wrap alone.
+function M.url_breaks(document)
+  for _, el in ipairs(document:query_selector("a.url, span.path, span.tex8web-nolinkurl")) do
+    local nodes = text_nodes(el, {})
+    local url = {}
+    for i, node in ipairs(nodes) do url[i] = node:get_text() end
+    url = table.concat(url)
+    local points = url_break_points(url)
+    local from = url:match("^%a[%w+.-]*://()") or 1
+    local offset = 0
+    for _, node in ipairs(nodes) do
+      local text, parent = node:get_text(), node:get_parent()
+      local pieces, start = {}, 1
+      for i = 1, #text do
+        local at = offset + i
+        if at >= from and points[at] then
+          pieces[#pieces + 1] = parent:create_text_node(text:sub(start, i))
+          pieces[#pieces + 1] = parent:create_element("wbr")
+          start = i + 1
+        end
+      end
+      offset = offset + #text
+      if #pieces > 0 then
+        if start <= #text then pieces[#pieces + 1] = parent:create_text_node(text:sub(start)) end
+        local children = {}
+        for _, child in ipairs(parent:get_children()) do
+          if child == node then
+            for _, piece in ipairs(pieces) do children[#children + 1] = piece end
+          else
+            children[#children + 1] = child
+          end
+        end
+        dom.set_children(parent, children)
+      end
+    end
+  end
+end
+
 -- tex4ht's <!--l. 65--> before each paragraph gives its line in the .tex,
 -- which readers do not need and which makes the page larger
 function M.line_comments(document)

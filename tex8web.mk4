@@ -113,6 +113,7 @@ local passes = {
   text.hfill,
   text.cell_align,
   text.no_break_spaces,
+  text.url_breaks,
   text.minipages,
   text.sidenotes,
   fixinlines,

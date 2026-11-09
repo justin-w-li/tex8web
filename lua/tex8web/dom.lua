@@ -3,6 +3,12 @@
 -- and no other file does.
 local M = {}
 
+-- LuaXML's void elements lack wbr, so a <wbr> was written <wbr></wbr>,
+-- whose end tag MathJax's LiteParser (prerender.mjs) reads as the end of
+-- the elements around it. Every parse shares the table that lists them
+-- (luaxml-domobject.lua).
+require("luaxml-domobject").parse("<p/>")._handler.options.voidElements.wbr = true
+
 -- the nearest ancestor (or el itself) that satisfies predicate
 function M.closest(el, predicate)
   while el and el:is_element() do

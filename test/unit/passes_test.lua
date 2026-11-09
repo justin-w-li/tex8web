@@ -656,6 +656,26 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(d:query_selector("p span.tex8web-nbsp")[1] ~= nil, true)
   end,
 
+  ["text.url_breaks: a <wbr> after url.sty's break characters, none in a scheme, right after its //, or at the end"] = function()
+    local d = parse([[<a class="url" href="h"><span class="cmtt-10">https://a.org/b?c=1&amp;d#e/</span></a>]]
+      .. [[ <span class="path"><span>/usr/</span><span>local/x</span></span>]]
+      .. [[ <a href="h"><span class="tex8web-nolinkurl"><span>10.1/x</span></span></a>]]
+      .. [[ <a href="h">a.b/c</a> mailto:a.b]])
+    text.url_breaks(d)
+    equal(body(d), "<a class='url' href='h'><span class='cmtt-10'>https://a.<wbr />org/<wbr />b?<wbr />c=<wbr />1&amp;<wbr />d#<wbr />e/</span></a>"
+      .. " <span class='path'><span>/usr/<wbr /></span><span>local/<wbr />x</span></span>"
+      .. " <a href='h'><span class='tex8web-nolinkurl'><span>10.<wbr />1/<wbr />x</span></span></a>"
+      .. " <a href='h'>a.b/c</a> mailto:a.b")
+  end,
+
+  ["text.url_breaks: no <wbr> after a first character, between two break characters, or before a relation, as in TeX"] = function()
+    local d = parse([[<span class="path">/usr</span> <span class="path">../src</span> <span class="path">a//b</span>]]
+      .. [[ <span class="path">a.:b::c(.d</span>]])
+    text.url_breaks(d)
+    equal(body(d), "<span class='path'>/usr</span> <span class='path'>..<wbr />/src</span> <span class='path'>a/<wbr />/b</span>"
+      .. " <span class='path'>a.:<wbr />b::<wbr />c(.d</span>")
+  end,
+
   ["text.minipages: tex4ht's whitespace around \\noindent's empty paragraph, and a raw ~ between minipages"] = function()
     local d = parse("<!--  l. 9  --><p class='noindent'>\n</p>\n"
       .. [[<div class="minipage tex8web-minipage-c">A</div>]] .. "\u{A0}" .. [[<div class="minipage tex8web-minipage-c">B</div>]])

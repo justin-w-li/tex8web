@@ -85,6 +85,7 @@ The other passes are for:
 - the space around theorems and captions, which TeX knows only inside them, moved from a mark onto the block. With the caption package's `position=auto`, a caption's place at the top or bottom of its float is told from the page: caption reads it from `\prevdepth`, which is changed by the anchor that tex4ht puts at the start of a float.
 - text after `\hfill`, which is set at the right, and line ends at `\break` and `\linebreak`
 - the alignment of a paragraph cell from its `\centering` or `\raggedleft`
+- a `<wbr>` where url.sty may break a URL, in a `\url`, a `\path`, and a `\nolinkurl`. The text of a `\nolinkurl` is put in a span by `tex8web-text.tex`.
 - the width of each picture drawn by dvisvgm, such as a TikZ picture, as a share of the text width, read from the SVG file and multiplied by the factors of each `\scalebox` or `\resizebox` around the picture (from marks that `tex8web-text.tex` writes around the scaled box, since dvisvgm draws the picture at its natural size), and its `vertical-align`, from the position of its TikZ `baseline`, written into the SVG
 - [links to headings](DOCUMENTATION.md#links-to-headings) and theorems
 - the removal of tex4ht's source-line comments

@@ -568,10 +568,21 @@ const bibliographies = {
 
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
 // hyphenated in the PDF, and html4.4ht's overflow-wrap still breaks one too
-// long for a line): the stylesheet's rule, and the URLs as links of that class
+// long for a line): the stylesheet's rule, and the URLs as links of that class.
+// A line may end after url.sty's break characters in a \url, a \nolinkurl,
+// and a \path, but not in a scheme or right after its //, after a URL's last
+// character, or in a link whose text is prose.
 const urls = {
-  'test-biburl': [/a\.url \{[^}]*hyphens: manual/,
+  'test-biburl': [/a\.url[^{]*\{[^}]*hyphens: manual/,
     /<a class='url' href='https:\/\/example\.org\/internationalization\/[^']*'><span class='cmtt-10'>/],
+  'test-urlbreaks': [/a\.url, \.path, \.tex8web-nolinkurl \{[^}]*hyphens: manual/,
+    /<span class='cmtt-10'>https:\/\/example\.<wbr \/>org\/<wbr \/>reports\/<wbr \/>understandingrepresentationsofcharacterization\/<wbr \/>introduction<\/span><\/a>\./,
+    /search\?<wbr \/>query=<wbr \/>representations&amp;<wbr \/>page=<wbr \/>2&amp;<wbr \/>sort=<wbr \/>relevance#<wbr \/>results<\/span>/,
+    /<span class='tex8web-nolinkurl'><span class='cmtt-10'>10\.<wbr \/>1000\/<wbr \/>representations\.<wbr \/>characterizations\.<wbr \/>2000\.<wbr \/>123456<\/span><\/span><\/a>/,
+    /<span class='path'><span class='cmtt-10'>\/usr\/<wbr \/>local\/<wbr \/>share\/<wbr \/>internationalization\/<wbr \/>documentation\/<wbr \/>representations\/<\/span><\/span>/,
+    /<a href='https:\/\/example\.org\/internationalization\/documentation'>the documentation of the representations and their characterizations<\/a>/,
+    /<p class='indent'>\s*<span class='tex8web-nolinkurl'><span class='cmtt-10'>10\.<wbr \/>1000/,
+    /<span class='path'><span class='cmtt-10'>\.\.<wbr \/>\/src\/<wbr \/>/],
 };
 
 // \, and \thinspace in text as a narrow no-break space, where TeX does not

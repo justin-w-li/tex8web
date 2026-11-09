@@ -1,0 +1,34 @@
+% Long URLs where a line may end inside them. In the PDF, url.sty breaks a
+% URL after a character of \UrlBreaks or \UrlBigBreaks, such as a slash or
+% a period, and never adds a hyphen. The web page does not break a URL
+% right after its scheme's //. hyperref's \nolinkurl, as biblatex
+% prints a DOI, and url.sty's \path break the same way. A link whose text
+% is prose breaks only at its spaces.
+\documentclass{article}
+\usepackage{hyperref}
+\title{Long URLs}
+\author{A. Author\\ \nolinkurl{a_author@example.org}}
+\begin{document}
+\maketitle
+A long address in the middle of a sentence, such as
+\url{https://example.org/internationalization/documentation/representations/characterizations},
+moves to the next line whole on the web unless it may break inside.
+At the end of a sentence, the period stays with the address
+\url{https://example.org/reports/understandingrepresentationsofcharacterization/introduction}.
+A query has more break points:
+\url{https://example.org/search?query=representations&page=2&sort=relevance#results}.
+A footnote has one too.\footnote{See
+\url{https://example.org/internationalization/documentation/representations/characterizations}.}
+
+A DOI printed as biblatex prints it:
+\href{https://doi.org/10.1000/representations.characterizations.2000.123456}{\nolinkurl{10.1000/representations.characterizations.2000.123456}},
+and a path: \path{/usr/local/share/internationalization/documentation/representations/}.
+A link whose text is prose, \href{https://example.org/internationalization/documentation}{the documentation of the representations and their characterizations}, breaks at its spaces only.
+See also \cite{guide}.
+
+\nolinkurl{10.1000/representations.characterizations.2000.123456} begins this paragraph, and a relative path, \path{../src/internationalization/documentation}, may break after its two dots.
+\begin{thebibliography}{9}
+\bibitem{guide} A.~Author. A guide to the documentation.
+\url{https://example.org/internationalization/documentation/representations/characterizations}.
+\end{thebibliography}
+\end{document}
