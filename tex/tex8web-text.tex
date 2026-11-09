@@ -479,6 +479,9 @@
         % the AMS classes' \@tocline sets the number in the line, without a box
         \ifdefined\@tocline\else\ifcsname l@#1\endcsname\begingroup
             \c@tocdepth\@M \everypar{}\let\selectfont\relax
+            % (the mw classes' \mw@tocskip compares the level with the entry
+            % before's, which their \tableofcontents starts at -1000)
+            \def\previous@toc@level{-1000}%
             \web@tocset{#1}{skip}{0pt}\web@tocset{#1}{weight}{normal}%
             \def\leavevmode{\ifvmode\web@tocset{#1}{skip}{\the\dimexpr\lastskip}\fi\unhbox\voidb@x}%
             \def\bfseries{\web@tocset{#1}{weight}{bold}}%

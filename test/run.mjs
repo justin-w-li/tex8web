@@ -140,6 +140,15 @@ const measured = {
     '--tex8web-chapter-after': '1.92863em', '--tex8web-chapter-label-after': '0.5787em',
     '--tex8web-part-label-after': '1.15741em', '--tex8web-part-before': null,
     '--tex8web-part-after': null, '--tex8web-part-align': 'center' },
+  // (the mw classes' table of contents: number widths and indents from
+  // their \SetTOCIndents, in place of article's 1.5em and 2.3em. mwrep has
+  // no \@makechapterhead, so its chapters keep the stylesheet's spacing)
+  'test-mwart': { '--tex8web-toc-section-number': '1.36082em', '--tex8web-toc-subsection-indent': '1.36082em',
+    '--tex8web-toc-subsection-number': '2.36388em', '--tex8web-toc-section-weight': 'bold' },
+  'test-mwrep': { '--tex8web-toc-chapter-number': '1.36082em', '--tex8web-toc-section-indent': '1.36082em',
+    '--tex8web-toc-section-number': '2.36388em', '--tex8web-toc-chapter-weight': 'bold',
+    '--tex8web-toc-section-weight': 'normal', '--tex8web-chapter-before': null,
+    '--tex8web-chapter-label-after': null },
   // (chapter styles left with the stylesheet's spacing: memoir's chappell,
   // with four skips, one of them zero, and fncychap's Glenn, with a
   // negative space between label and title)

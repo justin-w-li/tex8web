@@ -1,0 +1,35 @@
+% An mwrep document: a table of contents, a chapter, numbered headings,
+% lists, and a bibliography. mwrep's \l@chapter reads \previous@toc@level,
+% which the class defines only in \tableofcontents, and mwrep has no
+% \@makechapterhead.
+\documentclass{mwrep}
+\title{Mwrep}
+\author{Someone}
+\begin{document}
+\maketitle
+\tableofcontents
+\chapter{First}
+\section{A section}
+Some text, as cited in \cite{book} and \cite{paper}.
+\subsection{A subsection}
+\begin{itemize}
+    \item One,
+    \begin{itemize}
+        \item inside.
+    \end{itemize}
+    \item two.
+\end{itemize}
+\subsubsection{A subsubsection}
+\begin{enumerate}
+    \item First,
+    \item second.
+\end{enumerate}
+\section{Another section}
+\begin{description}
+    \item[Term] A description.
+\end{description}
+\begin{thebibliography}{9}
+\bibitem{book} A.~Author. \emph{A Book}. 2000.
+\bibitem{paper} B.~Writer. A paper. 2001.
+\end{thebibliography}
+\end{document}

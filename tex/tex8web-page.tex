@@ -533,7 +533,6 @@
 % ems of the text, as for a section: the heading ends in a plain \vskip,
 % so the space of a framed box below is the larger, not the sum
 \newcommand\web@chapterskips{%
-    \web@needs{web@makechapterhead}%
     \begingroup
         \web@noteskips
         \c@secnumdepth\z@ \csname m@m@Andtrue\endcsname
@@ -615,7 +614,10 @@
         \web@bighead{part}\parttitlefont\partnamefont
     \endgroup
     \web@bighead{chapter}\chaptitlefont\chapnamefont
-    \ifcsname web@titlefont@chapter\endcsname\else\web@chapterskips\fi
+    % (mwrep has no \@makechapterhead)
+    \ifcsname web@titlefont@chapter\endcsname\else
+        \ifdefined\web@makechapterhead\web@chapterskips\fi
+    \fi
     % (mwrep's \part has no \@part)
     \ifcsname web@titlefont@part\endcsname\else
         \ifdefined\web@@part

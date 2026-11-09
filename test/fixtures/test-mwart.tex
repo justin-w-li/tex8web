@@ -1,0 +1,33 @@
+% An mwart document: a table of contents, numbered headings at three levels,
+% lists, and a bibliography. mwart's \l@section reads \previous@toc@level,
+% which the class defines only in \tableofcontents.
+\documentclass{mwart}
+\title{Mwart}
+\author{Someone}
+\begin{document}
+\maketitle
+\tableofcontents
+\section{A section}
+Some text, as cited in \cite{book} and \cite{paper}.
+\subsection{A subsection}
+\begin{itemize}
+    \item One,
+    \begin{itemize}
+        \item inside.
+    \end{itemize}
+    \item two.
+\end{itemize}
+\subsubsection{A subsubsection}
+\begin{enumerate}
+    \item First,
+    \item second.
+\end{enumerate}
+\section{Another section}
+\begin{description}
+    \item[Term] A description.
+\end{description}
+\begin{thebibliography}{9}
+\bibitem{book} A.~Author. \emph{A Book}. 2000.
+\bibitem{paper} B.~Writer. A paper. 2001.
+\end{thebibliography}
+\end{document}
