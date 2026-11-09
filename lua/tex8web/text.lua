@@ -276,6 +276,19 @@ local function next_child(children, i)
   return i
 end
 
+-- (text that starts with a letter, as "th" after $i$)
+local function is_suffix(node)
+  return node and node:is_text() and node:get_text():find("^%a") ~= nil
+end
+
+local function has_suffix(el)
+  local children = el:get_children()
+  for i, child in ipairs(children) do
+    if is_inline_math(child) and is_suffix(children[next_child(children, i)]) then return true end
+  end
+  return false
+end
+
 -- the index of the last child, from i on, before the first whitespace. A
 -- text child is split there, and an element with whitespace in it ends
 -- the run before it.
@@ -303,23 +316,26 @@ end
 -- between a narrow no-break space and the math (p.\,$5$), so the two are
 -- wrapped together. Safari (26.5 and 27.0) also breaks between inline math
 -- and a no-break space after it ($x$~and), even when the two are wrapped,
--- unless the wrapper reaches the next whitespace. Verbatim text, alltt,
--- and listings are left as they are.
+-- unless the wrapper reaches the next whitespace. A browser also breaks
+-- between inline math and letters right after it ($i$th), where TeX does
+-- not, so those letters are wrapped with the math too. Verbatim text,
+-- alltt, and listings are left as they are.
 function M.no_break_spaces(document)
   document:traverse_elements(function(el)
     local class = el:get_attribute("class")
-    if class == "tex8web-nbsp" or class == "tex8web-nowrap" or not has_nbsp(el)
+    if class == "tex8web-nbsp" or class == "tex8web-nowrap" or not (has_nbsp(el) or has_suffix(el))
         or dom.closest(el, function(up) return is_math(up) or is_verbatim(up) end) then
       return
     end
     local children, wrapped, i = mark_nbsp(el), {}, 1
     while i <= #children do
       local j = next_child(children, i)
-      local last = is_tie(children[i]) and is_inline_math(children[j]) and j
-        or is_inline_math(children[i]) and is_tie(children[j]) and i
+      local inline = is_tie(children[i]) and is_inline_math(children[j]) and j
+        or is_inline_math(children[i]) and i
+      local after = inline and next_child(children, inline)
+      local last = inline and (is_tie(children[after]) or is_suffix(children[after]))
+        and word_end(el, children, after) or inline ~= i and inline
       if last then
-        local tie = next_child(children, last)
-        if is_tie(children[tie]) then last = word_end(el, children, tie) end
         local nowrap = el:create_element("span", {class = "tex8web-nowrap"})
         for n = i, last do nowrap:add_child_node(children[n]) end
         wrapped[#wrapped + 1] = nowrap
