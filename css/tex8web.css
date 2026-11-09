@@ -259,6 +259,14 @@ html body { max-width: var(--tex8web-textwidth);
 /* pictures no wider than the column. A picture in display math
    (\[ \begin{tikzcd} .. \]) has the space of display math */
 img { max-width: 100%; height: auto; }
+/* a \rule in text (tex8web-text.tex), no wider than the column, also after
+   a paragraph's indent. Its height is a border in the text color, as a
+   border is printed and kept in forced colors, where a background is not */
+.tex8web-rule { display: inline-block; max-width: 100%; height: 0;
+    width: calc(var(--tex8web-textwidth) * var(--tex8web-rule-width));
+    border-block-start: var(--tex8web-rule-height) solid;
+    vertical-align: var(--tex8web-rule-raise); }
+p.indent > .tex8web-rule:first-child { max-width: calc(100% - var(--tex8web-parindent, 0px)); }
 /* floats with \intextsep around them (tex8web-text.tex), with a table
    float's inner figure.float holding no margin of its own. Two floats in a
    row are \floatsep apart, as the PDF stacks floats at the top of a page.

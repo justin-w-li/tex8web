@@ -288,6 +288,33 @@
 \let\web@hrulefill\hrulefill
 \def\hrulefill{{\let\hfill\web@hfill\web@hrulefill}}
 
+% --- rules ------------------------------------------------------------------
+
+% a \rule as a box of its width and height in the text color, no wider than
+% the column (css/tex8web.css). tex4ht writes a rule as underscores, as many
+% as its width holds. tex4ht ignores the rule between the specials t4ht@[
+% and t4ht@] (info4ht.4ht), which nest. t4ht@_ would set the character for
+% the rest of the document, where tabularray.4ht sets it to none. The span
+% is at the body size, as tex4ht ends the span of the text's size before it.
+% The span holds an empty span: make4ht's joincharacters filter moves the
+% space after an empty span into it, where the space would be lost.
+% A rule with no width or height, such as a strut, is left to tex4ht, which
+% writes nothing for it. \HCode writes nothing in a picture or in the
+% page's <title>. dvisvgm ignores the specials and draws a picture's rule.
+\web@needs{@rule}
+\let\web@rule\@rule
+\def\@rule[#1]#2#3{\leavevmode
+    \begingroup
+    \setlength\@tempdima{#1}\setlength\@tempdimb{#2}\setlength\@tempdimc{#3}%
+    \let\web@rule@do\web@rule
+    \ifdim\@tempdimb>\z@ \ifdim\@tempdimc>\z@ \let\web@rule@do\web@rule@span \fi\fi
+    \web@rule@do[#1]{#2}{#3}%
+    \endgroup}
+\def\web@rule@span[#1]#2#3{%
+    \HCode{<span class="tex8web-rule" style="--tex8web-rule-width: \web@over\@tempdimb\web@textwidth;
+        --tex8web-rule-height: \web@bodyem\@tempdimc; --tex8web-rule-raise: \web@bodyem\@tempdima"><span></span></span>}%
+    \special{t4ht@[}\web@rule[#1]{#2}{#3}\special{t4ht@]}}
+
 % --- table cells ------------------------------------------------------------
 
 % the space at each side of a cell, \tabcolsep as in force at the table, on

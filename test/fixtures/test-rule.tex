@@ -1,0 +1,31 @@
+% A \rule in the text is a box of its width and height, in the text color,
+% as in the PDF, and no wider than the column. A strut, and the rules of a
+% table, math, and a picture, are left as they were. A rule in a table cell
+% or the title is a box too, and the page's <title> has no rule.
+\documentclass{article}
+\usepackage{xcolor,tikz}
+\title{A title\\\rule{\linewidth}{1pt}}\author{An author}\date{}
+\begin{document}
+\maketitle
+\noindent\rule{7in}{2.8pt}
+
+A rule raised \rule[2pt]{1em}{0.5em}, a lowered one \rule[-2pt]{1em}{0.5em},
+and a strut\rule{0pt}{3ex} drawn as nothing.
+
+\noindent\rule{\linewidth}{0.4pt}
+
+{\small A small rule \rule{0.5\textwidth}{1pt} in small text} and {\color{red}a red one
+\rule{1em}{1pt}}.
+
+\begin{itemize}
+    \item \rule{\linewidth}{1pt}
+\end{itemize}
+
+\begin{tabular}{|l|}
+    \hline
+    A cell with a strut\rule{0pt}{3ex} and a rule \rule{1em}{1pt} \\
+    \hline
+\end{tabular}
+
+Math $x \rule{1em}{1pt}$ and a picture \tikz\node[draw]{\rule{1em}{1pt}};.
+\end{document}

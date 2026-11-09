@@ -1,7 +1,9 @@
 % \WebLikePDF in the document's config (test-likepdf.cfg), which sets the
 % text as the PDF does. The checks are in test/run.mjs, those of the sizes
 % in test/page.mjs, and those of the space around center and verbatim, a
-% list's plus \parskip, in test/visual.mjs.
+% list's plus \parskip, in test/visual.mjs. A rule as wide as the text
+% after a paragraph's indent stays in the column of a phone's screen (the
+% check that the page fits in test/visual.mjs).
 \documentclass[11pt]{article}
 \usepackage{amsmath}
 \setlength{\parskip}{3pt}
@@ -36,4 +38,6 @@ A paragraph with a footnote.\footnote{A footnote.}
     Centered after a footnote.
 \end{center}
 A paragraph after the blocks.
+
+\rule{\textwidth}{0.4pt}, an indented rule as wide as the text, in the column.
 \end{document}

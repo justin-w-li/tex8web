@@ -757,6 +757,26 @@ const hfill = {
   'examples/custom': [/<span class='tex8web-hfill-gap'><\/span><span class='tex8web-hfill'><mjx-container/],
 };
 
+// A \rule in text as a box: its width a share of the text width, its height
+// and raise in ems of the body size, after text in \small as well, and in a
+// table cell and the title. Nine boxes and no underscores, also in <title>:
+// the struts and the rule in the picture write none, and the picture's SVG
+// draws its rule. With tabularray, the lines of a tblr after a \rule have
+// no underscores either.
+const rules = {
+  'test-rule': [
+    /<title>A title <\/title>/, /<h1 class='titleHead'>A title<br \/> <span class='tex8web-rule' style='--tex8web-rule-width: 1;/,
+    /<p[^>]*><span class='tex8web-rule' style='--tex8web-rule-width: 1\.46635; --tex8web-rule-height: 0\.28em; --tex8web-rule-raise: 0em'><span><\/span><\/span> <\/p>/,
+    /raised <span class='tex8web-rule' style='--tex8web-rule-width: 0\.02899; --tex8web-rule-height: 0\.5em; --tex8web-rule-raise: 0\.2em'><span><\/span><\/span>, a lowered one <span class='tex8web-rule' style='[^']*--tex8web-rule-raise: -0\.2em'>/,
+    /A small rule <\/span><span class='tex8web-rule' style='--tex8web-rule-width: 0\.5; --tex8web-rule-height: 0\.1em; [^']*'><span><\/span><\/span> <span class='cmr-9'>in small text/,
+    /<li>(?:(?!<\/li>)[^])*<span class='tex8web-rule' style='--tex8web-rule-width: 0\.92754;/,
+    /<td [^>]*>(?:(?!<\/td>)[^])*and a rule <span class='tex8web-rule' style='--tex8web-rule-width: 0\.02899;/,
+    /^(?:(?!tex8web-rule')[^])*(?:tex8web-rule'(?:(?!tex8web-rule')[^])*){9}$/,
+    /^(?![^]*__)/,
+  ],
+  'test-rule-tabularray': [/<span class='tex8web-rule' style='--tex8web-rule-width: 1;/, /^(?![^]*__)/],
+};
+
 // \break, \linebreak, and \linebreak[4] end the line, in a paragraph, a
 // list item, a centered paragraph, and a paragraph cell. Nothing ends the
 // line at a \linebreak[2], in a box, between paragraphs, or at \hfil\break,
@@ -1023,7 +1043,7 @@ const patterns = [
   [typeset, 'in the typeset math'], [speech, 'in the speech'], [pictures, 'among the pictures'],
   [titles, "as the page's title"], [dates, 'as the date'], [minipages, 'among the minipages'], [index, 'in the index'],
   [contents, 'in the page'], [fonts, "in the text's own font"], [colors, 'among the colors', true], [qed, 'around the QED boxes'],
-  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [breaks, 'at the line breaks'], [thin, 'at the thin spaces'], [ties, 'at the no-break spaces'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
+  [lists, 'among the lists'], [hfill, 'after an \\hfill'], [rules, 'among the rules'], [breaks, 'at the line breaks'], [thin, 'at the thin spaces'], [ties, 'at the no-break spaces'], [verbatim, 'in the verbatim text'], [terms, 'among the terms'],
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [tables, 'among the tables'],
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
   [bibliographies, 'in the bibliography'],

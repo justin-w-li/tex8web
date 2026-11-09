@@ -1,0 +1,12 @@
+% With tabularray, tex4ht writes no underscores for any rule in the
+% document (tabularray.4ht), also after a \rule, as for the lines that
+% tabularray draws with TeX rules.
+\documentclass{article}
+\usepackage{tabularray}
+\begin{document}
+\noindent\rule{\linewidth}{0.4pt}
+
+\begin{tblr}{hlines}
+    a & b \\
+\end{tblr}
+\end{document}

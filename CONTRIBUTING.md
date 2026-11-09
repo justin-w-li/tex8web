@@ -39,6 +39,7 @@ tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 - A length that a document can change for one element is written on that element: `\tabcolsep` on each table, `\fboxsep` and `\fboxrule` on each `\fbox`, `\framebox`, `\colorbox`, and `\fcolorbox`, and `\labelsep` on each list.
 - A size change within the text, such as `\small` or a footnote, is written by tex4ht as spans around the words, and the blocks around them stay at the body size. So the spacing of a list, theorem, algorithm, or box is given in ems of the body size, and each formula in that text is given its size as `--tex8web-math-size`, a multiple of the body size.
 - List labels are typeset by TeX, so they match the PDF.
+- A `\rule` in text is written as a box of its width, as a share of the text width, and its height, in ems of the body size. tex4ht writes a rule as underscores, which are left out by putting the rule between the specials `t4ht@[` and `t4ht@]`.
 - `\,` and `\thinspace` in text are written as U+202F, the narrow no-break space. TeX does not break a line at their kern, which tex4ht writes as a space where a line can break, or as nothing in italic.
 - A `~` or `\,` next to inline math is wrapped with the math in a `tex8web-nowrap` span by `text.no_break_spaces`. After the math, the span reaches the next whitespace. Safari breaks a line between inline math and a no-break space after it, even inside a `white-space: nowrap` span, unless the span reaches the next place where the line may break.
 - The title is passed from one LaTeX run to the next by tex4ht, so the first draft build, with one LaTeX run, has no title.
@@ -305,7 +306,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, and prerendering |
 | `tex/tex8web-core.tex` | the entry point, with the four modules below |
 | `tex/tex8web-math.tex` | the MathJax configuration, `\WebMathMacros`, the escaping of formula source, siunitx, equation numbers, `\intertext`, TikZ in display math, and the space around display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, the space in table cells and the alignment of paragraph cells, the table of contents, lists, `\fbox` and `\colorbox`, bibliographies, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, `\rule` in text, the space in table cells and the alignment of paragraph cells, the table of contents, lists, `\fbox` and `\colorbox`, bibliographies, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, and the measurements and heading fonts of the document |
 | `tex/tex8web-boxes.tex` | tcolorbox boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: settings lost under tex4ht, dcolumn's old names for `dcolumn.4ht`, and `\web@needs` |
