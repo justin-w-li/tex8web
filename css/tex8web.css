@@ -751,7 +751,8 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 }
 /* a link's target: a little space above it, and the highlight */
 :target { scroll-margin-top: 1em; }
-:is(h2, h3, h4, h5, h6, .tex8web-term):target, .newtheorem:has(.head > a:target), .tcolorbox:has(> a:target) {
+:is(h2, h3, h4, h5, h6, .paragraphHead, .likeparagraphHead, .subparagraphHead, .likesubparagraphHead,
+    .tex8web-term):target, .newtheorem:has(.head > a:target), .tcolorbox:has(> a:target) {
     background-color: var(--tex8web-highlight); }
 /* an equation's anchors (marked in page.lua) come right before it, or for
    a gather at the end of the paragraph before. The highlight goes on the

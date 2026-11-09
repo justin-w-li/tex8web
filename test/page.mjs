@@ -504,6 +504,28 @@ async function themed(chrome, file) {
   }
 }
 
+// A link to a heading tints the heading, also a run-in one, which tex4ht
+// writes as a span in the paragraph (\paragraph and \subparagraph).
+async function tinting(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, {}, async page => {
+    const [count, runin, untinted] = await page.evaluate(`(async () => {
+      const untinted = [];
+      let count = 0, runin = 0;
+      for (const a of document.querySelectorAll('#tex8web-toc .tableofcontents a')) {
+        const el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+        location.hash = a.hash;
+        await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+        count++;
+        if (el.matches('span')) runin++;
+        if (getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)') untinted.push(a.textContent.trim());
+      }
+      return [count, runin, untinted];
+    })()`);
+    if (!runin) return [`no run-in heading among ${count} headings`];
+    return untinted.map(title => `${title}: a link followed to the heading, the heading not tinted`);
+  });
+}
+
 // A link to an equation tints the equation, as a link to a heading tints
 // the heading, whether tex4ht's anchor is right before it, first among the
 // anchors of an alignment's lines, or, for a gather, last in the paragraph
@@ -1482,6 +1504,7 @@ async function hang(chrome, file, doc) {
 // - transitions: an example and the page that links to it
 // - contents, isolated, and lazy: a page with subsections before its first
 //   section
+// - tint: a page with a run-in heading in its table of contents
 // - fit: a short example whose one section with subsections is not the first
 // - ending: two examples, each with a heading that stays below the window's
 //   top quarter at the end, and one with two
@@ -1501,6 +1524,7 @@ const checks = {
   fade: [['test'], each(fading)],
   theme: [['test-generic'], each(themed)],
   target: [['test-generic', 'test-index'], each(targeting)],
+  tint: [['examples/footnotes'], each(tinting)],
   filter: [['test', 'test-tcolorbox'], each(filtering)],
   keyboard: [['examples/basic'], each(keying)],
   lazy: [['test-tocsub'], lazily],
