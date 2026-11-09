@@ -378,6 +378,60 @@ async function hiding(chrome, file) {
   });
 }
 
+// A wide window scrolled partway down, narrowed past the breakpoint to a
+// phone's width, then widened again: the line of text at the window's top
+// stays near the top each time: at most a quarter of the window below it,
+// or two lines above it, as Chrome keeps the place of a block, and a line
+// inside a paragraph that wraps again may move a little. The line is
+// marked by the first character of the text that starts below the top,
+// outside the controls, the table of contents, and the footnotes, which
+// move between the layouts.
+async function narrowing(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 900 }, async page => {
+    const mark = `(() => {
+      const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode: text =>
+        /\\S/.test(text.data) && !text.parentElement.closest('.tex8web-controls, #tex8web-toc, .tex8web-sidenote, .footnotes, .tex8web-permalink, mjx-container')
+          ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
+      for (let text; (text = walk.nextNode());) {
+        const at = text.data.search(/\\S/), range = document.createRange();
+        range.setStart(text, at);
+        range.setEnd(text, at + 1);
+        const box = range.getBoundingClientRect();
+        if (box.height && box.top >= 0) {
+          window.__mark = range;
+          return [Math.round(box.top), text.data.slice(at, at + 30), Math.round(scrollY), box.height];
+        }
+      }
+      return null;
+    })()`;
+    const settled = `new Promise(done => {
+      let y = -1, same = 0;
+      const frame = () => {
+        same = scrollY === y ? same + 1 : 0;
+        y = scrollY;
+        if (same < 5) requestAnimationFrame(frame);
+        else done([Math.round(__mark.getBoundingClientRect().top), Math.round(scrollY)]);
+      };
+      requestAnimationFrame(frame);
+    })`;
+    const problems = [];
+    // (instant: a smooth scroll still running at the resize would move the
+    // page after the line is marked)
+    await page.evaluate(`scrollTo({ top: 0.4 * (document.documentElement.scrollHeight - innerHeight), behavior: 'instant' })`);
+    await page.frame();
+    for (const [from, to, size] of [['wide', 'narrow', [400, 800]], ['narrow', 'wide', [1600, 900]]]) {
+      const before = await page.evaluate(mark);
+      if (!before) return [`${from}: no text below the window's top`];
+      await page.resize(...size);
+      const [after, y] = await page.evaluate(settled);
+      if (after < -2 * before[3] || after > size[1] / 4) {
+        problems.push(`"${before[1]}", ${before[0]}px down a ${from} window, ${after}px down once ${to} (scrolled ${before[2]}px, then ${y}px)`);
+      }
+    }
+    return problems;
+  });
+}
+
 // On a phone screen, a page opened partway down, and nothing moves: by a
 // link's #, with its bar hidden, as after any link's jump, and the heading
 // at the top; by a reload, with its bar shown with its line, as the
@@ -1634,6 +1688,7 @@ const checks = {
   viewer: [['test-article', 'examples/basic'], each(viewing)],
   touch: [['examples/basic'], each(touching)],
   bar: [['test'], each(async (...args) => [...await naming(...args), ...await hiding(...args), ...await landing(...args)])],
+  narrow: [['test', 'examples/complex'], each(narrowing)],
   fade: [['test'], each(fading)],
   theme: [['test-generic'], each(themed)],
   target: [['test-generic', 'test-index'], each(targeting)],

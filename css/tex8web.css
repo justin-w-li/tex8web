@@ -243,8 +243,11 @@ h1:is(.partHead, .likepartHead) { text-align: var(--tex8web-part-align, center);
 .subparagraphHead .tex8web-labelsep { width: var(--tex8web-subparagraph-labelsep, 1em); }
 /* a column as wide as the PDF's in ems of the text, so that lines hold
    about as much, or the screen's width when narrower. The top margin
-   clears the controls (page.lua), at the same height on any screen */
-html body { max-width: var(--tex8web-textwidth);
+   clears the controls (page.lua), at the same height on any screen. The
+   side padding is the gutter of a narrow screen, set on every screen:
+   Chrome does not keep the reader's place (scroll anchoring) across a
+   resize that changes the body's margin or padding */
+html body { max-width: var(--tex8web-textwidth); padding-inline: 1.25rem;
     margin-block-start: 4rem; margin-block-end: 4em; }
 /* display math with \abovedisplayskip above and \belowdisplayskip below
    (tex8web-math.tex), less MathJax's padding, which keeps the ink of a
@@ -830,7 +833,6 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
         white-space: nowrap; text-overflow: ellipsis;
         /* (slightly above center, where lowercase letters look low) */
         padding-block: 0.275rem 0.475rem; }
-    html body { padding-inline: 1.25rem; }
     /* (no room for a # in the margin: its link covers the heading,
        theorem head, or box title instead, under the links in it but over
        its math, which MathJax positions) */
