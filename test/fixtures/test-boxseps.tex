@@ -1,7 +1,7 @@
 % The space in tables, arrays, boxes, and description lists from TeX's
 % lengths, each set away from its default, in the document and in a group
 \documentclass[11pt]{article}
-\usepackage{amsmath,xcolor,tcolorbox}
+\usepackage{mathtools,xcolor,tcolorbox}
 \setlength\tabcolsep{12pt}
 \setlength\arraycolsep{10pt}
 \setlength\fboxsep{6pt}
@@ -28,6 +28,13 @@ narrow & joined & cells \\
    \quad \begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix}
    \quad \begin{array}{c@{\hspace{2em}}c} x & y \end{array}
    \quad \left(\begin{array}{cc} e & f \end{array}\right) \]
+
+\[ \begin{matrix*} 1 & 2 \end{matrix*}
+   \quad \begin{pmatrix*}[r] -1 & 2 \\ 3 & 4 \end{pmatrix*}
+   \quad \begin{bmatrix*} 1 & 2 \end{bmatrix*}
+   \quad \begin{Bmatrix*} 1 & 2 \end{Bmatrix*}
+   \quad \begin{vmatrix*} 1 & 2 \end{vmatrix*}
+   \quad \begin{Vmatrix*} 1 & 2 \end{Vmatrix*} \]
 
 A \fbox{framed} word, a \framebox[3cm][l]{wide} one,
 a \colorbox{yellow}{colored} one, and an \fcolorbox{red}{yellow}{outlined} one.

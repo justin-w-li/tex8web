@@ -92,6 +92,8 @@ function tex8web(config, tex) {
     multline: {...alignment, rowspacing: 0.5}, 'multline*': {...alignment, rowspacing: 0.5},
     array: array, matrix: matrix, pmatrix: matrix, bmatrix: matrix, Bmatrix: matrix,
     vmatrix: matrix, Vmatrix: matrix,
+    'matrix*': matrix, 'pmatrix*': matrix, 'bmatrix*': matrix, 'Bmatrix*': matrix,
+    'vmatrix*': matrix, 'Vmatrix*': matrix,
     // amsmath's cases sets \arraystretch to 1.2, and has two columns a
     // \quad apart, also when the second is empty
     cases: {rowspacing: 0.2, stretch: 1.2, space: 0, columns: 2},

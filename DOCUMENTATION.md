@@ -359,7 +359,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **The separator of xfrac's `\sfrac`.** A fraction with a separator in brackets, such as `$\sfrac{1}[/]{2}$`, is set wrongly, as a fraction over the bracket. Leave the separator out.
 - **A TikZ picture in display math**, such as a `tikzcd` diagram, is drawn as one picture with the rest of the math in that display.
 - **The space above display math** is `\abovedisplayskip`, also after a short line, where the PDF has the smaller `\abovedisplayshortskip`.
-- **Space between array columns.** `\arraycolsep` is taken at `\begin{document}`, so a change to it for one formula is ignored. A rule `|` next to an `@{}` or `!{}` column has half an em of space beside it, where the PDF has `\arraycolsep`. mathtools' starred matrices, such as `pmatrix*`, have MathJax's space between columns.
+- **Space between array columns.** `\arraycolsep` is taken at `\begin{document}`, so a change to it for one formula is ignored. A rule `|` next to an `@{}` or `!{}` column has half an em of space beside it, where the PDF has `\arraycolsep`.
 - **Boxes in math.** `\fbox`, `\colorbox`, and `\fcolorbox` in math have MathJax's space and frame, not `\fboxsep` and `\fboxrule`.
 - **Styles for `.mathjax-inline`** in a config apply only to a page built without Node, and to math in text of another size, such as a footnote.
 

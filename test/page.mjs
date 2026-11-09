@@ -1174,8 +1174,9 @@ async function sizing(chrome, file) {
 // tcolorbox's boxsep plus middle, and \labelsep, each set away from its
 // default, and smaller in a group for the second table, an \fbox, and a
 // \colorbox. Only the space beside a column that the source sets with
-// @{} stays 0. A label starts at the margin, also when made with
-// \MakeUppercase. A \framebox in \small is as wide as in the body. A
+// @{} stays 0. mathtools' starred matrices are spaced as amsmath's. A
+// label starts at the margin, also when made with \MakeUppercase. A
+// \framebox in \small is as wide as in the body. A
 // box's text starts after its padding in an indented paragraph, as
 // \WebLikePDF indents it. Within half a px, or a px for each frame, which
 // Chrome draws in whole px.
@@ -1233,11 +1234,24 @@ const spaces = `(() => {
     add(\`description \${i + 1}'s label after the margin\`, first(dl.querySelector('dt')) - box(dl).left, 0);
     add(\`description \${i + 1}'s text after the label\`, (start >= 0 ? range.getBoundingClientRect().left : NaN) - box(label).right, 10.95 * (i + 1));
   });
-  const [array, matrix, given] = all('mjx-mtable').map(table => [...table.querySelectorAll('mjx-mtd')]);
+  const tables = all('mjx-mtable');
+  const [array, matrix, given] = tables.map(table => [...table.querySelectorAll('mjx-mtd')]);
   sides('an array', array?.[0], 10);
   sides('a pmatrix', matrix?.[0], { left: 0, right: 10 });
   sides('an array with @{\\\\hspace{2em}}', given?.[0], { left: 10, right: 0 });
   sides('an @{\\\\hspace{2em}} column', given?.[1], 0);
+  ['matrix*', 'pmatrix*', 'bmatrix*', 'Bmatrix*', 'vmatrix*', 'Vmatrix*'].forEach((name, i) =>
+    sides('a ' + name, tables[4 + i]?.querySelector('mjx-mtd'), { left: 0, right: 10 }));
+  // pmatrix*[r]'s rows as far apart as pmatrix's, and its first column's
+  // entries, -1 and 3, ending at the same place
+  const rowGap = table => {
+    const [one, two] = table ? table.querySelectorAll('mjx-mtr') : [];
+    return box(two).top - box(one).top;
+  };
+  add("a pmatrix*'s rows apart, less a pmatrix's", rowGap(tables[5]) - rowGap(tables[1]), 0);
+  const end = cell => box([...(cell?.querySelectorAll('mjx-c') ?? [])].pop()).right;
+  const starred = [...(tables[5]?.querySelectorAll('mjx-mtd') ?? [])];
+  add("a pmatrix*[r]'s first column, its right ends apart", end(starred[0]) - end(starred[2]), 0);
   return found;
 })()`;
 async function spacing(chrome, file) {
