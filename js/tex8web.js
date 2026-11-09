@@ -94,6 +94,9 @@ function tex8web(config, tex) {
     align: alignment, 'align*': alignment, alignat: alignment, 'alignat*': alignment,
     flalign: alignment, 'flalign*': alignment, gather: alignment, 'gather*': alignment,
     aligned: alignment, alignedat: alignment, gathered: alignment, split: alignment,
+    // LaTeX's eqnarray sets its rows a \baselineskip and \jot apart
+    // (\@xeqncr, latex.ltx)
+    eqnarray: alignment, 'eqnarray*': alignment,
     multline: {...alignment, rowspacing: 0.5}, 'multline*': {...alignment, rowspacing: 0.5},
     array: array, matrix: matrix, pmatrix: matrix, bmatrix: matrix, Bmatrix: matrix,
     vmatrix: matrix, Vmatrix: matrix,

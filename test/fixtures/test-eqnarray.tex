@@ -1,7 +1,9 @@
 % LaTeX's eqnarray as in the PDF: each row numbered, unless it has
 % \nonumber, and a \ref to a row's \label gives the row's number.
-% eqnarray* numbers no row.
+% eqnarray* numbers no row. A \qedhere in an eqnarray, which amsthm sets
+% in the row, takes no number from the row.
 \documentclass{article}
+\usepackage{amsmath,amsthm}
 \begin{document}
 \section{S}
 \begin{eqnarray}
@@ -13,6 +15,11 @@ a & = & b \label{eq:first} \\
 e & = & f \\
   & = & g
 \end{eqnarray*}
+\begin{proof}
+\begin{eqnarray}
+j & = & k \qedhere
+\end{eqnarray}
+\end{proof}
 \begin{equation} h = i \label{eq:after} \end{equation}
 See \ref{eq:first}, \ref{eq:last}, and \ref{eq:after}.
 \end{document}

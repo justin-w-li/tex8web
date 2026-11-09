@@ -720,12 +720,18 @@ const qed = {
     /See <a href='#s'>1</,
     /^(?:(?!mjx-c class='mjx-c3D' space)[^])*(?:mjx-c class='mjx-c3D' space='4'(?:(?!mjx-c class='mjx-c3D' space)[^])*){3}$/,
   ],
-  // eqnarray: a number on each row but the one with \nonumber, and none in
-  // eqnarray*. A \ref to a row's \label gives its number and leads to it,
-  // and the equation after is the third, as in the PDF
+};
+
+// Equation numbers, as in the PDF
+const numbers = {
+  // eqnarray: a \ref to a row's \label gives its number and leads to it.
+  // The equation after an eqnarray whose row has a \qedhere is the fourth:
+  // the row keeps its number, and the box is set below the display
   'test-eqnarray': [
-    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*See <a href='#\1'>1<!--[^>]*--><\/a>, <a href='#\2'>2<!--[^>]*--><\/a>, and <a href='#[^']+'>3<!--/,
-    /^(?:(?!<mjx-labels)[^])*(?:<mjx-labels(?:(?!<mjx-labels)[^])*){2}$/,
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*See <a href='#\1'>1<!--[^>]*--><\/a>, <a href='#\2'>2<!--[^>]*--><\/a>, and <a href='#[^']+'>4<!--/,
+    /<\/mjx-container><\/span><\/div>\s*<div class='tex8web-qed-line'>/,
+    // (four numbered rows: none for the \nonumber row or in eqnarray*)
+    /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){4}$/,
   ],
 };
 
@@ -1062,7 +1068,7 @@ const patterns = [
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [tables, 'among the tables'],
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
   [bibliographies, 'in the bibliography'],
-  [urls, 'among the URLs', true],
+  [urls, 'among the URLs', true], [numbers, 'in the equation numbers'],
 ];
 
 // the problems in a built page's logs, the page, and the files beside it

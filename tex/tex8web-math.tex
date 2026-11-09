@@ -404,8 +404,8 @@
 %   part of an alignat gets its number of columns
 % - equation numbers: MathJax would number the equations from 1, while
 %   \eqref and \ref print TeX's numbers, and tex4ht steps the counter once
-%   per environment. So each row is numbered here, and MathJax gets the
-%   number as a \tag
+%   per amsmath environment, and never in an eqnarray. So each row is
+%   numbered here, and MathJax gets the number as a \tag
 % - amsmath starts each right-hand column (&= b, &-c) with {}, so a
 %   relation or binary operator there is spaced as one. MathJax does not
 \int_new:N \g__web_alignment_int
@@ -557,7 +557,7 @@
                 }
                 { \token_to_str:N \notag } { \bool_set_false:N \l__web_number_row_bool }
                 { \token_to_str:N \nonumber } { \bool_set_false:N \l__web_number_row_bool }
-                { \token_to_str:N \qedhere } { \bool_set_true:N \l__web_qed_wanted_bool }
+                { \token_to_str:N \qedhere } { \__web_qed_wanted: }
                 { \token_to_str:N \\ } { \__web_newline: }
             }
         }
@@ -595,6 +595,13 @@
 % \qedsymbol in force, chosen as for the text (\web@qed@choose,
 % tex8web-text.tex)
 \int_new:N \g__web_qed_int
+% In an eqnarray, amsthm sets the box in the row, which keeps its number
+% (\math@qedhere, amsthm.sty). Here the box stays on the stack, and is set
+% below the display
+\cs_new_protected:Npn \__web_qed_wanted: {
+    \str_if_eq:eeF { \seq_item:Nn \l__web_envs_seq { -1 } } { eqnarray }
+        { \bool_set_true:N \l__web_qed_wanted_bool }
+}
 \@ifpackageloaded{amsthm}{ \web@needs{QED@stack} }{}
 \cs_new_protected:Npn \__web_qedhere: {
     \cs_if_exist:NT \QED@stack {
