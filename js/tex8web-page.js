@@ -164,10 +164,12 @@
     let was = layout(), width = innerWidth, last = scrollY;
     const atTop = () => root.classList.toggle('tex8web-top', scrollY <= 0);
     let jumped = false;
+    const away = () => controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > 0);
     const jump = () => {
       jumped = true;
-      controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > 0);
+      away();
     };
+    // (target() throws on a hash that does not decode, as a reader may type)
     try {
       jumped = performance.getEntriesByType('navigation')[0]?.type === 'navigate' && Boolean(target(location));
     } catch {}
@@ -187,7 +189,7 @@
     atTop();
     // (a load with a hash: the bar hidden a frame before transitions return)
     const settle = () => requestAnimationFrame(() => {
-      if (jumped) controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > 0);
+      if (jumped) away();
       requestAnimationFrame(() => {
         settled = true;
         last = scrollY;
@@ -209,7 +211,7 @@
         width = innerWidth;
         last = scrollY;
       } else if (jumped) {
-        controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > 0);
+        away();
         last = scrollY;
       } else if (scrollY >= 0 && scrollY <= end && (Math.abs(scrollY - last) >= 10 || top())) {
         controls.classList.toggle('tex8web-away', was === 'narrow' && scrollY > last && !top());

@@ -393,7 +393,9 @@ async function landing(chrome, file) {
   const state = `new Promise(done => setTimeout(() => {
     const controls = document.querySelector('.tex8web-controls');
     done([scrollY, controls.classList.contains('tex8web-away'), getComputedStyle(controls).borderBottomColor, __runs.join(),
-      document.getElementById(${JSON.stringify(id)}).getBoundingClientRect().top]);
+      document.getElementById(${JSON.stringify(id)}).getBoundingClientRect().top,
+      Math.min(parseFloat(getComputedStyle(document.getElementById(${JSON.stringify(id)})).marginTop),
+        parseFloat(getComputedStyle(document.body).fontSize))]);
   }, 500))`;
   const problems = [];
   const judge = (how, [y, away, line, moved]) => {
@@ -407,7 +409,14 @@ async function landing(chrome, file) {
     const got = await page.evaluate(state);
     judge('a link', got);
     if (!got[1]) problems.push('landing by a link: the bar shown');
-    if (got[4] > 17) problems.push(`landing by a link: the heading ${Math.round(got[4])}px down`);
+    if (Math.abs(got[4] - got[5]) > 1) problems.push(`landing by a link: the heading ${Math.round(got[4])}px down, not ${Math.round(got[5])}px`);
+    // without JavaScript, the bar stays: room for it above the target
+    const room = await page.evaluate(`(() => {
+      document.documentElement.classList.remove('tex8web-js');
+      return [parseFloat(getComputedStyle(document.querySelector(':target')).scrollMarginTop),
+        document.querySelector('.tex8web-controls').offsetHeight];
+    })()`);
+    if (room[0] <= room[1]) problems.push(`landing by a link without JavaScript: ${room[0]}px above the target, under a bar ${room[1]}px tall`);
   });
   await chrome.withPage(url, { ...size, before: runs }, async page => {
     await page.evaluate('scrollTo(0, 1500)');
@@ -424,10 +433,11 @@ async function landing(chrome, file) {
 
 // On a phone screen, every entry of the table of contents followed down from
 // the top by a tap in the drawer, up from the end by a change of the hash,
-// then Back to the end and Forward again. After each jump the bar is away,
-// and the heading lands its space before it, at most one body em, below the
-// window's top, with the block above it off the screen; or lower, with the
-// page at its end.
+// then Back to the end and Forward again, each after a turn of the wheel
+// that ends the last jump. After each jump the bar is away, and the heading
+// lands its space before it, at most one body em, below the window's top,
+// with the block above it off the screen; or lower, with the page at its
+// end. The wheel turned up then shows the bar.
 async function jumping(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 400, height: 800 }, async page => {
     const problems = [];
@@ -471,7 +481,8 @@ async function jumping(chrome, file) {
     };
     const settle = `(async () => { await ${still}; return [scrollY, ${max}, document.querySelector('.tex8web-controls').classList.contains('tex8web-away')]; })()`;
     for (let i = 0; i < count; i++) {
-      await page.evaluate(`history.replaceState(null, '', location.pathname); scrollTo({ top: 0, behavior: 'instant' }); ${still}`);
+      await page.evaluate(`dispatchEvent(new WheelEvent('wheel')); history.replaceState(null, '', location.pathname);
+        scrollTo({ top: 0, behavior: 'instant' }); ${still}`);
       // down: the contents button, then the entry in the drawer
       const button = await page.evaluate(`(() => {
         const box = document.querySelector('.tex8web-contents').getBoundingClientRect();
@@ -493,16 +504,23 @@ async function jumping(chrome, file) {
       const down = await landed(i);
       judge(`entry ${i + 1} (${down.hash}) followed down`, down);
       // up: from the end, by the hash
-      await page.evaluate(`history.replaceState(null, '', location.pathname); scrollTo({ top: ${max}, behavior: 'instant' }); ${still}`);
+      await page.evaluate(`dispatchEvent(new WheelEvent('wheel')); history.replaceState(null, '', location.pathname);
+        scrollTo({ top: ${max}, behavior: 'instant' }); ${still}`);
       await page.evaluate(`location.hash = ${JSON.stringify(down.hash)}`);
       judge(`entry ${i + 1} followed up`, await landed(i));
       // Back to the end, and Forward to the heading
-      await page.evaluate('history.back()');
+      await page.evaluate(`dispatchEvent(new WheelEvent('wheel')); history.back()`);
       const [y, end, away] = await page.evaluate(settle);
       if (Math.abs(y - end) > 1) problems.push(`entry ${i + 1}, Back: at ${Math.round(y)}px, not at the end`);
       if (!away) problems.push(`entry ${i + 1}, Back: the bar shown`);
-      await page.evaluate('history.forward()');
-      judge(`entry ${i + 1}, Forward`, await landed(i));
+      await page.evaluate(`dispatchEvent(new WheelEvent('wheel')); history.forward()`);
+      const forward = await landed(i);
+      judge(`entry ${i + 1}, Forward`, forward);
+      if (forward.end) continue;
+      await page.mouse('wheel', 200, 400, { deltaY: -100 });
+      if (!await until(() => page.evaluate(`!document.querySelector('.tex8web-controls').classList.contains('tex8web-away')`))) {
+        problems.push(`entry ${i + 1}: the bar not shown on the wheel turned up after Forward`);
+      }
     }
     return problems;
   });
@@ -1600,8 +1618,7 @@ async function hang(chrome, file, doc) {
 //   section
 // - tint: a page with a run-in heading in its table of contents
 // - fit: a short example whose one section with subsections is not the first
-// - jumps: an example with sections and subsections, each heading far
-//   enough from the end to be scrolled to
+// - jumps: an example with sections and subsections
 // - ending: two examples, each with a heading that stays below the window's
 //   top quarter at the end, and one with two
 // - sizes: \WebLikePDF at a size other than 12pt, and a table of contents
