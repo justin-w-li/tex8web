@@ -33,5 +33,11 @@
     "allow": [
       "repeated ids: Xbook, Xpaper"
     ]
+  },
+  "test-natbib-authoryear": {
+    "why": "natbib.4ht writes each entry's anchor twice without hyperref, before the label and before the entry",
+    "allow": [
+      "repeated ids: Xbook, Xpaper"
+    ]
   }
 }

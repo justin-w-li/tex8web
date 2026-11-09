@@ -519,6 +519,8 @@ const lists = {
 // biblatex.4ht's.
 const bibliography = (sep, labelsep, attributes = '') =>
   new RegExp(`<dl${attributes} style='--tex8web-bibitem-sep: ${sep.replace('.', '\\.')}; --tex8web-biblabelsep: ${labelsep.replace('.', '\\.')}'>`);
+const hanging = (sep, hang, attributes, indent = `-${hang}`) => new RegExp(`<dl${attributes} style='--tex8web-bibitem-sep: ${sep.replace('.', '\\.')}; `
+  + `--tex8web-bibhang: ${hang.replace('.', '\\.')}; --tex8web-bibitemindent: ${indent.replace('.', '\\.')}'>`);
 const bibliographies = {
   // (article's \itemsep of 4pt and \parsep of 4pt)
   'test-article': [bibliography('0.8em', '0.5em')],
@@ -537,6 +539,14 @@ const bibliographies = {
   // (biblatex's \bibitemsep, the list's \itemsep of 4pt, its \bibparsep of
   // 0pt, and its \biblabelsep, twice \labelsep)
   'examples/complex': [bibliography('0.4em', '1em', " class='thebibliography'")],
+  // (author-year lists, whose \itemindent is -\leftmargin, with \leftmargin
+  // and \itemindent in place of the label space: natbib's \bibsep, the
+  // list's \itemsep plus \parsep at load, and its \bibhang of 1em, and
+  // biblatex's \bibhang, article's \parindent of 15pt. A \bibhang of 0pt
+  // leaves no room for a label too)
+  'test-natbib-authoryear': [hanging('0.8em', '1em', " class='tex8web-bibhang'"),
+    hanging('0.8em', '0em', " class='tex8web-bibhang'", '0em')],
+  'test-biblatex-authoryear': [hanging('0em', '1.5em', " class='thebibliography tex8web-bibhang'")],
 };
 
 // \, and \thinspace in text as a narrow no-break space, where TeX does not

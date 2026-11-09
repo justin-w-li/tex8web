@@ -1,0 +1,11 @@
+% An article with biblatex's authoryear style, through the bibtex backend.
+% Its bibliography has no labels: the style's list sets \leftmargin to
+% \bibhang and \itemindent to -\leftmargin (authoryear.bbx), so each entry
+% starts at the margin and its later lines are indented by \bibhang.
+\documentclass{article}
+\usepackage[backend=bibtex,style=authoryear]{biblatex}
+\addbibresource{test-biblatex-authoryear.bib}
+\begin{document}
+Some text, as cited in \textcite{book} and \parencite{paper}.
+\printbibliography
+\end{document}

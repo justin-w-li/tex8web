@@ -715,6 +715,14 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 :is(.thebibliography > dl, dl.thebibliography) > dt { grid-column: 1; justify-self: end;
     float: none; margin: 0; }
 :is(.thebibliography > dl, dl.thebibliography) > dd { grid-column: 2; margin: 0; }
+/* an author-year bibliography, whose entries have no labels: no space
+   after the empty label column, and each entry hangs, as LaTeX's list sets
+   it, by \leftmargin with its first line at \itemindent. The first <p> of
+   biblatex's entries had tex4ht's fixed hanging indent (html4.4ht) */
+:is(.thebibliography > dl, dl.thebibliography).tex8web-bibhang { column-gap: 0; }
+:is(.thebibliography > dl, dl.thebibliography).tex8web-bibhang > dd {
+    padding-left: var(--tex8web-bibhang); text-indent: var(--tex8web-bibitemindent); }
+:is(.thebibliography > dl, dl.thebibliography).tex8web-bibhang > dd > p:first-child { text-indent: inherit; }
 
 /* --- links to the page (page.lua) -------------------------------------- */
 

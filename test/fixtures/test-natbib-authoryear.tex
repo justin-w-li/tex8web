@@ -1,0 +1,22 @@
+% An article with natbib in author-year mode, whose bibliography has no
+% labels. natbib sets the list's \leftmargin to \bibhang and its \itemindent
+% to -\leftmargin (\NAT@bibsetup), so each entry starts at the margin and its
+% later lines are indented by \bibhang. The entries wrap at a narrow width.
+% A second bibliography, with a \bibhang of 0pt, has no indent.
+\documentclass{article}
+\usepackage{natbib}
+\begin{document}
+Some text, as cited in \citet{book}, \citep{paper}, and \citet{flat}.
+\begin{thebibliography}{2}
+\bibitem[Author(2000)]{book} Author, A. (2000). \emph{A Book with a Title
+  Long Enough to Wrap onto a Second Line, Even on a Wide Screen}. A Publisher,
+  A City.
+\bibitem[Writer(2001)]{paper} Writer, B. (2001). A paper whose title is also
+  long enough to wrap onto a second line, even on a wide screen. \emph{A
+  Journal}, 1:1--10.
+\end{thebibliography}
+{\setlength{\bibhang}{0pt}
+\begin{thebibliography}{1}
+\bibitem[Flat(2002)]{flat} Flat, C. (2002). \emph{A Book}. A Publisher.
+\end{thebibliography}}
+\end{document}

@@ -1246,6 +1246,38 @@ async function spacing(chrome, file) {
       .map(([what, value, wanted]) => `${what}: ${value.toFixed(2)}pt, not ${wanted.toFixed(2)}pt`));
 }
 
+// Each entry of an author-year bibliography from the margin, in pt of the
+// 10pt text: its first line at 0, and its second at \bibhang, which is
+// natbib's 1em or biblatex's \parindent of 15pt. Each entry is long enough
+// to wrap. Within half a px.
+const hangs = { 'test-natbib-authoryear': 10, 'test-biblatex-authoryear': 15 };
+const hanging = `(() => {
+  const pt = parseFloat(getComputedStyle(document.body).fontSize) / 10;
+  const dl = document.querySelector('dl.tex8web-bibhang');
+  const margin = dl?.getBoundingClientRect().left;
+  return [...(dl?.querySelectorAll(':scope > dd') ?? [])].map(dd => {
+    const rects = [];
+    const walk = document.createTreeWalker(dd, NodeFilter.SHOW_TEXT);
+    while (walk.nextNode()) {
+      const range = document.createRange();
+      range.selectNodeContents(walk.currentNode);
+      rects.push(...[...range.getClientRects()].filter(r => r.width > 0 && /\\S/.test(walk.currentNode.textContent)));
+    }
+    const tops = [...new Set(rects.map(r => Math.round(r.top)))].sort((a, b) => a - b);
+    const line = top => (Math.min(...rects.filter(r => Math.round(r.top) === top).map(r => r.left)) - margin) / pt;
+    return [line(tops[0]), tops.length > 1 ? line(tops[1]) : NaN, 0.5 / pt];
+  });
+})()`;
+async function hang(chrome, file, doc) {
+  return chrome.withPage(pathToFileURL(file).href, {}, async page => {
+    const entries = await page.evaluate(hanging);
+    if (!entries.length) return ['no author-year bibliography'];
+    return entries.flatMap(([first, second, slack], i) => [['first', first, 0], ['second', second, hangs[doc.name]]]
+      .filter(([, value, wanted]) => !(Math.abs(value - wanted) <= slack))
+      .map(([which, value, wanted]) => `entry ${i + 1}'s ${which} line: ${value.toFixed(2)}pt from the margin, not ${wanted}pt`));
+  });
+}
+
 // Each check, with the fixtures it runs on, which must have its feature:
 // - viewer: an SVG and a raster picture
 // - bar, fade, browsing, and one filter: test.tex's long page, with its
@@ -1259,6 +1291,7 @@ async function spacing(chrome, file) {
 // - sizes: \WebLikePDF at a size other than 12pt, and a table of contents
 // - spaces: a document with each length that spaces tables, boxes, arrays,
 //   and description lists set away from its default
+// - hang: author-year bibliographies, with entries that wrap
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));
@@ -1283,6 +1316,7 @@ const checks = {
   transitions: [['examples/basic', 'test-generic'], navigating],
   sizes: [['test-likepdf'], each(sizing)],
   spaces: [['test-boxseps'], each(spacing)],
+  hang: [Object.keys(hangs), each(hang)],
 };
 
 const unknown = process.argv.slice(2).filter(name => !(name in checks));

@@ -698,17 +698,29 @@
 % the classes it knows, or biblatex.4ht's, which it configures again at
 % each \printbibliography. For other classes, such as mwart, html4.4ht's
 % list is a <div>, which the stylesheet leaves as it is.
+% A list whose first line starts at the margin or left of it, as
+% \leftmargin plus \itemindent is not positive, leaves no room for a label. natbib's author-year mode
+% (\NAT@bibsetup) and biblatex's author-year styles (authoryear.bbx) set
+% \leftmargin to \bibhang and \itemindent to -\leftmargin, for entries
+% without labels. Such a list gets the class tex8web-bibhang, and its
+% \leftmargin and \itemindent in place of the label space. The openbib
+% option's negative \itemindent leaves room for the label.
+\def\web@ifbibhang{\ifdim\dimexpr\leftmargin+\itemindent-1sp\relax<\z@}
 \def\web@biblengths{ style="--tex8web-bibitem-sep: \web@bodyem{\dimexpr\itemsep+\parsep\relax};
-    --tex8web-biblabelsep: \web@bodyem{\ifdefined\biblabelsep\biblabelsep\else\web@biblabelsep\fi}"}
+    \web@ifbibhang
+        --tex8web-bibhang: \web@bodyem\leftmargin; --tex8web-bibitemindent: \web@bodyem\itemindent"%
+    \else
+        --tex8web-biblabelsep: \web@bodyem{\ifdefined\biblabelsep\biblabelsep\else\web@biblabelsep\fi}"%
+    \fi}
 \def\web@biblabelsep{\labelsep}
 \catcode58 11
 \ifdefined\@openbib@code \pend:def\@openbib@code{\edef\web@biblabelsep{\the\labelsep}}\fi
 \catcode58 12
 \ExplSyntaxOn
 \cs_if_exist:cT { onthebibliography:list }
-    { \exp_args:Nnnc \regex_replace_once:nnN { <dl> } { <dl\c{web@biblengths}> } { onthebibliography:list } }
+    { \exp_args:Nnnc \regex_replace_once:nnN { <dl> } { <dl\c{web@ifbibhang}\ class="tex8web-bibhang"\c{fi}\c{web@biblengths}> } { onthebibliography:list } }
 \cs_if_exist:NT \bibConfigure
-    { \web@replace \bibConfigure { <dl\ class="thebibliography" } { \0\c{web@biblengths} } }
+    { \web@replace \bibConfigure { <dl\ class="thebibliography" } { <dl\ class="thebibliography\c{web@ifbibhang}\ tex8web-bibhang\c{fi}"\c{web@biblengths} } }
 \ExplSyntaxOff
 
 % --- framed -----------------------------------------------------------------
