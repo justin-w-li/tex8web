@@ -394,7 +394,8 @@
         }
 }
 
-% amsmath's displays, which tex4ht passes to MathJax as they are, except:
+% amsmath's displays and LaTeX's eqnarray, which tex4ht passes to MathJax
+% as they are, except:
 % - MathJax has no \intertext, so the alignment is split there. MathJax
 %   gets the parts, and the text between them is typeset here, in a group,
 %   because amsmath sets it in a \vbox that ends its font commands. Each
@@ -460,8 +461,8 @@
 \tl_new:N \l__web_count_tl
 \tl_new:N \l__web_env_tl
 % (tex8web.js has a table of these environments too, for their row spacing)
-\clist_const:Nn \c__web_numbered_clist { equation, multline, align, gather, alignat, flalign }
-\clist_const:Nn \c__web_rows_clist { align, gather, alignat, flalign }
+\clist_const:Nn \c__web_numbered_clist { equation, multline, align, gather, alignat, flalign, eqnarray }
+\clist_const:Nn \c__web_rows_clist { align, gather, alignat, flalign, eqnarray }
 \clist_const:Nn \c__web_alignments_clist
     { align, align*, alignat, alignat*, flalign, flalign*, split, aligned, alignedat }
 \cs_new_protected:Npn \__web_part:nn #1#2 {
@@ -626,7 +627,7 @@
 }
 \cs_generate_variant:Nn \__web_qed_row:n { e }
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
-        flalign, flalign*, multline, multline* } {
+        flalign, flalign*, multline, multline*, eqnarray } {
     \cs_if_exist:cT {#1} {
         \RenewDocumentEnvironment{#1}{+!b}{ \__web_display:nn {#1} {##1} }{}
     }
