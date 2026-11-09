@@ -182,6 +182,10 @@ Referenced as \eqref{eq:numbered}, \cref{eq:split} and Equation~\ref{eq:split}:
 
 \[ \abs{x} = \begin{cases} x & \text{if } x \geq 0, \\ -x & \text{otherwise}, \end{cases} \qquad f(x) = \begin{dcases} \frac{1}{x} & x > 0 \\ 0 & x \leq 0. \end{dcases} \]
 
+mathtools' variants, with text after the starred forms' \verb|&|:
+\[ \begin{cases*} x & if $x \geq 0$\\ -x & otherwise\end{cases*} \qquad \begin{dcases*} x & if $x \geq 0$\\ -x & otherwise\end{dcases*} \qquad \begin{dcases} x \\ -x \end{dcases} = y \]
+\[ \begin{rcases} x & y \\ -x & -y \end{rcases} \qquad \begin{rcases*} x & if $x \geq 0$\\ -x & otherwise\end{rcases*} \qquad \begin{drcases} x & y \\ -x & -y \end{drcases} \qquad \begin{drcases*} x & if $x \geq 0$\\ -x & otherwise\end{drcases*} \]
+
 \subsection{Alignments}
 
 An align with a note in the middle, a tag and a gap:

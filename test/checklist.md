@@ -50,7 +50,7 @@ Open the two side by side, in light mode, and go through the tables below. Their
 | 3.3 Big delimiters | `\left( … \right)` as tall as the fraction inside; `\biggl(` inside `\Biggl[` | Delimiters much taller than in the PDF |
 | 3.4 Fractions and text | Text inside the display upright with normal word spaces; `\phantom` leaves a gap | |
 | 3.5 Numbered equations | Each equation centered on the line, its number at the right margin; the split's `=` signs aligned; the references (1), eq. (2) and 2 link to them | Equation pushed left of center by its number |
-| 3.6 Cases | Brace with two aligned columns; `dcases` fraction full size | The displays missing entirely |
+| 3.6 Cases | Brace with two aligned columns; `dcases` fraction full size; mathtools' variants with braces on either side, and text after the starred forms' `&` | The displays missing entirely |
 | 3.7 Alignments | `=` aligned with no extra space around them; numbers (3), (∗), (4) beside their lines; the notes ("by Cauchy–Schwarz, and so" and the four after) as ordinary lines of text, with the columns lined up across each; *a* = *b* and *c* = *d* in two column pairs; lines starting with ≤ or = spaced as relations; gather centered; multline's first line left, last line right; alignat's two column pairs | Extra space around `=` and inside ‖ ‖; the note pushing the table wider than the page |
 | 3.8 Matrices and arrays | Delimiters just taller than the rows; `pmatrix*[r]` right-aligned; the vertical rule and `\hline` in the array | Very large delimiters; rules missing |
 | 3.9 Wide displays | Scrolls sideways within the column, the page doesn't | Text running off the page |

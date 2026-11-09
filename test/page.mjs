@@ -1262,6 +1262,53 @@ async function spacing(chrome, file) {
       .map(([what, value, wanted]) => `${what}: ${value.toFixed(2)}pt, not ${wanted.toFixed(2)}pt`));
 }
 
+// The rows and columns of test's cases environments, in pt of its 10.95pt
+// text. In amsmath's cases, a row's baseline is 1.2 \baselineskip below
+// the last. In mathtools' variants, a row's baseline is \baselineskip plus
+// \jot below the last, also with text after the &. The two columns are a
+// \quad apart. A dcases without a second column has no space after its
+// rows. Each baseline is found with a zero-size inline-block. Within
+// 0.1pt, as none of these lengths is rounded to a whole px.
+const cased = `(() => {
+  const pt = parseFloat(getComputedStyle(document.body).fontSize) / 10.95;
+  const baseline = cell => {
+    const probe = document.createElement('tex8web-probe');
+    probe.style.cssText = 'display: inline-block; width: 0; height: 0';
+    cell.prepend(probe);
+    const y = probe.getBoundingClientRect().bottom;
+    probe.remove();
+    return y;
+  };
+  const px = (el, property) => parseFloat(getComputedStyle(el)[property]);
+  const tables = [...document.querySelectorAll('mjx-mtable')]
+    .filter(table => /cases/.test(table.getAttribute('data-tex8web-env')));
+  const found = [];
+  tables.forEach((table, i) => {
+    const env = table.getAttribute('data-tex8web-env');
+    const rows = [...table.querySelectorAll('mjx-mtr')];
+    const [one, two] = rows.map(row => row.querySelector('mjx-mtd'));
+    // (but the first dcases, whose fraction is taller than a row's strut)
+    if (i !== 1) found.push([\`\${env} \${i}'s rows apart\`, (baseline(two) - baseline(one)) / pt, env === 'cases' ? 1.2 * 13.6 : 13.6 + 3]);
+    const cells = rows[0].querySelectorAll('mjx-mtd');
+    if (cells[1]?.textContent) {
+      found.push([\`\${env} \${i}'s columns apart\`, (px(cells[0], 'paddingRight') + px(cells[1], 'paddingLeft')) / pt, 10.95]);
+    } else {
+      const last = [...table.querySelectorAll('mjx-c')].pop();
+      found.push([\`\${env} \${i} after its rows\`, (table.getBoundingClientRect().right - last.getBoundingClientRect().right) / pt, 0]);
+    }
+  });
+  return {envs: tables.map(table => table.getAttribute('data-tex8web-env')).join(' '), found};
+})()`;
+async function casing(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, {}, async page => {
+    const {envs, found} = await page.evaluate(cased);
+    const wanted = 'cases dcases cases* dcases* dcases rcases rcases* drcases drcases*';
+    if (envs !== wanted) return [`the environments ${envs}, not ${wanted}`];
+    return found.filter(([, value, wanted]) => !(Math.abs(value - wanted) <= 0.1))
+      .map(([what, value, wanted]) => `${what}: ${value.toFixed(2)}pt, not ${wanted.toFixed(2)}pt`);
+  });
+}
+
 // Each entry of an author-year bibliography from the margin, in pt of the
 // 10pt text: its first line at 0, and its second at \bibhang, which is
 // natbib's 1em or biblatex's \parindent of 15pt. Each entry is long enough
@@ -1332,6 +1379,7 @@ const checks = {
   transitions: [['examples/basic', 'test-generic'], navigating],
   sizes: [['test-likepdf'], each(sizing)],
   spaces: [['test-boxseps'], each(spacing)],
+  cases: [['test'], each(casing)],
   hang: [Object.keys(hangs), each(hang)],
 };
 

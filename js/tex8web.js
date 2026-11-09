@@ -85,6 +85,11 @@ function tex8web(config, tex) {
   // (colsep), and also at an array's edges (edges).
   const matrix = {rowspacing: 0.4, stretch: 1, space: 0, colsep: true};
   const array = {...matrix, edges: true};
+  // mathtools' cases environments set rows on struts with \jot between
+  // them, as an alignment does. Their \quad starts the second column, so
+  // it is there only when a row has a second cell, as in MathJax
+  // (mathtools.sty, \MT_start_cases:nnnn).
+  const mathtoolsCases = {...alignment, rowspacing: 0.2};
   const environments = {
     align: alignment, 'align*': alignment, alignat: alignment, 'alignat*': alignment,
     flalign: alignment, 'flalign*': alignment, gather: alignment, 'gather*': alignment,
@@ -97,8 +102,9 @@ function tex8web(config, tex) {
     // amsmath's cases sets \arraystretch to 1.2, and has two columns a
     // \quad apart, also when the second is empty
     cases: {rowspacing: 0.2, stretch: 1.2, space: 0, columns: 2},
-    dcases: {rowspacing: 0.2, stretch: 1.2, space: 0, columns: 2},
-    rcases: {rowspacing: 0.2, stretch: 1.2, space: 0},
+    'cases*': mathtoolsCases, dcases: mathtoolsCases, 'dcases*': mathtoolsCases,
+    rcases: mathtoolsCases, 'rcases*': mathtoolsCases,
+    drcases: mathtoolsCases, 'drcases*': mathtoolsCases,
   };
 
   // the environment of each table, which MathJax does not record (an
