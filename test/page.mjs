@@ -386,8 +386,8 @@ async function hiding(chrome, file) {
 // marked by the first character of the text that starts below the top,
 // outside the controls, the table of contents, and the footnotes, which
 // move between the layouts.
-async function narrowing(chrome, file) {
-  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 900 }, async page => {
+async function narrowing(chrome, file, doc, setup) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 900, before: setup }, async page => {
     const mark = `(() => {
       const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode: text =>
         /\\S/.test(text.data) && !text.parentElement.closest('.tex8web-controls, #tex8web-toc, .tex8web-sidenote, .footnotes, .tex8web-permalink, mjx-container')
@@ -420,6 +420,9 @@ async function narrowing(chrome, file) {
     await page.evaluate(`scrollTo({ top: 0.4 * (document.documentElement.scrollHeight - innerHeight), behavior: 'instant' })`);
     await page.frame();
     for (const [from, to, size] of [['wide', 'narrow', [400, 800]], ['narrow', 'wide', [1600, 900]]]) {
+      // (without scroll anchoring, the line is read 150ms after the
+      // scrolling stops: tex8web-page.js)
+      if (setup) await page.evaluate('new Promise(done => setTimeout(done, 200))');
       const before = await page.evaluate(mark);
       if (!before) return [`${from}: no text below the window's top`];
       await page.resize(...size);
@@ -430,6 +433,76 @@ async function narrowing(chrome, file) {
     }
     return problems;
   });
+}
+
+// narrowing, in a browser without scroll anchoring, as Safari: CSS.supports
+// says so before the page script runs, and the anchoring is turned off
+const anchorless = `{
+  const supports = CSS.supports;
+  CSS.supports = (...args) => args[0] !== 'overflow-anchor' && supports.apply(CSS, args);
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync('html { overflow-anchor: none }');
+  document.adoptedStyleSheets = [sheet];
+}`;
+
+// A page scrolled partway down and reloaded three times, on a wide screen
+// and a phone's: the line of text at the window's top lands where it was
+// each time, within a pixel. The line is the first text that starts below
+// the top, found again after each reload by its place among the page's
+// text.
+async function reloading(chrome, file) {
+  const problems = [];
+  for (const [width, height] of [[1600, 900], [390, 844]]) {
+    await chrome.withPage(pathToFileURL(file).href, { width, height }, async page => {
+      const texts = `[...(function* () {
+        const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode: text =>
+          /\\S/.test(text.data) && !text.parentElement.closest('.tex8web-controls, #tex8web-toc, .tex8web-permalink')
+            ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
+        for (let text; (text = walk.nextNode());) yield text;
+      })()]`;
+      const top = text => `(() => {
+        const range = document.createRange();
+        range.selectNodeContents(${text});
+        return range.getBoundingClientRect().top;
+      })()`;
+      const still = `new Promise(done => {
+        let y = -1, same = 0;
+        const frame = () => {
+          same = scrollY === y ? same + 1 : 0;
+          y = scrollY;
+          if (same < 10) requestAnimationFrame(frame);
+          else done();
+        };
+        requestAnimationFrame(frame);
+      })`;
+      await page.evaluate(`scrollTo({ top: 0.4 * (document.documentElement.scrollHeight - innerHeight), behavior: 'instant' })`);
+      await page.frame();
+      const found = await page.evaluate(`(() => {
+        const texts = ${texts};
+        const i = texts.findIndex(text => ${top('text')} >= 0);
+        return i < 0 ? null : [i, texts[i].data.trim().slice(0, 30), ${top('texts[i]')}];
+      })()`);
+      if (!found) {
+        problems.push(`${width}px: no text below the window's top`);
+        return;
+      }
+      const [i, text, was] = found;
+      const tops = [];
+      for (let n = 0; n < 3; n++) {
+        await page.evaluate('window.__old = true; location.reload()');
+        if (!await until(() => page.evaluate(`!window.__old && document.readyState === 'complete' && document.fonts.status === 'loaded'`))) {
+          problems.push(`${width}px: not loaded again`);
+          return;
+        }
+        await page.evaluate(still);
+        tops.push(await page.evaluate(top(`${texts}[${i}]`)));
+      }
+      if (tops.some(t => Math.abs(t - was) > 1)) {
+        problems.push(`${width}px: "${text}", ${Math.round(was)}px down, then ${tops.map(Math.round).join(', ')}px after each reload`);
+      }
+    });
+  }
+  return problems;
 }
 
 // On a phone screen, a page opened partway down, and nothing moves: by a
@@ -1689,6 +1762,8 @@ const checks = {
   touch: [['examples/basic'], each(touching)],
   bar: [['test'], each(async (...args) => [...await naming(...args), ...await hiding(...args), ...await landing(...args)])],
   narrow: [['test', 'examples/complex'], each(narrowing)],
+  anchorless: [['test', 'examples/complex'], each((chrome, file, doc) => narrowing(chrome, file, doc, anchorless))],
+  reload: [['test', 'examples/complex'], each(reloading)],
   fade: [['test'], each(fading)],
   theme: [['test-generic'], each(themed)],
   target: [['test-generic', 'test-index'], each(targeting)],

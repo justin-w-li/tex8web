@@ -1,10 +1,12 @@
 // tex8web's page script: the up link, the theme button, the table of
 // contents (its button, the bar on a narrow screen, the current entry, and
 // the search field), smooth scrolling to links, footnotes beside their
-// marks, preview cards, opened pictures, and the fade at the edges of what
-// scrolls sideways. page.lua and text.lua build the elements used here, and
-// tex8web-head.js adds tex8web-js to <html> before the page is drawn. The
-// page is readable without this script (css/tex8web.css).
+// marks, preview cards, opened pictures, the fade at the edges of what
+// scrolls sideways, the reader's place on a reload, and, in Safari, the
+// reader's place as the width changes. page.lua and text.lua build the
+// elements used here, and tex8web-head.js adds tex8web-js to <html> before
+// the page is drawn. The page is readable without this script
+// (css/tex8web.css).
 (() => {
   const root = document.documentElement;
   const target = a => document.getElementById(decodeURIComponent(a.hash.slice(1)));
@@ -67,6 +69,10 @@
       }, { passive: true });
     }
   };
+
+  // the scroll position set by restore() or anchor(), which is not the
+  // reader's scrolling. bar() reads it at the next scroll event only.
+  let kept;
 
   // The up link goes back in history when the last other page before this
   // one is the page above, so the reader's place there is kept. Without the
@@ -201,13 +207,16 @@
     // Hidden only on a narrow screen: the browser may restyle the page for a
     // narrow screen before the resize event, and a bar already hidden would
     // then vanish instead of fading. Ignored: the scrolling that keeps the
-    // reader's place as the width changes. Safari on iOS bounces past the
-    // page's ends and jitters a pixel or two back as its own bars grow or
-    // shrink, so a change of direction counts only after 10px.
+    // reader's place as the width changes, and the return to that place on
+    // a reload (restore()). Safari on iOS bounces past the page's ends and
+    // jitters a pixel or two back as its own bars grow or shrink, so a
+    // change of direction counts only after 10px.
     addEventListener('scroll', () => {
       atTop();
       const end = document.documentElement.scrollHeight - innerHeight;
-      if (innerWidth !== width || !settled) {
+      const ours = scrollY === kept;
+      kept = undefined;
+      if (innerWidth !== width || !settled || ours) {
         width = innerWidth;
         last = scrollY;
       } else if (jumped) {
@@ -234,6 +243,68 @@
       if (now === 'wide') controls.classList.remove('tex8web-away');
       else if (was === 'wide') controls.classList.toggle('tex8web-away', !top());
       was = now;
+    });
+  }
+
+  // The reader's place on a reload. Chrome returns to it before the web
+  // fonts arrive (no fonts are preloaded from disk: tex8web-fonts.js), and
+  // its scroll anchoring then moves the page as they swap in, further on
+  // each reload. So the place is saved as the page is left, and returned
+  // to once the fonts are loaded. The return is skipped once the reader
+  // scrolls, clicks, or follows a link, and when the width or the page's
+  // height differs, which would put other text there. Back and Forward are
+  // left to the browser: the place is saved by path, which other entries
+  // in the history may share.
+  function restore() {
+    const key = `tex8web-place ${location.pathname}`;
+    addEventListener('pagehide', () => {
+      try { sessionStorage.setItem(key, JSON.stringify([scrollY, innerWidth, root.scrollHeight])); } catch {}
+    });
+    let saved;
+    try { saved = JSON.parse(sessionStorage.getItem(key)); } catch {}
+    if (!saved || performance.getEntriesByType('navigation')[0]?.type !== 'reload') return;
+    let moved = false;
+    const move = () => { moved = true; };
+    scrolled(move);
+    addEventListener('hashchange', move);
+    addEventListener('pointerdown', move);
+    // (fonts.ready after the load: the fonts may not be requested yet)
+    new Promise(done => document.readyState === 'complete' ? done() : addEventListener('load', done, { once: true }))
+      .then(() => document.fonts.ready)
+      .then(() => requestAnimationFrame(() => {
+        const [y, width, height] = saved;
+        if (moved || innerWidth !== width || root.scrollHeight !== height || scrollY === y) return;
+        scrollTo({ top: y, behavior: 'instant' });
+        kept = scrollY;
+      }));
+  }
+
+  // In Chrome and Firefox, scroll anchoring keeps the reader's place as the
+  // width changes. Safari has none, so there the line a quarter down the
+  // window, read once the scrolling stops, is put back where it was.
+  function anchor() {
+    if (CSS.supports('overflow-anchor', 'auto')) return;
+    let line, width = innerWidth, timer;
+    // A caret in math has an empty box: the element there instead. Between
+    // blocks, the caret is put in the nearest text, in Safari as in Chrome.
+    const read = () => {
+      const box = document.body.getBoundingClientRect(), x = (box.left + box.right) / 2, y = innerHeight / 4;
+      const range = document.caretRangeFromPoint(x, y);
+      const at = range?.getBoundingClientRect().height ? range : document.elementFromPoint(x, y);
+      if (at) line = { at, top: at.getBoundingClientRect().top };
+    };
+    addEventListener('scroll', () => {
+      clearTimeout(timer);
+      timer = setTimeout(read, 150);
+    }, { passive: true });
+    // not when only the height changes, as on iOS when Safari's bars grow
+    // or shrink during scrolling
+    addEventListener('resize', () => {
+      if (innerWidth === width) return;
+      width = innerWidth;
+      if (!line) return;
+      scrollBy({ top: line.at.getBoundingClientRect().top - line.top, behavior: 'instant' });
+      kept = scrollY;
     });
   }
 
@@ -1028,7 +1099,7 @@
   // each feature separately: tex8web-head.js has already marked the page as
   // scripted, so one failed feature would leave the other features'
   // controls dead and the table of contents collapsed
-  for (const feature of [up, theme, column, bar, smooth, sidenotes, edges, contents, filter, previews, viewer]) {
+  for (const feature of [up, theme, column, bar, restore, anchor, smooth, sidenotes, edges, contents, filter, previews, viewer]) {
     try {
       feature();
     } catch (error) {
