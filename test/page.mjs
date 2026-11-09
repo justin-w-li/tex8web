@@ -1176,10 +1176,10 @@ async function sizing(chrome, file) {
 // \colorbox. Only the space beside a column that the source sets with
 // @{} stays 0. mathtools' starred matrices are spaced as amsmath's. A
 // label starts at the margin, also when made with \MakeUppercase. A
-// \framebox in \small is as wide as in the body. A
-// box's text starts after its padding in an indented paragraph, as
-// \WebLikePDF indents it. Within half a px, or a px for each frame, which
-// Chrome draws in whole px.
+// \framebox in \small is as wide as in the body. A box's text starts
+// after its padding in an indented paragraph, as \WebLikePDF indents it.
+// Within half a px, or a px for each frame, which Chrome draws in whole
+// px.
 const spaces = `(() => {
   const pt = parseFloat(getComputedStyle(document.body).fontSize) / 10.95;
   const all = selector => [...document.querySelectorAll(selector)];
@@ -1234,6 +1234,8 @@ const spaces = `(() => {
     add(\`description \${i + 1}'s label after the margin\`, first(dl.querySelector('dt')) - box(dl).left, 0);
     add(\`description \${i + 1}'s text after the label\`, (start >= 0 ? range.getBoundingClientRect().left : NaN) - box(label).right, 10.95 * (i + 1));
   });
+  // (the fixture's tables in order: array, pmatrix, the @{} array, the
+  // array in \left(, and the six starred matrices)
   const tables = all('mjx-mtable');
   const [array, matrix, given] = tables.map(table => [...table.querySelectorAll('mjx-mtd')]);
   sides('an array', array?.[0], 10);
