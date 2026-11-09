@@ -1,9 +1,10 @@
 % LaTeX's eqnarray as in the PDF: each row numbered, unless it has
 % \nonumber, and a \ref to a row's \label gives the row's number.
-% eqnarray* numbers no row. A \qedhere in an eqnarray, which amsthm sets
-% in the row, takes no number from the row. A \label on an unnumbered row
-% gets the next row's number, also when the next row has a \label. At
-% 11pt, the rows are \jot apart, which MathJax's default spacing is not.
+% eqnarray* numbers no row, and a \label there gets the next number. A
+% \qedhere in an eqnarray, which amsthm sets in the row, takes no number
+% from the row. A \label on an unnumbered row gets the next row's number,
+% also when the next row has a \label. At 11pt, the rows are \jot apart,
+% which MathJax's default spacing is not.
 \documentclass[11pt]{article}
 \usepackage{amsmath,amsthm}
 \begin{document}
@@ -14,9 +15,10 @@ a & = & b \label{eq:first} \\
   & = & d \label{eq:last}
 \end{eqnarray}
 \begin{eqnarray*}
-e & = & f \\
-  & = & g
+e & = & f \label{eq:star} \\
+  & = & g \label{eq:star2}
 \end{eqnarray*}
+Star \ref{eq:star} and \ref{eq:star2}.
 \begin{proof}
 \begin{eqnarray}
 j & = & k \qedhere

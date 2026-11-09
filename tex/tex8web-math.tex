@@ -462,7 +462,7 @@
 \tl_new:N \l__web_env_tl
 % (tex8web.js has a table of these environments too, for their row spacing)
 \clist_const:Nn \c__web_numbered_clist { equation, multline, align, gather, alignat, flalign, eqnarray }
-\clist_const:Nn \c__web_rows_clist { align, gather, alignat, flalign, eqnarray }
+\clist_const:Nn \c__web_rows_clist { align, gather, alignat, flalign, eqnarray, eqnarray* }
 \clist_const:Nn \c__web_alignments_clist
     { align, align*, alignat, alignat*, flalign, flalign*, split, aligned, alignedat }
 \cs_new_protected:Npn \__web_part:nn #1#2 {
@@ -528,25 +528,28 @@
 }
 % MathJax gets a row's \label only after the row's tag, whose element the
 % \label names. MathJax keeps a \label until a tag takes it (makeTag,
-% Tags.ts), so a \label on an untagged eqnarray row and one on the next
-% row would give "Multiple \label", which LaTeX does not give
+% Tags.ts), so a \label on an untagged row would be given to a later tag,
+% or give "Multiple \label" with the next \label
 \cs_new_protected:Npn \__web_tag_label: {
     \tl_if_empty:NF \l__web_label_tl {
         \tl_put_right:Ne \l__web_body_tl
             { \exp_not:N \label { \exp_not:V \l__web_label_tl } }
     }
 }
-% A \label on an unnumbered row of an eqnarray gets the number the next row
-% would get, as in the PDF, where the counter is stepped after each numbered
-% row (\@@eqncr, latex.ltx). It leads to an anchor of its own, which
-% \refstepcounter makes, without hyperref's, whose name the next row takes
+% A \label on an unnumbered row of an eqnarray, or in an eqnarray*, gets the
+% number the next row would get, as in the PDF, where the counter is stepped
+% after each numbered row (\@@eqncr, latex.ltx). It leads to an anchor of
+% its own, which \refstepcounter makes
+\prg_new_conditional:Npnn \__web_eqnarray: { p } {
+    \str_case_e:nnTF { \seq_item:Nn \l__web_envs_seq { -1 } }
+        { {eqnarray} {} {eqnarray*} {} } \prg_return_true: \prg_return_false:
+}
 \cs_new_protected:Npn \__web_eqnarray_label: {
     \bool_lazy_and:nnT
-        { \str_if_eq_p:ee { \seq_item:Nn \l__web_envs_seq { -1 } } { eqnarray } }
+        { \__web_eqnarray_p: }
         { ! \tl_if_empty_p:N \l__web_label_tl }
         {
             \group_begin:
-                \cs_set_eq:NN \hyper@refstepcounter \use_none:n
                 \refstepcounter{equation}
                 \exp_args:No \label {\l__web_label_tl}
                 \addtocounter{equation}{-1}
@@ -635,12 +638,11 @@
 % is the \qedsymbol in force, chosen as for the text (\web@qed@choose,
 % tex8web-text.tex)
 \int_new:N \g__web_qed_int
-% In an eqnarray, amsthm sets the box in the row, which keeps its number
+% In an eqnarray, amsthm sets the box in the row, which keeps any number
 % (\math@qedhere, amsthm.sty). Here the box stays on the stack, and is set
 % below the display
 \cs_new_protected:Npn \__web_qed_wanted: {
-    \str_if_eq:eeF { \seq_item:Nn \l__web_envs_seq { -1 } } { eqnarray }
-        { \bool_set_true:N \l__web_qed_wanted_bool }
+    \bool_if:nF { \__web_eqnarray_p: } { \bool_set_true:N \l__web_qed_wanted_bool }
 }
 \@ifpackageloaded{amsthm}{ \web@needs{QED@stack} }{}
 \cs_new_protected:Npn \__web_qedhere: {
@@ -676,7 +678,7 @@
 }
 \cs_generate_variant:Nn \__web_qed_row:n { e }
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
-        flalign, flalign*, multline, multline*, eqnarray } {
+        flalign, flalign*, multline, multline*, eqnarray, eqnarray* } {
     \cs_if_exist:cT {#1} {
         \RenewDocumentEnvironment{#1}{+!b}{ \__web_display:nn {#1} {##1} }{}
     }
