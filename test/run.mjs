@@ -561,6 +561,13 @@ const bibliographies = {
   'test-biblatex-authoryear': [hanging('0em', '1.5em', " class='thebibliography tex8web-bibhang'")],
 };
 
+// A \url not hyphenated, as in the PDF, where html4.4ht hyphenates every
+// link: the stylesheet's rule, and the URLs as links of that class
+const urls = {
+  'test-biburl': [/a\.url \{[^}]*hyphens: manual/,
+    /<a class='url' href='https:\/\/example\.org\/internationalization\/[^']*'><span class='cmtt-10'>/],
+};
+
 // \, and \thinspace in text as a narrow no-break space, where TeX does not
 // break: also in italic, in a quantity siunitx sets as text, and kept with
 // the math after it. In a picture, the kern, so a node is as wide as in the
@@ -1047,6 +1054,7 @@ const patterns = [
   [permalinks, 'among the links'], [loose, 'in a paragraph'], [algorithms, 'in the algorithms'], [tables, 'among the tables'],
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
   [bibliographies, 'in the bibliography'],
+  [urls, 'among the URLs', true],
 ];
 
 // the problems in a built page's logs, the page, and the files beside it

@@ -1,0 +1,13 @@
+% Long URLs in a bibliography, set with hyperref's \url. In the PDF, a URL
+% breaks only after its slashes and dots, with no hyphen added.
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+Some text, as cited in \cite{guide} and \cite{report}.
+\begin{thebibliography}{9}
+\bibitem{guide} A.~Author. A guide to the documentation.
+\url{https://example.org/internationalization/documentation/representations/characterizations}.
+\bibitem{report} B.~Writer. A report.
+\url{https://example.org/reports/understandingrepresentationsofcharacterization/introduction}.
+\end{thebibliography}
+\end{document}
