@@ -203,7 +203,10 @@ const measured = {
 // - a big bar a little taller, and a large operator scaled around it
 // - an align's rows on TeX's struts, \jot apart
 // - inline math broken after a relation, and at \allowbreak
+// mhchem's \ce, in text and in a heading, is an inline formula without
+// tex4ht's \texttt, whose span tex4ht splits at a line break of the HTML.
 const typeset = {
+  'test-mhchem': [/<\/a>The <mjx-container/, /forms acid: <mjx-container/],
   'test': [
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 TEX-SO'>\(/,
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c5B TEX-LO'>\[/,

@@ -360,6 +360,20 @@
         { [ \exp_not:n {#1} ] { \exp_not:n {#2} } \IfValueT {#3} { [ \exp_not:n {#3} ] } { \exp_not:n {#4} } }
 }{}
 
+% mhchem's \ce, as an inline formula. tex4ht writes its source as text in
+% \texttt (mathjax-latex-4ht.4ht), and ends and starts the font's span at
+% each line break of the HTML. MathJax finds no formula whose \) is in
+% another element, and make4ht's joincharacters filter joins the spans
+% only after prerendering. In a heading, \ce is written to the .aux and
+% the table of contents as it stands.
+\@ifpackageloaded{mhchem}{
+    \cs_new_protected:Npn \__web_ce:n #1 { \( \ce {#1} \) }
+    \cs_new:Npn \__web_ce: {
+        \token_if_eq_meaning:NNTF \protect \@typeset@protect { \__web_ce:n } { \exp_not:N \ce }
+    }
+    \AddToHook { begindocument/end } { \HLet \ce \__web_ce: }
+}{}
+
 % a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, so TeX
 % typesets it, rescanning the source, which tex4ht read with & as a letter.
 % A \[ \] with a \qedhere is walked for its box (see \__web_part:nn)

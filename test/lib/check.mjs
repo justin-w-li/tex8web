@@ -116,6 +116,16 @@ const pageChecks = [
     const merrors = count(html, /<mjx-merror/g);
     return merrors ? [`${merrors} MathJax error(s)`] : [];
   },
+  // (a \( or \[ that MathJax did not find in a prerendered page, which has
+  // no tex8web-config, such as one whose closing delimiter is in another
+  // element. MathJax skips the elements removed here. A \( written as text
+  // outside them, as with \textbackslash, is counted too)
+  function untypesetMath(html) {
+    if (/ id=['"]tex8web-config['"]/.test(html)) return [];
+    const text = html.replace(/<(script|style|textarea|pre|code|mjx-container)\b[^]*?<\/\1>/g, '').replace(/<[^>]+>/g, '');
+    const n = count(text, /\\[([]/g);
+    return n ? [`${n} formula(s) left as LaTeX source`] : [];
+  },
   // (MathJax draws an unknown macro as its name, in red, which tex8web.js
   // makes light-dark(red, ...))
   function unknownMacros(html) {
