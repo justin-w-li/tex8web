@@ -2,8 +2,8 @@
 % \nonumber, and a \ref to a row's \label gives the row's number.
 % eqnarray* numbers no row. A \qedhere in an eqnarray, which amsthm sets
 % in the row, takes no number from the row. A \label on an unnumbered row
-% gets the next row's number. At 11pt, the rows are \jot apart, which
-% MathJax's default spacing is not.
+% gets the next row's number, also when the next row has a \label. At
+% 11pt, the rows are \jot apart, which MathJax's default spacing is not.
 \documentclass[11pt]{article}
 \usepackage{amsmath,amsthm}
 \begin{document}
@@ -26,7 +26,7 @@ j & = & k \qedhere
 See \ref{eq:first}, \ref{eq:last}, and \ref{eq:after}.
 \begin{eqnarray}
 l & = & m \nonumber \label{eq:skip} \\
-  & = & n
+  & = & n \label{eq:next}
 \end{eqnarray}
-Then \ref{eq:skip}.
+Then \ref{eq:skip} and \ref{eq:next}.
 \end{document}

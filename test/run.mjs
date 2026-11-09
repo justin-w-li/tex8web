@@ -734,10 +734,11 @@ const numbers = {
   // eqnarray: a \ref to a row's \label gives its number and leads to it.
   // The equation after an eqnarray whose row has a \qedhere is the fourth:
   // the row keeps its number. A \label on a \nonumber row gets the next
-  // row's number and leads to an anchor of its own
+  // row's number and leads to an anchor of its own, also when the next row
+  // has a \label
   'test-eqnarray': [
     /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*See <a href='#\1'>1<!--[^>]*--><\/a>, <a href='#\2'>2<!--[^>]*--><\/a>, and <a href='#[^']+'>4<!--/,
-    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='[^']+'><\/a>[^]*Then <a href='#\1'>5<!--/,
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*Then <a href='#\1'>5<!--[^>]*--><\/a> and <a href='#\2'>5<!--/,
     // (five numbered rows: none for the \nonumber rows or in eqnarray*)
     /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){5}$/,
   ],

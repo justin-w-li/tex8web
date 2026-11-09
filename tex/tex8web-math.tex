@@ -512,14 +512,29 @@
             \refstepcounter{equation}
             \bool_if:NTF \l__web_qed_bool
                 { \__web_qed_row:e { (\theequation) \exp_not:N \\ } }
-                { \tl_put_right:Ne \l__web_body_tl { \exp_not:N \tag {\theequation} } }
+                {
+                    \tl_put_right:Ne \l__web_body_tl { \exp_not:N \tag {\theequation} }
+                    \__web_tag_label:
+                }
         }
         {
-            \bool_if:NT \l__web_qed_bool { \__web_qed_row:n {} }
+            \bool_if:NTF \l__web_qed_bool
+                { \__web_qed_row:n {} }
+                { \bool_if:NT \l__web_own_tag_bool { \__web_tag_label: } }
             \__web_eqnarray_label:
         }
     \tl_if_empty:NF \l__web_label_tl { \exp_args:No \label {\l__web_label_tl} }
     \__web_row_start:
+}
+% MathJax gets a row's \label only after the row's tag, whose element the
+% \label names. MathJax keeps a \label until a tag takes it (makeTag,
+% Tags.ts), so a \label on an untagged eqnarray row and one on the next
+% row would give "Multiple \label", which LaTeX does not give
+\cs_new_protected:Npn \__web_tag_label: {
+    \tl_if_empty:NF \l__web_label_tl {
+        \tl_put_right:Ne \l__web_body_tl
+            { \exp_not:N \label { \exp_not:V \l__web_label_tl } }
+    }
 }
 % A \label on an unnumbered row of an eqnarray gets the number the next row
 % would get, as in the PDF, where the counter is stepped after each numbered
@@ -546,22 +561,26 @@
     }
 }
 \cs_new_protected:Npn \__web_group:n #1 {
-    \str_case:Vn \l__web_next_tl {
-        {begin} {
-            \seq_push:Nn \l__web_envs_seq {#1}
-            \seq_push:Nn \l__web_columns_seq {0}
+    \str_if_eq:VnTF \l__web_next_tl {label}
+        { \tl_set:Nn \l__web_label_tl {#1} }
+        {
+            \str_case:Vn \l__web_next_tl {
+                {begin} {
+                    \seq_push:Nn \l__web_envs_seq {#1}
+                    \seq_push:Nn \l__web_columns_seq {0}
+                }
+                {tag} { \tl_set:Nn \l__web_tag_tl {#1} }
+            }
+            \tl_put_right:Nn \l__web_body_tl { {#1} }
         }
-        {label} { \tl_set:Nn \l__web_label_tl {#1} }
-        {tag} { \tl_set:Nn \l__web_tag_tl {#1} }
-    }
     \tl_clear:N \l__web_next_tl
-    \tl_put_right:Nn \l__web_body_tl { {#1} }
     \__web_walk:w
 }
 \cs_new_protected:Npn \__web_token:N #1 {
     \token_if_eq_meaning:NNF #1 \q_nil {
         \tl_clear:N \l__web_next_tl
-        \str_if_eq:eeF { \token_to_str:N #1 } { \token_to_str:N \\ }
+        \str_case_e:nnF { \token_to_str:N #1 }
+            { { \token_to_str:N \\ } {} { \token_to_str:N \label } {} }
             { \tl_put_right:Nn \l__web_body_tl {#1} }
         \token_if_eq_meaning:NNTF #1 & { \__web_column: } {
             \str_case_e:nn { \token_to_str:N #1 } {
@@ -610,10 +629,10 @@
 % proof's stack, as \qedhere does, and the display gets the box as a tag
 % where amsthm puts it: at the right of the last row, which then has no
 % number, or under an equation's number. In a row with its own \tag, the
-% box stays on the stack and is set below the display. The tag gets a
-% \label unless the row has one, because MathJax names an unlabelled tag's
-% element after its text, and two boxes would share an id. The box is the
-% \qedsymbol in force, chosen as for the text (\web@qed@choose,
+% box stays on the stack and is set below the display. The tag gets the
+% row's \label, or one of its own, because MathJax names an unlabelled
+% tag's element after its text, and two boxes would share an id. The box
+% is the \qedsymbol in force, chosen as for the text (\web@qed@choose,
 % tex8web-text.tex)
 \int_new:N \g__web_qed_int
 % In an eqnarray, amsthm sets the box in the row, which keeps its number
@@ -645,8 +664,10 @@
     }
     \tl_set:Ne \l__web_qed_tag_tl {
         \exp_not:N \tag * { \exp_not:n {#1} \exp_not:V \l__web_qed_symbol_tl }
-        \tl_if_empty:NT \l__web_label_tl
-            { \exp_not:N \label { web-qed- \int_use:N \g__web_qed_int } }
+        \exp_not:N \label {
+            \tl_if_empty:NTF \l__web_label_tl
+                { web-qed- \int_use:N \g__web_qed_int } { \exp_not:V \l__web_label_tl }
+        }
     }
 }
 \cs_new_protected:Npn \__web_qed_row:n #1 {
