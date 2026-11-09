@@ -665,7 +665,7 @@ const qed = {
       new RegExp(`${word} display\\.(?:(?!<\\/div>)[^])*<mjx-labels(?:(?!<\\/div>)[^])*mjx-c${code}(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/(?:p|div)>`),
     ]),
   ],
-  // amsart's \qedsymbol (amssymb's \square, from msam), after text and in a
+  // amsart's \qedsymbol (\textsquare, msam's square), after text and in a
   // tag, then one the document sets
   'test-amsart': [
     new RegExp(`${inProof('Plain')}${box}`),

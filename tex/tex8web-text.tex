@@ -200,15 +200,16 @@
 % \web@qed@choose puts the symbol in force in \web@qedsym.
 % amsart, amsproc, and amsbook mark amsthm as loaded. tex4ht loads the
 % class's .4ht instead of amsthm.4ht, so \qedsymbol is the class's, and there
-% is no \o:qedsymbol:. Their \textsquare is msam's square, the same box as
-% \square.
+% is no \o:qedsymbol:. Their \textsquare, msam's square, is set as \square,
+% the same box, which MathJax knows in a display's tag.
 \def\web@openbox{\openbox}
 \def\web@textsquare{\textsquare}
 \def\web@square{\(\square\)}
 \@ifpackageloaded{amsthm}
   {
-    \ifcsname o:qedsymbol:\endcsname
-        \let\web@qedwrapped\qedsymbol \else \let\web@qedwrapped\relax \fi
+    \let\web@qedwrapped\relax
+    \@ifclassloaded{amsart}{}{\@ifclassloaded{amsproc}{}{\@ifclassloaded{amsbook}{}
+        {\web@needs{o:qedsymbol:}\let\web@qedwrapped\qedsymbol}}}
     \def\web@qed@choose{%
         \ifx\qedsymbol\web@qedwrapped
             \expandafter\let\expandafter\web@qedsym\csname o:qedsymbol:\endcsname
