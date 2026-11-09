@@ -370,10 +370,10 @@
         section.classList.add('tex8web-reading');
         opened = section;
       }
-      // Nothing to scroll in the closed drawer, which is not drawn. Its
-      // entries' boxes, read after the changes above, would lay out the
-      // whole page.
-      if (!wide && !toc.matches(':popover-open')) return;
+      // Nothing to scroll in the hidden column or the closed drawer, which
+      // are not drawn. Their entries' boxes, read after the changes above,
+      // would lay out the whole page.
+      if (wide ? root.classList.contains('tex8web-toc-hidden') : !toc.matches(':popover-open')) return;
       reveal();
     };
     let pending = false;
@@ -420,7 +420,15 @@
       toc.scrollTop = top;
     };
     document.fonts.addEventListener('loadingdone', fit);
-    new ResizeObserver(fit).observe(toc);
+    // The hidden column is not scrolled either, so its entry is scrolled to
+    // when the column is shown, or when the window is widened while the
+    // drawer is closed: the box's height then grows from 0.
+    let height = 0;
+    new ResizeObserver(([entry]) => {
+      fit();
+      if (!height && entry.contentRect.height) reveal();
+      height = entry.contentRect.height;
+    }).observe(toc);
     new MutationObserver(fit).observe(list, { childList: true, subtree: true });
     // The closed drawer is not scrolled (update()), so its entry is scrolled
     // to as it opens, in the frame before it is first drawn. A microtask

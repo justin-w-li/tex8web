@@ -683,6 +683,9 @@ async function opening(chrome, file) {
 // the drawer is drawn from its first frame with the marked entry a third of
 // the way down. A section the reader opens there stays open as the drawer
 // closes and opens again, and the drawer is not scrolled as it closes.
+// The column hidden with the contents button is not measured either, and
+// is scrolled to the marked entry when it is shown, as when the window
+// widens with the drawer closed.
 async function following(chrome, file) {
   const problems = [];
   const links = `[...document.querySelectorAll('#tex8web-toc .tableofcontents a')]`;
@@ -700,19 +703,20 @@ async function following(chrome, file) {
     const box = document.getElementById('tex8web-toc').getBoundingClientRect(), a = ${links}[${i}].getBoundingClientRect();
     return a.height > 0 && a.top > box.top - 1 && a.bottom < box.bottom + 1;
   })()`;
-  const follows = async page => {
+  // the last entry whose heading can be scrolled to the top
+  const reachable = async page => {
     let last = await page.evaluate(`${links}.length`) - 1;
     while (last > 0 && !await page.evaluate(to(last))) last--;
+    return last;
+  };
+  const follows = async page => {
+    const last = await reachable(page);
     if (!await marked(page, await page.evaluate(to(0)))) return 'the first entry not marked';
     await page.evaluate(`document.getElementById('tex8web-toc').scrollTop = 0`);
     if (await page.evaluate(seen(last))) return 'the last entry reached shown at the top';
     if (!await marked(page, await page.evaluate(to(last)))) return 'the last entry reached not marked';
     if (!await until(() => page.evaluate(seen(last)))) return 'the last entry reached not scrolled into view';
   };
-  await chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 150 }, async page => {
-    const problem = await follows(page);
-    if (problem) problems.push(`the column: ${problem}`);
-  });
   const before = `window.tex8webReads = 0;
     for (const name of ['getBoundingClientRect', 'getClientRects']) {
       const method = Element.prototype[name];
@@ -721,6 +725,23 @@ async function following(chrome, file) {
         return method.call(this);
       };
     }`;
+  await chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 150, before }, async page => {
+    const problem = await follows(page);
+    if (problem) problems.push(`the column: ${problem}`);
+    // hidden with the contents button at the first entry, not measured as
+    // the page scrolls, and scrolled to the last entry reached when shown
+    const button = `document.querySelector('.tex8web-contents').click()`;
+    const last = await reachable(page);
+    if (!await marked(page, await page.evaluate(to(0)))) problems.push('the hidden column: the first entry not marked');
+    await page.evaluate(button);
+    await finished(page);
+    await page.evaluate('tex8webReads = 0');
+    if (!await marked(page, await page.evaluate(to(last)))) problems.push('the hidden column: the last entry reached not marked');
+    const reads = await page.evaluate('tex8webReads');
+    if (reads) problems.push(`the hidden column: entries measured ${reads} times`);
+    await page.evaluate(button);
+    if (!await until(() => page.evaluate(seen(last)))) problems.push('the column shown again: the last entry reached not scrolled into view');
+  });
   await chrome.withPage(pathToFileURL(file).href, { width: 400, height: 150, before }, async page => {
     const count = await page.evaluate(`${links}.length`);
     let reached = 0;
@@ -806,6 +827,16 @@ async function following(chrome, file) {
     if (now !== states) problems.push(`the drawer opened again: sections open ${now}, not ${states}`);
     const problem = await follows(page);
     if (problem) problems.push(`the open drawer: ${problem}`);
+    // closed at the first entry, then the page scrolled to the last entry
+    // reached, and the window widened: the column is scrolled to it
+    const last = await reachable(page);
+    await page.evaluate(`document.getElementById('tex8web-toc').scrollTop = 0`);
+    if (!await marked(page, await page.evaluate(to(0)))) problems.push('the drawer closed: the first entry not marked');
+    await page.evaluate(`document.getElementById('tex8web-toc').hidePopover()`);
+    await finished(page);
+    if (!await marked(page, await page.evaluate(to(last)))) problems.push('the drawer closed: the last entry reached not marked');
+    await page.resize(1600, 150);
+    if (!await until(() => page.evaluate(seen(last)))) problems.push('the window widened: the last entry reached not scrolled into view');
   });
   return problems;
 }
