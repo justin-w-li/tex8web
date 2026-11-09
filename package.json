@@ -21,7 +21,8 @@
     "test:visual": "node --test test/chrome.test.mjs test/shots.test.mjs & tools=$!; node test/visual.mjs && node test/page.mjs; code=$?; wait $tools || code=1; exit $code",
     "test:page": "node test/page.mjs",
     "examples": "node test/examples.mjs",
-    "regress": "node test/regress.mjs"
+    "regress": "node test/regress.mjs",
+    "test:compare": "node test/compare.mjs"
   },
   "dependencies": {
     "@mathjax/mathjax-bbm-font-extension": "4.1.3",

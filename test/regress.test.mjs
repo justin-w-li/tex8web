@@ -1,14 +1,15 @@
-// Tests of regress.mjs. Run by npm test, or alone:
+// Tests of regress.mjs and compare.mjs. Run by npm test, or alone:
 //   node --test test/regress.test.mjs
 // make4ht is a stand-in (test/lib/stubs.mjs). Chrome is real, for the screens.
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { root } from './lib/build.mjs';
+import { lock } from './lib/slots.mjs';
 import { stubbed } from './lib/stubs.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -139,6 +140,94 @@ describe('regress.mjs', { concurrency: true }, () => {
       await refused(/main\.tex/, 'two');
       await refused(/same name.*dup/, 'a/dup', 'b/dup');
       await refused(/make4ht/, '--out', 'my-out', 'one');
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+});
+
+// a copy of this checkout as a repository of its own, on the branch topic,
+// which left main at main's one commit
+const hasGit = spawnSync('git', ['--version']).status === 0;
+function repository() {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webcompare')));
+  const tree = join(dir, 'tex8web');
+  cpSync(root, tree, { recursive: true, filter: path => !['build', 'node_modules', '.git'].includes(basename(path)) });
+  symlinkSync(realpathSync(join(root, 'node_modules')), join(tree, 'node_modules'));
+  for (const args of [['init', '-q', '-b', 'main'], ['add', '-A'], ['commit', '-q', '-m', 'base'], ['checkout', '-q', '-b', 'topic']]) {
+    const result = spawnSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', ...args],
+      { cwd: tree, timeout: 60000, encoding: 'utf8' });
+    assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
+  }
+  return { dir, tree, commit: spawnSync('git', ['rev-parse', 'main'], { cwd: tree, encoding: 'utf8' }).stdout.slice(0, 12) };
+}
+const compare = (tree, ...args) => new Promise(done => {
+  const child = spawn(process.execPath, [join(tree, 'test/compare.mjs'), ...args], { cwd: tree, timeout: 120000,
+    env: { ...process.env, ...stubbed } });
+  const result = { stdout: '', stderr: '' };
+  child.stdout.on('data', data => { result.stdout += data; });
+  child.stderr.on('data', data => { result.stderr += data; });
+  child.on('close', status => done({ ...result, status }));
+});
+const outcomes = tree => JSON.parse(readFileSync(join(tree, 'build/compare/compare.json'), 'utf8'));
+const none = { unchanged: [], changed: [], looksDifferent: [], new: [], removed: [], failed: [] };
+
+describe('compare.mjs', { concurrency: true }, () => {
+  test('compare.mjs reports the pages of a branch the same as at its merge base, and keeps one base for each merge base', { skip: !hasGit }, async () => {
+    const { dir, tree, commit } = repository();
+    const bases = join(dir, 'bases'), stale = join(bases, 'aaaaaaaaaaaa'), held = join(bases, 'bbbbbbbbbbbb');
+    mkdirSync(stale, { recursive: true });
+    mkdirSync(held);
+    // (another run's base, which is not removed while that run holds its lock)
+    const release = lockf ? await lock(join(held, 'lock')) : null;
+    const names = ['test-chapterstyle', 'test-graphics-only'];
+    try {
+      let result = await compare(tree, '--bases', bases, ...names);
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.match(result.stdout, /^test-chapterstyle: unchanged$/m);
+      assert.match(result.stdout, /^test-graphics-only: unchanged$/m);
+      assert.deepEqual(outcomes(tree), { base: commit, ...none, unchanged: names });
+      assert.equal(existsSync(stale), false, 'a stale base was kept');
+      if (lockf) assert.ok(existsSync(held), 'a base in use was removed');
+
+      // the base is extracted once, and both sides' builds are reused
+      const marker = join(bases, commit, 'tex8web/marker');
+      writeFileSync(marker, '');
+      result = await compare(tree, '--bases', bases, ...names);
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.doesNotMatch(result.stderr, /extracting/);
+      assert.ok(existsSync(marker), 'the base was extracted again');
+      assert.equal(result.stdout.match(/^reusing test-graphics-only's html build/gm)?.length, 2, result.stdout);
+
+      // a document only on the branch is new, and has nothing to compare with
+      writeFileSync(join(tree, 'test/fixtures/test-new.tex'), article('New'));
+      result = await compare(tree, '--bases', bases, 'test-graphics-only', 'test-new');
+      assert.equal(result.status, 3, result.stderr + result.stdout);
+      assert.match(result.stdout, /^test-new: new/m);
+      assert.deepEqual(outcomes(tree), { base: commit, ...none, unchanged: ['test-graphics-only'], new: ['test-new'] });
+
+      result = await compare(tree, '--bases', bases, 'test-graphics-only', 'no-such-document');
+      assert.equal(result.status, 2, result.stderr + result.stdout);
+      assert.match(result.stderr, /no document named no-such-document/);
+    } finally {
+      release?.();
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  // (Chrome compares the screens. Like the screens of regress.mjs, this is
+  // left out without lockf, as in CI's test job, which has no Chrome)
+  test('compare.mjs reports the one fixture a branch changed', { skip: !hasGit || !lockf }, async () => {
+    const { dir, tree, commit } = repository();
+    try {
+      writeFileSync(join(tree, 'test/fixtures/test-graphics-only.tex'), article('Changed'));
+      const result = await compare(tree, '--bases', join(dir, 'bases'), 'test-chapterstyle', 'test-graphics-only');
+      assert.equal(result.status, 3, result.stderr + result.stdout);
+      assert.match(result.stdout, /^test-chapterstyle: unchanged$/m);
+      assert.match(result.stdout, /^test-graphics-only: (changed|looks different): /m);
+      const found = outcomes(tree);
+      assert.deepEqual([...found.changed, ...found.looksDifferent], ['test-graphics-only']);
+      assert.deepEqual({ ...found, changed: [], looksDifferent: [] }, { base: commit, ...none, unchanged: ['test-chapterstyle'] });
     } finally {
       rmSync(dir, { recursive: true });
     }
