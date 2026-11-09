@@ -593,6 +593,12 @@ const ties = {
     new RegExp(`as in <span class='tex8web-nowrap'>${math}${tie}and,</span> <span class='tex8web-nowrap'>${math}\u202Fcm,</span> and\\s+<span class='tex8web-nowrap'>${math}${tie}${math}\\.</span>`),
     new RegExp(`the set of<span class='tex8web-nowrap'>${tie}${math}${tie}elements</span> is <span class='tex8web-nowrap'>${math}${tie}times</span> the`),
     new RegExp(`and <span class='tex8web-nowrap'>${math}\u202Fm<sup class='textsuperscript'><span class='cmr-9'>2</span></sup></span> is`)],
+  // letters right after inline math, with no space between ($i$th), kept
+  // with the math up to the next whitespace
+  'test-mathsuffix': [new RegExp(`the\\s+<span class='tex8web-nowrap'>${math}th</span> row`),
+    new RegExp(`the <span class='tex8web-nowrap'>${math}th</span>\\s+and <span class='tex8web-nowrap'>${math}st</span> terms`),
+    new RegExp(`of <span class='tex8web-nowrap'>${math}pt\\.</span> So`),
+    new RegExp(`the<span class='tex8web-nowrap'>${tie}${math}th</span>\\s+entry`)],
 };
 
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
