@@ -198,16 +198,22 @@
 % the document has set \qedsymbol since (thmtools' qed=, a \renewcommand
 % before a proof), \qedsymbol is no longer tex4ht's and is set as it is.
 % \web@qed@choose puts the symbol in force in \web@qedsym.
+% amsart, amsproc, and amsbook mark amsthm as loaded. tex4ht loads the
+% class's .4ht instead of amsthm.4ht, so \qedsymbol is the class's, and there
+% is no \o:qedsymbol:. Their \textsquare is msam's square, the same box as
+% \square.
 \def\web@openbox{\openbox}
+\def\web@textsquare{\textsquare}
 \def\web@square{\(\square\)}
 \@ifpackageloaded{amsthm}
   {
-    \web@needs{o:qedsymbol:}
-    \let\web@qedwrapped\qedsymbol
+    \ifcsname o:qedsymbol:\endcsname
+        \let\web@qedwrapped\qedsymbol \else \let\web@qedwrapped\relax \fi
     \def\web@qed@choose{%
         \ifx\qedsymbol\web@qedwrapped
             \expandafter\let\expandafter\web@qedsym\csname o:qedsymbol:\endcsname
-        \else \let\web@qedsym\qedsymbol \fi}
+        \else \let\web@qedsym\qedsymbol \fi
+        \ifx\web@qedsym\web@textsquare \let\web@qedsym\web@openbox \fi}
     \DeclareRobustCommand\qed{%
         \ifmmode \mathqed \else
             \ifvmode \HCode{<div class="tex8web-qed-line">}%

@@ -665,6 +665,16 @@ const qed = {
       new RegExp(`${word} display\\.(?:(?!<\\/div>)[^])*<mjx-labels(?:(?!<\\/div>)[^])*mjx-c${code}(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/(?:p|div)>`),
     ]),
   ],
+  // amsart's \qedsymbol (amssymb's \square, from msam), after text and in a
+  // tag, then one the document sets
+  'test-amsart': [
+    new RegExp(`${inProof('Plain')}${box}`),
+    ...['Bracket', 'Align star'].map(tagged),
+    new RegExp(`${inProof('Changed')}<span class='tex8web-qed'><mjx-container[^>]*><mjx-math[^>]*><mjx-c class='mjx-c25FC`),
+    new RegExp(`${inProof('Changed display')}<mjx-labels(?:(?!<\\/div>)[^])*mjx-c25FC(?:(?!<\\/div>)[^])*<\\/mjx-container><\\/span>\\s*<\\/p>\\s*<\\/div>`),
+    /^(?:(?!mjx-c25FB)[^])*(?:mjx-c25FB(?:(?!mjx-c25FB)[^])*){3}$/,
+    /^(?:(?!mjx-c25FC)[^])*(?:mjx-c25FC(?:(?!mjx-c25FC)[^])*){2}$/,
+  ],
   // \qedhere in a row with a \label, a \tag, a nested environment or text
   // in a display, twice, or outside a proof; and a proof ending in a list
   'test-qedrow': [

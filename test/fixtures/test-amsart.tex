@@ -1,8 +1,30 @@
 % An amsart document: a section in amsart's centered small capitals at the
-% text size, and a run-in paragraph, which amsart ends with a period.
+% text size, and a run-in paragraph, which amsart ends with a period. Its
+% proofs end in amsart's \qedsymbol, after text and with \qedhere in a
+% display, and then in one the document sets.
 \documentclass{amsart}
+\usepackage{amssymb}
 \begin{document}
 \section{A section}
 Some text.
 \paragraph{A paragraph} Text after it.
+\begin{proof}[Plain]
+Ends in text.
+\end{proof}
+\begin{proof}[Bracket]
+Ends in a display.
+\[ a = b \qedhere \]
+\end{proof}
+\begin{proof}[Align star]
+Ends in an alignment.
+\begin{align*} a &= b \\ c &= d \qedhere \end{align*}
+\end{proof}
+\renewcommand{\qedsymbol}{$\blacksquare$}
+\begin{proof}[Changed]
+Ends in text.
+\end{proof}
+\begin{proof}[Changed display]
+Ends in a display.
+\[ a = b \qedhere \]
+\end{proof}
 \end{document}
