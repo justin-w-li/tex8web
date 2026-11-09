@@ -149,11 +149,12 @@ describe('regress.mjs', { concurrency: true }, () => {
 // a copy of this checkout as a repository of its own, on the branch topic,
 // which left main at main's one commit
 const hasGit = spawnSync('git', ['--version']).status === 0;
-function repository() {
+function repository(files = {}) {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webcompare')));
   const tree = join(dir, 'tex8web');
   cpSync(root, tree, { recursive: true, filter: path => !['build', 'node_modules', '.git'].includes(basename(path)) });
   symlinkSync(realpathSync(join(root, 'node_modules')), join(tree, 'node_modules'));
+  for (const [path, body] of Object.entries(files)) writeFileSync(join(tree, path), body);
   for (const args of [['init', '-q', '-b', 'main'], ['add', '-A'], ['commit', '-q', '-m', 'base'], ['checkout', '-q', '-b', 'topic']]) {
     const result = spawnSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', ...args],
       { cwd: tree, timeout: 60000, encoding: 'utf8' });
@@ -174,18 +175,21 @@ const none = { unchanged: [], changed: [], looksDifferent: [], new: [], removed:
 
 describe('compare.mjs', { concurrency: true }, () => {
   test('compare.mjs reports the pages of a branch the same as at its merge base, and keeps one base for each merge base', { skip: !hasGit }, async () => {
-    const { dir, tree, commit } = repository();
+    // (a fixture that fails to build at the merge base and on the branch, as
+    // run.mjs's refused fixtures do)
+    const { dir, tree, commit } = repository({ 'test/fixtures/test-refused.tex': article('\\undefinedcs') });
     const bases = join(dir, 'bases'), stale = join(bases, 'aaaaaaaaaaaa'), held = join(bases, 'bbbbbbbbbbbb');
     mkdirSync(stale, { recursive: true });
     mkdirSync(held);
     // (another run's base, which is not removed while that run holds its lock)
-    const release = lockf ? await lock(join(held, 'lock')) : null;
-    const names = ['test-chapterstyle', 'test-graphics-only'];
+    const release = lockf ? await lock(`${held}.lock`) : null;
+    const names = ['test-chapterstyle', 'test-graphics-only', 'test-refused'];
     try {
       let result = await compare(tree, '--bases', bases, ...names);
       assert.equal(result.status, 0, result.stderr + result.stdout);
       assert.match(result.stdout, /^test-chapterstyle: unchanged$/m);
       assert.match(result.stdout, /^test-graphics-only: unchanged$/m);
+      assert.match(result.stdout, /^test-refused: fails to build on both sides$/m);
       assert.deepEqual(outcomes(tree), { base: commit, ...none, unchanged: names });
       assert.equal(existsSync(stale), false, 'a stale base was kept');
       if (lockf) assert.ok(existsSync(held), 'a base in use was removed');

@@ -170,6 +170,7 @@ The checks of each test script are listed in its header comment.
 - Give a bug fix a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
 - Check a visual change with screenshots from `node test/shots.mjs`, wide and narrow, light and dark, next to the PDF.
 - Compare your documents before and after your change with `npm run regress`.
+- Check that your branch changed only the test pages it meant to with `npm run test:compare`.
 
 ### Commands
 
@@ -190,6 +191,11 @@ The checks of each test script are listed in its header comment.
   - The script is run by npm in the tex8web directory, so relative paths are taken from `INIT_CWD`.
   - With `--latexmk`, `build/pdf.lock` in the document's directory is held during the PDF build, so two latexmk runs never write to the same `build/pdf` at once. Without `--latexmk`, build the PDFs linked in the config before you run `regress`.
   - The screens of a changed page are compared as soon as the page is built, with `--shots-cache <dir>` passed to `shots.mjs` (`<out>/shots-cache` by default).
+- **`npm run test:compare -- [names]`**: every document in `test/fixtures/` and `examples/`, or the named ones, built on your checkout and at the commit where your branch left main (`git merge-base main HEAD`), and each pair compared as `regress` compares a page with its baseline. It lists each document as unchanged, changed, looking different, new, removed, or failed, in the output and in `build/compare/compare.json`. Differing screens are in `build/compare/compare/<name>`. It exits 3 if a page changed, looks different, is new, or was removed, 1 if a build or comparison failed, and 2 on a usage error. A document that fails to build on both sides is unchanged, as some fixtures are refused by design.
+  - Your side is built as `npm test` builds it, into `build/test/<document>/html`, so the builds of an earlier `npm test` are reused.
+  - The merge base is extracted with `git archive` into `<bases>/<commit>/tex8web`, which uses your `node_modules`, and is built with its own `test/lib/build.mjs`, documents, and configs. A merge base with another `package-lock.json` is refused. `<bases>` is `build/base` by default, or `--bases <dir>`. Several checkouts can share one directory, so that each merge base is built once.
+  - A run holds `<bases>/<commit>.lock` from start to end, so no other run extracts or removes that base meanwhile, and two runs with one merge base run one after the other. Each run removes the bases that no worktree's branch left main at, unless another run holds their lock. Without `lockf`, as on Linux, no lock is taken, so share no `<bases>` there.
+  - The examples keep the real date, so their pages at the merge base are built again on another day, and a run across midnight shows them as changed.
 - **`node test/diff.mjs <old> <new>`**: what changed in the HTML between two builds
 - **`node test/check.mjs <html dir> [make4ht log] [TeX log]`**: the generic page checks, on any build
 - **`test/checklist.md`**: the checklist for comparing the page of `test.tex` with its PDF by eye
@@ -214,7 +220,7 @@ A build is not run again when its inputs match its stamp, in `build/test/<docume
 - the versions of MathJax and subset-font
 - the versions of TeX and make4ht, and the last change to TeX Live
 
-Each document is built with the same environment into `build/test/<document>/html` by `npm test`, `npm run test:visual`, and `npm run test:page`, so a build by one is reused by the others, with a message in the output. A failed build is never reused.
+Each document is built with the same environment into `build/test/<document>/html` by `npm test`, `npm run test:visual`, `npm run test:page`, and `npm run test:compare`, so a build by one is reused by the others, with a message in the output. A failed build is never reused.
 
 The LaTeX runs have a separate stamp: only the tex8web files that LaTeX reads, plus the day, for `\today`. After a change to other files, for example in `css/`, `js/`, `fonts/`, or the HTML passes, only tex4ht, t4ht, and the HTML passes run again. Reused LaTeX runs are noted in the build log.
 
@@ -322,5 +328,5 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `js/prerender.mjs`, `prerender-rules.mjs` | MathJax in Node, and the MathJax CSS rules that the removal of elements depends on |
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which is copied with every page |
 | `examples/` | the examples, and `index.tex`, the index of the published site |
-| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `regress.mjs`, the `*.test.mjs` tests of the test tools, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, and `lib/` |
+| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `regress.mjs`, `compare.mjs`, the `*.test.mjs` tests of the test tools, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, and `lib/` |
 | `.github/workflows/ci.yml` | CI and the published examples |

@@ -9,7 +9,7 @@
 // new or removed, and is not built. The merge base is extracted with git
 // archive into <bases>/<commit>/tex8web, with this checkout's node_modules,
 // and built with its own test/lib/build.mjs, so with its own documents,
-// configs, and tex8web. A run holds <bases>/<commit>/lock, and
+// configs, and tex8web. A run holds <bases>/<commit>.lock, and
 // first removes each other base that no worktree's branch left main at,
 // unless another run holds its lock. Exits 1 if a build or comparison
 // failed, 3 if a page changed, looks different, is new, or was removed, 2
@@ -71,17 +71,17 @@ for (const name of existsSync(bases) ? readdirSync(bases) : []) {
   const dir = join(bases, name);
   if (!/^[0-9a-f]{12}$/.test(name) || keep.has(name) || !statSync(dir).isDirectory()) continue;
   if (noLockf()) rmSync(dir, { recursive: true, force: true });
-  else spawnSync('lockf', ['-k', '-t', '0', join(dir, 'lock'), 'rm', '-rf', dir]);
+  else spawnSync('lockf', ['-k', '-t', '0', `${dir}.lock`, 'rm', '-rf', dir]);
 }
 
 // (held for the whole run, so that no other run extracts or prunes the base
 // while it is built and compared with. 75 is lockf's exit when busy)
 const dir = join(bases, commit), tree = join(dir, 'tex8web');
 mkdirSync(dir, { recursive: true });
-if (!noLockf() && spawnSync('lockf', ['-k', '-t', '0', join(dir, 'lock'), 'true']).status === 75) {
+if (!noLockf() && spawnSync('lockf', ['-k', '-t', '0', `${dir}.lock`, 'true']).status === 75) {
   console.error(`waiting for another run with the base ${commit}`);
 }
-await lock(join(dir, 'lock'));
+await lock(`${dir}.lock`);
 if (!existsSync(tree)) {
   console.error(`extracting tex8web ${commit} into ${tree}`);
   const staged = `${tree}.new`;
@@ -122,7 +122,9 @@ async function compare(name) {
   if (!sides.base.has(name)) return { name, kind: 'new', outcome: `new: no page at ${commit}` };
   if (!sides.branch.has(name)) return { name, kind: 'removed', outcome: 'removed: no page on this checkout' };
   rmSync(join(out, 'compare', safe(name)), { recursive: true, force: true });
-  const old = await side(base, 'base', name), now = await side(branch, 'branch', name);
+  const [old, now] = await Promise.all([side(base, 'base', name), side(branch, 'branch', name)]);
+  // (some fixtures are refused by design, as run.mjs checks)
+  if (old.failed && now.failed) return { name, kind: 'unchanged', outcome: 'fails to build on both sides' };
   if (old.failed || now.failed) return { name, kind: 'failed', outcome: [old.failed, now.failed].filter(Boolean).join('; ') };
   const diff = await run(process.execPath, [join(here, 'diff.mjs'), old.html, now.html]);
   const log = join(logs, `${safe(name)}.diff`);
