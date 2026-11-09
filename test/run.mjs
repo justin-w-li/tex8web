@@ -561,8 +561,9 @@ const bibliographies = {
   'test-biblatex-authoryear': [hanging('0em', '1.5em', " class='thebibliography tex8web-bibhang'")],
 };
 
-// A \url not hyphenated, as in the PDF, where html4.4ht hyphenates every
-// link: the stylesheet's rule, and the URLs as links of that class
+// A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
+// hyphenated in the PDF, and html4.4ht's overflow-wrap still breaks one too
+// long for a line): the stylesheet's rule, and the URLs as links of that class
 const urls = {
   'test-biburl': [/a\.url \{[^}]*hyphens: manual/,
     /<a class='url' href='https:\/\/example\.org\/internationalization\/[^']*'><span class='cmtt-10'>/],

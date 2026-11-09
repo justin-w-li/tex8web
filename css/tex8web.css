@@ -49,8 +49,9 @@ a[href^="#X"] { color: var(--tex8web-cite, inherit); }
 /* (hyperref's urlcolor also colors \href to another site, but not the
    controls' link to tex8web's repository) */
 a.url, a[href*="://"]:not(.tex8web-control), a[href^="mailto:"] { color: var(--tex8web-url, inherit); }
-/* (a \url gets no added hyphen, as in the PDF, where html4.4ht hyphenates
-   every link. Its overflow-wrap still breaks a URL too long for a line) */
+/* (a \url gets no added hyphen, since html4.4ht hyphenates every link. A
+   \url is not hyphenated in the PDF, and html4.4ht's overflow-wrap still
+   breaks one too long for a line) */
 a.url { hyphens: manual; }
 /* pictures tex4ht generates (TikZ) are black line art, inverted in dark
    mode (tex8web-page.tex selects them by the document's name) */
