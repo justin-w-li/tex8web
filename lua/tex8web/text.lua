@@ -211,8 +211,9 @@ local function next_space(text, start)
   return i, j
 end
 
--- the children of el, with each no-break space in a <span class="tex8web-nbsp">,
--- and each narrow no-break space in a text node of its own
+-- the children of el, with each no-break space as a space in a
+-- <span class="tex8web-nbsp">, and each narrow no-break space in a text
+-- node of its own
 local function mark_nbsp(el)
   local children = {}
   for _, child in ipairs(el:get_children()) do
@@ -227,7 +228,7 @@ local function mark_nbsp(el)
           children[#children + 1] = el:create_text_node(narrow)
         elseif i then
           local nbsp = el:create_element("span", {class = "tex8web-nbsp"})
-          nbsp:add_child_node(nbsp:create_text_node("\u{A0}"))
+          nbsp:add_child_node(nbsp:create_text_node(" "))
           children[#children + 1] = nbsp
         end
         start = (j or 0) + 1
@@ -239,7 +240,7 @@ local function mark_nbsp(el)
   return children
 end
 
--- (a narrowed space would misalign the columns of code)
+-- (tex4ht writes each space of verbatim text as a no-break space)
 local function is_verbatim(el)
   local name = el:get_element_name()
   return name == "pre" or name == "code" or dom.has_class(el, "lstlisting")
@@ -317,12 +318,12 @@ local function with_text(el, node, text)
   return copy
 end
 
--- the index of the last child that shows something, from i on, before
--- the first whitespace. A text child, or a span of text, is split at the
--- whitespace. Inline math with a space at its end (sized_math_spaces) ends
--- the run with it. These end the run before them:
+-- the index of the last child that shows something or is a ~, from i
+-- on, before the first whitespace. A text child, or a span of text, is
+-- split at the whitespace. Inline math with a space at its end
+-- (sized_math_spaces) ends the run with it. These end the run before them:
 -- - empty text, where text.hfill took the whitespace out
--- - an element with whitespace in it, or where a line ends
+-- - an element with whitespace in it, other than a ~, or where a line ends
 -- - an \hfill's gap, or a qed box, which the stylesheet needs as a child of
 --   its paragraph
 -- (The whitespace in a formula's source is not text.)
@@ -338,11 +339,11 @@ local function word_end(el, children, i)
       return i
     elseif is_inline_math(child) then
       if child:get_text():find("%s$") then return i end
-    elseif child:is_element() and (child:get_text():find("%s") or ends_line(child)
+    elseif child:is_element() and (child:get_text():find("%s") and not is_nbsp(child) or ends_line(child)
         or dom.has_class(child, "tex8web-hfill-gap") or dom.has_class(child, "tex8web-qed")) then
       break
     end
-    if shows(child) then last = i end
+    if shows(child) or is_nbsp(child) then last = i end
     i = i + 1
   end
   return last
@@ -362,8 +363,10 @@ local function word_start(el, wrapped)
   return with_text(el, node, tail)
 end
 
--- tex4ht writes ~ as a no-break space, which Latin Modern draws half again
--- as wide as a space, so each is marked for the CSS to narrow. A browser
+-- tex4ht writes ~ as a no-break space, which is drawn at the font's
+-- width for U+00A0 in Chrome and Firefox and as a space in Safari. So each
+-- is written as a space in a span, which css/tex8web.css keeps from
+-- collapsing or breaking, as wide as a space in its font. A browser
 -- may break a line before and after an atomic inline, as MathJax's
 -- inline-block mjx-math is, even next to a no-break space or a letter
 -- (CSS Text 3, section 5.1). So a no-break space or a narrow one before

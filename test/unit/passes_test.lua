@@ -110,8 +110,15 @@ return {
   ["text.no_break_spaces: a ~ kept with the math after it"] = function()
     local d = parse("<p>Lemma\u{A0}<span class=\"mathjax-inline\">\\(1\\)</span> and a\u{A0}b</p>")
     text.no_break_spaces(d)
-    equal(body(d), "<p>Lemma<span class='tex8web-nowrap'><span class='tex8web-nbsp'>\u{A0}</span>"
-      .. "<span class='mathjax-inline'>\\(1\\)</span></span> and a<span class='tex8web-nbsp'>\u{A0}</span>b</p>")
+    equal(body(d), "<p>Lemma<span class='tex8web-nowrap'><span class='tex8web-nbsp'> </span>"
+      .. "<span class='mathjax-inline'>\\(1\\)</span></span> and a<span class='tex8web-nbsp'> </span>b</p>")
+  end,
+
+  ["text.no_break_spaces: a ~ alone in a span of its font, kept with the math and the word after it"] = function()
+    local d = parse("<p>see<span class=\"cmr-9\">\u{A0}</span><span class=\"mathjax-inline\">\\(1\\)</span>\u{A0}then x</p>")
+    text.no_break_spaces(d)
+    equal(body(d), "<p>see<span class='tex8web-nowrap'><span class='cmr-9'><span class='tex8web-nbsp'> </span></span>"
+      .. "<span class='mathjax-inline'>\\(1\\)</span><span class='tex8web-nbsp'> </span>then</span> x</p>")
   end,
 
   ["text.no_break_spaces: a narrow no-break space kept with the math after it, and not narrowed"] = function()
@@ -126,9 +133,9 @@ return {
       .. "of\u{A0}<span class=\"mathjax-inline\">\\(n\\)</span>\u{A0}<span class=\"mathjax-inline\">\\(y\\)</span>\u{A0}<!--l. 3-->elements, "
       .. "<span class=\"mathjax-inline\">\\(x\\)</span>\u{A0}(<a href=\"#e\">1</a>) and <span class=\"mathjax-inline\">\\(z\\)</span>\u{A0}<em>a phrase</em></p>")
     text.no_break_spaces(d)
-    equal(body(d), "<p>of <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span><span class='tex8web-nbsp'>\u{A0}</span>and,</span> <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(5\\)</span>\u{202F}<span class='it'>cm</span>2</span> and "
-      .. "of<span class='tex8web-nowrap'><span class='tex8web-nbsp'>\u{A0}</span><span class='mathjax-inline'>\\(n\\)</span><span class='tex8web-nbsp'>\u{A0}</span><span class='mathjax-inline'>\\(y\\)</span><span class='tex8web-nbsp'>\u{A0}</span><!-- l. 3 -->elements,</span> "
-      .. "<span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span><span class='tex8web-nbsp'>\u{A0}</span>(<a href='#e'>1</a>)</span> and <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(z\\)</span><span class='tex8web-nbsp'>\u{A0}</span></span><em>a phrase</em></p>")
+    equal(body(d), "<p>of <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span><span class='tex8web-nbsp'> </span>and,</span> <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(5\\)</span>\u{202F}<span class='it'>cm</span>2</span> and "
+      .. "of<span class='tex8web-nowrap'><span class='tex8web-nbsp'> </span><span class='mathjax-inline'>\\(n\\)</span><span class='tex8web-nbsp'> </span><span class='mathjax-inline'>\\(y\\)</span><span class='tex8web-nbsp'> </span><!-- l. 3 -->elements,</span> "
+      .. "<span class='tex8web-nowrap'><span class='mathjax-inline'>\\(x\\)</span><span class='tex8web-nbsp'> </span>(<a href='#e'>1</a>)</span> and <span class='tex8web-nowrap'><span class='mathjax-inline'>\\(z\\)</span><span class='tex8web-nbsp'> </span></span><em>a phrase</em></p>")
   end,
 
   ["text.no_break_spaces: the characters right before and after the math, up to whitespace, kept with it, also in a span of their font"] = function()
@@ -159,7 +166,7 @@ return {
     local d = parse("<p><span class=\"cmti-10\">For all</span><span class=\"cmti-10\">\u{A0}</span><span class=\"mathjax-inline\">\\(x\\)</span>"
       .. "<span class=\"cmti-10\">\u{A0}and so on</span></p>")
     text.no_break_spaces(d)
-    local nbsp = "<span class='tex8web-nbsp'>\u{A0}</span>"
+    local nbsp = "<span class='tex8web-nbsp'> </span>"
     equal(body(d), "<p><span class='cmti-10'>For all</span><span class='tex8web-nowrap'><span class='cmti-10'>" .. nbsp .. "</span>"
       .. "<span class='mathjax-inline'>\\(x\\)</span><span class='cmti-10'>" .. nbsp .. "and</span></span><span class='cmti-10'> so on</span></p>")
   end,

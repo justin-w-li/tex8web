@@ -92,10 +92,12 @@ html body { font-family: var(--tex8web-roman); }
 [class*="-lmss"], [class^="cmss"], [class^="ecss"] { font-family: var(--tex8web-sans); }
 /* (TeX Live's ht-fonts/alias/times/ptmr7t.htf calls Times monospace) */
 [class^="ptmr7t-"] { font-family: inherit; }
-/* Latin Modern's no-break space (~) is 0.5em wide, its space 0.333em.
-   text.lua marks no-break spaces, and keeps one together with the math
-   next to it */
-.tex8web-nbsp { letter-spacing: -0.167em; }
+/* text.lua writes each ~ as a space, as U+00A0 is drawn as a space in
+   Safari but at the font's U+00A0 width in Chrome and Firefox. pre keeps
+   the space from collapsing and, on the space's own box, the line from
+   breaking after it (CSS Text 3, section 5.1). text.lua keeps a ~
+   together with the math next to it */
+.tex8web-nbsp { white-space: pre; }
 .tex8web-nowrap { white-space: nowrap; }
 /* \TeX and \LaTeX (tex8web-text.tex), kerned and moved as in LaTeX: the E
    down half an ex, the A in \sf@size (7 of 10) with its top at the T's */

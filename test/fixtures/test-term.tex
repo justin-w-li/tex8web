@@ -1,6 +1,7 @@
 % Terms (\WebTerm, in test-term.cfg) in a heading: the heading's id and
 % table of contents entry have only the term's text, also for a term made
-% with a robust command (\defn).
+% with a robust command (\defn). A term with a ~ has a - in its id, as
+% for a space.
 \documentclass{article}
 \newcommand{\term}[1]{\textbf{#1}}
 \NewDocumentCommand\defn{m}{\textbf{#1}}
@@ -10,4 +11,5 @@
 A \term{group} is a set with an operation.
 \section{The \defn{ring} law}
 A \defn{ring} has two.
+A \term{normal~subgroup} is a subgroup.
 \end{document}

@@ -595,9 +595,10 @@ const thin = {
 };
 
 // ~ and \, in text next to inline math: the space and the math in one
-// span, and after the math, the text up to the next whitespace too
+// span, and after the math, the text up to the next whitespace too. A ~
+// is written as a space (tex8web-nbsp).
 const math = "<mjx-container(?:(?!</mjx-container>)[^])*</mjx-container>";
-const tie = "<span class='tex8web-nbsp'>.</span>";
+const tie = "<span class='tex8web-nbsp'> </span>";
 const ties = {
   'test-nowrap': [new RegExp(`value of<span class='tex8web-nowrap'>${tie}${math},</span> keeps`),
     new RegExp(`p\\.<span class='tex8web-nowrap'>\u202F${math}\\.</span> A`),
@@ -627,6 +628,9 @@ const ties = {
     new RegExp(`the ${math}<span class='fbox'[^>]*>th row</span>, the ${math}<span class='framebox-l'[^>]*>two words</span>, and\\s+the ${math}<span class='tex8web-term' id='term-th-power'>th power</span> of it\\.`)],
   // a ~ in a span of its font, in \small text, kept with the math
   'test-localsize': [new RegExp(`<span class='cmbx-10'>if</span><span class='tex8web-nowrap'><span class='cmr-10'>${tie}</span><span class='mathjax-inline'[^>]*>${math}</span><span class='cmr-10'>${tie}</span><span class='cmbx-10'>then</span></span>`)],
+  // a ~ in a heading and its table of contents entry too
+  'test-tiepalatino': [new RegExp(`Proof of Lemma${tie}1</a>`), new RegExp(`Proof of Lemma${tie}1</h3>`),
+    new RegExp(`See Lemma${tie}1 and`)],
 };
 
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
@@ -639,7 +643,8 @@ const tikz = { 'test-article': ['test-article0x.svg', 0.0825] };
 const terms = {
   'test': [/<span class='tex8web-term' id='term-inner-product'>/, /<span class='tex8web-term' id='term-ball'>/],
   'test-term': [/<h3 class='sectionHead' id='the-group-law'>/, /<a href='#the-group-law' id='[^']*'>The <span class='cmbx-10'>group\s*<\/span>\s*law<\/a>/,
-    /<h3 class='sectionHead' id='the-ring-law'>/, /<a href='#the-ring-law' id='[^']*'>The <span class='cmbx-10'>ring\s*<\/span>\s*law<\/a>/],
+    /<h3 class='sectionHead' id='the-ring-law'>/, /<a href='#the-ring-law' id='[^']*'>The <span class='cmbx-10'>ring\s*<\/span>\s*law<\/a>/,
+    /<span class='tex8web-term' id='term-normal-subgroup'>/],
 };
 
 // Links at the heads of numbered theorems and the titles of numbered or
@@ -988,7 +993,7 @@ const mdframed = {
 };
 
 // Spaces in verbatim, alltt, and \verbatiminput keep the font's width. Only
-// the ~ in the text is narrowed.
+// the ~ in the text is written as a space in a span.
 const verbatim = {
   'test-verbatim': [/^(?:(?!tex8web-nbsp)[^])*Plain<span class='tex8web-nbsp'>(?:(?!tex8web-nbsp)[^])*$/,
     /<div class='alltt'>/, /<div class='verbatiminput'>/, /<pre class='verbatim'/],
