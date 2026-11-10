@@ -1,9 +1,10 @@
 % A document in Palatino (mathpazo) with sans-serif text and a sans-serif
-% heading (titlesec's sf option) in Latin Modern Sans. Each tie (~) is as
+% heading (a titlesec \titleformat) in Latin Modern Sans. Each tie (~) is as
 % wide as a space in its font, also in the heading.
 \documentclass{article}
 \usepackage{mathpazo}
-\usepackage[sf]{titlesec}
+\usepackage{titlesec}
+\titleformat*{\section}{\Large\bfseries\sffamily}
 \begin{document}
 \tableofcontents
 \section{Proof of Lemma~1}

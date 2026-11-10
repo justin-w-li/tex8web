@@ -354,13 +354,24 @@ const labeled = `(() => {
 })()`;
 
 // Each shown tie (text.lua) as wide as a space in its font, as in TeX,
-// within 0.005em for rounding, and with white-space: pre, which keeps the
-// line from breaking after it (CSS Text 3, section 5.1). A copy of the
-// tie and a space with white-space: pre are measured in inline-blocks
-// beside the tie, which are not justified. The copy keeps the
-// stylesheet's white-space, so a tie that would collapse is 0px wide.
+// within 0.005em for rounding, measured in inline-blocks beside it, which
+// are not justified. A copy of the tie between two letters in a box of no
+// width must keep the letters on one line.
 // Failures: [the text around the tie, what is wrong]
 const ties = `(() => {
+  const broken = span => {
+    const box = document.createElement('tex8web-probe');
+    box.style.cssText = 'display: block; width: 0';
+    box.append('x', span.cloneNode(true), 'x');
+    document.body.append(box);
+    const [a, b] = [box.firstChild, box.lastChild].map(node => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return range.getBoundingClientRect().top;
+    });
+    box.remove();
+    return a !== b;
+  };
   const spans = [...document.querySelectorAll('.tex8web-nbsp')].filter(span => span.getClientRects().length);
   const wrong = spans.flatMap(span => {
     const tie = span.cloneNode(true), space = document.createElement('tex8web-probe');
@@ -376,7 +387,7 @@ const ties = `(() => {
     return [
       ...Math.abs(a - b) > 0.005 * parseFloat(getComputedStyle(span).fontSize)
         ? [[text, \`\${a.toFixed(2)}px wide in \${font}, a space \${b.toFixed(2)}px\`]] : [],
-      ...getComputedStyle(span).whiteSpace !== 'pre' ? [[text, 'white-space not pre']] : [],
+      ...broken(span) ? [[text, 'a line breaks after it']] : [],
     ];
   });
   return { checked: spans.length, wrong };
