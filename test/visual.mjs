@@ -5,8 +5,9 @@
 // color. The prerendered page is also checked for a hidden theme button,
 // headings spaced as in LaTeX, tables in the text spaced as paragraphs,
 // the rest of each \hfill at the right, algorithm2e's numbers and
-// captions, list labels on their text's baseline, the fonts of the table
-// of contents, printing, and a width that fits a phone.
+// captions, list labels on their text's baseline, ties as wide as a
+// space and with no line break after them, the fonts of the table of
+// contents, printing, and a width that fits a phone.
 // Needs Chrome and the network. Differing screens are saved in
 // build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
@@ -352,6 +353,35 @@ const labeled = `(() => {
   return { checked, wrong };
 })()`;
 
+// Each shown tie (text.lua) as wide as a space in its font, as in TeX,
+// within 0.005em for rounding, and with white-space: pre, which keeps the
+// line from breaking after it (CSS Text 3, section 5.1). A copy of the
+// tie and a space with white-space: pre are measured in inline-blocks
+// beside the tie, which are not justified. The copy keeps the
+// stylesheet's white-space, so a tie that would collapse is 0px wide.
+// Failures: [the text around the tie, what is wrong]
+const ties = `(() => {
+  const spans = [...document.querySelectorAll('.tex8web-nbsp')].filter(span => span.getClientRects().length);
+  const wrong = spans.flatMap(span => {
+    const tie = span.cloneNode(true), space = document.createElement('tex8web-probe');
+    space.textContent = ' ';
+    tie.style.display = 'inline-block';
+    space.style.cssText = 'display: inline-block; white-space: pre';
+    span.after(tie, space);
+    const [a, b] = [tie, space].map(probe => probe.getBoundingClientRect().width);
+    tie.remove();
+    space.remove();
+    const text = span.closest(':not(.tex8web-nbsp, .tex8web-nowrap)').textContent.replace(/\\s+/g, ' ').trim().slice(0, 30);
+    const font = getComputedStyle(span).fontFamily.split(',')[0];
+    return [
+      ...Math.abs(a - b) > 0.005 * parseFloat(getComputedStyle(span).fontSize)
+        ? [[text, \`\${a.toFixed(2)}px wide in \${font}, a space \${b.toFixed(2)}px\`]] : [],
+      ...getComputedStyle(span).whiteSpace !== 'pre' ? [[text, 'white-space not pre']] : [],
+    ];
+  });
+  return { checked: spans.length, wrong };
+})()`;
+
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
 // multiples of the font size of the table of contents. The weights of each
@@ -411,7 +441,7 @@ const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).
 
 // the subjects each check found over the run: a check with none has
 // tested nothing
-const ran = { spaced: 0, tablesSpaced: 0, blocksSpaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0 };
+const ran = { spaced: 0, tablesSpaced: 0, blocksSpaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0, ties: 0 };
 
 async function compare(chrome, doc, ok) {
   const dir = testDir(doc, 'visual');
@@ -472,6 +502,9 @@ async function compare(chrome, doc, ok) {
           const labels = await page.evaluate(labeled);
           ran.labeled += labels.checked;
           for (const [text, what] of labels.wrong) problems.push(`${html}: the item "${text}": ${what}`);
+          const tied = await page.evaluate(ties);
+          ran.ties += tied.checked;
+          for (const [text, what] of tied.wrong) problems.push(`${html}: the tie in "${text}": ${what}`);
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {

@@ -1,11 +1,12 @@
 % A document in XCharter (the charter package's Charter, extended), with a
 % passage in Times chosen by \fontfamily. The page shows them in XCharter
-% and TeX Gyre Termes. The math stays in MathJax's TeX font, as the PDF's
-% stays in Computer Modern.
+% and TeX Gyre Termes, with each tie (~) as wide as a space in its font.
+% The math stays in MathJax's TeX font, as the PDF's stays in Computer
+% Modern.
 \documentclass{article}
 \usepackage{XCharter}
 \begin{document}
 Text in XCharter, \emph{in italics}, \textbf{in bold},
-{\fontfamily{bch}\selectfont in Charter} and {\fontfamily{qtm}\selectfont in Termes},
+{\fontfamily{bch}\selectfont in Charter} and {\fontfamily{qtm}\selectfont in Termes, Lemma~1},
 with $x^2$ in math.
 \end{document}
