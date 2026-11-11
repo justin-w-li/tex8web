@@ -314,14 +314,14 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, and prerendering |
 | `tex/tex8web-core.tex` | the entry point, with the four modules below |
 | `tex/tex8web-math.tex` | the MathJax configuration, `\WebMathMacros`, the escaping of formula source, siunitx, equation numbers, `\intertext`, TikZ in display math, and the space around display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, `\rule` in text, the space in table cells and the alignment of paragraph cells, the table of contents, lists, `\fbox` and `\colorbox`, bibliographies, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, and `\WebTerm` |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, `\rule` in text, the space in table cells and the alignment of paragraph cells, the table of contents, lists, `\fbox` and `\colorbox`, bibliographies, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, `\WebTerm`, and TS1 symbols |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, and the measurements and heading fonts of the document |
 | `tex/tex8web-boxes.tex` | tcolorbox boxes |
 | `tex/tex8web-hooks.sty` | loaded before the preamble: settings lost under tex4ht, dcolumn's old names for `dcolumn.4ht`, and `\web@needs` |
 | `css/tex8web.css` | the page styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | macros in math, and their colors |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula source, colors, spacing, theorems in boxes, footnotes, links, page controls, the table of contents, meta tags, and scripts |
-| `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex and makeglossaries, and prerendering |
+| `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page and font rules, bibtex and biber, makeindex and makeglossaries, and prerendering |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
 | `js/tex8web.js` | MathJax sizes set as in TeX |
 | `js/tex8web-fonts.js` | the font preload links, written inline in the head of each page, before the stylesheet link |

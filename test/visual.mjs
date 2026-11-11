@@ -393,17 +393,18 @@ const ties = `(() => {
   return { checked: spans.length, wrong };
 })()`;
 
-// The weight and style of each TS1 symbol's span against the text's span
-// just before it. In bold or italic text the PDF draws the symbol bold or
-// italic too.
+// The weight and style of each TS1 symbol's span, of a class such as
+// ts1-lmbx10-, against the text's span of the same font, ec-lmbx-10. In
+// bold or italic text the PDF draws the symbol bold or italic too.
 const symbolFaces = `(() => {
   const face = el => getComputedStyle(el).fontWeight + ' ' + getComputedStyle(el).fontStyle;
-  const spans = [...document.querySelectorAll('span[class^="ts1-"]')].filter(span => {
-    const text = span.previousSibling;
-    return text?.nodeName === 'SPAN' && /-\\d|-$/.test(text.className) && !text.className.startsWith('ts1-');
+  const pairs = [...document.querySelectorAll('span[class^="ts1-"]')].flatMap(span => {
+    const [, name, size] = span.className.match(/^ts1-(.*\\D)(\\d+)-$/) ?? [];
+    const text = name && document.querySelector(\`span.ec-\${name}-\${size}\`);
+    return text ? [[span, text]] : [];
   });
-  return { checked: spans.length, wrong: spans.filter(span => face(span) !== face(span.previousSibling))
-    .map(span => [span.previousSibling.textContent.trim(), face(span), face(span.previousSibling)]) };
+  return { checked: pairs.length, wrong: pairs.filter(([span, text]) => face(span) !== face(text))
+    .map(([span, text]) => [span.className, face(span), face(text)]) };
 })()`;
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
@@ -531,7 +532,7 @@ async function compare(chrome, doc, ok) {
           for (const [text, what] of tied.wrong) problems.push(`${html}: the tie in "${text}": ${what}`);
           const symbols = await page.evaluate(symbolFaces);
           ran.symbolFaces += symbols.checked;
-          for (const [text, got, want] of symbols.wrong) problems.push(`${html}: the TS1 symbol after "${text}": ${got}, not ${want}`);
+          for (const [font, got, want] of symbols.wrong) problems.push(`${html}: the TS1 symbol of .${font}: ${got}, not ${want}`);
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {

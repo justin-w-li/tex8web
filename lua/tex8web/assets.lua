@@ -474,8 +474,7 @@ end
 -- italic text is regular and upright. The rules go before the mark of
 -- css/tex8web.css, with tex4ht's.
 function M.unsized_fonts(context)
-  local log = files.read(context.dir .. "/" .. context.input .. ".lg")
-  if not log then return end
+  local log = assert(files.read(context.dir .. "/" .. context.input .. ".lg"))
   local faces, rules, seen = {}, {}, {}
   for name, rule in log:gmatch("htfcss:%s*(%S+)%s+([^\n]-)%s*\n") do faces[name] = rule end
   for name in log:gmatch('Font%("([^"]-%d)",""') do
