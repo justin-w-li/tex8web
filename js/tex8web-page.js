@@ -592,9 +592,32 @@
     // all entries fit is measured first: the closed drawer's empty box fits
     // them all, and the ResizeObserver measures the open drawer only after
     // the frame's callbacks.
+    // A closing drawer is drawn until it has slid out (css/tex8web.css).
+    // Safari on iPhone ignores a transition of display, which would keep it.
     toc.addEventListener('beforetoggle', event => {
       if (event.newState === 'open') requestAnimationFrame(() => { fit(); reveal(); });
+      else if (getComputedStyle(toc).transitionDuration !== '0s') toc.classList.add('tex8web-closing');
     });
+    const closed = event => {
+      if (event.target === toc && event.propertyName === 'translate') toc.classList.remove('tex8web-closing');
+    };
+    toc.addEventListener('transitionend', closed);
+    toc.addEventListener('transitioncancel', closed);
+    // A tap beside the drawer closes it and does nothing else. The popover
+    // closes on the tap's pointerup but lets its click through, and Safari
+    // on iPhone sends that click after the drawer has closed. A tap on the
+    // contents button leaves the drawer open until its click closes it.
+    let outside = false;
+    document.addEventListener('pointerdown', event => {
+      outside = toc.matches(':popover-open') && !toc.contains(event.target);
+    }, true);
+    document.addEventListener('click', event => {
+      if (outside && !toc.matches(':popover-open')) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      outside = false;
+    }, true);
   }
 
   // the search field: in place of the entries, the headings, theorems and
