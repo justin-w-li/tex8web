@@ -1,0 +1,17 @@
+% glossaries sorted by LaTeX, with \makenoidxglossaries and no external
+% tool, with hyperref: a glossary and acronyms printed by
+% \printnoidxglossaries
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage[acronym]{glossaries}
+\makenoidxglossaries
+\newglossaryentry{ring}{name={ring},
+  description={a set with two operations}}
+\newglossaryentry{group}{name={group},
+  description={a set with an associative operation}}
+\newacronym{gcd}{GCD}{greatest common divisor}
+\begin{document}
+\section{Groups}
+A \gls{ring} is a \gls{group}. The \gls{gcd}, then the \gls{gcd}.
+\printnoidxglossaries
+\end{document}

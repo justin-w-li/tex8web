@@ -1117,25 +1117,35 @@ const entry = (id, name, description) =>
 const glossary = (title, ...entries) => new RegExp(`>${title}<\\/h3>\\s*<dl class='description'[^>]*>(?:(?!<\\/dl>)[^])*`
   + entries.join('(?:(?!<\\/dl>)[^])*'));
 const gls = (id, text) => `<a class='glossary' href='#glo_${id}'>${text}<\\/a>`;
+// (glossaries prints "This document is incomplete" in place of a glossary
+// whose file is missing)
+const complete = /^(?![^]*This document is incomplete)/;
 const glossaries = {
   'test-glossaries': [
+    complete,
     new RegExp(`A ${gls('group', 'group')} has inverses\\. ${gls('group', 'Group')} theory studies ${gls('group', 'groups')}\\.`),
     new RegExp(`Every ${gls('field', "<span class='cmti-10'>field</span>")} is a ${gls('ring', "<span class='cmss-10'>ring</span>")}, and ${gls('ring', 'Rings')} are ${gls('ring', "<span class='cmtt-10'>rings</span>")} too\\.`),
     new RegExp(`<aside class='footnotetext[^]*${gls('gcd', "<span class='cmr-8'>greatest common divisor \\(GCD\\)</span>")}[^]*</aside>`),
-    new RegExp(`The ${gls('gcd', 'GCD')} of two numbers divides their ${gls('lcm', 'least common multiple \\(LCM\\)')}; a ${gls('gcd', 'GCD')} again\\.`),
+    new RegExp(`Computing the ${gls('lcm', 'least common multiple \\(LCM\\)')}\\s*<\\/h3>`),
+    new RegExp(`The ${gls('gcd', 'GCD')} of two numbers divides their ${gls('lcm', 'LCM')}; a ${gls('gcd', 'GCD')} again\\.`),
     new RegExp(`Theorem 1\\.[^]*${gls('etale', "<span class='cmti-10'>étale</span>")}[^]*${gls('field', "<span class='cmti-10'>fields</span>")}[^]*${gls('marks', "<span class='cmti-10'>bang!at@bar—quote”</span>")}`),
     new RegExp(`The number <a class='glossary' href='#glo_pi'><mjx-container[^]*is not in ${gls('hom', 'Hom')}\\.`),
-    glossary('Glossary', entry('etale', 'étale', 'flat and unramified\\.'), entry('field', 'field', 'a ring whose nonzero'),
+    // (the name with makeindex's special characters sorts by its own text,
+    // and étale by its sort key, after it)
+    glossary('Glossary', entry('marks', 'bang!at@bar—quote”', 'a name with makeindex’s special characters\\.'),
+      entry('etale', 'étale', 'flat and unramified\\.'), entry('field', 'field', 'a ring whose nonzero'),
       entry('group', 'group', 'a set with an associative operation, an identity, and inverses\\.'),
-      entry('marks', 'bang!at@bar—quote”', 'a name with makeindex’s special characters\\.'),
       entry('ring', 'ring', 'an abelian group with a second, distributive operation\\.')),
-    glossary('Acronyms', entry('gcd', 'GCD', 'greatest common divisor\\.'), entry('lcm', 'LCM', 'least common multiple\\.')),
+    /^(?![^]*glo_unused)/,
+    // (the long style's table)
+    /<h3[^>]*>(?:(?!<\/h3>)[^])*>Acronyms<\/h3>\s*<div class='longtable'>\s*<table(?:(?!<\/table>)[^])*<a id='glo_gcd'><\/a>GCD(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*greatest common divisor\.(?:(?!<\/table>)[^])*<a id='glo_lcm'><\/a>LCM(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*least common multiple\./,
     // (the super style's table, and the index style's paragraphs)
     /<h3[^>]*>(?:(?!<\/h3>)[^])*>Symbols<\/h3>\s*<div class='supertabular'>\s*<table class='tabular'(?:(?!<\/table>)[^])*<a id='glo_pi'><\/a><mjx-container(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*the ratio of a circle’s circumference to its diameter\./,
     /<h3[^>]*>(?:(?!<\/h3>)[^])*>Notation<\/h3>\s*<p class='noindent'><a id='glo_hom'><\/a><span class='cmbx-10'>Hom\s*<\/span>the set of homomorphisms\./,
   ],
-  // (sorted by xindy; without hyperref, no links)
+  // (sorted by xindy, étale by its UTF-8 name; without hyperref, no links)
   'test-glossaries-xindy': [
+    complete,
     glossary('Glossary', entry('abelian', 'abelian', 'with a commutative operation\\.'), entry('etale', 'étale', 'flat and unramified\\.'),
       entry('group', 'group', 'a set with an associative operation\\.')),
     glossary('Acronyms', entry('gcd', 'GCD', 'greatest common divisor\\.')),
@@ -1144,11 +1154,19 @@ const glossaries = {
   ],
   // (glossaries-extra's abbreviations, with no period after a description)
   'test-glossaries-extra': [
+    complete,
     new RegExp(`The ${gls('gcd', 'greatest common divisor \\(GCD\\)')}, then the ${gls('gcd', 'GCD')}\\.`),
     new RegExp(`The LCM<span class='footnote-mark'>[^]*then the ${gls('lcm', 'LCM')}\\. In short ${gls('gcd', 'GCD')}, in full ${gls('lcm', 'least common multiple')}\\.`),
     /<span class='cmr-8'>least common multiple<\/span><\/p><\/aside>/,
     glossary('Glossary', entry('group', 'group', 'a set with an associative operation 1')),
     glossary('Abbreviations', entry('gcd', 'GCD', 'greatest common divisor 1'), entry('lcm', 'LCM', 'least common multiple 1')),
+  ],
+  // (sorted by LaTeX, which needs no makeglossaries step)
+  'test-glossaries-noidx': [
+    complete,
+    new RegExp(`A ${gls('ring', 'ring')} is a ${gls('group', 'group')}\\. The ${gls('gcd', 'greatest common divisor \\(GCD\\)')}, then the ${gls('gcd', 'GCD')}\\.`),
+    glossary('Glossary', entry('group', 'group', 'a set with an associative operation\\.'), entry('ring', 'ring', 'a set with two operations\\.')),
+    glossary('Acronyms', entry('gcd', 'GCD', 'greatest common divisor\\.')),
   ],
 };
 
