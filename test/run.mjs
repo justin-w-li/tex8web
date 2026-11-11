@@ -451,6 +451,11 @@ const surds = {
     new RegExp(`<span class='tex8web-label'>${surd('').source}`), new RegExp(`<td [^>]*>${surd('').source}`),
     new RegExp(`<dt [^>]*>(?:<a [^>]*><\\/a>)?${surd('').source}`),
     /<mtext>Mathtext √<\/mtext>/,
+    // (at the start of a paragraph and of a p{} cell)
+    new RegExp(`<p [^>]*>${surd('').source}\\s*(?:<\\/span>\\s*)?Paragraph start`),
+    new RegExp(`<td [^>]*>\\s*<p [^>]*>${surd('').source}\\s*(?:<\\/span>\\s*)?Parcell`),
+    // (the text after a picture, which keeps the font's glyph, stays as it is)
+    /test-surd0x\.svg'[^>]*\/> here\./, /test-surd1x\.svg'[^>]*\/> after\./,
     // (the sign in the span of its TS1 font, which has the size and family
     // of the text around it; the stylesheet gives a TS1 span no weight or
     // shape, so in bold or italic text the sign stays regular and upright)

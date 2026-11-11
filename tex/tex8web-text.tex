@@ -647,10 +647,11 @@
 % \textsurd as √. lm-ts1.htf, which the TS1 files of pxfonts, Libertine,
 % and TeX Gyre also take, gives a middle dot. The special replaces the
 % font's glyph that follows, as html4.4ht does for \l, so the sign stays in
-% the span of its font. A picture keeps the font's glyph.
+% the span of its font. In a picture, dvisvgm skips the special and draws
+% the font's glyph.
 \expandafter\let\expandafter\web@textsurd\csname TS1\string\textsurd\endcsname
 \expandafter\def\csname TS1\string\textsurd\endcsname{%
-    \ifx\EndPicture\:UnDef\ht:special{t4ht@+\string&{35}x221A{59}}\fi
+    \ht:special{t4ht@+\string&{35}x221A{59}}%
     \web@textsurd}
 \web@configurelist{itemize}{itemize}{ul}
 \web@configurelist{enumerate}{enumerate}{ol}

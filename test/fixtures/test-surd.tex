@@ -2,8 +2,9 @@
 % dot: in each font of the text, in a footnote, a theorem, a heading and its
 % contents entry with hyperref, an itemize's and a description's label, a
 % table and its caption, beside \textbullet and \textperiodcentered, which
-% stays a middle dot, in \text in math, and in a TikZ and a LaTeX picture,
-% which keep the font's glyph.
+% stays a middle dot, in \text in math, at the start of a paragraph and of a
+% p{} cell, and in a TikZ and a LaTeX picture, which keep the font's glyph
+% and leave the text after them as it is.
 \documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
@@ -43,9 +44,14 @@ Theorem \textsurd{} sign.
 \begin{tabular}{ll}
 Cell & \textsurd \\
 \end{tabular}
+\begin{tabular}{p{3cm}}
+\textsurd{} Parcell sign. \\
+\end{tabular}
 \caption{Caption \textsurd{} sign.}
 \end{table}
+\textsurd{} Paragraph start.
+
 Math $x = \text{Mathtext \textsurd{} sign}$ here.
 Picture \tikz \node {\textsurd}; here.
-\begin{picture}(20,10)\put(0,0){\textsurd}\end{picture}
+\begin{picture}(20,10)\put(0,0){\textsurd}\end{picture} after.
 \end{document}
