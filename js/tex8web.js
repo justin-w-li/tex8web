@@ -48,38 +48,56 @@ function tex8web(config, tex) {
     };
   }
 
-  // a \lefteqn (macros.lua: an mpadded of no width) in an alignment with
-  // numbers on the right, kept clear of the numbers on a narrow screen.
-  // MathJax sizes the table by its columns, so the content of the box may
-  // run past the table's right edge, under the numbers. The table gets
-  // that much more room on its right. It stays centered while there is
-  // room, as in the PDF, and is moved left when there is not (internal:
-  // the wrappers' boxes, the table's spacing, and handleDisplay, which
-  // gives a numbered table its width).
+  // a \lefteqn (macros.lua: an mpadded of no width) on a numbered row of
+  // an alignment, kept clear of the numbers on a narrow screen. MathJax
+  // sizes the table by its columns, so the content of the box may run past
+  // the table's right edge, under the number. The table gets that much
+  // more room on its right. It stays centered while there is room, as in
+  // the PDF, and is moved left when there is not (internal: the wrappers'
+  // boxes, the table's spacing, and handleDisplay, which gives a numbered
+  // table its width). A row without a number may run into the margin, as
+  // in the PDF.
   function overhang(table) {
+    return lapEnd(table, true) - table.getBBox().w;
+  }
+  // how far right the content of the boxes in a table's rows reaches, from
+  // the table's left edge
+  function lapEnd(table, numbered) {
     const widths = table.getComputedWidths(), spacing = table.getColumnHalfSpacing();
     let end = 0;
     for (const row of table.tableRows) {
+      if (numbered && !row.node.isKind('mlabeledtr')) continue;
       let x = 0;
       row.tableCells.forEach((cell, i) => {
         x += spacing[i];
         const content = cell.childNodes[0];
         const align = cell.node.attributes.get('columnalign');
-        let at = x + (widths[i] - content.getOuterBBox().w) * (align === 'right' ? 1 : align === 'center' ? 0.5 : 0);
-        for (const child of content.childNodes) {
-          const box = child.getOuterBBox();
-          // (the box in the group that \newcommand's expansion makes)
-          let lap = child;
-          while (lap.childNodes.length === 1 && !lap.node.isKind('mpadded')) lap = lap.childNodes[0];
-          if (lap.node.isKind('mpadded') && String(lap.node.attributes.get('width')) === '0') {
-            end = Math.max(end, at + lap.childNodes[0].getOuterBBox().w * box.rscale);
-          }
-          at += box.w * box.rscale;
-        }
+        const at = x + (widths[i] - content.getOuterBBox().w) * (align === 'right' ? 1 : align === 'center' ? 0.5 : 0);
+        end = Math.max(end, lapReach(content, at, 1));
         x += widths[i] + spacing[i + 1];
       });
     }
-    return end - table.getBBox().w;
+    return end;
+  }
+  // the same in math that starts at `at`, whose ems are `scale` of the
+  // table's: in groups, as the one \newcommand's expansion makes, and in a
+  // table, as a split in an equation. \llap's box, which has an lspace,
+  // ends where it stands.
+  function lapReach(wrapper, at, scale) {
+    const node = wrapper.node;
+    if (node.isKind('mtable')) return at + lapEnd(wrapper, false) * scale;
+    if (node.isKind('mpadded')) {
+      const lapped = String(node.attributes.get('width')) === '0' && !node.attributes.getExplicit('lspace');
+      return lapped ? at + wrapper.childNodes[0].getOuterBBox().w * scale : at;
+    }
+    if (!['mrow', 'mstyle', 'TeXAtom'].some(kind => node.isKind(kind))) return at;
+    let end = at;
+    for (const child of wrapper.childNodes) {
+      const box = child.getOuterBBox();
+      end = Math.max(end, lapReach(child, at, scale * box.rscale));
+      at += box.w * box.rscale * scale;
+    }
+    return end;
   }
   function clearNumbers() {
     const Wrapper = MathJax._.output.chtml.Wrappers.math.ChtmlMath.prototype;
@@ -87,14 +105,12 @@ function tex8web(config, tex) {
     Wrapper.handleDisplay = function (parent) {
       handleDisplay.call(this, parent);
       const table = this.jax.table;
-      if (!table?.hasLabels || table.node.attributes.get('side') !== 'right'
-          || this.adaptor.getAttribute(parent, 'width') !== 'full' || table.getAlignShift()[0] !== 'center') return;
+      if (!table?.hasLabels) return;
       const over = overhang(table);
       if (over <= 0) return;
       const {L, w, R} = table.getOuterBBox();
       const adaptor = this.adaptor, mtable = table.dom[0], inner = adaptor.firstChild(mtable);
       adaptor.setStyle(mtable, 'min-width', table.em(L + w + over + R));
-      adaptor.setStyle(parent, 'min-width', table.em(L + w + over + R));
       // The left margin places the table: centered, or far enough left for
       // the content and the numbers. The right margin keeps that room in
       // an equation's preview, which sets the left margin to 0.

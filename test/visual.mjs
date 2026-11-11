@@ -412,39 +412,45 @@ const symbolFaces = `(() => {
 // Each \lefteqn (MathJax's \rlap: an mjx-mpadded around a block of no
 // width) adds no width: its content is wider than its cell, or, outside an
 // alignment, what follows it starts at the box. Its content starts at the
-// box, ends before the equation numbers beside it, and can be scrolled
-// to in a display too wide for its column. In an alignment, the box is at the edge of its cell that the
-// column's alignment gives, as in the PDF: the right edge in eqnarray's
-// first column, the left edge in its third. Checked with JavaScript off
-// and on a phone. laps has the number of boxes on each page checked.
-// Failures: [the box's text, what is wrong]
+// box, ends before the equation numbers beside it, also those of a table
+// around its own, and can be scrolled to in a display too wide for its
+// column. In an alignment, a box alone in its cell is at the edge of the
+// cell that the column's alignment gives, as in the PDF: the right edge in
+// eqnarray's first column, the left edge in its third. A table with
+// numbers stays centered while the content of its boxes beside the numbers
+// ends an em before them, as in the PDF. Checked with JavaScript off and
+// on a phone. laps has the number of boxes on each page checked. Failures:
+// [the box's text, what is wrong]
 const lapped = `(() => {
-  const boxes = [...document.querySelectorAll('mjx-mpadded')];
+  // (\\llap's box moves its content left, in an mjx-rbox)
+  const boxes = [...document.querySelectorAll('mjx-mpadded')].filter(box => !box.querySelector(':scope > mjx-block > mjx-rbox'));
+  const numbers = table => [...table.querySelectorAll(':scope > mjx-labels mjx-mtd')].map(label => {
+    const number = document.createRange();
+    number.selectNodeContents(label);
+    return [label.textContent, number.getBoundingClientRect()];
+  }).filter(([, n]) => n.width);
+  const beside = (content, n) => n.top < content.bottom && content.top < n.bottom;
   const wrong = boxes.flatMap(box => {
     const text = box.textContent.slice(0, 20);
     const at = box.getBoundingClientRect(), content = box.firstElementChild.firstElementChild.getBoundingClientRect();
     const problems = [];
     if (Math.abs(content.left - at.left) > 0.5) problems.push(\`content at \${(content.left - at.left).toFixed(2)}px from the box\`);
     const cell = box.closest('mjx-mtd');
-    if (cell) {
+    if (cell?.textContent === box.textContent) {
       const rect = cell.getBoundingClientRect(), style = getComputedStyle(cell);
       const left = rect.left + parseFloat(style.paddingLeft), right = rect.right - parseFloat(style.paddingRight);
       const edge = /right|end/.test(style.textAlign) ? right : left;
       if (Math.abs(at.left - edge) > 0.5) problems.push(\`\${(at.left - edge).toFixed(2)}px from its cell's edge\`);
       if (content.width < right - left + 0.5) problems.push(\`its cell \${(right - left).toFixed(2)}px wide holds its content \${content.width.toFixed(2)}px wide\`);
-    } else {
+    } else if (!cell) {
       // (past the group around the box, which only MathJax in a browser keeps)
       const group = box.parentElement.matches('mjx-texatom') && !box.nextElementSibling ? box.parentElement : box;
       const next = group.nextElementSibling?.getBoundingClientRect();
       if (!next || Math.abs(next.left - at.left) > 0.5) problems.push(next ? \`what follows at \${(next.left - at.left).toFixed(2)}px from the box\` : 'nothing after it');
     }
-    // clear of the equation numbers beside it
-    for (const label of box.closest('mjx-mtable')?.querySelectorAll(':scope > mjx-labels mjx-mtd') ?? []) {
-      const number = document.createRange();
-      number.selectNodeContents(label);
-      const n = number.getBoundingClientRect();
-      if (n.width && n.top < content.bottom && content.top < n.bottom && content.right > n.left + 0.5) {
-        problems.push(\`runs \${(content.right - n.left).toFixed(2)}px under its number \${label.textContent}\`);
+    for (let table = box.closest('mjx-mtable'); table; table = table.parentElement.closest('mjx-mtable')) {
+      for (const [label, n] of numbers(table)) {
+        if (beside(content, n) && content.right > n.left + 0.5) problems.push(\`runs \${(content.right - n.left).toFixed(2)}px under its number \${label}\`);
       }
     }
     const scroller = box.closest('mjx-container[display]');
@@ -452,9 +458,20 @@ const lapped = `(() => {
     if (scroller && end > scroller.scrollWidth + 0.5) problems.push(\`ends \${(end - scroller.scrollWidth).toFixed(2)}px past where its display scrolls\`);
     return problems.map(what => [text, what]);
   });
+  for (const table of document.querySelectorAll('mjx-mtable:has(> mjx-labels):has(mjx-mpadded)')) {
+    const rect = table.getBoundingClientRect(), inner = table.querySelector(':scope > mjx-table > mjx-itable').getBoundingClientRect();
+    const shift = (inner.left + inner.right - rect.left - rect.right) / 2;
+    const near = numbers(table), em = parseFloat(getComputedStyle(table).fontSize);
+    const reach = Math.max(inner.right, ...[...table.querySelectorAll('mjx-mpadded')]
+      .map(box => box.firstElementChild.firstElementChild.getBoundingClientRect())
+      .filter(content => near.some(([, n]) => beside(content, n))).map(content => content.right));
+    if (inner.left - shift >= rect.left && near.every(([, n]) => reach - shift < n.left - em) && Math.abs(shift) > 0.5) {
+      wrong.push([table.textContent.slice(0, 20), \`its table \${shift.toFixed(2)}px from the center\`]);
+    }
+  }
   return { checked: boxes.length, wrong };
 })()`;
-const laps = { 'test-lefteqn': 12 };
+const laps = { 'test-lefteqn': 15 };
 
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
@@ -616,6 +633,7 @@ async function compare(chrome, doc, ok) {
     if (doc.name in laps) {
       for (const file of [typeset, join(pre, html)]) {
         const boxes = await chrome.withPage(pathToFileURL(file).href, { width: 390, height: 844 }, page => page.evaluate(lapped));
+        if (boxes.checked !== laps[doc.name]) problems.push(`${relative(join(root, 'build'), file)}: at 390px, ${boxes.checked} boxes of \\lefteqn, not ${laps[doc.name]}`);
         for (const [text, what] of boxes.wrong) problems.push(`${relative(join(root, 'build'), file)}: at 390px, the \\lefteqn "${text}": ${what}`);
       }
     }
