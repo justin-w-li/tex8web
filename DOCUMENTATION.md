@@ -381,7 +381,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **Heading alignment.** A heading is centered or set flush right only if the command, such as `\centering`, is in its titlesec format, its `\@startsection` style, the class's `\part`, or memoir's `\chaptitlefont` or `\parttitlefont`. A command inside another macro, as in memoir's `\setsecheadstyle{\centering}`, is not found.
 - **KOMA-Script headings** are bold, in the text's family and the standard classes' sizes. In the PDF, they are in a bold sans-serif font. To change them, set `--tex8web-section-family` and the other heading properties with `\Css`.
 - **mwcls classes.** In mwart, mwrep, and mwbk, headings have the sizes and spacing of the standard classes. A chapter's number is on a line of its own, where in the PDF it is beside the title. The bibliography's entries are farther apart than in the PDF. The table of contents has the class's indents and number widths, but no space above the entries of the top level. The page's title, shown in the browser tab, is not the document's title.
-- **Text in `\scalebox` or `\resizebox`** is shown at its natural size. Only pictures in these boxes are scaled.
+- **Text in `\scalebox`, `\resizebox`, or `\reflectbox`** is shown at its natural size, and is not mirrored or turned over. Only pictures in these boxes are scaled, mirrored, or turned over.
 - **`\hrule`, `\vrule`, and `\hrulefill`.** `\hrule` and `\vrule` are shown as a line of underscores, and `\hrulefill` is not shown. Use `\rule`, as in `\noindent\rule{\linewidth}{0.4pt}`, which is drawn as in the PDF.
 
 ### Packages

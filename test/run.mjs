@@ -318,8 +318,11 @@ const pictures = {
   // (\includegraphics pictures mirrored as in the PDF, at any size and in
   // any context, halved too; turned over, 75pt high, 37.5pt when halved,
   // or 48bp without a size, so hanging below the baseline; two
-  // \reflectbox mirror nothing, and a picture that dvisvgm draws is
-  // mirrored in its SVG; a picture at its natural size is not scaled)
+  // \reflectbox mirror nothing, and a picture that dvisvgm draws is not
+  // mirrored again by its <img>; a picture at its natural size is not
+  // scaled; a mirror around a rotation is before it, on its span, and one
+  // inside a rotation on the picture; a picture with a height that does
+  // not keep its aspect is shown, and lowered, 75pt high)
   'test-reflectbox': [
     ...['bare', 'width', 'half', 'half bare', 'nested', 'left', 'right', 'link', 'footnote', 'cell', 'minipage',
       'theorem', 'italic', 'figure'].map(alt => flipped(alt, -1, 1)),
@@ -328,7 +331,12 @@ const pictures = {
     /<img alt='' src='test-reflectbox0x\.svg' (?![^>]*transform)[^>]*\/>/,
     flipped('over', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
     flipped('round', -1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
-    flipped('over bare', 1, -1, '(?:-48px|calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.139[67]\\))'),
+    flipped('over bare', 1, -1, '-48px'),
+    ...['rotated', 'angle'].map(alt => new RegExp(
+      `<span class='rotatebox' style='transform: scale\\(-1, 1\\) rotate\\(-30deg\\);'> <img alt='${alt}' (?![^>]*transform)`)),
+    /<span class='rotatebox' style='transform: rotate\(-30deg\);'> <img alt='rotated inside' /,
+    flipped('rotated inside', -1, 1),
+    flipped('squashed', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
     flipped('twice', 1, 1)],
 };
 

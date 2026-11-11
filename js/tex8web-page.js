@@ -967,7 +967,8 @@
       // dark mode selects
       picture.setAttribute('src', img.getAttribute('src'));
       picture.alt = img.alt;
-      // (a mirrored or stretched TikZ picture: text.pictures in text.lua)
+      // (a picture mirrored or turned over, or a stretched TikZ picture:
+      // text.pictures in text.lua)
       picture.style.transform = img.style.transform;
       picture.style.aspectRatio = img.style.aspectRatio;
       plate.style.setProperty('--tex8web-ratio', box.width / box.height);

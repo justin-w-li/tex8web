@@ -919,16 +919,16 @@
 % PDF's text width. The picture shrinks only in a column narrower than that
 % (img's max-width). The width is the one graphicx computes from width,
 % height, and scale. Only a width is set, so a height never squashes the
-% picture. The height, in the same unit, is a data attribute for
-% text.pictures, which lowers a picture turned over and then removes the
-% attribute. tex4ht's size is kept when no size is asked for. It is kept
-% when graphicx resizes a box around the picture instead (a size after
-% angle, or scale with a size): then \Gin@@ewidth or \Gin@@eheight is
-% missing, since graphicx sets them only in the other case. It is kept when
-% the width depends on a natural size that tex4ht does not know (no .xbb
-% file beside a bitmap: \noBoundingBox in graphics.4ht). \web@textwidth is
-% used because a minipage, and so a tcolorbox or subfigure, sets \textwidth
-% to its width.
+% picture. The height it is shown at, from the width and the natural aspect,
+% in the same unit, is a data attribute for text.pictures, which lowers a
+% picture turned over and then removes the attribute. tex4ht's size is kept
+% when no size is asked for. It is kept when graphicx resizes a box around
+% the picture instead (a size after angle, or scale with a size): then
+% \Gin@@ewidth or \Gin@@eheight is missing, since graphicx sets them only in
+% the other case. It is kept when the width depends on a natural size that
+% tex4ht does not know (no .xbb file beside a bitmap: \noBoundingBox in
+% graphics.4ht). \web@textwidth is used because a minipage, and so a
+% tcolorbox or subfigure, sets \textwidth to its width.
 \ExplSyntaxOn
 \cs_if_exist:NT \Gin@req@width
   {
@@ -957,7 +957,10 @@
           }
           {
             style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\web@textwidth,4)})"~
-            data-tex8web-height="\fp_eval:n{round(\Gin@req@height/\web@textwidth,4)}"
+            \dim_compare:nNnT { \Gin@nat@width } > { 0pt }
+              {
+                data-tex8web-height="\fp_eval:n{round(\Gin@req@width*\Gin@nat@height/\Gin@nat@width/\web@textwidth,4)}"
+              }
           }
           { \__web_gin_dim: }
     }

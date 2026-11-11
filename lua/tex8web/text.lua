@@ -500,9 +500,13 @@ end
 -- that pgf lowers or raises has its baseline's y in the SVG
 -- (g.tex8web-baseline), from which its vertical-align is set. A negative
 -- factor mirrors or turns over any picture, drawn or not, with a transform.
+-- tex4ht rotates a box in a span.rotatebox, so a box's mirror goes on the
+-- outermost such span inside the box, before its rotation, as in the PDF.
 function M.pictures(document, context)
-  local scales, marks = {{1, 1}}, {}
+  local scales, marks, depths, flipped = {{1, 1}}, {}, {}, {}
+  local sign = function(v) return v < 0 and -1 or 1 end
   document:traverse_elements(function(el)
+    if dom.has_class(el, "rotatebox") then depths[el] = #scales end
     if dom.has_class(el, "tex8web-scale") then
       local x, y = scales[#scales][1], scales[#scales][2]
       scales[#scales + 1] = {x * tonumber(el:get_attribute("data-x")), y * tonumber(el:get_attribute("data-y"))}
@@ -555,8 +559,35 @@ function M.pictures(document, context)
         dom.add_style(el, "vertical-align:-" .. el:get_attribute("height") .. "px")
       end
     end
-    local sx, sy = scales[#scales][1] < 0 and -1 or 1, scales[#scales][2] < 0 and -1 or 1
-    if sx < 0 or sy < 0 then dom.add_style(el, string.format("transform:scale(%d, %d)", sx, sy)) end
+    -- (each box's signs, on the outermost span.rotatebox inside the box,
+    -- or else on the picture)
+    local rotations, up = {}, el:get_parent()
+    while up and up:is_element() do
+      if depths[up] then table.insert(rotations, 1, up) end
+      up = up:get_parent()
+    end
+    local flips = {}
+    for level = 2, #scales do
+      local target = el
+      for _, span in ipairs(rotations) do
+        if depths[span] >= level then target = span break end
+      end
+      local f = flips[target] or {1, 1}
+      flips[target] = {f[1] * sign(scales[level][1]) * sign(scales[level - 1][1]),
+        f[2] * sign(scales[level][2]) * sign(scales[level - 1][2])}
+    end
+    for target, f in pairs(flips) do
+      if (f[1] < 0 or f[2] < 0) and not flipped[target] then
+        local scale = string.format("scale(%d, %d)", f[1], f[2])
+        local style = target:get_attribute("style") or ""
+        if target ~= el and style:find("transform:") then
+          target:set_attribute("style", (style:gsub("transform:%s*", "transform: " .. scale .. " ", 1)))
+        else
+          dom.add_style(target, "transform:" .. scale)
+        end
+        if target ~= el then flipped[target] = true end
+      end
+    end
   end)
   for _, mark in ipairs(marks) do mark:remove_node() end
 end

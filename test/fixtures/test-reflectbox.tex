@@ -2,10 +2,11 @@
 % \reflectbox at the natural size and with a width, \scalebox with
 % negative factors (also halving, and turning over), two \reflectbox, a
 % \reflectbox in a box that scales, two pictures in one \reflectbox, a
-% \reflectbox inside a TikZ node, and a mirrored picture in a link, a
-% footnote, a table, a minipage, a theorem, italic text, and a figure. A
-% picture turned over hangs below the baseline in the PDF, as graphics.sty
-% swaps its height and depth.
+% \reflectbox inside a TikZ node, a \reflectbox around a rotation and
+% inside one, a picture with a height that does not keep its aspect turned
+% over, and a mirrored picture in a link, a footnote, a table, a minipage,
+% a theorem, italic text, and a figure. A picture turned over hangs below
+% the baseline in the PDF, as graphics.sty swaps its height and depth.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{amsthm}
@@ -32,6 +33,14 @@ Turned over: \scalebox{1}[-1]{\includegraphics[alt={over}, width=100pt]{test-pic
 Turned over bare: \scalebox{1}[-1]{\includegraphics[alt={over bare}]{test-picture.png}} after.
 
 Turned round: \scalebox{-1}[-1]{\includegraphics[alt={round}, width=100pt]{test-picture.png}} after.
+
+Rotated: \reflectbox{\rotatebox{30}{\includegraphics[alt={rotated}, width=50pt]{test-picture.png}}} after.
+
+Angle: \reflectbox{\includegraphics[alt={angle}, angle=30, width=50pt]{test-picture.png}} after.
+
+Rotated inside: \rotatebox{30}{\reflectbox{\includegraphics[alt={rotated inside}, width=50pt]{test-picture.png}}} after.
+
+Squashed: \scalebox{1}[-1]{\includegraphics[alt={squashed}, width=100pt, height=20pt]{test-picture.png}} after.
 
 Twice: \reflectbox{\reflectbox{\includegraphics[alt={twice}, width=100pt]{test-picture.png}}} after.
 
