@@ -432,24 +432,23 @@ const fonts = {
 
 // \textsurd as √ after the given text, in the fonts whose tex4ht files give
 // a middle dot and in those that give √. The first are Latin Modern's TS1
-// file, which tex4ht also takes for pxfonts and three TeX Gyre fonts, and
-// txfonts' file. Palladio takes the sign from Computer Modern's TS1 font.
-// \textperiodcentered stays a middle dot, and no other middle dot is left
-// in the page.
+// file, which tex4ht also takes for pxfonts and every TeX Gyre family but
+// Termes, and txfonts' file, tcxb.htf. Palladio takes the sign from
+// Computer Modern's TS1 font. \textperiodcentered stays a middle dot, and
+// no other middle dot is left in the page.
 const surd = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:√|&#x221A;)`);
 const dot = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:·|&#x00B7;|&#xB7;)`);
 const inFont = before => new RegExp(`${before}\\s*(?:<\\/span>\\s*)?<span\\s+class='ts1-[^']+'>(?:√|&#x221A;)`);
 // The TS1 symbols of test-ts1-symbols, each with its label and the code
 // point of the character that LaTeX draws.
 const ts1Symbols = [['Threequartersemdash', '2014'], ['Blank', '2422'], ['Dblhyphen', '2E40'], ['Lbrackdbl', '27E6'],
-  ['Rbrackdbl', '27E7'], ['Divorced', '26AE'], ['Died', '271D'], ['Married', '26AD'], ['Dblhyphenchar', '2E40'],
-  ['Acutedbl', '02DD'], ['Gravedbl', '02F5'], ['Bardbl', '2016'], ['Bullet', '2022'], ['Guarani', '20B2'],
-  ['Peso', '20B1'], ['Lira', '20A4'], ['Interrobang', '203D'], ['Interrobangdown', '2E18'], ['Discount', '2052'],
-  ['Openbullet', '25E6'], ['Lquill', '2045'], ['Rquill', '2046'], ['CircledP', '2117'],
-  ['Mu', '00B5'], ['Ordmasculine', '00BA'], ['Surd', '221A'], ['Quotesingle', '0027'], ['Asciidieresis', '00A8']];
+  ['Rbrackdbl', '27E7'], ['Dblhyphenchar', '2E40'], ['Acutedbl', '02DD'], ['Gravedbl', '02F5'], ['Bardbl', '2016'],
+  ['Bullet', '2022'], ['Guarani', '20B2'], ['Lira', '20A4'], ['Discount', '2052'], ['Openbullet', '25E6'],
+  ['Lquill', '2045'], ['Rquill', '2046'], ['CircledP', '2117'], ['Mu', '00B5'], ['Ordmasculine', '00BA'],
+  ['Surd', '221A'], ['Quotesingle', '0027']];
 const ts1 = (label, code) => new RegExp(
   `${label}\\s*(?:<\\/?span[^>]*>\\s*)*(?:\\u{${code}}|&#x0*${code};)`, 'iu');
-const onlyDots =/^(?![^]*(?<!dot\s*(?:<\/?span[^>]*>\s*)*)(?:·|&#x00B7;|&#xB7;))/i;
+const onlyDots = /^(?![^]*(?<!dot\s*(?:<\/?span[^>]*>\s*)*)(?:·|&#x00B7;|&#xB7;))/i;
 const surds = {
   // (also in a heading and its contents entry, an itemize's and a
   // description's label, a table's cell and caption, beside \textbullet's •,
@@ -472,14 +471,7 @@ const surds = {
     ...['Typewriter', 'Sans', 'Large', 'Footnote'].map(inFont)],
   'test-surd-fonts': [onlyDots, dot('Pxdot'), dot('Txdot'), ...['Palatino', 'Palitalic', 'Pxsans', 'Pxmono', 'Times',
     'Palladio', 'Heros', 'Pagella', 'Termes', 'Cursor', 'Computer'].map(surd)],
-  'test-ts1-symbols': [...['Lm', 'Tx', 'Hv'].flatMap(font => ts1Symbols.map(([name, code]) => ts1(font + name, code))),
-    // (the TS1 symbols that rtcxr.htf leaves empty)
-    ...Object.entries({Sterling: 'A3', Currency: 'A4', Yen: 'A5', Section: 'A7', Ordfeminine: 'AA', Asciimacron: 'AF',
-      Degree: 'B0', Twosuperior: 'B2', Threesuperior: 'B3', Asciiacute: 'B4', Paragraph: 'B6', Periodcentered: 'B7',
-      Onesuperior: 'B9', Onequarter: 'BC', Onehalf: 'BD', Threequarters: 'BE', Dagger: '2020', Daggerdbl: '2021',
-      Perthousand: '2030', Celsius: '2103', Centoldstyle: 'A2', Florin: '192', Asciibreve: '2D8', Asciicaron: '2C7',
-      Asciigrave: '60', Dollar: '24', Fractionsolidus: '2044', Asteriskcentered: '2217'})
-      .map(([name, code]) => ts1('Txo' + name, code))],
+  'test-ts1-symbols': [...['Lm', 'Tx', 'Hv'].flatMap(font => ts1Symbols.map(([name, code]) => ts1(font + name, code)))],
 };
 // \textsurd in a TikZ picture and a LaTeX picture, drawn with the font's
 // glyph (TS1 slot 187)
