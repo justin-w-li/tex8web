@@ -408,6 +408,35 @@ const symbolFaces = `(() => {
   return { checked: pairs.length, wrong: pairs.filter(([span, text]) => face(span) !== face(text))
     .map(([span, text]) => [span.className, face(span), face(text)]) };
 })()`;
+
+// Each \lefteqn (MathJax's \rlap: an mjx-mpadded around a block of no
+// width) adds no width, and its content starts at the box. In an
+// alignment, the box is at the edge of its cell that the column's
+// alignment gives, as in the PDF: the right edge in eqnarray's first
+// column, the left edge in its third. laps has the number of boxes on each
+// page checked.
+// Failures: [the box's text, what is wrong]
+const lapped = `(() => {
+  const boxes = [...document.querySelectorAll('mjx-mpadded')].filter(box => box.firstElementChild?.style.width === '0px');
+  const wrong = boxes.flatMap(box => {
+    const text = box.textContent.slice(0, 20);
+    const at = box.getBoundingClientRect(), content = box.firstElementChild.firstElementChild.getBoundingClientRect();
+    const cell = box.closest('mjx-mtd');
+    let edge = at.left;
+    if (cell) {
+      const rect = cell.getBoundingClientRect(), style = getComputedStyle(cell);
+      edge = /right|end/.test(style.textAlign) ? rect.right - parseFloat(style.paddingRight) : rect.left + parseFloat(style.paddingLeft);
+    }
+    return [
+      ...at.width > 0.5 ? [[text, \`\${at.width.toFixed(2)}px wide\`]] : [],
+      ...Math.abs(content.left - at.left) > 0.5 ? [[text, \`content at \${(content.left - at.left).toFixed(2)}px from the box\`]] : [],
+      ...Math.abs(at.left - edge) > 0.5 ? [[text, \`\${(at.left - edge).toFixed(2)}px from its cell's edge\`]] : [],
+    ];
+  });
+  return { checked: boxes.length, wrong };
+})()`;
+const laps = { 'test-lefteqn': 6 };
+
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
 // multiples of the font size of the table of contents. The weights of each
@@ -535,6 +564,11 @@ async function compare(chrome, doc, ok) {
           const symbols = await page.evaluate(symbolFaces);
           ran.symbolFaces += symbols.checked;
           for (const [font, got, want] of symbols.wrong) problems.push(`${html}: the TS1 symbol of .${font}: ${got}, not ${want}`);
+          if (doc.name in laps) {
+            const boxes = await page.evaluate(lapped);
+            if (boxes.checked !== laps[doc.name]) problems.push(`${html}: ${boxes.checked} boxes of \\lefteqn, not ${laps[doc.name]}`);
+            for (const [text, what] of boxes.wrong) problems.push(`${html}: the \\lefteqn "${text}": ${what}`);
+          }
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {
@@ -588,6 +622,7 @@ while (waiting.size) {
 // only with every document: a subset may lack what a check looks for
 const never = only.length ? [] : Object.entries(ran).filter(([, count]) => !count).map(([name]) => `no document for the ${name} check to check`);
 const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
+stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);
 failures += never.length + stray.length;
 chrome.close();

@@ -1,0 +1,38 @@
+% LaTeX's \lefteqn, which MathJax lacks: its argument in display style, in
+% a box of no width that starts where the box is. An eqnarray row with a
+% long left side starts with it, and the next rows are set from the second
+% column, as in the PDF. Also in eqnarray* with \left( and \right. across
+% rows, in align*, on a numbered row with a \label, in a theorem, in the
+% third column, with a macro of the document inside, and in inline math.
+\documentclass{article}
+\usepackage{amsmath,amsthm}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\newcommand{\pair}[2]{\langle #1, #2 \rangle}
+\begin{document}
+\section{S}
+\begin{eqnarray}
+\lefteqn{a + b + c + e + f + g} \nonumber \\
+  & = & d
+\end{eqnarray}
+\begin{eqnarray*}
+\lefteqn{\left( \sum_{i=1}^n x_i + y \right.} \\
+  & & \left. {} + z \right) = w
+\end{eqnarray*}
+\begin{align*}
+\lefteqn{p + q + r + s} \\
+  & = t
+\end{align*}
+\begin{eqnarray}
+\lefteqn{\frac{u}{v} + \pair{u}{v}} \label{eq:long} \\
+  & = & k
+\end{eqnarray}
+See \eqref{eq:long} and \ref{eq:long}.
+\begin{theorem}
+\begin{eqnarray}
+h & = & \lefteqn{m + n + o + o + o} \nonumber \\
+  & & {} + l
+\end{eqnarray}
+\end{theorem}
+Inline, $\lefteqn{\sum_{j=1}^n j}xy$ overlaps.
+\end{document}

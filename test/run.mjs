@@ -238,6 +238,18 @@ const typeset = {
     /<mtable [^>]*data-tex8web-env='eqnarray'[^>]*rowspacing='0.274em'/,
     /<mtable [^>]*data-tex8web-env='eqnarray\*'[^>]*rowspacing='0.274em'/,
   ],
+  // \lefteqn as in LaTeX: its argument in display style, in a box of no
+  // width. In eqnarray, eqnarray* with \left( and \right. across rows,
+  // align*, a numbered row, eqnarray's third column, and inline math, where
+  // a sum's limits go above and below; a macro of the document inside
+  'test-lefteqn': [
+    /<mpadded width='0'><mstyle><mi>a<\/mi><mo[^>]*>\+<\/mo><mi>b<\/mi>/,
+    /<mpadded width='0'><mrow data-mjx-texclass='INNER'><mo data-mjx-texclass='OPEN'>\(<\/mo><munderover>/,
+    /<mpadded width='0'><mstyle><mi>p<\/mi>/,
+    /<mpadded width='0'><mstyle><mfrac>[^]*?<\/mfrac><mo[^>]*>\+<\/mo><mo[^>]*>⟨<\/mo><mi>u<\/mi>/,
+    /<mpadded width='0'><mstyle><mi>m<\/mi>/,
+    /<mpadded width='0'><mstyle displaystyle='true'><munderover>/,
+  ],
 };
 
 // What screen readers hear: ClearSpeak's words, | as "given", no "normal"
@@ -867,6 +879,11 @@ const numbers = {
     /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*Then <a href='#\1'>5<!--[^>]*--><\/a> and <a href='#\2'>5<!--/,
     // (five numbered rows: none for the \nonumber rows or in eqnarray*)
     /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){5}$/,
+  ],
+  // a \label on an eqnarray row that starts with \lefteqn, under hyperref
+  'test-lefteqn': [
+    /See \(<a href='#([^']+)'>2<!--[^>]*--><\/a>\) and <a href='#\1'>2<!--/,
+    /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){4}$/,
   ],
 };
 
