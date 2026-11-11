@@ -40,7 +40,7 @@ All paths in the page are relative, so you can publish the output directory as i
 
 ### Bibliographies and indexes
 
-tex8web runs bibtex or biber when your document has a bibliography. For each makeidx or imakeidx index, tex8web runs makeindex with the style file given in its `\makeindex` options. Style files are looked up next to your document and in the `INDEXSTYLE` directories.
+tex8web runs bibtex or biber when your document has a bibliography. For each makeidx or imakeidx index, tex8web runs makeindex with the style file given in its `\makeindex` options. Style files are looked up next to your document and in the `INDEXSTYLE` directories. For glossaries with `\makeglossaries`, tex8web runs makeglossaries, and each glossary is sorted by makeindex or xindy.
 
 ### Without Node
 
@@ -64,7 +64,7 @@ Pass both files every time. Without `-e path/to/tex8web/tex8web.mk4`, the build 
 
 ### Platform
 
-tex8web runs Node, bibtex, and makeindex through a POSIX shell, so it works on macOS and Linux, not Windows.
+tex8web runs Node, bibtex, makeindex, and makeglossaries through a POSIX shell, so it works on macOS and Linux, not Windows.
 
 ## Your own config
 
@@ -350,6 +350,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **One page per document.** A document is split into several pages by a number such as `2` in the `\Preamble` options, by `splitat=`, or by `\CutAt` in a config. With any of these, tex8web stops with an error. Remove the option.
 - **Document classes not supported by tex4ht**, such as Tufte-LaTeX. Configure the class for tex4ht in your config.
 - **The `program` option of imakeidx** is ignored: makeindex is always run. The `splitindex` option is not supported.
+- **The `record` option of glossaries-extra.** bib2gls is not run, so the glossaries are missing. Use `\makeglossaries` or `\makenoidxglossaries`.
 
 ### Math
 

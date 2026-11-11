@@ -1,6 +1,7 @@
--- The indexes, which make4ht does not build: after the first LaTeX run,
--- makeindex on each. Each number in an index counts \index commands and
--- links back to its \index (see "Indexes" in CONTRIBUTING.md).
+-- The indexes and glossaries, which make4ht does not build: after the first
+-- LaTeX run, makeindex on each index, and makeglossaries. Each number in an
+-- index counts \index commands and links back to its \index (see "Indexes"
+-- in CONTRIBUTING.md).
 local files = require "tex8web.files"
 local indexing = require "make4ht-indexing"
 
@@ -83,6 +84,21 @@ function M.run(par)
       log:warning("the index failed (" .. command .. ")")
     end
   end
+  return 0
+end
+
+-- runs makeglossaries, which sorts each glossary with makeindex or xindy,
+-- if the document has \makeglossaries: glossaries writes the name of its
+-- style file to the .aux then. (\makenoidxglossaries sorts in LaTeX and
+-- writes no style file.) A failed run is a warning, as for the index.
+function M.glossaries(par)
+  local dir = (par.builddir ~= "" and par.builddir) or "."
+  local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""
+  if not aux:find("\\@istfilename{", 1, true) then return 0 end
+  local command = "makeglossaries -q -d " .. files.quote(dir) .. " " .. files.quote(par.input)
+  log:info("glossaries: " .. command)
+  -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
+  if os.execute(command .. " > /dev/null") ~= 0 then log:warning("the glossaries failed (" .. command .. ")") end
   return 0
 end
 

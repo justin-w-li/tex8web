@@ -54,7 +54,7 @@ tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 
 ### 2. HTML passes
 
-tex8web runs bibtex or biber, makeindex, and the passes in `lua/tex8web/`. The steps, and the TeX search paths for the files loaded by `tex8web.cfg`, are set in `tex8web.mk4`, so a build without `-e tex8web.mk4` fails.
+tex8web runs bibtex or biber, makeindex, makeglossaries, and the passes in `lua/tex8web/`. The steps, and the TeX search paths for the files loaded by `tex8web.cfg`, are set in `tex8web.mk4`, so a build without `-e tex8web.mk4` fails.
 
 #### Macros in math (`macros.lua`, `preamble.lua`)
 
@@ -321,7 +321,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `css/tex8web.css` | the page styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | macros in math, and their colors |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula source, colors, spacing, theorems in boxes, footnotes, links, page controls, the table of contents, meta tags, and scripts |
-| `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex, and prerendering |
+| `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page, bibtex and biber, makeindex and makeglossaries, and prerendering |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
 | `js/tex8web.js` | MathJax sizes set as in TeX |
 | `js/tex8web-fonts.js` | the font preload links, written inline in the head of each page, before the stylesheet link |

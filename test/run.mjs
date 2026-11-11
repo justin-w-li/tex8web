@@ -1137,8 +1137,8 @@ const glossaries = {
       entry('group', 'group', 'a set with an associative operation, an identity, and inverses\\.'),
       entry('ring', 'ring', 'an abelian group with a second, distributive operation\\.')),
     /^(?![^]*glo_unused)/,
-    // (the long style's table)
-    /<h3[^>]*>(?:(?!<\/h3>)[^])*>Acronyms<\/h3>\s*<div class='longtable'>\s*<table(?:(?!<\/table>)[^])*<a id='glo_gcd'><\/a>GCD(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*greatest common divisor\.(?:(?!<\/table>)[^])*<a id='glo_lcm'><\/a>LCM(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*least common multiple\./,
+    // (the long style's table, after hyperref's anchor)
+    /<h3[^>]*>(?:(?!<\/h3>)[^])*>Acronyms<\/h3>(?:(?!<table|<h3)[^])*<div class='longtable'>\s*<table(?:(?!<\/table>)[^])*<a id='glo_gcd'><\/a>GCD(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*<p class='noindent'>greatest common divisor\.(?:(?!<\/table>)[^])*<a id='glo_lcm'><\/a>LCM(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*<p class='noindent'>least common multiple\./,
     // (the super style's table, and the index style's paragraphs)
     /<h3[^>]*>(?:(?!<\/h3>)[^])*>Symbols<\/h3>\s*<div class='supertabular'>\s*<table class='tabular'(?:(?!<\/table>)[^])*<a id='glo_pi'><\/a><mjx-container(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*the ratio of a circle’s circumference to its diameter\./,
     /<h3[^>]*>(?:(?!<\/h3>)[^])*>Notation<\/h3>\s*<p class='noindent'><a id='glo_hom'><\/a><span class='cmbx-10'>Hom\s*<\/span>the set of homomorphisms\./,

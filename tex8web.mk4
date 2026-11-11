@@ -30,9 +30,9 @@ local text = require "tex8web.text"
 
 -- LaTeX, with tex/tex8web-hooks.sty loaded before the preamble and tex4ht's
 -- fn-in option, which keeps footnotes on the page (text.lua moves them
--- beside the text); then bibtex or biber and makeindex, which make4ht does
--- not run, if the document needs them; then LaTeX until the
--- cross-references settle. (The parameters extend settings, because
+-- beside the text); then bibtex or biber, makeindex, and makeglossaries,
+-- which make4ht does not run, if the document needs them; then LaTeX until
+-- the cross-references settle. (The parameters extend settings, because
 -- Make.params is still empty here.)
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
@@ -68,6 +68,8 @@ else
     Make:bibliography {}
     Make:add("index", index.run)
     Make:index {}
+    Make:add("glossaries", index.glossaries)
+    Make:glossaries {}
     Make:autohtlatex(latex)
   end
   if save then
