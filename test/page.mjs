@@ -1734,24 +1734,6 @@ async function hang(chrome, file, doc) {
   });
 }
 
-// Each check, with the fixtures it runs on, which must have its feature:
-// - viewer: an SVG and a raster picture
-// - bar, fade, browsing, and one filter: test.tex's long page, with its
-//   display that scrolls, its previews, its term, and its sections'
-//   subsections
-// - the other filter: a titled box
-// - transitions: an example and the page that links to it
-// - contents, isolated, and lazy: a page with subsections before its first
-//   section
-// - tint: a page with a run-in heading in its table of contents
-// - fit: a short example whose one section with subsections is not the first
-// - jumps: an example with sections and subsections
-// - ending: two examples, each with a heading that stays below the window's
-//   top quarter at the end, and one with two
-// - sizes: \WebLikePDF at a size other than 12pt, and a table of contents
-// - spaces: a document with each length that spaces tables, boxes, arrays,
-//   and description lists set away from its default
-// - hang: author-year bibliographies, with entries that wrap
 // The viewer shows a picture with the mirrors of the picture and of the
 // rotations around it (text.pictures in text.lua), without their angles:
 // in test-reflectbox's figures, the picture's transform in the viewer, for
@@ -1785,6 +1767,25 @@ async function mirroring(chrome, file) {
   });
 }
 
+// Each check, with the fixtures it runs on, which must have its feature:
+// - viewer: an SVG and a raster picture
+// - bar, fade, browsing, and one filter: test.tex's long page, with its
+//   display that scrolls, its previews, its term, and its sections'
+//   subsections
+// - the other filter: a titled box
+// - transitions: an example and the page that links to it
+// - contents, isolated, and lazy: a page with subsections before its first
+//   section
+// - tint: a page with a run-in heading in its table of contents
+// - fit: a short example whose one section with subsections is not the first
+// - jumps: an example with sections and subsections
+// - ending: two examples, each with a heading that stays below the window's
+//   top quarter at the end, and one with two
+// - sizes: \WebLikePDF at a size other than 12pt, and a table of contents
+// - spaces: a document with each length that spaces tables, boxes, arrays,
+//   and description lists set away from its default
+// - hang: author-year bibliographies, with entries that wrap
+// - mirror: mirrored pictures in figures, around and inside rotations
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));

@@ -972,7 +972,7 @@
       // its span.rotatebox. The viewer shows the mirrors of the picture and
       // of those spans, without the rotations, which it never shows.)
       const mirror = [1, 1];
-      for (let el = img; el; el = el.parentElement && el.parentElement.closest('.rotatebox')) {
+      for (let el = img; el; el = el.parentElement?.closest('.rotatebox')) {
         const signs = /scale\((-?1), (-?1)\)/.exec(el.style.transform);
         if (signs) [mirror[0], mirror[1]] = [mirror[0] * signs[1], mirror[1] * signs[2]];
       }
