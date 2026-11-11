@@ -1,0 +1,47 @@
+% glossaries with hyperref and makeindex: a main glossary in the list
+% style, acronyms in the long-short style, symbols in the super style, and
+% a glossary of notation from \newglossary* in the index style. Terms used
+% with \gls, \glspl, \Gls, and \Glspl, in italic, sans-serif, and
+% typewriter text, in a footnote, and in a theorem. A name with
+% makeindex's special characters, and one with an accent and a sort key.
+% Each \gls links to its entry.
+\documentclass{article}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\usepackage[acronym,symbols]{glossaries}
+\newglossary*{notation}{Notation}
+\makeglossaries
+\newtheorem{theorem}{Theorem}
+\newglossaryentry{group}{name={group},
+  description={a set with an associative operation, an identity, and inverses}}
+\newglossaryentry{ring}{name={ring},
+  description={an abelian group with a second, distributive operation}}
+\newglossaryentry{field}{name={field},
+  description={a ring whose nonzero elements form a group}}
+\newglossaryentry{etale}{name={\'etale},sort={etale},
+  description={flat and unramified}}
+\newglossaryentry{marks}{name={bang!at@bar|quote"},sort={marks},
+  description={a name with makeindex's special characters}}
+\newglossaryentry{pi}{type=symbols,name={\ensuremath{\pi}},sort={pi},
+  description={the ratio of a circle's circumference to its diameter}}
+\newglossaryentry{hom}{type=notation,name={Hom},
+  description={the set of homomorphisms}}
+\setacronymstyle{long-short}
+\newacronym{gcd}{GCD}{greatest common divisor}
+\newacronym{lcm}{LCM}{least common multiple}
+\begin{document}
+\section{Groups}
+A \gls{group} has inverses. \Gls{group} theory studies \glspl{group}.
+Every \emph{\gls{field}} is a \textsf{\gls{ring}}, and \Glspl{ring} are
+\texttt{\glspl{ring}} too.\footnote{A \gls{gcd} need not exist in a
+\gls{ring}.}
+The \gls{gcd} of two numbers divides their \gls{lcm}; a \gls{gcd} again.
+\begin{theorem}
+An \gls{etale} morphism of \glspl{field} is \gls{marks}.
+\end{theorem}
+The number \gls{pi} is not in \gls{hom}.
+\printglossary[style=list]
+\printglossary[type=\acronymtype]
+\printglossary[type=symbols,style=super]
+\printglossary[type=notation,style=index]
+\end{document}

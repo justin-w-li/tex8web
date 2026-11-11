@@ -1,0 +1,19 @@
+% glossaries without hyperref, sorted by xindy, with acronyms in the
+% footnote style and every glossary printed by \printglossaries
+\documentclass{article}
+\usepackage[acronym,xindy]{glossaries}
+\makeglossaries
+\newglossaryentry{group}{name={group},
+  description={a set with an associative operation}}
+\newglossaryentry{etale}{name={\'etale},sort={etale},
+  description={flat and unramified}}
+\newglossaryentry{abelian}{name={abelian},
+  description={with a commutative operation}}
+\setacronymstyle{footnote}
+\newacronym{gcd}{GCD}{greatest common divisor}
+\begin{document}
+\section{Groups}
+An \gls{abelian} \gls{group} is \gls{etale}. The \gls{gcd} divides, and
+the \gls{gcd} again.
+\printglossaries
+\end{document}

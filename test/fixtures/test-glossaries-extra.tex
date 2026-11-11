@@ -1,0 +1,19 @@
+% glossaries-extra with hyperref: abbreviations in the long-short and the
+% footnote styles, with \glsxtrshort and \glsxtrlong, and every glossary
+% printed by \printglossaries
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage[abbreviations]{glossaries-extra}
+\makeglossaries
+\setabbreviationstyle{long-short}
+\setabbreviationstyle[note]{footnote}
+\newglossaryentry{group}{name={group},
+  description={a set with an associative operation}}
+\newabbreviation{gcd}{GCD}{greatest common divisor}
+\newabbreviation[category=note]{lcm}{LCM}{least common multiple}
+\begin{document}
+\section{Groups}
+A \gls{group}. The \gls{gcd}, then the \gls{gcd}. The \gls{lcm}, then the
+\gls{lcm}. In short \glsxtrshort{gcd}, in full \glsxtrlong{lcm}.
+\printglossaries
+\end{document}

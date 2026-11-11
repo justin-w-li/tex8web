@@ -1107,6 +1107,51 @@ const captions = {
   'test': [caption('0em', '0\\.91324em', 'A table with math'), caption('0\\.54794em', '0em', 'One\\.')],
 };
 
+// Glossaries, which makeglossaries sorts: each entry with its description,
+// in order, and each \gls linked to its entry with hyperref. Acronyms on
+// first and later use, in the text and in a footnote; a footnote-style
+// acronym's long form in the footnote. (The location numbers are not
+// links: glossary-locations in the gap tracker.)
+const entry = (id, name, description) =>
+  `<a id='glo_${id}'><\\/a><span class='cmbx-10'>${name}<\\/span>\\s*<\\/dt><dd class='description'>\\s*<p class='noindent'>${description}`;
+const glossary = (title, ...entries) => new RegExp(`>${title}<\\/h3>\\s*<dl class='description'[^>]*>(?:(?!<\\/dl>)[^])*`
+  + entries.join('(?:(?!<\\/dl>)[^])*'));
+const gls = (id, text) => `<a class='glossary' href='#glo_${id}'>${text}<\\/a>`;
+const glossaries = {
+  'test-glossaries': [
+    new RegExp(`A ${gls('group', 'group')} has inverses\\. ${gls('group', 'Group')} theory studies ${gls('group', 'groups')}\\.`),
+    new RegExp(`Every ${gls('field', "<span class='cmti-10'>field</span>")} is a ${gls('ring', "<span class='cmss-10'>ring</span>")}, and ${gls('ring', 'Rings')} are ${gls('ring', "<span class='cmtt-10'>rings</span>")} too\\.`),
+    new RegExp(`<aside class='footnotetext[^]*${gls('gcd', "<span class='cmr-8'>greatest common divisor \\(GCD\\)</span>")}[^]*</aside>`),
+    new RegExp(`The ${gls('gcd', 'GCD')} of two numbers divides their ${gls('lcm', 'least common multiple \\(LCM\\)')}; a ${gls('gcd', 'GCD')} again\\.`),
+    new RegExp(`Theorem 1\\.[^]*${gls('etale', "<span class='cmti-10'>étale</span>")}[^]*${gls('field', "<span class='cmti-10'>fields</span>")}[^]*${gls('marks', "<span class='cmti-10'>bang!at@bar—quote”</span>")}`),
+    new RegExp(`The number <a class='glossary' href='#glo_pi'><mjx-container[^]*is not in ${gls('hom', 'Hom')}\\.`),
+    glossary('Glossary', entry('etale', 'étale', 'flat and unramified\\.'), entry('field', 'field', 'a ring whose nonzero'),
+      entry('group', 'group', 'a set with an associative operation, an identity, and inverses\\.'),
+      entry('marks', 'bang!at@bar—quote”', 'a name with makeindex’s special characters\\.'),
+      entry('ring', 'ring', 'an abelian group with a second, distributive operation\\.')),
+    glossary('Acronyms', entry('gcd', 'GCD', 'greatest common divisor\\.'), entry('lcm', 'LCM', 'least common multiple\\.')),
+    // (the super style's table, and the index style's paragraphs)
+    /<h3[^>]*>(?:(?!<\/h3>)[^])*>Symbols<\/h3>\s*<div class='supertabular'>\s*<table class='tabular'(?:(?!<\/table>)[^])*<a id='glo_pi'><\/a><mjx-container(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*the ratio of a circle’s circumference to its diameter\./,
+    /<h3[^>]*>(?:(?!<\/h3>)[^])*>Notation<\/h3>\s*<p class='noindent'><a id='glo_hom'><\/a><span class='cmbx-10'>Hom\s*<\/span>the set of homomorphisms\./,
+  ],
+  // (sorted by xindy; without hyperref, no links)
+  'test-glossaries-xindy': [
+    glossary('Glossary', entry('abelian', 'abelian', 'with a commutative operation\\.'), entry('etale', 'étale', 'flat and unramified\\.'),
+      entry('group', 'group', 'a set with an associative operation\\.')),
+    glossary('Acronyms', entry('gcd', 'GCD', 'greatest common divisor\\.')),
+    /The GCD<span class='footnote-mark'>[^]*divides, and the GCD again\.[^]*<span class='cmr-8'>greatest common divisor<\/span><\/p><\/aside>/,
+    /^(?![^]*class='glossary')/,
+  ],
+  // (glossaries-extra's abbreviations, with no period after a description)
+  'test-glossaries-extra': [
+    new RegExp(`The ${gls('gcd', 'greatest common divisor \\(GCD\\)')}, then the ${gls('gcd', 'GCD')}\\.`),
+    new RegExp(`The LCM<span class='footnote-mark'>[^]*then the ${gls('lcm', 'LCM')}\\. In short ${gls('gcd', 'GCD')}, in full ${gls('lcm', 'least common multiple')}\\.`),
+    /<span class='cmr-8'>least common multiple<\/span><\/p><\/aside>/,
+    glossary('Glossary', entry('group', 'group', 'a set with an associative operation 1')),
+    glossary('Abbreviations', entry('gcd', 'GCD', 'greatest common divisor 1'), entry('lcm', 'LCM', 'least common multiple 1')),
+  ],
+};
+
 // Each table, with how a failure reads, and whether its patterns are also
 // matched against the stylesheet
 const patterns = [
@@ -1118,6 +1163,7 @@ const patterns = [
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
   [bibliographies, 'in the bibliography'],
   [urls, 'among the URLs', true], [numbers, 'in the equation numbers'],
+  [glossaries, 'in the glossaries'],
 ];
 
 // the problems in a built page's logs, the page, and the files beside it
