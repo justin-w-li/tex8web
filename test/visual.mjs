@@ -443,7 +443,7 @@ const lapped = `(() => {
   });
   return { checked: boxes.length, wrong };
 })()`;
-const laps = { 'test-lefteqn': 10 };
+const laps = { 'test-lefteqn': 11 };
 
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are

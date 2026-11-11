@@ -243,7 +243,7 @@ const typeset = {
   // align*, a numbered row, eqnarray's third column, and inline math, where
   // a sum's limits go above and below; a macro of the document inside
   'test-lefteqn': [
-    /<mpadded width='0'><mstyle><mi>a<\/mi><mo[^>]*>\+<\/mo><mi>b<\/mi>/,
+    /<mpadded width='0'><mstyle><mi>a<\/mi><mo[^>]*>\+<\/mo><mi>b<\/mi>(?:(?!<\/mpadded>)[^])*<mi>g<\/mi><\/mstyle><\/mpadded>/,
     /<mpadded width='0'><mrow data-mjx-texclass='INNER'><mo data-mjx-texclass='OPEN'>\(<\/mo><munderover>/,
     /<mpadded width='0'><mstyle><mi>p<\/mi>/,
     /<mpadded width='0'><mstyle><mfrac>[^]*?<\/mfrac><mo[^>]*>\+<\/mo><mo[^>]*>⟨<\/mo><mi>u<\/mi>/,
@@ -255,6 +255,8 @@ const typeset = {
     /<mpadded width='0'><mstyle displaystyle='true'><munderover><mstyle mathsize='100.0%'><mtext>∑<\/mtext><\/mstyle><mrow data-mjx-texclass='ORD'><mi>i<\/mi>/,
     /<mpadded width='0'><mstyle><msub><mi>a<\/mi><mn>1<\/mn><\/msub>(?:(?!<\/mpadded>)[^])*<mn>13<\/mn><\/mrow><\/msub><\/mstyle><\/mpadded>/,
     /<mpadded width='0'><mstyle><mi>w<\/mi>(?:(?!<\/mpadded>)[^])*<mi>z<\/mi><mo[^>]*>=<\/mo><\/mstyle><\/mpadded>/,
+    // with long following rows, in a display wider than a phone
+    /<mpadded width='0'><mstyle><munderover>(?:(?!<\/mpadded>)[^])*<mi>k<\/mi>(?:(?!<\/mpadded>)[^])*<mo[^>]*>=<\/mo><\/mstyle><\/mpadded>(?:(?!<mtr)[^])*<mtr>(?:(?!<\/mtr>)[^])*<msub><mi>b<\/mi><mn>1<\/mn>/,
   ],
 };
 

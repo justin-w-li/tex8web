@@ -6,7 +6,8 @@
 % third column, with a macro of the document inside, and in inline math.
 % Then on a middle row after a row with a first column, in an array (text
 % style), one too wide for a phone on a numbered row, and one that ends
-% with a relation, as in Lamport's book.
+% with a relation, as in Lamport's book. Last, that idiom with long
+% following rows, which make the display wider than a phone.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \usepackage{hyperref}
@@ -51,5 +52,10 @@ x & = & y \\
 \begin{eqnarray*}
 \lefteqn{w + x + y + z = } \\
   & & a + b + c
+\end{eqnarray*}
+\begin{eqnarray*}
+\lefteqn{\sum_{k=1}^n (q_k + r_k) = } \\
+  & & b_1 + b_2 + b_3 + b_4 + b_5 + b_6 + b_7 + b_8 + b_9 + b_{10} + b_{11} + b_{12} \\
+  & & {} + c_1 + c_2 + c_3 + c_4 + c_5 + c_6 + c_7 + c_8 + c_9 + c_{10} + c_{11}
 \end{eqnarray*}
 \end{document}
