@@ -644,15 +644,33 @@
     \expandafter\def\csname TS1\string\textbullet\endcsname{%
         \ifx\EndPicture\:UnDef\HCode{&\#x2022;}\else\web@textbullet\fi}
 \fi
-% \textsurd as √. lm-ts1.htf, which the TS1 files of pxfonts, Libertine,
-% and TeX Gyre also take, gives a middle dot. The special replaces the
-% font's glyph that follows, as html4.4ht does for \l, so the sign stays in
-% the span of its font. In a picture, dvisvgm skips the special and draws
-% the font's glyph.
-\expandafter\let\expandafter\web@textsurd\csname TS1\string\textsurd\endcsname
-\expandafter\def\csname TS1\string\textsurd\endcsname{%
-    \ht:special{t4ht@+\string&{35}x221A{59}}%
-    \web@textsurd}
+% Other TS1 symbols as LaTeX draws them. lm-ts1.htf maps these slots to
+% other characters, such as a middle dot for \textsurd. tex4ht also takes
+% that file for pxfonts, Libertine, and TeX Gyre Heros, Pagella, and
+% Cursor. txfonts' file, rtcxr.htf, has most of the same errors and a few of
+% its own. The special replaces the font's glyph that follows, as html4.4ht
+% does for \l, so the symbol stays in the span of its font. In a picture,
+% dvisvgm skips the special and draws the font's glyph.
+\def\web@tsone#1#2{%
+    \expandafter\let\csname web@tsone\string#1\expandafter\endcsname
+        \csname TS1\string#1\endcsname
+    \expandafter\edef\csname TS1\string#1\endcsname{%
+        \noexpand\ht:special{t4ht@+\string&{35}x#2{59}}%
+        \expandafter\noexpand\csname web@tsone\string#1\endcsname}}
+\web@tsone\textthreequartersemdash{2014}\web@tsone\textblank{2422}
+\web@tsone\textdblhyphen{2E40}\web@tsone\textdblhyphenchar{2E40}
+\web@tsone\textlbrackdbl{27E6}\web@tsone\textrbrackdbl{27E7}
+\web@tsone\textdivorced{26AE}\web@tsone\textdied{271D}
+\web@tsone\textmarried{26AD}\web@tsone\textacutedbl{2DD}
+\web@tsone\textgravedbl{2F5}\web@tsone\textbardbl{2016}
+\web@tsone\textguarani{20B2}\web@tsone\textpeso{20B1}
+\web@tsone\textlira{20A4}\web@tsone\textinterrobang{203D}
+\web@tsone\textinterrobangdown{2E18}\web@tsone\textdiscount{2052}
+\web@tsone\textopenbullet{25E6}\web@tsone\textlquill{2045}
+\web@tsone\textrquill{2046}\web@tsone\textcircledP{2117}
+\web@tsone\textmu{B5}\web@tsone\textordmasculine{BA}
+\web@tsone\textsurd{221A}\web@tsone\textquotesingle{27}
+\web@tsone\textasciidieresis{A8}
 \web@configurelist{itemize}{itemize}{ul}
 \web@configurelist{enumerate}{enumerate}{ol}
 % a description, as html4.4ht writes it, with the \labelsep that LaTeX puts
