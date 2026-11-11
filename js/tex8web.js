@@ -101,8 +101,7 @@ function tex8web(config, tex) {
   // table its width). A row without a number may run into the margin, as
   // in the PDF. A table as wide as the line, as in flalign and multline,
   // is left as MathJax sets it, with its columns spread over the line as
-  // in the PDF. The output jax keeps the last table it made, which may
-  // belong to an earlier display.
+  // in the PDF.
   function clearNumbers() {
     const Wrapper = MathJax._.output.chtml.Wrappers.math.ChtmlMath.prototype;
     const handleDisplay = Wrapper.handleDisplay;
@@ -110,9 +109,6 @@ function tex8web(config, tex) {
       handleDisplay.call(this, parent);
       const table = this.jax.table;
       if (!table?.hasLabels || table.node.attributes.get('data-width-includes-label')) return;
-      let math = table;
-      while (math && math !== this) math = math.parent;
-      if (!math) return;
       const over = lapEnd(table, true) - table.getBBox().w;
       if (over <= 0) return;
       const {L, w, R} = table.getOuterBBox();
