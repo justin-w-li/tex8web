@@ -967,16 +967,17 @@
       // dark mode selects
       picture.setAttribute('src', img.getAttribute('src'));
       picture.alt = img.alt;
-      // (a picture mirrored or turned over, or a stretched TikZ picture:
-      // text.pictures in text.lua, which puts a mirror around a rotation on
-      // its span.rotatebox. The viewer shows the mirrors of the picture and
-      // of those spans, without the rotations, which it never shows.)
+      // (a picture mirrored or turned over: text.pictures in text.lua, which
+      // puts a mirror around a rotation on its span.rotatebox. The viewer
+      // shows the mirrors of the picture and of those spans, without the
+      // rotations, which it never shows.)
       const mirror = [1, 1];
       for (let el = img; el; el = el.parentElement?.closest('.rotatebox')) {
         const signs = /scale\((-?1), (-?1)\)/.exec(el.style.transform);
         if (signs) [mirror[0], mirror[1]] = [mirror[0] * signs[1], mirror[1] * signs[2]];
       }
       picture.style.transform = mirror.includes(-1) ? `scale(${mirror.join(', ')})` : '';
+      // (a stretched TikZ picture: text.pictures in text.lua)
       picture.style.aspectRatio = img.style.aspectRatio;
       plate.style.setProperty('--tex8web-ratio', box.width / box.height);
       natural = /\.svg$/i.test(img.getAttribute('src')) ? 0 : img.naturalWidth;
