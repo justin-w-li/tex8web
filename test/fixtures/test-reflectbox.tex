@@ -1,13 +1,15 @@
 % \includegraphics pictures in boxes that mirror or turn them over:
 % \reflectbox at the natural size and with a width, \scalebox with
 % negative factors (also halving, and turning over), two \reflectbox, a
-% \reflectbox in a box that scales, and a mirrored picture in a link, a
+% \reflectbox in a box that scales, two pictures in one \reflectbox, a
+% \reflectbox inside a TikZ node, and a mirrored picture in a link, a
 % footnote, a table, a minipage, a theorem, italic text, and a figure. A
 % picture turned over hangs below the baseline in the PDF, as graphics.sty
 % swaps its height and depth.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{amsthm}
+\usepackage{tikz}
 \usepackage{hyperref}
 \newtheorem{theorem}{Theorem}
 \begin{document}
@@ -16,6 +18,14 @@ Bare: \reflectbox{\includegraphics[alt={bare}]{test-picture.png}} after.
 Width: \reflectbox{\includegraphics[alt={width}, width=100pt]{test-picture.png}} after.
 
 Half: \scalebox{-0.5}[0.5]{\includegraphics[alt={half}, width=100pt]{test-picture.png}} after.
+
+Half bare: \scalebox{-0.5}[0.5]{\includegraphics[alt={half bare}]{test-picture.png}} after.
+
+Half over: \scalebox{-0.5}{\includegraphics[alt={half over}, width=100pt]{test-picture.png}} after.
+
+Two: \reflectbox{\includegraphics[alt={left}, width=50pt]{test-picture.png} \includegraphics[alt={right}, width=50pt]{test-picture.png}} after.
+
+Drawn: \tikz\node{\reflectbox{\includegraphics[width=50pt]{test-picture.png}}}; after.
 
 Turned over: \scalebox{1}[-1]{\includegraphics[alt={over}, width=100pt]{test-picture.png}} after.
 
