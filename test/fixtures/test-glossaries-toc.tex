@@ -1,14 +1,22 @@
 % glossaries with hyperref and a table of contents: a \gls in a heading,
-% which hyperref's link in the table of contents holds too
+% which hyperref's link in the table of contents holds too. With the toc
+% option, each glossary is in the table of contents; the symbols glossary
+% has an entry used only in a description, so its heading first appears
+% after the second makeglossaries run. (A blank line before
+% \printglossaries: a \phantomsection in a paragraph puts the anchor in the
+% paragraph, for any heading.)
 \documentclass{article}
 \usepackage{hyperref}
-\usepackage{glossaries}
+\usepackage[toc,symbols]{glossaries}
 \makeglossaries
+\newglossaryentry{unit}{type=symbols,name={u},
+  description={the identity of a group}}
 \newglossaryentry{group}{name={group},
-  description={a set with an associative operation}}
+  description={a set with an associative operation and a \gls{unit}}}
 \begin{document}
 \tableofcontents
 \section{Every \gls{group}}
 A \gls{group} again.
+
 \printglossaries
 \end{document}

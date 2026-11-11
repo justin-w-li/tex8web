@@ -1153,6 +1153,11 @@ const glossaries = {
   'test-glossaries-toc': [
     /<div class='tableofcontents'><span class='sectionToc'><span class='tocnumber'>1<\/span><a href='#every-group'[^>]*>Every group<\/a><\/span>/,
     new RegExp(`Every ${gls('group', 'group')}<\\/h3>`),
+    // (the toc option's lines, the symbols glossary's only after it first
+    // has an entry, which another entry's description uses)
+    /<a href='#glossary'>Glossary<\/a><\/span><br \/><span class='sectionToc'><span class='tocnumber'><\/span><a href='#symbols'>Symbols<\/a>/,
+    /<h3 class='likesectionHead' id='glossary'>/, /<h3 class='likesectionHead' id='symbols'>/,
+    glossary('Symbols', entry('unit', 'u', 'the identity of a group\\.')),
   ],
   // (a makeindex or xindy style file next to the document, which prints a
   // line)

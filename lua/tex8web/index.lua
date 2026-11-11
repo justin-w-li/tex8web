@@ -1,8 +1,8 @@
 -- The indexes and glossaries, which make4ht does not build: after the first
 -- LaTeX run, makeindex on each index, and makeglossaries, which runs again
--- after the last if the glossaries changed. Each number in an index counts
--- \index commands and links back to its \index (see "Indexes" in
--- CONTRIBUTING.md).
+-- after the last LaTeX run if the glossaries changed. Each number in an
+-- index counts \index commands and links back to its \index (see "Indexes"
+-- in CONTRIBUTING.md).
 local files = require "tex8web.files"
 local indexing = require "make4ht-indexing"
 
@@ -92,26 +92,32 @@ end
 -- makeglossaries
 local sorted
 
--- runs makeglossaries if the document has \makeglossaries (glossaries
--- writes the name of its style file to the .aux then; \makenoidxglossaries
--- sorts in LaTeX and writes none) and the input files of the glossaries
--- listed in the .aux changed since the last run. Returns whether it ran. A
--- failed run is a warning, as for the index.
-local function makeglossaries(par)
+-- the style file's name, if the document has \makeglossaries (glossaries
+-- writes it to the .aux then; \makenoidxglossaries sorts in LaTeX and
+-- writes none), and the input files of the glossaries listed in the .aux
+local function inputs(par)
   local dir = (par.builddir ~= "" and par.builddir) or "."
   local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""
   local style = aux:match("\\@istfilename{([^}]*)}")
-  if not style then return false end
-  local inputs = {}
+  if not style then return end
+  local found = {}
   for ext in aux:gmatch("\\@newglossary{[^}]*}{[^}]*}{[^}]*}{([^}]*)}") do
-    inputs[#inputs + 1] = files.read(dir .. "/" .. par.input .. "." .. ext) or ""
+    found[#found + 1] = files.read(dir .. "/" .. par.input .. "." .. ext) or ""
   end
-  inputs = table.concat(inputs, "\0")
-  if inputs == sorted then return false end
-  sorted = inputs
-  -- (makeglossaries looks for the style file only in the build directory,
-  -- where glossaries writes it; with \noist, the document's own is next to
-  -- the document, where make4ht runs)
+  return style, table.concat(found, "\0")
+end
+
+-- runs makeglossaries if the document has \makeglossaries and the
+-- glossaries' input files changed since the last run. Returns whether it
+-- ran. A failed run is a warning, as for the index.
+local function makeglossaries(par)
+  local style, text = inputs(par)
+  if not style or text == sorted then return false end
+  sorted = text
+  local dir = (par.builddir ~= "" and par.builddir) or "."
+  -- (glossaries writes its style file to the build directory, the working
+  -- directory of makeindex or xindy after -d; with \noist, the document's
+  -- own is next to the document, where make4ht runs)
   local own = lfs.currentdir() .. "/" .. style
   local option = ""
   if not lfs.attributes(dir .. "/" .. style) and lfs.attributes(own) then option = " -s " .. files.quote(own) end
@@ -128,17 +134,38 @@ function M.glossaries(par)
   return 0
 end
 
+-- the files whose change needs another LaTeX run: the cross-references
+-- and the table of contents (autohtlatex's list)
+local function checksum(par)
+  local dir = (par.builddir ~= "" and par.builddir) or "."
+  local sum = ""
+  for _, ext in ipairs {"aux", "4tc", "xref"} do
+    sum = md5.sumhexa(sum .. (files.read(dir .. "/" .. par.input .. "." .. ext) or ""))
+  end
+  return sum
+end
+
+-- the most LaTeX runs M.glossaries_again makes (autohtlatex's default)
+local runs = 5
+
 -- makeglossaries and LaTeX again, after LaTeX has settled, while the
--- glossaries' input files change: an entry used only in the description
--- of another reaches the .glo only when the glossary is printed (the
--- glossaries manual asks for a second makeglossaries run then). Returns
--- LaTeX's status.
+-- glossaries' input files or LaTeX's cross-references change: an entry used
+-- only in the description of another reaches the .glo only when the
+-- glossary is printed (the glossaries manual asks for a second
+-- makeglossaries run then), and a glossary that first has entries then
+-- adds a heading to the table of contents. Returns LaTeX's status.
 function M.glossaries_again(par)
-  for _ = 1, 3 do
-    if not makeglossaries(par) then return 0 end
+  local before = checksum(par)
+  for _ = 1, runs do
+    if not makeglossaries(par) and checksum(par) == before then return 0 end
+    before = checksum(par)
     -- (required here, as it needs make4ht's Make, which the unit tests lack)
     local status = require("make4ht-htlatex").htlatex(par)
     if status ~= 0 then return status end
+  end
+  local _, text = inputs(par)
+  if text ~= sorted or checksum(par) ~= before then
+    log:warning("the glossaries did not settle after " .. runs .. " more LaTeX runs")
   end
   return 0
 end
