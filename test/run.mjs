@@ -277,6 +277,12 @@ const speech = {
 const share = (alt, fraction) => new RegExp(`<img alt='${alt}' [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${fraction.replace('.', '\\.')}\\)'`);
 const drawn = (n, width, more = '') => new RegExp(`<img alt='' src='test-tikzbox${n}x\\.svg' style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${width.replace('.', '\\.')}\\)${more.replace(/[().*]/g, '\\$&')}' />`);
 const lower = share => `; vertical-align:calc(var(--tex8web-textwidth) * -${share})`;
+// an \includegraphics picture with the alt text, mirrored or turned over
+// by the factors' signs (none for 1, 1), and lowered by its height when
+// turned over (a lookahead, so the order of the properties is free)
+const flipped = (alt, sx, sy, below) => new RegExp(`<img alt='${alt}' ` +
+  (sx === 1 && sy === 1 ? '(?![^>]*transform)' : `(?=[^>]*style='[^']*transform:scale\\(${sx}, ${sy}\\))`) +
+  (below ? `(?=[^>]*style='[^']*vertical-align:${below})` : '(?![^>]*vertical-align)') + '[^>]*\\/>');
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -305,6 +311,17 @@ const pictures = {
     drawn(10, '0.0742', lower('0.0097')), drawn(11, '0.0640', lower('0.0102')), drawn(12, '0.0518', lower('0.0134')),
     drawn(16, '0.1661', `${lower('0.0836')}; transform:scale(1, -1)`), drawn(13, '0.1662'), drawn(14, '0.1647'),
     share('halved', '0.1449'), /Text: Big/, /^(?![^]*tex8web-scale)/],
+  // (\includegraphics pictures mirrored as in the PDF, at any size and in
+  // any context, halved too; turned over, 75pt high, or 48bp without a
+  // size, so hanging below the baseline; two \reflectbox mirror nothing)
+  'test-reflectbox': [
+    ...['bare', 'width', 'half', 'nested', 'link', 'footnote', 'cell', 'minipage', 'theorem', 'italic', 'figure']
+      .map(alt => flipped(alt, -1, 1)),
+    share('half', '0.1449'), share('nested', '0.1449'),
+    flipped('over', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
+    flipped('round', -1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
+    flipped('over bare', 1, -1, '(?:-48px|calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.139[67]\\))'),
+    flipped('twice', 1, 1)],
 };
 
 // The title of a page without \maketitle, for the tab and link previews:

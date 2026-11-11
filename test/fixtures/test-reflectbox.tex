@@ -1,0 +1,56 @@
+% \includegraphics pictures in boxes that mirror or turn them over:
+% \reflectbox at the natural size and with a width, \scalebox with
+% negative factors (also halving, and turning over), two \reflectbox, a
+% \reflectbox in a box that scales, and a mirrored picture in a link, a
+% footnote, a table, a minipage, a theorem, italic text, and a figure. A
+% picture turned over hangs below the baseline in the PDF, as graphics.sty
+% swaps its height and depth.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+Bare: \reflectbox{\includegraphics[alt={bare}]{test-picture.png}} after.
+
+Width: \reflectbox{\includegraphics[alt={width}, width=100pt]{test-picture.png}} after.
+
+Half: \scalebox{-0.5}[0.5]{\includegraphics[alt={half}, width=100pt]{test-picture.png}} after.
+
+Turned over: \scalebox{1}[-1]{\includegraphics[alt={over}, width=100pt]{test-picture.png}} after.
+
+Turned over bare: \scalebox{1}[-1]{\includegraphics[alt={over bare}]{test-picture.png}} after.
+
+Turned round: \scalebox{-1}[-1]{\includegraphics[alt={round}, width=100pt]{test-picture.png}} after.
+
+Twice: \reflectbox{\reflectbox{\includegraphics[alt={twice}, width=100pt]{test-picture.png}}} after.
+
+Nested: \scalebox{0.5}{\reflectbox{\includegraphics[alt={nested}, width=100pt]{test-picture.png}}} after.
+
+Link: \href{https://example.com}{\reflectbox{\includegraphics[alt={link}, width=100pt]{test-picture.png}}} after.
+
+Footnote.\footnote{In a note:
+\reflectbox{\includegraphics[alt={footnote}, width=50pt]{test-picture.png}}.}
+
+\begin{tabular}{|l|}
+\hline
+\reflectbox{\includegraphics[alt={cell}, width=50pt]{test-picture.png}} \\
+\hline
+\end{tabular}
+
+\begin{minipage}{0.5\textwidth}
+\reflectbox{\includegraphics[alt={minipage}, width=\textwidth]{test-picture.png}}
+\end{minipage}
+
+\begin{theorem}
+A picture: \reflectbox{\includegraphics[alt={theorem}, width=50pt]{test-picture.png}}.
+\end{theorem}
+
+\textit{In italic: \reflectbox{\includegraphics[alt={italic}, width=50pt]{test-picture.png}}.}
+
+\begin{figure}
+\centering
+\reflectbox{\includegraphics[alt={figure}, width=100pt]{test-picture.png}}
+\caption{A mirrored picture.}
+\end{figure}
+\end{document}
