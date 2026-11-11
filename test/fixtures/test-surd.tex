@@ -1,0 +1,45 @@
+% \textsurd (√) in Latin Modern, where tex4ht's lm-ts1.htf gives a middle
+% dot: in each font of the text, in a footnote, a theorem, a heading and its
+% contents entry with hyperref, a list's label, a table and its caption,
+% beside \textbullet, in \text in math, and in a TikZ picture, which keeps
+% the font's glyph.
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{tikz}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\tableofcontents
+\section{Roots \textsurd{} here}
+Plain \textsurd{} sign.
+\textit{Italic \textsurd{} sign.}
+\textbf{Bold \textsurd{} sign.}
+\textbf{\textit{Bolditalic \textsurd{} sign.}}
+\textsl{Slanted \textsurd{} sign.}
+\textsc{Smallcaps \textsurd{} sign.}
+\texttt{Typewriter \textsurd{} sign.}
+\textsf{Sans \textsurd{} sign.}
+\textsf{\textbf{Sansbold \textsurd{} sign.}}
+{\large Large \textsurd{} sign.}
+Bullet \textbullet{} and surd \textsurd{} together.
+Note\footnote{Footnote \textsurd{} sign.} here.
+\begin{theorem}
+Theorem \textsurd{} sign.
+\end{theorem}
+\begin{itemize}
+\item[\textsurd] Checked item.
+\end{itemize}
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+Cell & \textsurd \\
+\end{tabular}
+\caption{Caption \textsurd{} sign.}
+\end{table}
+Math $x = \text{Mathtext \textsurd{} sign}$ here.
+Picture \tikz \node {\textsurd}; here.
+\end{document}

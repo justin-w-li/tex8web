@@ -430,6 +430,27 @@ const fonts = {
   'test-amsart': [/<span class='paragraphHead' id='a-paragraph'> <a id='[^']+'><\/a>A paragraph\.<\/span>/],
 };
 
+// \textsurd as √ after the given text, in the fonts whose tex4ht files give
+// a middle dot (Latin Modern's TS1 file, which pxfonts, txfonts, and TeX
+// Gyre take), and in those that give √. No middle dot is left in the page.
+const surd = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:√|&#x221A;)`);
+const noDot = /^(?![^]*(?:·|&#x00B7;|&#xB7;))/;
+const surds = {
+  // (also in a heading and its contents entry, a list's label, a table's
+  // cell and caption, beside \textbullet's •, and in \text in math, which
+  // MathJax typesets)
+  'test-surd': [noDot, ...['Plain', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Smallcaps', 'Typewriter', 'Sans',
+    'Sansbold', 'Large', 'Footnote', 'Theorem', 'Caption', 'Bullet • and surd'].map(surd),
+    new RegExp(`<h3 class='sectionHead'(?:(?!<\\/h3>)[^])*${surd('Roots').source}`),
+    new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${surd('Roots').source}`),
+    new RegExp(`<span class='tex8web-label'>${surd('').source}`), new RegExp(`<td [^>]*>${surd('').source}`),
+    /<mtext>Mathtext √<\/mtext>/],
+  'test-surd-fonts': [noDot, ...['Palatino', 'Palitalic', 'Pxsans', 'Pxmono', 'Times', 'Heros', 'Pagella', 'Termes',
+    'Cursor', 'Computer'].map(surd)],
+};
+// \textsurd in a TikZ picture, drawn with the font's glyph (TS1 slot 187)
+const glyphs = { 'test-surd': [['test-surd0x.svg', /xlink:href='#g\d+-187'/]] };
+
 // Colors in dark mode: a light-dark() of the color at another lightness,
 // and black text in the page's text color. This holds for \textcolor,
 // \colorbox, \fcolorbox, listings, math, and \rule. Math and table cells
@@ -1242,6 +1263,7 @@ const patterns = [
   [bibliographies, 'in the bibliography'],
   [urls, 'among the URLs', true], [numbers, 'in the equation numbers'],
   [glossaries, 'in the glossaries'],
+  [surds, 'at the square root signs'],
 ];
 
 // the problems in a built page's logs, the page, and the files beside it
@@ -1310,6 +1332,10 @@ function check(doc, result, out, aux) {
       problems.push(`${file} isn't ${share} of the text width`);
     }
   }
+  for (const [file, pattern] of glyphs[doc.name] ?? []) {
+    const svg = existsSync(join(out, file)) ? readFileSync(join(out, file), 'utf8') : '';
+    if (!pattern.test(svg)) problems.push(`no ${pattern.source} in ${file}`);
+  }
   // (prerender.mjs drops the element around a one-character token's mjx-c)
   if (/<mjx-m[ion](?: (?:space|size)='[^']*')*><mjx-c class='[^']*'>[^<]*<\/mjx-c><\/mjx-m[ion]>/.test(html)) {
     problems.push('a token of one character left in the typeset math');
@@ -1331,7 +1357,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, expected, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, glyphs, expected, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

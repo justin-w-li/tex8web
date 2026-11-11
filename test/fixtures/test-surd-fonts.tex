@@ -1,0 +1,17 @@
+% \textsurd (√) in other fonts whose tex4ht files take the Latin Modern TS1
+% one, which gives a middle dot: pxfonts, loaded without textcomp and in
+% OT1, and txfonts, TeX Gyre, and Computer Modern, chosen by family.
+\documentclass{article}
+\usepackage{pxfonts}
+\begin{document}
+Palatino \textsurd{} sign.
+\textit{Palitalic \textsurd{} sign.}
+\textsf{Pxsans \textsurd{} sign.}
+{\fontfamily{txr}\selectfont Times \textsurd{} sign.}
+{\fontfamily{qhv}\selectfont Heros \textsurd{} sign.}
+{\fontfamily{qpl}\selectfont Pagella \textsurd{} sign.}
+{\fontfamily{qtm}\selectfont Termes \textsurd{} sign.}
+{\fontfamily{qcr}\selectfont Cursor \textsurd{} sign.}
+{\fontfamily{cmr}\selectfont Computer \textsurd{} sign.}
+\texttt{Pxmono \textsurd{} sign.}
+\end{document}
