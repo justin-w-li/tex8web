@@ -1,0 +1,14 @@
+% glossaries with xindy, \noist, and a xindy style file next to the
+% document, test-glossaries-xdy.xdy, whose markup prints a line above the
+% glossary
+\documentclass{article}
+\usepackage[xindy]{glossaries}
+\noist
+\setStyleFile{test-glossaries-xdy}
+\makeglossaries
+\newglossaryentry{group}{name={group},
+  description={a set with an associative operation}}
+\begin{document}
+A \gls{group}.
+\printglossaries
+\end{document}

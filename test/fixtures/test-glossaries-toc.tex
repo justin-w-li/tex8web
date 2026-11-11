@@ -1,0 +1,14 @@
+% glossaries with hyperref and a table of contents: a \gls in a heading,
+% which hyperref's link in the table of contents holds too
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{glossaries}
+\makeglossaries
+\newglossaryentry{group}{name={group},
+  description={a set with an associative operation}}
+\begin{document}
+\tableofcontents
+\section{Every \gls{group}}
+A \gls{group} again.
+\printglossaries
+\end{document}

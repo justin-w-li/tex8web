@@ -1117,8 +1117,8 @@ const entry = (id, name, description) =>
 const glossary = (title, ...entries) => new RegExp(`>${title}<\\/h3>\\s*<dl class='description'[^>]*>(?:(?!<\\/dl>)[^])*`
   + entries.join('(?:(?!<\\/dl>)[^])*'));
 const gls = (id, text) => `<a class='glossary' href='#glo_${id}'>${text}<\\/a>`;
-// (glossaries prints "This document is incomplete" in place of a glossary
-// whose file is missing)
+// (glossaries-extra prints "This document is incomplete" in place of a
+// glossary whose file is missing; glossaries prints nothing)
 const complete = /^(?![^]*This document is incomplete)/;
 const glossaries = {
   'test-glossaries': [
@@ -1142,6 +1142,25 @@ const glossaries = {
     // (the super style's table, and the index style's paragraphs)
     /<h3[^>]*>(?:(?!<\/h3>)[^])*>Symbols<\/h3>\s*<div class='supertabular'>\s*<table class='tabular'(?:(?!<\/table>)[^])*<a id='glo_pi'><\/a><mjx-container(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*the ratio of a circle’s circumference to its diameter\./,
     /<h3[^>]*>(?:(?!<\/h3>)[^])*>Notation<\/h3>\s*<p class='noindent'><a id='glo_hom'><\/a><span class='cmbx-10'>Hom\s*<\/span>the set of homomorphisms\./,
+    // (G-set's description uses monoid, and monoid's semigroup: the .glo
+    // has them only after the second and third LaTeX runs)
+    glossary('Glossary', entry('gset', 'G-set', `a set on which a ${gls('monoid', 'monoid')} acts\\.`),
+      entry('monoid', 'monoid', `a ${gls('semigroup', 'semigroup')} with an identity\\.`),
+      entry('semigroup', 'semigroup', 'a set with an associative operation\\.')),
+  ],
+  // (tex4ht's table of contents holds the heading's text, without the
+  // \gls link, so the sidebar has no link in a link)
+  'test-glossaries-toc': [
+    /<div class='tableofcontents'><span class='sectionToc'><span class='tocnumber'>1<\/span><a href='#every-group'[^>]*>Every group<\/a><\/span>/,
+    new RegExp(`Every ${gls('group', 'group')}<\\/h3>`),
+  ],
+  // (a makeindex or xindy style file next to the document, which prints a
+  // line)
+  'test-glossaries-ist': [
+    new RegExp(`>Glossary<\\/h3>\\s*<p [^>]*>Sorted with our own style\\.[^]*${entry('group', 'group', 'a set with an associative operation\\.')}`),
+  ],
+  'test-glossaries-xdy': [
+    new RegExp(`>Glossary<\\/h3>\\s*<p [^>]*>Sorted with our own style\\.[^]*${entry('group', 'group', 'a set with an associative operation\\.')}`),
   ],
   // (sorted by xindy, étale by its UTF-8 name; without hyperref, no links)
   'test-glossaries-xindy': [

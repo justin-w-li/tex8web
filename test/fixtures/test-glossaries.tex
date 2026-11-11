@@ -5,7 +5,9 @@
 % typewriter text, in a footnote, in a theorem, and in a heading. A name
 % with makeindex's special characters and no sort key, one with an accent
 % and a sort key, and one never used, which is not printed. Each \gls links
-% to its entry.
+% to its entry. An entry used only in another entry's description, and one
+% used only in that entry's description, which makeglossaries sees only on
+% its second and third runs.
 \documentclass{article}
 \usepackage{amsthm}
 \usepackage{hyperref}
@@ -27,6 +29,12 @@
   description={the ratio of a circle's circumference to its diameter}}
 \newglossaryentry{hom}{type=notation,name={Hom},
   description={the set of homomorphisms}}
+\newglossaryentry{gset}{name={G-set},
+  description={a set on which a \gls{monoid} acts}}
+\newglossaryentry{monoid}{name={monoid},
+  description={a \gls{semigroup} with an identity}}
+\newglossaryentry{semigroup}{name={semigroup},
+  description={a set with an associative operation}}
 \newglossaryentry{unused}{name={unused},
   description={an entry no \gls uses}}
 \setacronymstyle{long-short}
@@ -44,6 +52,8 @@ The \gls{gcd} of two numbers divides their \gls{lcm}; a \gls{gcd} again.
 An \gls{etale} morphism of \glspl{field} is \gls{marks}.
 \end{theorem}
 The number \gls{pi} is not in \gls{hom}.
+
+A \gls{gset} is a set with an action.
 \printglossary[style=list]
 \printglossary[type=\acronymtype,style=long]
 \printglossary[type=symbols,style=super]

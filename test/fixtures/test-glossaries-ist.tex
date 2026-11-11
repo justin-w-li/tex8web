@@ -1,0 +1,14 @@
+% glossaries with \noist and a makeindex style file next to the
+% document, test-glossaries-ist.ist, whose preamble prints a line above
+% the glossary
+\documentclass{article}
+\usepackage{glossaries}
+\noist
+\setStyleFile{test-glossaries-ist}
+\makeglossaries
+\newglossaryentry{group}{name={group},
+  description={a set with an associative operation}}
+\begin{document}
+A \gls{group}.
+\printglossaries
+\end{document}
