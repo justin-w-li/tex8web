@@ -431,24 +431,23 @@ const fonts = {
 };
 
 // \textsurd as √ after the given text, in the fonts whose tex4ht files give
-// a middle dot and in those that give √. The first are Latin Modern's TS1
-// file, which tex4ht also takes for pxfonts and every TeX Gyre family but
-// Termes, and txfonts' file, tcxb.htf. Palladio takes the sign from
-// Computer Modern's TS1 font. \textperiodcentered stays a middle dot, and
-// no other middle dot is left in the page.
-const surd = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:√|&#x221A;)`);
-const dot = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:·|&#x00B7;|&#xB7;)`);
-const inFont = before => new RegExp(`${before}\\s*(?:<\\/span>\\s*)?<span\\s+class='ts1-[^']+'>(?:√|&#x221A;)`);
+// a middle dot and in those that give √. Latin Modern, pxfonts, every TeX
+// Gyre family but Termes, and txfonts give a middle dot. Palladio takes
+// the sign from Computer Modern's TS1 font. \textperiodcentered stays a
+// middle dot, and no other middle dot is left in the page.
+const surd = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*√`);
+const dot = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*·`);
+const inFont = before => new RegExp(`${before}\\s*(?:<\\/span>\\s*)?<span\\s+class='ts1-[^']+'>√`);
 // The TS1 symbols of test-ts1-symbols, each with its label and the code
-// point of the character that LaTeX draws.
+// point of the Unicode character of its glyph. \textcopyleft is ɔ, as
+// macOS has no font with the copyleft sign.
 const ts1Symbols = [['Threequartersemdash', '2014'], ['Blank', '2422'], ['Dblhyphen', '2E40'], ['Lbrackdbl', '27E6'],
   ['Rbrackdbl', '27E7'], ['Dblhyphenchar', '2E40'], ['Acutedbl', '02DD'], ['Gravedbl', '02F5'], ['Bardbl', '2016'],
   ['Bullet', '2022'], ['Guarani', '20B2'], ['Lira', '20A4'], ['Discount', '2052'], ['Openbullet', '25E6'],
   ['Lquill', '2045'], ['Rquill', '2046'], ['CircledP', '2117'], ['Mu', '00B5'], ['Ordmasculine', '00BA'],
-  ['Surd', '221A'], ['Quotesingle', '0027']];
-const ts1 = (label, code) => new RegExp(
-  `${label}\\s*(?:<\\/?span[^>]*>\\s*)*(?:\\u{${code}}|&#x0*${code};)`, 'iu');
-const onlyDots = /^(?![^]*(?<!dot\s*(?:<\/?span[^>]*>\s*)*)(?:·|&#x00B7;|&#xB7;))/i;
+  ['Surd', '221A'], ['Quotesingle', '0027'], ['Copyleft', '0254']];
+const ts1 = (label, code) => new RegExp(`${label}\\s*(?:<\\/?span[^>]*>\\s*)*\\u{${code}}`, 'iu');
+const onlyDots = /^(?![^]*(?<!dot\s*(?:<\/?span[^>]*>\s*)*)·)/i;
 const surds = {
   // (also in a heading and its contents entry, an itemize's and a
   // description's label, a table's cell and caption, beside \textbullet's •,
@@ -466,12 +465,11 @@ const surds = {
     // (the text after a picture, which keeps the font's glyph, stays as it is)
     /test-surd0x\.svg'[^>]*\/> here\./, /test-surd1x\.svg'[^>]*\/> after\./,
     // The sign is in the span of its TS1 font, which has the size and family
-    // of the text around it. The stylesheet gives a TS1 span no weight or
-    // shape, so in bold or italic text the sign stays regular and upright.
+    // of the text around it. Its weight and shape are checked by visual.mjs.
     ...['Typewriter', 'Sans', 'Large', 'Footnote'].map(inFont)],
   'test-surd-fonts': [onlyDots, dot('Pxdot'), dot('Txdot'), ...['Palatino', 'Palitalic', 'Pxsans', 'Pxmono', 'Times',
     'Palladio', 'Heros', 'Pagella', 'Termes', 'Cursor', 'Computer'].map(surd)],
-  'test-ts1-symbols': [...['Lm', 'Tx', 'Hv'].flatMap(font => ts1Symbols.map(([name, code]) => ts1(font + name, code)))],
+  'test-ts1-symbols': ['Lm', 'Tx', 'Hv'].flatMap(font => ts1Symbols.map(([name, code]) => ts1(font + name, code))),
 };
 // \textsurd in a TikZ picture and a LaTeX picture, drawn with the font's
 // glyph (TS1 slot 187)

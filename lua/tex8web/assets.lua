@@ -466,6 +466,34 @@ function M.other_lists(css)
   end))
 end
 
+-- adds tex4ht's rules for the fonts whose class keeps the size in the
+-- name, such as ts1-lmbx10- for the bold Latin Modern TS1 font. Their
+-- file, ts1-.htf, gives the face for the name without the size,
+-- ts1-lmbx, and t4ht matches that only to a class it splits into name and
+-- size, such as ec-lmbx-10. Without the rule, a TS1 symbol in bold or
+-- italic text is regular and upright. The rules go before the mark of
+-- css/tex8web.css, with tex4ht's.
+function M.unsized_fonts(context)
+  local log = files.read(context.dir .. "/" .. context.input .. ".lg")
+  if not log then return end
+  local faces, rules, seen = {}, {}, {}
+  for name, rule in log:gmatch("htfcss:%s*(%S+)%s+([^\n]-)%s*\n") do faces[name] = rule end
+  for name in log:gmatch('Font%("([^"]-%d)",""') do
+    local rule = not faces[name] and faces[(name:gsub("%d+$", ""))]
+    if rule and not seen[name] then
+      seen[name] = true
+      rules[#rules + 1] = (".%s-{%s}\n"):format(name, rule)
+    end
+  end
+  if #rules == 0 then return end
+  local path = context.dir .. "/" .. context.input .. ".css"
+  local css = assert(files.read(path))
+  local i = assert(css:find("/* tex8web.css */", 1, true))
+  local f = assert(io.open(path, "w"))
+  f:write(css:sub(1, i - 1), table.concat(rules), css:sub(i))
+  f:close()
+end
+
 -- inserts css/tex8web.css and the font rules where tex8web-core.tex marks
 -- their place in the document's stylesheet, then adjusts the colors and the
 -- wide-screen query

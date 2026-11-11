@@ -393,6 +393,18 @@ const ties = `(() => {
   return { checked: spans.length, wrong };
 })()`;
 
+// The weight and style of each TS1 symbol's span against the text's span
+// just before it. In bold or italic text the PDF draws the symbol bold or
+// italic too.
+const symbolFaces = `(() => {
+  const face = el => getComputedStyle(el).fontWeight + ' ' + getComputedStyle(el).fontStyle;
+  const spans = [...document.querySelectorAll('span[class^="ts1-"]')].filter(span => {
+    const text = span.previousSibling;
+    return text?.nodeName === 'SPAN' && /-\\d|-$/.test(text.className) && !text.className.startsWith('ts1-');
+  });
+  return { checked: spans.length, wrong: spans.filter(span => face(span) !== face(span.previousSibling))
+    .map(span => [span.previousSibling.textContent.trim(), face(span), face(span.previousSibling)]) };
+})()`;
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
 // multiples of the font size of the table of contents. The weights of each
@@ -452,7 +464,8 @@ const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).
 
 // the subjects each check found over the run: a check with none has
 // tested nothing
-const ran = { spaced: 0, tablesSpaced: 0, blocksSpaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0, ties: 0 };
+const ran = { spaced: 0, tablesSpaced: 0, blocksSpaced: 0, misaligned: 0, sidenotes: 0, filled: 0, algorithms: 0, labeled: 0, ties: 0,
+  symbolFaces: 0 };
 
 async function compare(chrome, doc, ok) {
   const dir = testDir(doc, 'visual');
@@ -516,6 +529,9 @@ async function compare(chrome, doc, ok) {
           const tied = await page.evaluate(ties);
           ran.ties += tied.checked;
           for (const [text, what] of tied.wrong) problems.push(`${html}: the tie in "${text}": ${what}`);
+          const symbols = await page.evaluate(symbolFaces);
+          ran.symbolFaces += symbols.checked;
+          for (const [text, got, want] of symbols.wrong) problems.push(`${html}: the TS1 symbol after "${text}": ${got}, not ${want}`);
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {

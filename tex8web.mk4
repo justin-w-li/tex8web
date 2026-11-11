@@ -149,6 +149,9 @@ local mathjax = prerender.mathjax_version(root)
 Make:match("html$", function(filename, par)
   context = {root = root, dir = filename:match("^(.*)/") or ".", input = par.input,
     tex_file = par.tex_file, mathjax = mathjax}
+  -- (before the passes, as assets.copy reads the fonts' faces from the
+  -- stylesheet)
+  assets.unsized_fonts(context)
   local status = fix_html(filename, par)
   assets.stylesheet(context)
   if not prerender.run(context, filename) then
