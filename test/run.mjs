@@ -335,8 +335,8 @@ const pictures = {
     flipped('round', -1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
     flipped('over bare', 1, -1, '-48px'),
     ...['rotated', 'angle'].map(alt => new RegExp(
-      `<span class='rotatebox' style='transform: scale\\(-1, 1\\) rotate\\(-30deg\\);'> <img alt='${alt}' (?![^>]*transform)`)),
-    /<span class='rotatebox' style='transform: rotate\(-30deg\);'> <img alt='rotated inside' /,
+      `<span class='rotatebox' style='transform: scale\\(-1, 1\\) rotate\\(-90deg\\);'> <img alt='${alt}' (?![^>]*transform)`)),
+    /<span class='rotatebox' style='transform: rotate\(-90deg\);'> <img alt='rotated inside' /,
     flipped('rotated inside', -1, 1),
     flipped('squashed', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
     flipped('flattened', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),

@@ -9,7 +9,9 @@
 % around rotations in a figure, for the viewer, and a mirrored picture in a
 % link, a footnote, a table, a minipage, a theorem, italic text, and a
 % figure. A picture turned over hangs below the baseline in the PDF, as
-% graphics.sty swaps its height and depth.
+% graphics.sty swaps its height and depth. Every rotation is by 90 degrees:
+% headless Chrome under load antialiased a picture at 30 degrees differently
+% from one capture to the next, which failed the visual check.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{amsthm}
@@ -37,11 +39,11 @@ Turned over bare: \scalebox{1}[-1]{\includegraphics[alt={over bare}]{test-pictur
 
 Turned round: \scalebox{-1}[-1]{\includegraphics[alt={round}, width=100pt]{test-picture.png}} after.
 
-Rotated: \reflectbox{\rotatebox{30}{\includegraphics[alt={rotated}, width=50pt]{test-picture.png}}} after.
+Rotated: \reflectbox{\rotatebox{90}{\includegraphics[alt={rotated}, width=50pt]{test-picture.png}}} after.
 
-Angle: \reflectbox{\includegraphics[alt={angle}, angle=30, width=50pt]{test-picture.png}} after.
+Angle: \reflectbox{\includegraphics[alt={angle}, angle=90, width=50pt]{test-picture.png}} after.
 
-Rotated inside: \rotatebox{30}{\reflectbox{\includegraphics[alt={rotated inside}, width=50pt]{test-picture.png}}} after.
+Rotated inside: \rotatebox{90}{\reflectbox{\includegraphics[alt={rotated inside}, width=50pt]{test-picture.png}}} after.
 
 Squashed: \scalebox{1}[-1]{\includegraphics[alt={squashed}, width=100pt, height=20pt]{test-picture.png}} after.
 
@@ -84,9 +86,9 @@ A picture: \reflectbox{\includegraphics[alt={theorem}, width=50pt]{test-picture.
 
 \begin{figure}
 \centering
-\reflectbox{\rotatebox{30}{\tikz\draw (0,0) rectangle (3,2) (0,0) -- (1,2);}}
-\reflectbox{\rotatebox{30}{\includegraphics[alt={viewed rotated}, width=100pt]{test-picture.png}}}
-\reflectbox{\rotatebox{30}{\reflectbox{\includegraphics[alt={viewed twice}, width=100pt]{test-picture.png}}}}
+\reflectbox{\rotatebox{90}{\tikz\draw (0,0) rectangle (3,2) (0,0) -- (1,2);}}
+\reflectbox{\rotatebox{90}{\includegraphics[alt={viewed rotated}, width=100pt]{test-picture.png}}}
+\reflectbox{\rotatebox{90}{\reflectbox{\includegraphics[alt={viewed twice}, width=100pt]{test-picture.png}}}}
 \caption{Mirrored pictures around rotations.}
 \end{figure}
 \end{document}
