@@ -1111,7 +1111,7 @@ const captions = {
 // in order, and each \gls linked to its entry with hyperref. Acronyms on
 // first and later use, in the text and in a footnote; a footnote-style
 // acronym's long form in the footnote. (The location numbers are not
-// links: glossary-locations in the gap tracker.)
+// links.)
 const entry = (id, name, description) =>
   `<a id='glo_${id}'><\\/a><span class='cmbx-10'>${name}<\\/span>\\s*<\\/dt><dd class='description'>\\s*<p class='noindent'>${description}`;
 const glossary = (title, ...entries) => new RegExp(`>${title}<\\/h3>\\s*<dl class='description'[^>]*>(?:(?!<\\/dl>)[^])*`
@@ -1142,8 +1142,8 @@ const glossaries = {
     // (the super style's table, and the index style's paragraphs)
     /<h3[^>]*>(?:(?!<\/h3>)[^])*>Symbols<\/h3>\s*<div class='supertabular'>\s*<table class='tabular'(?:(?!<\/table>)[^])*<a id='glo_pi'><\/a><mjx-container(?:(?!<\/table>)[^])*<\/td><td [^>]*>\s*the ratio of a circle’s circumference to its diameter\./,
     /<h3[^>]*>(?:(?!<\/h3>)[^])*>Notation<\/h3>\s*<p class='noindent'><a id='glo_hom'><\/a><span class='cmbx-10'>Hom\s*<\/span>the set of homomorphisms\./,
-    // (G-set's description uses monoid, and monoid's semigroup: the .glo
-    // has them only after the second and third LaTeX runs)
+    // (G-set's description uses monoid, and monoid's semigroup, which
+    // makeglossaries sees only on its second and third runs)
     glossary('Glossary', entry('gset', 'G-set', `a set on which a ${gls('monoid', 'monoid')} acts\\.`),
       entry('monoid', 'monoid', `a ${gls('semigroup', 'semigroup')} with an identity\\.`),
       entry('semigroup', 'semigroup', 'a set with an associative operation\\.')),

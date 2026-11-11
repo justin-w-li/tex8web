@@ -24,7 +24,7 @@ The options:
 - **`-B aux`**: Write tex4ht's working files to `aux/` instead of `build/tex4ht/`. The path is relative to your document. Keep `-` out of the path. See [Known limitations](#known-limitations).
 - **`-p pdf`**: Add a PDF button that links to `pdf`, and copy `pdf` next to the page. The path is relative to the directory you run tex8web from. Build the PDF first, for example with `latexmk -pdf -outdir=build/pdf document.tex`. With both `-p` and `\WebPDF`, the page links to the PDF given with `-p`.
 - **`-u url`**: Add an up button that links to the page above this one on your site, such as a list of your documents. The URL is relative to the page, for example `../index.html`. With both `-u` and `\WebUp`, the up button links to the URL given with `-u`.
-- **`-m draft`**: Run LaTeX once, and skip the bibliography and the index. Draft builds are quicker, but references and citations can show as ??. The first draft build has no title, so the browser tab, the link preview, and the link to the top of the table of contents are empty until a later build.
+- **`-m draft`**: Run LaTeX once, and skip the bibliography, the index, and the glossaries. Draft builds are quicker, but references and citations can show as ??. The first draft build has no title, so the browser tab, the link preview, and the link to the top of the table of contents are empty until a later build.
 - **`--version`**: Print the tex8web version, and in a git clone the commit, for example `tex8web 0.1.0 (a1b2c3d)`. With uncommitted changes, `-dirty` follows the commit.
 - Any other option is passed to make4ht. Put your document last.
 
