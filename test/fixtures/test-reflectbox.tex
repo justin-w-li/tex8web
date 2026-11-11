@@ -4,9 +4,11 @@
 % \reflectbox in a box that scales, two pictures in one \reflectbox, a
 % \reflectbox inside a TikZ node, a \reflectbox around a rotation and
 % inside one, a picture with a height that does not keep its aspect turned
-% over, and a mirrored picture in a link, a footnote, a table, a minipage,
-% a theorem, italic text, and a figure. A picture turned over hangs below
-% the baseline in the PDF, as graphics.sty swaps its height and depth.
+% over, a picture halved and turned over at full width, mirrored pictures
+% around rotations in a figure, for the viewer, and a mirrored picture in a
+% link, a footnote, a table, a minipage, a theorem, italic text, and a
+% figure. A picture turned over hangs below the baseline in the PDF, as
+% graphics.sty swaps its height and depth.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{amsthm}
@@ -42,6 +44,8 @@ Rotated inside: \rotatebox{30}{\reflectbox{\includegraphics[alt={rotated inside}
 
 Squashed: \scalebox{1}[-1]{\includegraphics[alt={squashed}, width=100pt, height=20pt]{test-picture.png}} after.
 
+Flattened: \scalebox{1}[-0.5]{\includegraphics[alt={flattened}, width=100pt]{test-picture.png}} after.
+
 Twice: \reflectbox{\reflectbox{\includegraphics[alt={twice}, width=100pt]{test-picture.png}}} after.
 
 Nested: \scalebox{0.5}{\reflectbox{\includegraphics[alt={nested}, width=100pt]{test-picture.png}}} after.
@@ -71,5 +75,13 @@ A picture: \reflectbox{\includegraphics[alt={theorem}, width=50pt]{test-picture.
 \centering
 \reflectbox{\includegraphics[alt={figure}, width=100pt]{test-picture.png}}
 \caption{A mirrored picture.}
+\end{figure}
+
+\begin{figure}
+\centering
+\reflectbox{\rotatebox{30}{\tikz\draw (0,0) rectangle (3,2) (0,0) -- (1,2);}}
+\reflectbox{\rotatebox{30}{\includegraphics[alt={viewed rotated}, width=100pt]{test-picture.png}}}
+\reflectbox{\rotatebox{30}{\reflectbox{\includegraphics[alt={viewed twice}, width=100pt]{test-picture.png}}}}
+\caption{Mirrored pictures around rotations.}
 \end{figure}
 \end{document}

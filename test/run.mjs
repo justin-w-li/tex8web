@@ -322,7 +322,8 @@ const pictures = {
   // mirrored again by its <img>; a picture at its natural size is not
   // scaled; a mirror around a rotation is before it, on its span, and one
   // inside a rotation on the picture; a picture with a height that does
-  // not keep its aspect is shown, and lowered, 75pt high)
+  // not keep its aspect is shown, and lowered, 75pt high, as is one
+  // halved only in height)
   'test-reflectbox': [
     ...['bare', 'width', 'half', 'half bare', 'nested', 'left', 'right', 'link', 'footnote', 'cell', 'minipage',
       'theorem', 'italic', 'figure'].map(alt => flipped(alt, -1, 1)),
@@ -337,6 +338,7 @@ const pictures = {
     /<span class='rotatebox' style='transform: rotate\(-30deg\);'> <img alt='rotated inside' /,
     flipped('rotated inside', -1, 1),
     flipped('squashed', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
+    flipped('flattened', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
     flipped('twice', 1, 1)],
 };
 

@@ -1752,6 +1752,39 @@ async function hang(chrome, file, doc) {
 // - spaces: a document with each length that spaces tables, boxes, arrays,
 //   and description lists set away from its default
 // - hang: author-year bibliographies, with entries that wrap
+// The viewer shows a picture with the mirrors of the picture and of the
+// rotations around it (text.pictures in text.lua), without their angles:
+// in test-reflectbox's figures, the picture's transform in the viewer, for
+// a picture mirrored itself, a drawn and an included one mirrored around a
+// rotation, and one mirrored twice, around and inside a rotation
+const mirrors = [["img[alt='figure']", 'matrix(-1, 0, 0, 1, 0, 0)'], ["img[src$='x.svg']", 'matrix(-1, 0, 0, 1, 0, 0)'],
+  ["img[alt='viewed rotated']", 'matrix(-1, 0, 0, 1, 0, 0)'], ["img[alt='viewed twice']", 'none']];
+async function mirroring(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, {}, async page => {
+    const problems = [];
+    const open = 'document.querySelector(\'.tex8web-viewer\').matches(\':popover-open\')';
+    for (const [selector, want] of mirrors) {
+      const focused = await page.evaluate(`(() => {
+        const img = document.querySelector(${JSON.stringify(`figure ${selector}.tex8web-zoomable`)});
+        if (!img) return false;
+        img.scrollIntoView({ block: 'center' });
+        img.focus();
+        return document.activeElement === img;
+      })()`);
+      if (!focused) {
+        problems.push(`${selector}: no picture in a figure that opens the viewer`);
+        continue;
+      }
+      await page.press('Enter', 13);
+      const shown = await until(() => page.evaluate(`${open} && getComputedStyle(document.querySelector('.tex8web-viewer img')).transform`));
+      if (shown !== want) problems.push(`${selector}: ${shown ? `the transform ${shown} in the viewer` : 'no viewer'} (not ${want})`);
+      await page.press('Escape', 27);
+      if (!await until(() => page.evaluate(`!${open}`))) return [...problems, `${selector}: Escape: the viewer still open`];
+    }
+    return problems;
+  });
+}
+
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));
@@ -1759,6 +1792,7 @@ const each = check => async (chrome, docs) => {
 };
 const checks = {
   viewer: [['test-article', 'examples/basic'], each(viewing)],
+  mirror: [['test-reflectbox'], each(mirroring)],
   touch: [['examples/basic'], each(touching)],
   bar: [['test'], each(async (...args) => [...await naming(...args), ...await hiding(...args), ...await landing(...args)])],
   narrow: [['test', 'examples/complex'], each(narrowing)],

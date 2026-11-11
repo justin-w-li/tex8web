@@ -548,19 +548,22 @@ function M.pictures(document, context)
           function(start, share) return string.format("%s%.4f)", start, x * share) end)))
       end
       -- (an \includegraphics: the height that tex8web-text.tex writes beside
-      -- a width, as a share of the text width. tex4ht's size stays unscaled,
-      -- so a picture at its natural size is lowered by its whole height.)
+      -- a width, as a share of the text width. Only the width is scaled, so
+      -- the picture is shown x times that high, whatever y is. tex4ht's
+      -- size stays unscaled, so a picture at its natural size is lowered by
+      -- its whole height.)
       local height = tonumber(el:get_attribute("data-tex8web-height"))
       el:set_attribute("data-tex8web-height", nil)
       -- (turned over, as graphics.sty swaps the box's height and depth)
       if scales[#scales][2] < 0 and height then
-        dom.add_style(el, string.format("vertical-align:calc(var(--tex8web-textwidth) * %.4f)", -y * height))
+        dom.add_style(el, string.format("vertical-align:calc(var(--tex8web-textwidth) * %.4f)", -x * height))
       elseif scales[#scales][2] < 0 and el:get_attribute("height") then
         dom.add_style(el, "vertical-align:-" .. el:get_attribute("height") .. "px")
       end
     end
     -- (each box's signs, on the outermost span.rotatebox inside the box,
-    -- or else on the picture)
+    -- or else on the picture. Every span.rotatebox has a transform, from
+    -- html4.4ht, which the signs go before.)
     local rotations, up = {}, el:get_parent()
     while up and up:is_element() do
       if depths[up] then table.insert(rotations, 1, up) end
@@ -579,13 +582,12 @@ function M.pictures(document, context)
     for target, f in pairs(flips) do
       if (f[1] < 0 or f[2] < 0) and not flipped[target] then
         local scale = string.format("scale(%d, %d)", f[1], f[2])
-        local style = target:get_attribute("style") or ""
-        if target ~= el and style:find("transform:") then
-          target:set_attribute("style", (style:gsub("transform:%s*", "transform: " .. scale .. " ", 1)))
+        if target ~= el then
+          target:set_attribute("style", (target:get_attribute("style"):gsub("transform:%s*", "transform: " .. scale .. " ", 1)))
+          flipped[target] = true
         else
           dom.add_style(target, "transform:" .. scale)
         end
-        if target ~= el then flipped[target] = true end
       end
     end
   end)
