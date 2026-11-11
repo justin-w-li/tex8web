@@ -1113,6 +1113,15 @@ const mdframed = {
 const verbatim = {
   'test-verbatim': [/^(?:(?!tex8web-nbsp)[^])*Plain<span class='tex8web-nbsp'>(?:(?!tex8web-nbsp)[^])*$/,
     /<div class='alltt'>/, /<div class='verbatiminput'>/, /<pre class='verbatim'/],
+  ...Object.fromEntries(['test-verbatim-font', 'test-verbatim-font-hyperref', 'test-verbatim-font-t1',
+    'test-verbatim-font-lmodern', 'test-verbatim-font-courier'].map(name => [name, [
+    /<code class='verb'>vf-inline a_b#c%<\/code>/,
+    /<code class='verb'>vf-star[ ␣]+two[ ␣]+spaces<\/code>/,
+    /<pre class='verbatim'[^>]*>[^<]*vf-block a_b#c%[^<]*<\/pre>/,
+    /<pre class='verbatim'[^>]*>[^<]*vf-block-star[ ␣]+two[ ␣]+spaces[^<]*<\/pre>/,
+    /<div class='verbatiminput'>vf-file a_b #c%/,
+    /<div class='verbatiminput'>vf-file[ ␣]+a_b[ ␣]+#c%/,
+  ]])),
 };
 
 // the fonts listed in data-fonts on the inline script

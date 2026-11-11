@@ -513,6 +513,40 @@ async function hanging(page, doc, where) {
     ...wrong.map(([name, what]) => `${where}: the picture ${name}: ${what}`)];
 }
 
+// Check the font on each literal text node, including spans inside a
+// verbatim block. Counting each marker also catches missing fixture cases.
+const verbatimFamilies = {
+  'test-verbatim-font': 'Latin Modern Mono',
+  'test-verbatim-font-hyperref': 'Latin Modern Mono',
+  'test-verbatim-font-t1': 'Latin Modern Mono',
+  'test-verbatim-font-lmodern': 'Latin Modern Mono',
+  'test-verbatim-font-courier': 'TeX Gyre Cursor',
+};
+const verbatimFonts = family => `(() => {
+  const cases = ['heading', 'inline', 'star', 'italic', 'italic-star', 'bold',
+    'sans', 'typewriter', 'footnote', 'block', 'block-star',
+    'block-italic', 'block-sans', 'block-typewriter', 'theorem', 'block-theorem',
+    'texttt', 'alltt', 'fancy-inline', 'fancy-block', 'file'];
+  const found = Object.fromEntries(cases.map(name => ['vf-' + name, []]));
+  const nodes = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT);
+  while (nodes.nextNode()) {
+    const node = nodes.currentNode;
+    for (const marker of node.textContent.match(/vf-[a-z-]+/g) ?? []) {
+      if (found[marker]) found[marker].push(node.parentElement);
+    }
+  }
+  const wrong = [];
+  for (const [marker, elements] of Object.entries(found)) {
+    const count = marker === 'vf-file' ? 3 : 1;
+    if (elements.length !== count) wrong.push([marker, elements.length + ' text nodes, expected ' + count]);
+    for (const el of elements) {
+      const got = getComputedStyle(el).fontFamily.split(',')[0].replaceAll('"', '').trim();
+      if (got !== ${JSON.stringify(family)}) wrong.push([marker, got + ', expected ' + ${JSON.stringify(family)}]);
+    }
+  }
+  return wrong;
+})()`;
+
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
 // multiples of the font size of the table of contents. The weights of each
@@ -646,6 +680,10 @@ async function compare(chrome, doc, ok) {
             for (const [text, what] of boxes.wrong) problems.push(`${html}: the \\lefteqn "${text}": ${what}`);
           }
           if (doc.name in hangs) problems.push(...await hanging(page, doc, html));
+          if (verbatimFamilies[doc.name]) {
+            const literals = await page.evaluate(verbatimFonts(verbatimFamilies[doc.name]));
+            for (const [marker, what] of literals) problems.push(`${html}: literal ${marker}: ${what}`);
+          }
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {
@@ -714,6 +752,9 @@ stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn
 stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);
 failures += never.length + stray.length;
+const strayLiterals = strayKeys(verbatimFamilies);
+for (const name of strayLiterals) console.log(`not ok - no document ${name} for its literal fonts`);
+failures += strayLiterals.length;
 chrome.close();
 console.log(failures ? `\n${failures} failed` : '\nall passed');
 process.exit(failures ? 1 : 0);

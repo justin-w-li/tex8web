@@ -1,0 +1,64 @@
+% Use texttt in headings and footnotes, whose arguments forbid verb.
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Literal heading \texttt{vf-heading}}
+
+Plain \verb|vf-inline a_b#c%| and \verb*|vf-star two  spaces|.
+
+{\itshape Italic \verb|vf-italic| and \verb*|vf-italic-star two spaces|.}
+
+{\bfseries Bold \verb|vf-bold|.}
+
+{\sffamily Sans serif \verb|vf-sans|.}
+
+{\ttfamily Typewriter \verb|vf-typewriter|.}
+
+Footnote text\footnote{Literal \texttt{vf-footnote}.} continues here.
+
+\begin{verbatim}
+vf-block  a_b#c%
+\end{verbatim}
+
+\begin{verbatim*}
+vf-block-star  two spaces
+\end{verbatim*}
+
+{\itshape
+\begin{verbatim}
+vf-block-italic
+\end{verbatim}
+}
+
+{\sffamily
+\begin{verbatim}
+vf-block-sans
+\end{verbatim}
+}
+
+{\ttfamily
+\begin{verbatim}
+vf-block-typewriter
+\end{verbatim}
+}
+
+\begin{theorem}
+Literal \verb|vf-theorem| in italic theorem text.
+\begin{verbatim}
+vf-block-theorem
+\end{verbatim}
+\end{theorem}
+
+\verbatiminput{test-verbatim-font.txt}
+\verbatiminput*{test-verbatim-font.txt}
+
+\texttt{vf-texttt}.
+\begin{alltt}
+vf-alltt  a_b
+\end{alltt}
+
+Fancy inline \Verb|vf-fancy-inline|.
+\begin{Verbatim}
+vf-fancy-block  a_b#c%
+\end{Verbatim}
+\VerbatimInput{test-verbatim-font.txt}
+\end{document}
