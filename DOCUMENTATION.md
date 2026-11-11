@@ -38,7 +38,7 @@ The output directory contains:
 
 All paths in the page are relative, so you can publish the output directory as it is. With Node, the fonts contain only the characters your document uses, so give each document a separate output directory. The page is named `document.html`, not `index.html`, so link to it by name, for example `https://you.github.io/repo/document.html` on GitHub Pages.
 
-### Bibliographies and indexes
+### Bibliographies, indexes, and glossaries
 
 tex8web runs bibtex or biber when your document has a bibliography. For each makeidx or imakeidx index, tex8web runs makeindex with the style file given in its `\makeindex` options. Style files are looked up next to your document and in the `INDEXSTYLE` directories. For glossaries with `\makeglossaries`, tex8web runs makeglossaries. A style file set with `\noist` and `\setStyleFile` is looked up next to your document.
 

@@ -88,9 +88,13 @@ function M.run(par)
   return 0
 end
 
--- the glossaries' input files (.glo, .acn, ...) last given to
+-- the text of the glossaries' input files (.glo, .acn, ...) last given to
 -- makeglossaries
 local sorted
+
+-- when this build started: tex8web.mk4 loads this file before the first
+-- LaTeX run
+local started = os.time()
 
 -- the style file's name, if the document has \makeglossaries (glossaries
 -- writes it to the .aux then; \makenoidxglossaries sorts in LaTeX and
@@ -117,10 +121,13 @@ local function makeglossaries(par)
   local dir = (par.builddir ~= "" and par.builddir) or "."
   -- (glossaries writes its style file to the build directory, the working
   -- directory of makeindex or xindy after -d; with \noist, the document's
-  -- own is next to the document, where make4ht runs)
+  -- own is next to the document, where make4ht runs. A style file in the
+  -- build directory from before this build is one that glossaries wrote
+  -- before the document had \noist)
   local own = lfs.currentdir() .. "/" .. style
+  local written = lfs.attributes(dir .. "/" .. style, "modification")
   local option = ""
-  if not lfs.attributes(dir .. "/" .. style) and lfs.attributes(own) then option = " -s " .. files.quote(own) end
+  if not (written and written >= started) and lfs.attributes(own) then option = " -s " .. files.quote(own) end
   local command = "makeglossaries -q" .. option .. " -d " .. files.quote(dir) .. " " .. files.quote(par.input)
   log:info("glossaries: " .. command)
   -- (texlua's os.execute returns the exit status, not Lua 5.3's true)

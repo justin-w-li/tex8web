@@ -3,9 +3,9 @@
 // run beside them. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { build, expected, largestFirst, pool, root, select, strayKeys, testDir, workers } from './lib/build.mjs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 const only = process.argv.slice(2);
@@ -1369,6 +1369,33 @@ if (escaping) jobs.push(async () => {
   }
   if (pages[0] !== pages[1]) problems.push("the page differs from the one with tex4ht's escaping of math");
   report(`${escaping.name} (escaping as tex4ht's)`, problems);
+});
+
+// test-glossaries-ist built over a build directory that holds another
+// test-glossaries-ist.ist, as an earlier build without \noist leaves there:
+// the glossary is still sorted with the style file next to the document.
+// (bin/tex8web is run directly, as build() empties the build directory)
+const noist = docs.find(d => d.name === 'test-glossaries-ist');
+if (noist) jobs.push(async () => {
+  const out = join(testDir(noist), 'stale'), aux = join(testDir(noist), 'staleaux');
+  rmSync(out, { recursive: true, force: true });
+  rmSync(aux, { recursive: true, force: true });
+  mkdirSync(aux, { recursive: true });
+  const style = readFileSync(join(noist.dir, 'test-glossaries-ist.ist'), 'utf8');
+  const older = join(aux, 'test-glossaries-ist.ist');
+  writeFileSync(older, style.replace('Sorted with our own style.', 'Sorted with a stale style.'));
+  // (dated a minute back, as the earlier build wrote it)
+  const minuteAgo = new Date(Date.now() - 60000);
+  utimesSync(older, minuteAgo, minuteAgo);
+  const result = await run(join(root, 'bin/tex8web'), ['-c', relative(noist.dir, noist.cfg), '-B', relative(noist.dir, aux),
+    '-d', relative(noist.dir, out), '-a', 'info', noist.tex], { cwd: noist.dir, slot: true, env: { ...process.env, ...noist.env } });
+  const page = join(out, 'test-glossaries-ist.html');
+  const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  const problems = [];
+  if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
+  if (!html.includes('Sorted with our own style.')) problems.push('the glossary is not sorted with the style file next to the document');
+  if (html.includes('stale style')) problems.push("the glossary is sorted with the build directory's older style file");
+  report(`${noist.name} (an older style file in the build directory)`, problems);
 });
 
 await pool(jobs, workers, job => job());
