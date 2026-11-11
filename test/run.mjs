@@ -431,12 +431,14 @@ const fonts = {
 };
 
 // \textsurd as √ after the given text, in the fonts whose tex4ht files give
-// a middle dot (Latin Modern's TS1 file, which pxfonts, txfonts, and TeX
-// Gyre take), and in those that give √ (and Palladio, where LaTeX takes the
-// sign from Computer Modern's TS1 font). \textperiodcentered stays a
-// middle dot, and no other middle dot is left in the page.
+// a middle dot (Latin Modern's TS1 file, which pxfonts and TeX Gyre take,
+// and txfonts' own file), and in those that give √ (and Palladio, where
+// LaTeX takes the sign from Computer Modern's TS1 font).
+// \textperiodcentered stays a middle dot, and no other middle dot is left
+// in the page.
 const surd = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:√|&#x221A;)`);
 const dot = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:·|&#x00B7;|&#xB7;)`);
+const inFont = before => new RegExp(`${before}\\s*(?:<\\/span>\\s*)?<span\\s+class='ts1-[^']+'>(?:√|&#x221A;)`);
 const onlyDots = /^(?![^]*(?<!dot\s*(?:<\/?span[^>]*>\s*)*)(?:·|&#x00B7;|&#xB7;))/i;
 const surds = {
   // (also in a heading and its contents entry, an itemize's and a
@@ -448,7 +450,10 @@ const surds = {
     new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${surd('Roots').source}`),
     new RegExp(`<span class='tex8web-label'>${surd('').source}`), new RegExp(`<td [^>]*>${surd('').source}`),
     new RegExp(`<dt [^>]*>(?:<a [^>]*><\\/a>)?${surd('').source}`),
-    /<mtext>Mathtext √<\/mtext>/],
+    /<mtext>Mathtext √<\/mtext>/,
+    // (the sign in the span of its TS1 font, which has the size, weight,
+    // shape, and family of the text around it)
+    ...['Italic', 'Bold', 'Typewriter', 'Sans', 'Large', 'Footnote'].map(inFont)],
   'test-surd-fonts': [onlyDots, dot('Pxdot'), dot('Txdot'), ...['Palatino', 'Palitalic', 'Pxsans', 'Pxmono', 'Times',
     'Palladio', 'Heros', 'Pagella', 'Termes', 'Cursor', 'Computer'].map(surd)],
 };
