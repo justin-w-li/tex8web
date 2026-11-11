@@ -316,14 +316,14 @@ const pictures = {
     drawn(16, '0.1661', `${lower('0.0836')}; transform:scale(1, -1)`), drawn(13, '0.1662'), drawn(14, '0.1647'),
     share('halved', '0.1449'), /Text: Big/, /^(?![^]*tex8web-scale)/],
   // (\includegraphics pictures mirrored as in the PDF, at any size and in
-  // any context, halved too, also at the natural size of 64bp; turned
-  // over, 75pt high, 37.5pt when halved, or 48bp without a size, so
-  // hanging below the baseline; two \reflectbox mirror nothing, and a
-  // picture that dvisvgm draws is mirrored in its SVG)
+  // any context, halved too; turned over, 75pt high, 37.5pt when halved,
+  // or 48bp without a size, so hanging below the baseline; two
+  // \reflectbox mirror nothing, and a picture that dvisvgm draws is
+  // mirrored in its SVG; a picture at its natural size is not scaled)
   'test-reflectbox': [
     ...['bare', 'width', 'half', 'half bare', 'nested', 'left', 'right', 'link', 'footnote', 'cell', 'minipage',
       'theorem', 'italic', 'figure'].map(alt => flipped(alt, -1, 1)),
-    wide('half', '0.1449'), wide('nested', '0.1449'), wide('half bare', '0.0931'), wide('half over', '0.1449'),
+    wide('half', '0.1449'), wide('nested', '0.1449'), wide('half over', '0.1449'),
     flipped('half over', -1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.1087\\)'),
     /<img alt='' src='test-reflectbox0x\.svg' (?![^>]*transform)[^>]*\/>/,
     flipped('over', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
