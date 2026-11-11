@@ -498,7 +498,8 @@ end
 -- so its width is multiplied by the factors of the boxes around it, as is
 -- the width that tex8web-text.tex gives an \includegraphics. A picture
 -- that pgf lowers or raises has its baseline's y in the SVG
--- (g.tex8web-baseline), from which its vertical-align is set.
+-- (g.tex8web-baseline), from which its vertical-align is set. A negative
+-- factor mirrors or turns over any picture, drawn or not, with a transform.
 function M.pictures(document, context)
   local scales, marks = {{1, 1}}, {}
   document:traverse_elements(function(el)
@@ -537,12 +538,25 @@ function M.pictures(document, context)
         end
         dom.add_style(el, string.format("aspect-ratio:%.4f", x * width / (y * height)))
       end
-      local sx, sy = scales[#scales][1] < 0 and -1 or 1, scales[#scales][2] < 0 and -1 or 1
-      if sx < 0 or sy < 0 then dom.add_style(el, string.format("transform:scale(%d, %d)", sx, sy)) end
-    elseif x ~= 1 and el:get_attribute("style") then
-      el:set_attribute("style", ((el:get_attribute("style") or ""):gsub("(width:calc%(var%(%-%-tex8web%-textwidth%) %* )([%d.]+)%)",
-        function(start, share) return string.format("%s%.4f)", start, x * share) end)))
+    else
+      if x ~= 1 and el:get_attribute("style") then
+        el:set_attribute("style", ((el:get_attribute("style") or ""):gsub("(width:calc%(var%(%-%-tex8web%-textwidth%) %* )([%d.]+)%)",
+          function(start, share) return string.format("%s%.4f)", start, x * share) end)))
+      end
+      -- (an \includegraphics: the height that tex8web-text.tex writes beside
+      -- a width, as a share of the text width. tex4ht's size stays unscaled,
+      -- so a picture at its natural size is lowered by its whole height.)
+      local height = tonumber(el:get_attribute("data-tex8web-height"))
+      el:set_attribute("data-tex8web-height", nil)
+      -- (turned over, as graphics.sty swaps the box's height and depth)
+      if scales[#scales][2] < 0 and height then
+        dom.add_style(el, string.format("vertical-align:calc(var(--tex8web-textwidth) * %.4f)", -y * height))
+      elseif scales[#scales][2] < 0 and el:get_attribute("height") then
+        dom.add_style(el, "vertical-align:-" .. el:get_attribute("height") .. "px")
+      end
     end
+    local sx, sy = scales[#scales][1] < 0 and -1 or 1, scales[#scales][2] < 0 and -1 or 1
+    if sx < 0 or sy < 0 then dom.add_style(el, string.format("transform:scale(%d, %d)", sx, sy)) end
   end)
   for _, mark in ipairs(marks) do mark:remove_node() end
 end
