@@ -1,13 +1,18 @@
 % \textsurd (√) in other fonts whose tex4ht files take the Latin Modern TS1
 % one, which gives a middle dot: pxfonts, loaded without textcomp and in
-% OT1, and txfonts, TeX Gyre, and Computer Modern, chosen by family.
+% OT1, and txfonts, Palladio (where LaTeX takes the sign from Computer
+% Modern), TeX Gyre, and Computer Modern, chosen by family.
+% \textperiodcentered stays a middle dot.
 \documentclass{article}
 \usepackage{pxfonts}
 \begin{document}
 Palatino \textsurd{} sign.
+Pxdot \textperiodcentered{} sign.
 \textit{Palitalic \textsurd{} sign.}
 \textsf{Pxsans \textsurd{} sign.}
 {\fontfamily{txr}\selectfont Times \textsurd{} sign.}
+{\fontfamily{txr}\selectfont Txdot \textperiodcentered{} sign.}
+{\fontfamily{ppl}\selectfont Palladio \textsurd{} sign.}
 {\fontfamily{qhv}\selectfont Heros \textsurd{} sign.}
 {\fontfamily{qpl}\selectfont Pagella \textsurd{} sign.}
 {\fontfamily{qtm}\selectfont Termes \textsurd{} sign.}

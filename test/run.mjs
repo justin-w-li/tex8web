@@ -432,24 +432,31 @@ const fonts = {
 
 // \textsurd as √ after the given text, in the fonts whose tex4ht files give
 // a middle dot (Latin Modern's TS1 file, which pxfonts, txfonts, and TeX
-// Gyre take), and in those that give √. No middle dot is left in the page.
+// Gyre take), and in those that give √ (and Palladio, where LaTeX takes the
+// sign from Computer Modern's TS1 font). \textperiodcentered stays a
+// middle dot, and no other middle dot is left in the page.
 const surd = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:√|&#x221A;)`);
-const noDot = /^(?![^]*(?:·|&#x00B7;|&#xB7;))/;
+const dot = before => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*(?:·|&#x00B7;|&#xB7;)`);
+const onlyDots = /^(?![^]*(?<!dot\s*(?:<\/?span[^>]*>\s*)*)(?:·|&#x00B7;|&#xB7;))/i;
 const surds = {
-  // (also in a heading and its contents entry, a list's label, a table's
-  // cell and caption, beside \textbullet's •, and in \text in math, which
-  // MathJax typesets)
-  'test-surd': [noDot, ...['Plain', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Smallcaps', 'Typewriter', 'Sans',
-    'Sansbold', 'Large', 'Footnote', 'Theorem', 'Caption', 'Bullet • and surd'].map(surd),
+  // (also in a heading and its contents entry, an itemize's and a
+  // description's label, a table's cell and caption, beside \textbullet's •,
+  // and in \text in math, which MathJax typesets)
+  'test-surd': [onlyDots, dot('Dot'), ...['Plain', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Smallcaps', 'Typewriter',
+    'Sans', 'Sansbold', 'Large', 'Footnote', 'Theorem', 'Caption', 'Bullet • and surd'].map(surd),
     new RegExp(`<h3 class='sectionHead'(?:(?!<\\/h3>)[^])*${surd('Roots').source}`),
     new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${surd('Roots').source}`),
     new RegExp(`<span class='tex8web-label'>${surd('').source}`), new RegExp(`<td [^>]*>${surd('').source}`),
+    new RegExp(`<dt [^>]*>(?:<a [^>]*><\\/a>)?${surd('').source}`),
     /<mtext>Mathtext √<\/mtext>/],
-  'test-surd-fonts': [noDot, ...['Palatino', 'Palitalic', 'Pxsans', 'Pxmono', 'Times', 'Heros', 'Pagella', 'Termes',
-    'Cursor', 'Computer'].map(surd)],
+  'test-surd-fonts': [onlyDots, dot('Pxdot'), dot('Txdot'), ...['Palatino', 'Palitalic', 'Pxsans', 'Pxmono', 'Times',
+    'Palladio', 'Heros', 'Pagella', 'Termes', 'Cursor', 'Computer'].map(surd)],
 };
-// \textsurd in a TikZ picture, drawn with the font's glyph (TS1 slot 187)
-const glyphs = { 'test-surd': [['test-surd0x.svg', /xlink:href='#g\d+-187'/]] };
+// \textsurd in a TikZ picture and a LaTeX picture, drawn with the font's
+// glyph (TS1 slot 187)
+const glyphs = {
+  'test-surd': [['test-surd0x.svg', /xlink:href='#g\d+-187'/], ['test-surd1x.svg', /xlink:href='#g\d+-187'/]],
+};
 
 // Colors in dark mode: a light-dark() of the color at another lightness,
 // and black text in the page's text color. This holds for \textcolor,

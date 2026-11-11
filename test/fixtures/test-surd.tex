@@ -1,8 +1,9 @@
 % \textsurd (√) in Latin Modern, where tex4ht's lm-ts1.htf gives a middle
 % dot: in each font of the text, in a footnote, a theorem, a heading and its
-% contents entry with hyperref, a list's label, a table and its caption,
-% beside \textbullet, in \text in math, and in a TikZ picture, which keeps
-% the font's glyph.
+% contents entry with hyperref, an itemize's and a description's label, a
+% table and its caption, beside \textbullet and \textperiodcentered, which
+% stays a middle dot, in \text in math, and in a TikZ and a LaTeX picture,
+% which keep the font's glyph.
 \documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
@@ -26,6 +27,7 @@ Plain \textsurd{} sign.
 \textsf{\textbf{Sansbold \textsurd{} sign.}}
 {\large Large \textsurd{} sign.}
 Bullet \textbullet{} and surd \textsurd{} together.
+Dot \textperiodcentered{} sign.
 Note\footnote{Footnote \textsurd{} sign.} here.
 \begin{theorem}
 Theorem \textsurd{} sign.
@@ -33,6 +35,9 @@ Theorem \textsurd{} sign.
 \begin{itemize}
 \item[\textsurd] Checked item.
 \end{itemize}
+\begin{description}
+\item[\textsurd] Checked term.
+\end{description}
 \begin{table}[h]
 \centering
 \begin{tabular}{ll}
@@ -42,4 +47,5 @@ Cell & \textsurd \\
 \end{table}
 Math $x = \text{Mathtext \textsurd{} sign}$ here.
 Picture \tikz \node {\textsurd}; here.
+\begin{picture}(20,10)\put(0,0){\textsurd}\end{picture}
 \end{document}
