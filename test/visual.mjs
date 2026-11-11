@@ -412,11 +412,11 @@ const symbolFaces = `(() => {
 // Each \lefteqn (MathJax's \rlap: an mjx-mpadded around a block of no
 // width) adds no width: its content is wider than its cell, or, outside an
 // alignment, what follows it starts at the box. Its content starts at the
-// box, and its end can be scrolled to in a display too wide for its
-// column. In an alignment, the box is at the edge of its cell that the
+// box, ends before the equation numbers beside it, and can be scrolled
+// to in a display too wide for its column. In an alignment, the box is at the edge of its cell that the
 // column's alignment gives, as in the PDF: the right edge in eqnarray's
-// first column, the left edge in its third. laps has the number of boxes
-// on each page checked.
+// first column, the left edge in its third. Checked with JavaScript off
+// and on a phone. laps has the number of boxes on each page checked.
 // Failures: [the box's text, what is wrong]
 const lapped = `(() => {
   const boxes = [...document.querySelectorAll('mjx-mpadded')];
@@ -433,8 +433,19 @@ const lapped = `(() => {
       if (Math.abs(at.left - edge) > 0.5) problems.push(\`\${(at.left - edge).toFixed(2)}px from its cell's edge\`);
       if (content.width < right - left + 0.5) problems.push(\`its cell \${(right - left).toFixed(2)}px wide holds its content \${content.width.toFixed(2)}px wide\`);
     } else {
-      const next = box.nextElementSibling?.getBoundingClientRect();
+      // (past the group around the box, which only MathJax in a browser keeps)
+      const group = box.parentElement.matches('mjx-texatom') && !box.nextElementSibling ? box.parentElement : box;
+      const next = group.nextElementSibling?.getBoundingClientRect();
       if (!next || Math.abs(next.left - at.left) > 0.5) problems.push(next ? \`what follows at \${(next.left - at.left).toFixed(2)}px from the box\` : 'nothing after it');
+    }
+    // clear of the equation numbers beside it
+    for (const label of box.closest('mjx-mtable')?.querySelectorAll(':scope > mjx-labels mjx-mtd') ?? []) {
+      const number = document.createRange();
+      number.selectNodeContents(label);
+      const n = number.getBoundingClientRect();
+      if (n.width && n.top < content.bottom && content.top < n.bottom && content.right > n.left + 0.5) {
+        problems.push(\`runs \${(content.right - n.left).toFixed(2)}px under its number \${label.textContent}\`);
+      }
     }
     const scroller = box.closest('mjx-container[display]');
     const end = scroller && content.right - scroller.getBoundingClientRect().left + scroller.scrollLeft;
@@ -443,7 +454,7 @@ const lapped = `(() => {
   });
   return { checked: boxes.length, wrong };
 })()`;
-const laps = { 'test-lefteqn': 11 };
+const laps = { 'test-lefteqn': 12 };
 
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
@@ -602,6 +613,12 @@ async function compare(chrome, doc, ok) {
       if (b[i]) writeFileSync(join(visual, `${name}-prerendered.png`), Buffer.from(b[i], 'base64'));
     });
     if (differing.length) problems.push(`${html}: screens ${differing.join(', ')} of ${a.length} differ`);
+    if (doc.name in laps) {
+      for (const file of [typeset, join(pre, html)]) {
+        const boxes = await chrome.withPage(pathToFileURL(file).href, { width: 390, height: 844 }, page => page.evaluate(lapped));
+        for (const [text, what] of boxes.wrong) problems.push(`${relative(join(root, 'build'), file)}: at 390px, the \\lefteqn "${text}": ${what}`);
+      }
+    }
     for (const check of [printed, fits]) {
       problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     }
