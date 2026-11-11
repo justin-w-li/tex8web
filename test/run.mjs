@@ -446,7 +446,7 @@ const ts1Symbols = [['Threequartersemdash', '2014'], ['Blank', '2422'], ['Dblhyp
   ['Bullet', '2022'], ['Guarani', '20B2'], ['Lira', '20A4'], ['Discount', '2052'], ['Openbullet', '25E6'],
   ['Lquill', '2045'], ['Rquill', '2046'], ['CircledP', '2117'], ['Mu', '00B5'], ['Ordmasculine', '00BA'],
   ['Surd', '221A'], ['Quotesingle', '0027'], ['Copyleft', '0254']];
-const ts1 = (label, code) => new RegExp(`${label}\\s*(?:<\\/?span[^>]*>\\s*)*\\u{${code}}`, 'iu');
+const ts1 = (label, code) => new RegExp(`${label}\\s*(?:<\\/?span[^>]*>\\s*)*\\u{${code}}`, 'u');
 const onlyDots = /^(?![^]*(?<!dot\s*(?:<\/?span[^>]*>\s*)*)·)/i;
 const surds = {
   // (also in a heading and its contents entry, an itemize's and a
