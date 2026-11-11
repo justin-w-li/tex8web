@@ -21,6 +21,9 @@ local fallbacks = {
   -- (xfrac's, as \nicefrac from MathJax's units extension, which
   -- tex8web-math.tex loads with xfrac)
   ["\\sfrac"] = "\\newcommand{\\sfrac}[3][]{\\nicefrac{#2}{#3}}",
+  -- (LaTeX's \rlap{$\displaystyle #1$}, in latex.ltx. MathJax's \rlap
+  -- takes math in math, so the dollar signs would be drawn.)
+  ["\\lefteqn"] = "\\newcommand{\\lefteqn}[1]{\\rlap{\\displaystyle #1}}",
 }
 
 -- The math's colors that MathJax would get wrong (see "Macros in math" in
