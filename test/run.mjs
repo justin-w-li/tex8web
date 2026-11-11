@@ -323,7 +323,8 @@ const pictures = {
   // scaled; a mirror around a rotation is before it, on its span, and one
   // inside a rotation on the picture; a picture with a height that does
   // not keep its aspect is shown, and lowered, 75pt high, as is one
-  // halved only in height)
+  // halved only in height; a picture without its .xbb file turned over
+  // but not lowered, its height unknown)
   'test-reflectbox': [
     ...['bare', 'width', 'half', 'half bare', 'nested', 'left', 'right', 'link', 'footnote', 'cell', 'minipage',
       'theorem', 'italic', 'figure'].map(alt => flipped(alt, -1, 1)),
@@ -339,7 +340,7 @@ const pictures = {
     flipped('rotated inside', -1, 1),
     flipped('squashed', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
     flipped('flattened', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
-    flipped('twice', 1, 1)],
+    flipped('twice', 1, 1), flipped('over no box', 1, -1), flipped('squashed no box', 1, -1)],
 };
 
 // The title of a page without \maketitle, for the tab and link previews:

@@ -957,7 +957,9 @@
           }
           {
             style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\web@textwidth,4)})"~
-            \dim_compare:nNnT { \Gin@nat@width } > { 0pt }
+            % (without a bounding box, graphics.sty's natural size is
+            % 72bp square, so the height is unknown)
+            \cs_if_eq:NNT \noBoundingBox \UnDefined
               {
                 data-tex8web-height="\fp_eval:n{round(\Gin@req@width*\Gin@nat@height/\Gin@nat@width/\web@textwidth,4)}"
               }

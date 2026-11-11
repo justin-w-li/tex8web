@@ -4,7 +4,8 @@
 % \reflectbox in a box that scales, two pictures in one \reflectbox, a
 % \reflectbox inside a TikZ node, a \reflectbox around a rotation and
 % inside one, a picture with a height that does not keep its aspect turned
-% over, a picture halved and turned over at full width, mirrored pictures
+% over, a picture halved and turned over at full width, a picture without
+% its .xbb file turned over at a width and with a height, mirrored pictures
 % around rotations in a figure, for the viewer, and a mirrored picture in a
 % link, a footnote, a table, a minipage, a theorem, italic text, and a
 % figure. A picture turned over hangs below the baseline in the PDF, as
@@ -43,6 +44,10 @@ Angle: \reflectbox{\includegraphics[alt={angle}, angle=30, width=50pt]{test-pict
 Rotated inside: \rotatebox{30}{\reflectbox{\includegraphics[alt={rotated inside}, width=50pt]{test-picture.png}}} after.
 
 Squashed: \scalebox{1}[-1]{\includegraphics[alt={squashed}, width=100pt, height=20pt]{test-picture.png}} after.
+
+No box: \scalebox{1}[-1]{\includegraphics[alt={over no box}, width=100pt]{test-bare.png}} after.
+
+No box squashed: \scalebox{1}[-1]{\includegraphics[alt={squashed no box}, width=100pt, height=20pt]{test-bare.png}} after.
 
 Flattened: \scalebox{1}[-0.5]{\includegraphics[alt={flattened}, width=100pt]{test-picture.png}} after.
 
