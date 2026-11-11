@@ -440,6 +440,46 @@ function M.literal_blocks(document)
   end
 end
 
+-- A literal block whose font spans share one size, as after \small or
+-- with \verbatim@font set to it, holds its text in a box of that size,
+-- from tex4ht's rules for the spans' classes (the page's stylesheet, or
+-- css in a test; a class without a size is at the text's). The spans
+-- inherit the box's size (css/tex8web.css), so its lines are as far apart
+-- as lines of that size: a block's own size sets the least height of each
+-- of its lines. The block keeps the text's size, which its margins use.
+function M.literal_sizes(document, context, css)
+  css = css or files.read(context.dir .. "/" .. context.input .. ".css") or ""
+  local sizes = {}
+  for class, rule in css:gmatch("%.([%w-]+)%s*(%b{})") do
+    local size = rule:match("font%-size%s*:%s*([%d.]+)%%")
+    if size then sizes[class] = tonumber(size) end
+  end
+  for _, block in ipairs(document:query_selector("pre.verbatim, pre.boxedverbatim, div.verbatiminput, "
+      .. "div.listing, div.listinginput, div.verbatimtabinput")) do
+    local size, same = nil, true
+    for _, span in ipairs(block:query_selector("span")) do
+      for class in (span:get_attribute("class") or ""):gmatch("%S+") do
+        if dom.is_font_class(class) then
+          local own = sizes[class] or 100
+          if size and size ~= own then same = false end
+          size = own
+        end
+      end
+    end
+    if same and size and size ~= 100 then
+      local box = block:create_element("span", {class = "tex8web-sized-literal", style = "font-size: " .. size .. "%"})
+      local children = block:get_children()
+      -- (the newline a browser drops right after <pre>, and would keep in
+      -- the box)
+      if block:get_element_name() == "pre" and children[1] and children[1]:is_text() then
+        dom.set_node_text(children[1], (children[1]:get_text():gsub("^\n", "", 1)))
+      end
+      dom.set_children(block, {box})
+      for _, child in ipairs(children) do box:add_child_node(child) end
+    end
+  end
+end
+
 -- Short inline literals keep opening punctuation on their line. Only
 -- longer literals need a constrained box on a narrow screen. A literal of
 -- 20 characters is at most about 11em wide (a typewriter character is

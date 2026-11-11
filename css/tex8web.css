@@ -98,6 +98,9 @@ code.verb, pre.verbatim, pre.boxedverbatim, div.verbatiminput,
 div.listing, div.listinginput, div.verbatimtabinput {
     font-family: var(--tex8web-mono); font-size: inherit; font-style: normal; font-weight: normal; }
 code.lstinline { font: inherit; }
+/* (the text of a block whose spans share one size: text.literal_sizes) */
+.tex8web-sized-literal { display: block; }
+.tex8web-sized-literal span { font-size: inherit; }
 /* TeX does not break literals at hyphens or slashes. Keep opening
    punctuation with short literals, which must remain inline. A long
    literal wraps in a narrow column: the text on a narrow screen, and a
@@ -116,6 +119,10 @@ code.verb, code.lstinline { white-space: nowrap; }
    its spaces; text.literal_blocks removes tex4ht's padding spaces, so that
    short blocks do not scroll. */
 div.listing, div.verbatimtabinput { white-space: pre; }
+/* moreverb's line numbers, in roman as in the PDF (tex8web-text.tex). The
+   font span inside, at the numbers' size, is in roman, and not the number's
+   span, whose taller roman line would push the line down */
+.tex8web-listing-number > span { font-family: var(--tex8web-roman); }
 /* a ~, written as a space by text.lua: pre keeps the space from
    collapsing and the line from breaking after it (CONTRIBUTING.md) */
 .tex8web-nbsp { white-space: pre; }

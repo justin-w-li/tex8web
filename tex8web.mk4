@@ -120,6 +120,7 @@ local passes = {
   text.no_break_spaces,
   text.long_literals,
   text.literal_blocks,
+  text.literal_sizes,
   text.url_breaks,
   text.minipages,
   text.sidenotes,

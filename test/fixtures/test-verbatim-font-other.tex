@@ -1,10 +1,15 @@
 \documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage{beramono}
+% (a roman font tex8web does not have, for moreverb's line numbers)
+\usepackage{beraserif,moreverb}
 \begin{document}
 \verb|vf-other| and \texttt{vf-other-tt}.
 \begin{verbatim}
 vf-other-block
 vf-other-second
 \end{verbatim}
+\begin{listing}{1}
+vf-other-listing
+\end{listing}
 \end{document}

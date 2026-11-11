@@ -684,6 +684,27 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(block:get_text(), "\nx\u{A0}y\n")
   end,
 
+  ["text.literal_sizes: a block whose spans share one size takes it"] = function()
+    local css = ".cmtt-9{font-size:90%;font-family: monospace,monospace;}\n.cmr-9{font-size:90%;}\n"
+      .. ".cmtt-10{font-family: monospace,monospace;}\n.cmtt-8{font-size:80%;}\n"
+    local d = parse("<pre class='verbatim'>\n  \n<span class='cmtt-9'>a</span>\n\n<span class='cmtt-9'>b</span></pre>"
+      .. "<div class='listing'><span class='cmr-9'>1</span><span class='cmtt-9'>c</span></div>"
+      .. "<pre class='verbatim'><span class='cmtt-9'>d</span><span class='cmtt-8'>e</span></pre>"
+      .. "<div class='verbatiminput'><span class='cmtt-10'>f</span></div>"
+      .. "<div class='listing'><span class='tex8web-listing-number'><span class='cmr-9'>1</span></span>"
+      .. "<span class='cmtt-10'>g</span></div>")
+    text.literal_sizes(d, {}, css)
+    local boxes = d:query_selector("span.tex8web-sized-literal")
+    equal(#boxes, 2)
+    equal(boxes[1]:get_attribute("style"), "font-size: 90%")
+    equal(boxes[1]:get_parent():get_element_name(), "pre")
+    equal(#boxes[1]:get_parent():get_children(), 1)
+    -- (the newline after <pre>, which a browser drops, and would keep in the box)
+    equal(boxes[1]:get_text(), "  \na\n\nb")
+    equal(boxes[2]:get_parent():get_attribute("class"), "listing")
+    -- (two sizes, or the text's size: the spans keep theirs)
+  end,
+
   ["text.long_literals: phone-width verb and listings get constrained boxes"] = function()
     local literal = "abcdefghijklmnopqrstuvwxyz123456789"
     for _, class in ipairs({"verb", "lstinline"}) do

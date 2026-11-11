@@ -58,8 +58,11 @@ return {
   end,
 
   ["assets.faces: roman text in moreverb's listings, as its line numbers"] = function()
-    equal(faces('<div class="listinginput"><span class="cmbx-9">1</span></div>', ".cmbx-9{ font-weight: bold;}\n"),
-      "lmroman10-bold.woff2 lmroman10-regular.woff2")
+    equal(faces('<div class="listinginput"><span class="tex8web-listing-number"><span class="cmbx-9">1</span></span></div>',
+      ".cmbx-9{ font-weight: bold;}\n"), "lmroman10-bold.woff2 lmroman10-regular.woff2")
+    -- (a roman font tex8web does not have: the number is in the text's roman)
+    equal(faces('<div class="listing"><span class="tex8web-listing-number"><span class="fver-9">1</span></span></div>',
+      ""), "lmroman10-regular.woff2")
   end,
 
   ["assets.faces: a table of contents' entries in their level's font"] = function()

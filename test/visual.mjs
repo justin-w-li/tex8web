@@ -626,6 +626,54 @@ const verbatimFonts = (family, name) => `(async () => {
   return wrong;
 })()`;
 
+// A small verbatim block of three lines has the line pitch of its size,
+// as \small's \baselineskip in the PDF, and not the text's.
+const smallPitch = `(async () => {
+  await document.fonts.load('16px "Latin Modern Mono"');
+  const tops = [], sizes = [];
+  for (const marker of ['vf-pitch-first', 'vf-pitch-second', 'vf-pitch-third']) {
+    const nodes = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT);
+    while (nodes.nextNode()) {
+      const node = nodes.currentNode, start = node.textContent.indexOf(marker);
+      if (start < 0) continue;
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, start + marker.length);
+      tops.push(range.getBoundingClientRect().top);
+      sizes.push(getComputedStyle(node.parentElement).fontSize);
+      break;
+    }
+  }
+  if (tops.length !== 3) return ['small verbatim block lines missing'];
+  const lines = document.createElement('div');
+  lines.style.cssText = 'font-family: "Latin Modern Mono"; font-size: ' + sizes[0];
+  lines.innerHTML = 'x<br>x<br>x';
+  document.querySelector('main').append(lines);
+  const want = lines.getBoundingClientRect().height / 3;
+  lines.remove();
+  const wrong = [];
+  for (const i of [1, 2]) {
+    const pitch = tops[i] - tops[i - 1];
+    if (Math.abs(pitch - want) > 0.5) wrong.push('small verbatim line pitch ' + pitch.toFixed(2) + 'px, expected ' + want.toFixed(2) + 'px');
+  }
+  return wrong;
+})()`;
+
+// moreverb's line numbers are in the text's roman, also with a roman font
+// tex8web does not have.
+const moreverbNumbers = `(() => {
+  const listing = document.querySelector('div.listing');
+  if (!listing) return ['no listing'];
+  const nodes = document.createTreeWalker(listing, NodeFilter.SHOW_TEXT);
+  while (nodes.nextNode()) {
+    if (nodes.currentNode.textContent.trim() !== '1') continue;
+    const got = getComputedStyle(nodes.currentNode.parentElement).fontFamily;
+    const want = getComputedStyle(document.body).fontFamily;
+    return got === want ? [] : ['listing number in ' + got + ', expected ' + want];
+  }
+  return ['no listing number'];
+})()`;
+
 // A verbatim block in a typewriter font tex8web does not have keeps the
 // line pitch of the document's typewriter font, as every other verbatim
 // block does, and not the shorter one of the browser's monospace.
@@ -1254,6 +1302,14 @@ async function compare(chrome, doc, ok) {
     if (doc.name === 'test-verbatim-font-other') {
       const pitch = await chrome.withPage(pathToFileURL(join(pre, html)).href,
         { width: 1600, javascript: false }, page => page.evaluate(fallbackPitch));
+      problems.push(...pitch.map(p => `${html}: ${p}`));
+      const numbers = await chrome.withPage(pathToFileURL(join(pre, html)).href,
+        { width: 1600, javascript: false }, page => page.evaluate(moreverbNumbers));
+      problems.push(...numbers.map(p => `${html}: ${p}`));
+    }
+    if (doc.name === 'test-verbatim-font-smallfont') {
+      const pitch = await chrome.withPage(pathToFileURL(join(pre, html)).href,
+        { width: 1600, javascript: false }, page => page.evaluate(smallPitch));
       problems.push(...pitch.map(p => `${html}: ${p}`));
     }
     if (doc.name === 'test-verbatim-font-review-spacing') {
