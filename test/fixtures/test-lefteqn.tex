@@ -7,7 +7,7 @@
 % Then on a middle row after a row with a first column, in an array (text
 % style), one too wide for a phone on a numbered row, and one that ends
 % with a relation, as in Lamport's book. Then that idiom with long
-% following rows, which make the display wider than a phone. Last, a
+% following rows, which make the display wider than a phone. Then, a
 % numbered row whose \lefteqn fits beside its number in the PDF, but not
 % on a phone, and one in a split in a numbered equation. Then a long
 % \lefteqn on a row without a number, which runs into the margin in the
@@ -15,7 +15,9 @@
 % content stays inside the table, and a numbered \lefteqn after other
 % math in eqnarray's third column, and one after operators with space
 % around them. Last, a \vphantom and a \mathstrut on numbered rows, whose
-% boxes of no width draw nothing, so the tables stay centered.
+% boxes of no width draw nothing, so the tables stay centered, and a
+% numbered \lefteqn in flalign and one on the first line of a multline,
+% whose tables MathJax makes as wide as the page.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \usepackage{hyperref}
@@ -99,4 +101,13 @@ a & = & \left( b + c \right. \nonumber \\
 \begin{eqnarray}
 x & = & y \mathstrut \label{eq:strut}
 \end{eqnarray}
+\begin{flalign}
+\lefteqn{\sum_{i=1}^n f(x_i) + g(x_i) + h(x_i)} \label{eq:flalign} \\
+  & = d &
+\end{flalign}
+\begin{multline}
+\lefteqn{\sum_{i=1}^n f(x_i) + g(x_i)} \\
+a + b + c + d + e \\
+= d \label{eq:multline}
+\end{multline}
 \end{document}

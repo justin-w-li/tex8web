@@ -414,7 +414,8 @@ const symbolFaces = `(() => {
 // alignment, what follows it starts at the box. Its content starts at the
 // box, ends before the equation numbers beside it, also those of a table
 // around its own, and can be scrolled to in a display too wide for its
-// column. In an alignment, a box alone in its cell is at the edge of the
+// column, which scrolls no more than an em past its last character. In an
+// alignment, a box alone in its cell is at the edge of the
 // cell that the column's alignment gives, as in the PDF: the right edge in
 // eqnarray's first column, the left edge in its third. A table with
 // numbers stays centered while the content of its boxes beside the numbers
@@ -443,7 +444,10 @@ const lapped = `(() => {
       const left = rect.left + parseFloat(style.paddingLeft), right = rect.right - parseFloat(style.paddingRight);
       const edge = /right|end/.test(style.textAlign) ? right : left;
       if (Math.abs(at.left - edge) > 0.5) problems.push(\`\${(at.left - edge).toFixed(2)}px from its cell's edge\`);
-      if (content.width < right - left + 0.5) problems.push(\`its cell \${(right - left).toFixed(2)}px wide holds its content \${content.width.toFixed(2)}px wide\`);
+      // (the columns of a table as wide as the line, as in multline, are
+      // not sized by their content)
+      const full = box.closest('mjx-mtable').hasAttribute('data-width-includes-label');
+      if (!full && content.width < right - left + 0.5) problems.push(\`its cell \${(right - left).toFixed(2)}px wide holds its content \${content.width.toFixed(2)}px wide\`);
     } else if (!cell) {
       // (past the group around the box, which only MathJax in a browser keeps)
       const group = box.parentElement.matches('mjx-texatom') && !box.nextElementSibling ? box.parentElement : box;
@@ -458,6 +462,12 @@ const lapped = `(() => {
     const scroller = box.closest('mjx-container[display]');
     const end = scroller && content.right - scroller.getBoundingClientRect().left + scroller.scrollLeft;
     if (scroller && end > scroller.scrollWidth + 0.5) problems.push(\`ends \${(end - scroller.scrollWidth).toFixed(2)}px past where its display scrolls\`);
+    if (scroller) {
+      const left = scroller.getBoundingClientRect().left - scroller.scrollLeft;
+      const last = Math.max(scroller.clientWidth, ...[...scroller.querySelectorAll('mjx-c')].map(c => c.getBoundingClientRect().right - left));
+      const em = parseFloat(getComputedStyle(scroller).fontSize);
+      if (scroller.scrollWidth > last + em) problems.push(\`its display scrolls \${(scroller.scrollWidth - last).toFixed(2)}px past its last character\`);
+    }
     return problems.map(what => [text, what]);
   });
   for (const table of document.querySelectorAll('mjx-mtable:has(> mjx-labels):has(mjx-mpadded)')) {
@@ -473,7 +483,7 @@ const lapped = `(() => {
   }
   return { checked: boxes.length, wrong };
 })()`;
-const laps = { 'test-lefteqn': 16 };
+const laps = { 'test-lefteqn': 18 };
 
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are

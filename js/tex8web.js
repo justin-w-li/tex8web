@@ -68,12 +68,11 @@ function tex8web(config, tex) {
     return end;
   }
   // the same in math that starts at `at`, whose ems are `scale` of the
-  // table's: in groups, as the one \newcommand's expansion makes, and in a
-  // table, as a split in an equation. A child starts after the space
-  // before it (L, as an operator's lspace) and is followed by the space
-  // after it (R). \llap's box, which has an lspace, ends where it stands,
-  // and so does the box of \vphantom or \mathstrut, whose mphantom draws
-  // nothing.
+  // table's: in groups, as the TeXAtom around \rlap's box, and in a table,
+  // as a split in an equation. A child starts after the space before it
+  // (L, as an operator's lspace) and is followed by the space after it
+  // (R). \llap's box, which has an lspace, ends where it stands, and so
+  // does the box of \vphantom or \mathstrut, whose mphantom draws nothing.
   function lapReach(wrapper, at, scale) {
     const node = wrapper.node;
     if (node.isKind('mtable')) return at + lapEnd(wrapper, false) * scale;
@@ -100,14 +99,20 @@ function tex8web(config, tex) {
   // the PDF, and is moved left when there is not (internal: the wrappers'
   // boxes, the table's spacing, and handleDisplay, which gives a numbered
   // table its width). A row without a number may run into the margin, as
-  // in the PDF.
+  // in the PDF. A table as wide as the line, as in flalign and multline,
+  // is left as MathJax sets it, with its columns spread over the line as
+  // in the PDF. The output jax keeps the last table it made, which may
+  // belong to an earlier display.
   function clearNumbers() {
     const Wrapper = MathJax._.output.chtml.Wrappers.math.ChtmlMath.prototype;
     const handleDisplay = Wrapper.handleDisplay;
     Wrapper.handleDisplay = function (parent) {
       handleDisplay.call(this, parent);
       const table = this.jax.table;
-      if (!table?.hasLabels) return;
+      if (!table?.hasLabels || table.node.attributes.get('data-width-includes-label')) return;
+      let math = table;
+      while (math && math !== this) math = math.parent;
+      if (!math) return;
       const over = lapEnd(table, true) - table.getBBox().w;
       if (over <= 0) return;
       const {L, w, R} = table.getOuterBBox();
