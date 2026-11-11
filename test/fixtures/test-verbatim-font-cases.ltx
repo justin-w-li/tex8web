@@ -1,6 +1,7 @@
-% Use texttt in headings and footnotes, whose arguments forbid verb.
+% Use texttt in headings; fancyvrb permits verb in footnotes.
 \newtheorem{theorem}{Theorem}
 \begin{document}
+\VerbatimFootnotes
 \section{Literal heading \texttt{vf-heading}}
 
 Plain \verb|vf-inline a_b#c%| and \verb*|vf-star two  spaces|.
@@ -13,14 +14,14 @@ Plain \verb|vf-inline a_b#c%| and \verb*|vf-star two  spaces|.
 
 {\ttfamily Typewriter \verb|vf-typewriter|.}
 
-Footnote text\footnote{Literal \texttt{vf-footnote}.} continues here.
+Footnote text\footnote{Literal \texttt{vf-footnote} and \verb|vf-footnote-verb|.} continues here.
 
 \begin{verbatim}
 vf-block  a_b#c%
 \end{verbatim}
 
 \begin{verbatim*}
-vf-block-star  two spaces
+vf-block-star two  spaces
 \end{verbatim*}
 
 {\itshape
@@ -57,8 +58,48 @@ vf-alltt  a_b
 \end{alltt}
 
 Fancy inline \Verb|vf-fancy-inline|.
+Fancy starred \Verb*|vf-fancy-star two  spaces|.
+
+\begin{minipage}{7.5em}
+aaaa bbbb (\verb|xxxx|) dd
+
+aaaa bbbb ``\verb|xxxx|'' dd
+\end{minipage}
+
+Long kernel path: \verb|/usr/local/texlive/2026/texmf-dist/tex/generic/tex4ht/html4.4ht|.
+
+Long fancy path: \Verb|/usr/local/texlive/2026/texmf-dist/tex/generic/tex4ht/html4.4ht|.
+
+\begin{minipage}{18em}
+Prefix text before \verb|vf-wrap-kernel a  b|.
+
+Prefix text before \verb*|vf-wrap-kernel-star a  b|.
+
+Prefix text before \Verb|vf-wrap-fancy a  b|.
+
+Prefix text before \Verb*|vf-wrap-fancy-star a  b|.
+\end{minipage}
+
+\begin{Verbatim*}
+vf-fancy-block-star two  spaces
+\end{Verbatim*}
+\begin{Verbatim}[showspaces=true]
+vf-fancy-showspaces two  spaces
+\end{Verbatim}
 \begin{Verbatim}
 vf-fancy-block  a_b#c%
 \end{Verbatim}
 \VerbatimInput{test-verbatim-font.txt}
+
+{\small\verb|vf-small|}
+
+{\footnotesize
+\begin{verbatim}
+vf-block-small
+\end{verbatim}
+}
+
+\begin{Verbatim}[fontsize=\small]
+vf-fancy-small
+\end{Verbatim}
 \end{document}

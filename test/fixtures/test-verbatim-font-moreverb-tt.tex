@@ -1,0 +1,19 @@
+\documentclass{article}
+\usepackage{moreverb}
+% A typewriter body font: tex4ht writes no font span for the literal text,
+% so the padding and the source spaces share the block's text.
+\renewcommand\familydefault{\ttdefault}
+\begin{document}
+Paragraph before the reference block.
+\begin{verbatim}
+vf-first-reference
+reference-second
+\end{verbatim}
+\begin{listing}{1}
+vf-tt-listing a  b
+tt-second
+
+    tt-indented
+\end{listing}
+\verbatimtabinput{test-verbatim-font.txt}
+\end{document}

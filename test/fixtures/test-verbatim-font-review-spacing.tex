@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage{moreverb}
+\begin{document}
+Paragraph before a listing.
+\begin{listing}{1}
+listing-one
+\end{listing}
+Paragraph after a listing and before tabbed input.
+\verbatimtabinput{test-verbatim-font.txt}
+Paragraph after tabbed input and before numbered input.
+\listinginput{1}{test-verbatim-font.txt}
+Paragraph after numbered input.
+\begin{listing}{1}
+listing-two
+\end{listing}
+\verbatimtabinput{test-verbatim-font.txt}
+\listinginput{1}{test-verbatim-font.txt}
+\begin{listing}{1}
+listing-three
+\end{listing}
+Paragraph after adjacent blocks.
+\end{document}

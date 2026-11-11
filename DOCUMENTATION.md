@@ -304,6 +304,7 @@ These differences cannot be turned off.
 - A picture is at its PDF size until the column is narrower than the picture, and then scaled down to the column width.
 - Minipages and subfigures that share a line in the PDF are side by side at their PDF widths, and wrap on a narrow screen.
 - Display math wider than the column scrolls sideways, and so do wide tables and verbatim blocks on a narrow screen. With JavaScript on, these blocks fade out at an edge where more of the block is hidden.
+- Long inline literals can wrap between any characters on narrow screens and in margin notes.
 - The table of contents has no page numbers or dot leaders.
 - An index is in one column. In place of page numbers, each entry has numbers that count the `\index` commands in order, and each number links to its `\index`.
 

@@ -28,8 +28,8 @@ return {
       "lmroman10-regular.woff2 lmsans10-oblique.woff2")
   end,
 
-  ["assets.faces: headings and their labels in the fonts the stylesheet gives them, verbatim in the browser's"] = function()
-    equal(faces('<h3 class="sectionHead">A</h3><pre class="verbatim">b</pre><code class="verb">c</code>', ""),
+  ["assets.faces: headings and their labels in the fonts the stylesheet gives them"] = function()
+    equal(faces('<h3 class="sectionHead">A</h3><pre>b</pre><code>c</code>', ""),
       "lmroman10-bold.woff2 lmroman10-regular.woff2")
     equal(faces('<h3 class="sectionHead">A</h3><h1 class="titleHead">T</h1>',
       ":root { --tex8web-section-family: var(--tex8web-sans);\n --tex8web-section-weight: normal; "
@@ -42,6 +42,24 @@ return {
       ":root { --tex8web-chapter-family: var(--tex8web-sans);\n --tex8web-chapter-weight: normal;\n"
       .. " --tex8web-chapter-label-family: var(--tex8web-roman); --tex8web-chapter-label-weight: bold; }"),
       "lmroman10-bold.woff2 lmroman10-regular.woff2 lmsans10-regular.woff2")
+  end,
+
+  ["assets.faces: literals in the document's typewriter font, an inline listing in the text's"] = function()
+    for _, literal in ipairs({'<pre class="verbatim">b</pre>', '<em><code class="verb">b</code></em>',
+        '<div class="listing">b</div>', '<div class="verbatimtabinput">b</div>'}) do
+      equal(faces(literal, ""), "lmmono10-regular.woff2 lmroman10-regular.woff2")
+    end
+    equal(faces('<em><code class="lstinline">b</code></em>', ""), "lmroman10-italic.woff2 lmroman10-regular.woff2")
+    -- (the stylesheet's rules name the element too: a span.verb or a
+    -- div.verbatim stays in the text's font)
+    equal(faces('<span class="verb">b</span><div class="verbatim">c</div>', ""), "lmroman10-regular.woff2")
+    local roles = {body = "roman", others = {}, mono = {files = {regular = "texgyrecursor-regular"}, classes = {"pcrr"}}}
+    equal(faces('<pre class="verbatim">b</pre>', "", roles), "lmroman10-regular.woff2 texgyrecursor-regular.woff2")
+  end,
+
+  ["assets.faces: roman text in moreverb's listings, as its line numbers"] = function()
+    equal(faces('<div class="listinginput"><span class="cmbx-9">1</span></div>', ".cmbx-9{ font-weight: bold;}\n"),
+      "lmroman10-bold.woff2 lmroman10-regular.woff2")
   end,
 
   ["assets.faces: a table of contents' entries in their level's font"] = function()

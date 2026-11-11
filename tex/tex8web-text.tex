@@ -2,6 +2,74 @@
 % and figures. tcolorbox's boxes are in tex8web-boxes.tex.
 \makeatletter
 
+% html4.4ht suppresses font spans in literals. Keep the spans so that
+% the selected typewriter family and size survive, including file input.
+\catcode58 11
+\Configure{verb}
+    {\HCode{<code class="verb"\a:LRdir>}}
+    {\HCode{</code>}}
+\web@needs{env:verb}
+\web@needs{endenv:verb}
+\def\env:verb#1{\ifinner\else\vfill\break\fi
+    \IgnorePar\EndP\HAssign\Verb:N=0
+    \gHAdvance\verbatimN by 1
+    \HCode{<pre class="#1" id="verbatim-\verbatimN"\a:LRdir>}\HtmlParOff}
+\def\web@endverb#1{\NoFonts\EndP\ht:special{t4ht=</pre>#1}\EndNoFonts
+    \HtmlParOn\ShowPar\par{\HCondtrue\noindent}}
+\def\endenv:verb{\web@endverb{}}
+\@ifpackageloaded{verbatim}{%
+    \Configure{verbatiminput}
+        {\HAssign\Verb:N=0\ifvmode\IgnorePar\fi\EndP
+         \HCode{<div class="verbatiminput"\a:LRdir>}\HtmlParOff}
+        {\HCode{</div>}\HtmlParOn}}{}
+% memoir emulates moreverb without loading its tex4ht hooks.
+\ifcsname a:listinginput\endcsname
+    \ConfigureEnv{listing}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{<div class="listing">}}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}{}{}%
+    \ConfigureEnv{listingcont}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{<div class="listing">}}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}{}{}%
+    % moreverb's starred listings use character 32 directly. Use LaTeX's
+    % visible-space setup after \@verbatim has reset the space catcode.
+    % The environment's body patches \@verbatim, so that the patch ends
+    % with the environment's group; listing* ends in listingcont*.
+    \web@needs{@verbatim}\web@needs{@setupverbvisiblespace}%
+    \web@needs{listingcont*}%
+    \expandafter\pend:def\csname listingcont*\endcsname
+        {\append:def\@verbatim{\@setupverbvisiblespace\@vobeyspaces}}%
+    \ConfigureEnv{listing*}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{<div class="listing">}}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}{}{}%
+    \ConfigureEnv{listingcont*}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{<div class="listing">}}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}{}{}%
+    \Configure{listinginput}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{<div class="listinginput">}}
+        {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}%
+    % html4.4ht opens a table around the box, but closes only its pre.
+    \def\env:verB#1{\IgnorePar\EndP
+        \HCode{<table class="#1"><tr class="#1"><td class="#1">}\env:verb{#1}}
+    \ConfigureEnv{boxedverbatim}{\env:verB{boxedverbatim}}
+        {\web@endverb{</td></tr></table>}}{}{}%
+\fi
+% html4.4ht's listings-init hook sets \ttfamily after basicstyle. An
+% inline listing keeps the font of basicstyle, as in the PDF, so the
+% hook is redefined within the \lstinline group only.
+\@ifpackageloaded{listings}{%
+    \Configure{lstinline}
+        {\HCode{<code class="lstinline">}\HtmlParOff
+         \expandafter\def\csname a:listings-init\endcsname{\ht:special{t4ht@(}}}
+        {\HtmlParOn\HCode{</code>}}}{}
+\catcode58 12
+
+% The virtual Courier fonts map character 32 to an ordinary space.
+% Starred literals need a visible space regardless of the selected font.
+\web@needs{verbvisiblespace}
+\ifx\verbvisiblespace\asciispace
+    \def\verbvisiblespace{\leavevmode\special{t4ht@+&{35}x2423;}\asciispace}%
+\fi
+
 % --- title ------------------------------------------------------------------
 
 % each \thanks mark where the \thanks is, as in the PDF. tex4ht (latex.4ht)

@@ -1,0 +1,28 @@
+\usepackage{listings,color}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+Default \lstinline|vf-review-default| beside \textnormal{vf-review-roman-reference}.
+
+{\itshape Default italic \lstinline|vf-review-default-italic| beside vf-review-italic-reference.}
+
+{\itshape Typewriter italic \lstinline[basicstyle=\ttfamily]|vf-review-italic-tt| beside {\ttfamily vf-review-tt-reference}.}
+
+A 35-character literal: \verb|abcdefghijklmnopqrstuvwxyz123456789|.
+
+A path: \verb|https://example.org/a-long-path/file|.
+
+A dotted identifier: \verb|org.example.project.module.subpackage.ClassName|.
+
+\begin{itemize}
+\item A literal inside a list: \verb|abcdefghijklmnopqrstuvwxyz123456789|.
+\end{itemize}
+\begin{theorem}
+A literal inside a theorem: \verb|abcdefghijklmnopqrstuvwxyz123456789|.
+\end{theorem}
+
+\lstinline[basicstyle=\normalfont\ttfamily]|for (int i = 0; i < n; i++) total += values[i];|.
+
+A footnote with an inline listing.\footnote{Run \lstinline|make4ht -c tex8web.cfg -f html5 main.tex| first.}
+
+A footnote with a hyphenated path.\footnote{See \lstinline[basicstyle=\ttfamily]|a-long-hyphenated-path/with/slashes-in-it| here.}
+\end{document}

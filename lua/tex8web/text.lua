@@ -245,6 +245,8 @@ local function is_verbatim(el)
   local name = el:get_element_name()
   return name == "pre" or name == "code" or dom.has_class(el, "lstlisting")
     or dom.has_class(el, "verbatiminput") or dom.has_class(el, "alltt")
+    or dom.has_class(el, "listing") or dom.has_class(el, "listinginput")
+    or dom.has_class(el, "verbatimtabinput")
 end
 
 local function is_nbsp(node)
@@ -407,6 +409,55 @@ function M.no_break_spaces(document)
     end
     dom.set_children(el, wrapped)
   end)
+end
+
+-- HTML parsing drops the first newline of a pre, but not of moreverb's
+-- divs. Drop the same newline so these blocks start at the same height.
+-- The CSS keeps every space in these divs, so also drop tex4ht's padding
+-- spaces on the first line and after the last. Source spaces are no-break
+-- spaces, which stay. (The padding may span several text nodes: each edit
+-- reads the run of text nodes at that end of the block as one text.)
+function M.literal_blocks(document)
+  local function edit(nodes, change)
+    if #nodes == 0 then return end
+    local parts = {}
+    for i, node in ipairs(nodes) do parts[i] = node:get_text() end
+    for i, node in ipairs(nodes) do dom.set_node_text(node, i == 1 and change(table.concat(parts)) or "") end
+  end
+  for _, block in ipairs(document:query_selector("div.listing, div.verbatimtabinput")) do
+    local children = block:get_children()
+    local first, last = {}, {}
+    for _, child in ipairs(children) do
+      if not child:is_text() then break end
+      first[#first + 1] = child
+    end
+    for i = #children, 1, -1 do
+      if not children[i]:is_text() then break end
+      table.insert(last, 1, children[i])
+    end
+    edit(first, function(text) return (text:gsub("^\n", "", 1):gsub("^ +\n", "\n", 1)) end)
+    edit(last, function(text) return (text:gsub(" +$", "", 1)) end)
+  end
+end
+
+-- Short inline literals keep opening punctuation on their line. Only
+-- longer literals need a constrained box on a narrow screen. A literal of
+-- 20 characters is at most about 11em wide (a typewriter character is
+-- about 0.525em), half of a phone's column of about 22em, so it fits on a
+-- line with its punctuation.
+function M.long_literals(document)
+  for _, code in ipairs(document:query_selector("code.verb, code.lstinline")) do
+    if utf8.len(code:get_text()) > 20 then
+      local parent = code:get_parent()
+      local box = parent:create_element("span", {class = "tex8web-long-literal"})
+      local children = parent:get_children()
+      for i, child in ipairs(children) do
+        if child == code then children[i] = box end
+      end
+      dom.set_children(parent, children)
+      box:add_child_node(code)
+    end
+  end
 end
 
 -- minipages and subfigures side by side (tex8web-text.tex): each run of

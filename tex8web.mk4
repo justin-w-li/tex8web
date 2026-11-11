@@ -118,6 +118,8 @@ local passes = {
   text.hfill,
   text.cell_align,
   text.no_break_spaces,
+  text.long_literals,
+  text.literal_blocks,
   text.url_breaks,
   text.minipages,
   text.sidenotes,

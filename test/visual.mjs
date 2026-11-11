@@ -513,39 +513,562 @@ async function hanging(page, doc, where) {
     ...wrong.map(([name, what]) => `${where}: the picture ${name}: ${what}`)];
 }
 
-// Check the font on each literal text node, including spans inside a
-// verbatim block. Counting each marker also catches missing fixture cases.
+// Measure literal text against its intended font, including visible spaces.
+// Counts guard the cases; style, weight, and size guard their TeX context.
+const verbatimCases = ['heading', 'inline', 'star', 'italic', 'italic-star', 'bold',
+  'sans', 'typewriter', 'footnote', 'footnote-verb', 'block', 'block-star',
+  'block-italic', 'block-sans', 'block-typewriter', 'theorem', 'block-theorem',
+  'texttt', 'alltt', 'fancy-inline', 'fancy-block', 'file', 'small', 'block-small', 'fancy-small',
+  'wrap-kernel', 'wrap-kernel-star', 'wrap-fancy', 'wrap-fancy-star',
+  'fancy-star', 'fancy-block-star', 'fancy-showspaces'];
 const verbatimFamilies = {
   'test-verbatim-font': 'Latin Modern Mono',
   'test-verbatim-font-hyperref': 'Latin Modern Mono',
   'test-verbatim-font-t1': 'Latin Modern Mono',
   'test-verbatim-font-lmodern': 'Latin Modern Mono',
   'test-verbatim-font-courier': 'TeX Gyre Cursor',
+  'test-verbatim-font-courier-only': 'TeX Gyre Cursor',
+  'test-verbatim-font-times': 'TeX Gyre Cursor',
+  'test-verbatim-font-kernel': 'Latin Modern Mono',
+  'test-verbatim-font-memoir': 'Latin Modern Mono',
+  'test-verbatim-font-moreverb': 'Latin Modern Mono',
+  'test-verbatim-font-moreverb-courier': 'TeX Gyre Cursor',
+  'test-verbatim-font-smallfont': 'Latin Modern Mono',
+  'test-verbatim-font-other': 'monospace',
+  'test-verbatim-font-sourcecodepro': 'Latin Modern Mono',
+  'test-verbatim-font-visible': 'TeX Gyre Cursor',
 };
-const verbatimFonts = family => `(() => {
-  const cases = ['heading', 'inline', 'star', 'italic', 'italic-star', 'bold',
-    'sans', 'typewriter', 'footnote', 'block', 'block-star',
-    'block-italic', 'block-sans', 'block-typewriter', 'theorem', 'block-theorem',
-    'texttt', 'alltt', 'fancy-inline', 'fancy-block', 'file'];
+const verbatimMetrics = {
+  default: { fileCount: 3, size: 1, sizes: {
+    'vf-block-small': 0.8, 'vf-footnote': 0.8, 'vf-footnote-verb': 0.8,
+    'vf-small': 0.9, 'vf-fancy-small': 0.9,
+    'vf-kernel-small': 0.9, 'vf-kernel-block-small': 0.8,
+  } },
+  'test-verbatim-font-moreverb': { fileCount: 2, size: 1 },
+  'test-verbatim-font-smallfont': { fileCount: 1, size: 0.9 },
+  'test-verbatim-font-sourcecodepro': { fileCount: 1, size: 1 },
+};
+const verbatimExtraCases = {
+  'test-verbatim-font-kernel': ['kernel', 'kernel-star', 'kernel-block', 'kernel-block-star',
+    'kernel-small', 'kernel-block-small'],
+  'test-verbatim-font-memoir': ['memoir'],
+  'test-verbatim-font-moreverb': ['boxed', 'tabbed', 'file', 'listing', 'listingcont'],
+  'test-verbatim-font-moreverb-courier': ['listing-star', 'listingcont-star'],
+  'test-verbatim-font-smallfont': ['template-inline', 'template-block', 'file'],
+  'test-verbatim-font-other': ['other', 'other-tt', 'other-block'],
+  'test-verbatim-font-sourcecodepro': ['fallback-inline', 'fallback-block', 'file'],
+  'test-verbatim-font-visible': ['custom-inline', 'custom-block', 'custom-fancy', 'custom-fancy-block'],
+};
+const verbatimFonts = (family, name) => `(async () => {
+  const cases = ${JSON.stringify(verbatimExtraCases[name] ?? verbatimCases)};
+  const family = ${JSON.stringify(family)};
+  const metrics = ${JSON.stringify(verbatimMetrics[name] ?? verbatimMetrics.default)};
   const found = Object.fromEntries(cases.map(name => ['vf-' + name, []]));
   const nodes = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT);
   while (nodes.nextNode()) {
     const node = nodes.currentNode;
     for (const marker of node.textContent.match(/vf-[a-z-]+/g) ?? []) {
-      if (found[marker]) found[marker].push(node.parentElement);
+      if (found[marker]) found[marker].push(node);
     }
   }
   const wrong = [];
-  for (const [marker, elements] of Object.entries(found)) {
-    const count = marker === 'vf-file' ? 3 : 1;
-    if (elements.length !== count) wrong.push([marker, elements.length + ' text nodes, expected ' + count]);
-    for (const el of elements) {
-      const got = getComputedStyle(el).fontFamily.split(',')[0].replaceAll('"', '').trim();
-      if (got !== ${JSON.stringify(family)}) wrong.push([marker, got + ', expected ' + ${JSON.stringify(family)}]);
+  if (family !== 'monospace') {
+    const faces = await document.fonts.load('16px "' + family + '"');
+    if (!faces.length || faces.some(face => face.status !== 'loaded')) {
+      wrong.push(['font', family + ' did not load']);
+    }
+  }
+  const base = parseFloat(getComputedStyle(document.body).fontSize);
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;';
+  document.body.append(probe);
+  for (const [marker, texts] of Object.entries(found)) {
+    const count = marker === 'vf-file' ? metrics.fileCount : 1;
+    if (texts.length !== count) wrong.push([marker, texts.length + ' text nodes, expected ' + count]);
+    for (const node of texts) {
+      const style = getComputedStyle(node.parentElement);
+      const declared = style.fontFamily.split(',')[0].replaceAll('"', '').trim();
+      if (declared !== family) wrong.push([marker, declared + ', expected ' + family]);
+      const size = parseFloat(style.fontSize);
+      const ratio = metrics.sizes?.[marker] ?? metrics.size;
+      if (marker !== 'vf-heading' && Math.abs(size / base - ratio) > 0.011) {
+        wrong.push([marker, 'font size ' + size / base + ', expected ' + ratio]);
+      }
+      if (marker !== 'vf-heading' && (style.fontStyle !== 'normal' || style.fontWeight !== '400')) {
+        wrong.push([marker, style.fontStyle + ' ' + style.fontWeight + ', expected normal 400']);
+      }
+      const text = node.textContent.trim();
+      const start = node.textContent.indexOf(text);
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, start + text.length);
+      if (node.parentElement.closest('code.verb') && range.getClientRects().length !== 1) {
+        wrong.push([marker, 'inline literal breaks across lines']);
+      }
+      const actual = range.getBoundingClientRect().width;
+      probe.style.font = style.fontWeight + ' ' + size + 'px ' + (family === 'monospace' ? family : '"' + family + '"');
+      probe.textContent = text;
+      const expected = probe.getBoundingClientRect().width;
+      if (Math.abs(actual - expected) > 0.1) {
+        wrong.push([marker, actual.toFixed(2) + 'px wide, expected ' + expected.toFixed(2) + 'px in ' + family]);
+      }
+      if (text.includes('␣')) {
+        probe.textContent = '␣';
+        const space = probe.getBoundingClientRect().width;
+        probe.textContent = 'x';
+        if (Math.abs(space - probe.getBoundingClientRect().width) > 0.1) {
+          wrong.push([marker, 'visible space is not one typewriter character wide']);
+        }
+      }
+    }
+  }
+  probe.remove();
+  return wrong;
+})()`;
+
+// A verbatim block in a typewriter font tex8web does not have keeps the
+// line pitch of the document's typewriter font, as every other verbatim
+// block does, and not the shorter one of the browser's monospace.
+const fallbackPitch = `(async () => {
+  await document.fonts.load('16px "Latin Modern Mono"');
+  const pre = document.querySelector('pre.verbatim');
+  if (!pre) return ['no verbatim block'];
+  const tops = ['vf-other-block', 'vf-other-second'].map(marker => {
+    const nodes = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT);
+    while (nodes.nextNode()) {
+      const node = nodes.currentNode, start = node.textContent.indexOf(marker);
+      if (start < 0) continue;
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, start + marker.length);
+      return range.getBoundingClientRect().top;
+    }
+  });
+  if (tops.includes(undefined)) return ['verbatim block lines missing'];
+  const line = document.createElement('div');
+  line.style.cssText = 'line-height: normal; font-family: "Latin Modern Mono"; font-size: ' + getComputedStyle(pre).fontSize;
+  line.textContent = 'x';
+  document.body.append(line);
+  const want = line.getBoundingClientRect().height;
+  line.remove();
+  const pitch = tops[1] - tops[0];
+  return Math.abs(pitch - want) > 0.5
+    ? ['verbatim lines ' + pitch.toFixed(2) + 'px apart, expected ' + want.toFixed(2) + 'px as in Latin Modern Mono'] : [];
+})()`;
+
+// Each source line of a listing, a tabbed file, or a tabbed block stays on
+// its own line.
+const listingLines = starred => `(() => {
+  const cases = ${JSON.stringify(starred
+    ? [['div.listing', 'vf-listing-star', 'star-second'],
+      ['div.listing', 'vf-listingcont-star', 'cont-star-second']]
+    : [['div.listing', 'vf-listing', 'listing-second'],
+      ['div.listing', 'vf-listingcont', 'cont-second'],
+      ['div.verbatimtabinput', 'vf-file', 'file-second'],
+      ['pre.verbatim', 'vf-tabbed', 'tabbed-two']])};
+  const wrong = [];
+  for (const [selector, first, second] of cases) {
+    const block = [...document.querySelectorAll(selector)].find(el => el.textContent.includes(first));
+    if (!block) { wrong.push(first + ': missing block'); continue; }
+    const tops = [];
+    for (const marker of [first, second]) {
+      const nodes = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+      let found = false;
+      while (nodes.nextNode()) {
+        const node = nodes.currentNode, start = node.textContent.indexOf(marker);
+        if (start < 0) continue;
+        const range = document.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, start + marker.length);
+        tops.push(range.getBoundingClientRect().top);
+        found = true;
+        break;
+      }
+      if (!found) wrong.push(marker + ': missing text');
+    }
+    if (tops.length === 2 && tops[1] <= tops[0] + 1) wrong.push(first + ': source lines collapsed');
+  }
+  return wrong;
+})()`;
+
+// A tab in a tabbed block (moreverb's verbatimtab) reaches the next tab
+// stop, eight columns, as in the PDF: the text after it starts sixteen
+// characters from the line's start.
+const tabColumns = `(() => {
+  const block = [...document.querySelectorAll('pre.verbatim')].find(el => el.textContent.includes('tabbed-two'));
+  if (!block) return ['tabbed-two: missing block'];
+  const nodes = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  while (nodes.nextNode()) {
+    const node = nodes.currentNode, start = node.textContent.indexOf('tabbed-two');
+    if (start < 0) continue;
+    const end = node.textContent.indexOf('end', start);
+    if (end < 0) return ['tabbed-two: missing text after the tab'];
+    const left = offset => {
+      const range = document.createRange();
+      range.setStart(node, offset);
+      range.setEnd(node, offset + 1);
+      return range.getBoundingClientRect().left;
+    };
+    const char = (left(start + 9) - left(start)) / 9, columns = (left(end) - left(start)) / char;
+    return Math.abs(columns - 16) > 0.1 ? ['tabbed-two: text after the tab at column ' + columns.toFixed(2) + ', expected 16'] : [];
+  }
+  return ['tabbed-two: missing text'];
+})()`;
+
+// A long inline literal wraps on a phone, and stays whole on wide screens
+// and in print, where TeX does not break literals at hyphens or slashes.
+async function inlineLiteralLines(chrome, file, count) {
+  const wrong = [];
+  for (const [width, media] of [[1600, 'screen'], [740, 'print'], [390, 'screen']]) {
+    const problems = await chrome.withPage(pathToFileURL(file).href,
+      { width, javascript: false }, async page => {
+        await page.media(media);
+        return page.evaluate(`(() => {
+          const codes = [...document.querySelectorAll('code.verb')];
+          const paths = codes.filter(el => el.textContent.startsWith('/usr/local/texlive/'));
+          const wrong = [];
+          if (paths.length !== ${count}) wrong.push('expected ${count} long inline literals, found ' + paths.length);
+          for (const code of codes) {
+            const range = document.createRange();
+            range.selectNodeContents(code);
+            const lines = new Set([...range.getClientRects()].map(rect => rect.top));
+            const wrap = ${media === 'screen' && width === 390} && paths.includes(code);
+            if (wrap ? lines.size <= 1 : lines.size !== 1) {
+              wrong.push(code.textContent + ': ' + (wrap ? 'long inline literal does not wrap' : 'inline literal breaks across lines'));
+            }
+          }
+          return wrong;
+        })()`);
+      });
+    wrong.push(...problems.map(problem => width + 'px ' + media + ': ' + problem));
+  }
+  return wrong;
+}
+
+// Match listings' font choices to ordinary text in the same TeX font.
+// Measure both the code box and its glyphs, including unbreakable identifiers.
+// family: the document's typewriter family, where tex8web maps its italic
+// (null for Computer Modern's cmitt, which it does not map yet).
+async function reviewLiterals(chrome, file, family) {
+  const wrong = [];
+  // (1064px: the narrowest wide screen for these pages, 66.5em)
+  for (const [width, media] of [[320, 'screen'], [360, 'screen'], [390, 'screen'],
+      [1064, 'screen'], [1600, 'screen'], [740, 'print'], [1600, 'print']]) {
+    const problems = await chrome.withPage(pathToFileURL(file).href,
+      { width, javascript: false }, async page => {
+        await page.media(media);
+        return page.evaluate(`(async () => {
+          await document.fonts.ready;
+          const codes = [...document.querySelectorAll('code.verb, code.lstinline')];
+          if (codes.length !== 11) return ['expected eleven review literals'];
+          const wrong = [];
+          const reference = marker => {
+            const nodes = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT);
+            while (nodes.nextNode()) {
+              if (nodes.currentNode.textContent.includes(marker)) return getComputedStyle(nodes.currentNode.parentElement);
+            }
+          };
+          for (const [marker, ref] of [['vf-review-default', 'vf-review-roman-reference'],
+              ['vf-review-default-italic', 'vf-review-italic-reference'],
+              ['vf-review-italic-tt', 'vf-review-tt-reference']]) {
+            const code = codes.find(el => el.textContent.replace(/\u2212/g, '-') === marker), want = reference(ref);
+            if (!code || !want) { wrong.push('missing font comparison for ' + marker); continue; }
+            const nodes = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+            while (nodes.nextNode()) {
+              // (tex4ht gives a TS1 italic minus no italic style; a minus looks the same in both)
+              if (!nodes.currentNode.textContent.replace(/\u2212/g, '').trim()) continue;
+              const got = getComputedStyle(nodes.currentNode.parentElement);
+              for (const property of ['fontFamily', 'fontStyle', 'fontWeight', 'fontSize']) {
+                if (got[property] !== want[property]) wrong.push(marker + ': ' + property + ' is ' + got[property] + ', expected ' + want[property]);
+              }
+              const family = ${JSON.stringify(family)};
+              if (marker === 'vf-review-italic-tt' && family &&
+                  got.fontFamily.split(',')[0].replaceAll('"', '').trim() !== family) {
+                wrong.push(marker + ': font family is ' + got.fontFamily + ', expected ' + family);
+              }
+            }
+          }
+          for (const code of codes) {
+            const range = document.createRange();
+            range.selectNodeContents(code);
+            const rects = [...range.getClientRects()].filter(rect => rect.width > 0);
+            // (a wide printed page floats margin notes as a wide screen does)
+            const note = code.closest('.tex8web-sidenote');
+            const sidenote = note && getComputedStyle(note).float !== 'none' && note;
+            if (sidenote) {
+              // (a margin note is narrower than a long literal: it wraps there)
+              const bounds = sidenote.getBoundingClientRect();
+              for (const rect of [code.getBoundingClientRect(), ...rects]) {
+                if (rect.left < bounds.left - 1 || rect.right > bounds.right + 1) {
+                  wrong.push(code.textContent + ': literal extends past its margin note'); break;
+                }
+              }
+            } else if (${media === 'screen' && width <= 390}) {
+              const paragraph = code.closest('p'), bounds = paragraph?.getBoundingClientRect();
+              if (!bounds) { wrong.push('literal has no paragraph'); continue; }
+              const style = getComputedStyle(paragraph);
+              const left = bounds.left + parseFloat(style.paddingLeft), right = bounds.right - parseFloat(style.paddingRight);
+              for (const rect of [code.getBoundingClientRect(), ...rects]) {
+                if (rect.left < left - 1 || rect.right > right + 1) {
+                  wrong.push(code.textContent + ': literal extends past its column'); break;
+                }
+              }
+            } else if (rects.some(rect => rect.top > rects[0].top + rects[0].height / 2)) {
+              // (text in different fonts on one line has different tops)
+              wrong.push(code.textContent + ': literal breaks on a wide screen or in print');
+            }
+          }
+          if (${media === 'screen'} && document.documentElement.scrollWidth > innerWidth + 1) {
+            wrong.push('literals widened the page');
+          }
+          return wrong;
+        })()`);
+      });
+    wrong.push(...problems.map(p => width + 'px ' + media + ': ' + p));
+  }
+  return wrong;
+}
+
+// Reuse the list-spacing measurement for all moreverb block forms.
+const moreverbSpaced = blocksSpaced.replace('pre.verbatim', 'div.listing, div.listinginput, div.verbatimtabinput');
+
+// Opening punctuation shares a line with a short literal at phone widths.
+async function literalOpeners(chrome, file) {
+  const wrong = [];
+  for (const width of [320, 390, 480]) {
+    const problems = await chrome.withPage(pathToFileURL(file).href,
+      { width, javascript: false }, page => page.evaluate(`(() => {
+        const codes = [...document.querySelectorAll('code.verb')].filter(el => el.textContent === 'xxxx');
+        const wrong = [];
+        if (codes.length !== 2) return ['expected two literals with opening punctuation'];
+        for (const code of codes) {
+          const wrapper = code.closest('.obeylines-h') ?? code;
+          const before = wrapper.previousSibling;
+          if (!before || before.nodeType !== Node.TEXT_NODE || !/[(“]$/.test(before.textContent.trimEnd())) {
+            wrong.push('missing opening bracket or quote'); continue;
+          }
+          const opener = document.createRange(), literal = document.createRange();
+          const end = before.textContent.trimEnd().length;
+          opener.setStart(before, end - 1); opener.setEnd(before, end);
+          literal.selectNodeContents(code);
+          const paragraph = code.closest('p');
+          for (const chars of [14, 15, 16, 17, 18]) {
+            paragraph.style.width = chars + 'ch';
+            const a = opener.getBoundingClientRect(), b = literal.getBoundingClientRect();
+            if (Math.abs(a.top - b.top) > parseFloat(getComputedStyle(paragraph).lineHeight) / 2) {
+              wrong.push(chars + 'ch: opener stranded before ' + code.textContent);
+            }
+          }
+          paragraph.style.removeProperty('width');
+        }
+        return wrong;
+      })()`));
+    wrong.push(...problems.map(p => width + 'px: ' + p));
+  }
+  return wrong;
+}
+
+// Match the first source line's offset to a pre, including its parser newline.
+const literalBlockStarts = `(() => {
+  const firstTop = (block, marker) => {
+    const nodes = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    while (nodes.nextNode()) {
+      const node = nodes.currentNode, start = node.textContent.indexOf(marker);
+      if (start < 0) continue;
+      const range = document.createRange();
+      range.setStart(node, start); range.setEnd(node, start + marker.length);
+      return range.getBoundingClientRect().top - block.getBoundingClientRect().top;
+    }
+    return null;
+  };
+  const reference = [...document.querySelectorAll('pre.verbatim')].find(el => el.textContent.includes('vf-first-reference'));
+  if (!reference) return ['missing reference pre'];
+  const expected = firstTop(reference, 'vf-first-reference'), wrong = [];
+  const blocks = [...document.querySelectorAll('div.listing, div.verbatimtabinput')];
+  if (blocks.length < 2) return ['missing literal blocks'];
+  for (const block of blocks) {
+    const marker = block.textContent.match(/vf-[a-z-]+/)?.[0];
+    const actual = marker && firstTop(block, marker);
+    if (actual == null || Math.abs(actual - expected) > 1) {
+      wrong.push(marker + ': first line is ' + actual + 'px below block top, expected ' + expected);
+    }
+    if (block.previousElementSibling?.matches('div.listing')) {
+      const gap = parseFloat(getComputedStyle(block).marginTop);
+      const listGap = parseFloat(getComputedStyle(reference).marginTop);
+      if (Math.abs(gap - listGap) > 0.5) wrong.push(marker + ': missing list spacing');
     }
   }
   return wrong;
 })()`;
+
+async function listingFades(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 390 }, page =>
+    page.evaluate(`(async () => {
+      await document.fonts.ready;
+      await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+      const blocks = [...document.querySelectorAll('div.listing, div.verbatimtabinput')]
+        .filter(el => el.scrollWidth > el.clientWidth);
+      if (blocks.length !== 2) return ['expected two scrolling literal blocks, found ' + blocks.length];
+      const wrong = [];
+      const files = [...document.querySelectorAll('div.listinginput')];
+      if (files.length !== 1) wrong.push('expected one numbered file listing, found ' + files.length);
+      for (const file of files) {
+        if (file.scrollWidth <= file.clientWidth || getComputedStyle(file).overflowX !== 'auto') {
+          wrong.push('long numbered file listing does not scroll inside its box');
+        }
+      }
+      blocks.push(...files);
+      for (const block of blocks) {
+        const hidden = () => parseFloat(block.style.getPropertyValue('--tex8web-hidden-right'));
+        if (!block.classList.contains('tex8web-scrolls') || !(hidden() > 0)) {
+          wrong.push(block.className + ': missing right edge fade');
+        }
+        block.scrollLeft = block.scrollWidth;
+        await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+        if (hidden() > 1 || !(parseFloat(block.style.getPropertyValue('--tex8web-hidden-left')) > 0)) {
+          wrong.push(block.className + ': edge fade did not follow scrolling');
+        }
+      }
+      return wrong;
+    })()`));
+}
+
+// Source blank lines and indentation survive collapsing tex4ht's padding.
+const listingWhitespace = `(() => {
+  const block = [...document.querySelectorAll('div.listing')].find(el => el.textContent.includes('cont-indented'));
+  if (!block) return ['missing indented listing line'];
+  const positions = [];
+  for (const marker of ['vf-listingcont', 'cont-second', 'cont-indented']) {
+    const nodes = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    while (nodes.nextNode()) {
+      const node = nodes.currentNode, start = node.textContent.indexOf(marker);
+      if (start < 0) continue;
+      const range = document.createRange();
+      range.setStart(node, start); range.setEnd(node, start + 1);
+      positions.push(range.getBoundingClientRect());
+      break;
+    }
+  }
+  if (positions.length !== 3) return ['missing listing whitespace markers'];
+  const [first, second, indented] = positions, wrong = [];
+  if (Math.abs(indented.top - second.top - 2 * (second.top - first.top)) > 1) {
+    wrong.push('source blank line in listing was lost');
+  }
+  if (Math.abs(indented.left - second.left - 4 * indented.width) > 1) {
+    wrong.push('source indentation in listing was lost');
+  }
+  return wrong;
+})()`;
+
+// moreverb's line numbers are in the roman font (\small\rmfamily), as in
+// the PDF, in listings and file listings.
+const listingNumbers = `(() => {
+  const numbers = [...document.querySelectorAll('div.listing span, div.listinginput span')]
+    .filter(span => /^cmr-/.test(span.className));
+  if (!numbers.length) return ['missing listing line numbers'];
+  return numbers.filter(span => !getComputedStyle(span).fontFamily.startsWith('"Latin Modern Roman"'))
+    .map(span => \`line number "\${span.textContent.trim()}" in \${getComputedStyle(span).fontFamily}\`);
+})()`;
+
+// In a typewriter document, moreverb's literal text is bare text in the
+// block. Its padding after the line number, its indentation, and its blank
+// line show as in the PDF, and the block neither scrolls nor ends in a
+// padding line.
+const typewriterListing = `(() => {
+  const block = [...document.querySelectorAll('div.listing')].find(el => el.textContent.includes('vf-tt-listing'));
+  const file = [...document.querySelectorAll('div.verbatimtabinput')].find(el => el.textContent.includes('file-second'));
+  if (!block || !file) return ['missing typewriter listing or tabbed input'];
+  const box = (root, marker, length = 1) => {
+    const nodes = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (nodes.nextNode()) {
+      const node = nodes.currentNode, start = node.textContent.indexOf(marker);
+      if (start < 0) continue;
+      const range = document.createRange();
+      range.setStart(node, start); range.setEnd(node, start + length);
+      return range.getBoundingClientRect();
+    }
+    return null;
+  };
+  const number = block.querySelector('span');
+  const one = number && box(number, '1'), first = box(block, 'vf-tt-listing');
+  const second = box(block, 'tt-second'), indented = box(block, 'tt-indented');
+  if (!one || !first || !second || !indented) return ['missing typewriter listing markers'];
+  const wrong = [], char = first.width;
+  if (Math.abs(first.left - one.right - 3 * char) > 1) {
+    wrong.push('padding after the line number is ' + (first.left - one.right) + 'px, not three spaces');
+  }
+  if (Math.abs(indented.left - second.left - 4 * char) > 1) wrong.push('source indentation in listing was lost');
+  if (Math.abs(indented.top - second.top - 2 * (second.top - first.top)) > 1) {
+    wrong.push('source blank line in listing was lost');
+  }
+  for (const el of [block, file]) {
+    if (el.scrollWidth > el.clientWidth + 1) wrong.push(el.className + ': short block scrolls');
+  }
+  const last = box(file, 'file-second'), pitch = last && last.bottom - box(file, 'vf-file').bottom;
+  if (!last || file.getBoundingClientRect().bottom - last.bottom > pitch / 2) {
+    wrong.push('tabbed input ends in a padding line');
+  }
+  return wrong;
+})()`;
+
+// Inline listings retain the document's typewriter family and TeX size.
+async function listingFonts(chrome, file, family) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 390, javascript: false }, page =>
+    page.evaluate(`(async () => {
+      const family = ${JSON.stringify(family)};
+      const faces = await document.fonts.load('16px "' + family + '"');
+      const wrong = [];
+      if (!faces.length || faces.some(face => face.status !== 'loaded')) wrong.push('listing font did not load');
+      const codes = [...document.querySelectorAll('code.lstinline')];
+      if (codes.length !== 10) return ['expected ten inline listings'];
+      const base = parseFloat(getComputedStyle(document.body).fontSize);
+      for (const code of codes) {
+        const marker = code.textContent.match(/vf-lst-[a-z-]+/)?.[0];
+        if (!marker) { wrong.push('missing listing marker'); continue; }
+        const ratio = marker.endsWith('footnote') ? 0.8 : marker.endsWith('small') ? 0.9 : 1;
+        const nodes = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+        while (nodes.nextNode()) {
+          const node = nodes.currentNode;
+          if (!node.textContent.trim()) continue;
+          const style = getComputedStyle(node.parentElement);
+          if (style.fontFamily.split(',')[0].replaceAll('"', '').trim() !== family ||
+              Math.abs(parseFloat(style.fontSize) / base - ratio) > 0.011 ||
+              style.fontStyle !== 'normal' || style.fontWeight !== '400') {
+            wrong.push(marker + ': wrong typewriter font or size');
+          }
+        }
+      }
+      return wrong;
+    })()`));
+}
+
+// Long boxed literals must stay inside their frame on a wide screen and
+// in print. On a phone, the literal scrolls inside the frame.
+async function boxedLiterals(chrome, file) {
+  const wrong = [];
+  for (const [width, media] of [[1600, 'screen'], [1600, 'print'], [740, 'print'], [390, 'screen']]) {
+    const problems = await chrome.withPage(pathToFileURL(file).href,
+      { width, javascript: false }, async page => {
+        await page.media(media);
+        return page.evaluate(`(() => {
+          const boxes = [...document.querySelectorAll('table.boxedverbatim pre')];
+          if (boxes.length !== 1) return ['expected one boxed literal, found ' + boxes.length];
+          const pre = boxes[0];
+          const range = document.createRange();
+          range.selectNodeContents(pre);
+          const text = range.getBoundingClientRect(), frame = pre.getBoundingClientRect();
+          if (${media === 'screen' && width === 390}) {
+            return pre.scrollWidth > pre.clientWidth && getComputedStyle(pre).overflowX === 'auto'
+              ? [] : ['long literal does not scroll inside its frame'];
+          }
+          return text.right > frame.right + 0.5 || text.left < frame.left - 0.5
+            ? ['long literal extends beyond its frame'] : [];
+        })()`);
+      });
+    wrong.push(...problems.map(problem => width + 'px ' + media + ': ' + problem));
+  }
+  return wrong;
+}
 
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
@@ -681,7 +1204,7 @@ async function compare(chrome, doc, ok) {
           }
           if (doc.name in hangs) problems.push(...await hanging(page, doc, html));
           if (verbatimFamilies[doc.name]) {
-            const literals = await page.evaluate(verbatimFonts(verbatimFamilies[doc.name]));
+            const literals = await page.evaluate(verbatimFonts(verbatimFamilies[doc.name], doc.name));
             for (const [marker, what] of literals) problems.push(`${html}: literal ${marker}: ${what}`);
           }
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
@@ -722,6 +1245,55 @@ async function compare(chrome, doc, ok) {
     }
     for (const check of [printed, fits]) {
       problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    }
+    if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
+      const family = { 'test-verbatim-font-review-courier': 'TeX Gyre Cursor',
+        'test-verbatim-font-review-lmodern': 'Latin Modern Mono' }[doc.name] ?? null;
+      problems.push(...(await reviewLiterals(chrome, join(pre, html), family)).map(p => `${html}: ${p}`));
+    }
+    if (doc.name === 'test-verbatim-font-other') {
+      const pitch = await chrome.withPage(pathToFileURL(join(pre, html)).href,
+        { width: 1600, javascript: false }, page => page.evaluate(fallbackPitch));
+      problems.push(...pitch.map(p => `${html}: ${p}`));
+    }
+    if (doc.name === 'test-verbatim-font-review-spacing') {
+      const spacing = await chrome.withPage(pathToFileURL(join(pre, html)).href,
+        { width: 390, javascript: false }, page => page.evaluate(moreverbSpaced));
+      if (spacing.checked !== 11) problems.push(`${html}: expected eleven moreverb spacing boundaries, found ${spacing.checked}`);
+      for (const [text, got, want] of spacing.wrong) {
+        problems.push(`${html}: "${text}": ${got} above it, not ${want} as above a list`);
+      }
+    }
+    if (doc.name.startsWith('test-verbatim-font-listings')) {
+      const family = doc.name.endsWith('-courier') ? 'TeX Gyre Cursor' : 'Latin Modern Mono';
+      problems.push(...(await listingFonts(chrome, join(pre, html), family)).map(p => `${html}: ${p}`));
+    }
+    if (verbatimFamilies[doc.name] && !verbatimExtraCases[doc.name]) {
+      problems.push(...(await literalOpeners(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+    }
+    if (/^test-verbatim-font-moreverb(?:-courier|-tt)?$/.test(doc.name)) {
+      const url = pathToFileURL(join(pre, html)).href, plain = doc.name === 'test-verbatim-font-moreverb';
+      problems.push(...(await chrome.withPage(url, { width: 390, javascript: false }, async page => [
+        ...await page.evaluate(literalBlockStarts),
+        ...(plain ? await page.evaluate(listingWhitespace) : []),
+        ...(plain ? await page.evaluate(tabColumns) : []),
+        ...(doc.name.endsWith('-tt') ? await page.evaluate(typewriterListing) : []),
+        ...(doc.name.endsWith('-tt') ? [] : await page.evaluate(listingNumbers)),
+      ])).map(p => `${html}: ${p}`));
+      if (!doc.name.endsWith('-tt')) {
+        const lines = await chrome.withPage(url, { width: 1600, javascript: false }, page =>
+          page.evaluate(listingLines(doc.name === 'test-verbatim-font-moreverb-courier')));
+        problems.push(...lines.map(p => `${html}: ${p}`));
+      }
+      if (plain) {
+        problems.push(...(await listingFades(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+        problems.push(...(await boxedLiterals(chrome, join(pre, html))).map(p => `${html}: ${p}`));
+      }
+    }
+    if (doc.name === 'test-verbatim-font-kernel' ||
+        (verbatimFamilies[doc.name] && !verbatimExtraCases[doc.name])) {
+      const count = doc.name === 'test-verbatim-font-kernel' ? 1 : 2;
+      problems.push(...(await inlineLiteralLines(chrome, join(pre, html), count)).map(p => `${html}: ${p}`));
     }
   }
   return { lines: [`${problems.length ? 'not ok' : 'ok'} - ${doc.name}`, ...problems.map(p => `    ${p}`)],

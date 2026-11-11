@@ -62,7 +62,9 @@ for _, font in ipairs(known) do
   for _, family in ipairs(font.families) do by_family[family] = font end
 end
 -- (the classes of Latin Modern's and Computer Modern's roman, for \textrm
--- and \textbf in a document whose text is in another role)
+-- and \textbf in a document whose text is in another role, and for
+-- moreverb's line numbers in its listings, which css/tex8web.css sets in
+-- the typewriter font)
 local roman_classes = {"-lmr", "-lmb", "-lmcsc", "cmr", "cmbx", "cmti", "cmsl", "cmcsc", "ecrm", "ecbx",
   "ecti", "ecsl", "eccc"}
 
@@ -137,8 +139,8 @@ end
 -- down by prerender.mjs, or else whole, M.originals), the roles' custom
 -- properties (css/tex8web.css), the text's role, and tex4ht's classes for
 -- each font, in its role (its htf files call Times monospace) or in its
--- own family. With the text in sans-serif, Latin Modern's roman classes are
--- set in roman.
+-- own family. Latin Modern's roman classes are set in roman in moreverb's
+-- listings, and everywhere with the text in sans-serif.
 local function font_css(roles)
   local css = {}
   local stacks = {roman = '"Latin Modern Roman", serif', sans = '"Latin Modern Sans", sans-serif',
@@ -166,6 +168,9 @@ local function font_css(roles)
   if roles.body ~= "roman" then
     css[#css + 1] = ("html body { font-family: var(--tex8web-%s); }"):format(roles.body)
     css[#css + 1] = ("%s { font-family: var(--tex8web-roman); }"):format(selector(roman_classes))
+  else
+    css[#css + 1] = (":is(div.listing, div.listinginput) :is(%s) { font-family: var(--tex8web-roman); }")
+      :format(selector(roman_classes))
   end
   return table.concat(css, "\n")
 end
@@ -193,10 +198,10 @@ end
 -- face, which the page's controls use. Faces of Latin Modern are found
 -- from the rules that set the font: tex4ht's for its font classes
 -- (.ec-lmbx-10 bold, .ec-lmro-10 oblique, which is the italic),
--- css/tex8web.css's for their families, headings, and table of contents
--- entries (in the fonts tex8web-page.tex gives them in css), and the
--- browser's for other elements. A role or class of another font (roles_of)
--- gives that font's face.
+-- css/tex8web.css's for their families, headings, table of contents
+-- entries (in the fonts tex8web-page.tex gives them in css), and literals,
+-- and the browser's for other elements. A role or class of another font
+-- (roles_of) gives that font's face.
 function M.faces(document, css, roles)
   roles = roles or {body = "roman", others = {}}
   -- (each rule a face: what it sets of bold, italic, and family, where the
@@ -209,6 +214,12 @@ function M.faces(document, css, roles)
     pre = {family = "system"}, code = {family = "system"}, tt = {family = "system"},
     kbd = {family = "system"}, samp = {family = "system"},
   }
+  -- (css/tex8web.css's literals, by element and class as its rules give
+  -- them, which set the document's typewriter font in place of the
+  -- element's rule above; an inline listing inherits the text's font)
+  local literal = {family = "mono", bold = false, italic = false}
+  local literals = {code = {verb = literal, lstinline = {}}, pre = {verbatim = literal, boxedverbatim = literal},
+    div = {verbatiminput = literal, listing = literal, listinginput = literal, verbatimtabinput = literal}}
   local classes = {titleHead = {bold = false}, id = {bold = true}, ["tex8web-toc-title"] = {bold = true}}
   -- (the face the stylesheet sets from --tex8web-<prefix>-weight, -style,
   -- and -family)
@@ -258,15 +269,16 @@ function M.faces(document, css, roles)
     elseif class:find("^ptmr7t%-") then face.family = nil end
   end
   -- (the role of a class: a role's font, or another font set in roman, as
-  -- in font_css)
-  local function role_of(class)
+  -- in font_css, where listing is whether the class is in moreverb's
+  -- listing)
+  local function role_of(class, listing)
     for _, role in ipairs({"roman", "sans", "mono"}) do
       if roles[role] and matches(class, roles[role].classes) then return role end
     end
     for _, font in ipairs(roles.others) do
       if matches(class, font.classes) then return "roman", font end
     end
-    if roles.body ~= "roman" and matches(class, roman_classes) then return "roman" end
+    if (roles.body ~= "roman" or listing) and matches(class, roman_classes) then return "roman" end
   end
   local function file(face)
     if face.family == "system" then return end
@@ -287,7 +299,13 @@ function M.faces(document, css, roles)
     local function apply(rule)
       for key, value in pairs(rule or {}) do face[key] = value end
     end
-    apply(rules[el:get_element_name()])
+    local name = el:get_element_name()
+    local own = rules[name]
+    for class in (el:get_attribute("class") or ""):gmatch("%S+") do
+      own = (literals[name] or {})[class] or own
+      if name == "div" and (class == "listing" or class == "listinginput") then face.listing = true end
+    end
+    apply(own)
     for class in (el:get_attribute("class") or ""):gmatch("%S+") do
       if class:find("^mathjax%-") then return end
       apply(classes[class])
@@ -296,7 +314,7 @@ function M.faces(document, css, roles)
         apply(face.label)
       end
       face.label = labels[class] or face.label
-      local role, font = role_of(class)
+      local role, font = role_of(class, face.listing)
       if role then face.family, face.font = role ~= "roman" and role or nil, font end
     end
     for _, child in ipairs(el:get_children()) do

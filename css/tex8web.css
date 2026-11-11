@@ -92,6 +92,30 @@ html body { font-family: var(--tex8web-roman); }
 [class*="-lmss"], [class^="cmss"], [class^="ecss"] { font-family: var(--tex8web-sans); }
 /* (TeX Live's ht-fonts/alias/times/ptmr7t.htf calls Times monospace) */
 [class^="ptmr7t-"] { font-family: inherit; }
+/* Literal fonts and sizes are on tex4ht's spans inside these elements.
+   Inherit the text size so a browser's monospace size is not applied first. */
+code.verb, pre.verbatim, pre.boxedverbatim, div.verbatiminput,
+div.listing, div.listinginput, div.verbatimtabinput {
+    font-family: var(--tex8web-mono); font-size: inherit; font-style: normal; font-weight: normal; }
+code.lstinline { font: inherit; }
+/* TeX does not break literals at hyphens or slashes. Keep opening
+   punctuation with short literals, which must remain inline. A long
+   literal wraps in a narrow column: the text on a narrow screen, and a
+   margin note wherever margin notes float, on a wide screen or a wide
+   printed page. */
+code.verb, code.lstinline { white-space: nowrap; }
+@media screen and not (--tex8web-wide) {
+    .tex8web-long-literal > :is(code.verb, code.lstinline) {
+        display: inline-block; width: max-content; max-width: 100%; white-space: normal; overflow-wrap: anywhere; } }
+@media (--tex8web-wide) {
+    .tex8web-sidenote .tex8web-long-literal > :is(code.verb, code.lstinline) {
+        display: inline-block; width: max-content; max-width: 100%; white-space: normal; overflow-wrap: anywhere; } }
+/* moreverb's listing and tabbed file lines end in source newlines only
+   (latex.4ht's \v:par), without the <br> of an obeylines-v wrapper. In a
+   typewriter document the text has no font span, so the whole block keeps
+   its spaces; text.literal_blocks removes tex4ht's padding spaces, so that
+   short blocks do not scroll. */
+div.listing, div.verbatimtabinput { white-space: pre; }
 /* a ~, written as a space by text.lua: pre keeps the space from
    collapsing and the line from breaking after it (CONTRIBUTING.md) */
 .tex8web-nbsp { white-space: pre; }
@@ -297,10 +321,10 @@ div.table + p { margin-top: 0; }
    paragraph, so it has the same space. As with tex4ht's p + div, the space
    is set between siblings: a block's own margins would stay inside a list
    item, a box, or a float, where TeX sets no space at the edges */
-:is(div.center, div.flushleft, div.flushright, pre.verbatim) { margin-block: 0; }
-:is(p, div.center, div.flushleft, div.flushright, pre.verbatim) + :is(div.center, div.flushleft, div.flushright, pre.verbatim),
-:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div.center, div.flushleft, div.flushright, pre.verbatim),
-:is(div.center, div.flushleft, div.flushright, pre.verbatim) + :is(p, div.tabular) {
+:is(div.center, div.flushleft, div.flushright, pre.verbatim, div.listing, div.listinginput, div.verbatimtabinput) { margin-block: 0; }
+:is(p, div.center, div.flushleft, div.flushright, pre.verbatim, div.listing, div.listinginput, div.verbatimtabinput) + :is(div.center, div.flushleft, div.flushright, pre.verbatim, div.listing, div.listinginput, div.verbatimtabinput),
+:where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div.center, div.flushleft, div.flushright, pre.verbatim, div.listing, div.listinginput, div.verbatimtabinput),
+:is(div.center, div.flushleft, div.flushright, pre.verbatim, div.listing, div.listinginput, div.verbatimtabinput) + :is(p, div.tabular) {
     margin-top: calc(var(--tex8web-list-sep) + var(--tex8web-parskip, 0em)); }
 /* (browsers indent a <figure>; LaTeX does not indent floats) */
 figure { margin-inline: 0; }
@@ -371,7 +395,10 @@ span.tex8web-rowskip { display: block; }
 tr.tex8web-rowskip td { padding: 0; line-height: 0; }
 /* a tabular or verbatim too wide for a narrow screen scrolls sideways, as
    a wide display does, so that the page does not widen */
-@media not (--tex8web-wide) { div.tabular, pre { overflow-x: auto; } }
+@media not (--tex8web-wide) {
+    /* An auto table grows to fit its pre, leaving nothing to scroll. */
+    table.boxedverbatim { table-layout: fixed; }
+    div.tabular, pre, div.listing, div.listinginput, div.verbatimtabinput { overflow-x: auto; } }
 /* a box that scrolls sideways fades out at each edge where more of it is
    hidden. Each edge has a separate mask, a fade from that edge, shifted
    out of the box while less than --tex8web-edge is hidden beyond it, so
@@ -1088,7 +1115,10 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
         display: none !important; }
     html body { margin-block: 0; padding-inline: 0; --tex8web-column: min(var(--tex8web-textwidth), 100vw); }
     .tex8web-sidenote { top: auto !important; }
-    mjx-container[display], div.tabular, pre { overflow: visible !important; }
+    mjx-container[display], div.tabular, pre, div.listing, div.listinginput, div.verbatimtabinput {
+        overflow: visible !important; }
+    /* The not-wide query also matches a narrow printed page. */
+    table.boxedverbatim { table-layout: auto; }
     .tex8web-scrolls { mask-image: none; }
     .tcolorbox, mjx-container[display], figure, div.table, table { break-inside: avoid; }
     h1, h2, h3, h4, h5, h6 { break-after: avoid; }

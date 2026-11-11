@@ -1,0 +1,27 @@
+\usepackage{listings,color}
+\newtheorem{theorem}{Theorem}
+\lstset{basicstyle=\normalfont\ttfamily}
+\begin{document}
+\section{Inline listings}
+Default \lstinline|vf-lst-default| beside \verb|vf-verb-default|.
+
+Plain \lstinline|vf-lst-plain a_b| beside \verb|vf-verb-plain a_b|.
+
+{\itshape Italic \lstinline|vf-lst-italic| beside \verb|vf-verb-italic|.}
+
+{\sffamily Sans \lstinline|vf-lst-sans| beside \verb|vf-verb-sans|.}
+
+{\ttfamily Typewriter \lstinline|vf-lst-typewriter|.}
+
+{\small Small \lstinline|vf-lst-small| beside \verb|vf-verb-small|.}
+
+Footnote\footnote{\lstinline|vf-lst-footnote|.} continues.
+
+\begin{theorem}
+\lstinline|vf-lst-theorem| beside \verb|vf-verb-theorem|.
+\end{theorem}
+
+\lstinline[showspaces=true]|vf-lst-spaces two  spaces|.
+
+\lstinline[basicstyle=\ttfamily\small]|vf-lst-option-small|.
+\end{document}

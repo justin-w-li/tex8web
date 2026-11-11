@@ -1,0 +1,31 @@
+\documentclass{article}
+\usepackage{moreverb}
+\begin{document}
+\begin{boxedverbatim}
+vf-boxed
+012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+\end{boxedverbatim}
+\begin{verbatimtab}
+vf-tabbed
+tabbed-two	end
+\end{verbatimtab}
+\begin{listing}{1}
+vf-listing a  b
+listing-second
+012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+\end{listing}
+\begin{listingcont}
+vf-listingcont c  d
+cont-second
+
+    cont-indented
+\end{listingcont}
+Paragraph before the reference block.
+\begin{verbatim}
+vf-first-reference
+reference-second
+\end{verbatim}
+Paragraph after the reference block.
+\listinginput{1}{test-verbatim-font-moreverb.txt}
+\verbatimtabinput{test-verbatim-font-moreverb.txt}
+\end{document}

@@ -663,6 +663,55 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(d:query_selector("p span.tex8web-nbsp")[1] ~= nil, true)
   end,
 
+  ["text.literal_blocks: drop the parser newline and padding, keeping source blank lines"] = function()
+    local d = parse("<div class='listing'>\n  \n<span>\nfirst</span></div>"
+      .. "<div class='verbatimtabinput'>\n  \n<span>second</span></div>")
+    text.literal_blocks(d)
+    equal(d:query_selector("div.listing")[1]:get_text(), "\n\nfirst")
+    equal(d:query_selector("div.verbatimtabinput")[1]:get_text(), "\nsecond")
+  end,
+
+  ["text.literal_blocks: bare literal text keeps its source spaces, not the padding"] = function()
+    local d = parse("<div class='listing'>\n   \n<span>1</span>   a\u{A0}\u{A0}b\n"
+      .. "<span>2</span>   \u{A0}\u{A0}c\n   </div>")
+    text.literal_blocks(d)
+    equal(d:query_selector("div.listing")[1]:get_text(), "\n1   a\u{A0}\u{A0}b\n2   \u{A0}\u{A0}c\n")
+    -- (padding split over text nodes)
+    d = parse("<div class='verbatimtabinput'></div>")
+    local block = d:query_selector("div")[1]
+    for _, part in ipairs({"\n   ", "\nx\u{A0}y\n", "   "}) do block:add_child_node(block:create_text_node(part)) end
+    text.literal_blocks(d)
+    equal(block:get_text(), "\nx\u{A0}y\n")
+  end,
+
+  ["text.long_literals: phone-width verb and listings get constrained boxes"] = function()
+    local literal = "abcdefghijklmnopqrstuvwxyz123456789"
+    for _, class in ipairs({"verb", "lstinline"}) do
+      local d = parse("<p><code class='" .. class .. "'>" .. literal .. "</code></p>")
+      text.long_literals(d)
+      equal(#d:query_selector("span.tex8web-long-literal > code." .. class), 1)
+    end
+  end,
+
+  ["text.long_literals: only long literals get a narrow-screen box"] = function()
+    local short, long = string.rep("é", 20), string.rep("é", 21)
+    local d = parse("<p><code class='verb'>" .. short .. "</code>"
+      .. "<code class='verb'><span class='cmtt-10'>" .. long .. "</span></code></p>")
+    text.long_literals(d)
+    equal(#d:query_selector("span.tex8web-long-literal > code.verb"), 1)
+    equal(d:query_selector("span.tex8web-long-literal")[1]:get_text(), long)
+    equal(#d:query_selector("p > code.verb"), 1)
+  end,
+
+  ["text.no_break_spaces: moreverb preserves literal spaces inside font spans"] = function()
+    for _, class in ipairs({"listing", "listinginput", "verbatimtabinput"}) do
+      local literal = "<div class='" .. class .. "'><span class='cmtt-10'>a\u{A0}\u{A0}b</span></div>"
+      local d = parse(literal .. "<p>c\u{A0}d</p>")
+      text.no_break_spaces(d)
+      equal(body(d), literal .. "<p>c<span class='tex8web-nbsp'> </span>d</p>")
+    end
+  end,
+
   ["text.url_breaks: a <wbr> after url.sty's break characters, none in a scheme, right after its //, or at the end"] = function()
     local d = parse([[<a class="url" href="h"><span class="cmtt-10">https://a.org/b?c=1&amp;d#e/</span></a>]]
       .. [[ <span class="path"><span>/usr/</span><span>local/x</span></span>]]

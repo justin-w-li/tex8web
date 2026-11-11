@@ -1114,22 +1114,58 @@ const verbatim = {
   'test-verbatim': [/^(?:(?!tex8web-nbsp)[^])*Plain<span class='tex8web-nbsp'>(?:(?!tex8web-nbsp)[^])*$/,
     /<div class='alltt'>/, /<div class='verbatiminput'>/, /<pre class='verbatim'/],
   ...Object.fromEntries(['test-verbatim-font', 'test-verbatim-font-hyperref', 'test-verbatim-font-t1',
-    'test-verbatim-font-lmodern', 'test-verbatim-font-courier'].map(name => [name, [
-    /<code class='verb'>vf-inline a_b#c%<\/code>/,
-    /<code class='verb'>vf-star[ ␣]+two[ ␣]+spaces<\/code>/,
-    /<pre class='verbatim'[^>]*>[^<]*vf-block a_b#c%[^<]*<\/pre>/,
-    /<pre class='verbatim'[^>]*>[^<]*vf-block-star[ ␣]+two[ ␣]+spaces[^<]*<\/pre>/,
-    /<div class='verbatiminput'>vf-file a_b #c%/,
-    /<div class='verbatiminput'>vf-file[ ␣]+a_b[ ␣]+#c%/,
+    'test-verbatim-font-lmodern', 'test-verbatim-font-courier',
+    'test-verbatim-font-times', 'test-verbatim-font-courier-only'].map(name => [name, [
+    /<code class='verb'>(?:<span[^>]*>)?vf-inline a_b#c%(?:<\/span>)?<\/code>/,
+    /<code class='verb'>(?:<span[^>]*>)?vf-star␣two␣␣spaces(?:<\/span>)?<\/code>/,
+    /<pre class='verbatim'[^>]*>(?:(?!<\/pre>)[^])*vf-block a_b#c%/,
+    /<pre class='verbatim'[^>]*>(?:(?!<\/pre>)[^])*vf-block-star␣two␣␣spaces/,
+    /<div class='verbatiminput'>(?:<span[^>]*>)?vf-file a_b #c%/,
+    /<div class='verbatiminput'>(?:<span[^>]*>)?vf-file␣␣a_b␣␣#c%/,
+    /<code class='verb'><span[^>]*>vf-footnote-verb<\/span><\/code>/,
+    /<code class='verb'><span[^>]*>vf-small<\/span><\/code>/,
+    /vf-fancy-star␣two␣␣spaces/,
+    /vf-fancy-block-star␣two␣␣spaces/,
+    /vf-fancy-showspaces␣two␣␣spaces/,
+    /<code class='verb'>(?:<span[^>]*>)?vf-wrap-kernel a b(?:<\/span>)?<\/code>/,
+    /<code class='verb'>(?:<span[^>]*>)?vf-wrap-kernel-star␣a␣␣b(?:<\/span>)?<\/code>/,
+    /<code class='verb'>(?:<span[^>]*>)?vf-wrap-fancy a b(?:<\/span>)?<\/code>/,
+    /<code class='verb'>(?:<span[^>]*>)?vf-wrap-fancy-star␣a␣␣b(?:<\/span>)?<\/code>/,
   ]])),
+  'test-verbatim-font-kernel': [
+    /<code class='verb'>[^]*\/usr\/local\/texlive\/2026\/texmf-dist\/tex\/generic\/tex4ht\/html4\.4ht/,
+    /vf-kernel-star␣two␣␣spaces/, /vf-kernel-block-star␣two␣␣spaces/,
+    /<span[^>]*>vf-kernel-small<\/span>/, /<span[^>]*>vf-kernel-block-small<\/span>/,
+  ],
+  'test-verbatim-font-moreverb': [
+    /<pre class='boxedverbatim'/, /<div class='listinginput'>/, /<div class='verbatimtabinput'>/,
+    /^(?:(?!tex8web-nbsp)[^])*$/,
+    /<\/pre>\s*<\/td><\/tr><\/table>/,
+    /<div class='listing'>[^]*vf-listing a b/,
+    /<div class='listing'>[^]*vf-listingcont c d/,
+    /listing-second/, /cont-second/, /file-second/,
+    /<pre class='verbatim'[^>]*>(?:(?!<\/pre>)[^])*vf-tabbed tabbed-two end/,
+  ],
+  'test-verbatim-font-moreverb-courier': [
+    /<div class='listing'>(?:(?!<\/div>)[^])*vf-listing-star␣a␣␣b/,
+    /<div class='listing'>(?:(?!<\/div>)[^])*vf-listingcont-star␣c␣␣d/,
+    /star-second/, /cont-star-second/,
+    /<pre class='verbatim'[^>]*>(?:(?!<\/pre>)[^])*vf-reference-spaces a b/,
+  ],
+  'test-verbatim-font-smallfont': [/<span[^>]*>vf-template-inline<\/span>/,
+    /<span[^>]*>vf-template-block<\/span>/],
+  'test-verbatim-font-other': [/<code class='verb'>(?:<span[^>]*>)?vf-other/],
+  'test-verbatim-font-sourcecodepro': [/<code class='verb'>[^]*vf-fallback-inline a b/,
+    /<pre class='verbatim'[^>]*>[^]*vf-fallback-block a b/],
+  'test-verbatim-font-visible': [/vf-custom-inlineXaXb/, /vf-custom-blockXaXb/,
+    /vf-custom-fancyXaXb/, /vf-custom-fancy-blockXaXb/],
 };
 
 // the fonts listed in data-fonts on the inline script
 const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1] ?? '').split(/\s+/).filter(Boolean);
 
 // The fonts preloaded, and no others: the text's faces (bold headings,
-// italic, \texttt, but not \verb, which is in the browser's monospace) and
-// the MathJax fonts that the math uses
+// italic, \texttt, and \verb) and the MathJax fonts that the math uses.
 const preloads = {
   'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmroman10-bolditalic',
     'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'b', 'c', 'mi', 'v', 'lo', 'so', 's3', 's4', 'brk']
@@ -1353,6 +1389,36 @@ function check(doc, result, out, aux) {
   if (styles && !/^li p:last-child/m.test(styles)) problems.push("no html4.4ht's rules for <li>");
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  // memoir emulates moreverb without its tex4ht configuration hooks.
+  if (/<head>(?:(?!<\/head>)[^])*<div class='listinginput'>/.test(html)) problems.push('listinginput in the head');
+  if (doc.name.startsWith('test-verbatim-font-listings')) {
+    const literals = [...html.matchAll(/<code class='lstinline'>([^]*?)<\/code>/g)];
+    if (literals.length !== 10) problems.push('expected ten inline listings');
+    for (const [, literal] of literals) {
+      if (!/<span class='[^']*(?:tt|pcr|qcr)[^']*'/.test(literal)) {
+        problems.push('lstinline typewriter font span missing: ' + literal);
+      }
+    }
+  }
+  if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
+    const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];
+    if (codes.length !== 11) problems.push('expected eleven review literals');
+    for (const [markup, , literal] of codes) {
+      const plain = literal.replace(/<[^>]*>/g, '');
+      if (plain.length > 20 && !html.includes("<span class='tex8web-long-literal'>" + markup)) {
+        problems.push('review literal lacks a constrained box: ' + plain);
+      }
+    }
+    // (listings sets a hyphen as a math minus in a font other than typewriter)
+    const defaultCode = codes.find(([, , literal]) => literal.replace(/<[^>]*>/g, '').replace(/\u2212/g, '-') === 'vf-review-default')?.[2];
+    if (!defaultCode || /class='[^']*(?:tt|pcr|qcr)/.test(defaultCode)) {
+      problems.push('default listings font was replaced with typewriter');
+    }
+    const italicCode = codes.find(([, , literal]) => literal.replace(/<[^>]*>/g, '').replace(/\u2212/g, '-') === 'vf-review-italic-tt')?.[2];
+    if (!italicCode || !/class='[^']*(?:cmitt|ecit-|lmtti|lmtto|pcrro|qcrri)/.test(italicCode)) {
+      problems.push('listings basicstyle lost italic typewriter');
+    }
+  }
   const classes = html.match(/<html[^>]*\sclass='([^']*)'/)?.[1] ?? '';
   if (classes !== (switched[doc.name] ?? '')) problems.push(`<html> has classes '${classes}'`);
   // (the examples are published: the title is shown in tabs and link previews)
