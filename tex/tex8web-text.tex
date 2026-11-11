@@ -644,6 +644,13 @@
     \expandafter\def\csname TS1\string\textbullet\endcsname{%
         \ifx\EndPicture\:UnDef\HCode{&\#x2022;}\else\web@textbullet\fi}
 \fi
+% \textsurd as √. lm-ts1.htf, which the TS1 files of pxfonts, txfonts, and
+% TeX Gyre also take, gives a middle dot. A picture keeps the font's glyph.
+\ifcsname TS1\string\textsurd\endcsname
+    \expandafter\let\expandafter\web@textsurd\csname TS1\string\textsurd\endcsname
+    \expandafter\def\csname TS1\string\textsurd\endcsname{%
+        \ifx\EndPicture\:UnDef\HCode{&\#x221A;}\else\web@textsurd\fi}
+\fi
 \web@configurelist{itemize}{itemize}{ul}
 \web@configurelist{enumerate}{enumerate}{ol}
 % a description, as html4.4ht writes it, with the \labelsep that LaTeX puts
