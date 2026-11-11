@@ -451,9 +451,10 @@ const surds = {
     new RegExp(`<span class='tex8web-label'>${surd('').source}`), new RegExp(`<td [^>]*>${surd('').source}`),
     new RegExp(`<dt [^>]*>(?:<a [^>]*><\\/a>)?${surd('').source}`),
     /<mtext>Mathtext √<\/mtext>/,
-    // (the sign in the span of its TS1 font, which has the size, weight,
-    // shape, and family of the text around it)
-    ...['Italic', 'Bold', 'Typewriter', 'Sans', 'Large', 'Footnote'].map(inFont)],
+    // (the sign in the span of its TS1 font, which has the size and family
+    // of the text around it; the stylesheet gives a TS1 span no weight or
+    // shape, so in bold or italic text the sign stays regular and upright)
+    ...['Typewriter', 'Sans', 'Large', 'Footnote'].map(inFont)],
   'test-surd-fonts': [onlyDots, dot('Pxdot'), dot('Txdot'), ...['Palatino', 'Palitalic', 'Pxsans', 'Pxmono', 'Times',
     'Palladio', 'Heros', 'Pagella', 'Termes', 'Cursor', 'Computer'].map(surd)],
 };
