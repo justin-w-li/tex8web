@@ -410,32 +410,40 @@ const symbolFaces = `(() => {
 })()`;
 
 // Each \lefteqn (MathJax's \rlap: an mjx-mpadded around a block of no
-// width) adds no width, and its content starts at the box. In an
-// alignment, the box is at the edge of its cell that the column's
-// alignment gives, as in the PDF: the right edge in eqnarray's first
-// column, the left edge in its third. laps has the number of boxes on each
-// page checked.
+// width) adds no width: its content is wider than its cell, or, outside an
+// alignment, what follows it starts at the box. Its content starts at the
+// box, and its end can be scrolled to in a display too wide for its
+// column. In an alignment, the box is at the edge of its cell that the
+// column's alignment gives, as in the PDF: the right edge in eqnarray's
+// first column, the left edge in its third. laps has the number of boxes
+// on each page checked.
 // Failures: [the box's text, what is wrong]
 const lapped = `(() => {
-  const boxes = [...document.querySelectorAll('mjx-mpadded')].filter(box => box.firstElementChild?.style.width === '0px');
+  const boxes = [...document.querySelectorAll('mjx-mpadded')];
   const wrong = boxes.flatMap(box => {
     const text = box.textContent.slice(0, 20);
     const at = box.getBoundingClientRect(), content = box.firstElementChild.firstElementChild.getBoundingClientRect();
+    const problems = [];
+    if (Math.abs(content.left - at.left) > 0.5) problems.push(\`content at \${(content.left - at.left).toFixed(2)}px from the box\`);
     const cell = box.closest('mjx-mtd');
-    let edge = at.left;
     if (cell) {
       const rect = cell.getBoundingClientRect(), style = getComputedStyle(cell);
-      edge = /right|end/.test(style.textAlign) ? rect.right - parseFloat(style.paddingRight) : rect.left + parseFloat(style.paddingLeft);
+      const left = rect.left + parseFloat(style.paddingLeft), right = rect.right - parseFloat(style.paddingRight);
+      const edge = /right|end/.test(style.textAlign) ? right : left;
+      if (Math.abs(at.left - edge) > 0.5) problems.push(\`\${(at.left - edge).toFixed(2)}px from its cell's edge\`);
+      if (content.width < right - left + 0.5) problems.push(\`its cell \${(right - left).toFixed(2)}px wide holds its content \${content.width.toFixed(2)}px wide\`);
+    } else {
+      const next = box.nextElementSibling?.getBoundingClientRect();
+      if (!next || Math.abs(next.left - at.left) > 0.5) problems.push(next ? \`what follows at \${(next.left - at.left).toFixed(2)}px from the box\` : 'nothing after it');
     }
-    return [
-      ...at.width > 0.5 ? [[text, \`\${at.width.toFixed(2)}px wide\`]] : [],
-      ...Math.abs(content.left - at.left) > 0.5 ? [[text, \`content at \${(content.left - at.left).toFixed(2)}px from the box\`]] : [],
-      ...Math.abs(at.left - edge) > 0.5 ? [[text, \`\${(at.left - edge).toFixed(2)}px from its cell's edge\`]] : [],
-    ];
+    const scroller = box.closest('mjx-container[display]');
+    const end = scroller && content.right - scroller.getBoundingClientRect().left + scroller.scrollLeft;
+    if (scroller && end > scroller.scrollWidth + 0.5) problems.push(\`ends \${(end - scroller.scrollWidth).toFixed(2)}px past where its display scrolls\`);
+    return problems.map(what => [text, what]);
   });
   return { checked: boxes.length, wrong };
 })()`;
-const laps = { 'test-lefteqn': 6 };
+const laps = { 'test-lefteqn': 10 };
 
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are

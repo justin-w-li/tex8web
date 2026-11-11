@@ -248,7 +248,13 @@ const typeset = {
     /<mpadded width='0'><mstyle><mi>p<\/mi>/,
     /<mpadded width='0'><mstyle><mfrac>[^]*?<\/mfrac><mo[^>]*>\+<\/mo><mo[^>]*>⟨<\/mo><mi>u<\/mi>/,
     /<mpadded width='0'><mstyle><mi>m<\/mi>/,
-    /<mpadded width='0'><mstyle displaystyle='true'><munderover>/,
+    /<mpadded width='0'><mstyle displaystyle='true'><munderover><mstyle mathsize='100.0%'><mtext>∑<\/mtext><\/mstyle><mrow data-mjx-texclass='ORD'><mi>j<\/mi>/,
+    // on a middle row, in an array's cell (text style), too wide for a
+    // phone, and with a relation at its end
+    /<mpadded width='0'><mstyle><mi>a<\/mi><mo[^>]*>\+<\/mo><mi>b<\/mi><mo[^>]*>\+<\/mo><mi>c<\/mi><mo[^>]*>\+<\/mo><mi>e<\/mi><\/mstyle><\/mpadded>/,
+    /<mpadded width='0'><mstyle displaystyle='true'><munderover><mstyle mathsize='100.0%'><mtext>∑<\/mtext><\/mstyle><mrow data-mjx-texclass='ORD'><mi>i<\/mi>/,
+    /<mpadded width='0'><mstyle><msub><mi>a<\/mi><mn>1<\/mn><\/msub>(?:(?!<\/mpadded>)[^])*<mn>13<\/mn><\/mrow><\/msub><\/mstyle><\/mpadded>/,
+    /<mpadded width='0'><mstyle><mi>w<\/mi>(?:(?!<\/mpadded>)[^])*<mi>z<\/mi><mo[^>]*>=<\/mo><\/mstyle><\/mpadded>/,
   ],
 };
 
@@ -881,9 +887,10 @@ const numbers = {
     /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){5}$/,
   ],
   // a \label on an eqnarray row that starts with \lefteqn, under hyperref
+  // (the anchor before the display whose \lefteqn holds the fraction)
   'test-lefteqn': [
-    /See \(<a href='#([^']+)'>2<!--[^>]*--><\/a>\) and <a href='#\1'>2<!--/,
-    /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){4}$/,
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>(?:(?!<\/div>)[^])*<mpadded width='0'><mstyle><mfrac>(?:(?!<\/div>)[^])*<\/div>\s*<p class='noindent'>See \(<a href='#\1'>2<!--[^>]*--><\/a>\) and <a href='#\1'>2<!--/,
+    /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){8}$/,
   ],
 };
 

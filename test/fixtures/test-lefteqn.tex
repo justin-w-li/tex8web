@@ -4,6 +4,9 @@
 % column, as in the PDF. Also in eqnarray* with \left( and \right. across
 % rows, in align*, on a numbered row with a \label, in a theorem, in the
 % third column, with a macro of the document inside, and in inline math.
+% Then on a middle row after a row with a first column, in an array (text
+% style), one too wide for a phone on a numbered row, and one that ends
+% with a relation, as in Lamport's book.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \usepackage{hyperref}
@@ -35,4 +38,18 @@ h & = & \lefteqn{m + n + o + o + o} \nonumber \\
 \end{eqnarray}
 \end{theorem}
 Inline, $\lefteqn{\sum_{j=1}^n j}xy$ overlaps.
+\begin{eqnarray}
+x & = & y \\
+\lefteqn{a + b + c + e} \nonumber \\
+  & = & d
+\end{eqnarray}
+\[ \begin{array}{rcl} \lefteqn{\sum_{i=1}^n x_i + y} \\ & = & z \end{array} \]
+\begin{eqnarray}
+\lefteqn{a_1 + a_2 + a_3 + a_4 + a_5 + a_6 + a_7 + a_8 + a_9 + a_{10} + a_{11} + a_{12} + a_{13}} \label{eq:wide} \\
+  & = & d
+\end{eqnarray}
+\begin{eqnarray*}
+\lefteqn{w + x + y + z = } \\
+  & & a + b + c
+\end{eqnarray*}
 \end{document}
