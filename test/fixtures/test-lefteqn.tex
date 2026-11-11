@@ -13,7 +13,9 @@
 % \lefteqn on a row without a number, which runs into the margin in the
 % PDF and leaves the display centered, an \llap on a numbered row, whose
 % content stays inside the table, and a numbered \lefteqn after other
-% math in eqnarray's third column.
+% math in eqnarray's third column, and one after operators with space
+% around them. Last, a \vphantom and a \mathstrut on numbered rows, whose
+% boxes of no width draw nothing, so the tables stay centered.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \usepackage{hyperref}
@@ -85,5 +87,16 @@ a_1 + a_2 + a_3 + a_4 + a_5 + a_6 \llap{\text{by the remark after the second lem
 \begin{eqnarray}
 h & = & k + \lefteqn{\sum_{i=1}^n f(x_i) + g(x_i) + h(x_i)} \label{eq:after} \\
   & & {} + l
+\end{eqnarray}
+\begin{eqnarray}
+h & = & a + b + c + \lefteqn{\sum_{i=1}^n f(x_i) + g(x_i) + h(x_i)} \label{eq:spaced} \\
+  & & {} + l
+\end{eqnarray}
+\begin{eqnarray}
+a & = & \left( b + c \right. \nonumber \\
+  & & \left. \vphantom{\sum_{i=1}^n x_i + y_i + z_i + w_i + u_i + v_i + s_i + t_i + p_i + q_i} {} + d \right) \label{eq:phantom}
+\end{eqnarray}
+\begin{eqnarray}
+x & = & y \mathstrut \label{eq:strut}
 \end{eqnarray}
 \end{document}

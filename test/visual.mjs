@@ -422,8 +422,10 @@ const symbolFaces = `(() => {
 // on a phone. laps has the number of boxes on each page checked. Failures:
 // [the box's text, what is wrong]
 const lapped = `(() => {
-  // (\\llap's box moves its content left, in an mjx-rbox)
-  const boxes = [...document.querySelectorAll('mjx-mpadded')].filter(box => !box.querySelector(':scope > mjx-block > mjx-rbox'));
+  // (\\llap's box moves its content left, in an mjx-rbox, and a box of
+  // \\vphantom or \\mathstrut holds an mjx-mphantom, which draws nothing)
+  const boxes = [...document.querySelectorAll('mjx-mpadded')]
+    .filter(box => !box.querySelector(':scope > mjx-block > :is(mjx-rbox, mjx-mphantom)'));
   const numbers = table => [...table.querySelectorAll(':scope > mjx-labels mjx-mtd')].map(label => {
     const number = document.createRange();
     number.selectNodeContents(label);
@@ -462,7 +464,7 @@ const lapped = `(() => {
     const rect = table.getBoundingClientRect(), inner = table.querySelector(':scope > mjx-table > mjx-itable').getBoundingClientRect();
     const shift = (inner.left + inner.right - rect.left - rect.right) / 2;
     const near = numbers(table), em = parseFloat(getComputedStyle(table).fontSize);
-    const reach = Math.max(inner.right, ...[...table.querySelectorAll('mjx-mpadded')]
+    const reach = Math.max(inner.right, ...boxes.filter(box => table.contains(box))
       .map(box => box.firstElementChild.firstElementChild.getBoundingClientRect())
       .filter(content => near.some(([, n]) => beside(content, n))).map(content => content.right));
     if (inner.left - shift >= rect.left && near.every(([, n]) => reach - shift < n.left - em) && Math.abs(shift) > 0.5) {
@@ -471,7 +473,7 @@ const lapped = `(() => {
   }
   return { checked: boxes.length, wrong };
 })()`;
-const laps = { 'test-lefteqn': 15 };
+const laps = { 'test-lefteqn': 16 };
 
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
