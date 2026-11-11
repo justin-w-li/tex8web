@@ -394,13 +394,15 @@ const ties = `(() => {
 })()`;
 
 // The weight and style of each TS1 symbol's span, of a class such as
-// ts1-lmbx10-, against the text's span of the same font, ec-lmbx-10. In
-// bold or italic text the PDF draws the symbol bold or italic too.
+// ts1-lmbx10-, against the text's span of the same font, ec-lmbx-10. A
+// magnified font's classes end in its magnification, as ts1-lmbx10-x-x-109
+// and ec-lmbx-10x-x-109 in an 11pt document. In bold or italic text the
+// PDF draws the symbol bold or italic too.
 const symbolFaces = `(() => {
   const face = el => getComputedStyle(el).fontWeight + ' ' + getComputedStyle(el).fontStyle;
   const pairs = [...document.querySelectorAll('span[class^="ts1-"]')].flatMap(span => {
-    const [, name, size] = span.className.match(/^ts1-(.*\\D)(\\d+)-$/) ?? [];
-    const text = name && document.querySelector(\`span.ec-\${name}-\${size}\`);
+    const [, name, size, mag = ''] = span.className.match(/^ts1-(.*\\D)(\\d+)-(x-x-\\d+)?$/) ?? [];
+    const text = name && document.querySelector(\`span.ec-\${name}-\${size}\${mag}\`);
     return text ? [[span, text]] : [];
   });
   return { checked: pairs.length, wrong: pairs.filter(([span, text]) => face(span) !== face(text))

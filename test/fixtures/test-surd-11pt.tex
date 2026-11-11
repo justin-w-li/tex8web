@@ -1,0 +1,16 @@
+% \textsurd (√) in an 11pt document, where tex4ht magnifies the 10pt Latin
+% Modern fonts and names their classes with the magnification, such as
+% ts1-lmbx10-x-x-109. The sign takes the weight and shape of bold, italic,
+% and bold italic text at 11pt, and of small bold text, which is set in the
+% same font at 10pt.
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\begin{document}
+Plain \textsurd{} sign.
+\textit{Italic \textsurd{} sign.}
+\textbf{Bold \textsurd{} sign.}
+\textbf{\textit{Bolditalic \textsurd{} sign.}}
+{\small\bfseries Smallbold \textsurd{} sign.}
+\end{document}

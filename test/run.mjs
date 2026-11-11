@@ -469,6 +469,9 @@ const surds = {
     ...['Typewriter', 'Sans', 'Large', 'Footnote'].map(inFont)],
   'test-surd-fonts': [onlyDots, dot('Pxdot'), dot('Txdot'), ...['Palatino', 'Palitalic', 'Pxsans', 'Pxmono', 'Times',
     'Palladio', 'Heros', 'Pagella', 'Termes', 'Cursor', 'Computer'].map(surd)],
+  // (in an 11pt document, whose fonts tex4ht magnifies; their weight and
+  // shape are checked by visual.mjs)
+  'test-surd-11pt': [onlyDots, ...['Plain', 'Italic', 'Bold', 'Bolditalic', 'Smallbold'].map(surd)],
   'test-ts1-symbols': ['Lm', 'Tx', 'Hv'].flatMap(font => ts1Symbols.map(([name, code]) => ts1(font + name, code))),
 };
 // \textsurd in a TikZ picture and a LaTeX picture, drawn with the font's

@@ -471,17 +471,19 @@ end
 -- file, ts1-.htf, gives the face for the name without the size,
 -- ts1-lmbx, and t4ht matches that only to a class it splits into name and
 -- size, such as ec-lmbx-10. Without the rule, a TS1 symbol in bold or
--- italic text is regular and upright. The rules go before the mark of
--- css/tex8web.css, with tex4ht's.
+-- italic text is regular and upright. A magnified font's class ends in
+-- its magnification, as ts1-lmbx10-x-x-109 in an 11pt document. The
+-- rules go before the mark of css/tex8web.css, with tex4ht's.
 function M.unsized_fonts(context)
   local log = assert(files.read(context.dir .. "/" .. context.input .. ".lg"))
   local faces, rules, seen = {}, {}, {}
   for name, rule in log:gmatch("htfcss:%s*(%S+)%s+([^\n]-)%s*\n") do faces[name] = rule end
-  for name in log:gmatch('Font%("([^"]-%d)",""') do
+  for name, mag in log:gmatch('Font%("([^"]-%d)","","[^"]*","(%d+)"%)') do
     local rule = not faces[name] and faces[(name:gsub("%d+$", ""))]
-    if rule and not seen[name] then
-      seen[name] = true
-      rules[#rules + 1] = (".%s-{%s}\n"):format(name, rule)
+    local class = name .. "-" .. (mag == "100" and "" or "x-x-" .. mag)
+    if rule and not seen[class] then
+      seen[class] = true
+      rules[#rules + 1] = (".%s{%s}\n"):format(class, rule)
     end
   end
   if #rules == 0 then return end
