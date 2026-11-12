@@ -37,11 +37,12 @@ local text = require "tex8web.text"
 -- Make.params is still empty here.)
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
--- The tests' builds (test/lib/build.mjs) copy LaTeX's build directory to
--- TEX8WEB_LATEX_SAVE, a path that must not exist yet. When nothing LaTeX
--- reads has changed, they pass that copy as TEX8WEB_LATEX_REUSE, which is
--- copied back in place of running LaTeX if it holds the DVI. The marks
--- around LaTeX's part of the log let the tests save that part too.
+-- The tests' builds (test/lib/build.mjs) copy LaTeX's build directory into
+-- TEX8WEB_LATEX_SAVE, an empty directory that they make, so that a runner
+-- can mount exactly that directory. When nothing LaTeX reads has changed,
+-- they pass that copy as TEX8WEB_LATEX_REUSE, which is copied back in place
+-- of running LaTeX if it holds the DVI. The marks around LaTeX's part of the
+-- log let the tests save that part too.
 local save, reuse = os.getenv("TEX8WEB_LATEX_SAVE"), os.getenv("TEX8WEB_LATEX_REUSE")
 if reuse and not lfs.attributes(reuse .. "/" .. settings.input .. "." .. settings.dvi) then reuse = nil end
 local function mark(name)
@@ -78,7 +79,13 @@ else
   if save then
     Make:add("latex_save", function(par)
       -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
-      if not lfs.attributes(save) and os.execute("cp -R " .. files.quote(par.builddir) .. " " .. files.quote(save)) == 0 then
+      local empty = lfs.attributes(save, "mode") == "directory"
+      if empty then
+        for name in lfs.dir(save) do
+          if name ~= "." and name ~= ".." then empty = false end
+        end
+      end
+      if empty and os.execute("cp -R " .. files.quote(par.builddir .. "/.") .. " " .. files.quote(save)) == 0 then
         mark("end")
       end
       return 0

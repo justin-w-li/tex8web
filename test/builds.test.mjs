@@ -195,7 +195,7 @@ test('a document with a runner builds its PDF and page through it, and is never 
     const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.startsWith('run '));
     assert.equal(runs.length, 2, runs.join('\n'));
     assert.ok(runs[0].includes(mount(dirname(pdf), '')) && runs[0].endsWith(` latexmk -norc -pdf -interaction=nonstopmode -outdir=${relative(dir, dirname(pdf))} doc.tex`), runs[0]);
-    for (const part of [mount(dir), mount(cfg), mount(pdf), mount(out, ''), mount(dirname(aux), ''), mount(join(dir, 'build'), '')]) {
+    for (const part of [mount(dir), mount(cfg), mount(pdf), mount(out, ''), mount(aux, ''), mount(`${aux}.latex`, ''), mount(join(dir, 'build'), '')]) {
       assert.ok(runs[1].includes(part), `${part} in ${runs[1]}`);
     }
     assert.match(runs[1], / timeout -k 5 900 \S+\/bin\/tex8web -c /);

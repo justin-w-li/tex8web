@@ -306,6 +306,9 @@ async function buildHere(doc, out, aux, env) {
   } else if (!doc.draft) {
     rmSync(stage.stamp, { force: true });
     rmSync(stage.dir, { recursive: true, force: true });
+    // (tex8web.mk4 copies LaTeX's run only into an empty directory, so that
+    // a runner can mount exactly that directory)
+    mkdirSync(stage.dir, { recursive: true });
   }
   // (make4ht's own mkdir fails when two builds make the same parent at once)
   mkdirSync(aux, { recursive: true });
@@ -314,14 +317,13 @@ async function buildHere(doc, out, aux, env) {
   // and most formulas stay the same in another version of tex8web)
   mkdirSync(join(doc.dir, 'build'), { recursive: true });
   const speech = join(doc.dir, 'build', doc.tex.replace(/\.tex$/, '.speech.json'));
-  // (the runner's writable directories must exist. tex8web.mk4 copies the
-  // LaTeX run to stage.dir only if it does not exist, so its parent is
-  // writable)
+  // (a runner's writable directories must exist. The stamps and logs stay
+  // outside them)
   mkdirSync(out, { recursive: true });
   const linked = pdf && join(doc.dir, pdf);
-  const [command, prefixed] = through(doc, [doc.cfg, ...linked && existsSync(linked) ? [linked] : []],
-    [out, dirname(aux), join(doc.dir, 'build')], join(root, 'bin/tex8web'), args);
-  const result = await run(command, prefixed, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
+  const [command, prefixed, limits] = through(doc, [doc.cfg, ...linked && existsSync(linked) ? [linked] : [], ...reuse ? [stage.dir] : []],
+    [out, aux, ...doc.draft || reuse ? [] : [stage.dir], join(doc.dir, 'build')], join(root, 'bin/tex8web'), args);
+  const result = await run(command, prefixed, { cwd: doc.dir, slot: true, ...limits, env: { ...process.env, ...env,
     TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? stage.dir : undefined,
     TEX8WEB_LATEX_SAVE: doc.draft || reuse ? undefined : stage.dir } });
   // (the marks around LaTeX's part of the log, which a reused run takes from
@@ -342,13 +344,15 @@ async function buildHere(doc, out, aux, env) {
   return reuse && latexLog !== undefined ? { ...result, latexReused: true } : result;
 }
 
-// the command and arguments that run command on a document: through
-// doc.runner if set, with -r for each file in read outside the document's
-// directory, and -w for each directory in write
-const through = (doc, read, write, command, args) => doc.runner
+// the command, arguments, and run() limits that run command on a document:
+// through doc.runner if set, with -r for each path in read outside the
+// document's directory, and -w for each directory in write. The total limit
+// is then longer than the runner's default of 900 s, so that the runner,
+// started later, stops the command first, with its own line
+export const through = (doc, read, write, command, args) => doc.runner
   ? [doc.runner[0], [...doc.runner.slice(1), ...read.filter(file => /^\.\.(\/|$)/.test(relative(doc.dir, file))).flatMap(file => ['-r', file]),
-    ...write.flatMap(dir => ['-w', dir]), '--', command, ...args]]
-  : [command, args];
+    ...write.flatMap(dir => ['-w', dir]), '--', command, ...args], { total: 930 }]
+  : [command, args, {}];
 
 // builds a document's PDF with latexmk in outdir (relative to the
 // document); resolves to { code, log }. Once for each PDF, as both test
@@ -359,9 +363,9 @@ export function latexmk(doc, outdir) {
   const key = join(doc.dir, outdir, doc.tex);
   if (!pdfs.has(key)) {
     mkdirSync(join(doc.dir, outdir), { recursive: true });
-    const [command, args] = through(doc, [], [join(doc.dir, outdir)], 'latexmk',
+    const [command, args, limits] = through(doc, [], [join(doc.dir, outdir)], 'latexmk',
       [...doc.runner ? ['-norc'] : [], '-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex]);
-    pdfs.set(key, run(command, args, { cwd: doc.dir, slot: true }));
+    pdfs.set(key, run(command, args, { cwd: doc.dir, slot: true, ...limits }));
   }
   return pdfs.get(key);
 }

@@ -34,7 +34,7 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { build, pool, root, run, workers } from './lib/build.mjs';
+import { build, pool, root, run, through, workers } from './lib/build.mjs';
 import { lock } from './lib/slots.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
@@ -66,7 +66,6 @@ const baseline = at(options.baseline ?? join(out, 'accepted'));
 const logs = join(out, 'logs');
 const shotsCache = at(options['shots-cache'] ?? join(out, 'shots-cache'));
 const cfg = at(options.c ?? join(root, 'tex8web.cfg'));
-const contain = join(root, 'test/lib/contain.mjs');
 if (!existsSync(cfg)) refuse(`no such config: ${options.c}`);
 
 function document(arg) {
@@ -83,7 +82,8 @@ function document(arg) {
   }
   // build() does not build the PDFs a config's \WebPDF links; latexmk()
   // builds them with --latexmk
-  return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true, ...options.contain && { runner: [contain] } };
+  return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true,
+    ...options.contain && { runner: [join(root, 'test/lib/contain.mjs')] } };
 }
 
 const docs = positionals.map(document);
@@ -114,10 +114,10 @@ async function latexmk(doc) {
   try {
     // (in the container, the document's directory is read-only, and a
     // .latexmkrc, which is Perl, is not read)
-    const [command, args] = options.contain
-      ? [contain, ['-w', join(doc.dir, 'build'), '--', 'latexmk', '-norc', '-pdf', '-outdir=build/pdf']] : ['latexmk', []];
+    const [command, args, limits] = through(doc, [], [join(doc.dir, 'build')], 'latexmk',
+      [...options.contain ? ['-norc', '-pdf', '-outdir=build/pdf'] : [], '-interaction=nonstopmode', '-halt-on-error', doc.tex]);
     // latexmk can print nothing for minutes on a long document
-    const result = await run(command, [...args, '-interaction=nonstopmode', '-halt-on-error', doc.tex], { cwd: doc.dir, slot: true, idle: 900 });
+    const result = await run(command, args, { cwd: doc.dir, slot: true, idle: 900, ...limits });
     writeFileSync(join(logs, `${doc.name}.pdf.log`), result.log);
     if (result.code !== 0) return `failed to build its PDF, exit ${result.code} (log: ${join(logs, `${doc.name}.pdf.log`)})`;
   } finally {

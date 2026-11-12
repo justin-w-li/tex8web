@@ -6,14 +6,16 @@
 // escape, and limits on time (default 900 s), memory (default 2g),
 // processes, and file size. Mounted at the same paths inside, read-only:
 // tex8web, its node_modules, the current directory, and each -r path. Each
-// -w directory is mounted writable, and /tmp is empty. Only TEX8WEB_*,
-// SOURCE_DATE_EPOCH, and FORCE_SOURCE_DATE are passed from the environment.
-// The image is built when its tag, a hash of the Dockerfile, is missing.
-// Exits with the command's status, after a line on stderr if a limit
-// stopped it.
+// -w directory is mounted writable, and /tmp is empty. A mount whose path
+// holds a symbolic link is refused. Only TEX8WEB_*, SOURCE_DATE_EPOCH, and
+// FORCE_SOURCE_DATE are passed from the environment. The image is built
+// when its tag, a hash of the Dockerfile, is missing. Exits with the
+// command's status, after a line on stderr if a limit stopped it, and
+// nonzero if a process was killed for memory or a symbolic link was left
+// in a -w directory.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { constants } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,6 +40,14 @@ try {
 const { values: { t: time, m: memory, r: read, w: write }, positionals: command } = parsed;
 if (!command.length) refuse(usage);
 for (const dir of write) if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory()) refuse(`contain: not a directory: ${dir}`);
+// (Docker Desktop follows a symbolic link in a mount's source on the host,
+// so a source that holds build -> /Users/<you> would have that mounted)
+const real = path => { try { return realpathSync(path); } catch { return null; } };
+for (const path of [process.cwd(), ...read, ...write]) {
+  if (real(path) !== resolve(path)) {
+    refuse(`contain: refusing to mount ${path}: it is missing, or a symbolic link is in its path`);
+  }
+}
 
 // (one mount for each path, as docker refuses two at one place. A worktree's
 // node_modules is a link to another checkout's, so the link's target is
@@ -59,12 +69,14 @@ if (spawnSync('docker', ['image', 'inspect', image], { stdio: 'ignore' }).status
 // docker client but not the container. So a watcher in a session of its
 // own removes the container once this process is gone
 const name = `t8w-${process.pid}-${randomBytes(4).toString('hex')}`;
-const watcher = spawn('perl', ['-e', 'my $parent = getppid; select undef, undef, undef, 0.5 while getppid == $parent; exec qw(docker rm -f), @ARGV',
-  name], { detached: true, stdio: 'ignore' });
+const watcher = spawn('perl', ['-e', 'my $parent = shift; select undef, undef, undef, 0.5 while getppid == $parent; exec qw(docker rm -f), @ARGV',
+  process.pid, name], { detached: true, stdio: 'ignore' });
 
 // (fsize is in bytes. A bind mount has no size limit, so this caps each
 // file, and the time limit a flood of small files)
-const child = spawn('docker', ['run', '--rm', '--init', '--name', name, '--network', 'none', '--read-only',
+// (not --rm, so that the container's state can be read after it ends)
+const started = Date.now();
+const child = spawn('docker', ['run', '--init', '--name', name, '--network', 'none', '--read-only',
   '--tmpfs', '/tmp:rw,noexec,nosuid,size=512m', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
   '--pids-limit', '256', '--cpus', '2', '--memory', memory, '--memory-swap', memory, '--ulimit', 'fsize=1073741824',
   '--user', `${process.getuid()}:${process.getgid()}`, '-e', 'HOME=/tmp', '-e', 'TEXMFVAR=/tmp/texmf-var',
@@ -73,10 +85,26 @@ const child = spawn('docker', ['run', '--rm', '--init', '--name', name, '--netwo
   ...[...mounts].flatMap(([path, mode]) => ['--mount', `type=bind,source=${path},target=${path}${mode}`]),
   '-w', process.cwd(), image, 'timeout', '-k', '5', time, ...command], { stdio: 'inherit' });
 child.on('exit', (code, signal) => {
+  // (OOMKilled is set when any process in the container was killed for
+  // memory, even one whose parent went on)
+  const oom = spawnSync('docker', ['inspect', '-f', '{{.State.OOMKilled}}', name], { encoding: 'utf8' }).stdout.trim() === 'true';
+  spawnSync('docker', ['rm', '-f', name], { stdio: 'ignore' });
   watcher.kill();
-  // (timeout exits with 124 at the time limit. A process killed for memory
-  // ends with SIGKILL, 128 plus 9)
-  if (code === 124) console.error(`contain: stopped at the time limit of ${time} s`);
-  if (code === 137) console.error(`contain: stopped at the memory limit of ${memory}`);
-  process.exit(code ?? 128 + constants.signals[signal]);
+  // (timeout exits with 124 at the time limit, or 137 when it had to kill a
+  // command that ignored SIGTERM)
+  if (oom) console.error(`contain: a process was stopped at the memory limit of ${memory}`);
+  else if (code === 124 || code === 137 && Date.now() - started >= time * 1000) console.error(`contain: stopped at the time limit of ${time} s`);
+  // (a link left in the output would be followed by the tools on the host
+  // that read or write it. readdirSync's recursive option follows links)
+  const links = [];
+  const walk = dir => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) links.push(join(dir, entry.name));
+      else if (entry.isDirectory()) walk(join(dir, entry.name));
+    }
+  };
+  write.forEach(walk);
+  for (const link of links) console.error(`contain: the command left a symbolic link in the output: ${link}`);
+  const status = code ?? 128 + constants.signals[signal];
+  process.exit(status || (oom || links.length ? 1 : 0));
 });
