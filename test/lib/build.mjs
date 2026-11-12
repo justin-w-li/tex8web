@@ -230,7 +230,10 @@ function stamps(doc, args, env, pdf) {
   const vars = Object.entries(all)
     .filter(([name]) => /^(TEX8WEB_(?!SLOTS|SPEECH_CACHE)|TEXINPUTS$|TEXMF|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).sort();
   const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
-  const rest = [hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf];
+  // (a build through a runner, whose tools are the image's, is never reused
+  // as a host build, nor the reverse)
+  const rest = [hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf,
+    ...doc.runner ? [[doc.runner, ...[doc.runner[0], join(root, 'Dockerfile')].map(file => readFileSync(file, 'utf8'))]] : []];
   const hash = (...head) => createHash('sha256').update(JSON.stringify([...head, ...rest])).digest('hex');
   return { page: hash(tools().page, day), latex: hash(tools().latex, day) };
 }
@@ -249,7 +252,9 @@ function stamps(doc, args, env, pdf) {
 // Variables in env replace those in doc.env. A draft document (doc.draft)
 // is built in make4ht's draft mode, which needs tex4ht's files from the
 // previous build in aux. For a document with noLatexmk, the PDF is built
-// elsewhere, and a missing PDF is not built here
+// elsewhere, and a missing PDF is not built here. With doc.runner, the argv
+// of a runner such as test/lib/contain.mjs, make4ht and latexmk run
+// through that runner
 export async function build(doc, out, aux, env = {}) {
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
@@ -309,7 +314,14 @@ async function buildHere(doc, out, aux, env) {
   // and most formulas stay the same in another version of tex8web)
   mkdirSync(join(doc.dir, 'build'), { recursive: true });
   const speech = join(doc.dir, 'build', doc.tex.replace(/\.tex$/, '.speech.json'));
-  const result = await run(join(root, 'bin/tex8web'), args, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
+  // (the runner's writable directories must exist. tex8web.mk4 copies the
+  // LaTeX run to stage.dir only if it does not exist, so its parent is
+  // writable)
+  mkdirSync(out, { recursive: true });
+  const linked = pdf && join(doc.dir, pdf);
+  const [command, prefixed] = through(doc, [doc.cfg, ...linked && existsSync(linked) ? [linked] : []],
+    [out, dirname(aux), join(doc.dir, 'build')], join(root, 'bin/tex8web'), args);
+  const result = await run(command, prefixed, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
     TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? stage.dir : undefined,
     TEX8WEB_LATEX_SAVE: doc.draft || reuse ? undefined : stage.dir } });
   // (the marks around LaTeX's part of the log, which a reused run takes from
@@ -330,15 +342,26 @@ async function buildHere(doc, out, aux, env) {
   return reuse && latexLog !== undefined ? { ...result, latexReused: true } : result;
 }
 
+// the command and arguments that run command on a document: through
+// doc.runner if set, with -r for each file in read outside the document's
+// directory, and -w for each directory in write
+const through = (doc, read, write, command, args) => doc.runner
+  ? [doc.runner[0], [...doc.runner.slice(1), ...read.filter(file => /^\.\.(\/|$)/.test(relative(doc.dir, file))).flatMap(file => ['-r', file]),
+    ...write.flatMap(dir => ['-w', dir]), '--', command, ...args]]
+  : [command, args];
+
 // builds a document's PDF with latexmk in outdir (relative to the
 // document); resolves to { code, log }. Once for each PDF, as both test
-// builds of a document may need it at once
+// builds of a document may need it at once. Through a runner, a
+// .latexmkrc is not read, as it is Perl
 const pdfs = new Map();
 export function latexmk(doc, outdir) {
   const key = join(doc.dir, outdir, doc.tex);
   if (!pdfs.has(key)) {
-    pdfs.set(key, run('latexmk', ['-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex],
-      { cwd: doc.dir, slot: true }));
+    mkdirSync(join(doc.dir, outdir), { recursive: true });
+    const [command, args] = through(doc, [], [join(doc.dir, outdir)], 'latexmk',
+      [...doc.runner ? ['-norc'] : [], '-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex]);
+    pdfs.set(key, run(command, args, { cwd: doc.dir, slot: true }));
   }
   return pdfs.get(key);
 }

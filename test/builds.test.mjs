@@ -1,14 +1,14 @@
 // Tests of the build stamps of lib/build.mjs, and of when a build is
 // reused. Run by npm test, or alone:
 //   node --test test/builds.test.mjs
-// make4ht is a stand-in (test/lib/stubs.mjs).
+// make4ht and docker are stand-ins (test/lib/stubs.mjs).
 import assert from 'node:assert/strict';
-import { appendFileSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { mock, test } from 'node:test';
 import { build, latexSourceHash, latexSources, root, sourceHash } from './lib/build.mjs';
-import { stubbed } from './lib/stubs.mjs';
+import { dockerLog, stubbed } from './lib/stubs.mjs';
 
 test('what a build reads, in tex8web and in the document, is in its stamp', () => {
   const dir = mkdtempSync(join(tmpdir(), 'tex8webstamp'));
@@ -167,5 +167,53 @@ test('a build is reused only while nothing it was built from has changed', { tim
     assert.equal((await make()).latexReused, undefined);
   } finally {
     rmSync(dir, { recursive: true });
+  }
+});
+
+test('a document with a runner builds its PDF and page through it, and is never reused as a host build', { timeout: 30000 }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webrunner')));
+  const elsewhere = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webelsewhere')));
+  // (latexmk runs with this process's environment)
+  const path = process.env.PATH;
+  process.env.PATH = stubbed.PATH;
+  try {
+    writeFileSync(join(dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nText\n\\end{document}\n');
+    const cfg = join(elsewhere, 'other.cfg');
+    copyFileSync(join(root, 'tex8web.cfg'), cfg);
+    const pdf = join(elsewhere, 'pdf/doc.pdf');
+    const doc = { name: 'runner', dir, tex: 'doc.tex', cfg, pdf: relative(dir, pdf), runner: [join(root, 'test/lib/contain.mjs')] };
+    const out = join(dir, 'build/html'), aux = join(dir, 'build/aux');
+    const make = () => build(doc, out, aux, stubbed);
+    writeFileSync(dockerLog, '');
+    const first = await make();
+    assert.equal(first.code, 0, first.log);
+    assert.ok(existsSync(pdf), 'no PDF');
+    assert.match(readFileSync(join(out, 'doc.html'), 'utf8'), /Text/);
+    // each command with the files it reads outside the document's directory
+    // read-only, and the directories it writes writable
+    const mount = (path, mode = ',readonly') => `type=bind,source=${path},target=${path}${mode} `;
+    const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.startsWith('run '));
+    assert.equal(runs.length, 2, runs.join('\n'));
+    assert.ok(runs[0].includes(mount(dirname(pdf), '')) && runs[0].endsWith(` latexmk -norc -pdf -interaction=nonstopmode -outdir=${relative(dir, dirname(pdf))} doc.tex`), runs[0]);
+    for (const part of [mount(dir), mount(cfg), mount(pdf), mount(out, ''), mount(dirname(aux), ''), mount(join(dir, 'build'), '')]) {
+      assert.ok(runs[1].includes(part), `${part} in ${runs[1]}`);
+    }
+    assert.match(runs[1], / timeout -k 5 900 \S+\/bin\/tex8web -c /);
+    assert.equal((await make()).reused, true);
+
+    // a host build, of the same document and PDF, is not that build, and its
+    // LaTeX run is not that build's either
+    delete doc.runner;
+    let host = await make();
+    assert.equal(host.reused, undefined);
+    assert.equal(host.latexReused, undefined);
+    doc.runner = [join(root, 'test/lib/contain.mjs')];
+    host = await make();
+    assert.equal(host.reused, undefined);
+    assert.equal(host.latexReused, undefined);
+  } finally {
+    process.env.PATH = path;
+    rmSync(dir, { recursive: true });
+    rmSync(elsewhere, { recursive: true });
   }
 });

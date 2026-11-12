@@ -1,6 +1,7 @@
 // Tests of regress.mjs and compare.mjs. Run by npm test, or alone:
 //   node --test test/regress.test.mjs
-// make4ht is a stand-in (test/lib/stubs.mjs). Chrome is real, for the screens.
+// make4ht and docker are stand-ins (test/lib/stubs.mjs). Chrome is real,
+// for the screens.
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
@@ -10,7 +11,7 @@ import { describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { root } from './lib/build.mjs';
 import { lock } from './lib/slots.mjs';
-import { stubbed } from './lib/stubs.mjs';
+import { dockerLog, stubbed } from './lib/stubs.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const lockf = existsSync('/usr/bin/lockf');
@@ -118,6 +119,23 @@ describe('regress.mjs', { concurrency: true }, () => {
       assert.match(result.stdout, /^one: no baseline/m);
       assert.match(result.stdout, /^bad: failed to build its PDF, exit \d+ \(log: .*bad\.pdf\.log\)/m);
       assert.equal(existsSync(join(dir, 'build/regress/html/bad')), false);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  test('regress.mjs --contain builds each PDF and page in the container, without the .latexmkrc', async () => {
+    // (a .latexmkrc read would name the PDF rc.pdf)
+    const dir = scratch({ 'one/main.tex': article('First'), 'one/.latexmkrc': "$jobname = 'rc';" });
+    try {
+      const result = await regress(dir, '--contain', '--latexmk', 'one');
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.ok(existsSync(join(dir, 'one/build/pdf/main.pdf')), 'no PDF');
+      assert.ok(existsSync(join(dir, 'build/regress/html/one/main.html')));
+      const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.includes(`target=${join(dir, 'one')},readonly `));
+      assert.ok(runs.some(line => line.includes(`target=${join(dir, 'one/build')} `)
+        && line.endsWith(' latexmk -norc -pdf -outdir=build/pdf -interaction=nonstopmode -halt-on-error main.tex')), runs.join('\n'));
+      assert.ok(runs.some(line => line.includes('/bin/tex8web -c ')), runs.join('\n'));
     } finally {
       rmSync(dir, { recursive: true });
     }

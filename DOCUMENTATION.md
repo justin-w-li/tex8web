@@ -339,6 +339,7 @@ The options:
 - **`--draft`**: Build in draft mode, as with `-m draft`. Draft builds are quicker, but their pages are not reliable.
 - **`--shots-cache dir`**: Cache the baselines' screenshots in `dir`, so each baseline is shot once for all runs that use `dir`. The default is `shots-cache` in the `--out` directory.
 - **`--latexmk`**: Build each document's PDF first, with `latexmk` in the document's directory. A document whose PDF fails to build is not built.
+- **`--contain`**: Build each page, and with `--latexmk` each PDF, in a Docker container without network access or shell escape, for documents whose source you do not trust. Docker must be running, and the first run builds the image from tex8web's `Dockerfile`. With `--latexmk`, the PDF is written to `build/pdf` in the document's directory, and the document's `.latexmkrc` is not read, so link `build/pdf/<name>.pdf` in your config.
 
 Without `--latexmk`, no PDFs are built, and if the PDF linked with `\WebPDF` in your config is missing, the page has no PDF button. A document is built again only when one of its inputs has changed: tex8web, the document's directory, the config, the linked PDF, or the build tools.
 

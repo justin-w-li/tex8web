@@ -1,6 +1,6 @@
 // Set-up for the tests of the test tools, applied on import: a separate
 // pool of build slots in a temporary $TMPDIR, so that the tests never wait
-// for other sessions' builds, and a stand-in for make4ht.
+// for other sessions' builds, and stand-ins for make4ht and docker.
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -35,5 +35,16 @@ fi
 echo tex8web-latex-end
 { echo "<head><script id='tex8web-fonts'>/*<![CDATA[*/ /*]]>*/</script></head>"; cat "$1"; } > "$out/\${1%.tex}.html"
 : > "$aux/\${1%.tex}.log"
+`, { mode: 0o755 });
+// A stand-in for docker, for test/lib/contain.mjs: it adds each call's
+// arguments to dockerLog, has every image, and runs the command of
+// `docker run` on the host, without the image and the timeout before it.
+export const dockerLog = join(stubs, 'docker.log');
+writeFileSync(join(stubs, 'docker'), `#!/bin/sh
+echo "$*" >> '${dockerLog}'
+[ "$1" = run ] || exit 0
+while [ "\${1#tex8web-tools:}" = "$1" ]; do shift; done
+shift 5
+exec "$@"
 `, { mode: 0o755 });
 export const stubbed = { PATH: `${stubs}:${process.env.PATH}` };
