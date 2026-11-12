@@ -112,6 +112,7 @@ A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-co
 | `\WebPDF{path}` | you want a PDF button without passing `-p` |
 | `\WebUp{url}` | you want an up button without passing `-u` |
 | `\WebLikePDF` | you want the text set as in the PDF: its size and line spacing, indented paragraphs, and justified text |
+| `\WebSpeechGiven` | your document uses `\|` for "given", as in `P(A \| B)`, and you want screen readers to say "given" |
 | `\Css{...}` | you want to add a style or change a tex8web style |
 
 The commands:
@@ -123,6 +124,7 @@ The commands:
 - **`\WebColor{name}{light}{dark}`**: Define the CSS variable `--name` as `light` in light mode and `dark` in dark mode.
 - **`\WebTerm\cs`**: Make the text of each `\cs{...}` a term in the search field. A term in a heading or a theorem note is found as that heading or theorem. Pass each command to `\WebTerm` once. A term's id, for links, is `term-` and the term's text in lower case, with a hyphen for each run of spaces or punctuation, and without math: `\term{Convex set}` has the id `term-convex-set`. Terms with the same text have `-2`, `-3`, and so on added to their ids.
 - **`\WebLikePDF`**: Set the text as in the PDF instead of with the [reading defaults](#reading-defaults). The text is at the PDF's size when the reader's default font size is 12pt, and scales with that default. The column width scales with the text size. The controls and the table of contents stay at the reader's default font size. Paragraphs are spaced as in the PDF, usually with no space between them. The text is justified and hyphenated only on a wide screen, because formulas that cannot break would leave wide gaps on a narrow screen.
+- **`\WebSpeechGiven`**: Speak `|` and `\mid` as "given" in the [speech for screen readers](#screen-readers), as in `P(A | B)`. Without this command, they are spoken as "divides", as in `a | b`.
 - **`\WebPDF{path}`**: Add a PDF button, as with [`-p`](#building-a-page). The path is relative to your document.
 - **`\WebUp{url}`**: Add an up button, as with [`-u`](#building-a-page).
 - **`\Css{...}`**: Add a CSS style after the tex8web styles in `css/tex8web.css`. Inside `\Css`, write `#` as `\#` and `%` as `\%`.
@@ -404,7 +406,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 
 ### Reading in a browser
 
-- **The controls are in English**, whatever the document language, and so is the speech for math. In the speech, `|` is "given", as in `P(A | B)`, so `a | b` in a document about divisibility is spoken as "a given b".
+- **The controls are in English**, whatever the document language, and so is the speech for math. In the speech, `|` is "divides", or "given" with [`\WebSpeechGiven`](#your-own-config). In a document that uses `|` in both ways, one of them is spoken wrongly, for example `P(A | B)` as "P of open paren A divides B close paren". Two bars in one formula, as in `a \mid b, b \mid c`, are spoken as an absolute value.
 - **Find in page.** Readers can find single characters of a formula with the browser's find-in-page command, but not a run of characters such as `Δ(S)`.
 - **A page opened from disk, or read with JavaScript off.** Fonts are not preloaded. On a phone, the layout of a long page can take a moment longer to settle.
 - **Safari after a swipe back.** After a swipe back to a page in Safari, the pages no longer slide when the reader returns to that page from history with the up or back button. The reader still returns to the same place.

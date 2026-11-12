@@ -260,11 +260,13 @@ const typeset = {
   ],
 };
 
-// What screen readers hear: ClearSpeak's words, | as "given", no "normal"
+// What screen readers hear: ClearSpeak's words, | as "given" with
+// \WebSpeechGiven (test.cfg) and as "divides" without it, no "normal"
 // before an upright letter, Δ as "Delta", and A^\top as "A transpose"; a
 // numbered equation without its number, then its label; an alignment of
 // several lines as one formula
 const speech = {
+  'test-speech': [/aria-label='a divides b'/, /aria-label='3 divides 12'/],
   'test': [/aria-label='P of open paren A given B close paren'/, /aria-label='Gamma of z'/,
     /aria-label='d x'/, /aria-label='Delta of S'/, /aria-label='A transpose'/,
     /^(?![^]*down tack)/, /aria-label='x sub i transpose'/],

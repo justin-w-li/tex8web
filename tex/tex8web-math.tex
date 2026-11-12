@@ -23,10 +23,11 @@
 %   Readers can turn speech on in MathJax's menu. Screen readers get each
 %   formula as MathML (assistiveMml, which MathJax leaves off when speech
 %   is on by default)
-% - speech, prerendered or from the menu, in ClearSpeak's words, with | read
-%   as "given", as in P(A | B), not "divides", and \Delta as "Delta", not
-%   "triangle". The rules are also set in the menu settings, because the
-%   menu's setting would replace them with ClearSpeak's defaults
+% - speech, prerendered or from the menu, in ClearSpeak's words, with \Delta
+%   as "Delta", not "triangle", and with \WebSpeechGiven, | as "given", as
+%   in P(A | B). The style (\web@speech) is also set in the menu settings,
+%   because the menu's setting would replace it with ClearSpeak's defaults.
+%   It is expanded when the head is written, after the config
 \def\web@extensions{"mathtools"}
 \def\web@load{"[tex]/mathtools"}
 \@for\web@package:=amscd,bbm,bboldx,braket,bussproofs,cancel,cases,centernot,%
@@ -51,12 +52,14 @@
     \web@needs{iftx@ntxmath}\web@needs{iftx@nc}%
     \iftx@ntxmath\def\web@mathfont{termes}\fi
     \iftx@nc\def\web@mathfont{schola}\fi}{}
+\def\web@speech{TriangleSymbol_Delta}
+\newcommand\WebSpeechGiven{\gdef\web@speech{VerticalLine_Given:TriangleSymbol_Delta}}
 \edef\web@mathjax{{
     "loader": {"load": ["ui/lazy", \web@load]},
     "options": {"menuOptions": {"settings": {"enrich": false, "speech": false,
         "braille": false, "assistiveMml": true,
-        "speechRules": "clearspeak-VerticalLine_Given:TriangleSymbol_Delta"}},
-        "sre": {"domain": "clearspeak", "style": "VerticalLine_Given:TriangleSymbol_Delta"}},
+        "speechRules": "clearspeak-\noexpand\web@speech"}},
+        "sre": {"domain": "clearspeak", "style": "\noexpand\web@speech"}},
     "tex": {"tags": "none", "packages": {"[+]": [\web@extensions]},
         "macros": {"colon": "\detokenize{\\mskip2mu\\mathpunct{}\\mkern-3mu{:}\\mskip6mu}",
             "relax": ""}},
