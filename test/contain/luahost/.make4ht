@@ -1,0 +1,6 @@
+-- make4ht runs this file as Lua: a write by absolute path to a directory
+-- on the host that is not mounted, which test/contain.mjs names in
+-- TEX8WEB_CONTAIN_SCRATCH
+local path = os.getenv("TEX8WEB_CONTAIN_SCRATCH") .. "/escaped-luahost"
+local file, err = io.open(path, "w")
+print("contain case: " .. (file and "wrote " .. path or err))

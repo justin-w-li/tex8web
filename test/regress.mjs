@@ -29,12 +29,16 @@
 //   --contain          build each page, and with --latexmk each PDF, in a
 //                      container without network or shell escape
 //                      (test/lib/contain.mjs), for a source not trusted.
-//                      latexmk then writes the PDF to the document's
-//                      build/pdf, and reads no .latexmkrc
+//                      A source that holds anything but files and
+//                      directories is refused. latexmk then writes the PDF
+//                      to the document's build/pdf, and reads no .latexmkrc
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { build, pool, root, run, through, workers } from './lib/build.mjs';
+import { build, pool, root, run, special, through, workers } from './lib/build.mjs';
 import { lock } from './lib/slots.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
@@ -80,6 +84,10 @@ function document(arg) {
     tex = files.includes('main.tex') ? 'main.tex' : files.length === 1 ? files[0] : null;
     if (!tex) refuse(`${arg} has no main.tex and not exactly one .tex file; name the file`);
   }
+  // (a source that is not trusted, before the host takes its lock or hashes
+  // it: the lock or the hash would follow a link)
+  const odd = options.contain && special(dir);
+  if (odd) refuse(`refusing ${arg}: ${odd} is not a file or directory`);
   // build() does not build the PDFs a config's \WebPDF links; latexmk()
   // builds them with --latexmk
   return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true,
@@ -110,7 +118,9 @@ const node = (script, ...args) => run(process.execPath, [join(here, script), ...
 // before the slot, so a run waiting for the lock holds no slot.
 async function latexmk(doc) {
   mkdirSync(join(doc.dir, 'build'), { recursive: true });
-  const release = await lock(join(doc.dir, 'build/pdf.lock'));
+  // (with --contain, the lock is kept where the source cannot reach it)
+  const release = await lock(options.contain
+    ? join(tmpdir(), `tex8web-pdf-${createHash('sha256').update(doc.dir).digest('hex').slice(0, 12)}.lock`) : join(doc.dir, 'build/pdf.lock'));
   try {
     // (in the container, the document's directory is read-only, and a
     // .latexmkrc, which is Perl, is not read)
@@ -170,6 +180,12 @@ async function screens(result) {
   }
 }
 
+// (the image is built once, before the builds, rather than by each at once
+// inside run()'s limits)
+if (options.contain && spawnSync(join(root, 'test/lib/contain.mjs'), ['--', 'true'], { stdio: ['ignore', 2, 2] }).status !== 0) {
+  console.error('the container did not run: is Docker running?');
+  process.exit(1);
+}
 const results = await pool(docs, workers, async doc => {
   const result = await regress(doc);
   // not awaited, so the next document builds meanwhile

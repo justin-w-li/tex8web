@@ -1,0 +1,7 @@
+% \input by absolute path of a file on the host outside every mount,
+% \ContainScratch/secret.tex, which test/contain.mjs makes, and which the
+% config it writes defines.
+\documentclass{article}
+\begin{document}
+\input{\ContainScratch/secret}
+\end{document}

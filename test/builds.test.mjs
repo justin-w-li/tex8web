@@ -3,7 +3,7 @@
 //   node --test test/builds.test.mjs
 // make4ht and docker are stand-ins (test/lib/stubs.mjs).
 import assert from 'node:assert/strict';
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { mock, test } from 'node:test';
@@ -211,6 +211,14 @@ test('a document with a runner builds its PDF and page through it, and is never 
     host = await make();
     assert.equal(host.reused, undefined);
     assert.equal(host.latexReused, undefined);
+
+    // a source with a link is refused before the host reads it
+    symlinkSync('/dev/zero', join(dir, 'zero.tex'));
+    writeFileSync(dockerLog, '');
+    const refused = await make();
+    assert.equal(refused.code, 2);
+    assert.match(refused.log, /^refusing to build runner: .*\/zero\.tex is not a file or directory$/m);
+    assert.equal(readFileSync(dockerLog, 'utf8'), '');
   } finally {
     process.env.PATH = path;
     rmSync(dir, { recursive: true });

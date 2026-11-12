@@ -11,11 +11,11 @@
 // FORCE_SOURCE_DATE are passed from the environment. The image is built
 // when its tag, a hash of the Dockerfile, is missing. Exits with the
 // command's status, after a line on stderr if a limit stopped it, and
-// nonzero if a process was killed for memory or a symbolic link was left
-// in a -w directory.
+// nonzero if a process was killed for memory or the command left in a -w
+// directory something other than files and directories, which is removed.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { chmodSync, lstatSync, readdirSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';
 import { constants } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,11 +72,10 @@ const name = `t8w-${process.pid}-${randomBytes(4).toString('hex')}`;
 const watcher = spawn('perl', ['-e', 'my $parent = shift; select undef, undef, undef, 0.5 while getppid == $parent; exec qw(docker rm -f), @ARGV',
   process.pid, name], { detached: true, stdio: 'ignore' });
 
-// (fsize is in bytes. A bind mount has no size limit, so this caps each
-// file, and the time limit a flood of small files. /tmp allows exec, as
-// biber unpacks itself there and runs from there, and the writable mounts
-// allow it anyway)
-// (not --rm, so that the container's state can be read after it ends)
+// (fsize, in bytes, caps each file, not their number, and a bind mount has
+// no size limit. /tmp allows exec, as biber unpacks itself there and runs
+// from there, and the writable mounts allow it anyway. Not --rm, so that
+// the container's state can be read after it ends)
 const started = Date.now();
 const child = spawn('docker', ['run', '--init', '--name', name, '--network', 'none', '--read-only',
   '--tmpfs', '/tmp:rw,exec,nosuid,size=512m', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
@@ -96,17 +95,25 @@ child.on('exit', (code, signal) => {
   // command that ignored SIGTERM)
   if (oom) console.error(`contain: a process was stopped at the memory limit of ${memory}`);
   else if (code === 124 || code === 137 && Date.now() - started >= time * 1000) console.error(`contain: stopped at the time limit of ${time} s`);
-  // (a link left in the output would be followed by the tools on the host
-  // that read or write it. readdirSync's recursive option follows links)
-  const links = [];
+  // (the tools on the host would follow a link left in the output, block
+  // on a FIFO, or fail on what the command made unreadable. So each mode
+  // is given back to its owner, and all but files and directories are
+  // removed)
+  let removed = 0;
   const walk = dir => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.isSymbolicLink()) links.push(join(dir, entry.name));
-      else if (entry.isDirectory()) walk(join(dir, entry.name));
+    chmodSync(dir, lstatSync(dir).mode | 0o700);
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name), stat = lstatSync(path);
+      if (stat.isDirectory()) walk(path);
+      else if (stat.isFile()) chmodSync(path, stat.mode | 0o600);
+      else {
+        rmSync(path);
+        removed++;
+        console.error(`contain: removed what the command left in the output, not a file or directory: ${path}`);
+      }
     }
   };
   write.forEach(walk);
-  for (const link of links) console.error(`contain: the command left a symbolic link in the output: ${link}`);
   const status = code ?? 128 + constants.signals[signal];
-  process.exit(status || (oom || links.length ? 1 : 0));
+  process.exit(status || (oom || removed ? 1 : 0));
 });

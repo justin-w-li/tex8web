@@ -3,7 +3,7 @@
 // described in CONTRIBUTING.md, "Reused builds".
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { availableParallelism, constants } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -184,6 +184,17 @@ export function hashFiles(base, paths, { outputs = false } = {}) {
   return hash.digest('hex');
 }
 
+// the first entry under dir, its build directory included, that is not a
+// file or directory, such as a link or a FIFO, or null
+export function special(dir) {
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name), stat = lstatSync(path);
+    const found = stat.isDirectory() ? special(path) : !stat.isFile() && path;
+    if (found) return found;
+  }
+  return null;
+}
+
 // the tex8web files a build reads
 const sources = ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'package.json', 'package-lock.json'];
 export const sourceHash = base => hashFiles(base, sources);
@@ -256,6 +267,10 @@ function stamps(doc, args, env, pdf) {
 // of a runner such as test/lib/contain.mjs, make4ht and latexmk run
 // through that runner
 export async function build(doc, out, aux, env = {}) {
+  // (a source through a runner is not trusted, and the host reads it before
+  // the runner does: hashFiles would follow a link)
+  const odd = doc.runner && special(doc.dir);
+  if (odd) return { code: 2, log: `refusing to build ${doc.name}: ${odd} is not a file or directory\n` };
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
   try {

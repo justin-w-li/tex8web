@@ -1,8 +1,9 @@
 # Tests every push to main and every pull request, and publishes the
 # examples to GitHub Pages from main. Builds run in TeX Live's image, pinned
 # by digest: the latest tag is rebuilt weekly, and a new tex4ht can change
-# the pages. To update it, take the new digest of texlive/texlive:latest
-# and see that both test jobs pass.
+# the pages. The Dockerfile, the image of npm run test:contain, has the same
+# digest, and both change together. To update it, take the new digest of
+# texlive/texlive:latest, put it in both, and see that both test jobs pass.
 name: CI
 
 on:
