@@ -7,21 +7,33 @@
 // A case passes when its build fails if it must, its logs have the
 // expected line, no file appeared in its directory, in tex8web's
 // directory, or in a scratch directory on the host, and no container is
-// left. Three cases differ: bibindex builds a test fixture, which must
+// left. Four cases differ: bibindex builds a test fixture, which must
 // build and match its build on the host; mountlink gives the runner a link
-// to mount; kill builds loop in another process, kills that process once
-// loop's .make4ht has run, and builds loop again on what was left. The
-// documents in test/contain are built only through the runner, never on
-// the host.
+// to mount; labels runs --clean on one of a running command's -w
+// directories; kill builds loop in another process, kills that process
+// once loop's .make4ht has run, and builds loop again on what was left.
+// The documents in test/contain are built only through the runner, never
+// on the host. Each docker call has a deadline.
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { build, empty, root, select } from './lib/build.mjs';
 
-if (spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0) {
+// runs a command, killed after seconds. One that does not end in time ends
+// the suite, with a line
+function sync(command, args, options = {}, seconds = 60) {
+  const result = spawnSync(command, args, { encoding: 'utf8', timeout: seconds * 1000, killSignal: 'SIGKILL', ...options });
+  if (result.error) {
+    console.error(`${command} ${args.join(' ')} did not end in ${seconds} s`);
+    process.exit(1);
+  }
+  return result;
+}
+
+if (sync('docker', ['info'], { stdio: 'ignore' }).status !== 0) {
   console.error('test/contain.mjs needs Docker, and docker info failed: start Docker and run it again');
   process.exit(2);
 }
@@ -57,7 +69,7 @@ const cases = {
 // directory it mounts, as Docker Desktop on macOS can fail to mount a
 // directory whose parent was removed and made again)
 const unstamp = dir => ['html.stamp', 'aux.latex.stamp'].forEach(file => rmSync(join(dir, file), { force: true }));
-const containers = () => spawnSync('docker', ['ps', '-aq', '--filter', 'name=t8w-'], { encoding: 'utf8' }).stdout.trim();
+const containers = () => sync('docker', ['ps', '-aq', '--filter', 'name=t8w-']).stdout.trim();
 const listing = dir => readdirSync(dir).filter(name => name !== 'build').sort().join('\n');
 
 // builds a case, and resolves to why it failed, or to its last line. kept:
@@ -78,7 +90,8 @@ async function check(name, { fails, limits = [], line, twice, kept } = cases[nam
     let found;
     for (let i = 0; i < (twice ? 2 : 1); i++) {
       const result = await build(doc, out, aux, { TEX8WEB_CONTAIN_SCRATCH: scratch });
-      const logs = [result.log, ...existsSync(aux) ? readdirSync(aux).filter(file => /\.(log|blg)$/.test(file))
+      // (lstat first: a FIFO left in aux, if the cleaning failed, would block)
+      const logs = [result.log, ...existsSync(aux) ? readdirSync(aux).filter(file => /\.(log|blg)$/.test(file) && lstatSync(join(aux, file)).isFile())
         .map(file => readFileSync(join(aux, file), 'latin1')) : []].join('\n');
       if (fails && result.code === 0) return 'built';
       if (fails && existsSync(`${out}.stamp`)) return 'a stamp was written';
@@ -123,7 +136,7 @@ function mountlink() {
   const link = join(base, 'mountlink');
   rmSync(link, { force: true });
   symlinkSync(scratch, link);
-  const result = spawnSync(join(root, 'test/lib/contain.mjs'), ['-w', link, '--', 'true'], { encoding: 'utf8' });
+  const result = sync(join(root, 'test/lib/contain.mjs'), ['-w', link, '--', 'true']);
   rmSync(link);
   const found = result.stderr.match(/contain: refusing to mount .*: it is missing, or a symbolic link is in its path/);
   return result.status === 2 && found ? { line: found[0] } : `the runner exited with ${result.status}:\n${result.stderr}`;
@@ -133,7 +146,9 @@ function mountlink() {
 // .make4ht has run: build.mjs then kills the runner's process group with
 // SIGKILL, as run() does with a hung command, so the runner cleans
 // nothing. The next build of loop must clean what was left, and fail
+// (each step prints its time, so that a stall shows where it is)
 async function kill() {
+  const started = Date.now(), step = what => console.log(`  kill: ${what} at ${Math.round((Date.now() - started) / 1000)} s`);
   const fifo = join(base, 'loop/aux.latex/escaped-fifo');
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'loop'], { stdio: 'ignore' });
   for (let i = 0; i < 120 && !existsSync(fifo); i++) await sleep(500);
@@ -141,13 +156,36 @@ async function kill() {
     child.kill();
     return 'loop\'s .make4ht did not run';
   }
+  step('loop\'s .make4ht ran');
   child.kill('SIGTERM');
   for (let i = 0; i < 10 && containers(); i++) await sleep(500);
   if (containers()) return `a container was left 5 s after the kill: ${containers()}`;
-  return check('loop', { fails: true, kept: true, line: [/contain: removed .*: .*\/(d\/){100}/, /contain: removed .*: .*escaped-fifo/] });
+  step('no container left');
+  const result = await check('loop', { fails: true, kept: true, line: [/contain: removed .*: .*\/(d\/){100}/, /contain: removed .*: .*loop\/build\/escaped-fifo/,
+    /contain: removed .*: .*aux\.latex\/escaped-fifo/] });
+  step('built again');
+  return result;
 }
 
-const others = { bibindex, mountlink, kill };
+// runs a command through the runner with two -w directories, and while it
+// runs, --clean on one of them: its container must be removed
+async function labels() {
+  const dirs = ['one', 'two'].map(name => join(base, 'labels', name));
+  dirs.forEach(dir => mkdirSync(dir, { recursive: true }));
+  const child = spawn(join(root, 'test/lib/contain.mjs'), [...dirs.flatMap(dir => ['-w', dir]), '--', 'sleep', '60'], { stdio: 'ignore' });
+  for (let i = 0; i < 60 && !containers(); i++) await sleep(500);
+  if (!containers()) {
+    child.kill();
+    return 'no container started';
+  }
+  const result = sync(join(root, 'test/lib/contain.mjs'), ['--clean', '-w', dirs[1]]);
+  if (result.status !== 0) return `--clean exited with ${result.status}:\n${result.stderr}`;
+  if (containers()) return `a container was left: ${containers()}`;
+  for (let i = 0; i < 20 && child.exitCode === null; i++) await sleep(500);
+  return child.exitCode === null ? 'the runner did not end' : { line: `--clean on ${dirs[1]} removed the container, and the runner exited with ${child.exitCode}` };
+}
+
+const others = { bibindex, mountlink, labels, kill };
 const all = [...Object.keys(cases), ...Object.keys(others)];
 const names = process.argv.slice(2);
 const unknown = names.filter(name => !all.includes(name));
@@ -161,7 +199,7 @@ if (containers()) {
 }
 // (the image is built once, before the cases, rather than inside the first
 // case's time limit)
-if (spawnSync(join(root, 'test/lib/contain.mjs'), ['--', 'true'], { stdio: ['ignore', 2, 2] }).status !== 0) {
+if (sync(join(root, 'test/lib/contain.mjs'), ['--', 'true'], { stdio: ['ignore', 2, 2] }, 660).status !== 0) {
   console.error('the container did not run');
   process.exit(1);
 }

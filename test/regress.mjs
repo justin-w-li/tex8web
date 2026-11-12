@@ -30,13 +30,13 @@
 //                      container without network or shell escape
 //                      (test/lib/contain.mjs), for a source not trusted.
 //                      A source that holds anything but files and
-//                      directories is refused, and the paths given are
-//                      taken without their symbolic links. latexmk then
-//                      writes the PDF to the document's build/pdf, and
-//                      reads no .latexmkrc
+//                      directories is refused, and so is a path given that
+//                      is a symbolic link; the links in a path's parent
+//                      are resolved. latexmk then writes the PDF to the
+//                      document's build/pdf, and reads no .latexmkrc
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -45,12 +45,16 @@ import { lock } from './lib/slots.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 // npm runs a script in tex8web's directory and sets INIT_CWD to where npm
-// was run. With --contain, a path is given without its symbolic links,
-// which contain.mjs refuses to mount, as macOS's /tmp is one
+// was run. With --contain, a path is taken without the symbolic links in
+// its parent, which contain.mjs refuses to mount, as macOS's /tmp is one,
+// and a path that is itself a link is refused
 const unlinked = path => existsSync(path) ? realpathSync(path) : join(unlinked(dirname(path)), basename(path));
 const at = path => {
   const full = resolve(process.env.npm_lifecycle_event ? process.env.INIT_CWD ?? process.cwd() : process.cwd(), path);
-  return options.contain ? unlinked(full) : full;
+  if (!options.contain) return full;
+  const real = join(unlinked(dirname(full)), basename(full));
+  if (lstatSync(real, { throwIfNoEntry: false })?.isSymbolicLink()) refuse(`refusing ${path}: it is a symbolic link`);
+  return real;
 };
 const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain] [--shots-cache <dir>] <dir or .tex file>...';
 const refuse = message => {
@@ -91,8 +95,14 @@ function document(arg) {
     tex = files.includes('main.tex') ? 'main.tex' : files.length === 1 ? files[0] : null;
     if (!tex) refuse(`${arg} has no main.tex and not exactly one .tex file; name the file`);
   }
-  // (a source that is not trusted, before the host takes its lock or hashes
-  // it: the lock or the hash would follow a link)
+  // (a source that is not trusted, before the host hashes it: the hash would
+  // follow a link. Its build directory first, as a killed build may have
+  // left it uncleaned)
+  const outputs = join(dir, 'build');
+  if (options.contain && lstatSync(outputs, { throwIfNoEntry: false })?.isDirectory() && spawnSync(join(root, 'test/lib/contain.mjs'),
+    ['--clean', '-w', outputs], { stdio: ['ignore', 2, 2], timeout: 960000, killSignal: 'SIGKILL' }).status !== 0) {
+    refuse(`refusing ${arg}: cleaning ${outputs} failed, or removed what is listed above`);
+  }
   const odd = options.contain && special(dir);
   if (odd) refuse(`refusing ${arg}: ${odd} is not a file or a directory that can be read`);
   // build() does not build the PDFs a config's \WebPDF links; latexmk()

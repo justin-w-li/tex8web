@@ -158,11 +158,17 @@ describe('regress.mjs', { concurrency: true }, () => {
       await refused(/main\.tex/, 'two');
       await refused(/same name.*dup/, 'a/dup', 'b/dup');
       await refused(/make4ht/, '--out', 'my-out', 'one');
-      // (a source that is not trusted, with a link where its PDF lock was)
+      // (a source that is not trusted: a link where its PDF lock was is
+      // removed, and the source refused; so is a source that holds a link,
+      // or is named through one)
       mkdirSync(join(dir, 'one/build'));
       symlinkSync(join(dir, 'elsewhere.lock'), join(dir, 'one/build/pdf.lock'));
-      await refused(/refusing one: .*one\/build\/pdf\.lock is not a file or a directory that can be read/, '--contain', '--latexmk', 'one');
-      assert.equal(existsSync(join(dir, 'elsewhere.lock')), false);
+      await refused(/removed .*one\/build\/pdf\.lock[^]*refusing one: cleaning .*one\/build failed/, '--contain', '--latexmk', 'one');
+      assert.equal(existsSync(join(dir, 'one/build/pdf.lock')) || existsSync(join(dir, 'elsewhere.lock')), false);
+      symlinkSync('/dev/zero', join(dir, 'one/zero.tex'));
+      await refused(/refusing one: .*one\/zero\.tex is not a file or a directory that can be read/, '--contain', 'one');
+      symlinkSync(join(dir, 'one'), join(dir, 'linked'));
+      await refused(/refusing linked: it is a symbolic link/, '--contain', 'linked');
     } finally {
       rmSync(dir, { recursive: true });
     }

@@ -193,14 +193,15 @@ test('a document with a runner builds its PDF and page through it, and is never 
     // read-only, and the directories it writes writable
     const mount = (path, mode = ',readonly') => `type=bind,source=${path},target=${path}${mode} `;
     const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.startsWith('run '));
-    // (each followed by the cleaning of the directories it writes, which
-    // mounts only those: by the runner, and again by build.mjs)
-    assert.equal(runs.length, 6, runs.join('\n'));
-    assert.ok(runs[0].includes(mount(dirname(pdf), '')) && runs[0].endsWith(` latexmk -norc -pdf -interaction=nonstopmode -outdir=${relative(dir, dirname(pdf))} doc.tex`), runs[0]);
+    // (first the cleaning of the document's build directory, and each
+    // command followed by the cleaning of the directories it writes, each
+    // mounting only those)
+    assert.equal(runs.length, 5, runs.join('\n'));
+    assert.ok(runs[1].includes(mount(dirname(pdf), '')) && runs[1].endsWith(` latexmk -norc -pdf -interaction=nonstopmode -outdir=${relative(dir, dirname(pdf))} doc.tex`), runs[1]);
     const writable = [mount(out, ''), mount(aux, ''), mount(`${aux}.latex`, ''), mount(join(dir, 'build'), '')];
     for (const part of [mount(dir), mount(cfg), mount(pdf), ...writable]) assert.ok(runs[3].includes(part), `${part} in ${runs[3]}`);
     assert.match(runs[3], / timeout -k 5 900 \S+\/bin\/tex8web -c /);
-    for (const [clean, parts] of [1, 2, 4, 5].map(i => [runs[i], i < 3 ? [mount(dirname(pdf), '')] : writable])) {
+    for (const [clean, parts] of [[runs[0], [mount(join(dir, 'build'), '')]], [runs[2], [mount(dirname(pdf), '')]], [runs[4], writable]]) {
       assert.equal(clean.match(/--mount /g).length, parts.length, clean);
       for (const part of parts) assert.ok(clean.includes(part), `${part} in ${clean}`);
       assert.match(clean, / sh -c /);
@@ -218,13 +219,17 @@ test('a document with a runner builds its PDF and page through it, and is never 
     assert.equal(host.reused, undefined);
     assert.equal(host.latexReused, undefined);
 
-    // a source with a link is refused before the host reads it
+    // a source with a link is refused before the host reads it, after its
+    // build directory and the outputs are cleaned
     symlinkSync('/dev/zero', join(dir, 'zero.tex'));
     writeFileSync(dockerLog, '');
     const refused = await make();
     assert.equal(refused.code, 2);
     assert.match(refused.log, /^refusing to build runner: .*\/zero\.tex is not a file or a directory that can be read$/m);
-    assert.equal(readFileSync(dockerLog, 'utf8'), '');
+    const cleans = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.startsWith('run '));
+    assert.equal(cleans.length, 1, cleans.join('\n'));
+    for (const part of [mount(join(dir, 'build'), ''), mount(out, ''), mount(aux, ''), mount(`${aux}.latex`, '')]) assert.ok(cleans[0].includes(part), part);
+    assert.match(cleans[0], / sh -c /);
   } finally {
     process.env.PATH = path;
     rmSync(dir, { recursive: true });

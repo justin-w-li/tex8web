@@ -283,13 +283,20 @@ function stamps(doc, args, env, pdf) {
 // of a runner such as test/lib/contain.mjs, make4ht and latexmk run
 // through that runner
 export async function build(doc, out, aux, env = {}) {
-  // (a source through a runner is not trusted, and the host reads it before
-  // the runner does: hashFiles would follow a link)
-  const odd = doc.runner && special(doc.dir);
-  if (odd) return { code: 2, log: `refusing to build ${doc.name}: ${odd} is not a file or a directory that can be read\n` };
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
   try {
+    if (doc.runner) {
+      // (what a runner killed with an earlier build, or by run(), left
+      // uncleaned, in the directories the host reads next. Then a source
+      // through a runner is not trusted, and the host reads it before the
+      // runner does: hashFiles would follow a link)
+      const left = await clean(doc, [join(doc.dir, 'build'), out, aux, `${aux}.latex`]
+        .filter(dir => lstatSync(dir, { throwIfNoEntry: false })?.isDirectory()));
+      if (left) return left;
+      const odd = special(doc.dir);
+      if (odd) return { code: 2, log: `refusing to build ${doc.name}: ${odd} is not a file or a directory that can be read\n` };
+    }
     return await buildHere(doc, out, aux, env);
   } finally {
     release();
@@ -330,9 +337,6 @@ async function buildHere(doc, out, aux, env) {
   const stage = { dir: `${aux}.latex`, stamp: `${aux}.latex.stamp`, log: `${aux}.latex.log` };
   const reuse = !doc.draft && existsSync(stage.stamp) && readFileSync(stage.stamp, 'utf8') === wanted.latex
     && existsSync(stage.dir) && existsSync(stage.log);
-  // (a runner killed with its build, or by it, cleaned nothing)
-  const left = doc.runner && await clean(doc, [out, aux, stage.dir].filter(dir => existsSync(dir)));
-  if (left) return left;
   empty(out);
   if (!doc.draft) empty(aux);
   if (reuse) {
@@ -383,7 +387,7 @@ async function buildHere(doc, out, aux, env) {
 // runner's default of 900 s, so that the runner, started later, stops the
 // command first, with its own line. However the runner ended, even killed
 // by run(), its --clean then cleans the directories in write, and the run
-// fails if that removed anything
+// fails if that removed anything or failed
 export async function runOn(doc, read, write, command, args, options) {
   if (!doc.runner) return run(command, args, options);
   const result = await run(doc.runner[0], [...doc.runner.slice(1), ...read.filter(file => /^\.\.(\/|$)/.test(relative(doc.dir, file)))
@@ -393,9 +397,12 @@ export async function runOn(doc, read, write, command, args, options) {
 }
 
 // runs the runner's --clean on the directories in write; resolves to null,
-// or to its result if it removed anything or failed
+// or to its result if it removed anything or failed. (--clean prints
+// nothing until it ends, within the runner's time limit plus 30 s, by
+// default 930 s)
 async function clean(doc, write) {
-  const result = write.length && await run(doc.runner[0], ['--clean', ...write.flatMap(dir => ['-w', dir])]);
+  const result = write.length && await run(doc.runner[0], [...doc.runner.slice(1), '--clean', ...write.flatMap(dir => ['-w', dir])],
+    { idle: 960, total: 960 });
   return result && result.code !== 0 ? result : null;
 }
 
