@@ -433,6 +433,10 @@ const contents = {
   // to that heading, under the id named from its title)
   'test-tocstar': ['Before', 'After', 'Blank', 'Overview'].map(title =>
     new RegExp(`<a href='#${title.toLowerCase()}'>${title}</a>[^]*<h[34] class='like\\w*Head' id='${title.toLowerCase()}'>`)),
+  // (a citation and its entry from bibtex, and an index from makeindex, in
+  // one document)
+  'test-bibindex': [/<span class='cite'>\[<a href='#Xgroups'>1<\/a>\]<\/span>/, /Groups and Their Orders/,
+    /<div class='index-subitem'>order, <a href='#dx1-3'>2<\/a>/],
 };
 
 // Text back in its font after a font command that the PDF keeps in a

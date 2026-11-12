@@ -1,0 +1,16 @@
+% A bibliography from a .bib file through bibtex, an index through
+% makeindex, and math: each tool a build runs besides LaTeX and Node
+% (tex8web.mk4).
+\documentclass{article}
+\usepackage{makeidx}
+\makeindex
+\begin{document}
+A group\index{group} is a set with an operation such that $a(bc) = (ab)c$,
+as in~\cite{groups}. Its order\index{group!order} is finite when
+\begin{equation}
+  |G| = \sum_{g \in G} 1 < \infty.
+\end{equation}
+\bibliographystyle{plain}
+\bibliography{test-bibindex}
+\printindex
+\end{document}

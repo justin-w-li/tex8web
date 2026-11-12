@@ -332,4 +332,5 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which is copied with every page |
 | `examples/` | the examples, and `index.tex`, the index of the published site |
 | `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `regress.mjs`, `compare.mjs`, the `*.test.mjs` tests of the test tools, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, and `lib/` |
+| `Dockerfile` | the image of CI's TeX Live with Node, in which `test/lib/contain.mjs` runs a build whose source is not trusted |
 | `.github/workflows/ci.yml` | CI and the published examples |
