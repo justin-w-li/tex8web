@@ -851,7 +851,7 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
     :is(h2, h3, h4, h5, h6, .newtheorem .head, .tcolorbox-title) a[href]:not(.tex8web-permalink) { position: relative;
         z-index: 2; }
     /* (transparent, as hidden buttons cannot be reached by keyboard; the
-       transition below fades to this state) */
+       transition below slides the bar away, then makes it transparent) */
     .tex8web-controls.tex8web-away:not(:has(:focus-visible)) { transform: translateY(-100%);
         opacity: 0; }
     /* (at the top, the title has the space above it that a wide screen
@@ -867,7 +867,7 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
             border-color var(--tex8web-fade), background-color var(--tex8web-fade); }
         .tex8web-controls.tex8web-away:not(:has(:focus-visible)) {
             transition: transform var(--tex8web-fade) var(--tex8web-leave),
-                opacity var(--tex8web-fade) var(--tex8web-leave),
+                opacity 0s var(--tex8web-fade),
                 border-color var(--tex8web-fade), background-color var(--tex8web-fade); }
     }
 }
