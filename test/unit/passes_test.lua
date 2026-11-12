@@ -684,6 +684,18 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(block:get_text(), "\nx\u{A0}y\n")
   end,
 
+  ["text.literal_blocks: a document's listing label ends before its padding"] = function()
+    local d = parse("<div class='listing'><span class='tex8web-listing-label'>1   </span><span class='cmtt-10'>a</span></div>")
+    text.literal_blocks(d)
+    equal(d:query_selector("span.tex8web-listing-label")[1]:get_text(), "1")
+    equal(d:query_selector("span.tex8web-listing-padding")[1]:get_text(), "   ")
+    equal(d:query_selector("div")[1]:get_text(), "1   a")
+    d = parse("<div class='listing'><span class='tex8web-listing-label'><span class='cmss-10'>1  </span></span>a</div>")
+    text.literal_blocks(d)
+    equal(d:query_selector("span.tex8web-listing-label")[1]:get_text(), "1")
+    equal(d:query_selector("div")[1]:get_text(), "1  a")
+  end,
+
   ["text.literal_sizes: a block whose spans share one size takes it"] = function()
     local css = ".cmtt-9{font-size:90%;font-family: monospace,monospace;}\n.cmr-9{font-size:90%;}\n"
       .. ".cmtt-10{font-family: monospace,monospace;}\n.cmtt-8{font-size:80%;}\n"
@@ -703,6 +715,29 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(boxes[1]:get_text(), "  \na\n\nb")
     equal(boxes[2]:get_parent():get_attribute("class"), "listing")
     -- (two sizes, or the text's size: the spans keep theirs)
+  end,
+
+  ["text.literal_sizes: a listing's line numbers keep their size"] = function()
+    local css = ".cmr-9{font-size:90%;}\n.cmtt-8{font-size:80%;}\n"
+    local d = parse("<div class='listing'><span class='tex8web-listing-number'><span class='cmr-9'>1</span></span>"
+      .. "<span class='cmtt-8'>a</span></div>")
+    text.literal_sizes(d, {}, css)
+    local boxes = d:query_selector("span.tex8web-sized-literal")
+    equal(#boxes, 1)
+    equal(boxes[1]:get_attribute("style"), "font-size: 80%")
+    equal(d:query_selector("span.tex8web-listing-number")[1]:get_attribute("style"), "font-size: 125%")
+    equal(d:query_selector("span.cmr-9")[1]:get_attribute("style"), "font-size: 90%")
+  end,
+
+  ["text.literal_sizes: a document's listing label is at the text's size"] = function()
+    local css = ".cmr-7{font-size:70%;}\n.cmtt-8{font-size:80%;}\n"
+    local d = parse("<div class='listing'><span class='tex8web-listing-label'><span class='cmtt-8'>a</span>"
+      .. "<span class='cmr-7'>1</span>:</span><span class='cmtt-8'>b</span></div>")
+    text.literal_sizes(d, {}, css)
+    equal(d:query_selector("span.tex8web-sized-literal")[1]:get_attribute("style"), "font-size: 80%")
+    equal(d:query_selector("span.tex8web-listing-label")[1]:get_attribute("style"), "font-size: 125%")
+    equal(d:query_selector("span.tex8web-listing-label > span.cmtt-8")[1]:get_attribute("style"), "font-size: 80%")
+    equal(d:query_selector("span.cmr-7")[1]:get_attribute("style"), "font-size: 70%")
   end,
 
   ["text.long_literals: phone-width verb and listings get constrained boxes"] = function()

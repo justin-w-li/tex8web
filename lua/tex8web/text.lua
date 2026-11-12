@@ -438,6 +438,36 @@ function M.literal_blocks(document)
     edit(first, function(text) return (text:gsub("^\n", "", 1):gsub("^ +\n", "\n", 1)) end)
     edit(last, function(text) return (text:gsub(" +$", "", 1)) end)
   end
+  -- A label that the document defines (tex8web-text.tex) ends in the
+  -- spaces of moreverb's \listingoffset, which are in the listing's font,
+  -- as after moreverb's numbers. They go after the label's span, in a span
+  -- of their own: make4ht's joincharacters (common_domfilters) moves the
+  -- space between two spans into the first if it holds only text.
+  local paddings, parents, seen = {}, {}, {}
+  for _, label in ipairs(document:query_selector("span.tex8web-listing-label")) do
+    -- (the last text, which may be in a font span)
+    local last = label
+    while last and last:is_element() do
+      local children = last:get_children()
+      last = children[#children]
+    end
+    local text, spaces = (last and last:is_text() and last:get_text() or ""):match("^(.-)( +)$")
+    if spaces then
+      dom.set_node_text(last, text)
+      local parent = label:get_parent()
+      paddings[label] = parent:create_element("span", {class = "tex8web-listing-padding"})
+      paddings[label]:add_child_node(paddings[label]:create_text_node(spaces))
+      if not seen[parent] then seen[parent], parents[#parents + 1] = true, parent end
+    end
+  end
+  for _, parent in ipairs(parents) do
+    local siblings = {}
+    for _, child in ipairs(parent:get_children()) do
+      siblings[#siblings + 1] = child
+      if paddings[child] then siblings[#siblings + 1] = paddings[child] end
+    end
+    dom.set_children(parent, siblings)
+  end
 end
 
 -- A literal block whose font spans share one size, as after \small or
@@ -454,19 +484,47 @@ function M.literal_sizes(document, context, css)
     local size = rule:match("font%-size%s*:%s*([%d.]+)%%")
     if size then sizes[class] = tonumber(size) end
   end
+  local function size_of(span)
+    for class in (span:get_attribute("class") or ""):gmatch("%S+") do
+      if dom.is_font_class(class) then return sizes[class] or 100 end
+    end
+  end
+  local function is_label(el)
+    return dom.has_class(el, "tex8web-listing-number") or dom.has_class(el, "tex8web-listing-label")
+  end
+  local function in_label(span, block)
+    local el = span:get_parent()
+    while el ~= block do
+      if is_label(el) then return true end
+      el = el:get_parent()
+    end
+    return false
+  end
   for _, block in ipairs(document:query_selector("pre.verbatim, pre.boxedverbatim, div.verbatiminput, "
       .. "div.listing, div.listinginput, div.verbatimtabinput")) do
-    local size, same = nil, true
+    -- (moreverb's line numbers are \small at any size of the listing, and
+    -- a document's labels have sizes of their own: a label is at the
+    -- text's size, and each font span in it at its class's size)
+    local size, same, labels, inside = nil, true, {}, {}
     for _, span in ipairs(block:query_selector("span")) do
-      for class in (span:get_attribute("class") or ""):gmatch("%S+") do
-        if dom.is_font_class(class) then
-          local own = sizes[class] or 100
-          if size and size ~= own then same = false end
-          size = own
-        end
+      if is_label(span) then
+        labels[#labels + 1] = span
+      elseif in_label(span, block) then
+        inside[#inside + 1] = span
+      else
+        local own = size_of(span)
+        if own and size and size ~= own then same = false end
+        size = own or size
       end
     end
     if same and size and size ~= 100 then
+      for _, label in ipairs(labels) do
+        dom.add_style(label, ("font-size: %g%%"):format(100 / size * 100))
+      end
+      for _, span in ipairs(inside) do
+        local own = size_of(span)
+        if own then dom.add_style(span, ("font-size: %g%%"):format(own)) end
+      end
       local box = block:create_element("span", {class = "tex8web-sized-literal", style = "font-size: " .. size .. "%"})
       local children = block:get_children()
       -- (the newline a browser drops right after <pre>, and would keep in

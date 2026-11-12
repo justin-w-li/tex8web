@@ -1,0 +1,21 @@
+\documentclass{article}
+\usepackage{moreverb}
+% A label that the document defines: text in the listing's typewriter
+% font, a number in roman at another size, and a colon in the base font.
+\makeatletter
+\renewcommand\verbatim@font{\footnotesize\ttfamily}
+\makeatother
+\renewcommand\listinglabel[1]{%
+  \llap{vf-label-{\scriptsize\rmfamily\the#1}{\normalsize\normalfont:}}\hskip\listingoffset\relax}
+\begin{document}
+\begin{listing}{1}
+vf-pitch-first
+vf-pitch-second
+vf-pitch-third
+\end{listing}
+% (a label defined in the body)
+\renewcommand\listinglabel[1]{\llap{vf-body-\the#1}\hskip\listingoffset\relax}
+\begin{listing}{1}
+vf-body-listing
+\end{listing}
+\end{document}

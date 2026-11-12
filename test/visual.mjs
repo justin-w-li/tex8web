@@ -1008,6 +1008,35 @@ const listingWhitespace = `(() => {
   return wrong;
 })()`;
 
+// A listing label that the document defines keeps its fonts and sizes: its
+// text in the listing's typewriter font, its number in roman, and its colon
+// in the base font, roman at the text's size.
+const listingLabelFonts = `(() => {
+  const label = document.querySelector('div.listing .tex8web-listing-label');
+  if (!label) return ["missing the document's listing label"];
+  const style = el => getComputedStyle(el);
+  const [text, number] = label.querySelectorAll('span');
+  const wrong = [];
+  if (!style(text).fontFamily.startsWith('"Latin Modern Mono"')) wrong.push('label text in ' + style(text).fontFamily);
+  if (!style(number).fontFamily.startsWith('"Latin Modern Roman"')) wrong.push('label number in ' + style(number).fontFamily);
+  if (![...label.childNodes].some(node => node.nodeType === 3 && node.textContent.includes(':'))) {
+    return [...wrong, 'the label colon is not text of the label'];
+  }
+  if (!style(label).fontFamily.startsWith('"Latin Modern Roman"')) wrong.push('label colon in ' + style(label).fontFamily);
+  const text_size = style(label.closest('div.listing')).fontSize;
+  if (style(label).fontSize !== text_size) wrong.push('label colon at ' + style(label).fontSize + ', not ' + text_size);
+  return wrong;
+})()`;
+
+// moreverb's line numbers are \small at any size of the listing.
+const listingNumberSize = `(() => {
+  const number = document.querySelector('div.listing .tex8web-listing-number > span');
+  if (!number) return ['missing listing line number'];
+  const got = parseFloat(getComputedStyle(number).fontSize);
+  const want = 0.9 * parseFloat(getComputedStyle(number.closest('div.listing')).fontSize);
+  return Math.abs(got - want) > 0.05 ? ['line number ' + got + 'px, expected ' + want.toFixed(2) + 'px'] : [];
+})()`;
+
 // moreverb's line numbers are in the roman font (\small\rmfamily), as in
 // the PDF, in listings and file listings.
 const listingNumbers = `(() => {
@@ -1311,6 +1340,23 @@ async function compare(chrome, doc, ok) {
       const pitch = await chrome.withPage(pathToFileURL(join(pre, html)).href,
         { width: 1600, javascript: false }, page => page.evaluate(smallPitch));
       problems.push(...pitch.map(p => `${html}: ${p}`));
+    }
+    if (doc.name === 'test-verbatim-font-moreverb-sizes') {
+      const sized = await chrome.withPage(pathToFileURL(join(pre, html)).href,
+        { width: 1600, javascript: false }, async page => [
+          ...await page.evaluate(smallPitch), ...await page.evaluate(listingNumberSize)]);
+      problems.push(...sized.map(p => `${html}: ${p}`));
+    }
+    if (doc.name === 'test-verbatim-font-moreverb-label-sans') {
+      const family = await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 1600, javascript: false },
+        page => page.evaluate(`getComputedStyle(document.querySelector('div.listing .tex8web-listing-label')).fontFamily`));
+      if (!family.startsWith('"Latin Modern Sans"')) problems.push(`${html}: the listing label in ${family}, not the text's sans`);
+    }
+    if (doc.name === 'test-verbatim-font-moreverb-label') {
+      const label = await chrome.withPage(pathToFileURL(join(pre, html)).href,
+        { width: 1600, javascript: false }, async page => [
+          ...await page.evaluate(smallPitch), ...await page.evaluate(listingLabelFonts)]);
+      problems.push(...label.map(p => `${html}: ${p}`));
     }
     if (doc.name === 'test-verbatim-font-review-spacing') {
       const spacing = await chrome.withPage(pathToFileURL(join(pre, html)).href,

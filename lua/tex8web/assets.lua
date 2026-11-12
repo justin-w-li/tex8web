@@ -165,6 +165,7 @@ local function font_css(roles)
   end
   if roles.body ~= "roman" then
     css[#css + 1] = ("html body { font-family: var(--tex8web-%s); }"):format(roles.body)
+    css[#css + 1] = (".tex8web-listing-label { font-family: var(--tex8web-%s); }"):format(roles.body)
     css[#css + 1] = ("%s { font-family: var(--tex8web-roman); }"):format(selector(roman_classes))
   end
   return table.concat(css, "\n")
@@ -307,8 +308,10 @@ function M.faces(document, css, roles)
         apply(face.label)
       end
       face.label = labels[class] or face.label
-      -- (moreverb's line numbers, in roman: css/tex8web.css)
+      -- (moreverb's line numbers, in roman, and a document's labels, in
+      -- the text's font: css/tex8web.css and font_css)
       if class == "tex8web-listing-number" then face.family, face.font = nil, nil end
+      if class == "tex8web-listing-label" then face.family, face.font = body.family, nil end
       local role, font = role_of(class)
       if role then face.family, face.font = role ~= "roman" and role or nil, font end
     end

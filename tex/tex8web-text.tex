@@ -49,12 +49,21 @@
         {\ifvmode\IgnorePar\fi\EndP\HCode{</div>}}%
     % moreverb sets its line numbers in \small\rmfamily. The span lets
     % css/tex8web.css set them in the text's roman, whatever the font,
-    % inside the typewriter block. (\thelisting@line drops the box, and
-    % both specials with it, on a line without a number.)
-    \ifdefined\listinglabel
-        \def\listinglabel#1{\llap{\HCode{<span class="tex8web-listing-number">}%
-            \small\rmfamily\the#1\HCode{</span>}}\hskip\listingoffset\relax}%
-    \fi
+    % inside the typewriter block. A label that the document defines, also
+    % in the body, is kept (moreverb.sty:63 has the original). Its span sets
+    % the text's font for its text in the document's base font, which
+    % tex4ht writes without a font span. The label is compared at each line,
+    % in \thelisting@line, which drops the box and the specials with it on a
+    % line without a number.
+    \def\web@listinglabel#1{\llap{\small\rmfamily\the#1}\hskip\listingoffset\relax}%
+    \def\web@numberlabel#1{\llap{\HCode{<span class="tex8web-listing-number">}%
+        \small\rmfamily\the#1\HCode{</span>}}\hskip\listingoffset\relax}%
+    \def\web@label#1{\ifx\web@documentlabel\web@listinglabel\web@numberlabel#1%
+        \else\HCode{<span class="tex8web-listing-label">}\web@documentlabel#1\HCode{</span>}\fi}%
+    \web@needs{thelisting@line}%
+    \let\web@thelistingline\thelisting@line
+    \def\thelisting@line{\let\web@documentlabel\listinglabel\let\listinglabel\web@label
+        \web@thelistingline\let\listinglabel\web@documentlabel}%
     % html4.4ht opens a table around the box, but closes only its pre.
     \def\env:verB#1{\IgnorePar\EndP
         \HCode{<table class="#1"><tr class="#1"><td class="#1">}\env:verb{#1}}

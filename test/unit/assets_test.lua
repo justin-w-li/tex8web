@@ -65,6 +65,12 @@ return {
       ""), "lmroman10-regular.woff2")
   end,
 
+  ["assets.faces: text in the base font in a document's listing label, in the text's font"] = function()
+    local label = '<div class="listing"><span class="tex8web-listing-label">1</span></div>'
+    equal(faces(label, ""), "lmroman10-regular.woff2")
+    equal(faces(label, "", {body = "sans", others = {}}), "lmsans10-regular.woff2")
+  end,
+
   ["assets.faces: a table of contents' entries in their level's font"] = function()
     local entries = '<span class="chapterToc">A</span><span class="subsectionToc">B</span>'
     equal(faces(entries, ""), "lmroman10-bold.woff2 lmroman10-regular.woff2")

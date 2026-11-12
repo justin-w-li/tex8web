@@ -119,10 +119,11 @@ code.verb, code.lstinline { white-space: nowrap; }
    its spaces; text.literal_blocks removes tex4ht's padding spaces, so that
    short blocks do not scroll. */
 div.listing, div.verbatimtabinput { white-space: pre; }
-/* moreverb's line numbers, in roman as in the PDF (tex8web-text.tex). The
-   font span inside, at the numbers' size, is in roman, and not the number's
-   span, whose taller roman line would push the line down */
-.tex8web-listing-number > span { font-family: var(--tex8web-roman); }
+/* moreverb's line numbers, in roman as in the PDF, and labels that the
+   document defines (tex8web-text.tex). A label's text in the document's
+   base font has no font span, and is in the text's font (assets.lua for
+   text in another font). Labels set no line height, as in TeX. */
+.tex8web-listing-number, .tex8web-listing-label { font-family: var(--tex8web-roman); line-height: 0; }
 /* a ~, written as a space by text.lua: pre keeps the space from
    collapsing and the line from breaking after it (CONTRIBUTING.md) */
 .tex8web-nbsp { white-space: pre; }
