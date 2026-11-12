@@ -1,0 +1,8 @@
+% \openout by absolute path to the document's directory, \ContainSource,
+% which the config that test/contain.mjs writes defines.
+\documentclass{article}
+\newwrite\escaped
+\begin{document}
+\immediate\openout\escaped=\ContainSource/escaped-openout.tex
+Text.
+\end{document}

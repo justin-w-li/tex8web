@@ -73,11 +73,13 @@ const watcher = spawn('perl', ['-e', 'my $parent = shift; select undef, undef, u
   process.pid, name], { detached: true, stdio: 'ignore' });
 
 // (fsize is in bytes. A bind mount has no size limit, so this caps each
-// file, and the time limit a flood of small files)
+// file, and the time limit a flood of small files. /tmp allows exec, as
+// biber unpacks itself there and runs from there, and the writable mounts
+// allow it anyway)
 // (not --rm, so that the container's state can be read after it ends)
 const started = Date.now();
 const child = spawn('docker', ['run', '--init', '--name', name, '--network', 'none', '--read-only',
-  '--tmpfs', '/tmp:rw,noexec,nosuid,size=512m', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+  '--tmpfs', '/tmp:rw,exec,nosuid,size=512m', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
   '--pids-limit', '256', '--cpus', '2', '--memory', memory, '--memory-swap', memory, '--ulimit', 'fsize=1073741824',
   '--user', `${process.getuid()}:${process.getgid()}`, '-e', 'HOME=/tmp', '-e', 'TEXMFVAR=/tmp/texmf-var',
   '-e', 'shell_escape=f', '-e', 'openout_any=p', '-e', 'LANG=C.UTF-8',

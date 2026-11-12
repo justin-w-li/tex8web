@@ -1,0 +1,3 @@
+-- make4ht runs this file as Lua: a link to / in the directory that LaTeX's
+-- run is saved in, which the host would follow
+os.execute('ln -s / "$TEX8WEB_LATEX_SAVE/escaped-link"')

@@ -200,6 +200,7 @@ The checks of each test script are listed in its header comment.
   - The merge base is extracted with `git archive` into `<bases>/<commit>/tex8web`, which uses your `node_modules`, and is built with its own `test/lib/build.mjs`, documents, and configs. A merge base with another `package-lock.json` is refused. `<bases>` is `build/base` by default, or `--bases <dir>`. Several checkouts can share one directory, so that each merge base is built once.
   - A run holds `<bases>/<commit>.lock` from start to end, so no other run extracts or removes that base meanwhile, and two runs with one merge base run one after the other. Each run removes the bases that no worktree's branch left main at, unless another run holds their lock. Without `lockf`, as on Linux, no lock is taken, so share no `<bases>` there.
   - The examples keep the real date, so their pages at the merge base are built again on another day, and a run across midnight shows them as changed.
+- **`npm run test:contain -- [cases]`**: the documents in `test/contain/`, each an attack on the host, built through `test/lib/contain.mjs`. Each build must fail or leave the attack without effect, with the expected line in its log, and leave no file outside its writable mounts and no container. It needs Docker, so `npm test` and CI do not run it.
 - **`node test/diff.mjs <old> <new>`**: what changed in the HTML between two builds
 - **`node test/check.mjs <html dir> [make4ht log] [TeX log]`**: the generic page checks, on any build
 - **`test/checklist.md`**: the checklist for comparing the page of `test.tex` with its PDF by eye
@@ -332,6 +333,6 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `js/prerender.mjs`, `prerender-rules.mjs` | MathJax in Node, and the MathJax CSS rules that the removal of elements depends on |
 | `fonts/` | Latin Modern as WOFF2, and `LICENSE.txt`, which is copied with every page |
 | `examples/` | the examples, and `index.tex`, the index of the published site |
-| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `regress.mjs`, `compare.mjs`, the `*.test.mjs` tests of the test tools, `unit/`, `fixtures/`, `expected.json`, `checklist.md`, and `lib/` |
+| `test/` | `run.mjs`, `visual.mjs`, `page.mjs`, `examples.mjs`, `check.mjs`, `diff.mjs`, `shots.mjs`, `regress.mjs`, `compare.mjs`, `contain.mjs`, the `*.test.mjs` tests of the test tools, `unit/`, `fixtures/`, `contain/`, `expected.json`, `checklist.md`, and `lib/` |
 | `Dockerfile` | the image of CI's TeX Live with Node, in which `test/lib/contain.mjs` runs a build whose source is not trusted |
 | `.github/workflows/ci.yml` | CI and the published examples |

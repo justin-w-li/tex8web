@@ -1,0 +1,4 @@
+-- make4ht runs this file as Lua, which has no memory limit of its own:
+-- distinct strings of 1 MB until the process is killed
+local kept = {}
+for i = 1, math.huge do kept[i] = string.rep("x", 2^20) .. i end

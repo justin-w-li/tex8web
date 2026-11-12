@@ -1,0 +1,6 @@
+-- make4ht runs this file as Lua: writes to the document's directory and to
+-- tex8web's directory, three levels up
+for _, path in ipairs {"escaped-make4ht", "../../../escaped-make4ht"} do
+  local file, err = io.open(path, "w")
+  print("contain case: " .. (file and "wrote " .. path or err))
+end

@@ -1,0 +1,7 @@
+% A shell command through \write18, which would write into the document's
+% build directory, writable in the container.
+\documentclass{article}
+\begin{document}
+\immediate\write18{touch build/escaped-write18}
+Text.
+\end{document}

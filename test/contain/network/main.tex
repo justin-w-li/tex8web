@@ -1,0 +1,8 @@
+% A bibliography that biber would fetch from the network.
+\documentclass{article}
+\usepackage[backend=biber]{biblatex}
+\addbibresource[location=remote]{https://example.org/escaped.bib}
+\begin{document}
+As in \cite{escaped}.
+\printbibliography
+\end{document}

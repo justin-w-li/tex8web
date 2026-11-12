@@ -22,7 +22,8 @@
     "test:page": "node test/page.mjs",
     "examples": "node test/examples.mjs",
     "regress": "node test/regress.mjs",
-    "test:compare": "node test/compare.mjs"
+    "test:compare": "node test/compare.mjs",
+    "test:contain": "node test/contain.mjs"
   },
   "dependencies": {
     "@mathjax/mathjax-bbm-font-extension": "4.1.3",

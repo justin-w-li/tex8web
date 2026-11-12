@@ -1,0 +1,8 @@
+% \openout by absolute path to a directory on the host, \ContainScratch,
+% which the config that test/contain.mjs writes defines.
+\documentclass{article}
+\newwrite\escaped
+\begin{document}
+\immediate\openout\escaped=\ContainScratch/escaped-openout.tex
+Text.
+\end{document}

