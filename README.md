@@ -1,6 +1,6 @@
 # tex8web
 
-tex8web turns a LaTeX document into a web page that looks like its PDF, with [make4ht](https://ctan.org/pkg/make4ht) and tex4ht from TeX Live. Most documents need no config. tex8web typesets the math with MathJax when you build, so the page is plain HTML and CSS, readable offline and without JavaScript.
+tex8web turns a LaTeX document into a web page that looks like its PDF, with [make4ht](https://ctan.org/pkg/make4ht) and tex4ht from TeX Live. tex8web typesets the math with MathJax when you build, so the page is plain HTML and CSS, readable offline and without JavaScript.
 
 Four example pages are [online](https://justin-w-li.github.io/tex8web/), each next to its PDF.
 
@@ -27,7 +27,22 @@ LaTeXML is a Perl reimplementation of TeX, used for arXiv's HTML papers. Each pa
 
 lwarp is a LaTeX package, so the HTML is written by real LaTeX. Many packages are supported, but not all. The math is shown as SVG pictures or with MathJax in the browser.
 
-tex8web runs real TeX through tex4ht, so your document needs no changes, and package support is as in tex4ht. The page is styled from TeX's measurements of the document.
+tex8web runs real TeX through tex4ht, so your document needs no changes. The page is styled from TeX's measurements of the document.
+
+## Tested documents
+
+tex8web is tested on about 100 short test documents, the four [examples](#examples), and several long sets of class notes. Other documents and packages have not been checked against their PDF yet.
+
+Two of the examples build without a config. The other two use one: `complex` for macros that MathJax cannot read, and `custom` for its title and header box. The class notes use one for their colors, macros, and styles.
+
+Some differences from the PDF found in the tested documents:
+
+- A document split into several pages is refused: tex8web makes one page per document.
+- Text in `\scalebox`, `\resizebox`, or `\reflectbox` is shown at its natural size.
+- The parts of a tcolorbox or mdframed box drawn with TikZ are shown as a plain frame.
+- Macros that MathJax cannot read are shown in red until you define them with `\WebMathMacros`.
+
+All known differences are listed in [Known limitations](DOCUMENTATION.md#known-limitations).
 
 ## Install
 

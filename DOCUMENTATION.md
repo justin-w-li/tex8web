@@ -68,7 +68,7 @@ tex8web runs Node, bibtex, makeindex, and makeglossaries through a POSIX shell, 
 
 ## Your own config
 
-Most documents need no config. tex8web reads a document's macros, colors, theorem styles, and lists, and the settings of these packages:
+tex8web reads a document's macros, colors, theorem styles, and lists, and the settings of these packages:
 
 - titlesec, for headings
 - tocloft, for the table of contents
