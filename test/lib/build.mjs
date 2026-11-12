@@ -293,7 +293,7 @@ export async function build(doc, out, aux, env = {}) {
       // runner does: hashFiles would follow a link)
       const left = await clean(doc, [join(doc.dir, 'build'), out, aux, `${aux}.latex`]
         .filter(dir => lstatSync(dir, { throwIfNoEntry: false })?.isDirectory()));
-      if (left) return left;
+      if (left) return { ...left, log: `${left.log}the cleaning before the build failed, or removed what is listed above\n` };
       const odd = special(doc.dir);
       if (odd) return { code: 2, log: `refusing to build ${doc.name}: ${odd} is not a file or a directory that can be read\n` };
     }
@@ -415,7 +415,10 @@ export function latexmk(doc, outdir) {
   const key = join(doc.dir, outdir, doc.tex);
   if (!pdfs.has(key)) {
     mkdirSync(join(doc.dir, outdir), { recursive: true });
-    pdfs.set(key, runOn(doc, [], [join(doc.dir, outdir)], 'latexmk',
+    // (the document's build directory when outdir is in it, so that the
+    // cleaning before a build, which has build's label, finds a container
+    // left by a killed latexmk)
+    pdfs.set(key, runOn(doc, [], [join(doc.dir, /^build(\/|$)/.test(outdir) ? 'build' : outdir)], 'latexmk',
       [...doc.runner ? ['-norc'] : [], '-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex], { cwd: doc.dir, slot: true }));
   }
   return pdfs.get(key);

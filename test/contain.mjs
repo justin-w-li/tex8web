@@ -23,13 +23,14 @@ import { fileURLToPath } from 'node:url';
 import { build, empty, root, select } from './lib/build.mjs';
 
 // runs a command, killed after seconds. One that does not end in time ends
-// the suite, with a line
+// the suite, with a line; one that does not start is printed
 function sync(command, args, options = {}, seconds = 60) {
   const result = spawnSync(command, args, { encoding: 'utf8', timeout: seconds * 1000, killSignal: 'SIGKILL', ...options });
-  if (result.error) {
+  if (result.error?.code === 'ETIMEDOUT') {
     console.error(`${command} ${args.join(' ')} did not end in ${seconds} s`);
     process.exit(1);
   }
+  if (result.error) console.error(result.error.message);
   return result;
 }
 
@@ -164,6 +165,8 @@ async function kill() {
   const result = await check('loop', { fails: true, kept: true, line: [/contain: removed .*: .*\/(d\/){100}/, /contain: removed .*: .*loop\/build\/escaped-fifo/,
     /contain: removed .*: .*aux\.latex\/escaped-fifo/] });
   step('built again');
+  // (the cleaning gave back the mode of the directory left in build)
+  if (typeof result !== 'string' && (lstatSync(join(root, 'test/contain/loop/build/closed')).mode & 0o700) !== 0o700) return 'build/closed is still closed';
   return result;
 }
 
@@ -174,15 +177,16 @@ async function labels() {
   dirs.forEach(dir => mkdirSync(dir, { recursive: true }));
   const child = spawn(join(root, 'test/lib/contain.mjs'), [...dirs.flatMap(dir => ['-w', dir]), '--', 'sleep', '60'], { stdio: 'ignore' });
   for (let i = 0; i < 60 && !containers(); i++) await sleep(500);
-  if (!containers()) {
-    child.kill();
-    return 'no container started';
+  try {
+    if (!containers()) return 'no container started';
+    const result = sync(join(root, 'test/lib/contain.mjs'), ['--clean', '-w', dirs[1]]);
+    if (result.status !== 0) return `--clean exited with ${result.status}:\n${result.stderr}`;
+    if (containers()) return `a container was left: ${containers()}`;
+    for (let i = 0; i < 20 && child.exitCode === null; i++) await sleep(500);
+    return child.exitCode === null ? 'the runner did not end' : { line: `--clean on ${dirs[1]} removed the container, and the runner exited with ${child.exitCode}` };
+  } finally {
+    if (child.exitCode === null) child.kill();
   }
-  const result = sync(join(root, 'test/lib/contain.mjs'), ['--clean', '-w', dirs[1]]);
-  if (result.status !== 0) return `--clean exited with ${result.status}:\n${result.stderr}`;
-  if (containers()) return `a container was left: ${containers()}`;
-  for (let i = 0; i < 20 && child.exitCode === null; i++) await sleep(500);
-  return child.exitCode === null ? 'the runner did not end' : { line: `--clean on ${dirs[1]} removed the container, and the runner exited with ${child.exitCode}` };
 }
 
 const others = { bibindex, mountlink, labels, kill };

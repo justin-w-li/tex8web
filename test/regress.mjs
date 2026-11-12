@@ -30,8 +30,8 @@
 //                      container without network or shell escape
 //                      (test/lib/contain.mjs), for a source not trusted.
 //                      A source that holds anything but files and
-//                      directories is refused, and so is a path given that
-//                      is a symbolic link; the links in a path's parent
+//                      directories is refused, and so is a document given
+//                      as a symbolic link. Other links in the paths given
 //                      are resolved. latexmk then writes the PDF to the
 //                      document's build/pdf, and reads no .latexmkrc
 import { spawnSync } from 'node:child_process';
@@ -45,13 +45,15 @@ import { lock } from './lib/slots.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 // npm runs a script in tex8web's directory and sets INIT_CWD to where npm
-// was run. With --contain, a path is taken without the symbolic links in
-// its parent, which contain.mjs refuses to mount, as macOS's /tmp is one,
-// and a path that is itself a link is refused
+// was run. With --contain, a path is taken without its symbolic links,
+// which contain.mjs refuses to mount, as macOS's /tmp is one. A document
+// argument (source) that is itself a link is refused, so only the links
+// in its parent are resolved
 const unlinked = path => existsSync(path) ? realpathSync(path) : join(unlinked(dirname(path)), basename(path));
-const at = path => {
+const at = (path, source) => {
   const full = resolve(process.env.npm_lifecycle_event ? process.env.INIT_CWD ?? process.cwd() : process.cwd(), path);
   if (!options.contain) return full;
+  if (!source) return unlinked(full);
   const real = join(unlinked(dirname(full)), basename(full));
   if (lstatSync(real, { throwIfNoEntry: false })?.isSymbolicLink()) refuse(`refusing ${path}: it is a symbolic link`);
   return real;
@@ -84,7 +86,7 @@ const cfg = at(options.c ?? join(root, 'tex8web.cfg'));
 if (!existsSync(cfg)) refuse(`no such config: ${options.c}`);
 
 function document(arg) {
-  const path = at(arg);
+  const path = at(arg, true);
   if (!existsSync(path)) refuse(`no such file or directory: ${arg}`);
   let dir = path, tex = basename(path);
   if (statSync(path).isFile()) {

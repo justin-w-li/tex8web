@@ -68,7 +68,7 @@ for (const path of write) mounts.set(resolve(path), '');
 function docker(args, options = {}, seconds = 60) {
   const result = spawnSync('docker', args, { encoding: 'utf8', timeout: seconds * 1000, killSignal: 'SIGKILL', ...options });
   if (result.error) {
-    console.error(`contain: docker ${args[0]} did not end in ${seconds} s`);
+    console.error(result.error.code === 'ETIMEDOUT' ? `contain: docker ${args[0]} did not end in ${seconds} s` : `contain: ${result.error.message}`);
     process.exit(1);
   }
   return result;
@@ -79,7 +79,8 @@ const image = `tex8web-tools:${createHash('sha256').update(dockerfile).digest('h
 if (docker(['image', 'inspect', image], { stdio: 'ignore' }).status !== 0) {
   console.error(`contain: building the image ${image}`);
   // (without a build context, as the Dockerfile copies nothing)
-  const built = docker(['build', '-t', image, '-'], { input: dockerfile, stdio: ['pipe', 2, 2] }, 600);
+  // (the first build pulls TeX Live's image, of several GB)
+  const built = docker(['build', '-t', image, '-'], { input: dockerfile, stdio: ['pipe', 2, 2] }, 3600);
   if (built.status !== 0) process.exit(built.status ?? 1);
 }
 
@@ -99,7 +100,7 @@ const labels = write.map(dir => `t8w.w.${createHash('sha256').update(resolve(dir
 // docker client but not the container. So a watcher in a session of its
 // own removes the container once this process is gone
 const name = `t8w-${process.pid}-${randomBytes(4).toString('hex')}`;
-const watcher = spawn('perl', ['-e', 'my $parent = shift; select undef, undef, undef, 0.5 while getppid == $parent; exec qw(docker rm -f), @ARGV',
+const watcher = spawn('perl', ['-e', 'my $parent = shift; select undef, undef, undef, 0.5 while getppid == $parent; alarm 60; exec qw(docker rm -f), @ARGV',
   process.pid, name], { detached: true, stdio: 'ignore' });
 
 // --clean: removes every container labeled with any of the -w directories,
