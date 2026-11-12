@@ -161,7 +161,7 @@ describe('regress.mjs', { concurrency: true }, () => {
       // (a source that is not trusted, with a link where its PDF lock was)
       mkdirSync(join(dir, 'one/build'));
       symlinkSync(join(dir, 'elsewhere.lock'), join(dir, 'one/build/pdf.lock'));
-      await refused(/refusing one: .*one\/build\/pdf\.lock is not a file or directory/, '--contain', '--latexmk', 'one');
+      await refused(/refusing one: .*one\/build\/pdf\.lock is not a file or a directory that can be read/, '--contain', '--latexmk', 'one');
       assert.equal(existsSync(join(dir, 'elsewhere.lock')), false);
     } finally {
       rmSync(dir, { recursive: true });

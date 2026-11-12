@@ -1,0 +1,6 @@
+-- make4ht runs this file as Lua: what the fifo case leaves, a directory
+-- without permissions holding a file, a tree deeper than the host's limit
+-- on a path, and a FIFO last, which the kill case waits for, before
+-- main.tex loops
+os.execute('cd "$TEX8WEB_LATEX_SAVE" && mkdir escaped-closed && touch escaped-closed/file && chmod 000 escaped-closed'
+  .. ' && (for i in $(seq 600); do mkdir d && cd d; done && touch file) && mkfifo escaped-fifo')

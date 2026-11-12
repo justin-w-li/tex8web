@@ -184,15 +184,31 @@ export function hashFiles(base, paths, { outputs = false } = {}) {
   return hash.digest('hex');
 }
 
+// removes what dir holds, or dir itself if it is not a directory. (A
+// directory is kept: Docker Desktop on macOS can refuse for a moment to
+// remove a directory that a container mounted, and fail for a minute or so
+// to mount one whose parent was removed and made again)
+export function empty(dir) {
+  if (!lstatSync(dir, { throwIfNoEntry: false })?.isDirectory()) return rmSync(dir, { force: true });
+  for (const name of readdirSync(dir)) rmSync(join(dir, name), { recursive: true, force: true });
+}
+
 // the first entry under dir, its build directory included, that is not a
-// file or directory, such as a link or a FIFO, or null
+// file or a directory that can be read, such as a link, a FIFO, or a path
+// too long, or null
 export function special(dir) {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name), stat = lstatSync(path);
-    const found = stat.isDirectory() ? special(path) : !stat.isFile() && path;
-    if (found) return found;
+  // (a directory that cannot be read, or holds an entry that cannot be, is
+  // returned itself)
+  try {
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name), stat = lstatSync(path);
+      const found = stat.isDirectory() ? special(path) : !stat.isFile() && path;
+      if (found) return found;
+    }
+    return null;
+  } catch {
+    return dir;
   }
-  return null;
 }
 
 // the tex8web files a build reads
@@ -270,7 +286,7 @@ export async function build(doc, out, aux, env = {}) {
   // (a source through a runner is not trusted, and the host reads it before
   // the runner does: hashFiles would follow a link)
   const odd = doc.runner && special(doc.dir);
-  if (odd) return { code: 2, log: `refusing to build ${doc.name}: ${odd} is not a file or directory\n` };
+  if (odd) return { code: 2, log: `refusing to build ${doc.name}: ${odd} is not a file or a directory that can be read\n` };
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
   try {
@@ -314,13 +330,16 @@ async function buildHere(doc, out, aux, env) {
   const stage = { dir: `${aux}.latex`, stamp: `${aux}.latex.stamp`, log: `${aux}.latex.log` };
   const reuse = !doc.draft && existsSync(stage.stamp) && readFileSync(stage.stamp, 'utf8') === wanted.latex
     && existsSync(stage.dir) && existsSync(stage.log);
-  rmSync(out, { recursive: true, force: true });
-  if (!doc.draft) rmSync(aux, { recursive: true, force: true });
+  // (a runner killed with its build, or by it, cleaned nothing)
+  const left = doc.runner && await clean(doc, [out, aux, stage.dir].filter(dir => existsSync(dir)));
+  if (left) return left;
+  empty(out);
+  if (!doc.draft) empty(aux);
   if (reuse) {
     console.log(`reusing ${doc.name}'s LaTeX run in ${basename(out)}: nothing LaTeX reads has changed`);
   } else if (!doc.draft) {
     rmSync(stage.stamp, { force: true });
-    rmSync(stage.dir, { recursive: true, force: true });
+    empty(stage.dir);
     // (tex8web.mk4 copies LaTeX's run only into an empty directory, so that
     // a runner can mount exactly that directory)
     mkdirSync(stage.dir, { recursive: true });
@@ -336,9 +355,8 @@ async function buildHere(doc, out, aux, env) {
   // outside them)
   mkdirSync(out, { recursive: true });
   const linked = pdf && join(doc.dir, pdf);
-  const [command, prefixed, limits] = through(doc, [doc.cfg, ...linked && existsSync(linked) ? [linked] : [], ...reuse ? [stage.dir] : []],
-    [out, aux, ...doc.draft || reuse ? [] : [stage.dir], join(doc.dir, 'build')], join(root, 'bin/tex8web'), args);
-  const result = await run(command, prefixed, { cwd: doc.dir, slot: true, ...limits, env: { ...process.env, ...env,
+  const result = await runOn(doc, [doc.cfg, ...linked && existsSync(linked) ? [linked] : [], ...reuse ? [stage.dir] : []],
+    [out, aux, ...doc.draft || reuse ? [] : [stage.dir], join(doc.dir, 'build')], join(root, 'bin/tex8web'), args, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
     TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? stage.dir : undefined,
     TEX8WEB_LATEX_SAVE: doc.draft || reuse ? undefined : stage.dir } });
   // (the marks around LaTeX's part of the log, which a reused run takes from
@@ -359,15 +377,27 @@ async function buildHere(doc, out, aux, env) {
   return reuse && latexLog !== undefined ? { ...result, latexReused: true } : result;
 }
 
-// the command, arguments, and run() limits that run command on a document:
-// through doc.runner if set, with -r for each path in read outside the
-// document's directory, and -w for each directory in write. The total limit
-// is then longer than the runner's default of 900 s, so that the runner,
-// started later, stops the command first, with its own line
-export const through = (doc, read, write, command, args) => doc.runner
-  ? [doc.runner[0], [...doc.runner.slice(1), ...read.filter(file => /^\.\.(\/|$)/.test(relative(doc.dir, file))).flatMap(file => ['-r', file]),
-    ...write.flatMap(dir => ['-w', dir]), '--', command, ...args], { total: 930 }]
-  : [command, args, {}];
+// runs command on a document with run() and options: through doc.runner if
+// set, with -r for each path in read outside the document's directory, and
+// -w for each directory in write. The total limit is then longer than the
+// runner's default of 900 s, so that the runner, started later, stops the
+// command first, with its own line. However the runner ended, even killed
+// by run(), its --clean then cleans the directories in write, and the run
+// fails if that removed anything
+export async function runOn(doc, read, write, command, args, options) {
+  if (!doc.runner) return run(command, args, options);
+  const result = await run(doc.runner[0], [...doc.runner.slice(1), ...read.filter(file => /^\.\.(\/|$)/.test(relative(doc.dir, file)))
+    .flatMap(file => ['-r', file]), ...write.flatMap(dir => ['-w', dir]), '--', command, ...args], { ...options, total: 930 });
+  const left = await clean(doc, write);
+  return left ? { ...result, code: result.code || 1, log: result.log + left.log } : result;
+}
+
+// runs the runner's --clean on the directories in write; resolves to null,
+// or to its result if it removed anything or failed
+async function clean(doc, write) {
+  const result = write.length && await run(doc.runner[0], ['--clean', ...write.flatMap(dir => ['-w', dir])]);
+  return result && result.code !== 0 ? result : null;
+}
 
 // builds a document's PDF with latexmk in outdir (relative to the
 // document); resolves to { code, log }. Once for each PDF, as both test
@@ -378,9 +408,8 @@ export function latexmk(doc, outdir) {
   const key = join(doc.dir, outdir, doc.tex);
   if (!pdfs.has(key)) {
     mkdirSync(join(doc.dir, outdir), { recursive: true });
-    const [command, args, limits] = through(doc, [], [join(doc.dir, outdir)], 'latexmk',
-      [...doc.runner ? ['-norc'] : [], '-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex]);
-    pdfs.set(key, run(command, args, { cwd: doc.dir, slot: true, ...limits }));
+    pdfs.set(key, runOn(doc, [], [join(doc.dir, outdir)], 'latexmk',
+      [...doc.runner ? ['-norc'] : [], '-pdf', '-interaction=nonstopmode', `-outdir=${outdir}`, doc.tex], { cwd: doc.dir, slot: true }));
   }
   return pdfs.get(key);
 }

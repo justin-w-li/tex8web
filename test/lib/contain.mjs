@@ -2,6 +2,7 @@
 // Runs a command in the image of tex8web's Dockerfile, for a document whose
 // source is not trusted:
 //   test/lib/contain.mjs [-t seconds] [-m memory] [-r path]... [-w dir]... -- command args...
+//   test/lib/contain.mjs --clean [-w dir]...
 // The command runs in the current directory, with no network, no shell
 // escape, and limits on time (default 900 s), memory (default 2g),
 // processes, and file size. Mounted at the same paths inside, read-only:
@@ -9,20 +10,25 @@
 // -w directory is mounted writable, and /tmp is empty. A mount whose path
 // holds a symbolic link is refused. Only TEX8WEB_*, SOURCE_DATE_EPOCH, and
 // FORCE_SOURCE_DATE are passed from the environment. The image is built
-// when its tag, a hash of the Dockerfile, is missing. Exits with the
-// command's status, after a line on stderr if a limit stopped it, and
-// nonzero if a process was killed for memory or the command left in a -w
-// directory something other than files and directories, which is removed.
+// when its tag, a hash of the Dockerfile, is missing. After the command,
+// and alone with --clean, the -w directories are cleaned: any container
+// that ran a command on them is removed, and then, in another container,
+// the owner is given read and write on everything in them, and everything
+// but files and directories is removed, and every path of 1000 bytes or
+// more. Exits with the command's status, after a line on stderr if a limit
+// stopped it, and nonzero if a process was killed for memory or the
+// cleaning removed anything.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { chmodSync, lstatSync, readdirSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { constants } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const usage = 'usage: test/lib/contain.mjs [-t seconds] [-m memory] [-r path]... [-w dir]... -- command args...';
+const usage = 'usage: test/lib/contain.mjs [-t seconds] [-m memory] [-r path]... [-w dir]... -- command args...\n'
+  + '       test/lib/contain.mjs --clean [-w dir]...';
 const refuse = message => {
   console.error(message);
   process.exit(2);
@@ -33,12 +39,13 @@ try {
   parsed = parseArgs({ allowPositionals: true, options: {
     t: { type: 'string', short: 't', default: '900' }, m: { type: 'string', short: 'm', default: '2g' },
     r: { type: 'string', short: 'r', multiple: true, default: [] }, w: { type: 'string', short: 'w', multiple: true, default: [] },
+    clean: { type: 'boolean' },
   } });
 } catch (error) {
   refuse(`${error.message}\n${usage}`);
 }
-const { values: { t: time, m: memory, r: read, w: write }, positionals: command } = parsed;
-if (!command.length) refuse(usage);
+const { values: { t: time, m: memory, r: read, w: write, clean: cleanOnly }, positionals: command } = parsed;
+if (!command.length === !cleanOnly) refuse(usage);
 for (const dir of write) if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory()) refuse(`contain: not a directory: ${dir}`);
 // (Docker Desktop follows a symbolic link in a mount's source on the host,
 // so a source that holds build -> /Users/<you> would have that mounted)
@@ -65,6 +72,40 @@ if (spawnSync('docker', ['image', 'inspect', image], { stdio: 'ignore' }).status
   if (built.status !== 0) process.exit(built.status ?? 1);
 }
 
+// (what both containers are limited to. fsize, in bytes, caps each file,
+// not their number, and a bind mount has no size limit. /tmp allows exec,
+// as biber unpacks itself there and runs from there, and the writable
+// mounts allow it anyway)
+const limited = ['--network', 'none', '--read-only', '--tmpfs', '/tmp:rw,exec,nosuid,size=512m', '--cap-drop', 'ALL',
+  '--security-opt', 'no-new-privileges', '--pids-limit', '256', '--cpus', '2', '--memory', memory, '--memory-swap', memory,
+  '--ulimit', 'fsize=1073741824', '--user', `${process.getuid()}:${process.getgid()}`, '-e', 'LANG=C.UTF-8'];
+const writable = write.flatMap(dir => ['--mount', `type=bind,source=${resolve(dir)},target=${resolve(dir)}`]);
+// (the command's container is labeled by its -w directories, so that
+// --clean finds it after this process was killed)
+const label = `t8w.out=${createHash('sha256').update(write.map(dir => resolve(dir)).sort().join('\n')).digest('hex').slice(0, 12)}`;
+
+// removes the containers of commands on the -w directories, and then, in a
+// container with only those directories mounted, cleans them, with GNU
+// tools, which follow no link and go to any depth. The tools on the host
+// would follow a link, block on a FIFO, fail on what the command made
+// unreadable, and fail on a path longer than macOS's limit of 1024 bytes.
+// Returns whether anything was removed, or the cleaning failed
+function clean() {
+  if (!write.length) return false;
+  const left = spawnSync('docker', ['ps', '-aq', '--filter', `label=${label}`], { encoding: 'utf8' }).stdout.trim();
+  if (left) spawnSync('docker', ['rm', '-f', ...left.split('\n')], { stdio: 'ignore' });
+  const script = 'long=$(printf "%1000s" "" | tr " " "?"); for dir; do chmod -R u+rwX "$dir"; '
+    + 'find "$dir" \\( -path "$long*" -prune -o ! -type f ! -type d \\) -print -exec rm -rf {} +; done';
+  // (timeout fails, silently, as the container's first process)
+  const result = spawnSync('docker', ['run', '--rm', '--init', ...limited, ...writable, image, 'timeout', '-k', '5', time, 'sh', '-c', script, 'sh',
+    ...write.map(dir => resolve(dir))], { encoding: 'utf8', stdio: ['ignore', 'pipe', 2] });
+  for (const path of result.stdout.split('\n').filter(Boolean)) {
+    console.error(`contain: removed what the command left in the output, not a file or directory, or too deep: ${path}`);
+  }
+  return result.status !== 0 || result.stdout !== '';
+}
+if (cleanOnly) process.exit(clean() ? 1 : 0);
+
 // build.mjs's run() kills its process group with SIGKILL, which ends the
 // docker client but not the container. So a watcher in a session of its
 // own removes the container once this process is gone
@@ -72,16 +113,10 @@ const name = `t8w-${process.pid}-${randomBytes(4).toString('hex')}`;
 const watcher = spawn('perl', ['-e', 'my $parent = shift; select undef, undef, undef, 0.5 while getppid == $parent; exec qw(docker rm -f), @ARGV',
   process.pid, name], { detached: true, stdio: 'ignore' });
 
-// (fsize, in bytes, caps each file, not their number, and a bind mount has
-// no size limit. /tmp allows exec, as biber unpacks itself there and runs
-// from there, and the writable mounts allow it anyway. Not --rm, so that
-// the container's state can be read after it ends)
+// (not --rm, so that the container's state can be read after it ends)
 const started = Date.now();
-const child = spawn('docker', ['run', '--init', '--name', name, '--network', 'none', '--read-only',
-  '--tmpfs', '/tmp:rw,exec,nosuid,size=512m', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
-  '--pids-limit', '256', '--cpus', '2', '--memory', memory, '--memory-swap', memory, '--ulimit', 'fsize=1073741824',
-  '--user', `${process.getuid()}:${process.getgid()}`, '-e', 'HOME=/tmp', '-e', 'TEXMFVAR=/tmp/texmf-var',
-  '-e', 'shell_escape=f', '-e', 'openout_any=p', '-e', 'LANG=C.UTF-8',
+const child = spawn('docker', ['run', '--init', '--name', name, '--label', label, ...limited,
+  '-e', 'HOME=/tmp', '-e', 'TEXMFVAR=/tmp/texmf-var', '-e', 'shell_escape=f', '-e', 'openout_any=p',
   ...Object.keys(process.env).filter(name => /^(TEX8WEB_|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).flatMap(name => ['-e', name]),
   ...[...mounts].flatMap(([path, mode]) => ['--mount', `type=bind,source=${path},target=${path}${mode}`]),
   '-w', process.cwd(), image, 'timeout', '-k', '5', time, ...command], { stdio: 'inherit' });
@@ -95,25 +130,7 @@ child.on('exit', (code, signal) => {
   // command that ignored SIGTERM)
   if (oom) console.error(`contain: a process was stopped at the memory limit of ${memory}`);
   else if (code === 124 || code === 137 && Date.now() - started >= time * 1000) console.error(`contain: stopped at the time limit of ${time} s`);
-  // (the tools on the host would follow a link left in the output, block
-  // on a FIFO, or fail on what the command made unreadable. So each mode
-  // is given back to its owner, and all but files and directories are
-  // removed)
-  let removed = 0;
-  const walk = dir => {
-    chmodSync(dir, lstatSync(dir).mode | 0o700);
-    for (const name of readdirSync(dir)) {
-      const path = join(dir, name), stat = lstatSync(path);
-      if (stat.isDirectory()) walk(path);
-      else if (stat.isFile()) chmodSync(path, stat.mode | 0o600);
-      else {
-        rmSync(path);
-        removed++;
-        console.error(`contain: removed what the command left in the output, not a file or directory: ${path}`);
-      }
-    }
-  };
-  write.forEach(walk);
+  const removed = clean();
   const status = code ?? 128 + constants.signals[signal];
   process.exit(status || (oom || removed ? 1 : 0));
 });

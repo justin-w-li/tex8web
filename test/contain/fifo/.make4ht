@@ -1,4 +1,6 @@
--- make4ht runs this file as Lua: FIFOs, which the host would block on, one
--- in a directory without permissions, which the host could neither read nor
--- remove, in the directory that LaTeX's run is saved in
-os.execute('cd "$TEX8WEB_LATEX_SAVE" && mkdir escaped-closed && mkfifo escaped-fifo escaped-closed/escaped-fifo && chmod 000 escaped-closed')
+-- make4ht runs this file as Lua: in the directory that LaTeX's run is saved
+-- in, FIFOs, which the host would block on, one in a directory without
+-- permissions, which the host could neither read nor remove, and a tree
+-- deeper than the host's limit on a path
+os.execute('cd "$TEX8WEB_LATEX_SAVE" && mkdir escaped-closed && mkfifo escaped-fifo escaped-closed/escaped-fifo && chmod 000 escaped-closed'
+  .. ' && for i in $(seq 600); do mkdir d && cd d; done && mkfifo escaped-deep')

@@ -30,21 +30,28 @@
 //                      container without network or shell escape
 //                      (test/lib/contain.mjs), for a source not trusted.
 //                      A source that holds anything but files and
-//                      directories is refused. latexmk then writes the PDF
-//                      to the document's build/pdf, and reads no .latexmkrc
+//                      directories is refused, and the paths given are
+//                      taken without their symbolic links. latexmk then
+//                      writes the PDF to the document's build/pdf, and
+//                      reads no .latexmkrc
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { build, pool, root, run, special, through, workers } from './lib/build.mjs';
+import { build, pool, root, run, runOn, special, workers } from './lib/build.mjs';
 import { lock } from './lib/slots.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
 // npm runs a script in tex8web's directory and sets INIT_CWD to where npm
-// was run
-const at = path => resolve(process.env.npm_lifecycle_event ? process.env.INIT_CWD ?? process.cwd() : process.cwd(), path);
+// was run. With --contain, a path is given without its symbolic links,
+// which contain.mjs refuses to mount, as macOS's /tmp is one
+const unlinked = path => existsSync(path) ? realpathSync(path) : join(unlinked(dirname(path)), basename(path));
+const at = path => {
+  const full = resolve(process.env.npm_lifecycle_event ? process.env.INIT_CWD ?? process.cwd() : process.cwd(), path);
+  return options.contain ? unlinked(full) : full;
+};
 const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain] [--shots-cache <dir>] <dir or .tex file>...';
 const refuse = message => {
   console.error(message);
@@ -87,7 +94,7 @@ function document(arg) {
   // (a source that is not trusted, before the host takes its lock or hashes
   // it: the lock or the hash would follow a link)
   const odd = options.contain && special(dir);
-  if (odd) refuse(`refusing ${arg}: ${odd} is not a file or directory`);
+  if (odd) refuse(`refusing ${arg}: ${odd} is not a file or a directory that can be read`);
   // build() does not build the PDFs a config's \WebPDF links; latexmk()
   // builds them with --latexmk
   return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true,
@@ -124,10 +131,10 @@ async function latexmk(doc) {
   try {
     // (in the container, the document's directory is read-only, and a
     // .latexmkrc, which is Perl, is not read)
-    const [command, args, limits] = through(doc, [], [join(doc.dir, 'build')], 'latexmk',
-      [...options.contain ? ['-norc', '-pdf', '-outdir=build/pdf'] : [], '-interaction=nonstopmode', '-halt-on-error', doc.tex]);
-    // latexmk can print nothing for minutes on a long document
-    const result = await run(command, args, { cwd: doc.dir, slot: true, idle: 900, ...limits });
+    // (latexmk can print nothing for minutes on a long document)
+    const result = await runOn(doc, [], [join(doc.dir, 'build')], 'latexmk',
+      [...options.contain ? ['-norc', '-pdf', '-outdir=build/pdf'] : [], '-interaction=nonstopmode', '-halt-on-error', doc.tex],
+      { cwd: doc.dir, slot: true, idle: 900 });
     writeFileSync(join(logs, `${doc.name}.pdf.log`), result.log);
     if (result.code !== 0) return `failed to build its PDF, exit ${result.code} (log: ${join(logs, `${doc.name}.pdf.log`)})`;
   } finally {

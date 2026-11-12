@@ -193,12 +193,18 @@ test('a document with a runner builds its PDF and page through it, and is never 
     // read-only, and the directories it writes writable
     const mount = (path, mode = ',readonly') => `type=bind,source=${path},target=${path}${mode} `;
     const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.startsWith('run '));
-    assert.equal(runs.length, 2, runs.join('\n'));
+    // (each followed by the cleaning of the directories it writes, which
+    // mounts only those: by the runner, and again by build.mjs)
+    assert.equal(runs.length, 6, runs.join('\n'));
     assert.ok(runs[0].includes(mount(dirname(pdf), '')) && runs[0].endsWith(` latexmk -norc -pdf -interaction=nonstopmode -outdir=${relative(dir, dirname(pdf))} doc.tex`), runs[0]);
-    for (const part of [mount(dir), mount(cfg), mount(pdf), mount(out, ''), mount(aux, ''), mount(`${aux}.latex`, ''), mount(join(dir, 'build'), '')]) {
-      assert.ok(runs[1].includes(part), `${part} in ${runs[1]}`);
+    const writable = [mount(out, ''), mount(aux, ''), mount(`${aux}.latex`, ''), mount(join(dir, 'build'), '')];
+    for (const part of [mount(dir), mount(cfg), mount(pdf), ...writable]) assert.ok(runs[3].includes(part), `${part} in ${runs[3]}`);
+    assert.match(runs[3], / timeout -k 5 900 \S+\/bin\/tex8web -c /);
+    for (const [clean, parts] of [1, 2, 4, 5].map(i => [runs[i], i < 3 ? [mount(dirname(pdf), '')] : writable])) {
+      assert.equal(clean.match(/--mount /g).length, parts.length, clean);
+      for (const part of parts) assert.ok(clean.includes(part), `${part} in ${clean}`);
+      assert.match(clean, / sh -c /);
     }
-    assert.match(runs[1], / timeout -k 5 900 \S+\/bin\/tex8web -c /);
     assert.equal((await make()).reused, true);
 
     // a host build, of the same document and PDF, is not that build, and its
@@ -217,7 +223,7 @@ test('a document with a runner builds its PDF and page through it, and is never 
     writeFileSync(dockerLog, '');
     const refused = await make();
     assert.equal(refused.code, 2);
-    assert.match(refused.log, /^refusing to build runner: .*\/zero\.tex is not a file or directory$/m);
+    assert.match(refused.log, /^refusing to build runner: .*\/zero\.tex is not a file or a directory that can be read$/m);
     assert.equal(readFileSync(dockerLog, 'utf8'), '');
   } finally {
     process.env.PATH = path;
