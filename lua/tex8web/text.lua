@@ -488,6 +488,13 @@ function M.minipages(document)
   end
 end
 
+-- The vertical-align that lowers a picture by ratio times its width, a
+-- CSS length. img's max-width (css/tex8web.css) can shrink the picture to
+-- the column, which then gives the width.
+local function lowered(width, ratio)
+  return string.format("vertical-align:calc(min(%s, var(--tex8web-column)) * %.4f)", width, ratio)
+end
+
 -- pictures that dvisvgm draws for tex4ht (TikZ, as <document>0x.svg and so
 -- on), as wide as in the PDF, as a share of the PDF's text width, which the
 -- stylesheet's text width also is. dvisvgm writes the size of what is
@@ -525,14 +532,15 @@ function M.pictures(document, context)
       if not width then error("no viewBox in " .. src) end
       local scale = tonumber(svg:match("<g id='page1' transform='matrix%(([%d.]+) 0 0 ")) or 1
       local share = 72.27 / 72 / scale / context.textwidth -- of a unit of the SVG
-      dom.add_style(el, string.format("width:calc(var(--tex8web-textwidth) * %.4f)", share * x * width))
+      local wide = share * x * width
+      dom.add_style(el, string.format("width:calc(var(--tex8web-textwidth) * %.4f)", wide))
       local baseline = svg:match("<g class='tex8web%-baseline' data%-y='([-%d.]+)'")
       local below = baseline and top + height - scale * baseline or 0
       -- (turned over, as graphics.sty swaps the box's height and depth)
       if scales[#scales][2] < 0 then below = height - below end
       -- (in display math, the picture is a block: css/tex8web.css)
       if below ~= 0 and not dom.closest(el, function(block) return dom.has_class(block, "mathjax-block") end) then
-        dom.add_style(el, string.format("vertical-align:calc(var(--tex8web-textwidth) * %.4f)", -share * y * below))
+        dom.add_style(el, lowered(string.format("var(--tex8web-textwidth) * %.4f", wide), -share * y * below / wide))
       end
       if y ~= x then
         if not svg:find("preserveAspectRatio") then
@@ -543,9 +551,12 @@ function M.pictures(document, context)
         dom.add_style(el, string.format("aspect-ratio:%.4f", x * width / (y * height)))
       end
     else
-      if x ~= 1 and el:get_attribute("style") then
-        el:set_attribute("style", ((el:get_attribute("style") or ""):gsub("(width:calc%(var%(%-%-tex8web%-textwidth%) %* )([%d.]+)%)",
-          function(start, share) return string.format("%s%.4f)", start, x * share) end)))
+      local style = el:get_attribute("style")
+      local wide = style and tonumber(style:match("width:calc%(var%(%-%-tex8web%-textwidth%) %* ([%d.]+)%)"))
+      if x ~= 1 and wide then
+        wide = x * wide
+        el:set_attribute("style", (style:gsub("(width:calc%(var%(%-%-tex8web%-textwidth%) %* )[%d.]+%)",
+          function(start) return string.format("%s%.4f)", start, wide) end)))
       end
       -- (an \includegraphics: the height that tex8web-text.tex writes beside
       -- a width, as a share of the text width. Only the width is scaled, so
@@ -556,9 +567,9 @@ function M.pictures(document, context)
       el:set_attribute("data-tex8web-height", nil)
       -- (turned over, as graphics.sty swaps the box's height and depth)
       if scales[#scales][2] < 0 and height then
-        dom.add_style(el, string.format("vertical-align:calc(var(--tex8web-textwidth) * %.4f)", -x * height))
+        dom.add_style(el, lowered(string.format("var(--tex8web-textwidth) * %.4f", wide), -x * height / wide))
       elseif scales[#scales][2] < 0 and el:get_attribute("height") then
-        dom.add_style(el, "vertical-align:-" .. el:get_attribute("height") .. "px")
+        dom.add_style(el, lowered(el:get_attribute("width") .. "px", -el:get_attribute("height") / el:get_attribute("width")))
       end
     end
     -- (each box's signs, on the outermost span.rotatebox inside the box,

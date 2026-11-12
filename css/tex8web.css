@@ -252,7 +252,10 @@ h1:is(.partHead, .likepartHead) { text-align: var(--tex8web-part-align, center);
    Chrome does not keep the reader's place (scroll anchoring) across a
    resize that changes the body's margin or padding */
 html body { max-width: var(--tex8web-textwidth); padding-inline: 1.25rem;
-    margin-block-start: 4rem; margin-block-end: 4em; }
+    margin-block-start: 4rem; margin-block-end: 4em;
+    /* (the column's width, inside the padding, which a lowered picture
+       shrunk to the column is lowered by a share of: text.lua) */
+    --tex8web-column: min(var(--tex8web-textwidth), 100vw - 2.5rem); }
 /* display math with \abovedisplayskip above and \belowdisplayskip below
    (tex8web-math.tex), less MathJax's padding, which keeps the ink of a
    display that scrolls from being cut off. (This selector outweighs MathJax's,
@@ -1083,7 +1086,7 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
         --tex8web-highlight: transparent; print-color-adjust: exact; }
     .tex8web-controls, .tex8web-toc, .tex8web-preview, .tex8web-viewer, .tex8web-permalink {
         display: none !important; }
-    html body { margin-block: 0; padding-inline: 0; }
+    html body { margin-block: 0; padding-inline: 0; --tex8web-column: min(var(--tex8web-textwidth), 100vw); }
     .tex8web-sidenote { top: auto !important; }
     mjx-container[display], div.tabular, pre { overflow: visible !important; }
     .tex8web-scrolls { mask-image: none; }

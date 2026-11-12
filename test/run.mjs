@@ -298,13 +298,15 @@ const speech = {
 // narrower screen
 const share = (alt, fraction) => new RegExp(`<img alt='${alt}' [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${fraction.replace('.', '\\.')}\\)'`);
 const drawn = (n, width, more = '') => new RegExp(`<img alt='' src='test-tikzbox${n}x\\.svg' style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${width.replace('.', '\\.')}\\)${more.replace(/[().*]/g, '\\$&')}' />`);
-const lower = share => `; vertical-align:calc(var(--tex8web-textwidth) * -${share})`;
+// lowered by a share of its width, which is at most the column's width
+const lowered = (width, ratio) => `calc(min(${width}, var(--tex8web-column)) * -${ratio})`;
+const lower = (width, ratio) => `; vertical-align:${lowered(`var(--tex8web-textwidth) * ${width}`, ratio)}`;
 // an \includegraphics picture with the alt text, mirrored or turned over
 // by the factors' signs (none for 1, 1), and lowered by its height when
 // turned over (a lookahead, so the order of the properties is free)
 const flipped = (alt, sx, sy, below) => new RegExp(`<img alt='${alt}' ` +
   (sx === 1 && sy === 1 ? '(?![^>]*transform)' : `(?=[^>]*style='[^']*transform:scale\\(${sx}, ${sy}\\))`) +
-  (below ? `(?=[^>]*style='[^']*vertical-align:${below})` : '(?![^>]*vertical-align)') + '[^>]*\\/>');
+  (below ? `(?=[^>]*style='[^']*vertical-align:${below.replace(/[().*]/g, '\\$&')})` : '(?![^>]*vertical-align)') + '[^>]*\\/>');
 // an \includegraphics picture's width as a share of the text width, with
 // more of the style after it
 const wide = (alt, fraction) =>
@@ -333,9 +335,9 @@ const pictures = {
   // picture, left without marks)
   'test-tikzbox': [drawn(0, '0.1655'), drawn(2, '1.0000'), drawn(15, '1.0000'), drawn(3, '0.1644'), drawn(4, '0.0828'),
     drawn(5, '0.3310', '; transform:scale(-1, 1)'), drawn(6, '0.6621', '; aspect-ratio:3.9860'),
-    drawn(7, '0.0754', lower('0.0102')), /test-tikzbox7x\.svg'[^>]*\/> and/, drawn(8, '0.0506', lower('0.0191')), drawn(9, '0.0506'),
-    drawn(10, '0.0742', lower('0.0097')), drawn(11, '0.0640', lower('0.0102')), drawn(12, '0.0518', lower('0.0134')),
-    drawn(16, '0.1661', `${lower('0.0836')}; transform:scale(1, -1)`), drawn(13, '0.1662'), drawn(14, '0.1647'),
+    drawn(7, '0.0754', lower('0.0754', '0.1358')), /test-tikzbox7x\.svg'[^>]*\/> and/, drawn(8, '0.0506', lower('0.0506', '0.3768')), drawn(9, '0.0506'),
+    drawn(10, '0.0742', lower('0.0742', '0.1303')), drawn(11, '0.0640', lower('0.0640', '0.1601')), drawn(12, '0.0518', lower('0.0518', '0.2591')),
+    drawn(16, '0.1661', `${lower('0.1661', '0.5035')}; transform:scale(1, -1)`), drawn(13, '0.1662'), drawn(14, '0.1647'),
     share('halved', '0.1449'), /Text: Big/, /^(?![^]*tex8web-scale)/],
   // (\includegraphics pictures mirrored as in the PDF, at any size and in
   // any context, halved too; turned over, 75pt high, 37.5pt when halved,
@@ -351,17 +353,17 @@ const pictures = {
     ...['bare', 'width', 'half', 'half bare', 'nested', 'left', 'right', 'link', 'footnote', 'cell', 'minipage',
       'theorem', 'italic', 'figure'].map(alt => flipped(alt, -1, 1)),
     wide('half', '0.1449'), wide('nested', '0.1449'), wide('half over', '0.1449'),
-    flipped('half over', -1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.1087\\)'),
+    flipped('half over', -1, -1, lowered('var(--tex8web-textwidth) * 0.1449', '0.7499')),
     /<img alt='' src='test-reflectbox0x\.svg' (?![^>]*transform)[^>]*\/>/,
-    flipped('over', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
-    flipped('round', -1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
-    flipped('over bare', 1, -1, '-48px'),
+    flipped('over', 1, -1, lowered('var(--tex8web-textwidth) * 0.2899', '0.7499')),
+    flipped('round', -1, -1, lowered('var(--tex8web-textwidth) * 0.2899', '0.7499')),
+    flipped('over bare', 1, -1, lowered('64px', '0.7500')),
     ...['rotated', 'angle'].map(alt => new RegExp(
       `<span class='rotatebox' style='transform: scale\\(-1, 1\\) rotate\\(-90deg\\);'> <img alt='${alt}' (?![^>]*transform)`)),
     /<span class='rotatebox' style='transform: rotate\(-90deg\);'> <img alt='rotated inside' /,
     flipped('rotated inside', -1, 1),
-    flipped('squashed', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
-    flipped('flattened', 1, -1, 'calc\\(var\\(--tex8web-textwidth\\) \\* -0\\.2174\\)'),
+    flipped('squashed', 1, -1, lowered('var(--tex8web-textwidth) * 0.2899', '0.7499')),
+    flipped('flattened', 1, -1, lowered('var(--tex8web-textwidth) * 0.2899', '0.7499')),
     flipped('twice', 1, 1), flipped('over no box', 1, -1), flipped('squashed no box', 1, -1)],
 };
 

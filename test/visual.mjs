@@ -485,6 +485,34 @@ const lapped = `(() => {
 })()`;
 const laps = { 'test-lefteqn': 18 };
 
+// Each picture lowered below the baseline (text.lua) with the share of its
+// height below the baseline that it has in the PDF, also where the picture
+// is shrunk to the column. The baseline is found with a zero-size
+// inline-block right after the picture, on the picture's line. Checked
+// with JavaScript off, on a wide screen and on a phone. hangs has the
+// shares in the page's order. Failures: [the picture, what is wrong]
+const hung = `(shares => {
+  const pictures = [...document.querySelectorAll('img[style*="vertical-align"]')];
+  const wrong = pictures.flatMap((img, i) => {
+    const probe = document.createElement('tex8web-probe');
+    probe.style.cssText = 'display: inline-block; width: 0; height: 0';
+    img.after(probe);
+    const box = img.getBoundingClientRect(), below = box.bottom - probe.getBoundingClientRect().bottom;
+    probe.remove();
+    const want = shares[i] * box.height;
+    return Math.abs(below - want) > 0.5
+      ? [[img.alt || img.getAttribute('src'), \`\${below.toFixed(1)}px of \${box.height.toFixed(1)}px below the baseline, not \${want.toFixed(1)}px\`]] : [];
+  });
+  return { checked: pictures.length, wrong };
+})`;
+const hangs = { 'test-turned-over': [1, 1, 0.25, 0.75, 1, 1, 1, 1] };
+async function hanging(page, doc, where) {
+  const shares = hangs[doc.name];
+  const { checked, wrong } = await page.evaluate(`${hung}(${JSON.stringify(shares)})`);
+  return [...checked === shares.length ? [] : [`${where}: ${checked} lowered pictures, not ${shares.length}`],
+    ...wrong.map(([name, what]) => `${where}: the picture ${name}: ${what}`)];
+}
+
 // The computed fonts of the table of contents entries (css/tex8web.css),
 // with JavaScript off and every entry shown. Sizes and indents are
 // multiples of the font size of the table of contents. The weights of each
@@ -617,6 +645,7 @@ async function compare(chrome, doc, ok) {
             if (boxes.checked !== laps[doc.name]) problems.push(`${html}: ${boxes.checked} boxes of \\lefteqn, not ${laps[doc.name]}`);
             for (const [text, what] of boxes.wrong) problems.push(`${html}: the \\lefteqn "${text}": ${what}`);
           }
+          if (doc.name in hangs) problems.push(...await hanging(page, doc, html));
           const entries = tocFonts[doc.name] && await page.evaluate(entryFonts);
           for (const [level, want] of Object.entries(tocFonts[doc.name] ?? {})) {
             for (const [key, value] of Object.entries(want)) {
@@ -649,6 +678,10 @@ async function compare(chrome, doc, ok) {
         for (const [text, what] of boxes.wrong) problems.push(`${relative(join(root, 'build'), file)}: at 390px, the \\lefteqn "${text}": ${what}`);
       }
     }
+    if (doc.name in hangs) {
+      problems.push(...await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: 390, height: 844 },
+        page => hanging(page, doc, `${html}: at 390px`)));
+    }
     for (const check of [printed, fits]) {
       problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     }
@@ -678,6 +711,7 @@ while (waiting.size) {
 const never = only.length ? [] : Object.entries(ran).filter(([, count]) => !count).map(([name]) => `no document for the ${name} check to check`);
 const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
 stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
+stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);
 failures += never.length + stray.length;
 chrome.close();

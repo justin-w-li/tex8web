@@ -1,0 +1,28 @@
+% Pictures turned over or lowered below the baseline, wider than a phone's
+% column: TikZ pictures turned over, also flattened, and lowered by a
+% baseline, with and without being turned over; \includegraphics turned
+% over at the text width, wider than the text, and at a natural size wider
+% than the text; and a narrow picture turned over. A picture turned over
+% hangs below the baseline in the PDF, as graphics.sty swaps its height
+% and depth. On any screen, the share of each picture below the baseline
+% is the share in the PDF, also where the picture is shrunk to the column.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{tikz}
+\begin{document}
+Drawn: \scalebox{1}[-1]{\tikz\fill (0,0) rectangle (0.9\textwidth,2cm);} after.
+
+Flattened: \scalebox{1}[-0.5]{\tikz\fill (0,0) rectangle (0.9\textwidth,2cm);} after.
+
+Lowered: \tikz[baseline=0.5cm]\fill (0,0) rectangle (0.9\textwidth,2cm); after.
+
+Lowered and turned over: \scalebox{1}[-1]{\tikz[baseline=0.5cm]\fill (0,0) rectangle (0.9\textwidth,2cm);} after.
+
+Narrow: \scalebox{1}[-1]{\tikz\fill (0,0) rectangle (2cm,1cm);} after.
+
+Text width: \scalebox{1}[-1]{\includegraphics[alt={text width}, width=\textwidth]{test-picture.png}} after.
+
+Wider: \scalebox{1}[-1]{\includegraphics[alt={wider}, width=1.2\textwidth]{test-picture.png}} after.
+
+Natural: \scalebox{1}[-1]{\includegraphics[alt={natural}]{test-wide.png}} after.
+\end{document}
