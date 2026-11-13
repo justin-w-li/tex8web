@@ -1,0 +1,37 @@
+% Pictures with no .xbb file in a document with TikZ and hyperref, whose
+% pictures dvisvgm draws: an overpic with plain, italic, and math labels,
+% a LaTeX picture that holds an \includegraphics, and a TikZ node that
+% holds one. Each one builds with its labels in its image. The last node's
+% picture has its .xbb file, which the fix must not break.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{overpic}
+\usepackage{tikz}
+\usepackage{hyperref}
+\begin{document}
+\section{Drawn}
+\begin{overpic}[width=0.5\textwidth]{test-overpic-box.pdf}
+\put(10,10){P}
+\put(50,50){\textit{Q} $y^2$}
+\end{overpic}
+After overpic.
+
+\setlength{\unitlength}{1pt}
+\begin{picture}(80,60)
+\put(0,0){\includegraphics[width=80pt]{test-overpic-box.pdf}}
+\put(10,10){R}
+\end{picture}
+After picture.
+
+\begin{tikzpicture}
+\node[inner sep=0] (p) {\includegraphics[width=80pt]{test-overpic-box.pdf}};
+\node at (p.center) {S};
+\end{tikzpicture}
+After node.
+
+\begin{tikzpicture}
+\node[inner sep=0] (p) {\includegraphics[width=80pt]{test-picture.png}};
+\node at (p.center) {T};
+\end{tikzpicture}
+After found.
+\end{document}

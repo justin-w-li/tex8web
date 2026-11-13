@@ -311,6 +311,10 @@ const flipped = (alt, sx, sy, below) => new RegExp(`<img alt='${alt}' ` +
 // more of the style after it
 const wide = (alt, fraction) =>
   new RegExp(`<img alt='${alt}' [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ${fraction.replace('.', '\\.')}\\);`);
+// a picture's image in the document's numbered images, then the paragraph
+// after it, with no other image or such paragraph between them
+const overpic = (doc, ext, after) =>
+  new RegExp(`<img [^>]*src='${doc}\\d+x\\.${ext}'[^>]*\\/>(?:(?!<img|After )[^])*After ${after}\\.`);
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -322,6 +326,12 @@ const pictures = {
     ...['rotated', 'scaled first', 'scaled last'].map(alt => new RegExp(`<img alt='${alt}' (?:(?!style=)[^>])*\\/>`))],
   // (the graphics package: a picture without a size or a .xbb, left to tex4ht)
   'test-graphics-only': [/<img (?:(?!style=)[^>])*\/>/],
+  // (pictures over a PDF or PNG without its .xbb file, and one with it:
+  // each picture's image, then the text after it, with no other picture or
+  // text between them)
+  'test-overpic': ['share', 'natural', 'trimmed', 'grid', 'path', 'permil', 'set', 'boxed', 'picture', 'figure',
+    'bare name', 'italic', 'minipage', 'cell', 'found'].map(after => overpic('test-overpic', 'png', after)),
+  'test-overpic-drawn': ['overpic', 'picture', 'node', 'found'].map(after => overpic('test-overpic-drawn', 'svg', after)),
   'examples/basic': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.25\)'/],
   // (in minipages, where \textwidth is the minipage's width)
   'test': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.225\)'/,
@@ -541,6 +551,12 @@ const glyphs = {
   'test-surd': [['test-surd0x.svg', /xlink:href='#g\d+-187'/], ['test-surd1x.svg', /xlink:href='#g\d+-187'/]],
   // (a TikZ fill in a color the document defines, after xcolor's reload)
   'test-lateopt-tikz': [['test-lateopt-tikz0x.svg', /fill='#c80064'/]],
+  // (the labels over pictures without their .xbb file: P, Q, and y in an
+  // overpic, R in a LaTeX picture, S in a TikZ node, and T over a picture
+  // with its .xbb file)
+  'test-overpic-drawn': [['test-overpic-drawn0x.svg', /xlink:href='#g\d+-80'/], ['test-overpic-drawn0x.svg', /xlink:href='#g\d+-81'/],
+    ['test-overpic-drawn0x.svg', /xlink:href='#g\d+-121'/], ['test-overpic-drawn1x.svg', /xlink:href='#g\d+-82'/],
+    ['test-overpic-drawn2x.svg', /xlink:href='#g\d+-83'/], ['test-overpic-drawn3x.svg', /xlink:href='#g\d+-84'/]],
 };
 
 // Colors in dark mode: a light-dark() of the color at another lightness,

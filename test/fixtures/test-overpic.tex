@@ -1,0 +1,100 @@
+% overpic pictures, and LaTeX pictures that hold an \includegraphics, over
+% PDF and PNG pictures with no .xbb file beside them. Each one builds, and
+% its labels are drawn in its image. Cases: a share of the text width, no
+% size, trim and clip, scale with a grid and tics, abs and unit with a
+% height through \graphicspath, permil, \setOverpic, the Overpic
+% environment, a LaTeX picture, a figure with angle and a caption, no
+% extension, italic and math labels, a minipage, and a table cell. The
+% last picture has its .xbb file, which the fix must not break.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{overpic}
+\begin{document}
+\section{Overpic}
+\begin{overpic}[width=0.5\textwidth]{test-overpic-box.pdf}
+\put(10,10){A}
+\end{overpic}
+After share.
+
+\begin{overpic}{test-overpic-box.pdf}
+\put(10,10){B}
+\end{overpic}
+After natural.
+
+\begin{overpic}[trim=4 4 4 4, clip, width=100pt]{test-overpic-box.pdf}
+\put(10,10){C}
+\end{overpic}
+After trimmed.
+
+\begin{overpic}[scale=1.5, grid, tics=20]{test-bare.png}
+\put(10,10){D}
+\end{overpic}
+After grid.
+
+{\graphicspath{{test-overpic/}}
+\begin{overpic}[abs, unit=1pt, height=40pt]{inner.png}
+\put(5,5){E}
+\end{overpic}
+After path.}
+
+\begin{overpic}[permil, width=80pt]{test-overpic-box.pdf}
+\put(100,100){F}
+\end{overpic}
+After permil.
+
+{\setOverpic{grid, tics=10}
+\begin{overpic}{test-overpic-box.pdf}
+\put(10,10){G}
+\end{overpic}
+After set.}
+
+\begin{Overpic}{\includegraphics[width=80pt]{test-overpic-box.pdf}}
+\put(10,10){H}
+\end{Overpic}
+After boxed.
+
+\setlength{\unitlength}{1pt}
+\begin{picture}(80,60)
+\put(0,0){\includegraphics[width=80pt]{test-overpic-box.pdf}}
+\put(10,10){I}
+\end{picture}
+After picture.
+
+\begin{figure}[h]
+\centering
+\begin{overpic}[angle=90, width=60pt]{test-overpic-box.pdf}
+\put(10,10){J}
+\end{overpic}
+\caption{Turned}
+\end{figure}
+After figure.
+
+\begin{overpic}[width=80pt]{test-overpic-box}
+\put(10,10){K}
+\end{overpic}
+After bare name.
+
+\begin{overpic}[width=80pt]{test-overpic-box.pdf}
+\put(10,10){\textit{L} $x^2$}
+\end{overpic}
+After italic.
+
+\begin{minipage}{0.4\textwidth}
+\begin{overpic}[width=\textwidth]{test-overpic-box.pdf}
+\put(10,10){M}
+\end{overpic}
+\end{minipage}
+After minipage.
+
+\begin{tabular}{c}
+\begin{overpic}[width=80pt]{test-overpic-box.pdf}
+\put(10,10){N}
+\end{overpic}
+\end{tabular}
+After cell.
+
+\begin{overpic}[width=80pt]{test-picture.png}
+\put(10,10){O}
+\end{overpic}
+After found.
+\end{document}
