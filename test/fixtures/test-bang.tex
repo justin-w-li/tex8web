@@ -1,0 +1,25 @@
+% babel's \useshorthands{!}, which makes ! active in the preamble, with
+% shorthands to a command made by \NewDocumentCommand (!!) and by
+% \newcommand (!+): in the text, in a heading, a footnote, a theorem,
+% \emph, \textsf, and \texttt, with hyperref. A bare ! stays a mark, and
+% ! in math is a factorial.
+\documentclass{article}
+\usepackage[english]{babel}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\NewDocumentCommand\term{t^ m}{\textit{#2}}
+\newcommand\strong[1]{\textbf{#1}}
+\newtheorem{theorem}{Theorem}
+\useshorthands{!}
+\defineshorthand{!!}{\term}
+\defineshorthand{!+}{\strong}
+\begin{document}
+\section{The !!{bang} heading! Again}
+A !!{word} and a mark! Then a !+{strong} one.\footnote{A !!{note} term and a !+{note} too! Yes.}
+\begin{theorem}
+Every !!{group} has a !+{unit}!
+\end{theorem}
+In \emph{an !!{emph} term}, \textsf{a !!{sans} term}, and \texttt{a !!{mono} term}.
+The factorial $n!$ and
+\[ (n+1)! = (n+1)\,n! \]
+\end{document}

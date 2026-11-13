@@ -445,6 +445,25 @@ const contents = {
   'test-bibpath': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
   // (the same from a .bst beside the document, named without a path)
   'test-bibstyle': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
+  // (! active in the preamble: babel's shorthands, in a heading, the text,
+  // a footnote, a theorem, three fonts, and math, with no space after a
+  // bare ! as in the PDF; also with the document's own config, by hand,
+  // and as shortvrb's delimiter. French and Turkish make ! active later,
+  // with French's space before it.)
+  'test-bang': [
+    /<h3 class='sectionHead' id='the-bang-heading-again'>(?:(?!<\/h3>)[^])*<\/a>The <span class='cmti-10'>bang <\/span>heading!Again<\/h3>/,
+    /<p class='noindent'>A <span class='cmti-10'>word <\/span>and a mark!Then a <span class='cmbx-10'>strong<\/span> one\./,
+    /<span class='cmr-8'>A <\/span><span class='cmti-8'>note <\/span><span class='cmr-8'>term and a <\/span><span class='cmbx-8'>note <\/span><span class='cmr-8'>too!Yes\.<\/span>/,
+    /<span class='cmbx-10'>Theorem 1\.<\/span> <\/span><span class='cmti-10'>Every group has a <\/span><span class='cmbxti-10'>unit<\/span><span class='cmti-10'>!<\/span>/,
+    /In <span class='cmti-10'>an emph term<\/span>, <span class='cmss-10'>a <\/span><span class='cmssi-10'>sans <\/span><span class='cmss-10'>term<\/span>, and <span class='cmtt-10'>a <\/span><span class='cmitt-10'>mono <\/span><span class='cmtt-10'>term<\/span>\./,
+    /The factorial <mjx-container aria-label='n factorial'/,
+    /aria-label='open paren n plus 1 close paren factorial equals open paren n plus 1 close paren times n factorial'/,
+  ],
+  'test-bang-owncfg': [/<p class='noindent'>A <span class='tex8web-term' id='term-word'><span class='cmti-10'>word<\/span><\/span> and a mark! <\/p>/],
+  'test-bang-hand': [/<p class='noindent'>Stop<span class='cmbx-10'>! <\/span>Go\./],
+  'test-bang-shortvrb': [/Type <span class='obeylines-h'><code class='verb'><span class='cmtt-10'>a_b\{c\}<\/span><\/code><\/span> here\./],
+  'test-bang-french': [/<p class='noindent'>Un mot ! Et une question \? Oui : non ; fin\./],
+  'test-bang-turkish': [/<p class='noindent'>Evet! Hayir: belki\./],
 };
 
 // Text back in its font after a font command that the PDF keeps in a

@@ -1,0 +1,10 @@
+% Checks cases the fix for an active ! in the preamble must not break:
+% babel's French makes ! ? : ; active at \begin{document}, each adding its
+% space before the mark, with hyperref.
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{hyperref}
+\begin{document}
+Un mot! Et une question? Oui: non; fin.
+\end{document}

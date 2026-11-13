@@ -1,0 +1,9 @@
+% Checks cases the fix for an active ! in the preamble must not break:
+% babel's Turkish with shorthands=:!=, which makes ! active at
+% \begin{document} and adds a space before it.
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[shorthands=:!=,turkish]{babel}
+\begin{document}
+Evet! Hayir: belki.
+\end{document}
