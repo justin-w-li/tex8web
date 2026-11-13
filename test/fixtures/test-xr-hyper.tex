@@ -1,21 +1,35 @@
 % References to labels of another document with xr-hyper, from an .aux
 % that LaTeX wrote under hyperref, with no .xref beside it. Each prints
 % its number, page, or name as in the PDF, as does a label from an .aux
-% that LaTeX wrote without hyperref. A label of this document still links
-% to its heading.
+% that LaTeX wrote without hyperref. \autoref prints no link to this
+% document's theorem with the same anchor. A label of an .aux that tex4ht
+% wrote under hyperref links to that document's page, and a label of this
+% document to its heading.
 \documentclass{article}
+\usepackage{amsthm}
 \usepackage{xr-hyper}
 \usepackage{hyperref}
 \externaldocument[X-]{test-xr/latex}
 \externaldocument[P-]{test-xr/plain}
+\externaldocument[H-]{test-xr/hyper4ht-hyper}
+\newtheorem{theorem}{Theorem}
 \begin{document}
 Starred \ref*{X-s}. Section \ref{X-ss}. Page \pageref{X-front}.
 Item \ref{X-item}. Bold \ref{X-emph}. Empty [\ref{X-none}].
 Named \nameref{X-thm}. Named in italics \nameref{X-emph}.
 Spaced \ref{X-step}. Included \ref{X-c}.
+Auto \autoref{X-thm}. Cleveref's \ref{X-emph@cref}.
 
 Without hyperref: subsection \ref{P-ss}, page \pageref{P-front}.
+Auto written by tex4ht \autoref{H-oss}.
 
 \section{Here}\label{here}
 Local \ref{here}.
+
+\begin{theorem}
+The first theorem of this document.
+\end{theorem}
+
+% (last: tex4ht's \hyperref leaves its text defined, for xr's links after it)
+Hyperref \hyperref[X-ss]{text}.
 \end{document}

@@ -1,7 +1,8 @@
 % References to labels of another document with xr, from an .aux that
 % LaTeX wrote under hyperref: five fields per label, and no .xref beside
 % it. Each prints its number, page, or name as in the PDF, in each
-% context. A label in an .aux that tex4ht wrote under hyperref, with its
+% context, with no link: \autoref with no name, and a cleveref field as
+% written. A label in an .aux that tex4ht wrote under hyperref, with its
 % .xref, still links to that document's page, and a label of this
 % document to its heading.
 \documentclass{article}
@@ -18,6 +19,7 @@ Starred \ref*{X-s}. Section \ref{X-ss}. Page \pageref{X-front}.
 Item \ref{X-item}. Bold \ref{X-emph}. Empty [\ref{X-none}].
 Named \nameref{X-thm}. Named in italics \nameref{X-emph}.
 Equation \eqref{X-eq}. Spaced \ref{X-step}. Included \ref{X-c}.
+Auto \autoref{X-thm}. Cleveref's \ref{X-emph@cref}.
 
 \textit{In italics, \ref{X-ss}.}
 A note.\footnote{In a footnote, \ref{X-ss}.}
@@ -30,7 +32,11 @@ In a theorem, \ref{X-ss}.
 
 \subsection{Heading \ref*{X-ss}}
 Written by tex4ht under hyperref: \ref{H-oss}, \nameref{H-oss}.
+Auto written by tex4ht \autoref{H-oss}.
 
 \section{Here}\label{here}
 Local \ref{here}.
+
+% (last: tex4ht's \hyperref leaves its text defined, for xr's links after it)
+Hyperref \hyperref[X-ss]{text}.
 \end{document}

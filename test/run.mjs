@@ -1071,7 +1071,14 @@ const latexAux = [
   said('Starred @.', '1'), said('Section @.', '1\\.1'), said('Page @.', 'iv'), said('Item @.', '\\(a\\)'),
   said('Bold @.', bold), said('Empty [@].', ''), said('Named @.', 'Main\\s+theorem'), said('Named in italics @.', italic),
   said('Spaced @.', 'Step 2'), said('Included @.', '3'),
+  // (\autoref with no name, a cleveref field kept as written, and
+  // \hyperref's text or the number)
+  said('Auto @.', '2'), said('Cleveref’s @.', "\\[section\\]\\[\\]\\[\\]<span class='cmti-10'>A<\\/span>"),
+  said('Hyperref @.', '(?:text|1\\.1)'),
 ];
+// (\autoref of a label that tex4ht wrote under hyperref: only the link to
+// that document's page)
+const autoTex4ht = page => new RegExp(`Auto written by tex4ht <a href='test-xr\\/\\.\\.\\/${page}\\.html#x1-90001\\.1'>1\\.1<\\/a>\\.`);
 // (a label of this document: a link to its heading)
 const local = number => new RegExp(`Local <a href='#here'>${number}(?:<!--[^>]*-->)?<\\/a>\\.`);
 const external = {
@@ -1084,14 +1091,14 @@ const external = {
       .map(([font, context]) => new RegExp(`<span class='${font}'>${context}, 1\\.1\\.\\s*<\\/span>`)),
     /<h4 class='subsectionHead'[^>]*>(?:(?!<\/h4>)[^])*>Heading 1\.1<\/h4>/,
     /Written by tex4ht under hyperref: <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>1\.1<\/a>, <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>Two<\/a>\./,
-    local(2)],
+    autoTex4ht('test-xr'), local(2)],
   // (without hyperref, from an .aux written without hyperref and from one
   // written under it; a label of an .aux that tex4ht wrote, with its .xref)
   'test-xr-plain': [said('Section @, subsection @, page @, item @, bold @, empty [@].', '1', '1\\.1', 'iv', '\\(a\\)', bold, ''),
     said('Under hyperref: subsection @, page @, bold @, spaced @, included @.', '1\\.1', 'iv', bold, 'Step 2', '3'),
     /Written by tex4ht: <a href='test-xr\/\.\.\/test-xr-plain\.html#x1-20001\.1'>1\.1<\/a>\./, local(1)],
   // (also from an .aux written without hyperref)
-  'test-xr-hyper': [...latexAux, said('Without hyperref: subsection @, page @.', '1\\.1', 'iv'), local(1)],
+  'test-xr-hyper': [...latexAux, said('Without hyperref: subsection @, page @.', '1\\.1', 'iv'), autoTex4ht('test-xr-hyper'), local(1)],
 };
 
 // Text after the last \hfill of a line, up to the end of the paragraph or of
