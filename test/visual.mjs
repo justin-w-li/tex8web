@@ -517,7 +517,7 @@ async function hanging(page, doc, where) {
 // PDF, within 0.5px, and not lowered or raised, or left of center beside
 // a wide mark. An equation number or QED box after the picture is at the
 // column's right, on the picture's bottom line, and a QED box under a
-// number is in the display. centers has the numbers of such pictures and
+// number is in the display, at the right. centers has the numbers of such pictures and
 // of the marks after them. Failures: [the picture, what is wrong]
 const centered = `(() => {
   const column = document.querySelector('main') ?? document.body, style = getComputedStyle(column);
@@ -543,6 +543,8 @@ const centered = `(() => {
     return [...Math.abs(off) > 0.5 && !moved ? [[name, \`its center \${off.toFixed(1)}px from the column's\`]] : [],
       ...after.filter(e => e.getBoundingClientRect().bottom > block.bottom + 0.5 || e.getBoundingClientRect().right > box.right - parseFloat(style.paddingRight) + 0.5)
         .map(e => [name, \`its \${e.className} is outside the display\`]),
+      ...after.filter(e => Math.abs(e.getBoundingClientRect().right - (box.right - parseFloat(style.paddingRight))) > 0.5)
+        .map(e => [name, \`its \${e.className} is not at the right\`]),
       ...img.style.verticalAlign ? [[name, \`vertical-align \${img.style.verticalAlign}\`]] : [],
       ...punct && (until.bottom < at.bottom - 0.5 || until.bottom - at.bottom > until.height / 2 || until.left < at.right - 0.5 || until.left > at.right + 1) ? [[name, 'the punctuation after it is not at its bottom right']] : [],
       ...mark && Math.abs(mark.bottom - at.bottom) > 0.5 ? [[name, \`the mark after it ends \${(mark.bottom - at.bottom).toFixed(1)}px below its bottom\`]] : [],
@@ -551,7 +553,7 @@ const centered = `(() => {
   });
   return { checked: [pictures.length, marks], wrong };
 })()`;
-const centers = { 'test-display-picture': [33, 12], 'test-display-picture-hyperref': [5, 2] };
+const centers = { 'test-display-picture': [36, 13], 'test-display-picture-hyperref': [5, 2] };
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
@@ -1329,15 +1331,17 @@ async function compare(chrome, doc, ok) {
             for (const [name, what] of phone.wrong) problems.push(`${html} at 390px: the display picture ${name}: ${what}`);
             // a link to a numbered picture goes to the anchor before its
             // display: the picture is below the top of the window, and
-            // highlighted as a target
+            // highlighted as a target, also in dark mode, where a TikZ
+            // picture is inverted with its background
             const anchors = await page.evaluate(`[...document.querySelectorAll('.mathjax-block:has(> img)')]
               .map(block => block.previousElementSibling).filter(a => a?.matches('a.tex8web-eq-anchor[id]')).map(a => a.id)`);
             if (!anchors.length) problems.push(`${html}: no anchor before a numbered picture`);
             for (const id of anchors) {
-              const seen = await chrome.withPage(`${pathToFileURL(file).href}#${id}`, { javascript: false }, at => at.evaluate(`(() => {
-                const img = document.getElementById(${JSON.stringify(id)}).nextElementSibling.querySelector(':scope > img');
+              const seen = await chrome.withPage(`${pathToFileURL(file).href}#${id}`, { javascript: false, colorScheme: 'dark' }, at => at.evaluate(`(() => {
+                const block = document.getElementById(${JSON.stringify(id)}).nextElementSibling, img = block.querySelector(':scope > img');
                 return [...img.getBoundingClientRect().top < 0 ? ['above the window'] : [],
-                  ...getComputedStyle(img).backgroundColor === 'rgba(0, 0, 0, 0)' ? ['not highlighted'] : []];
+                  ...getComputedStyle(block).backgroundColor === 'rgba(0, 0, 0, 0)' ? ['not highlighted'] : [],
+                  ...getComputedStyle(img).backgroundColor !== 'rgba(0, 0, 0, 0)' && getComputedStyle(img).filter !== 'none' ? ['highlighted under its filter'] : []];
               })()`));
               for (const what of seen) problems.push(`${html}: the picture linked as #${id}: ${what}`);
             }

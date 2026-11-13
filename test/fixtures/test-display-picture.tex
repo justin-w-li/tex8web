@@ -6,7 +6,8 @@
 % \notag, a \tikz path with braces, a \resizebox, a picture as wide as
 % the text with a number and with a long \tag*, a display after a blank line, \qedhere in a
 % numbered equation, a number in a theorem, a \tag in \[ \], a period or a comma
-% after the picture, and a number after a blank line. Ordinary display math stays as it is.
+% after the picture, a number after a blank line, a \[ \] after a blank
+% line, and a tikzcd in \[ \] alone and with a \tag. Ordinary display math stays as it is.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -170,6 +171,17 @@ Numbered after a blank line.
 \begin{tikzpicture}\draw (0,0) -- (1,1);\end{tikzpicture}
 \end{equation}
 where the numbered text goes on.
+
+Bracket after a blank line.
+
+\[ \includegraphics[alt={bracket blank graphics},width=2cm]{test-picture.png} \]
+where the bracket text goes on.
+
+Bracket tikzcd.
+\[ \begin{tikzcd} A \arrow[r] & B \end{tikzcd} \]
+
+Bracket tikzcd tag.
+\[ \begin{tikzcd} A \arrow[r] & B \end{tikzcd} \tag{D} \]
 
 Ordinary display.
 \[ y = 1 \]

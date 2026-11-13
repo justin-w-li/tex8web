@@ -492,32 +492,31 @@
 \web@needs{VerbMathToks}
 \cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
 \cs_set_eq:NN \__web_AltlDisplayDollars:w \AltlDisplayDollars
-% (the body of $$ $$ is set in an \hbox, so the picture is set in text,
-% as in a display environment below, and a \qedhere gives the text's box
-% after the picture. A \[ \] sets the picture in its math, where amsthm's
-% \qedhere gives the same box)
+% (the body is set in an \hbox, so the picture is set in text, as in a
+% display environment below, and a \qedhere gives the text's box after
+% the picture. tex4ht's mathjax option leaves TeX in text mode at \[ and
+% $$, so after a blank line an unboxed picture would start a paragraph
+% in the display)
+\cs_new_protected:Npn \__web_picture_bare:n #1 {
+    \__web_picture_body:n {#1}
+    \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } }
+    \__web_picture_punct:
+}
 \cs_set:Npn \AltlDisplayDollars #1 $$ {
     \__web_if_bare_picture:nTF {#1}
-        {
-            \__web_picture_body:n {#1}
-            \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } }
-            \__web_picture_punct: $$
-        }
+        { \__web_picture_bare:n {#1} $$ }
         { \__web_AltlDisplayDollars:w #1 $$ }
 }
+% (a tikzcd beside other math is set in the display's math)
 \cs_set:Npn \AltlDisplay #1 \] {
-    \str_if_in:nnTF {#1} {\begin{tikzcd}}
-        { \__web_picture:n {#1\]} }
+    \__web_if_bare_picture:nTF {#1}
+        { \__web_picture_bare:n {#1} \] }
         {
-            \__web_if_bare_picture:nTF {#1}
+            \__web_if_tagged_picture:nTF {#1}
+                { \__web_picture_tagged:n {#1} \] }
                 {
-                    \__web_picture_body:n {#1}
-                    \exp_args:NV \__web_picture:n \l__web_picture_body_tl
-                    \__web_picture_punct: \]
-                }
-                {
-                    \__web_if_tagged_picture:nTF {#1}
-                        { \__web_picture_tagged:n {#1} \] }
+                    \str_if_in:nnTF {#1} {\begin{tikzcd}}
+                        { \__web_picture:n {#1\]} }
                         {
                             \str_if_in:nnTF {#1} {\qedhere}
                                 {

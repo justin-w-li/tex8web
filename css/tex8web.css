@@ -393,7 +393,8 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 .mathjax-block > img:has(+ :is(.tex8web-picture-punct, .tex8web-picture-tag, .tex8web-qed)) { grid-area: 1 / 2; margin: 0; }
 .mathjax-block > :is(img, img + .tex8web-picture-punct) + :is(.tex8web-picture-tag, .tex8web-qed) { grid-area: 1 / -2;
     justify-self: end; white-space: nowrap; float: none; margin: 0; }
-.mathjax-block > :is(img, img + .tex8web-picture-punct) + .tex8web-picture-tag + .tex8web-qed { grid-row: 2; }
+.mathjax-block > :is(img, img + .tex8web-picture-punct) + .tex8web-picture-tag + .tex8web-qed { grid-area: 2 / -2;
+    justify-self: end; float: none; margin: 0; }
 /* a period or comma after such a picture, in a column of its own at its
    right, on the baseline of its bottom, centered with it */
 .mathjax-block:has(> img + .tex8web-picture-punct) { grid-template-columns: 1fr auto auto 1fr; column-gap: 0; }
@@ -838,9 +839,12 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     background-color: var(--tex8web-highlight); }
 /* an equation's anchors (marked in page.lua) come right before it, or for
    a gather at the end of the paragraph before. The highlight goes on the
-   first display after them */
-a.tex8web-eq-anchor:target ~ :is(.mathjax-env, .mathjax-block):not(a.tex8web-eq-anchor:target ~ :not(a.tex8web-eq-anchor) ~ *) > :is(mjx-container, img),
-p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > :is(mjx-container, img) {
+   first display after them, and for a picture with a number on the
+   display's grid (tex8web-math.tex): in dark mode, a TikZ picture's filter
+   would invert a highlight on the picture */
+a.tex8web-eq-anchor:target ~ :is(.mathjax-env, .mathjax-block):not(a.tex8web-eq-anchor:target ~ :not(a.tex8web-eq-anchor) ~ *) > mjx-container,
+a.tex8web-eq-anchor:target ~ .mathjax-block:has(> img ~ .tex8web-picture-tag):not(a.tex8web-eq-anchor:target ~ :not(a.tex8web-eq-anchor) ~ *),
+p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mjx-container {
     background-color: var(--tex8web-highlight); }
 
 /* --- controls and the table of contents (page.lua) -------------------- */

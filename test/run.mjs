@@ -404,7 +404,8 @@ const pictureNumbers = { 'Equation label first': '(2)', 'Equation tag graphics':
   'Equation notag': '', 'Bracket tikz node': '', 'Equation star resizebox': '', 'Equation wide graphics': '(3)',
   'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)', 'Equation long tag': 'the long tag',
   'Theorem equation graphics': '(5)', 'Bracket tag graphics': '(C)', 'Equation tikzcd period': '(6)',
-  'Dollars graphics comma': '', 'Bracket tikzpicture period': '', 'Numbered after a blank line': '(7)' };
+  'Dollars graphics comma': '', 'Bracket tikzpicture period': '', 'Numbered after a blank line': '(7)',
+  'Bracket after a blank line': '', 'Bracket tikzcd': '', 'Bracket tikzcd tag': '(D)' };
 // the punctuation after the picture, in its own element after it
 const picturePuncts = { 'Equation tikzcd period': '.', 'Dollars graphics comma': ',', 'Bracket tikzpicture period': '.' };
 pictureCases.push(...Object.keys(pictureNumbers));
@@ -1681,6 +1682,7 @@ function check(doc, result, out, aux) {
       if (name === 'Proof equation tikzpicture' && !/tex8web-picture-tag(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the number`);
       if (name === 'Equation after a blank line' && !/<p\b[^>]*>\s*where the text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
       if (name === 'Numbered after a blank line' && !/<p\b[^>]*>\s*where the numbered text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
+      if (name === 'Bracket after a blank line' && !/<p\b[^>]*>\s*where the bracket text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
       if (name === 'Equation tag graphics' && !/Reference to the tag: <a [^>]*>A(?:<!--(?:(?!-->)[^])*-->)?<\/a>/.test(text)) problems.push(`${name}: the reference does not read A`);
     });
     math.forEach((name, j) => {
