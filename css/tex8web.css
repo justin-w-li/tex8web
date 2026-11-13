@@ -383,9 +383,9 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 /* the number of an equation whose body is a picture (tex8web-math.tex),
    and the QED box of a \qedhere after a picture, at the right, on the
    picture's bottom line, as in the PDF. The picture is centered between
-   two equal columns, each as wide as the mark when it fits, and is moved
-   left of center when the mark needs more room, as TeX moves a display
-   beside a wide number. A QED box after a number is under it, at the
+   two columns, each half the free width when the mark fits in its half,
+   and is moved left of center when the mark needs more room, as TeX
+   moves a display beside a wide number. A QED box after a number is under it, at the
    right. The picture's margins are the display's */
 .mathjax-block:has(> img + :is(.tex8web-picture-punct, .tex8web-picture-tag, .tex8web-qed)) { display: grid;
     grid-template-columns: 1fr auto 1fr; column-gap: 1em; align-items: end;
@@ -840,12 +840,12 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
 /* an equation's anchors (marked in page.lua) come right before it, or for
    a gather and for a numbered picture after a blank line at the end of the
    paragraph before. The highlight goes on the first display after them,
-   and for a picture with a number on the display's grid (tex8web-math.tex):
-   in dark mode, a TikZ picture's filter would invert a highlight on the
-   picture */
+   and for a picture on the display (tex8web-math.tex), whose number may
+   be an empty \tag*{}: in dark mode, a TikZ picture's filter would
+   invert a highlight on the picture */
 a.tex8web-eq-anchor:target ~ :is(.mathjax-env, .mathjax-block):not(a.tex8web-eq-anchor:target ~ :not(a.tex8web-eq-anchor) ~ *) > mjx-container,
-a.tex8web-eq-anchor:target ~ .mathjax-block:has(> img ~ .tex8web-picture-tag):not(a.tex8web-eq-anchor:target ~ :not(a.tex8web-eq-anchor) ~ *),
-p:has(> a.tex8web-eq-anchor-end:target) + .mathjax-block:has(> img ~ .tex8web-picture-tag),
+a.tex8web-eq-anchor:target ~ .mathjax-block:has(> img):not(a.tex8web-eq-anchor:target ~ :not(a.tex8web-eq-anchor) ~ *),
+p:has(> a.tex8web-eq-anchor-end:target) + .mathjax-block:has(> img),
 p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mjx-container {
     background-color: var(--tex8web-highlight); }
 

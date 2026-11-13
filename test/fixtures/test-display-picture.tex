@@ -190,6 +190,22 @@ Proof tikzpicture period.
 \[ \begin{tikzpicture}\draw (0,0) -- (1,0);\end{tikzpicture}. \qedhere \]
 \end{proof}
 
+Equation empty star tag.
+\begin{equation}
+\includegraphics[alt={empty star tag graphics},width=2cm]{test-picture.png} \tag*{}
+\end{equation}
+
+Equation tikzcd thin space.
+\begin{equation}
+\begin{tikzcd} A \arrow[r] & B \end{tikzcd}\,.
+\end{equation}
+
+Dollars graphics semicolon space.
+$$ \includegraphics[alt={dollars graphics semicolon space},width=2cm]{test-picture.png}\;, $$
+
+Bracket tikzpicture quad.
+\[ \begin{tikzpicture}\draw (0,0) -- (1,1);\end{tikzpicture}\quad. \]
+
 Ordinary display.
 \[ y = 1 \]
 

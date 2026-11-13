@@ -405,10 +405,13 @@ const pictureNumbers = { 'Equation label first': '(2)', 'Equation tag graphics':
   'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)', 'Equation long tag': 'the long tag',
   'Theorem equation graphics': '(5)', 'Bracket tag graphics': '(C)', 'Equation tikzcd period': '(6)',
   'Dollars graphics comma': '', 'Bracket tikzpicture period': '', 'Numbered after a blank line': '(7)',
-  'Bracket after a blank line': '', 'Bracket tikzcd': '', 'Bracket tikzcd tag': '(D)', 'Proof tikzpicture period': '' };
+  'Bracket after a blank line': '', 'Bracket tikzcd': '', 'Bracket tikzcd tag': '(D)', 'Proof tikzpicture period': '',
+  'Equation empty star tag': '', 'Equation tikzcd thin space': '(8)', 'Dollars graphics semicolon space': '',
+  'Bracket tikzpicture quad': '' };
 // the punctuation after the picture, in its own element after it
 const picturePuncts = { 'Equation tikzcd period': '.', 'Dollars graphics comma': ',', 'Bracket tikzpicture period': '.',
-  'Proof tikzpicture period': '.' };
+  'Proof tikzpicture period': '.', 'Equation tikzcd thin space': '.', 'Dollars graphics semicolon space': ',',
+  'Bracket tikzpicture quad': '.' };
 pictureCases.push(...Object.keys(pictureNumbers));
 // the first element whose opening tag matches the pattern, whose first
 // group is the tag's name, up to its closing tag ('' if there is none)

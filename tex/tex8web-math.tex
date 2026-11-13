@@ -382,7 +382,8 @@
 % tikzpicture, \tikz, tikzcd, \includegraphics, or picture environment,
 % maybe in a \resizebox or a \scalebox, with \label, \notag, and
 % \nonumber anywhere around it, \qedhere and \tag after it, and a period
-% or a comma after it; and a \[ \] with a tikzcd. MathJax knows none of
+% or a comma after it, maybe after one spacing command (\, \: \; \!
+% \quad \qquad or a control space); and a \[ \] with a tikzcd. MathJax knows none of
 % them. Other pictures beside math, and a body with two pictures, stay
 % MathJax's. amsmath's displays take a \tag, and so does \[ \] with
 % amsmath; $$ $$, displaymath, and eqnarray do not.
@@ -404,16 +405,17 @@
             | \\scalebox \s* \{ [^\{\}]* \} (?: \s* \[ [^\]]* \] )? ) \s* \{ \s* }
         \exp_not:V \c__web_picture_tl
     \exp_not:n { \s* \} ) (?: } \exp_not:V \c__web_marks_tl
-    \exp_not:n { | \\qedhere \b | \\tag \s* \*? \s* \{ [^\{\}]* \} )* (?: [.,] (?: }
+    \exp_not:n { | \\qedhere \b | \\tag \s* \*? \s* \{ [^\{\}]* \} )*
+        (?: (?: (?: \\[,:;!\ ] | \\q?quad \b ) \s* )? [.,] (?: }
     \exp_not:V \c__web_marks_tl
     \exp_not:n { | \\qedhere \b | \\tag \s* \*? \s* \{ [^\{\}]* \} )* )? \Z }
 }
-% a period or comma after the picture, maybe with marks after it. It is
-% taken out of the body, and \__web_picture_punct: sets it after the
+% a period or comma after the picture, with its spacing command before
+% it and maybe marks after it. They are taken out of the body, and \__web_picture_punct: sets it after the
 % picture, on its bottom line (css/tex8web.css). (The body is read again
 % as it is set, which a tikzcd's & needs)
 \regex_const:Nn \c__web_picture_punct_regex {
-    ( [.,] ) ( (?: \s | \c{label} \s* \cB. (?: \c[^BE]. )* \cE. | \c{notag} | \c{nonumber} | \c{qedhere}
+    ( (?: \c{ (?: [,:;!\ ] | q?quad ) } \s* )? [.,] ) ( (?: \s | \c{label} \s* \cB. (?: \c[^BE]. )* \cE. | \c{notag} | \c{nonumber} | \c{qedhere}
         | \c{tag} \s* (?: \* \s* )? \cB. (?: \c[^BE]. )* \cE. )* ) \Z
 }
 \tl_new:N \l__web_picture_body_tl
@@ -849,7 +851,8 @@
     \bool_set_false:N \l__web_picture_back_bool
     \tl_clear:N \l__web_picture_tag_tl
     \__web_picture_tag:w #2 \tag \q_stop
-    \tl_if_empty:NT \l__web_picture_tag_tl {
+    % (a \tag*{} gives an empty tag, and no number)
+    \bool_if:NF \l__web_picture_back_bool {
         \clist_if_in:NnT \c__web_numbered_clist {#1} {
             \tl_if_in:nnF {#2} {\notag} {
                 \tl_if_in:nnF {#2} {\nonumber} {
@@ -912,8 +915,9 @@
     \refstepcounter{equation}
 }
 % (LaTeX's eqnarray takes no \tag)
-\cs_new_protected:Npn \__web_if_env_picture:nnTF #1#2 {
-    \str_if_in:nnTF {#1} {eqnarray} { \__web_if_bare_picture:nTF {#2} } { \__web_if_picture:nTF {#2} }
+\cs_new_protected:Npn \__web_if_env_picture:nnTF #1#2#3#4 {
+    \str_if_in:nnTF {#1} {eqnarray}
+        { \__web_if_bare_picture:nTF {#2} {#3} {#4} } { \__web_if_picture:nTF {#2} {#3} {#4} }
 }
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
         flalign, flalign*, multline, multline*, eqnarray, eqnarray* } {

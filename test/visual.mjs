@@ -554,7 +554,7 @@ const centered = `(() => {
   });
   return { checked: [pictures.length, marks], wrong };
 })()`;
-const centers = { 'test-display-picture': [37, 14], 'test-display-picture-hyperref': [5, 2] };
+const centers = { 'test-display-picture': [41, 15], 'test-display-picture-hyperref': [5, 2] };
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
