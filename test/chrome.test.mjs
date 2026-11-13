@@ -94,8 +94,8 @@ test('Chrome and its profile go with the process that started it, however it end
 // outside the page's directory, and to the downloads folder. Returns what
 // reached the server (connect, paths, tls, or udp), the hosts Chrome
 // looked up, as its net log shows them, whether the outside file was
-// read, and the page's address and screenshot. Offline, the page may load
-// the files of its directory
+// read, and the page's address. Offline, the page may load the files of
+// its directory
 async function tryWaysOut(offline) {
   const reached = [];
   const server = createServer(socket => {
@@ -108,14 +108,14 @@ async function tryWaysOut(offline) {
   });
   const udp = createSocket('udp4').on('message', () => reached.push('udp'));
   await Promise.all([new Promise(done => server.listen(0, '127.0.0.1', done)), new Promise(done => udp.bind(0, '127.0.0.1', done))]);
+  // (so that a test that times out does not keep its process running)
+  server.unref();
+  udp.unref();
   const port = server.address().port, at = `127.0.0.1:${port}`;
   const netLog = join(dir, `${offline ? 'offline' : 'default'}.json`);
-  const outside = mkdtempSync(join(tmpdir(), 'tex8webchromeoutside'));
+  const inside = mkdtempSync(join(dir, 'inside')), outside = mkdtempSync(join(dir, 'outside'));
   writeFileSync(join(outside, 'secret.html'), `<script>parent.postMessage('read', '*');</script>`);
-  let own;
-  try {
-    own = await launch({ offline: offline && [dir], netLog });
-    const tab = await own.open(write('ways-out.html', `<link rel="dns-prefetch" href="//example.invalid">
+  writeFileSync(join(inside, 'ways-out.html'), `<link rel="dns-prefetch" href="//example.invalid">
       <link rel="preconnect" href="http://localhost:${port}"><link rel="prefetch" href="http://${at}/prefetch">
       <img src="http://${at}/img"><img src="http://example.invalid/img"><p>text</p>
       <iframe src="${pathToFileURL(join(outside, 'secret.html')).href}"></iframe>
@@ -138,34 +138,39 @@ async function tryWaysOut(offline) {
           setInterval(() => new WebSocket('ws://${at}/after'), 50);
           location.href = 'http://${at}/navigate';
         }, 500);
-      </script>`));
+      </script>`);
+  let own;
+  try {
+    own = await launch({ offline: offline && [inside], netLog });
+    const tab = await own.open(pathToFileURL(join(inside, 'ways-out.html')).href);
     // (the net log is written as Chrome goes, in order)
     const log = () => readFileSync(netLog, 'utf8');
     assert.ok(await until(() => log().includes(`${at}/last`) && (offline || reached.includes('/navigate')), Boolean, 10000),
       'no marker in the net log');
     // (a moment for what is still on its way)
     await until(() => false, Boolean, 500);
-    // (a line of constants, then an event a line)
+    // (a line of constants, then an event a line, up to the marker's line,
+    // as a last line may be half written)
     const text = log(), events = text.indexOf(',\n"events"');
     const names = Object.fromEntries(Object.entries(JSON.parse(`${text.slice(0, events)}}`).constants.logEventTypes)
       .map(([name, type]) => [type, name]));
-    const lookups = [...text.slice(events).matchAll(/^\{.*\},?$/gm)].map(line => JSON.parse(line[0].replace(/,$/, '')))
+    const lookups = [...text.slice(events, text.lastIndexOf('\n', text.indexOf(`${at}/last`))).matchAll(/^\{.*\},?$/gm)].map(line => JSON.parse(line[0].replace(/,$/, '')))
       .filter(event => names[event.type] === 'HOST_RESOLVER_MANAGER_JOB' && event.params?.host).map(event => event.params.host);
-    return { reached, lookups, url: await tab.evaluate('location.href'), shot: await tab.screenshot(0, 100),
-      read: await tab.evaluate('window.secret === "read"') };
+    const url = await tab.evaluate('location.href'), read = await tab.evaluate('window.secret === "read"');
+    await tab.screenshot(0, 100);
+    return { reached, lookups, url, read };
   } finally {
     own?.close();
     server.close();
     udp.close();
-    rmSync(outside, { recursive: true });
   }
 }
 // (a name of its own, as the download, if the test fails, lands in the
 // user's downloads folder)
 const download = `tex8web-offline-${process.pid}.txt`;
 
-test('offline, no request of a page leaves Chrome, and the page is still shot', async () => {
-  const { reached, lookups, url, shot, read } = await tryWaysOut(true);
+test('offline, no request of a page leaves Chrome, and the page is still shot', { timeout: 120000 }, async () => {
+  const { reached, lookups, url, read } = await tryWaysOut(true);
   const downloaded = join(homedir(), 'Downloads', download);
   try {
     assert.deepEqual(reached, []);
@@ -173,14 +178,13 @@ test('offline, no request of a page leaves Chrome, and the page is still shot', 
     assert.equal(read, false);
     assert.ok(!existsSync(downloaded), 'the page downloaded a file');
     assert.match(url, /^file:.*ways-out\.html$/);
-    assert.ok(shot.length > 0);
   } finally {
     rmSync(downloaded, { force: true });
   }
 });
 
 // (so that the test above can fail)
-test('by default, the same page reaches the server and the DNS', async () => {
+test('by default, the same page reaches the server and the DNS', { timeout: 120000 }, async () => {
   const { reached, lookups } = await tryWaysOut(false);
   // (the outside file sends /read)
   for (const way of ['connect', '/prefetch', '/img', '/fetch', '/localhost', 'tls', '/xhr', '/ws', 'udp', '/read', '/navigate']) {

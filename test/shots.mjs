@@ -256,15 +256,16 @@ async function places(tab, label, height) {
     save(`${label}-${place}`, await tab.screenshot(y, Math.min(height, total - y)));
     console.log(`${label}-${place}: ${y}px, ${JSON.stringify(words ?? '')}`);
   };
-  // the text from the first text node at y or below to the end of its block
+  // the text from the first text node that ends below y to the end of its
+  // block, leaving out the controls, the table of contents, and sidenotes
   const textFrom = y => tab.evaluate(`(() => {
     const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     const range = document.createRange();
     for (let node; (node = walk.nextNode());) {
-      if (!node.data.trim() || node.parentElement.closest('.tex8web-controls, #tex8web-toc, script, style')) continue;
+      if (!node.data.trim() || node.parentElement.closest('.tex8web-controls, #tex8web-toc, .tex8web-sidenote, script, style')) continue;
       range.selectNodeContents(node);
       const box = range.getBoundingClientRect();
-      if (box.height && box.top + scrollY >= ${y}) {
+      if (box.height && box.bottom + scrollY > ${y}) {
         const block = node.parentElement.closest('p, li, dt, dd, h1, h2, h3, h4, h5, h6, div') ?? node.parentElement;
         range.setEnd(block, block.childNodes.length);
         return range.toString();
