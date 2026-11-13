@@ -91,18 +91,14 @@ For docs, comments, and commit messages:
 - End full-sentence list items with a period, and fragments with nothing.
 - In DOCUMENTATION.md, write only what a user acts on: what they see, what to do, and how to change it. Put mechanism in CONTRIBUTING.md, and thresholds, timings, and edge cases in tests.
 - Say a thing once, where it belongs, and link to it elsewhere.
-- Never name private documents, courses, or notes in code, tests, docs, or commits. Say "a long document".
+- Never name private documents in code, tests, docs, or commits. Say "a long document".
 - Commits: a subject of at most 72 characters, without a final period, saying what the page or tool now does (`Review fixes: …` is fine). Then a blank line, and a body wrapped at 72 that says why, and which check covers the change.
 
 ## Process
 
 - Work toward checks that can pass or fail. Fix a bug by writing a test that reproduces it and making it pass. Split multi-step work into milestones, each with its check, and commit each once verified.
-- Before committing:
-  - `npm test` passes.
-  - `npm run test:visual` passes when the change touches a file listed in [Which checks to run](CONTRIBUTING.md#which-checks-to-run). Otherwise, run it at the end of a batch and before opening a pull request.
-  - Before opening a pull request, check with `npm run test:compare` that your branch changed only the test pages it meant to. See [Commands](CONTRIBUTING.md#commands).
-  - A bug fix has a test where practical: a Lua unit test in `test/unit/`, or a fixture check in `test/run.mjs`.
-  - Check visual changes with `node test/shots.mjs`: headless Chrome screenshots, wide and narrow, light and dark, next to the PDF. Also use it to compare two builds, shoot one element's band (`--clip`), or print a measurement (`--eval`). Extend it instead of writing a separate script.
+- Before committing, and before opening a pull request, run the checks in [Which checks to run](CONTRIBUTING.md#which-checks-to-run).
+- For screenshots, a comparison of two builds, or a measurement, use `node test/shots.mjs` ([Commands](CONTRIBUTING.md#commands)). Extend it instead of writing a separate script.
 - At each milestone, or more often for risky changes, have a subagent with no context review the diff as a senior engineer, for correctness and cleanliness. Give it the diff and the files, not your conclusions. Fix what is warranted, and say what you did not fix and why in the pull request or your report.
 - Match the process to the change. The full cycle above is for features and for changes to TeX, Lua, or MathJax internals. A small UI tweak, such as a CSS value, a timing, a comment, or a few lines of JavaScript, gets a lighter loop:
   - no reviewer
@@ -111,5 +107,4 @@ For docs, comments, and commit messages:
   - `npm run test:visual`, and `npm run regress` on your documents, once at the end of a batch
 - Change `test/` or the dev loop only for a failure that happened or a cost you measured. Report a risk you only foresee, and do not code for it.
   - A change to the test tools needs a reviewer only if it touches locks, build slots, or process lifetimes.
-  - Check it with `npm test`, plus `npm run test:visual` if it touches `chrome.mjs`, `shots.mjs`, or `visual.mjs`.
 - Keep the docs true. Update DOCUMENTATION.md when behavior or limitations change, and CONTRIBUTING.md when internals, tests, or files change. Put known gaps in `test/expected.json`.

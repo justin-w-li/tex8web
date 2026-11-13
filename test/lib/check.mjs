@@ -1,5 +1,5 @@
-// The generic checks of a built page, for the documents of npm test and for
-// any other build (test/check.mjs).
+// The generic checks of a built page, for the documents of npm test and the
+// builds of regress.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, join, relative } from 'node:path';
 
