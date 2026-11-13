@@ -1,0 +1,16 @@
+% Display math with two pictures and math between them, or a picture in
+% each row, stays MathJax's: TeX would set the math between the pictures
+% as text. The config defines \tikz and \draw for MathJax.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{tikz}
+\begin{document}
+Two diagrams.
+$$ \tikz{\draw (0,0) -- (1,0);} \cong \tikz{\draw (0,0) -- (1,1);} $$
+
+Two rows.
+\begin{align}
+\tikz{\draw (0,0) -- (1,0);} \\
+\tikz{\draw (0,0) -- (1,1);}
+\end{align}
+\end{document}

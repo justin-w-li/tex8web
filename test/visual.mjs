@@ -532,11 +532,12 @@ const centered = `(() => {
     return [...Math.abs(off) > 0.5 ? [[name, \`its center \${off.toFixed(1)}px from the column's\`]] : [],
       ...img.style.verticalAlign ? [[name, \`vertical-align \${img.style.verticalAlign}\`]] : [],
       ...mark && Math.abs(mark.bottom - at.bottom) > 0.5 ? [[name, \`the mark after it ends \${(mark.bottom - at.bottom).toFixed(1)}px below its bottom\`]] : [],
-      ...mark && Math.abs(mark.right - (box.right - parseFloat(style.paddingRight))) > 0.5 ? [[name, 'the mark after it is not at the right']] : []];
+      ...mark && Math.abs(mark.right - (box.right - parseFloat(style.paddingRight))) > 0.5 ? [[name, 'the mark after it is not at the right']] : [],
+      ...mark && mark.left < at.right - 0.5 ? [[name, \`the mark after it covers it by \${(at.right - mark.left).toFixed(1)}px\`]] : []];
   });
   return { checked: [pictures.length, marks], wrong };
 })()`;
-const centers = { 'test-display-picture': [17, 2], 'test-display-picture-hyperref': [4, 1] };
+const centers = { 'test-display-picture': [26, 7], 'test-display-picture-hyperref': [4, 1] };
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
@@ -1309,6 +1310,9 @@ async function compare(chrome, doc, ok) {
             const pictures = await page.evaluate(centered);
             if (`${pictures.checked}` !== `${centers[doc.name]}`) problems.push(`${html}: ${pictures.checked} pictures in display math and marks after them, not ${centers[doc.name]}`);
             for (const [name, what] of pictures.wrong) problems.push(`${html}: the display picture ${name}: ${what}`);
+            // and at a phone's width, where a picture may fill the column
+            const phone = await chrome.withPage(pathToFileURL(file).href, { javascript: false, width: 390 }, at => at.evaluate(centered));
+            for (const [name, what] of phone.wrong) problems.push(`${html} at 390px: the display picture ${name}: ${what}`);
           }
           if (verbatimFamilies[doc.name]) {
             const literals = await page.evaluate(verbatimFonts(verbatimFamilies[doc.name], doc.name));

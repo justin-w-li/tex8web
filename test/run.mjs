@@ -399,6 +399,11 @@ const pictureCases = ['Dollars tikzpicture', 'Bracket tikzpicture', 'Bracket tik
   'Dollars tikzcd', 'Bracket matrix', 'Dollars matrix', 'Bracket graphics', 'Dollars graphics',
   'Displaymath tikzpicture', 'Displaymath graphics', ['Equation tikzpicture', '(1)'], 'Equation star graphics',
   'Equation star tikzcd', 'Bracket picture environment', 'Theorem tikzpicture', ['Proof tikzpicture', 'tex8web-qed']];
+// more cases, each with the number or tag its display shows ('' for none)
+const pictureNumbers = { 'Equation label first': '(2)', 'Equation tag graphics': '(A)', 'Equation star tag': 'B',
+  'Equation notag': '', 'Bracket tikz node': '', 'Equation star resizebox': '', 'Equation wide graphics': '(3)',
+  'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)' };
+pictureCases.push(...Object.keys(pictureNumbers));
 // the first element whose opening tag matches the pattern, whose first
 // group is the tag's name, up to its closing tag ('' if there is none)
 const element = (html, opening) => {
@@ -413,6 +418,7 @@ const element = (html, opening) => {
 };
 const displayPictures = {
   'test-display-picture': { pictures: pictureCases, math: ['Ordinary display', 'Ordinary dollars'] },
+  'test-display-picture-two': { pictures: [], math: ['Two diagrams', 'Two rows'] },
   'test-display-picture-hyperref': {
     pictures: ['Dollars tikzpicture', 'Bracket graphics', ['Equation tikzpicture', '(1)'], 'Theorem tikzpicture'],
     math: ['Ordinary display'] },
@@ -1649,6 +1655,16 @@ function check(doc, result, out, aux) {
           if (!display.includes(`id='${id}'`) && !new RegExp(`id='${id}'[^>]*>(?:\\s|<[^>]+>)*$`).test(text.slice(0, text.indexOf(display)))) problems.push(`${name}: reference to #${id} outside the display`);
         }
       }
+    });
+    shown.forEach((entry, i) => {
+      const name = [entry].flat()[0], text = part(i);
+      if (!(name in pictureNumbers) || doc.name !== 'test-display-picture') return;
+      const display = element(text, /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
+      const tag = display.match(/<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
+      if (tag !== pictureNumbers[name]) problems.push(`${name}: the display's number is "${tag}", not "${pictureNumbers[name]}"`);
+      if (name === 'Proof equation tikzpicture' && !/tex8web-picture-tag(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the number`);
+      if (name === 'Equation after a blank line' && !/<p\b[^>]*>\s*where the text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
+      if (name === 'Equation tag graphics' && !/Reference to the tag: <a [^>]*>A(?:<!--(?:(?!-->)[^])*-->)?<\/a>/.test(text)) problems.push(`${name}: the reference does not read A`);
     });
     math.forEach((name, j) => {
       const text = part(shown.length + j);

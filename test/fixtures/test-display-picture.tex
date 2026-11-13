@@ -2,7 +2,10 @@
 % tikzcd, an \includegraphics, and a picture environment, in \[ \], $$ $$,
 % displaymath, equation, and equation*, also with & in a matrix, in a
 % theorem, in a proof with \qedhere, and with a \label. Each case follows a
-% paragraph that names it. Ordinary display math stays as it is.
+% paragraph that names it. Also a \label before the picture, \tag, \tag*,
+% \notag, a \tikz path with braces, a \resizebox, a picture as wide as
+% the text with a number, a display after a blank line, and \qedhere in a
+% numbered equation. Ordinary display math stays as it is.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -75,6 +78,54 @@ Bracket picture environment.
 \[ \begin{picture}(40,20)\put(0,0){\line(1,0){40}}\put(0,0){\line(2,1){40}}\end{picture} \]
 
 Reference to the triangle: \ref{eq:triangle}.
+
+Equation label first.
+\begin{equation}
+\label{eq:first}\begin{tikzpicture}\draw (0,0) -- (2,1);\end{tikzpicture}
+\end{equation}
+
+Equation tag graphics.
+\begin{equation}
+\includegraphics[alt={tag graphics},width=2cm]{test-picture.png} \tag{A}\label{eq:tagged}
+\end{equation}
+Reference to the tag: \ref{eq:tagged}.
+
+Equation star tag.
+\begin{equation*}
+\begin{tikzcd} A \arrow[r] & B \end{tikzcd} \tag*{B}
+\end{equation*}
+
+Equation notag.
+\begin{equation}
+\begin{tikzpicture}\draw (0,0) -- (2,0);\end{tikzpicture} \notag
+\end{equation}
+
+Bracket tikz node.
+\[ \tikz \node[draw] {A}; \]
+
+Equation star resizebox.
+\begin{equation*}
+\resizebox{3cm}{!}{\begin{tikzpicture}\draw (0,0) -- (2,1);\end{tikzpicture}}
+\end{equation*}
+
+Equation wide graphics.
+\begin{equation}
+\includegraphics[alt={wide graphics},width=\linewidth]{test-picture.png}
+\end{equation}
+
+Equation after a blank line.
+
+\begin{equation*}
+\begin{tikzpicture}\draw (0,0) -- (1,1);\end{tikzpicture}
+\end{equation*}
+where the text goes on.
+
+\begin{proof}
+Proof equation tikzpicture.
+\begin{equation}
+\begin{tikzpicture}\draw (0,0) -- (1,0);\end{tikzpicture} \qedhere
+\end{equation}
+\end{proof}
 
 \begin{theorem}
 Theorem tikzpicture.

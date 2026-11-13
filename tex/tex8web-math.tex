@@ -378,24 +378,68 @@
 }{}
 
 % a picture in display math is typeset by TeX, rescanning the source,
-% which tex4ht read with & as a letter: a body that is only a tikzpicture,
-% a \tikz, a tikzcd, an \includegraphics, or a picture environment, with
-% at most a \label and a \qedhere, and a \[ \] with a tikzcd. MathJax
-% knows none of them. Other pictures beside math stay MathJax's.
-\regex_const:Nn \c__web_picture_regex {
-    \A \s* (?:
-        \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
+% which tex4ht read with & as a letter: a body that is only one
+% tikzpicture, \tikz, tikzcd, \includegraphics, or picture environment,
+% maybe in a \resizebox or a \scalebox, with \label, \notag, and
+% \nonumber anywhere around it, and \qedhere and \tag after it; and a \[ \]
+% with a tikzcd. MathJax knows none of them. Other pictures beside math,
+% and a body with two pictures, stay MathJax's. Only a numbered or
+% unnumbered equation environment takes a \tag.
+\tl_const:Nn \c__web_picture_tl {
+    (?: \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
         | \\begin \s* \{ tikzcd \} .* \\end \s* \{ tikzcd \}
         | \\begin \s* \{ picture \} .* \\end \s* \{ picture \}
         | \\includegraphics \s* \*? \s* (?: \[ [^\]]* \] \s* )* \{ [^\{\}]* \}
-        | \\tikz \b \s* (?: \[ [^\]]* \] \s* )? (?: \{ .* \} | [^;\{]* ; )
-    ) (?: \s | \\label \s* \{ [^\{\}]* \} | \\qedhere \b )* \Z
+        | \\tikz \b \s* (?: \[ [^\]]* \] \s* )?
+            (?: \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} | (?: [^;\{\}] | \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} )* ; ) )
 }
+\tl_const:Nn \c__web_marks_tl {
+    \s | \\label \s* \{ [^\{\}]* \} | \\notag \b | \\nonumber \b
+}
+\exp_args:NNe \regex_const:Nn \c__web_picture_regex {
+    \exp_not:n { \A (?: } \exp_not:V \c__web_marks_tl \exp_not:n { )* (?: }
+        \exp_not:V \c__web_picture_tl
+        \exp_not:n { | (?: \\resizebox \s* \*? \s* \{ [^\{\}]* \} \s* \{ [^\{\}]* \}
+            | \\scalebox \s* \{ [^\{\}]* \} (?: \s* \[ [^\]]* \] )? ) \s* \{ \s* }
+        \exp_not:V \c__web_picture_tl
+    \exp_not:n { \s* \} ) (?: } \exp_not:V \c__web_marks_tl
+    \exp_not:n { | \\qedhere \b | \\tag \s* \*? \s* \{ [^\{\}]* \} )* \Z }
+}
+% the end of each picture, to find a body with two
+\regex_const:Nn \c__web_picture_end_regex
+    { \\end \s* \{ (?: tikzpicture | tikzcd | picture ) \} | \\tikz \b }
 \str_new:N \l__web_picture_str
+\int_new:N \l__web_picture_int
+% (the regex runs only on a body with a picture's command)
 \prg_new_protected_conditional:Npnn \__web_if_picture:n #1 { TF } {
-    \str_set:Nn \l__web_picture_str {#1}
-    \exp_args:NNV \regex_match:NnTF \c__web_picture_regex \l__web_picture_str
-        { \prg_return_true: } { \prg_return_false: }
+    \__web_if_picture_command:nTF {#1}
+        {
+            \str_set:Nn \l__web_picture_str {#1}
+            \exp_args:NNV \regex_count:NnN \c__web_picture_end_regex \l__web_picture_str \l__web_picture_int
+            \int_compare:nNnTF \l__web_picture_int < 2
+                {
+                    \exp_args:NNV \regex_match:NnTF \c__web_picture_regex \l__web_picture_str
+                        { \prg_return_true: } { \prg_return_false: }
+                }
+                { \prg_return_false: }
+        }
+        { \prg_return_false: }
+}
+\cs_new_protected:Npn \__web_if_picture_command:nTF #1#2#3 {
+    \tl_if_in:nnTF {#1} {\includegraphics} {#2} {
+        \tl_if_in:nnTF {#1} {\tikz} {#2} {
+            \tl_if_in:nnTF {#1} {\begin{tikzpicture}} {#2} {
+                \tl_if_in:nnTF {#1} {\begin{tikzcd}} {#2}
+                    { \tl_if_in:nnTF {#1} {\begin{picture}} {#2} {#3} }
+            }
+        }
+    }
+}
+% the same, in a display that takes no \tag: \[ \], $$ $$, and displaymath
+\prg_new_protected_conditional:Npnn \__web_if_bare_picture:n #1 { TF } {
+    \__web_if_picture:nTF {#1}
+        { \tl_if_in:nnTF {#1} {\tag} { \prg_return_false: } { \prg_return_true: } }
+        { \prg_return_false: }
 }
 \cs_new_protected:Npn \__web_picture:n #1 {
     \char_set_catcode_alignment:N \& \tex_scantokens:D {#1}
@@ -406,14 +450,18 @@
 \web@needs{VerbMathToks}
 \cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
 \cs_set_eq:NN \__web_AltlDisplayDollars:w \AltlDisplayDollars
+% (the body of $$ $$ is set in an \hbox, so the picture is set in text,
+% as in a display environment below, and a \qedhere gives the text's box
+% after the picture. A \[ \] sets the picture in its math, where amsthm's
+% \qedhere gives the same box)
 \cs_set:Npn \AltlDisplayDollars #1 $$ {
-    \__web_if_picture:nTF {#1} { \__web_picture:n { \hbox{#1} $$ } } { \__web_AltlDisplayDollars:w #1 $$ }
+    \__web_if_bare_picture:nTF {#1} { \__web_picture:n { \hbox{#1} $$ } } { \__web_AltlDisplayDollars:w #1 $$ }
 }
 \cs_set:Npn \AltlDisplay #1 \] {
     \str_if_in:nnTF {#1} {\begin{tikzcd}}
         { \__web_picture:n {#1\]} }
         {
-            \__web_if_picture:nTF {#1}
+            \__web_if_bare_picture:nTF {#1}
                 { \__web_picture:n {#1\]} }
                 {
                     \str_if_in:nnTF {#1} {\qedhere}
@@ -710,19 +758,68 @@
     \tl_put_right:NV \l__web_body_tl \l__web_qed_tag_tl
 }
 \cs_generate_variant:Nn \__web_qed_row:n { e }
-% a display environment whose body is only a picture is set as a \[ \]
-% is (see \c__web_picture_regex). A numbered one gets its number in the
-% display, after the picture (css/tex8web.css)
+% a display environment whose body is only a picture is set as in a \[ \]
+% (see \c__web_picture_regex), in an \hbox, so that after a blank line it
+% starts no paragraph, as MathJax's display does not. Its number, or its
+% \tag, follows the picture in the display, and then the box of a
+% \qedhere, as amsthm sets the box under the number (css/tex8web.css)
+\tl_new:N \l__web_picture_tag_tl
+\bool_new:N \g__web_picture_qed_bool
 \cs_new_protected:Npn \__web_picture_display:nn #1#2 {
     \a:MathjaxBlock
-    \clist_if_in:NnTF \c__web_numbered_clist {#1}
-        {
-            \refstepcounter{equation}
-            \__web_picture:n {#2}
-            \HCode{<span~class="tex8web-picture-tag">} (\theequation) \HCode{</span>}
+    \group_begin:
+        \bool_gset_false:N \g__web_picture_qed_bool
+        \cs_set_eq:NN \__web_picture_qedhere: \qedhere
+        \cs_set_protected:Npn \qedhere { \bool_gset_true:N \g__web_picture_qed_bool }
+        \cs_set_protected:Npn \tag { \@ifstar \use_none:n \use_none:n }
+        \cs_set_eq:NN \notag \prg_do_nothing:
+        \cs_set_eq:NN \nonumber \prg_do_nothing:
+        \bool_set_false:N \l__web_picture_back_bool
+        \tl_clear:N \l__web_picture_tag_tl
+        \__web_picture_tag:w #2 \tag \q_stop
+        \tl_if_empty:NT \l__web_picture_tag_tl {
+            \clist_if_in:NnT \c__web_numbered_clist {#1} {
+                \tl_if_in:nnF {#2} {\notag} {
+                    \tl_if_in:nnF {#2} {\nonumber} {
+                        \refstepcounter{equation}
+                        \tl_set:Nn \l__web_picture_tag_tl { (\theequation) }
+                    }
+                }
+            }
         }
-        { \__web_picture:n {#2} }
+        \__web_picture:n { \hbox{#2} }
+        \bool_if:NT \l__web_picture_back_bool
+            { \setcounter{equation}{\l__web_picture_count_int} }
+        \tl_if_empty:NF \l__web_picture_tag_tl {
+            \HCode{<span~class="tex8web-picture-tag">} \l__web_picture_tag_tl \HCode{</span>}
+        }
+        \bool_if:NT \g__web_picture_qed_bool { \hbox { \__web_picture_qedhere: } }
+    \group_end:
     \b:MathjaxBlock
+}
+% \tag{text} or \tag*{text} in the body: the tag, which a \label names
+\cs_new_protected:Npn \__web_picture_tag:w #1 \tag #2 \q_stop {
+    \tl_if_blank:nF {#2} { \__web_picture_tag:nw #2 \q_stop }
+}
+\cs_new_protected:Npn \__web_picture_tag:nw #1#2 \q_stop {
+    \tl_if_eq:nnTF {#1} {*}
+        { \__web_picture_tag_star:nw #2 \q_stop }
+        { \tl_set:Nn \l__web_picture_tag_tl { (#1) } \__web_picture_label:n {#1} }
+}
+\cs_new_protected:Npn \__web_picture_tag_star:nw #1#2 \q_stop {
+    \tl_set:Nn \l__web_picture_tag_tl {#1}
+    \__web_picture_label:n {#1}
+}
+% (a step of the counter, with the tag as its number, for the anchor
+% before the picture that a \label names, wherever it is; the counter is
+% set back after the picture's \label)
+\int_new:N \l__web_picture_count_int
+\bool_new:N \l__web_picture_back_bool
+\cs_new_protected:Npn \__web_picture_label:n #1 {
+    \int_set:Nn \l__web_picture_count_int { \value{equation} }
+    \bool_set_true:N \l__web_picture_back_bool
+    \cs_set:Npn \theequation {#1}
+    \refstepcounter{equation}
 }
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
         flalign, flalign*, multline, multline*, eqnarray, eqnarray* } {
@@ -734,7 +831,7 @@
     }
 }
 \RenewDocumentEnvironment{displaymath}{+!b}{
-    \__web_if_picture:nTF {#1}
+    \__web_if_bare_picture:nTF {#1}
         { \__web_picture_display:nn {displaymath} {#1} } { \__web_mathjax:nn {#1} {displaymath} }
 }{}
 \ExplSyntaxOff
