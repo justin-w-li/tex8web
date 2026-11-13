@@ -141,14 +141,11 @@
 % a robust command in a field stops them too. Each field is read here
 % instead. A field that starts with \rEfLiNK becomes xr.4ht's link to the
 % other document's page. Any other field is kept as written, so a reference
-% to it prints its number, page, or name with no link. Its number also
-% prints \autoref's name, and \hyperref prints its text in place of the
-% number, as tex4ht's \rEfLiNK does for a label of this document. A
-% cleveref field starts with [, so it is kept as written too, and the
-% number of a cleveref label is not changed. xr.4ht also drops the other
-% document's folder from an \@input, which \include writes, where xr.sty
-% keeps it. Each .4ht file defines \XR@test, so each is wrapped after it is
-% read.
+% to it prints its number, page, or name with no link. A cleveref field
+% starts with [, so it is kept as written too, and the number of a cleveref
+% label is not changed. xr.4ht also drops the other document's folder from
+% an \@input, which \include writes, where xr.sty keeps it. Each .4ht file
+% defines \XR@test, so each is wrapped after it is read.
 \ExplSyntaxOn
 \AddToHook { file/xr.4ht/after } { \__web_xr_wrap: }
 \AddToHook { file/xr-hyper.4ht/after } { \__web_xr_wrap: }
