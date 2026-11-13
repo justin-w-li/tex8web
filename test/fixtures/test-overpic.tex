@@ -1,61 +1,78 @@
 % overpic pictures, and LaTeX pictures that hold an \includegraphics, over
-% PDF and PNG pictures with no .xbb file beside them. Each one builds, and
-% its labels are drawn in its image. Cases: a share of the text width, no
-% size, trim and clip, scale with a grid and tics, abs and unit with a
-% height through \graphicspath, permil, \setOverpic, the Overpic
+% PDF, PNG, and JPEG pictures with no .xbb file beside them. Each one
+% builds at its size in the PDF, which the edges drawn along its bottom and
+% left side, or a frame, show in its image. Cases: a share of the text
+% width, no size, trim and clip, scale with a grid and tics, abs and unit
+% with a height through \graphicspath, permil, \setOverpic, the Overpic
 % environment, a LaTeX picture, a figure with angle and a caption, no
-% extension, italic and math labels, a minipage, and a table cell. The
-% last picture has its .xbb file, which the fix must not break.
+% extension, italic and math labels, a minipage, a table cell, a JPEG, a
+% PDF with its MediaBox away from 0 0, a PDF with a CropBox, the second
+% page of a PDF, a PNG at 144 dpi, a folder in the name, a LaTeX picture
+% at natural size, and a subfigure. The last overpic has its .xbb file,
+% which the fix must not break. Nor must it change a plain \includegraphics
+% of a PNG without its .xbb file, outside any picture.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}
+\usepackage{subcaption}
+% the bottom and left edges of an overpic, at its size
+\newcommand\edges{\put(0,0){\rule{\width}{0.4pt}}\put(0,0){\rule{0.4pt}{\height}}}
+\setlength{\fboxsep}{0pt}
 \begin{document}
 \section{Overpic}
 \begin{overpic}[width=0.5\textwidth]{test-overpic-box.pdf}
+\edges
 \put(10,10){A}
 \end{overpic}
 After share.
 
 \begin{overpic}{test-overpic-box.pdf}
+\edges
 \put(10,10){B}
 \end{overpic}
 After natural.
 
 \begin{overpic}[trim=4 4 4 4, clip, width=100pt]{test-overpic-box.pdf}
+\edges
 \put(10,10){C}
 \end{overpic}
 After trimmed.
 
 \begin{overpic}[scale=1.5, grid, tics=20]{test-bare.png}
+\edges
 \put(10,10){D}
 \end{overpic}
 After grid.
 
 {\graphicspath{{test-overpic/}}
 \begin{overpic}[abs, unit=1pt, height=40pt]{inner.png}
+\edges
 \put(5,5){E}
 \end{overpic}
 After path.}
 
 \begin{overpic}[permil, width=80pt]{test-overpic-box.pdf}
+\edges
 \put(100,100){F}
 \end{overpic}
 After permil.
 
 {\setOverpic{grid, tics=10}
 \begin{overpic}{test-overpic-box.pdf}
+\edges
 \put(10,10){G}
 \end{overpic}
 After set.}
 
 \begin{Overpic}{\includegraphics[width=80pt]{test-overpic-box.pdf}}
+\edges
 \put(10,10){H}
 \end{Overpic}
 After boxed.
 
 \setlength{\unitlength}{1pt}
 \begin{picture}(80,60)
-\put(0,0){\includegraphics[width=80pt]{test-overpic-box.pdf}}
+\put(0,0){\fbox{\includegraphics[width=80pt]{test-overpic-box.pdf}}}
 \put(10,10){I}
 \end{picture}
 After picture.
@@ -63,6 +80,7 @@ After picture.
 \begin{figure}[h]
 \centering
 \begin{overpic}[angle=90, width=60pt]{test-overpic-box.pdf}
+\edges
 \put(10,10){J}
 \end{overpic}
 \caption{Turned}
@@ -70,17 +88,20 @@ After picture.
 After figure.
 
 \begin{overpic}[width=80pt]{test-overpic-box}
+\edges
 \put(10,10){K}
 \end{overpic}
 After bare name.
 
 \begin{overpic}[width=80pt]{test-overpic-box.pdf}
+\edges
 \put(10,10){\textit{L} $x^2$}
 \end{overpic}
 After italic.
 
 \begin{minipage}{0.4\textwidth}
 \begin{overpic}[width=\textwidth]{test-overpic-box.pdf}
+\edges
 \put(10,10){M}
 \end{overpic}
 \end{minipage}
@@ -88,12 +109,70 @@ After minipage.
 
 \begin{tabular}{c}
 \begin{overpic}[width=80pt]{test-overpic-box.pdf}
+\edges
 \put(10,10){N}
 \end{overpic}
 \end{tabular}
 After cell.
 
+\begin{overpic}[width=80pt]{test-overpic-photo.jpg}
+\edges
+\put(10,10){U}
+\end{overpic}
+After photo.
+
+\begin{overpic}{test-overpic-wide.pdf}
+\edges
+\put(10,10){V}
+\end{overpic}
+After moved.
+
+\begin{overpic}{test-overpic-crop.pdf}
+\edges
+\put(10,10){W}
+\end{overpic}
+After cropped.
+
+\begin{overpic}[page=2, width=80pt]{test-overpic-pages.pdf}
+\edges
+\put(10,10){X}
+\end{overpic}
+After second page.
+
+\begin{overpic}{test-overpic-hidpi.png}
+\edges
+\put(10,10){Y}
+\end{overpic}
+After dense.
+
+\begin{overpic}[width=80pt]{test-overpic/inner.png}
+\edges
+\put(10,10){Z}
+\end{overpic}
+After folder.
+
+\begin{picture}(80,60)
+\put(0,0){\fbox{\includegraphics{test-overpic-box.pdf}}}
+\put(10,10){a}
+\end{picture}
+After natural picture.
+
+\begin{figure}[h]
+\begin{subfigure}{0.45\textwidth}
+\begin{overpic}[width=\linewidth]{test-overpic-box.pdf}
+\edges
+\put(10,10){b}
+\end{overpic}
+\caption{Part}
+\end{subfigure}
+\end{figure}
+After subfigure.
+
+\includegraphics[width=80pt]{test-overpic-hidpi.png}
+After plain.
+
 \begin{overpic}[width=80pt]{test-picture.png}
+\edges
 \put(10,10){O}
 \end{overpic}
 After found.

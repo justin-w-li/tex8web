@@ -1,16 +1,21 @@
-% Pictures with no .xbb file in a document with TikZ and hyperref, whose
-% pictures dvisvgm draws: an overpic with plain, italic, and math labels,
-% a LaTeX picture that holds an \includegraphics, and a TikZ node that
-% holds one. Each one builds with its labels in its image. The last node's
-% picture has its .xbb file, which the fix must not break.
+% Pictures with no .xbb file in a document with TikZ, pict2e, and hyperref,
+% whose pictures dvisvgm draws: an overpic with plain, italic, and math
+% labels, a LaTeX picture that holds an \includegraphics, and a TikZ node
+% that holds one. Each one builds at its size in the PDF, with its labels
+% in its image. The last node's picture has its .xbb file, which the fix
+% must not break. Nor must it change a plain \includegraphics of a PNG
+% without its .xbb file, outside any picture.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}
+\usepackage{pict2e}
 \usepackage{tikz}
 \usepackage{hyperref}
+\setlength{\fboxsep}{0pt}
 \begin{document}
 \section{Drawn}
 \begin{overpic}[width=0.5\textwidth]{test-overpic-box.pdf}
+\put(0,0){\rule{\width}{0.4pt}}\put(0,0){\rule{0.4pt}{\height}}
 \put(10,10){P}
 \put(50,50){\textit{Q} $y^2$}
 \end{overpic}
@@ -18,7 +23,7 @@ After overpic.
 
 \setlength{\unitlength}{1pt}
 \begin{picture}(80,60)
-\put(0,0){\includegraphics[width=80pt]{test-overpic-box.pdf}}
+\put(0,0){\fbox{\includegraphics[width=80pt]{test-overpic-box.pdf}}}
 \put(10,10){R}
 \end{picture}
 After picture.
@@ -34,4 +39,7 @@ After node.
 \node at (p.center) {T};
 \end{tikzpicture}
 After found.
+
+\includegraphics[width=80pt]{test-overpic-hidpi.png}
+After plain.
 \end{document}

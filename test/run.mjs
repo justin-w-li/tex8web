@@ -315,6 +315,9 @@ const wide = (alt, fraction) =>
 // after it, with no other image or such paragraph between them
 const overpic = (doc, ext, after) =>
   new RegExp(`<img [^>]*src='${doc}\\d+x\\.${ext}'[^>]*\\/>(?:(?!<img|After )[^])*After ${after}\\.`);
+// a PNG without its .xbb file, outside any picture: tex4ht's image of the
+// PNG itself, 80pt wide
+const plainPng = /<img [^>]*src='test-overpic-hidpi\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.2319\)' \/> After plain\./;
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -329,9 +332,11 @@ const pictures = {
   // (pictures over a PDF or PNG without its .xbb file, and one with it:
   // each picture's image, then the text after it, with no other picture or
   // text between them)
-  'test-overpic': ['share', 'natural', 'trimmed', 'grid', 'path', 'permil', 'set', 'boxed', 'picture', 'figure',
-    'bare name', 'italic', 'minipage', 'cell', 'found'].map(after => overpic('test-overpic', 'png', after)),
-  'test-overpic-drawn': ['overpic', 'picture', 'node', 'found'].map(after => overpic('test-overpic-drawn', 'svg', after)),
+  'test-overpic': [...['share', 'natural', 'trimmed', 'grid', 'path', 'permil', 'set', 'boxed', 'picture', 'figure',
+    'bare name', 'italic', 'minipage', 'cell', 'photo', 'moved', 'cropped', 'second page', 'dense', 'folder',
+    'natural picture', 'subfigure', 'found'].map(after => overpic('test-overpic', 'png', after)), plainPng],
+  'test-overpic-drawn': [...['overpic', 'picture', 'node', 'found'].map(after => overpic('test-overpic-drawn', 'svg', after)),
+    plainPng],
   'examples/basic': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.25\)'/],
   // (in minipages, where \textwidth is the minipage's width)
   'test': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.225\)'/,
@@ -832,6 +837,22 @@ const ties = {
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width
 const tikz = { 'test-article': ['test-article0x.svg', 0.0825] };
+// pictures over pictures without their .xbb file, in pt, as in the PDF:
+// the width and height of the image before each "After <case>.", at the
+// scale of the image whose picture has its .xbb file ('found'). The edges
+// or frame drawn in each picture make its image as large as the picture.
+// (the grid's numbers lie outside its picture, and the Overpic
+// environment's graphic is not in its picture)
+const pictureSizes = {
+  'test-overpic': ['png', {
+    found: [80, 60], share: [172.5, 129.39], natural: [64.24, 48.18], trimmed: [100, 71.43], path: [53.33, 40],
+    permil: [80, 60], set: [64.24, 48.18], picture: [80.8, 60.8], figure: [60, 80], 'bare name': [80, 60],
+    italic: [80, 60], minipage: [138, 103.5], cell: [80, 60], photo: [80, 60], moved: [120.45, 30.11],
+    cropped: [120.45, 30.11], 'second page': [80, 20], dense: [64.24, 48.18], folder: [80, 60],
+    'natural picture': [65.04, 48.98], subfigure: [155.25, 116.44],
+  }],
+  'test-overpic-drawn': ['svg', { found: [80, 60], overpic: [172.5, 129.39], picture: [80.8, 60.8], node: [80, 60] }],
+};
 
 // Terms (\WebTerm), with ids for the table of contents filter; in a heading,
 // only the term's text in the heading's id and table of contents entry
@@ -1589,6 +1610,28 @@ function check(doc, result, out, aux) {
     if (!(Math.abs(x + width / 2 - at) < 0.1)) problems.push(`${file} isn't centered on its circle`);
     if (!html.includes(`src='${file}' style='width:calc(var(--tex8web-textwidth) * ${share})'`)) {
       problems.push(`${file} isn't ${share} of the text width`);
+    }
+  }
+  if (pictureSizes[doc.name]) {
+    const [ext, sizes] = pictureSizes[doc.name];
+    const measure = after => {
+      const file = flat.match(new RegExp(`src='(${doc.name}\\d+x\\.${ext})'[^>]*\\/>(?:(?!<img|After )[^])*After ${after}\\.`))?.[1];
+      if (!file || !existsSync(join(out, file))) return [];
+      const data = readFileSync(join(out, file));
+      return ext === 'png' ? [data.readUInt32BE(16), data.readUInt32BE(20)]
+        : (data.toString().match(/viewBox='([^']*)'/)?.[1] ?? '').split(' ').slice(2).map(Number);
+    };
+    const scale = measure('found')[0] / sizes.found[0];
+    for (const [after, size] of Object.entries(sizes)) {
+      const got = measure(after);
+      // (within the antialiased pixels at the image's edges)
+      if (!size.every((pt, i) => Math.abs(got[i] - pt * scale) <= 2 + 0.01 * pt * scale)) {
+        problems.push(`the picture before "After ${after}." is ${got.join(' by ')}, not ${size.join(' by ')}pt at ${scale} a pt`);
+      }
+    }
+    // (extractbb writes no .xbb file beside a picture)
+    for (const file of readdirSync(join(root, 'test/fixtures'), { recursive: true }).filter(f => /overpic.*\.xbb$/.test(f))) {
+      problems.push(`${file} written beside the fixtures`);
     }
   }
   for (const [file, pattern] of glyphs[doc.name] ?? []) {
