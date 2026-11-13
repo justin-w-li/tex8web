@@ -57,6 +57,8 @@ tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 
 tex8web runs bibtex or biber, makeindex, makeglossaries, and the passes in `lua/tex8web/`. The steps, and the TeX search paths for the files loaded by `tex8web.cfg`, are set in `tex8web.mk4`, so a build without `-e tex8web.mk4` fails.
 
+Before LaTeX's first run, each directory of the document is made in tex4ht's build directory (`-B`). LaTeX writes the `.aux` of `\include{dir/file}` to `dir` there, and cannot make that directory. Hidden directories, `build`, links, and the build directory itself are skipped.
+
 #### Macros in math (`macros.lua`, `preamble.lua`)
 
 MathJax is not given the preamble, so tex8web translates the macros defined there for it. Definitions are collected from the document, from the local packages it loads, and from the files that the document and these packages `\input` or `\include`. Files are read in the same order as in TeX. Later definitions replace earlier ones, except that `\providecommand` keeps an existing definition. Only macros used in the math are added to the page, so the rest of the source is not published.

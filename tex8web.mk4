@@ -60,6 +60,29 @@ if reuse then
   end, {correct_exit = 0})
   Make:latex_reused(latex)
 else
+  -- LaTeX writes the .aux of \include{dir/file} to dir in the build
+  -- directory, and stops if dir does not exist. So each directory of the
+  -- document is made there first, except hidden ones, build, links, and
+  -- the build directory itself, which would otherwise be made inside itself
+  -- on each run.
+  Make:add("folders", function(par)
+    if par.builddir == "" then return 0 end
+    local out = lfs.attributes(par.builddir)
+    local function walk(dir)
+      for name in lfs.dir(dir) do
+        local path = dir .. "/" .. name
+        local attributes = lfs.symlinkattributes(path)
+        if not name:find("^%.") and path ~= "./build" and attributes.mode == "directory"
+          and not (attributes.ino == out.ino and attributes.dev == out.dev) then
+          lfs.mkdir(par.builddir .. "/" .. path:sub(3))
+          walk(path)
+        end
+      end
+    end
+    walk(".")
+    return 0
+  end)
+  Make:folders {}
   if save then
     Make:add("latex_begin", function() mark("begin") return 0 end)
     Make:latex_begin {}

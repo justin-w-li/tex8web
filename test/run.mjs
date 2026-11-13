@@ -437,6 +437,9 @@ const contents = {
   // one document)
   'test-bibindex': [/<span class='cite'>\[<a href='#Xgroups'>1<\/a>\]<\/span>/, /Groups and Their Orders/,
     /<div class='index-subitem'>order, <a href='#dx1-3'>2<\/a>/],
+  // (a file \included from a folder, with a \ref each way)
+  'test-include': [/The included part is section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#included'>2</,
+    /Text from the included file, which follows section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#opening'>1</],
 };
 
 // Text back in its font after a font command that the PDF keeps in a

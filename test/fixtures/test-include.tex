@@ -1,0 +1,9 @@
+% \include of a file in a folder. LaTeX writes the file's .aux to that
+% folder in the build directory, which must exist before the first run.
+% A \ref goes each way between the document and the included file.
+\documentclass{article}
+\begin{document}
+\section{Opening}\label{sec:opening}
+The included part is section~\ref{sec:included}.
+\include{test-include/part}
+\end{document}
