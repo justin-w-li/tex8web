@@ -200,23 +200,30 @@
 % once, so a reference in that text prints its own number. In a \cref,
 % where tex8web-text.tex's \web@setcref gives \web@xr@cref
 % \@firstoftwo, cleveref prints the number, and this field prints nothing
-% and opens no link, so the \EndLink after the number closes none.)
+% and opens no link, so the \EndLink after the number closes none. Outside
+% these, the field expands to the number, as tex4ht's own labels do, for
+% \getrefnumber in an \edef such as \ifthenelse's or a label's. The two
+% assignments are protected, with names that the .aux can hold, since they
+% run only as text prints.)
 \tl_new:N \g__web_xr_text_tl
 \tl_new:N \l__web_xr_text_tl
 \cs_new_eq:NN \web@xr@cref \use_ii:nn
-\cs_new_protected:Npn \__web_xr_text:n #1
+\cs_new:Npn \__web_xr_text:n #1
   {
     \web@xr@cref
-      { \cs_set_eq:NN \EndLink \scan_stop: }
+      { \web@xr@endlink }
       {
         \tl_if_empty:NTF \g__web_xr_text_tl
           { \cs_if_exist:cT { :autoref } { \use:c { :autoref } { } } #1 }
-          {
-            \tl_set_eq:NN \l__web_xr_text_tl \g__web_xr_text_tl
-            \tl_gclear:N \g__web_xr_text_tl
-            \tl_use:N \l__web_xr_text_tl
-          }
+          { \web@xr@hyperref }
       }
+  }
+\cs_new_protected:Npn \web@xr@endlink { \cs_set_eq:NN \EndLink \scan_stop: }
+\cs_new_protected:Npn \web@xr@hyperref
+  {
+    \tl_set_eq:NN \l__web_xr_text_tl \g__web_xr_text_tl
+    \tl_gclear:N \g__web_xr_text_tl
+    \tl_use:N \l__web_xr_text_tl
   }
 % (hyperref.4ht's \label@@hyperref: its text, kept until the text prints,
 % for a reference to another document's label that LaTeX wrote)

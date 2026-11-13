@@ -12,6 +12,7 @@
 \usepackage{hyperref}
 \usepackage{cleveref}
 \usepackage{refcount}
+\usepackage{ifthen}
 \usepackage{xr}
 \externaldocument[X-]{test-xr/latex}
 \externaldocument[H-]{test-xr/hyper4ht}
@@ -27,6 +28,7 @@ Auto \autoref{X-thm}. Cleveref's \ref{X-emph@cref}.
 Auto section \autoref{X-ss}. Auto starred \autoref*{X-thm}.
 Cleveref \cref{X-ss}.
 Getrefnumber \setcounter{other}{\getrefnumber{X-s}}\arabic{other}.
+Equal \ifthenelse{\equal{\getrefnumber{X-s}}{1}}{yes}{no}.
 
 \textit{In italics, \ref{X-ss}.}
 A note.\footnote{In a footnote, \ref{X-ss}.}
@@ -43,6 +45,14 @@ Auto written by tex4ht \autoref{H-oss}.
 
 \section{Here}\label{here}
 Local \ref{here}.
+
+% (a number from \getrefnumber in a label of this document, written to
+% the .aux and read back on the next run)
+\renewcommand\thetheorem{\getrefnumber{X-thm}'}
+\begin{theorem}\label{prime}
+Numbered from another document.
+\end{theorem}
+Prime \ref{prime}.
 
 % (last: tex4ht's \hyperref leaves its text defined, for xr's links after it
 % to an .aux that tex4ht wrote)
