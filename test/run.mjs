@@ -1634,9 +1634,8 @@ function check(doc, result, out, aux) {
       }
     }
     // (extractbb writes no .xbb file beside a picture)
-    for (const file of readdirSync(join(root, 'test/fixtures'), { recursive: true }).filter(f => /overpic.*\.xbb$/.test(f))) {
-      problems.push(`${file} written beside the fixtures`);
-    }
+    const stray = spawnSync('git', ['ls-files', '--others', '--', 'test/fixtures/*.xbb'], { cwd: root, encoding: 'utf8' });
+    for (const file of stray.stdout.split('\n').filter(Boolean)) problems.push(`${file} written beside the fixtures`);
   }
   for (const [file, pattern] of glyphs[doc.name] ?? []) {
     const svg = existsSync(join(out, file)) ? readFileSync(join(out, file), 'utf8') : '';
