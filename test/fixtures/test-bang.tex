@@ -1,19 +1,22 @@
 % babel's \useshorthands{!}, which makes ! active in the preamble, with
 % shorthands to a command made by \NewDocumentCommand (!!) and by
-% \newcommand (!+): in the text, in a heading, a footnote, a theorem,
-% \emph, \textsf, and \texttt, with hyperref. A bare ! stays a mark, and
-% ! in math is a factorial.
+% \newcommand (!+): in the text, in a heading and the table of contents, a
+% footnote, a theorem, \emph, \textsf, and \texttt, with hyperref. amsthm
+% and hyperref load after \useshorthands, while ! is active. A bare ! stays
+% a mark, ! in math is a factorial, also inside a footnote and a heading,
+% and ! in verbatim stays literal.
 \documentclass{article}
 \usepackage[english]{babel}
-\usepackage{amsthm}
-\usepackage{hyperref}
 \NewDocumentCommand\term{t^ m}{\textit{#2}}
 \newcommand\strong[1]{\textbf{#1}}
-\newtheorem{theorem}{Theorem}
 \useshorthands{!}
 \defineshorthand{!!}{\term}
 \defineshorthand{!+}{\strong}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
 \begin{document}
+\tableofcontents
 \section{The !!{bang} heading! Again}
 A !!{word} and a mark! Then a !+{strong} one.\footnote{A !!{note} term and a !+{note} too! Yes.}
 \begin{theorem}
@@ -22,4 +25,10 @@ Every !!{group} has a !+{unit}!
 In \emph{an !!{emph} term}, \textsf{a !!{sans} term}, and \texttt{a !!{mono} term}.
 The factorial $n!$ and
 \[ (n+1)! = (n+1)\,n! \]
+There are\footnote{as many as $n!$ ways} orders.
+\section{Counting $n!$ orders}
+Verbatim \verb|a!!b| and
+\begin{verbatim}
+x!!y
+\end{verbatim}
 \end{document}

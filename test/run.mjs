@@ -445,11 +445,12 @@ const contents = {
   'test-bibpath': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
   // (the same from a .bst beside the document, named without a path)
   'test-bibstyle': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
-  // (! active in the preamble: babel's shorthands, in a heading, the text,
-  // a footnote, a theorem, three fonts, and math, with no space after a
-  // bare ! as in the PDF; also with the document's own config, by hand,
-  // and as shortvrb's delimiter. French and Turkish make ! active later,
-  // with French's space before it.)
+  // (! active in the preamble: babel's shorthands, in a heading and the
+  // table of contents, the text, a footnote, a theorem, three fonts, and
+  // math, with no space after a bare ! as in the PDF, and literal in
+  // verbatim; also with the document's own config, by hand, and as
+  // shortvrb's delimiter. French and Turkish make ! active later, with
+  // French's space and Turkish's thin space before it.)
   'test-bang': [
     /<h3 class='sectionHead' id='the-bang-heading-again'>(?:(?!<\/h3>)[^])*<\/a>The <span class='cmti-10'>bang <\/span>heading!Again<\/h3>/,
     /<p class='noindent'>A <span class='cmti-10'>word <\/span>and a mark!Then a <span class='cmbx-10'>strong<\/span> one\./,
@@ -458,12 +459,18 @@ const contents = {
     /In <span class='cmti-10'>an emph term<\/span>, <span class='cmss-10'>a <\/span><span class='cmssi-10'>sans <\/span><span class='cmss-10'>term<\/span>, and <span class='cmtt-10'>a <\/span><span class='cmitt-10'>mono <\/span><span class='cmtt-10'>term<\/span>\./,
     /The factorial <mjx-container aria-label='n factorial'/,
     /aria-label='open paren n plus 1 close paren factorial equals open paren n plus 1 close paren times n factorial'/,
+    /<span class='sectionToc'><span class='tocnumber'>1<\/span><a href='#the-bang-heading-again'[^>]*>The <span class='cmti-10'>bang <\/span>heading!Again<\/a>/,
+    /<span class='cmr-8'>as many as <\/span><span class='mathjax-inline'[^>]*><mjx-container aria-label='n factorial'/,
+    /<span class='tex8web-labelsep'> <\/span><a id='[^']*'><\/a>Counting <mjx-container aria-label='n factorial'/,
+    /<a href='#counting-n-orders'[^>]*>Counting <mjx-container aria-label='n factorial'/,
+    /Verbatim <span class='obeylines-h'><code class='verb'><span class='cmtt-10'>a!!b<\/span><\/code><\/span> and/,
+    /<pre class='verbatim' id='verbatim-1'>\s*<span class='cmtt-10'>x!!y<\/span>\s*<\/pre>/,
   ],
   'test-bang-owncfg': [/<p class='noindent'>A <span class='tex8web-term' id='term-word'><span class='cmti-10'>word<\/span><\/span> and a mark! <\/p>/],
   'test-bang-hand': [/<p class='noindent'>Stop<span class='cmbx-10'>! <\/span>Go\./],
   'test-bang-shortvrb': [/Type <span class='obeylines-h'><code class='verb'><span class='cmtt-10'>a_b\{c\}<\/span><\/code><\/span> here\./],
   'test-bang-french': [/<p class='noindent'>Un mot ! Et une question \? Oui : non ; fin\./],
-  'test-bang-turkish': [/<p class='noindent'>Evet! Hayir: belki\./],
+  'test-bang-turkish': [/<p class='noindent'>Evet\u202f! Hayır\u202f: belki\./],
 };
 
 // Text back in its font after a font command that the PDF keeps in a

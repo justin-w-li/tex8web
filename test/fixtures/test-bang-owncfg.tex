@@ -1,7 +1,9 @@
 % babel's \useshorthands*{!} in a document with its own config, a copy of
-% tex8web.cfg with a line added (test-bang-owncfg.cfg).
+% tex8web.cfg with a line added (test-bang-owncfg.cfg), with hyperref
+% loaded before ! is active.
 \documentclass{article}
 \usepackage[english]{babel}
+\usepackage{hyperref}
 \newcommand\term[1]{\textit{#1}}
 \useshorthands*{!}
 \defineshorthand{!!}{\term}
