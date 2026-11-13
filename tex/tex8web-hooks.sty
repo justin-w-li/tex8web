@@ -195,31 +195,35 @@
 \cs_new:Npn \__web_xr_number:n #1 { \exp_not:n { \__web_xr_text:n {#1} } }
 \cs_new:Npn \__web_xr_if_link:w #1 \q_mark \rEfLiNK #2 \q_stop { \tl_if_empty:nTF {#1} }
 \cs_new:Npn \__web_xr_link:w \rEfLiNK #1#2 { \xr:rEfLiNK \rEfLiNK {#1} \exp_not:n { {#2} } }
-% (the name that \autoref put in \:autoref, as tex4ht's labels print it,
-% then the number; or the text of the \hyperref around the reference,
-% once, so a reference in that text prints its own number. In a \cref,
-% where tex8web-text.tex's \web@setcref gives \web@xr@cref
-% \@firstoftwo, cleveref prints the number, and this field prints nothing
-% and opens no link, so the \EndLink after the number closes none. Outside
-% these, the field expands to the number, as tex4ht's own labels do, for
-% \getrefnumber in an \edef such as \ifthenelse's or a label's. The two
-% assignments are protected, with names that the .aux can hold, since they
-% run only as text prints. \g__web_xr_hyperref_bool tells whether a
-% \hyperref is around the reference, since its text may be empty.)
+% (\g__web_xr_hyperref_bool tells whether a \hyperref is around the
+% reference, since its text may be empty.)
 \bool_new:N \g__web_xr_hyperref_bool
 \tl_new:N \g__web_xr_text_tl
 \tl_new:N \l__web_xr_text_tl
+% (true in a \cref: tex8web-text.tex's \web@setcref sets it to
+% \@firstoftwo)
 \cs_new_eq:NN \web@xr@cref \use_ii:nn
 \cs_new:Npn \__web_xr_text:n #1
   {
     \web@xr@cref
+      % (in a \cref, cleveref prints the number, and this field prints
+      % nothing and opens no link, so the \EndLink after the number
+      % closes none)
       { \web@xr@endlink }
       {
         \bool_if:NTF \g__web_xr_hyperref_bool
+          % (the text of the \hyperref around the reference, once, so a
+          % reference in that text prints its own number)
           { \web@xr@hyperref }
+          % (the name that \autoref put in \:autoref, as tex4ht's labels
+          % print it, then the number. Elsewhere the field expands to the
+          % number, as tex4ht's own labels do, for \getrefnumber in an
+          % \edef such as \ifthenelse's or a label's.)
           { \cs_if_exist:cT { :autoref } { \use:c { :autoref } { } } #1 }
       }
   }
+% (protected, with names that the .aux can hold, since they run only as
+% text prints)
 \cs_new_protected:Npn \web@xr@endlink { \cs_set_eq:NN \EndLink \scan_stop: }
 \cs_new_protected:Npn \web@xr@hyperref
   {

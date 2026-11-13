@@ -1093,6 +1093,10 @@ const external = {
   'test-xr': [...latexAux, said('Equation @.', '\\(3\\)'),
     // (\cref with its name and no link, and \getrefnumber as a number)
     said('Cleveref @.', `section${nbsp}1\\.1`), said('Getrefnumber @.', '1'),
+    // (cleveref's page references and ranges, whose links read the label's
+    // anchor and URL fields: no link to this page)
+    said('Cleveref page @. Cleveref range @. Cleveref page range @.', `page${nbsp}2`,
+      `sections${nbsp}1\\s+to${nbsp}1\\.1`, `pages${nbsp}3\\s+to${nbsp}2`),
     // (\getrefnumber expanded in \ifthenelse's test, and in a label of this
     // document, which the .aux keeps for the next run)
     said('Equal @.', 'yes'), /Prime <a href='#[^']+'>2['’](?:<!--[^>]*-->)?<\/a>\./,
