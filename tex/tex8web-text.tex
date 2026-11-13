@@ -1029,6 +1029,33 @@
 \ConfigureEnv{tikzcd}{\Picture+[]{}}{\EndPicture}{}{}
 \catcode58 12
 
+% an \includegraphics without its .xbb file in a picture that tex4ht draws
+% as an image, such as overpic, a LaTeX picture, or a TikZ node. There,
+% \HLet (tex4ht.sty) runs graphics.sty's \Gin@setfile in place of
+% graphics.4ht's, which makes the missing file a warning, so the build
+% stopped at "Cannot determine size of graphic". The bounding box is read
+% from extractbb instead, as dvipdfmx.def does. TeX Live's restricted shell
+% escape allows extractbb. Without shell escape, as with --contain, the
+% errors are warnings, as in graphics.4ht, and the graphic is 72bp square.
+\catcode58 11
+\ifdefined\Gin@setfile
+    \web@needs{o:Gin@setfile:}%
+    \@ifundefined{Gin@page}{\let\Gin@page\@empty}{}%
+    \@ifundefined{Gin@pagebox}{\def\Gin@pagebox{cropbox}}{}%
+    \let\web@Gin@setfile\o:Gin@setfile:
+    \let\web@Gread@eps@aux\Gread@eps@aux
+    \def\o:Gin@setfile:{\let\Gread@eps@aux\web@Gread@bb
+        \let\@latex@error\grp:warning \let\@ehc\empty \web@Gin@setfile}
+    \def\web@Gread@bb#1{%
+        \ifeof\@inputcheck
+            \immediate\openin\@inputcheck="|extractbb
+                \ifx\Gin@page\@empty\else -p \Gin@page\space\fi
+                -B \Gin@pagebox\space -O \Gin@base\Gin@ext"\relax
+        \fi
+        \web@Gread@eps@aux{#1}}
+\fi
+\catcode58 12
+
 % an \includegraphics picture as wide as in the PDF, as a fraction of the
 % PDF's text width. The picture shrinks only in a column narrower than that
 % (img's max-width). The width is the one graphicx computes from width,

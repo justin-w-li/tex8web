@@ -403,7 +403,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 
 ### Pictures
 
-- **A picture without its `.xbb` file.** The size of a bitmap or PDF picture is taken from a `.xbb` file next to it. Without this file, a picture sized with `scale` or `height`, or with `width`, `height`, and `keepaspectratio`, is not at its PDF size. A picture turned over by `\scalebox` with a negative height factor stays on the baseline, where in the PDF it hangs below. Make the file with `extractbb -x picture.png`.
+- **A picture without its `.xbb` file.** The size of a bitmap or PDF picture is taken from a `.xbb` file next to it. Without this file, a picture sized with `scale` or `height`, or with `width`, `height`, and `keepaspectratio`, is not at its PDF size. A picture turned over by `\scalebox` with a negative height factor stays on the baseline, where in the PDF it hangs below. With `--contain`, a picture in an `overpic`, a LaTeX `picture`, or a TikZ picture is 72bp square. Make the file with `extractbb -x picture.png`.
 - **A size after `angle`**, as in `[angle=90,width=5cm]`, and **`scale` with `width` or `height`** are ignored, and the picture is at its natural size. Put the size before `angle`, or leave out `scale`.
 - **`trim` and `viewport`.** The whole picture is shown, at the width of the part that is kept.
 
