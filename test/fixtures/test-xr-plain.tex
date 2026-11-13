@@ -1,0 +1,19 @@
+% References to labels of another document with xr and no hyperref, from
+% an .aux that LaTeX wrote without hyperref (two fields per label) and
+% from one written under hyperref (five fields). Each prints its number
+% or page as in the PDF. A label in an .aux that tex4ht wrote, with its
+% .xref, still links to that document's page.
+\documentclass{article}
+\usepackage{xr}
+\externaldocument[P-]{test-xr/plain}
+\externaldocument[H-]{test-xr/latex}
+\externaldocument[T-]{test-xr/tex4ht}
+\begin{document}
+Section \ref{P-s}, subsection \ref{P-ss}, page \pageref{P-front},
+item \ref{P-item}, bold \ref{P-emph}, empty [\ref{P-none}].
+
+Under hyperref: subsection \ref{H-ss}, page \pageref{H-front},
+bold \ref{H-emph}.
+
+Written by tex4ht: \ref{T-oss}.
+\end{document}

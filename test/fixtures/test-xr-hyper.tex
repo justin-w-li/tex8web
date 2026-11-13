@@ -1,0 +1,12 @@
+% References to labels of another document with xr-hyper, from an .aux
+% that LaTeX wrote under hyperref, with no .xref beside it. Each prints
+% its number, page, or name as in the PDF.
+\documentclass{article}
+\usepackage{xr-hyper}
+\usepackage{hyperref}
+\externaldocument[X-]{test-xr/latex}
+\begin{document}
+Starred \ref*{X-s}. Section \ref{X-ss}. Page \pageref{X-front}.
+Item \ref{X-item}. Bold \ref{X-emph}. Empty [\ref{X-none}].
+Named \nameref{X-thm}. Named in italics \nameref{X-emph}.
+\end{document}

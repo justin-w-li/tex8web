@@ -1058,6 +1058,33 @@ const numbers = {
   ],
 };
 
+// References to labels of another document, with xr and xr-hyper, from an
+// .aux that LaTeX wrote: the number, page, or name as in the PDF, with
+// nothing else. A sentence of the fixture, where a space is any white space
+// or tags, and each @ a reference's text, with or without tags around it.
+const said = (sentence, ...texts) => new RegExp(sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '(?:\\s|<[^>]*>)+')
+  .split('@').map((part, i) => (i ? `(?:<[^>]*>)*${texts[i - 1]}(?:<[^>]*>)*` : '') + part).join(''));
+const bold = "<span class='cmbx-10'>A<\\/span>", italic = "<span class='cmti-10'>Intro<\\/span>";
+const latexAux = [
+  said('Starred @.', '1'), said('Section @.', '1\\.1'), said('Page @.', 'iv'), said('Item @.', '\\(a\\)'),
+  said('Bold @.', bold), said('Empty [@].', ''), said('Named @.', 'Main\\s+theorem'), said('Named in italics @.', italic),
+];
+// (a label of an .aux that tex4ht wrote, with its .xref beside it: a link
+// to that document's page)
+const tex4htAux = /Written by tex4ht: <a href='test-xr\/other\.html#x1-20001\.1'>1\.1<\/a>\./;
+const external = {
+  // (under hyperref, in italics, a footnote, sans-serif, typewriter, a
+  // theorem, and a heading)
+  'test-xr': [...latexAux, tex4htAux,
+    ...['In italics', 'In a footnote', 'In sans-serif', 'In typewriter', 'In a theorem'].map(context => said(`${context}, @.`, '1\\.1')),
+    /<h4 class='subsectionHead'[^>]*>(?:(?!<\/h4>)[^])*Heading\s*(?:<[^>]*>)*1\.1(?:<[^>]*>)*\s*<\/h4>/],
+  // (without hyperref, from an .aux written without hyperref and from one
+  // written under it)
+  'test-xr-plain': [said('Section @, subsection @, page @, item @, bold @, empty [@].', '1', '1\\.1', 'iv', '\\(a\\)', bold, ''),
+    said('Under hyperref: subsection @, page @, bold @.', '1\\.1', 'iv', bold), tex4htAux],
+  'test-xr-hyper': latexAux,
+};
+
 // Text after the last \hfill of a line, up to the end of the paragraph or of
 // the line (\\), goes in a span that the stylesheet floats right. In a
 // paragraph, the line is wrapped in a span, and in a centered paragraph,
@@ -1563,6 +1590,7 @@ const patterns = [
   [mdframed, "in mdframed's boxes", true], [sizes, 'in the resized text', true], [captions, 'around the captions'],
   [bibliographies, 'in the bibliography'],
   [urls, 'among the URLs', true], [numbers, 'in the equation numbers'],
+  [external, 'among the references to another document'],
   [glossaries, 'in the glossaries'],
   [surds, 'at the square root signs'],
 ];

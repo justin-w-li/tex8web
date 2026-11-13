@@ -1,0 +1,30 @@
+% References to labels of another document with xr, from an .aux that
+% LaTeX wrote under hyperref: five fields per label, and no .xref beside
+% it. Each prints its number, page, or name as in the PDF, in each
+% context. A label in an .aux that tex4ht wrote without hyperref, with
+% its .xref, still links to that document's page.
+\documentclass{article}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\usepackage{xr}
+\externaldocument[X-]{test-xr/latex}
+\externaldocument[T-]{test-xr/tex4ht}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Another document}
+Starred \ref*{X-s}. Section \ref{X-ss}. Page \pageref{X-front}.
+Item \ref{X-item}. Bold \ref{X-emph}. Empty [\ref{X-none}].
+Named \nameref{X-thm}. Named in italics \nameref{X-emph}.
+
+\textit{In italics, \ref{X-ss}.}
+A note.\footnote{In a footnote, \ref{X-ss}.}
+\textsf{In sans-serif, \ref{X-ss}.}
+\texttt{In typewriter, \ref{X-ss}.}
+
+\begin{theorem}
+In a theorem, \ref{X-ss}.
+\end{theorem}
+
+\subsection{Heading \ref*{X-ss}}
+Written by tex4ht: \ref{T-oss}.
+\end{document}
