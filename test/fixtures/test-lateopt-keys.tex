@@ -1,0 +1,8 @@
+% A package with key options, then the package again with a key that
+% requires another package (graphicx), without xcolor's reload.
+\documentclass{article}
+\usepackage[table]{xcolor}
+\usepackage{test-lateopt-keys}
+\usepackage[extra]{test-lateopt-keys}
+\input{test-lateopt-body.ltx}
+\end{document}

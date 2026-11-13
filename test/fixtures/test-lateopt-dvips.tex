@@ -1,0 +1,8 @@
+% Checks cases the fix must not break: xcolor again with dvipsnames, a
+% reload whose option reads a file of colors and loads no package.
+\documentclass{article}
+\usepackage[table]{xcolor}
+\usepackage[dvipsnames]{xcolor}
+\input{test-lateopt-body.ltx}
+\textcolor{Cerulean}{sky}.
+\end{document}

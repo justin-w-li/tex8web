@@ -1,8 +1,11 @@
 % The body of the test-lateopt-*.tex documents, each of which asks for
 % xcolor's table option on a reload: table colors, a defined color in
-% text, then graphicx and enumitem, which load after the reload.
+% text, then graphicx and enumitem, which load after the reload. The list
+% made with \newlist gets its class from enumitem.4ht.
 \usepackage{graphicx}
 \usepackage{enumitem}
+\newlist{steps}{enumerate}{1}
+\setlist[steps]{label=\arabic*.}
 \definecolor{ink}{RGB}{200,0,100}
 \begin{document}
 \begin{tabular}{ll}
@@ -21,3 +24,7 @@ e \\ f \\
 \item First.
 \item Second.
 \end{enumerate}
+
+\begin{steps}
+\item Step.
+\end{steps}
