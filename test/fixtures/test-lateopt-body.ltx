@@ -1,7 +1,8 @@
 % The body of the test-lateopt-*.tex documents, each of which asks for
 % xcolor's table option on a reload: table colors, a defined color in
 % text, then graphicx and enumitem, which load after the reload. The list
-% made with \newlist gets its class from enumitem.4ht.
+% made with \newlist gets its class from enumitem-hooks.4ht, which
+% tex4ht reads before enumitem loads.
 \usepackage{graphicx}
 \usepackage{enumitem}
 \newlist{steps}{enumerate}{1}

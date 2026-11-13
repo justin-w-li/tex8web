@@ -559,7 +559,7 @@ const list = '--tex8web-list-topsep: 0.8em; --tex8web-list-itemsep: 0.8em; --tex
 // (test-lateopt-body.ltx: \rowcolor, \cellcolor, \rowcolors, and
 // \textcolor, then graphicx's picture and enumitem's labels, which load
 // after xcolor's reload, and the class of a list made with \newlist, which
-// only enumitem.4ht gives)
+// only enumitem-hooks.4ht gives)
 const lateopt = [
   ...[['1-1- td', 'F4CCE0'], ['1-2-1', 'BFFFBF'], ['2-1-', 'FFE5E5'], ['2-2-', 'E5E5FF']].map(([selector, hex]) =>
     new RegExp(`#TBL-${selector}\\{ background-color:${lightDark(`#${hex}`, 'background')}\\}`)),
@@ -656,13 +656,13 @@ const colors = {
     /^(?![^]*#TBL-2-(?:1|3|5)-\{)/,
   ],
   // xcolor's table option asked for on a reload, which loads colortbl
-  // inside the reload: after xcolor, after TikZ, after a font package that
-  // loads xcolor, with color names on both loads and hyperref between,
-  // after colortbl and xcolor, twice, after a class that loads xcolor, and
-  // from a package, and after xcolor loaded before \documentclass. A
-  // package with key options asked for again with a key that requires
-  // graphicx. test-lateopt-once passes the option before one load.
-  ...Object.fromEntries(['xcolor', 'tikz', 'newtx', 'colortbl', 'twice', 'class', 'early', 'keys', 'once']
+  // inside the reload: after xcolor, after TikZ, with color names on both
+  // loads and hyperref between, after colortbl and xcolor, twice, after a
+  // class that loads xcolor, and from a package, and after xcolor loaded
+  // before \documentclass. A package with key options asked for again with
+  // a key that requires graphicx, by its name and by a path.
+  // test-lateopt-once passes the option before one load.
+  ...Object.fromEntries(['xcolor', 'tikz', 'colortbl', 'twice', 'class', 'early', 'keys', 'path', 'once']
     .map(name => [`test-lateopt-${name}`, lateopt])),
   // (the package's own key, processed after xcolor's reload and graphicx)
   'test-lateopt-sty': [...lateopt, /<p class='noindent'>wide option\./],

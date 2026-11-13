@@ -167,13 +167,20 @@
 % package load fails. tex4ht has read a loaded package's .4ht files, so a
 % package asked for again skips the wrapper. This also keeps colortbl's
 % hooks from being read twice, which fails, when colortbl comes before
-% xcolor's table option.
+% xcolor's table option. LaTeX marks a package loaded under its name
+% without a folder, so the test drops the folder of a name such as
+% sty/mypackage, as LaTeX does.
 \ExplSyntaxOn
 \web@needs { :onefilewithoptions }
+\tl_new:N \l__web_load_dir_tl
+\tl_new:N \l__web_load_name_tl
+\tl_new:N \l__web_load_ext_tl
 \cs_set_eq:NN \web@onefilewithoptions \@onefilewithoptions
 \cs_set:Npn \@onefilewithoptions #1[#2][#3]#4
     {
-        \@ifl@aded {#4} {#1}
+        \file_parse_full_name:nNNN {#1.#4}
+            \l__web_load_dir_tl \l__web_load_name_tl \l__web_load_ext_tl
+        \@ifl@aded {#4} { \l__web_load_name_tl }
             { \:onefilewithoptions #1[#2][#3]{#4} }
             { \web@onefilewithoptions #1[#2][#3]{#4} }
     }
