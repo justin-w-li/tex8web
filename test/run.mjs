@@ -1197,6 +1197,20 @@ const ligatures = {
     'Oldstyleitalic', 'Oldstyleslanted'].map(line => `${line}: ${ligature}`),
 };
 
+// the lines of ligatures[name] found fewer times than listed in a page's
+// HTML, with runs of white space as one space
+function ligatureProblems(name, flat) {
+  const words = flat.replace(/<[^>]*>/g, '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16))).normalize('NFKC');
+  const lines = ligatures[name] ?? [];
+  const problems = [];
+  for (const line of new Set(lines)) {
+    const wanted = lines.filter(other => other === line).length, found = words.split(line).length - 1;
+    if (found < wanted) problems.push(`'${line}' ${found} times in the text, not ${wanted}`);
+  }
+  return problems;
+}
+
 // the fonts listed in data-fonts on the inline script
 const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1] ?? '').split(/\s+/).filter(Boolean);
 
@@ -1480,13 +1494,7 @@ function check(doc, result, out, aux) {
       if (!pattern.test(withStyles ? flat + styles : flat)) problems.push(`no ${pattern.source} ${what}`);
     }
   }
-  const words = flat.replace(/<[^>]*>/g, '')
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16))).normalize('NFKC');
-  const lines = ligatures[doc.name] ?? [];
-  for (const line of new Set(lines)) {
-    const wanted = lines.filter(other => other === line).length, found = words.split(line).length - 1;
-    if (found < wanted) problems.push(`'${line}' ${found} times in the text, not ${wanted}`);
-  }
+  problems.push(...ligatureProblems(doc.name, flat));
   if (preloads[doc.name]) {
     const found = fontsListed(html).map(href => href.match(/^fonts\/(.+)\.woff2$/)?.[1]).sort().join(' ');
     const wanted = [...preloads[doc.name]].sort().join(' ');
@@ -1636,6 +1644,29 @@ if (noist) jobs.push(async () => {
   if (!html.includes('Sorted with our own style.')) problems.push('the glossary is not sorted with the style file next to the document');
   if (html.includes('stale style')) problems.push("the glossary is sorted with the build directory's older style file");
   report(`${noist.name} (an older style file in the build directory)`, problems);
+});
+
+// test-xcharter-osfi built over a build directory that holds the font file
+// tex8web writes for XCharter, with lm-ec.htf's slots, as an earlier build
+// may leave there: the page still shows the ligatures as the PDF does.
+// (bin/tex8web is run directly, as build() empties the build directory)
+const oldhtf = docs.find(d => d.name === 'test-xcharter-osfi');
+if (oldhtf) jobs.push(async () => {
+  const out = join(testDir(oldhtf), 'stale'), aux = join(testDir(oldhtf), 'staleaux');
+  rmSync(out, { recursive: true, force: true });
+  rmSync(aux, { recursive: true, force: true });
+  const alias = join(aux, 'tex8web-htf/ht-fonts/alias');
+  mkdirSync(alias, { recursive: true });
+  const lm = spawnSync('kpsewhich', ['-progname=tex4ht', '-format=othertext', 'lm-ec.htf'], { encoding: 'utf8' }).stdout.trim();
+  writeFileSync(join(alias, 'tex8web-xcharter.htf'), readFileSync(lm, 'utf8').replace(/^lm-ec /gm, 'tex8web-xcharter '));
+  const result = await run(join(root, 'bin/tex8web'), ['-c', relative(oldhtf.dir, oldhtf.cfg), '-B', relative(oldhtf.dir, aux),
+    '-d', relative(oldhtf.dir, out), '-a', 'info', oldhtf.tex], { cwd: oldhtf.dir, slot: true, env: { ...process.env, ...oldhtf.env } });
+  const page = join(out, 'test-xcharter-osfi.html');
+  const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  const problems = [];
+  if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
+  problems.push(...ligatureProblems(oldhtf.name, html.replace(/[^\S\u202F]+/g, ' ')));
+  report(`${oldhtf.name} (an older font file in the build directory)`, problems);
 });
 
 await pool(jobs, workers, job => job());

@@ -61,6 +61,10 @@ end
 -- names, and puts their folder first in tex4ht's search path
 function M.write(par)
   local dir
+  -- the families whose file this build has written. Each build writes them
+  -- again, over a file an earlier build left from an older table or
+  -- lm-ec.htf.
+  local written = {}
   for _, name in ipairs(dvi_fonts((par.builddir ~= "" and par.builddir .. "/" or "") .. par.input .. "." .. par.dvi)) do
     for _, order in ipairs(orders) do
       if name:find(order.fonts) then
@@ -75,7 +79,8 @@ function M.write(par)
           end
           os.setenv("TEX4HTINPUTS", dir .. ":" .. (os.getenv("TEX4HTINPUTS") or ""))
         end
-        if not lfs.attributes(dir .. "/" .. base .. ".htf") then
+        if not written[base] then
+          written[base] = true
           local lm = assert(files.read(kpse.new("luatex", "tex4ht"):find_file("lm-ec.htf", "other text files")))
           local lines = {}
           for line in lm:gmatch("[^\n]+") do
