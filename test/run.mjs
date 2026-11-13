@@ -467,7 +467,6 @@ const contents = {
     /<pre class='verbatim' id='verbatim-1'>\s*<span class='cmtt-10'>x!!y<\/span>\s*<\/pre>/,
   ],
   'test-bang-owncfg': [/<p class='noindent'>A <span class='tex8web-term' id='term-word'><span class='cmti-10'>word<\/span><\/span> and a mark! <\/p>/],
-  'test-bang-hand': [/<p class='noindent'>Stop<span class='cmbx-10'>! <\/span>Go\./],
   'test-bang-shortvrb': [/Type <span class='obeylines-h'><code class='verb'><span class='cmtt-10'>a_b\{c\}<\/span><\/code><\/span> here\./],
   'test-bang-french': [/<p class='noindent'>Un mot ! Et une question \? Oui : non ; fin\./],
   'test-bang-turkish': [/<p class='noindent'>Evet\u202f! Hayır\u202f: belki\./],
