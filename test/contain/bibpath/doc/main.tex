@@ -1,0 +1,9 @@
+% A document whose .aux names its .bst and .bib by a path above its
+% directory, as \bibliography{../bib/refs} writes it. Its PDF is built with
+% latexmk in the container, with the source's root mounted.
+\documentclass{article}
+\begin{document}
+A citation~\cite{entry}.
+\bibliographystyle{../bib/style}
+\bibliography{../bib/refs}
+\end{document}

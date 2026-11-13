@@ -1,0 +1,12 @@
+% A document that \includes a file from each of six directories. Built
+% with an output directory, LaTeX writes each file's .aux to a directory
+% of that name in the output directory, and cannot make one.
+\documentclass{article}
+\begin{document}
+\include{one/part}
+\include{two/part}
+\include{three/part}
+\include{four/part}
+\include{five/part}
+\include{six/part}
+\end{document}

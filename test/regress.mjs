@@ -164,11 +164,23 @@ async function latexmk(doc) {
   const release = await lock(options.contain
     ? join(tmpdir(), `tex8web-pdf-${createHash('sha256').update(doc.dir).digest('hex').slice(0, 12)}.lock`) : join(doc.dir, 'build/pdf.lock'));
   try {
-    // (in the container, the document's directory is read-only, and a
-    // .latexmkrc, which is Perl, is not read)
+    // (in the container, the document's directory is read-only, so the PDF
+    // is built in build/pdf, and a .latexmkrc, which is Perl, is not read.
+    // LaTeX writes the .aux of \include{dir/file} to build/pdf/dir, and
+    // cannot make dir, while latexmk makes one such directory per run, up
+    // to its limit of five runs. So each directory of the document is made
+    // there first. -bibfudge- runs bibtex in the document's directory, not
+    // in build/pdf, where a .bib or .bst named by a path that begins with
+    // ../ is not found)
+    if (options.contain) {
+      for (const entry of readdirSync(doc.dir, { recursive: true, withFileTypes: true })) {
+        const path = relative(doc.dir, join(entry.parentPath, entry.name));
+        if (entry.isDirectory() && !/^build(\/|$)|(^|\/)\./.test(path)) mkdirSync(join(doc.dir, 'build/pdf', path), { recursive: true });
+      }
+    }
     // (latexmk can print nothing for minutes on a long document)
     const result = await runOn(doc, [], [join(doc.dir, 'build')], 'latexmk',
-      [...options.contain ? ['-norc', '-pdf', '-outdir=build/pdf'] : [], '-interaction=nonstopmode', '-halt-on-error', doc.tex],
+      [...options.contain ? ['-norc', '-pdf', '-outdir=build/pdf', '-bibfudge-'] : [], '-interaction=nonstopmode', '-halt-on-error', doc.tex],
       { cwd: doc.dir, slot: true, idle: 900 });
     writeFileSync(join(logs, `${doc.name}.pdf.log`), result.log);
     if (result.code !== 0) return `failed to build its PDF, exit ${result.code} (log: ${join(logs, `${doc.name}.pdf.log`)})`;

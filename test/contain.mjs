@@ -7,10 +7,13 @@
 // A case passes when its build fails if it must, its logs have the
 // expected line, no file appeared in its directory, in tex8web's
 // directory, or in a scratch directory on the host, and no container is
-// left. Five cases differ: bibindex builds a test fixture, which must
+// left. Seven cases differ: bibindex builds a test fixture, which must
 // build and match its build on the host; root builds a document that reads
 // a file above its directory, which must fail without the source's root
-// mounted and build with it; mountlink gives the runner a link
+// mounted and build with it; bibpath and includes build a PDF with
+// regress.mjs --contain --latexmk, which must build it: bibpath's .aux
+// names its .bib and .bst by a path above its directory, and includes
+// \includes files from six directories; mountlink gives the runner a link
 // to mount; labels runs --clean on one of a running command's -w
 // directories; kill builds loop in another process, kills that process
 // once loop's .make4ht has run, and builds loop again on what was left.
@@ -159,6 +162,24 @@ async function rooted() {
   return { line: 'failed without the source\'s root, and built with it' };
 }
 
+// builds the PDF of test/contain/<name>/<sub> with regress.mjs --contain
+// --latexmk, which must build it, on a copy in a scratch directory, as in
+// rooted(). With a sub, the copy is the --root. bbl, if given, must be in
+// the .bbl. regress.mjs then builds the page, which is not checked here
+function pdf(name, sub, bbl) {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webpdf')));
+  process.on('exit', () => rmSync(own, { recursive: true }));
+  const top = join(own, name), dir = join(top, sub ?? '');
+  cpSync(join(root, 'test/contain', name), top, { recursive: true });
+  const result = sync(process.execPath, [join(root, 'test/regress.mjs'), '--contain', '--latexmk', ...sub ? ['--root', top] : [],
+    '--out', join(own, 'out'), dir], {}, 600);
+  const log = `${result.stderr}${result.stdout}`;
+  if (/failed to build its PDF/.test(log) || !existsSync(join(dir, 'build/pdf/main.pdf'))) return `no PDF:\n${log.trim().split('\n').slice(-8).join('\n')}`;
+  if (bbl && !bbl.test(readFileSync(join(dir, 'build/pdf/main.bbl'), 'utf8'))) return `no ${bbl} in the .bbl`;
+  if (containers()) return `a container was left: ${containers()}`;
+  return { line: 'built its PDF' };
+}
+
 // gives the runner a -w directory through a symbolic link, which Docker
 // Desktop would follow
 function mountlink() {
@@ -217,7 +238,7 @@ async function labels() {
   }
 }
 
-const others = { bibindex, root: rooted, mountlink, labels, kill };
+const others = { bibindex, root: rooted, bibpath: () => pdf('bibpath', 'doc', /\\bibitem\{entry\}/), includes: () => pdf('includes'), mountlink, labels, kill };
 const all = [...Object.keys(cases), ...Object.keys(others)];
 const names = process.argv.slice(2);
 const unknown = names.filter(name => !all.includes(name));
