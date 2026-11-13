@@ -1,0 +1,9 @@
+% A .bst and a .bib named by a path that begins with ../, which bibtex,
+% run in the build directory, looks up from there and not from the
+% document's directory. Both lead back to the fixtures' directory.
+\documentclass{article}
+\begin{document}
+A citation~\cite{lattices}.
+\bibliographystyle{../fixtures/test-bibpath}
+\bibliography{../fixtures/test-bibpath}
+\end{document}

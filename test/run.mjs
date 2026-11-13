@@ -440,6 +440,9 @@ const contents = {
   // (a file \included from a folder, with a \ref each way)
   'test-include': [/The included part is section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#included'>2</,
     /Text from the included file, which follows section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#opening'>1</],
+  // (a citation and its entry from a .bst and a .bib named by a path that
+  // begins with ../)
+  'test-bibpath': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
 };
 
 // Text back in its font after a font command that the PDF keeps in a
