@@ -554,6 +554,16 @@ const text = (hex, html) => `<span style='color:${dark(hex)};'>${html}</span>`;
 const fbox = "style='--tex8web-fboxsep: 0.3em; --tex8web-fboxrule: 0.04em'";
 // (the lengths in a list's style attribute, before its color)
 const list = '--tex8web-list-topsep: 0.8em; --tex8web-list-itemsep: 0.8em; --tex8web-list-indent: 2.5em; --tex8web-list-labelsep: 0.5em; ';
+// (test-lateopt-body.ltx: \rowcolor, \cellcolor, \rowcolors, and
+// \textcolor, then graphicx's picture and enumitem's labels, which load
+// after xcolor's reload)
+const lateopt = [
+  ...[['1-1- td', 'F4CCE0'], ['1-2-1', 'BFFFBF'], ['2-1-', 'FFE5E5'], ['2-2-', 'E5E5FF']].map(([selector, hex]) =>
+    new RegExp(`#TBL-${selector}\\{ background-color:${lightDark(`#${hex}`, 'background')}\\}`)),
+  new RegExp(`<span style='color:${lightDark('#C80064', 'color')};'>d</span>`),
+  /<img alt='picture' src='test-picture\.png' /,
+  /<span class='tex8web-label'>\s*\(a\)\s*<\/span>[^]*<span class='tex8web-label'>\s*\(b\)\s*<\/span>/,
+];
 const colors = {
   'test-color': [
     new RegExp(`<span style='color:${lightDark('#000080', 'color')};'>navy</span>`),
@@ -641,6 +651,17 @@ const colors = {
     // (\rowcolors{2}{}{...} leaves the first row and every odd one without)
     /^(?![^]*#TBL-2-(?:1|3|5)-\{)/,
   ],
+  // xcolor's table option asked for on a reload, which loads colortbl
+  // inside the reload: after xcolor, after TikZ, after a font package that
+  // loads xcolor, with color names on both loads and hyperref between,
+  // after colortbl and xcolor, twice, after a class that loads xcolor, and
+  // from a package. test-lateopt-once passes the option before one load.
+  ...Object.fromEntries(['xcolor', 'tikz', 'newtx', 'colortbl', 'twice', 'class', 'sty', 'once']
+    .map(name => [`test-lateopt-${name}`, lateopt])),
+  // (Cerulean from dvipsnames, Crimson from svgnames, and ForestGreen,
+  // which both define, from svgnames, read last)
+  'test-lateopt-names': [...lateopt, ...[['#0FE3FF', 'sky'], ['#DC143C', 'crimson'], ['#228B22', 'forest']]
+    .map(([hex, word]) => new RegExp(`<span style='color:${lightDark(hex, 'color')};'>${word}</span>`))],
 };
 
 // Lists as LaTeX sets them: each label as TeX typesets it (article's bullet

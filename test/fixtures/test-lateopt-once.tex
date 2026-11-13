@@ -1,0 +1,7 @@
+% Checks cases the fix must not break: xcolor loaded once, with its table
+% option passed before the load, so that nothing is reloaded.
+\documentclass{article}
+\PassOptionsToPackage{table}{xcolor}
+\usepackage{xcolor}
+\input{test-lateopt-body.ltx}
+\end{document}

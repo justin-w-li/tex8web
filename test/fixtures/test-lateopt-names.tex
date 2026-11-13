@@ -1,0 +1,10 @@
+% xcolor with dvipsnames, hyperref, then xcolor with table and svgnames:
+% a dvipsnames color, an svgnames color, and ForestGreen, which both
+% define, in svgnames' value, the one read last.
+\documentclass{article}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+\usepackage[table,svgnames]{xcolor}
+\input{test-lateopt-body.ltx}
+\textcolor{Cerulean}{sky}, \textcolor{Crimson}{crimson}, \textcolor{ForestGreen}{forest}.
+\end{document}

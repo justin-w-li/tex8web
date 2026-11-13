@@ -1,0 +1,23 @@
+% The body of the test-lateopt-*.tex documents, each of which asks for
+% xcolor's table option on a reload: table colors, a defined color in
+% text, then graphicx and enumitem, which load after the reload.
+\usepackage{graphicx}
+\usepackage{enumitem}
+\definecolor{ink}{RGB}{200,0,100}
+\begin{document}
+\begin{tabular}{ll}
+\rowcolor{ink!20} a & b \\
+\cellcolor{green!25} c & \textcolor{ink}{d} \\
+\end{tabular}
+
+{\rowcolors{1}{red!10}{blue!10}
+\begin{tabular}{l}
+e \\ f \\
+\end{tabular}}
+
+\includegraphics[alt={picture}, width=50pt]{test-picture.png}
+
+\begin{enumerate}[label=(\alph*)]
+\item First.
+\item Second.
+\end{enumerate}
