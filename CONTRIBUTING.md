@@ -47,6 +47,7 @@ tex4ht is configured by `tex8web.cfg` and the files in `tex/`.
 - The title is passed from one LaTeX run to the next by tex4ht, so the first draft build, with one LaTeX run, has no title.
 - A heading's font is read in `\web@headsize` from its titlesec `\titleformat`, the style in its class's `\@startsection`, or memoir's part and chapter fonts. The font is tried in a box that is thrown away, and its size, family, weight, style, variant, and alignment are written as custom properties. A `\paragraph` or `\subparagraph` head is then configured without html4.4ht's `\bf`.
 - With tocloft, the font of each table of contents level is read from `\cft<level>font` by `\web@tocfont`, as heading fonts are. The faces these fonts need are predicted in `lua/tex8web/assets.lua`, to be copied next to the page and listed for preloading.
+- XCharter's T1 fonts put the f-ligatures in other slots than T1's, while tex4ht's font files for them use T1's slots or are missing. After LaTeX, `lua/tex8web/htf.lua` reads the fonts the DVI file uses and writes font files for these fonts, which tex4ht reads before its own. A family with another order is one more entry in its table.
 - Settings lost under tex4ht, for example titlesec formats and tcolorbox options, are recorded in `tex/tex8web-hooks.sty`, which is loaded before the preamble.
 - Without titlesec, a chapter's spacing is read from the class's `\@makechapterhead`, which is kept in `tex8web-hooks.sty` before tex4ht empties it at `\begin{document}`. The command is run in a box that is thrown away, and its `\vskip`s are counted, with each `\vspace` taken as one. Three are taken as the space above, between label and title, and below, as in report, book, and memoir. Any other count, or a negative space, leaves the stylesheet's spacing, as does a class without `\@makechapterhead`, such as mwrep.
 - A part's spacing is read the same way from the class's `\part`, with the class's `\@part`, which the .4ht files replace. The part's page breaks, counter, and table of contents line are turned off, and each `\vfil` is counted as a fill. Two skips are taken as the space above and below, as in article. A fill above or below is not written, and the stylesheet gives the part a chapter's space there.
@@ -329,6 +330,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `lua/tex8web/macros.lua`, `preamble.lua` | macros in math, and their colors |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula source, colors, spacing, theorems in boxes, footnotes, links, page controls, the table of contents, meta tags, and scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page and font rules, bibtex and biber, makeindex and makeglossaries, and prerendering |
+| `lua/tex8web/htf.lua` | tex4ht's font files for fonts whose f-ligatures are in other slots than their encoding's |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
 | `js/tex8web.js` | MathJax sizes set as in TeX |
 | `js/tex8web-fonts.js` | the font preload links, written inline in the head of each page, before the stylesheet link |

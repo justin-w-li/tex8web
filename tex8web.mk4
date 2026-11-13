@@ -21,6 +21,7 @@ local fixinlines = require "make4ht-fixinlines"
 local assets = require "tex8web.assets"
 local bibliography = require "tex8web.bibliography"
 local files = require "tex8web.files"
+local htf = require "tex8web.htf"
 local index = require "tex8web.index"
 local macros = require "tex8web.macros"
 local page = require "tex8web.page"
@@ -120,6 +121,10 @@ else
     Make:latex_save {}
   end
 end
+-- tex4ht's font files for the fonts whose f-ligatures are in other slots
+-- than their encoding's, for tex4ht, which runs after these commands
+Make:add("htf", htf.write)
+Make:htf {}
 -- (tex4ht's class files list \jobname.4idx among the page's files, for
 -- tex4ht's index script: \warn:idx in article.4ht. make4ht never makes the
 -- file, and copying it to -d logs an error.)
