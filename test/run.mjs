@@ -443,6 +443,8 @@ const contents = {
   // (a citation and its entry from a .bst and a .bib named by a path that
   // begins with ../)
   'test-bibpath': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
+  // (the same from a .bst beside the document, named without a path)
+  'test-bibstyle': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
 };
 
 // Text back in its font after a font command that the PDF keeps in a

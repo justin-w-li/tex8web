@@ -1,0 +1,9 @@
+% A .bst beside the document, named without a path: test-bibpath's
+% style and entries. bibtex runs in the build directory and looks up a
+% .bst in BSTINPUTS, not BIBINPUTS.
+\documentclass{article}
+\begin{document}
+A citation~\cite{lattices}.
+\bibliographystyle{test-bibpath}
+\bibliography{test-bibpath}
+\end{document}
