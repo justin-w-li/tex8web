@@ -1030,17 +1030,21 @@
 \catcode58 12
 
 % an \includegraphics without its .xbb file in a picture that tex4ht draws
-% as an image, such as overpic, a LaTeX picture, or a TikZ node. Outside
-% these pictures, graphics.4ht's \Gin@setfile makes the missing file a
-% warning. Inside them, \HLet (tex4ht.sty) runs graphics.sty's version,
-% which stops the build at "Cannot determine size of graphic". There the
-% bounding box is read from extractbb instead, with dvipdfmx.def's options.
-% TeX Live's restricted shell escape allows extractbb. graphics.sty keeps
-% the size it reads, keyed on the file name, and a later \includegraphics
-% of the file outside a picture would take it, so the size from extractbb
-% is dropped after the picture's \includegraphics. Without shell escape, as
-% with --contain, the errors are warnings, as in graphics.4ht, and the
-% picture is square: at its requested width, or 72bp wide with no size.
+% as an image, such as overpic, a LaTeX picture, a TikZ node, or a tikzcd
+% diagram. Outside these pictures, graphics.4ht's \Gin@setfile makes the
+% missing file a warning. Inside them, \HLet (tex4ht.sty) runs
+% graphics.sty's version, which stops the build at "Cannot determine size of
+% graphic". There the bounding box is read from extractbb instead, with
+% dvipdfmx.def's options. TeX Live's restricted shell escape allows
+% extractbb. graphics.sty keeps the size it reads, keyed on the file name,
+% and a later \includegraphics of the file outside a picture would take it,
+% so the size from extractbb is dropped after the picture's \includegraphics.
+% Without shell escape, as with --contain, the errors are warnings, as in
+% graphics.4ht, and the picture is square: at its requested size, or 72bp
+% wide with no size. A file name with a space gives the same square picture,
+% as with dvipdfmx.def: TeX drops the double quotes from the name that
+% \openin reads, kpathsea's restricted shell escape refuses single quotes,
+% and extractbb gets the name as two arguments.
 \catcode58 11
 \ifdefined\Gin@setfile
     \web@needs{o:Gin@setfile:}%
