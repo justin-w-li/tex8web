@@ -134,6 +134,59 @@
 }
 \AddToHook{begindocument/before}{\catcode`\!=\web@bangcatcode\relax}
 
+% xr and xr-hyper: xr.4ht and xr-hyper.4ht read each label of the other
+% document's .aux as tex4ht writes it, with \rEfLiNK{anchor}{text} in a
+% fixed number of fields, and \xdef the rest. A label that LaTeX wrote
+% stops them, and so does a robust command in a name, or a name field that
+% tex4ht wrote under hyperref, read by xr. Each field is read here instead:
+% one that starts with \rEfLiNK becomes xr.4ht's link to the other
+% document's page, and any other field is kept as written, so a reference
+% to it prints its number, page, or name with no link. xr.4ht also drops
+% the other document's folder from an \@input, which \include writes, where
+% xr.sty keeps it. cleveref's @cref labels are left to xr.4ht. Each .4ht
+% file defines \XR@test, so each is wrapped after it is read.
+\ExplSyntaxOn
+\AddToHook { file/xr.4ht/after } { \__web_xr_wrap: }
+\AddToHook { file/xr-hyper.4ht/after } { \__web_xr_wrap: }
+\cs_new_protected:Npn \__web_xr_wrap:
+  {
+    \web@needs { XR@test }
+    \web@needs { xr:rEfLiNK }
+    \cs_gset_eq:NN \__web_xr_test:w \XR@test
+    \cs_gset_eq:NN \XR@test \__web_xr_read:w
+  }
+% (#1 to #4 as in xr.4ht's \XR@test: an .aux line's first token, its next
+% two arguments, and the rest)
+\cs_new_protected:Npn \__web_xr_read:w #1#2#3#4 \XR@
+  {
+    \token_if_eq_meaning:NNTF #1 \@input
+      {
+        \edef \XR@list { \XR@list \filename@area #2 \relax }
+        \__web_xr_next:
+      }
+      {
+        \bool_lazy_and:nnTF
+          { \token_if_eq_meaning_p:NN #1 \newlabel }
+          { ! \__web_xr_if_cref_p:n {#2} }
+          {
+            \tl_gset:ce { r@ \XR@prefix #2 } { \tl_map_function:nN {#3} \__web_xr_field:n }
+            \__web_xr_next:
+          }
+          { \__web_xr_test:w #1 {#2} {#3} #4 \XR@ }
+      }
+  }
+\cs_new_protected:Npn \__web_xr_next:
+  { \ifeof \@inputcheck \exp_after:wN \XR@aux \else \exp_after:wN \XR@read \fi }
+\cs_new:Npn \__web_xr_field:n #1
+  { { \__web_xr_if_link:w \q_mark #1 \q_mark \rEfLiNK \q_stop { \__web_xr_link:w #1 } { \exp_not:n {#1} } } }
+\cs_new:Npn \__web_xr_if_link:w #1 \q_mark \rEfLiNK #2 \q_stop { \tl_if_empty:nTF {#1} }
+\cs_new:Npn \__web_xr_link:w \rEfLiNK #1#2 { \xr:rEfLiNK \rEfLiNK {#1} \exp_not:n { {#2} } }
+\prg_new_conditional:Npnn \__web_xr_if_cref:n #1 { p }
+  { \__web_xr_if_cref:w #1 @cref \q_stop }
+\cs_new:Npn \__web_xr_if_cref:w #1 @cref #2 \q_stop
+  { \tl_if_empty:nTF {#2} \prg_return_false: \prg_return_true: }
+\ExplSyntaxOff
+
 % hyperref's hidelinks, under which tex8web-page.tex leaves links unmarked:
 % as a package option, or later in \hypersetup (kvoptions'
 % \KV@Hyp@hidelinks). The link colors and \@pdfborder cannot show it,
