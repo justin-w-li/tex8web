@@ -380,10 +380,12 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 .tex8web-minipages > .tex8web-minipage-t { align-self: baseline; }
 .tex8web-minipages > .tex8web-minipage-b { align-self: last baseline; }
 .mathjax-block img { display: block; margin: var(--tex8web-display-above) auto var(--tex8web-display-below); }
-/* the number of an equation whose body is a picture (tex8web-math.tex), at
-   the right, on the picture's bottom line, as in the PDF */
-.mathjax-block:has(> .tex8web-picture-tag) { display: block; position: relative; }
-.tex8web-picture-tag { position: absolute; right: 0; bottom: var(--tex8web-display-below); }
+/* the number of an equation whose body is a picture (tex8web-math.tex),
+   and the QED box of a \qedhere after a picture, at the right, on the
+   picture's bottom line, as in the PDF. The picture's margins are outside
+   the display */
+.mathjax-block:has(> img + :is(.tex8web-picture-tag, .tex8web-qed)) { display: block; position: relative; }
+.mathjax-block > img + :is(.tex8web-picture-tag, .tex8web-qed) { position: absolute; inset-inline-end: 0; bottom: 0; float: none; margin: 0; }
 /* a formula in resized text at the text's size (tex8web-math.tex) */
 :is(.mathjax-inline, .mathjax-block, .mathjax-env) { font-size: calc(var(--tex8web-math-size, 1) * 1em); }
 /* a table where it sits in the PDF, as its class says (tex8web-text.tex),
