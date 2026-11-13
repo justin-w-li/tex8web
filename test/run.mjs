@@ -384,6 +384,26 @@ const pictures = {
     flipped('squashed', 1, -1, lowered('var(--tex8web-textwidth) * 0.2899', '0.7499')),
     flipped('flattened', 1, -1, lowered('var(--tex8web-textwidth) * 0.2899', '0.7499')),
     flipped('twice', 1, 1), flipped('over no box', 1, -1), flipped('squashed no box', 1, -1)],
+  // (2cm in a 345pt text width, in each display)
+  'test-display-picture': ['bracket graphics', 'dollars graphics', 'displaymath graphics', 'equation star graphics']
+    .map(alt => wide(alt, '0.1649')),
+  'test-display-picture-hyperref': [wide('hyperref graphics', '0.1649')],
+};
+
+// Display math whose body is only a picture, as the PDF shows it: the
+// picture in the display, with no MathJax there and no MathJax error.
+// Each case is the page from its paragraph's name to the next name, with
+// the extra text that must be in it: a number, or the QED box of a
+// \qedhere. A display of math stays MathJax's.
+const pictureCases = ['Dollars tikzpicture', 'Bracket tikzpicture', 'Bracket tikz command', 'Dollars tikz command',
+  'Dollars tikzcd', 'Bracket matrix', 'Dollars matrix', 'Bracket graphics', 'Dollars graphics',
+  'Displaymath tikzpicture', 'Displaymath graphics', ['Equation tikzpicture', '(1)'], 'Equation star graphics',
+  'Equation star tikzcd', 'Bracket picture environment', 'Theorem tikzpicture', ['Proof tikzpicture', 'tex8web-qed']];
+const displayPictures = {
+  'test-display-picture': { pictures: pictureCases, math: ['Ordinary display', 'Ordinary dollars'] },
+  'test-display-picture-hyperref': {
+    pictures: ['Dollars tikzpicture', 'Bracket graphics', ['Equation tikzpicture', '(1)'], 'Theorem tikzpicture'],
+    math: ['Ordinary display'] },
 };
 
 // The title of a page without \maketitle, for the tab and link previews:
@@ -1593,6 +1613,23 @@ function check(doc, result, out, aux) {
     }
   }
   problems.push(...ligatureProblems(doc.name, flat));
+  if (displayPictures[doc.name]) {
+    const { pictures: shown, math } = displayPictures[doc.name];
+    const names = [...shown.map(name => [name].flat()[0]), ...math];
+    const starts = names.map(name => flat.indexOf(`${name}.`));
+    const part = i => starts[i] < 0 ? '' : flat.slice(starts[i], Math.min(...starts.filter(at => at > starts[i]), flat.indexOf('</main>')));
+    shown.forEach((entry, i) => {
+      const [name, extra] = [entry].flat(), text = part(i);
+      const outside = text.replace(/<span class='tex8web-qed'>(?:(?!<\/mjx-container>)[^])*<\/mjx-container><\/span>/g, '');
+      if (!/class='[^']*\bmathjax-(?:block|env)\b[^']*'>(?:(?!<\/p>)[^])*<img /.test(text)) problems.push(`${name}: no picture in the display`);
+      if (outside.includes('<mjx-container')) problems.push(`${name}: MathJax in the display`);
+      if (extra && !(extra.startsWith('(') ? text.replace(/<[^>]+>/g, '') : text).includes(extra)) problems.push(`${name}: no ${extra}`);
+    });
+    math.forEach((name, j) => {
+      const text = part(shown.length + j);
+      if (!text.includes('<mjx-container') || text.includes('<img ')) problems.push(`${name}: not MathJax's display`);
+    });
+  }
   if (preloads[doc.name]) {
     const found = fontsListed(html).map(href => href.match(/^fonts\/(.+)\.woff2$/)?.[1]).sort().join(' ');
     const wanted = [...preloads[doc.name]].sort().join(' ');
