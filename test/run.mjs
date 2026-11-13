@@ -1090,6 +1090,8 @@ const external = {
   // tex4ht wrote under hyperref, with its .xref beside it: links to that
   // document's page)
   'test-xr': [...latexAux, said('Equation @.', '\\(3\\)'),
+    // (\cref with its name and no link, and \getrefnumber as a number)
+    said('Cleveref @.', `section${nbsp}1\\.1`), said('Getrefnumber @.', '1'),
     ...[['cmti-10', 'In italics'], ['cmr-8', 'In a footnote'], ['cmss-10', 'In sans-serif'], ['cmtt-10', 'In typewriter'], ['cmti-10', 'In a theorem']]
       .map(([font, context]) => new RegExp(`<span class='${font}'>${context}, 1\\.1\\.\\s*<\\/span>`)),
     /<h4 class='subsectionHead'[^>]*>(?:(?!<\/h4>)[^])*>Heading 1\.1<\/h4>/,
@@ -1098,6 +1100,7 @@ const external = {
   // (without hyperref, from an .aux written without hyperref and from one
   // written under it; a label of an .aux that tex4ht wrote, with its .xref)
   'test-xr-plain': [said('Section @, subsection @, page @, item @, bold @, empty [@].', '1', '1\\.1', 'iv', '\\(a\\)', bold, ''),
+    said('Getrefnumber @.', '1'),
     said('Under hyperref: subsection @, page @, bold @, spaced @, included @.', '1\\.1', 'iv', bold, 'Step 2', '3'),
     /Written by tex4ht: <a href='test-xr\/\.\.\/test-xr-plain\.html#x1-20001\.1'>1\.1<\/a>\./, local(1)],
   // (also from an .aux written without hyperref)

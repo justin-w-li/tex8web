@@ -153,12 +153,15 @@
 
 % tex4ht's cleveref support links only the number of a \cref. cleveref is
 % given the link start and end instead, so that with nameinlink all of
-% "Lemma 1" is the link, as in the PDF.
+% "Lemma 1" is the link, as in the PDF. \web@xr@cref tells the number field
+% of another document's label that LaTeX wrote (tex8web-hooks.sty) that it
+% is in a \cref.
 \@ifpackageloaded{cleveref}{%
     \web@needs{@@@setcref}%
     \web@needs{cref@getlabel}%
     \def\web@setcref#1#2{\bgroup
         \def\rEfLiNK##1##2{\Link{##1}{}}%
+        \let\web@xr@cref\@firstoftwo
         \def\XRrEfLiNK[##1]##2##3{\Link[##1]{##2}{}}%
         \cref@getlabel{#2}{\@templabel}%
         #1{\@templabel}%

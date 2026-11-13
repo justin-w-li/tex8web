@@ -176,7 +176,7 @@
               {
                 \tl_gset:ce { r@ \XR@prefix #2 }
                   {
-                    \exp_args:Ne \__web_xr_number:n { \tl_head:n {#3} }
+                    \exp_args:NNe \__web_xr_field:Nn \__web_xr_number:n { \tl_head:n {#3} }
                     \exp_args:Ne \tl_map_function:nN { \tl_tail:n {#3} } \__web_xr_field:n
                   }
               }
@@ -187,30 +187,35 @@
   }
 \cs_new_protected:Npn \__web_xr_next:
   { \ifeof \@inputcheck \exp_after:wN \XR@aux \else \exp_after:wN \XR@read \fi }
-\cs_new:Npn \__web_xr_field:n #1
-  { { \__web_xr_if_link:w \q_mark #1 \q_mark \rEfLiNK \q_stop { \__web_xr_link:w #1 } { \exp_not:n {#1} } } }
+% (#1 keeps a field that is not \rEfLiNK: \exp_not:n, or
+% \__web_xr_number:n for the number)
+\cs_new:Npn \__web_xr_field:Nn #1#2
+  { { \__web_xr_if_link:w \q_mark #2 \q_mark \rEfLiNK \q_stop { \__web_xr_link:w #2 } { #1 {#2} } } }
+\cs_new:Npn \__web_xr_field:n { \__web_xr_field:Nn \exp_not:n }
+\cs_new:Npn \__web_xr_number:n #1 { \exp_not:n { \__web_xr_text:n {#1} } }
 \cs_new:Npn \__web_xr_if_link:w #1 \q_mark \rEfLiNK #2 \q_stop { \tl_if_empty:nTF {#1} }
 \cs_new:Npn \__web_xr_link:w \rEfLiNK #1#2 { \xr:rEfLiNK \rEfLiNK {#1} \exp_not:n { {#2} } }
-\cs_new:Npn \__web_xr_number:n #1
-  {
-    {
-      \__web_xr_if_link:w \q_mark #1 \q_mark \rEfLiNK \q_stop
-        { \__web_xr_link:w #1 } { \exp_not:n { \__web_xr_text:n {#1} } }
-    }
-  }
 % (the name that \autoref put in \:autoref, as tex4ht's labels print it,
 % then the number; or the text of the \hyperref around the reference,
-% once, so a reference in that text prints its own number)
+% once, so a reference in that text prints its own number. In a \cref,
+% where tex8web-text.tex's \web@setcref gives \web@xr@cref
+% \@firstoftwo, cleveref prints the number, and this field prints nothing
+% and opens no link, so the \EndLink after the number closes none.)
 \tl_new:N \g__web_xr_text_tl
 \tl_new:N \l__web_xr_text_tl
+\cs_new_eq:NN \web@xr@cref \use_ii:nn
 \cs_new_protected:Npn \__web_xr_text:n #1
   {
-    \tl_if_empty:NTF \g__web_xr_text_tl
-      { \cs_if_exist_use:c { :autoref } { { } } #1 }
+    \web@xr@cref
+      { \cs_set_eq:NN \EndLink \scan_stop: }
       {
-        \tl_set_eq:NN \l__web_xr_text_tl \g__web_xr_text_tl
-        \tl_gclear:N \g__web_xr_text_tl
-        \tl_use:N \l__web_xr_text_tl
+        \tl_if_empty:NTF \g__web_xr_text_tl
+          { \cs_if_exist:cT { :autoref } { \use:c { :autoref } { } } #1 }
+          {
+            \tl_set_eq:NN \l__web_xr_text_tl \g__web_xr_text_tl
+            \tl_gclear:N \g__web_xr_text_tl
+            \tl_use:N \l__web_xr_text_tl
+          }
       }
   }
 % (hyperref.4ht's \label@@hyperref: its text, kept until the text prints,
