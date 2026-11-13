@@ -386,8 +386,8 @@ const pictures = {
     flipped('twice', 1, 1), flipped('over no box', 1, -1), flipped('squashed no box', 1, -1)],
   // (2cm in a 345pt text width, in each display)
   'test-display-picture': ['bracket graphics', 'dollars graphics', 'displaymath graphics', 'equation star graphics']
-    .map(alt => wide(alt, '0.1649')),
-  'test-display-picture-hyperref': [wide('hyperref graphics', '0.1649')],
+    .map(alt => share(alt, '0.1649')),
+  'test-display-picture-hyperref': [share('hyperref graphics', '0.1649')],
 };
 
 // Display math whose body is only a picture, as the PDF shows it: the
@@ -399,6 +399,18 @@ const pictureCases = ['Dollars tikzpicture', 'Bracket tikzpicture', 'Bracket tik
   'Dollars tikzcd', 'Bracket matrix', 'Dollars matrix', 'Bracket graphics', 'Dollars graphics',
   'Displaymath tikzpicture', 'Displaymath graphics', ['Equation tikzpicture', '(1)'], 'Equation star graphics',
   'Equation star tikzcd', 'Bracket picture environment', 'Theorem tikzpicture', ['Proof tikzpicture', 'tex8web-qed']];
+// the first element whose opening tag matches the pattern, whose first
+// group is the tag's name, up to its closing tag ('' if there is none)
+const element = (html, opening) => {
+  const found = html.match(opening);
+  if (!found) return '';
+  const tags = new RegExp(`<(/?)${found[1]}[ >]`, 'g');
+  tags.lastIndex = found.index + found[0].length;
+  for (let depth = 1, tag; (tag = tags.exec(html));) {
+    if (!(depth += tag[1] ? -1 : 1)) return html.slice(found.index, html.indexOf('>', tag.index) + 1);
+  }
+  return '';
+};
 const displayPictures = {
   'test-display-picture': { pictures: pictureCases, math: ['Ordinary display', 'Ordinary dollars'] },
   'test-display-picture-hyperref': {
@@ -1621,9 +1633,21 @@ function check(doc, result, out, aux) {
     shown.forEach((entry, i) => {
       const [name, extra] = [entry].flat(), text = part(i);
       const outside = text.replace(/<span class='tex8web-qed'>(?:(?!<\/mjx-container>)[^])*<\/mjx-container><\/span>/g, '');
-      if (!/class='[^']*\bmathjax-(?:block|env)\b[^']*'>(?:(?!<\/p>)[^])*<img /.test(text)) problems.push(`${name}: no picture in the display`);
+      // the display element, from its opening tag to its closing one
+      const display = element(text, /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
+      if (!/^<[^>]+>(?:(?!<\/)[^])*<img /.test(display)) problems.push(`${name}: no picture in the display`);
       if (outside.includes('<mjx-container')) problems.push(`${name}: MathJax in the display`);
-      if (extra && !(extra.startsWith('(') ? text.replace(/<[^>]+>/g, '') : text).includes(extra)) problems.push(`${name}: no ${extra}`);
+      if (extra === 'tex8web-qed' && !display.includes(`class='${extra}'`)) problems.push(`${name}: no ${extra} in the display`);
+      if (extra?.startsWith('(')) {
+        if (!display.replace(/<[^>]+>/g, '').includes(extra)) problems.push(`${name}: no ${extra} in the display`);
+        // each \ref or \eqref of the equation: its number, linking to an id in the display
+        const refs = [...flat.matchAll(/Reference to the triangle: (?:(?!<\/p>)[^])*?<a href='#([^']+)'[^>]*>((?:(?!<\/a>)[^])*)<\/a>/g)];
+        if (!refs.length) problems.push(`${name}: no reference`);
+        for (const [, id, label] of refs) {
+          if (!['1', '(1)'].includes(label.replace(/<[^>]+>/g, ''))) problems.push(`${name}: reference reads ${label}`);
+          if (!display.includes(`id='${id}'`) && !new RegExp(`id='${id}'[^>]*>(?:\\s|<[^>]+>)*$`).test(text.slice(0, text.indexOf(display)))) problems.push(`${name}: reference to #${id} outside the display`);
+        }
+      }
     });
     math.forEach((name, j) => {
       const text = part(shown.length + j);

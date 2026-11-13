@@ -513,6 +513,24 @@ async function hanging(page, doc, where) {
     ...wrong.map(([name, what]) => `${where}: the picture ${name}: ${what}`)];
 }
 
+// Each picture alone in display math, centered in the column as in the
+// PDF, within 0.5px, and not lowered or raised. centers has the number of
+// such pictures. Failures: [the picture, what is wrong]
+const centered = `(() => {
+  const column = document.querySelector('main') ?? document.body, style = getComputedStyle(column);
+  const box = column.getBoundingClientRect();
+  const middle = (box.left + parseFloat(style.paddingLeft) + box.right - parseFloat(style.paddingRight)) / 2;
+  const pictures = [...document.querySelectorAll(':is(.mathjax-block, .mathjax-env) img')];
+  const wrong = pictures.flatMap(img => {
+    const at = img.getBoundingClientRect(), off = (at.left + at.right) / 2 - middle;
+    const name = img.alt || img.getAttribute('src');
+    return [...Math.abs(off) > 0.5 ? [[name, \`its center \${off.toFixed(1)}px from the column's\`]] : [],
+      ...img.style.verticalAlign ? [[name, \`vertical-align \${img.style.verticalAlign}\`]] : []];
+  });
+  return { checked: pictures.length, wrong };
+})()`;
+const centers = { 'test-display-picture': 17, 'test-display-picture-hyperref': 4 };
+
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
 const verbatimCases = ['heading', 'inline', 'star', 'italic', 'italic-star', 'bold',
@@ -1280,6 +1298,11 @@ async function compare(chrome, doc, ok) {
             for (const [text, what] of boxes.wrong) problems.push(`${html}: the \\lefteqn "${text}": ${what}`);
           }
           if (doc.name in hangs) problems.push(...await hanging(page, doc, html));
+          if (doc.name in centers) {
+            const pictures = await page.evaluate(centered);
+            if (pictures.checked !== centers[doc.name]) problems.push(`${html}: ${pictures.checked} pictures in display math, not ${centers[doc.name]}`);
+            for (const [name, what] of pictures.wrong) problems.push(`${html}: the display picture ${name}: ${what}`);
+          }
           if (verbatimFamilies[doc.name]) {
             const literals = await page.evaluate(verbatimFonts(verbatimFamilies[doc.name], doc.name));
             for (const [marker, what] of literals) problems.push(`${html}: literal ${marker}: ${what}`);
