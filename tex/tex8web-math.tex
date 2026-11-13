@@ -381,10 +381,11 @@
 % which tex4ht read with & as a letter: a body that is only one
 % tikzpicture, \tikz, tikzcd, \includegraphics, or picture environment,
 % maybe in a \resizebox or a \scalebox, with \label, \notag, and
-% \nonumber anywhere around it, and \qedhere and \tag after it; and a \[ \]
-% with a tikzcd. MathJax knows none of them. Other pictures beside math,
-% and a body with two pictures, stay MathJax's. A display environment
-% takes a \tag; \[ \], $$ $$, and displaymath do not.
+% \nonumber anywhere around it, \qedhere and \tag after it, and a period
+% or a comma after it; and a \[ \] with a tikzcd. MathJax knows none of
+% them. Other pictures beside math, and a body with two pictures, stay
+% MathJax's. amsmath's displays take a \tag, and so does \[ \] with
+% amsmath; $$ $$, displaymath, and eqnarray do not.
 \tl_const:Nn \c__web_picture_tl {
     (?: \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
         | \\begin \s* \{ tikzcd \} .* \\end \s* \{ tikzcd \}
@@ -403,7 +404,25 @@
             | \\scalebox \s* \{ [^\{\}]* \} (?: \s* \[ [^\]]* \] )? ) \s* \{ \s* }
         \exp_not:V \c__web_picture_tl
     \exp_not:n { \s* \} ) (?: } \exp_not:V \c__web_marks_tl
-    \exp_not:n { | \\qedhere \b | \\tag \s* \*? \s* \{ [^\{\}]* \} )* \Z }
+    \exp_not:n { | \\qedhere \b | \\tag \s* \*? \s* \{ [^\{\}]* \} )* (?: [.,] (?: }
+    \exp_not:V \c__web_marks_tl
+    \exp_not:n { | \\qedhere \b | \\tag \s* \*? \s* \{ [^\{\}]* \} )* )? \Z }
+}
+% a period or comma after the picture, maybe with marks after it, which
+% \webpicturemark sets after the picture, on its bottom line
+% (css/tex8web.css). The name has only letters, to be rescanned
+\regex_const:Nn \c__web_picture_punct_regex {
+    ( [.,] ) ( (?: \s | \c{label} \s* \cB. (?: \c[^BE]. )* \cE. | \c{notag} | \c{nonumber} | \c{qedhere}
+        | \c{tag} \s* (?: \* \s* )? \cB. (?: \c[^BE]. )* \cE. )* ) \Z
+}
+\cs_new_protected:Npn \webpicturemark #1 {
+    \HCode{<span~class="tex8web-picture-punct">} \hbox{#1} \HCode{</span>}
+}
+\tl_new:N \l__web_picture_body_tl
+\cs_new_protected:Npn \__web_picture_body:n #1 {
+    \tl_set:Nn \l__web_picture_body_tl {#1}
+    \regex_replace_once:NnN \c__web_picture_punct_regex
+        { \c{webpicturemark} \cB\{ \1 \cE\} \2 } \l__web_picture_body_tl
 }
 % the end of each picture, to find a body with two
 \regex_const:Nn \c__web_picture_end_regex
@@ -457,15 +476,33 @@
 % after the picture. A \[ \] sets the picture in its math, where amsthm's
 % \qedhere gives the same box)
 \cs_set:Npn \AltlDisplayDollars #1 $$ {
-    \__web_if_bare_picture:nTF {#1} { \__web_picture:n { \hbox{#1} $$ } } { \__web_AltlDisplayDollars:w #1 $$ }
+    \__web_if_bare_picture:nTF {#1}
+        {
+            \__web_picture_body:n {#1}
+            \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } $$ }
+        }
+        { \__web_AltlDisplayDollars:w #1 $$ }
 }
 \cs_set:Npn \AltlDisplay #1 \] {
     \str_if_in:nnTF {#1} {\begin{tikzcd}}
         { \__web_picture:n {#1\]} }
         {
             \__web_if_bare_picture:nTF {#1}
-                { \__web_picture:n {#1\]} }
                 {
+                    \__web_picture_body:n {#1}
+                    \exp_args:Ne \__web_picture:n { \exp_not:V \l__web_picture_body_tl \exp_not:N \] }
+                }
+                {
+                    % (with amsmath, \[ \] is equation*, which takes a \tag)
+                    \cs_if_exist:NTF \tag
+                        {
+                            \tl_if_in:nnTF {#1} {\tag}
+                                { \__web_if_picture:nTF {#1} { \use_i:nn } { \use_ii:nn } }
+                                { \use_ii:nn }
+                        }
+                        { \use_ii:nn }
+                    { \__web_picture_set:nn {equation*} {#1} \] }
+                    {
                     \str_if_in:nnTF {#1} {\qedhere}
                         {
                             \tl_clear:N \l__web_alignment_tl
@@ -473,6 +510,7 @@
                             \exp_after:wN \__web_AltlDisplay:w \l__web_body_tl \]
                         }
                         { \__web_AltlDisplay:w #1 \] }
+                    }
                 }
         }
 }
@@ -769,6 +807,11 @@
 \bool_new:N \g__web_picture_qed_bool
 \cs_new_protected:Npn \__web_picture_display:nn #1#2 {
     \a:MathjaxBlock
+    \__web_picture_set:nn {#1} {#2}
+    \b:MathjaxBlock
+}
+% (also in the math of a \[ \] with a \tag)
+\cs_new_protected:Npn \__web_picture_set:nn #1#2 {
     \group_begin:
         \bool_gset_false:N \g__web_picture_qed_bool
         \cs_set_eq:NN \__web_picture_qedhere: \qedhere
@@ -789,15 +832,18 @@
                 }
             }
         }
-        \__web_picture:n { \hbox{#2} }
+        \__web_picture_body:n {#2}
+        \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } }
         \bool_if:NT \l__web_picture_back_bool
             { \setcounter{equation}{\l__web_picture_count_int} }
+        % (in the upright font, as amsmath and LaTeX set a number)
         \tl_if_empty:NF \l__web_picture_tag_tl {
-            \HCode{<span~class="tex8web-picture-tag">} \l__web_picture_tag_tl \HCode{</span>}
+            \HCode{<span~class="tex8web-picture-tag">}
+            \hbox { \normalfont \normalcolor \l__web_picture_tag_tl }
+            \HCode{</span>}
         }
         \bool_if:NT \g__web_picture_qed_bool { \hbox { \__web_picture_qedhere: } }
     \group_end:
-    \b:MathjaxBlock
 }
 % \tag{text} or \tag*{text} in the body: the tag, which a \label names
 \cs_new_protected:Npn \__web_picture_tag:w #1 \tag #2 \q_stop {
@@ -828,11 +874,15 @@
     \cs_set:Npe \theHequation { tag. \int_use:N \g__web_picture_tag_int }
     \refstepcounter{equation}
 }
+% (LaTeX's eqnarray takes no \tag)
+\cs_new_protected:Npn \__web_if_env_picture:nnTF #1#2 {
+    \str_if_in:nnTF {#1} {eqnarray} { \__web_if_bare_picture:nTF {#2} } { \__web_if_picture:nTF {#2} }
+}
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
         flalign, flalign*, multline, multline*, eqnarray, eqnarray* } {
     \cs_if_exist:cT {#1} {
         \RenewDocumentEnvironment{#1}{+!b}{
-            \__web_if_picture:nTF {##1}
+            \__web_if_env_picture:nnTF {#1} {##1}
                 { \__web_picture_display:nn {#1} {##1} } { \__web_display:nn {#1} {##1} }
         }{}
     }

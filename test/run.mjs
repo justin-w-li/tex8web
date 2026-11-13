@@ -402,7 +402,11 @@ const pictureCases = ['Dollars tikzpicture', 'Bracket tikzpicture', 'Bracket tik
 // more cases, each with the number or tag its display shows ('' for none)
 const pictureNumbers = { 'Equation label first': '(2)', 'Equation tag graphics': '(A)', 'Equation star tag': 'B',
   'Equation notag': '', 'Bracket tikz node': '', 'Equation star resizebox': '', 'Equation wide graphics': '(3)',
-  'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)', 'Equation long tag': 'the long tag' };
+  'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)', 'Equation long tag': 'the long tag',
+  'Theorem equation graphics': '(5)', 'Bracket tag graphics': '(C)', 'Equation tikzcd period': '(6)',
+  'Dollars graphics comma': '', 'Bracket tikzpicture period': '' };
+// the punctuation after the picture, in its own element after it
+const picturePuncts = { 'Equation tikzcd period': '.', 'Dollars graphics comma': ',', 'Bracket tikzpicture period': '.' };
 pictureCases.push(...Object.keys(pictureNumbers));
 // the first element whose opening tag matches the pattern, whose first
 // group is the tag's name, up to its closing tag ('' if there is none)
@@ -1663,6 +1667,10 @@ function check(doc, result, out, aux) {
       const display = element(text, /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
       const tag = display.match(/<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
       if (tag !== pictureNumbers[name]) problems.push(`${name}: the display's number is "${tag}", not "${pictureNumbers[name]}"`);
+      // (upright, as amsmath sets a number, also in a theorem's italic)
+      if (/<span class='tex8web-picture-tag'>(?:(?!<\/span>)[^])*class='[^']*ti-/.test(display)) problems.push(`${name}: the display's number is in italic`);
+      const punct = display.match(/<img [^>]*>\s*<span class='tex8web-picture-punct'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
+      if (punct !== (picturePuncts[name] ?? '')) problems.push(`${name}: the punctuation after the picture is "${punct}", not "${picturePuncts[name] ?? ''}"`);
       if (name === 'Proof equation tikzpicture' && !/tex8web-picture-tag(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the number`);
       if (name === 'Equation after a blank line' && !/<p\b[^>]*>\s*where the text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
       if (name === 'Equation tag graphics' && !/Reference to the tag: <a [^>]*>A(?:<!--(?:(?!-->)[^])*-->)?<\/a>/.test(text)) problems.push(`${name}: the reference does not read A`);

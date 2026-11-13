@@ -394,6 +394,17 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 .mathjax-block > img + :is(.tex8web-picture-tag, .tex8web-qed) { grid-area: 1 / 3; justify-self: end;
     white-space: nowrap; float: none; margin: 0; }
 .mathjax-block > img + .tex8web-picture-tag + .tex8web-qed { grid-area: 2 / 3; justify-self: end; float: none; margin: 0; }
+/* a period or comma after such a picture, at its right, on the baseline
+   of its bottom, centered with it, and the marks after them as above */
+.mathjax-block:has(> img + .tex8web-picture-punct) { display: grid;
+    grid-template-columns: 1fr auto auto 1fr; align-items: end;
+    margin-block: var(--tex8web-display-above) var(--tex8web-display-below); }
+.mathjax-block > img:has(+ .tex8web-picture-punct) { grid-area: 1 / 2; margin: 0; }
+.mathjax-block > img + .tex8web-picture-punct { grid-area: 1 / 3; align-self: last baseline; }
+.mathjax-block > img + .tex8web-picture-punct + :is(.tex8web-picture-tag, .tex8web-qed) { grid-area: 1 / 4;
+    justify-self: end; white-space: nowrap; float: none; margin: 0 0 0 1em; }
+.mathjax-block > img + .tex8web-picture-punct + .tex8web-picture-tag + .tex8web-qed { grid-area: 2 / 4;
+    justify-self: end; float: none; margin: 0; }
 /* a formula in resized text at the text's size (tex8web-math.tex) */
 :is(.mathjax-inline, .mathjax-block, .mathjax-env) { font-size: calc(var(--tex8web-math-size, 1) * 1em); }
 /* a table where it sits in the PDF, as its class says (tex8web-text.tex),

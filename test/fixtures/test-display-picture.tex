@@ -4,8 +4,9 @@
 % theorem, in a proof with \qedhere, and with a \label. Each case follows a
 % paragraph that names it. Also a \label before the picture, \tag, \tag*,
 % \notag, a \tikz path with braces, a \resizebox, a picture as wide as
-% the text with a number and with a long \tag*, a display after a blank line, and \qedhere in a
-% numbered equation. Ordinary display math stays as it is.
+% the text with a number and with a long \tag*, a display after a blank line, \qedhere in a
+% numbered equation, a number in a theorem, a \tag in \[ \], and a period or a comma
+% after the picture. Ordinary display math stays as it is.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -141,6 +142,27 @@ Theorem tikzpicture.
 Proof tikzpicture.
 \[ \begin{tikzpicture}\draw (0,0) -- (1,0);\end{tikzpicture} \qedhere \]
 \end{proof}
+
+\begin{theorem}
+Theorem equation graphics.
+\begin{equation}
+\includegraphics[alt={theorem equation graphics},width=2cm]{test-picture.png}
+\end{equation}
+\end{theorem}
+
+Bracket tag graphics.
+\[ \includegraphics[alt={bracket tag graphics},width=2cm]{test-picture.png} \tag{C} \]
+
+Equation tikzcd period.
+\begin{equation}
+\begin{tikzcd} A \arrow[r] & B \end{tikzcd}.
+\end{equation}
+
+Dollars graphics comma.
+$$ \includegraphics[alt={dollars graphics comma},width=2cm]{test-picture.png}, $$
+
+Bracket tikzpicture period.
+\[ \begin{tikzpicture}\draw (0,0) -- (1,1);\end{tikzpicture}. \]
 
 Ordinary display.
 \[ y = 1 \]

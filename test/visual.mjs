@@ -526,9 +526,13 @@ const centered = `(() => {
   const pictures = [...document.querySelectorAll(':is(.mathjax-block, .mathjax-env) img')];
   let marks = 0;
   const wrong = pictures.flatMap(img => {
-    const at = img.getBoundingClientRect(), off = (at.left + at.right) / 2 - middle;
+    // (a period or comma after the picture is centered with it, on its bottom line)
+    const punct = img.nextElementSibling?.matches('.tex8web-picture-punct') && img.nextElementSibling;
+    const at = img.getBoundingClientRect(), until = punct ? punct.getBoundingClientRect() : at;
+    const off = (at.left + until.right) / 2 - middle;
     const name = img.alt || img.getAttribute('src');
-    const mark = img.nextElementSibling?.matches('.tex8web-picture-tag, .tex8web-qed') && img.nextElementSibling.getBoundingClientRect();
+    const next = punct ? punct.nextElementSibling : img.nextElementSibling;
+    const mark = next?.matches('.tex8web-picture-tag, .tex8web-qed') && next.getBoundingClientRect();
     if (mark) marks++;
     // (a picture beside a wide mark may be left of center, up to 1em from the mark)
     const em = parseFloat(getComputedStyle(img.parentElement).fontSize);
@@ -540,13 +544,14 @@ const centered = `(() => {
       ...after.filter(e => e.getBoundingClientRect().bottom > block.bottom + 0.5 || e.getBoundingClientRect().right > box.right - parseFloat(style.paddingRight) + 0.5)
         .map(e => [name, \`its \${e.className} is outside the display\`]),
       ...img.style.verticalAlign ? [[name, \`vertical-align \${img.style.verticalAlign}\`]] : [],
+      ...punct && (until.bottom < at.bottom - 0.5 || until.bottom - at.bottom > until.height / 2 || until.left < at.right - 0.5 || until.left > at.right + 1) ? [[name, 'the punctuation after it is not at its bottom right']] : [],
       ...mark && Math.abs(mark.bottom - at.bottom) > 0.5 ? [[name, \`the mark after it ends \${(mark.bottom - at.bottom).toFixed(1)}px below its bottom\`]] : [],
       ...mark && Math.abs(mark.right - (box.right - parseFloat(style.paddingRight))) > 0.5 ? [[name, 'the mark after it is not at the right']] : [],
-      ...mark && mark.left < at.right - 0.5 ? [[name, \`the mark after it covers it by \${(at.right - mark.left).toFixed(1)}px\`]] : []];
+      ...mark && mark.left < until.right - 0.5 ? [[name, \`the mark after it covers it by \${(until.right - mark.left).toFixed(1)}px\`]] : []];
   });
   return { checked: [pictures.length, marks], wrong };
 })()`;
-const centers = { 'test-display-picture': [27, 8], 'test-display-picture-hyperref': [5, 2] };
+const centers = { 'test-display-picture': [32, 11], 'test-display-picture-hyperref': [5, 2] };
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
