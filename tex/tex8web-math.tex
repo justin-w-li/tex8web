@@ -492,15 +492,16 @@
 \web@needs{VerbMathToks}
 \cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
 \cs_set_eq:NN \__web_AltlDisplayDollars:w \AltlDisplayDollars
-% (the body is set in an \hbox, so the picture is set in text, as in a
-% display environment below, and a \qedhere gives the text's box after
-% the picture. tex4ht's mathjax option leaves TeX in text mode at \[ and
-% $$, so after a blank line an unboxed picture would start a paragraph
-% in the display)
+% (set as in a display environment below, with no number: the picture in
+% an \hbox, then a period or comma after it, then the box of a \qedhere.
+% tex4ht's mathjax option leaves TeX in text mode at \[ and $$, so after
+% a blank line an unboxed picture would start a paragraph in the display)
 \cs_new_protected:Npn \__web_picture_bare:n #1 {
-    \__web_picture_body:n {#1}
-    \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } }
-    \__web_picture_punct:
+    \group_begin:
+        \tl_clear:N \l__web_picture_tag_tl
+        \bool_set_false:N \l__web_picture_back_bool
+        \__web_picture_set:n {#1}
+    \group_end:
 }
 \cs_set:Npn \AltlDisplayDollars #1 $$ {
     \__web_if_bare_picture:nTF {#1}
@@ -832,8 +833,8 @@
     \group_end:
 }
 % a \[ \] with a \tag, in its math: tex4ht has opened the display, which is
-% closed before the tag's anchor and opened again after it, a span, as in
-% math. page.lua removes the empty display this leaves
+% closed before the tag's anchor and opened again after it, as the same
+% element. page.lua removes the empty display this leaves
 \cs_new_protected:Npn \__web_picture_tagged:n #1 {
     \group_begin:
         \b:MathjaxBlock

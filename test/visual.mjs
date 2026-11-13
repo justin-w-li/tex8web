@@ -517,8 +517,9 @@ async function hanging(page, doc, where) {
 // PDF, within 0.5px, and not lowered or raised, or left of center beside
 // a wide mark. An equation number or QED box after the picture is at the
 // column's right, on the picture's bottom line, and a QED box under a
-// number is in the display, at the right. centers has the numbers of such pictures and
-// of the marks after them. Failures: [the picture, what is wrong]
+// number is in the display, at the right. centers has the numbers of such
+// pictures and of the marks after them. Failures: [the picture, what is
+// wrong]
 const centered = `(() => {
   const column = document.querySelector('main') ?? document.body, style = getComputedStyle(column);
   const box = column.getBoundingClientRect();
@@ -553,7 +554,7 @@ const centered = `(() => {
   });
   return { checked: [pictures.length, marks], wrong };
 })()`;
-const centers = { 'test-display-picture': [36, 13], 'test-display-picture-hyperref': [5, 2] };
+const centers = { 'test-display-picture': [37, 14], 'test-display-picture-hyperref': [5, 2] };
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
@@ -1333,12 +1334,17 @@ async function compare(chrome, doc, ok) {
             // display: the picture is below the top of the window, and
             // highlighted as a target, also in dark mode, where a TikZ
             // picture is inverted with its background
+            // (or at the end of the paragraph before, after a blank line)
             const anchors = await page.evaluate(`[...document.querySelectorAll('.mathjax-block:has(> img)')]
-              .map(block => block.previousElementSibling).filter(a => a?.matches('a.tex8web-eq-anchor[id]')).map(a => a.id)`);
+              .map(block => block.previousElementSibling)
+              .flatMap(a => a?.matches('p') ? [...a.querySelectorAll(':scope > a.tex8web-eq-anchor-end[id]')] : [a])
+              .filter(a => a?.matches('a.tex8web-eq-anchor[id], a.tex8web-eq-anchor-end[id]')).map(a => a.id)`);
             if (!anchors.length) problems.push(`${html}: no anchor before a numbered picture`);
             for (const id of anchors) {
               const seen = await chrome.withPage(`${pathToFileURL(file).href}#${id}`, { javascript: false, colorScheme: 'dark' }, at => at.evaluate(`(() => {
-                const block = document.getElementById(${JSON.stringify(id)}).nextElementSibling, img = block.querySelector(':scope > img');
+                const anchor = document.getElementById(${JSON.stringify(id)});
+                const block = (anchor.matches('.tex8web-eq-anchor-end') ? anchor.parentElement : anchor).nextElementSibling;
+                const img = block.querySelector(':scope > img');
                 return [...img.getBoundingClientRect().top < 0 ? ['above the window'] : [],
                   ...getComputedStyle(block).backgroundColor === 'rgba(0, 0, 0, 0)' ? ['not highlighted'] : [],
                   ...getComputedStyle(img).backgroundColor !== 'rgba(0, 0, 0, 0)' && getComputedStyle(img).filter !== 'none' ? ['highlighted under its filter'] : []];

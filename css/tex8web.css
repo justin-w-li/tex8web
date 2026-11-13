@@ -838,12 +838,14 @@ dl.description > dd { margin-left: 0; margin-bottom: var(--tex8web-item-sep); }
     .tex8web-term):target, .newtheorem:has(.head > a:target), .tcolorbox:has(> a:target) {
     background-color: var(--tex8web-highlight); }
 /* an equation's anchors (marked in page.lua) come right before it, or for
-   a gather at the end of the paragraph before. The highlight goes on the
-   first display after them, and for a picture with a number on the
-   display's grid (tex8web-math.tex): in dark mode, a TikZ picture's filter
-   would invert a highlight on the picture */
+   a gather and for a numbered picture after a blank line at the end of the
+   paragraph before. The highlight goes on the first display after them,
+   and for a picture with a number on the display's grid (tex8web-math.tex):
+   in dark mode, a TikZ picture's filter would invert a highlight on the
+   picture */
 a.tex8web-eq-anchor:target ~ :is(.mathjax-env, .mathjax-block):not(a.tex8web-eq-anchor:target ~ :not(a.tex8web-eq-anchor) ~ *) > mjx-container,
 a.tex8web-eq-anchor:target ~ .mathjax-block:has(> img ~ .tex8web-picture-tag):not(a.tex8web-eq-anchor:target ~ :not(a.tex8web-eq-anchor) ~ *),
+p:has(> a.tex8web-eq-anchor-end:target) + .mathjax-block:has(> img ~ .tex8web-picture-tag),
 p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mjx-container {
     background-color: var(--tex8web-highlight); }
 
