@@ -18,16 +18,16 @@ function M.run(par)
     command = "biber --input-directory " .. files.quote(dir) .. " --output-directory "
       .. files.quote(dir) .. " " .. files.quote(par.input)
   elseif aux:find("\\bibdata", 1, true) then
-    -- (run in the build directory, which bibtex may not write to from
-    -- here; BIBINPUTS and BSTINPUTS find the .bib and .bst files in the
+    -- bibtex runs in the build directory, which it may not write to from
+    -- here. BIBINPUTS and BSTINPUTS find the .bib and .bst files in the
     -- document's directory. kpathsea looks up a name that begins with ./
     -- or ../ only from the current directory, so such names in \bibdata
     -- and \bibstyle are made absolute. LaTeX writes the .aux again on its
-    -- next run, and ignores both commands)
+    -- next run, and ignores both commands.
     local here = lfs.currentdir()
-    local fixed = aux:gsub("(\\bib%a+){([^}]*)}", function(command, names)
-      if command ~= "\\bibdata" and command ~= "\\bibstyle" then return end
-      return command .. "{" .. names:gsub("[^,]+", function(name)
+    local fixed = aux:gsub("(\\bib%a+){([^}]*)}", function(cs, names)
+      if cs ~= "\\bibdata" and cs ~= "\\bibstyle" then return end
+      return cs .. "{" .. names:gsub("[^,]+", function(name)
         if name:find("^%.%.?/") then return here .. "/" .. name end
       end) .. "}"
     end)
@@ -36,8 +36,10 @@ function M.run(par)
       f:write(fixed)
       f:close()
     end
-    command = "cd " .. files.quote(dir) .. " && BIBINPUTS=" .. files.quote(here) .. ": BSTINPUTS="
-      .. files.quote(here) .. ": bibtex " .. files.quote(par.input)
+    -- (after the paths already set, as tex8web.mk4 sets TEXINPUTS)
+    local function path(name) return name .. "=" .. files.quote(here .. ":" .. (os.getenv(name) or "")) end
+    command = "cd " .. files.quote(dir) .. " && " .. path("BIBINPUTS") .. " " .. path("BSTINPUTS")
+      .. " bibtex " .. files.quote(par.input)
   else
     return 0
   end

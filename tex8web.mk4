@@ -69,7 +69,11 @@ else
     if par.builddir == "" then return 0 end
     local out = lfs.attributes(par.builddir)
     local function walk(dir)
-      for name in lfs.dir(dir) do
+      -- (lfs.dir raises an error on a folder that cannot be read, such as
+      -- one a container left owned by root)
+      local ok, names, state = pcall(lfs.dir, dir)
+      if not ok then return end
+      for name in names, state do
         local path = dir .. "/" .. name
         local attributes = lfs.symlinkattributes(path)
         if not name:find("^%.") and path ~= "./build" and attributes.mode == "directory"
