@@ -225,4 +225,34 @@ describe('shots.mjs', { concurrency: 2 }, () => {
     assert.equal(touched.status, 1, touched.stderr);
     assert.match(lines(touched)[0], /^main-1400-light: differs from screen 1 of 9/);
   });
+
+  test('--review shoots the top, the table of contents, the middle, and the bibliography, in the light scheme', async () => {
+    const root = mkdtempSync(join(dir, 'review'));
+    // the table of contents is a popover, shown as a sidebar from 1000px
+    writeFileSync(join(root, 'main.html'), `<!DOCTYPE html><meta charset="utf-8"><style>
+      body { margin: 0; font: 20px sans-serif; } h1, h3, p, dl { height: 100px; margin: 0; } .gap { height: 2000px; }
+      #tex8web-toc { margin: 0; width: 200px; height: 100vh; border: 0; background: #ccc; }
+      @media (min-width: 1000px) { #tex8web-toc { display: block; position: fixed; inset: 0 auto 0 0; } }</style>
+      <nav id="tex8web-toc" popover="auto"><div class="tableofcontents">1 One 2 Two</div></nav>
+      <h1>Title</h1><div class="gap"></div><p>Middle words</p><div class="gap"></div>
+      <h3>References</h3><dl class="thebibliography"><dt>[1]</dt><dd>A book.</dd></dl>`);
+    writeFileSync(join(root, 'bare.html'), '<!DOCTYPE html><p>Text</p>');
+    const result = await run({}, ['--offline', '--review', join(dir, 'out-review'), root]);
+    assert.equal(result.status, 0, result.stderr);
+    // 4400px high: the middle screen starts at 1750px at 900px, at 1778px
+    // at 844px, and the bibliography's heading at 4200px
+    assert.deepEqual(lines(result).filter(line => line.startsWith('main')), [
+      'main-1400-light-first: 0px, "Title"', 'main-1400-light-contents: 0px, "1 One 2 Two"',
+      'main-1400-light-middle: 1750px, "Middle words"', 'main-1400-light-bibliography: 4200px, "[1]A book."',
+      'main-390-light-first: 0px, "Title"', 'main-390-light-contents: 0px, "1 One 2 Two"',
+      'main-390-light-middle: 1778px, "Middle words"', 'main-390-light-bibliography: 4200px, "[1]A book."']);
+    assert.deepEqual(lines(result).filter(line => line.startsWith('bare') && !line.includes('first')),
+      ['bare-1400-light-contents: none', 'bare-1400-light-middle: 0px, "Text"', 'bare-1400-light-bibliography: none',
+        'bare-390-light-contents: none', 'bare-390-light-middle: 0px, "Text"', 'bare-390-light-bibliography: none']);
+    assert.equal(readdirSync(join(dir, 'out-review')).length, 8 + 4);
+    // the drawer, closed on a phone, is opened for its screen
+    const screen = name => readFileSync(join(dir, 'out-review', `main-${name}.png`));
+    assert.ok(screen('1400-light-first').equals(screen('1400-light-contents')));
+    assert.ok(!screen('390-light-first').equals(screen('390-light-contents')));
+  });
 });

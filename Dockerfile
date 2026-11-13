@@ -1,7 +1,7 @@
 # The tools that build a page, for documents whose source is not trusted:
-# CI's TeX Live image with Node, for prerendering. tex8web itself is
-# mounted at run time by test/lib/contain.mjs, which tags the image by a
-# hash of this file.
+# CI's TeX Live image with Node, for prerendering, and Poppler. tex8web
+# itself is mounted at run time by test/lib/contain.mjs, which tags the
+# image by a hash of this file.
 # To update Node, pick a 22.x.y release at least two weeks old from
 # https://nodejs.org/dist/index.json, and copy the SHA256 of its
 # linux-arm64 and linux-x64 .tar.gz files from its SHASUMS256.txt.
@@ -18,3 +18,9 @@ RUN case $TARGETARCH in \
   && tar -xzf /tmp/node.tar.gz -C /usr/local --strip-components=1 --no-same-owner \
   && rm /tmp/node.tar.gz \
   && node --version
+# (pdftoppm and pdftotext, for the PDF's pages beside the page's screens:
+# a PDF built from a source that is not trusted is not trusted either)
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends poppler-utils \
+  && rm -rf /var/lib/apt/lists/* \
+  && pdftoppm -v

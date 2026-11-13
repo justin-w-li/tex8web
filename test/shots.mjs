@@ -9,6 +9,13 @@
 //   node test/shots.mjs --eval <expression> <page.html | html directory>
 //     prints the expression's value as JSON for each page, width, and
 //     scheme (a promise is awaited)
+//   node test/shots.mjs --review <out> <page.html | html directory>
+//     the screens of a first review, beside the PDF's pages, in the light
+//     scheme: <page>-<width>-light-<place>.png, a window high, for the
+//     places first (the top), contents (the table of contents, opened),
+//     middle (the middle of the page), and bibliography (from its
+//     heading). Prints a line a place, with the text the screen starts
+//     with, for finding the PDF's page, or "none"
 // Options:
 //   --cache <dir>   keep hashes of the old build's strips, so a later run
 //                   against the same old build does not shoot them again.
@@ -26,6 +33,9 @@
 //   --touch         a touch screen without a mouse
 //   --window <w>x<h>  only a window of this size
 //   --font-size <px>  the browser's default font size (16 by default)
+//   --offline       a page loads only files in its build, and nothing
+//                   from the network, for pages built from sources that
+//                   are not trusted
 // Progress goes to stderr, a line a screen, so a stall shows where it was.
 // The PDF page to compare with: pdftoppm -png -r 100 -f <n> -l <n>
 // -singlefile <pdf> <out>/pdf
@@ -44,17 +54,21 @@ const padOption = option('--pad');
 const pad = Number(padOption ?? 0);
 const expression = option('--eval');
 const then = option('--then');
-const touch = args.includes('--touch');
-if (touch) args.splice(args.indexOf('--touch'), 1);
+const flag = name => args.includes(name) && Boolean(args.splice(args.indexOf(name), 1));
+const touch = flag('--touch');
+const offline = flag('--offline');
+const review = flag('--review');
 const cache = option('--cache');
 const expect = option('--expect');
 const keepOption = option('--keep');
 const windowOption = option('--window');
 const fontSizeOption = option('--font-size');
 const [out, ...builds] = expression === undefined ? args : [undefined, ...args];
-if ((!out && expression === undefined) || !builds.length || builds.length > (expression === undefined ? 2 : 1)) {
-  console.error('usage: node test/shots.mjs [--clip <selector> [--pad <px>]] [--then <expression>] [--touch] [--window <width>x<height>] [--font-size <px>] <out> <page.html | html directory> [<new html directory>]\n'
-    + '       node test/shots.mjs --eval <expression> <page.html | html directory>');
+if ((!out && expression === undefined) || !builds.length || builds.length > (expression === undefined ? 2 : 1)
+  || (review && (builds.length > 1 || clip !== undefined || expression !== undefined))) {
+  console.error('usage: node test/shots.mjs [--clip <selector> [--pad <px>]] [--then <expression>] [--touch] [--window <width>x<height>] [--font-size <px>] [--offline] <out> <page.html | html directory> [<new html directory>]\n'
+    + '       node test/shots.mjs --eval <expression> <page.html | html directory>\n'
+    + '       node test/shots.mjs --review [--then <expression>] [--touch] [--window <width>x<height>] [--font-size <px>] [--offline] <out> <page.html | html directory>');
   process.exit(2);
 }
 if ((expect !== undefined && expect !== 'look') || (keepOption !== undefined && !/^(\d+|all)$/.test(keepOption))
@@ -81,11 +95,17 @@ const pages = path => statSync(path).isDirectory()
 const save = (name, shot) => writeFileSync(join(out, `${name}.png`), Buffer.from(shot, 'base64'));
 if (out) mkdirSync(out, { recursive: true });
 
+// the animations a change started, but not endless ones, and a frame
+async function settle(tab) {
+  await tab.evaluate(`Promise.all(document.getAnimations().filter(a => a.effect?.getComputedTiming().endTime !== Infinity)
+    .map(a => a.finished.catch(() => {})))`);
+  await tab.frame();
+}
+
 async function prepare(tab) {
   if (then === undefined) return;
   await tab.evaluate(then);
-  await tab.evaluate('Promise.all(document.getAnimations().map(a => a.finished.catch(() => {})))');
-  await tab.frame();
+  await settle(tab);
 }
 
 // A comparison shoots a page in strips of this many screens. Each capture
@@ -133,7 +153,7 @@ async function shootStrips(file, at, { width, height, colorScheme }, { from = 0,
 const tool = [import.meta.url, new URL('./lib/chrome.mjs', import.meta.url), new URL('./lib/png.mjs', import.meta.url)]
   .map(url => readFileSync(fileURLToPath(url), 'utf8'));
 const cacheKey = () => createHash('sha256').update(JSON.stringify([hashFiles(builds[0], [''], { outputs: true }),
-  strip, windows, then, touch, fontSize, ...tool, chrome.version])).digest('hex').slice(0, 16);
+  strip, windows, then, touch, fontSize, offline, ...tool, chrome.version])).digest('hex').slice(0, 16);
 
 const cached = file => existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
 
@@ -227,8 +247,59 @@ async function band(tab, url) {
   return [await tab.screenshot(box.y, box.h)];
 }
 
+// --review: the places of one page at one width, a screen and a line each
+// (text in one line, short enough to search the PDF's text for)
+const line = text => text?.replace(/\s+/g, ' ').trim().slice(0, 80);
+async function places(tab, label, height) {
+  const total = await tab.evaluate('document.documentElement.scrollHeight');
+  const shoot = async (place, y, words) => {
+    save(`${label}-${place}`, await tab.screenshot(y, Math.min(height, total - y)));
+    console.log(`${label}-${place}: ${y}px, ${JSON.stringify(words ?? '')}`);
+  };
+  // the text from the first text node at y or below to the end of its block
+  const textFrom = y => tab.evaluate(`(() => {
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    for (let node; (node = walk.nextNode());) {
+      if (!node.data.trim() || node.parentElement.closest('.tex8web-controls, #tex8web-toc, script, style')) continue;
+      range.selectNodeContents(node);
+      const box = range.getBoundingClientRect();
+      if (box.height && box.top + scrollY >= ${y}) {
+        const block = node.parentElement.closest('p, li, dt, dd, h1, h2, h3, h4, h5, h6, div') ?? node.parentElement;
+        range.setEnd(block, block.childNodes.length);
+        return range.toString();
+      }
+    }
+  })()`).then(line);
+  await shoot('first', 0, await textFrom(0));
+  // (opened where it is a closed drawer, as on a phone)
+  const contents = await tab.evaluate(`(() => {
+    const toc = document.getElementById('tex8web-toc');
+    if (toc && !toc.checkVisibility()) toc.showPopover();
+    return toc?.querySelector('.tableofcontents')?.textContent;
+  })()`);
+  if (contents === undefined) console.log(`${label}-contents: none`);
+  else {
+    await settle(tab);
+    await shoot('contents', 0, line(contents));
+    await tab.evaluate(`(toc => toc.matches(':popover-open') && toc.hidePopover())(document.getElementById('tex8web-toc'))`);
+    await settle(tab);
+  }
+  const middle = Math.max(0, Math.round((total - height) / 2));
+  await shoot('middle', middle, await textFrom(middle));
+  // (from the heading before it, if there is one)
+  const bibliography = await tab.evaluate(`(() => {
+    const list = document.querySelector('.thebibliography');
+    const heading = list?.previousElementSibling?.matches('h1, h2, h3, h4, h5, h6') ? list.previousElementSibling : list;
+    return list && { y: Math.floor(heading.getBoundingClientRect().top + scrollY), words: list.textContent };
+  })()`);
+  if (!bibliography) console.log(`${label}-bibliography: none`);
+  else await shoot('bibliography', bibliography.y, line(bibliography.words));
+}
+
 const names = new Set(builds.flatMap(build => pages(build).map(page => basename(page))));
-const chrome = await launch({ fontSize });
+// (offline, the files of the builds, a page's directory for a page)
+const chrome = await launch({ fontSize, offline: offline && builds.map(build => statSync(build).isDirectory() ? build : dirname(build)) });
 let differ = false;
 try {
   for (const page of builds.length === 1 ? pages(builds[0]) : [...names].map(name => join(builds[0], name))) {
@@ -247,6 +318,14 @@ try {
           const [differing, before, after] = await compare(page, label, { width, height, colorScheme });
           differ ||= differing.length > 0;
           report(label, differing, before, after, height, expect === 'look');
+          continue;
+        }
+        if (review) {
+          if (colorScheme === 'dark') continue;
+          await chrome.withPage(pathToFileURL(page).href, { width, height, colorScheme, touch }, async tab => {
+            await prepare(tab);
+            await places(tab, label, height);
+          });
           continue;
         }
         const shots = [];

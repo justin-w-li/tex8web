@@ -4,9 +4,10 @@
 //   const page = await chrome.open('file:///…/page.html', { javascript: false });
 //   await page.evaluate('document.title'); await page.screenshot(y, height);
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { constants, tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { takeSlot } from './slots.mjs';
 
 const candidates = [
@@ -31,14 +32,17 @@ export async function until(read, wanted = Boolean, ms = 5000) {
 }
 
 // a DevTools connection: send(method, params) -> result, failing if Chrome
-// does not answer in two minutes, as Chrome has then crashed
+// does not answer in two minutes, as Chrome has then crashed; on(method,
+// f) calls f(params) on each of the method's events
 async function connect(url) {
   const ws = new WebSocket(url);
   await new Promise((done, fail) => { ws.onopen = done; ws.onerror = fail; });
   let id = 0;
   const pending = new Map();
+  const listeners = new Map();
   ws.onmessage = event => {
     const message = JSON.parse(event.data);
+    if (message.method) listeners.get(message.method)?.(message.params);
     const handler = pending.get(message.id);
     if (!handler) return;
     pending.delete(message.id);
@@ -52,6 +56,7 @@ async function connect(url) {
       pending.set(++id, { done, fail, timer });
       ws.send(JSON.stringify({ id, method, params }));
     }),
+    on: (method, f) => listeners.set(method, f),
     close: () => ws.close(),
   };
 }
@@ -76,22 +81,34 @@ const watch = `
     select undef, undef, undef, 0.1;
   }`;
 
-export async function launch({ fontSize } = {}) {
+// offline: the directories whose files pages may load. Pages then load
+// nothing else, from the network or from other files, and download
+// nothing: for pages built from sources that are not trusted, which can
+// hold script. netLog: a file for Chrome's log of network events, for the
+// test of offline
+export async function launch({ fontSize, offline, netLog } = {}) {
   const binary = candidates.find(existsSync);
   if (!binary) throw new Error('no Chrome found; set CHROME to its executable');
   // (a Chrome holds a build slot like a build does, until it is closed)
   const release = await takeSlot();
   const profile = mkdtempSync(join(tmpdir(), 'tex8webchrome'));
   // (the default font size in px, as a reader sets it in Chrome's
-  // settings, which a screenshot keeps)
-  if (fontSize) {
+  // settings, which a screenshot keeps. Offline, WebRTC sends UDP only
+  // through a proxy, and there is none: in Chrome 157, the switch
+  // --force-webrtc-ip-handling-policy still let STUN's UDP out)
+  if (fontSize || offline) {
     mkdirSync(join(profile, 'Default'));
-    writeFileSync(join(profile, 'Default', 'Preferences'),
-      JSON.stringify({ webkit: { webprefs: { default_font_size: fontSize } } }));
+    writeFileSync(join(profile, 'Default', 'Preferences'), JSON.stringify({
+      ...fontSize && { webkit: { webprefs: { default_font_size: fontSize } } },
+      ...offline && { webrtc: { ip_handling_policy: 'disable_non_proxied_udp' } } }));
   }
   // (Chrome refuses to run as root with its sandbox, as in a container)
   const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars',
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
+    // (offline: every host name fails to resolve, with no DNS lookup. The
+    // rules map IP addresses too, loopback included, in Chrome 157)
+    ...offline ? ['--host-resolver-rules=MAP * ~NOTFOUND'] : [],
+    ...netLog ? [`--log-net-log=${netLog}`] : [],
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'],
     { stdio: ['ignore', 'ignore', openSync(`${profile}.log`, 'w')], detached: true });
   // Chrome has a separate process group, so it outlives this process when
@@ -134,6 +151,19 @@ export async function launch({ fontSize } = {}) {
   }
   const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
   const browser = await connect(version.webSocketDebuggerUrl);
+  if (offline) await browser.send('Browser.setDownloadBehavior', { behavior: 'deny' });
+  // (real paths, as Chrome follows links)
+  const allowed = (offline || []).map(dir => realpathSync(dir));
+  const mayLoad = url => {
+    if (url.startsWith('data:')) return true;
+    if (!url.startsWith('file:')) return false;
+    try {
+      const path = realpathSync(fileURLToPath(url));
+      return allowed.some(dir => path === dir || path.startsWith(dir + sep));
+    } catch {
+      return false;
+    }
+  };
 
   async function attach(targetId, url, { javascript = true, width = 1000, height = 900, colorScheme = 'light', before, touch = false, fontSize }) {
     const page = await connect(`ws://127.0.0.1:${port}/devtools/page/${targetId}`);
@@ -142,6 +172,16 @@ export async function launch({ fontSize } = {}) {
     if (touch) await page.send('Emulation.setTouchEmulationEnabled', { enabled: true });
     await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: colorScheme }] });
     if (!javascript) await page.send('Emulation.setScriptExecutionDisabled', { value: true });
+    // (offline, every other request is aborted, so that a navigation away
+    // leaves the page in place, not an error page)
+    if (offline) {
+      page.on('Fetch.requestPaused', ({ requestId, request }) => {
+        const may = mayLoad(request.url);
+        page.send(may ? 'Fetch.continueRequest' : 'Fetch.failRequest',
+          may ? { requestId } : { requestId, errorReason: 'Aborted' }).catch(() => {});
+      });
+      await page.send('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
+    }
     await page.send('Page.enable');
     // (the default font size in px, for a check without screenshots: a
     // capture beyond the window undoes it. See launch's fontSize)
