@@ -1030,27 +1030,35 @@
 \catcode58 12
 
 % an \includegraphics without its .xbb file in a picture that tex4ht draws
-% as an image, such as overpic, a LaTeX picture, or a TikZ node. There,
-% \HLet (tex4ht.sty) runs graphics.sty's \Gin@setfile in place of
-% graphics.4ht's, which makes the missing file a warning, so the build
-% stopped at "Cannot determine size of graphic". The bounding box is read
-% from extractbb instead, as dvipdfmx.def does. TeX Live's restricted shell
-% escape allows extractbb. Without shell escape, as with --contain, the
-% errors are warnings, as in graphics.4ht, and the graphic is 72bp square.
+% as an image, such as overpic, a LaTeX picture, or a TikZ node. Outside
+% these pictures, graphics.4ht's \Gin@setfile makes the missing file a
+% warning. Inside them, \HLet (tex4ht.sty) runs graphics.sty's version,
+% which stops the build at "Cannot determine size of graphic". There the
+% bounding box is read from extractbb instead, with dvipdfmx.def's options.
+% TeX Live's restricted shell escape allows extractbb. graphics.sty keeps
+% the size it reads, keyed on the file name, and a later \includegraphics
+% of the file outside a picture would take it, so the size from extractbb
+% is dropped after the picture's \includegraphics. Without shell escape, as
+% with --contain, the errors are warnings, as in graphics.4ht, and the
+% picture is square: at its requested width, or 72bp wide with no size.
 \catcode58 11
 \ifdefined\Gin@setfile
     \web@needs{o:Gin@setfile:}%
-    \@ifundefined{Gin@page}{\let\Gin@page\@empty}{}%
-    \@ifundefined{Gin@pagebox}{\def\Gin@pagebox{cropbox}}{}%
     \let\web@Gin@setfile\o:Gin@setfile:
     \let\web@Gread@eps@aux\Gread@eps@aux
-    \def\o:Gin@setfile:{\let\Gread@eps@aux\web@Gread@bb
-        \let\@latex@error\grp:warning \let\@ehc\empty \web@Gin@setfile}
+    \let\web@Gread@drop\relax
+    \def\o:Gin@setfile:#1#2#3{\let\Gread@eps@aux\web@Gread@bb
+        \let\@latex@error\grp:warning \let\@ehc\empty \web@Gin@setfile{#1}{#2}{#3}%
+        \web@Gread@drop \global\let\web@Gread@drop\relax}
     \def\web@Gread@bb#1{%
         \ifeof\@inputcheck
             \immediate\openin\@inputcheck="|extractbb
                 \ifx\Gin@page\@empty\else -p \Gin@page\space\fi
-                -B \Gin@pagebox\space -O \Gin@base\Gin@ext"\relax
+                \ifx\Gin@pagebox\@empty\else -B \Gin@pagebox\space\fi
+                -O \Gin@base\Gin@ext"\relax
+            \xdef\web@Gread@drop{\global\let
+                \expandafter\noexpand\csname #1 bbox\Gread@attr@hash\endcsname
+                \relax}%
         \fi
         \web@Gread@eps@aux{#1}}
 \fi

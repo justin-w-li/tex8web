@@ -318,6 +318,10 @@ const overpic = (doc, ext, after) =>
 // a PNG without its .xbb file, outside any picture: tex4ht's image of the
 // PNG itself, 80pt wide
 const plainPng = /<img [^>]*src='test-overpic-hidpi\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.2319\)' \/> After plain\./;
+// the same PNG with scale or height, after an overpic of it: tex4ht's
+// size, since the natural size read for the overpic is not kept
+const plainSized = ['scaled', 'height'].map(after =>
+  new RegExp(`<img (?:(?!style=)[^>])*src='test-overpic-hidpi\\.png'(?:(?!style=)[^>])*\\/> After plain ${after}\\.`));
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -334,7 +338,7 @@ const pictures = {
   // text between them)
   'test-overpic': [...['share', 'natural', 'trimmed', 'grid', 'path', 'permil', 'set', 'boxed', 'picture', 'figure',
     'bare name', 'italic', 'minipage', 'cell', 'photo', 'moved', 'cropped', 'second page', 'dense', 'folder',
-    'natural picture', 'subfigure', 'found'].map(after => overpic('test-overpic', 'png', after)), plainPng],
+    'natural picture', 'subfigure', 'found'].map(after => overpic('test-overpic', 'png', after)), plainPng, ...plainSized],
   'test-overpic-drawn': [...['overpic', 'picture', 'node', 'found'].map(after => overpic('test-overpic-drawn', 'svg', after)),
     plainPng],
   'examples/basic': [/<img [^>]*style='width:calc\(var\(--tex8web-textwidth\) \* 0\.25\)'/],

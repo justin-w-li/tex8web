@@ -10,7 +10,8 @@
 % page of a PDF, a PNG at 144 dpi, a folder in the name, a LaTeX picture
 % at natural size, and a subfigure. The last overpic has its .xbb file,
 % which the fix must not break. Nor must it change a plain \includegraphics
-% of a PNG without its .xbb file, outside any picture.
+% of a PNG without its .xbb file, outside any picture, sized with width,
+% scale, or height after an overpic of the same PNG.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}
@@ -170,6 +171,12 @@ After subfigure.
 
 \includegraphics[width=80pt]{test-overpic-hidpi.png}
 After plain.
+
+\includegraphics[scale=0.5]{test-overpic-hidpi.png}
+After plain scaled.
+
+\includegraphics[height=40pt]{test-overpic-hidpi.png}
+After plain height.
 
 \begin{overpic}[width=80pt]{test-picture.png}
 \edges
