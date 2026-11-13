@@ -408,21 +408,31 @@
     \exp_not:V \c__web_marks_tl
     \exp_not:n { | \\qedhere \b | \\tag \s* \*? \s* \{ [^\{\}]* \} )* )? \Z }
 }
-% a period or comma after the picture, maybe with marks after it, which
-% \webpicturemark sets after the picture, on its bottom line
-% (css/tex8web.css). The name has only letters, to be rescanned
+% a period or comma after the picture, maybe with marks after it. It is
+% taken out of the body, and \__web_picture_punct: sets it after the
+% picture, on its bottom line (css/tex8web.css). (The body is read again
+% as it is set, which a tikzcd's & needs)
 \regex_const:Nn \c__web_picture_punct_regex {
     ( [.,] ) ( (?: \s | \c{label} \s* \cB. (?: \c[^BE]. )* \cE. | \c{notag} | \c{nonumber} | \c{qedhere}
         | \c{tag} \s* (?: \* \s* )? \cB. (?: \c[^BE]. )* \cE. )* ) \Z
 }
-\cs_new_protected:Npn \webpicturemark #1 {
-    \HCode{<span~class="tex8web-picture-punct">} \hbox{#1} \HCode{</span>}
-}
 \tl_new:N \l__web_picture_body_tl
+\tl_new:N \l__web_picture_punct_tl
+\seq_new:N \l__web_picture_seq
 \cs_new_protected:Npn \__web_picture_body:n #1 {
     \tl_set:Nn \l__web_picture_body_tl {#1}
-    \regex_replace_once:NnN \c__web_picture_punct_regex
-        { \c{webpicturemark} \cB\{ \1 \cE\} \2 } \l__web_picture_body_tl
+    \tl_clear:N \l__web_picture_punct_tl
+    \regex_extract_once:NnNT \c__web_picture_punct_regex {#1} \l__web_picture_seq {
+        \tl_set:Ne \l__web_picture_punct_tl { \seq_item:Nn \l__web_picture_seq { 2 } }
+        \regex_replace_once:NnN \c__web_picture_punct_regex { \2 } \l__web_picture_body_tl
+    }
+}
+\cs_new_protected:Npn \__web_picture_punct: {
+    \tl_if_empty:NF \l__web_picture_punct_tl {
+        \HCode{<span~class="tex8web-picture-punct">}
+        \hbox { \tl_use:N \l__web_picture_punct_tl }
+        \HCode{</span>}
+    }
 }
 % the end of each picture, to find a body with two
 \regex_const:Nn \c__web_picture_end_regex
@@ -456,6 +466,17 @@
         }
     }
 }
+% a picture with a \tag in a \[ \], which takes one with amsmath, as
+% equation*
+\prg_new_protected_conditional:Npnn \__web_if_tagged_picture:n #1 { TF } {
+    \cs_if_exist:NTF \tag
+        {
+            \tl_if_in:nnTF {#1} {\tag}
+                { \__web_if_picture:nTF {#1} { \prg_return_true: } { \prg_return_false: } }
+                { \prg_return_false: }
+        }
+        { \prg_return_false: }
+}
 % the same, in a display that takes no \tag: \[ \], $$ $$, and displaymath
 \prg_new_protected_conditional:Npnn \__web_if_bare_picture:n #1 { TF } {
     \__web_if_picture:nTF {#1}
@@ -479,7 +500,8 @@
     \__web_if_bare_picture:nTF {#1}
         {
             \__web_picture_body:n {#1}
-            \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } $$ }
+            \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } }
+            \__web_picture_punct: $$
         }
         { \__web_AltlDisplayDollars:w #1 $$ }
 }
@@ -490,27 +512,21 @@
             \__web_if_bare_picture:nTF {#1}
                 {
                     \__web_picture_body:n {#1}
-                    \exp_args:Ne \__web_picture:n { \exp_not:V \l__web_picture_body_tl \exp_not:N \] }
+                    \exp_args:NV \__web_picture:n \l__web_picture_body_tl
+                    \__web_picture_punct: \]
                 }
                 {
-                    % (with amsmath, \[ \] is equation*, which takes a \tag)
-                    \cs_if_exist:NTF \tag
+                    \__web_if_tagged_picture:nTF {#1}
+                        { \__web_picture_tagged:n {#1} \] }
                         {
-                            \tl_if_in:nnTF {#1} {\tag}
-                                { \__web_if_picture:nTF {#1} { \use_i:nn } { \use_ii:nn } }
-                                { \use_ii:nn }
+                            \str_if_in:nnTF {#1} {\qedhere}
+                                {
+                                    \tl_clear:N \l__web_alignment_tl
+                                    \__web_rows:nn {equation*} {#1}
+                                    \exp_after:wN \__web_AltlDisplay:w \l__web_body_tl \]
+                                }
+                                { \__web_AltlDisplay:w #1 \] }
                         }
-                        { \use_ii:nn }
-                    { \__web_picture_set:nn {equation*} {#1} \] }
-                    {
-                    \str_if_in:nnTF {#1} {\qedhere}
-                        {
-                            \tl_clear:N \l__web_alignment_tl
-                            \__web_rows:nn {equation*} {#1}
-                            \exp_after:wN \__web_AltlDisplay:w \l__web_body_tl \]
-                        }
-                        { \__web_AltlDisplay:w #1 \] }
-                    }
                 }
         }
 }
@@ -805,45 +821,66 @@
 % \qedhere, as amsthm sets the box under the number (css/tex8web.css)
 \tl_new:N \l__web_picture_tag_tl
 \bool_new:N \g__web_picture_qed_bool
+% (the number's step comes before the display, so that its anchor does,
+% as before MathJax's displays: page.lua marks it, and a link to it shows
+% the whole display)
 \cs_new_protected:Npn \__web_picture_display:nn #1#2 {
-    \a:MathjaxBlock
-    \__web_picture_set:nn {#1} {#2}
-    \b:MathjaxBlock
-}
-% (also in the math of a \[ \] with a \tag)
-\cs_new_protected:Npn \__web_picture_set:nn #1#2 {
     \group_begin:
-        \bool_gset_false:N \g__web_picture_qed_bool
-        \cs_set_eq:NN \__web_picture_qedhere: \qedhere
-        \cs_set_protected:Npn \qedhere { \bool_gset_true:N \g__web_picture_qed_bool }
-        \cs_set_protected:Npn \tag { \@ifstar \use_none:n \use_none:n }
-        \cs_set_eq:NN \notag \prg_do_nothing:
-        \cs_set_eq:NN \nonumber \prg_do_nothing:
-        \bool_set_false:N \l__web_picture_back_bool
-        \tl_clear:N \l__web_picture_tag_tl
-        \__web_picture_tag:w #2 \tag \q_stop
-        \tl_if_empty:NT \l__web_picture_tag_tl {
-            \clist_if_in:NnT \c__web_numbered_clist {#1} {
-                \tl_if_in:nnF {#2} {\notag} {
-                    \tl_if_in:nnF {#2} {\nonumber} {
-                        \refstepcounter{equation}
-                        \tl_set:Nn \l__web_picture_tag_tl { (\theequation) }
-                    }
+        \__web_picture_number:nn {#1} {#2}
+        \a:MathjaxBlock
+        \__web_picture_set:n {#2}
+        \b:MathjaxBlock
+    \group_end:
+}
+% a \[ \] with a \tag, in its math: tex4ht has opened the display, which is
+% closed before the tag's anchor and opened again after it, a span, as in
+% math. page.lua removes the empty display this leaves
+\cs_new_protected:Npn \__web_picture_tagged:n #1 {
+    \group_begin:
+        \b:MathjaxBlock
+        \__web_picture_number:nn {equation*} {#1}
+        \a:MathjaxBlock
+        \__web_picture_set:n {#1}
+    \group_end:
+}
+% the display's number or tag, in \l__web_picture_tag_tl, with the step of
+% the counter that a \label names
+\cs_new_protected:Npn \__web_picture_number:nn #1#2 {
+    \bool_set_false:N \l__web_picture_back_bool
+    \tl_clear:N \l__web_picture_tag_tl
+    \__web_picture_tag:w #2 \tag \q_stop
+    \tl_if_empty:NT \l__web_picture_tag_tl {
+        \clist_if_in:NnT \c__web_numbered_clist {#1} {
+            \tl_if_in:nnF {#2} {\notag} {
+                \tl_if_in:nnF {#2} {\nonumber} {
+                    \refstepcounter{equation}
+                    \tl_set:Nn \l__web_picture_tag_tl { (\theequation) }
                 }
             }
         }
-        \__web_picture_body:n {#2}
-        \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } }
-        \bool_if:NT \l__web_picture_back_bool
-            { \setcounter{equation}{\l__web_picture_count_int} }
-        % (in the upright font, as amsmath and LaTeX set a number)
-        \tl_if_empty:NF \l__web_picture_tag_tl {
-            \HCode{<span~class="tex8web-picture-tag">}
-            \hbox { \normalfont \normalcolor \l__web_picture_tag_tl }
-            \HCode{</span>}
-        }
-        \bool_if:NT \g__web_picture_qed_bool { \hbox { \__web_picture_qedhere: } }
-    \group_end:
+    }
+}
+% the picture, its number, and the box of a \qedhere, in the group of the
+% number's step
+\cs_new_protected:Npn \__web_picture_set:n #1 {
+    \bool_gset_false:N \g__web_picture_qed_bool
+    \cs_set_eq:NN \__web_picture_qedhere: \qedhere
+    \cs_set_protected:Npn \qedhere { \bool_gset_true:N \g__web_picture_qed_bool }
+    \cs_set_protected:Npn \tag { \@ifstar \use_none:n \use_none:n }
+    \cs_set_eq:NN \notag \prg_do_nothing:
+    \cs_set_eq:NN \nonumber \prg_do_nothing:
+    \__web_picture_body:n {#1}
+    \exp_args:Ne \__web_picture:n { \exp_not:N \hbox { \exp_not:V \l__web_picture_body_tl } }
+    \__web_picture_punct:
+    \bool_if:NT \l__web_picture_back_bool
+        { \setcounter{equation}{\l__web_picture_count_int} }
+    % (in the upright font, as amsmath and LaTeX set a number)
+    \tl_if_empty:NF \l__web_picture_tag_tl {
+        \HCode{<span~class="tex8web-picture-tag">}
+        \hbox { \normalfont \normalcolor \l__web_picture_tag_tl }
+        \HCode{</span>}
+    }
+    \bool_if:NT \g__web_picture_qed_bool { \hbox { \__web_picture_qedhere: } }
 }
 % \tag{text} or \tag*{text} in the body: the tag, which a \label names
 \cs_new_protected:Npn \__web_picture_tag:w #1 \tag #2 \q_stop {

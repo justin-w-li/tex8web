@@ -551,7 +551,7 @@ const centered = `(() => {
   });
   return { checked: [pictures.length, marks], wrong };
 })()`;
-const centers = { 'test-display-picture': [32, 11], 'test-display-picture-hyperref': [5, 2] };
+const centers = { 'test-display-picture': [33, 12], 'test-display-picture-hyperref': [5, 2] };
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
@@ -1327,6 +1327,20 @@ async function compare(chrome, doc, ok) {
             // and at a phone's width, where a picture may fill the column
             const phone = await chrome.withPage(pathToFileURL(file).href, { javascript: false, width: 390 }, at => at.evaluate(centered));
             for (const [name, what] of phone.wrong) problems.push(`${html} at 390px: the display picture ${name}: ${what}`);
+            // a link to a numbered picture goes to the anchor before its
+            // display: the picture is below the top of the window, and
+            // highlighted as a target
+            const anchors = await page.evaluate(`[...document.querySelectorAll('.mathjax-block:has(> img)')]
+              .map(block => block.previousElementSibling).filter(a => a?.matches('a.tex8web-eq-anchor[id]')).map(a => a.id)`);
+            if (!anchors.length) problems.push(`${html}: no anchor before a numbered picture`);
+            for (const id of anchors) {
+              const seen = await chrome.withPage(`${pathToFileURL(file).href}#${id}`, { javascript: false }, at => at.evaluate(`(() => {
+                const img = document.getElementById(${JSON.stringify(id)}).nextElementSibling.querySelector(':scope > img');
+                return [...img.getBoundingClientRect().top < 0 ? ['above the window'] : [],
+                  ...getComputedStyle(img).backgroundColor === 'rgba(0, 0, 0, 0)' ? ['not highlighted'] : []];
+              })()`));
+              for (const what of seen) problems.push(`${html}: the picture linked as #${id}: ${what}`);
+            }
           }
           if (verbatimFamilies[doc.name]) {
             const literals = await page.evaluate(verbatimFonts(verbatimFamilies[doc.name], doc.name));

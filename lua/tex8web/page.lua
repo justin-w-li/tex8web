@@ -306,8 +306,19 @@ local function mark_anchors(nodes, last, name)
   return count, 0
 end
 
+-- (an empty display is left before a picture's display with a \tag in a
+-- \[ \], so that the tag's anchor comes before the picture's display:
+-- tex8web-math.tex. It is removed)
+local function empty(element)
+  for _, node in ipairs(element:get_children()) do
+    if node:is_element() or node:is_text() and node:get_text():find("%S") then return false end
+  end
+  return true
+end
+
 function M.equation_anchors(document)
   for _, display in ipairs(document:query_selector(".mathjax-env, .mathjax-block")) do
+    if empty(display) then display:remove_node() goto next end
     local nodes = display:get_parent():get_children()
     local at
     for i, node in ipairs(nodes) do
@@ -322,6 +333,7 @@ function M.equation_anchors(document)
       local inside = nodes[before]:get_children()
       mark_anchors(inside, #inside, "tex8web-eq-anchor-end")
     end
+    ::next::
   end
 end
 

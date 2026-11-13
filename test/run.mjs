@@ -404,7 +404,7 @@ const pictureNumbers = { 'Equation label first': '(2)', 'Equation tag graphics':
   'Equation notag': '', 'Bracket tikz node': '', 'Equation star resizebox': '', 'Equation wide graphics': '(3)',
   'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)', 'Equation long tag': 'the long tag',
   'Theorem equation graphics': '(5)', 'Bracket tag graphics': '(C)', 'Equation tikzcd period': '(6)',
-  'Dollars graphics comma': '', 'Bracket tikzpicture period': '' };
+  'Dollars graphics comma': '', 'Bracket tikzpicture period': '', 'Numbered after a blank line': '(7)' };
 // the punctuation after the picture, in its own element after it
 const picturePuncts = { 'Equation tikzcd period': '.', 'Dollars graphics comma': ',', 'Bracket tikzpicture period': '.' };
 pictureCases.push(...Object.keys(pictureNumbers));
@@ -1652,6 +1652,7 @@ function check(doc, result, out, aux) {
       if (extra === 'tex8web-qed' && !display.includes(`class='${extra}'`)) problems.push(`${name}: no ${extra} in the display`);
       if (extra?.startsWith('(')) {
         if (!display.replace(/<[^>]+>/g, '').includes(extra)) problems.push(`${name}: no ${extra} in the display`);
+        if (/<a id=/.test(display)) problems.push(`${name}: the number's anchor is in the display`);
         // each \ref or \eqref of the equation: its number, linking to an id in the display
         const refs = [...flat.matchAll(/Reference to the triangle: (?:(?!<\/p>)[^])*?<a href='#([^']+)'[^>]*>((?:(?!<\/a>)[^])*)<\/a>/g)];
         if (!refs.length) problems.push(`${name}: no reference`);
@@ -1667,12 +1668,19 @@ function check(doc, result, out, aux) {
       const display = element(text, /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
       const tag = display.match(/<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
       if (tag !== pictureNumbers[name]) problems.push(`${name}: the display's number is "${tag}", not "${pictureNumbers[name]}"`);
+      // (the number's anchor before the display, marked, as before MathJax's
+      // displays, or at the end of the paragraph before, with no empty
+      // display left beside it)
+      if (tag && /<a id=/.test(display)) problems.push(`${name}: the number's anchor is in the display`);
+      if (tag && !/<a [^>]*\btex8web-eq-anchor(?:-end\b[^>]*><\/a>\s*<\/p>|\b[^>]*><\/a>)\s*$/.test(text.slice(0, text.indexOf(display)))) problems.push(`${name}: no marked anchor right before the display`);
+      if (/<(div|span) class='[^']*\bmathjax-block\b[^']*'>\s*<\/\1>/.test(text)) problems.push(`${name}: an empty display`);
       // (upright, as amsmath sets a number, also in a theorem's italic)
       if (/<span class='tex8web-picture-tag'>(?:(?!<\/span>)[^])*class='[^']*ti-/.test(display)) problems.push(`${name}: the display's number is in italic`);
       const punct = display.match(/<img [^>]*>\s*<span class='tex8web-picture-punct'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
       if (punct !== (picturePuncts[name] ?? '')) problems.push(`${name}: the punctuation after the picture is "${punct}", not "${picturePuncts[name] ?? ''}"`);
       if (name === 'Proof equation tikzpicture' && !/tex8web-picture-tag(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the number`);
       if (name === 'Equation after a blank line' && !/<p\b[^>]*>\s*where the text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
+      if (name === 'Numbered after a blank line' && !/<p\b[^>]*>\s*where the numbered text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
       if (name === 'Equation tag graphics' && !/Reference to the tag: <a [^>]*>A(?:<!--(?:(?!-->)[^])*-->)?<\/a>/.test(text)) problems.push(`${name}: the reference does not read A`);
     });
     math.forEach((name, j) => {

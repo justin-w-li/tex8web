@@ -5,8 +5,8 @@
 % paragraph that names it. Also a \label before the picture, \tag, \tag*,
 % \notag, a \tikz path with braces, a \resizebox, a picture as wide as
 % the text with a number and with a long \tag*, a display after a blank line, \qedhere in a
-% numbered equation, a number in a theorem, a \tag in \[ \], and a period or a comma
-% after the picture. Ordinary display math stays as it is.
+% numbered equation, a number in a theorem, a \tag in \[ \], a period or a comma
+% after the picture, and a number after a blank line. Ordinary display math stays as it is.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -163,6 +163,13 @@ $$ \includegraphics[alt={dollars graphics comma},width=2cm]{test-picture.png}, $
 
 Bracket tikzpicture period.
 \[ \begin{tikzpicture}\draw (0,0) -- (1,1);\end{tikzpicture}. \]
+
+Numbered after a blank line.
+
+\begin{equation}
+\begin{tikzpicture}\draw (0,0) -- (1,1);\end{tikzpicture}
+\end{equation}
+where the numbered text goes on.
 
 Ordinary display.
 \[ y = 1 \]
