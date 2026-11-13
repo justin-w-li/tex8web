@@ -117,6 +117,23 @@
     \fi
 }
 
+% An active !, as babel's \useshorthands{!} or shortvrb's \MakeShortVerb{\!}
+% make it in the preamble. tex4ht reads its .4ht files in \Preamble, which
+% the config runs at \begin{document}. tex4ht first resets the catcodes of a
+% list of characters (tex4ht.sty), and ! is not in the list. The .4ht files
+% use ! as a delimiter (html4.4ht), so \Preamble makes ! ordinary. The
+% config's \begin{document} restores its catcode, before babel's begin
+% document code. \Preamble is defined by tex4ht.sty, which is loaded after
+% this package, and this hook runs again at the config's \begin{document}.
+\AddToHook{env/document/before}{%
+    \ifdefined\web@Preamble\else
+        \global\let\web@Preamble\Preamble
+        \gdef\Preamble{\edef\web@bangcatcode{\the\catcode`\!}\catcode`\!=12
+            \web@Preamble}%
+    \fi
+}
+\AddToHook{begindocument/before}{\catcode`\!=\web@bangcatcode\relax}
+
 % hyperref's hidelinks, under which tex8web-page.tex leaves links unmarked:
 % as a package option, or later in \hypersetup (kvoptions'
 % \KV@Hyp@hidelinks). The link colors and \@pdfborder cannot show it,

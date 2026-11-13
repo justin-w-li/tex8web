@@ -325,7 +325,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, `\rule` in text, the space in table cells and the alignment of paragraph cells, the table of contents, lists, `\fbox` and `\colorbox`, bibliographies, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, `\WebTerm`, and TS1 symbols |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, and the measurements and heading fonts of the document |
 | `tex/tex8web-boxes.tex` | tcolorbox boxes |
-| `tex/tex8web-hooks.sty` | loaded before the preamble: settings lost under tex4ht, dcolumn's old names for `dcolumn.4ht`, and `\web@needs` |
+| `tex/tex8web-hooks.sty` | loaded before the preamble: settings lost under tex4ht, dcolumn's old names for `dcolumn.4ht`, `!` made ordinary while tex4ht reads its `.4ht` files, and `\web@needs` |
 | `css/tex8web.css` | the page styles |
 | `lua/tex8web/macros.lua`, `preamble.lua` | macros in math, and their colors |
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula source, colors, spacing, theorems in boxes, footnotes, links, page controls, the table of contents, meta tags, and scripts |
