@@ -1,0 +1,46 @@
+% XCharter in T1, whose TFMs put the f-ligatures in slots 27 to 31 in
+% another order than T1's: 29 ff, 31 fi, 30 fl, 28 ffi, and 27 ffl. Each
+% line below is one of the package's fonts in T1, with every ligature, and
+% the page shows the letters the PDF shows. The small capitals, the sans
+% serif, and the typewriter text have no such ligatures, and guard them.
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{XCharter}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Baffled officers fly}
+
+Upright: off first buffer efficient fly baffle.
+
+\textit{Italic: off first buffer efficient fly baffle.}
+
+\textbf{Bold: off first buffer efficient fly baffle.}
+
+\textbf{\textit{Bolditalic: off first buffer efficient fly baffle.}}
+
+\textsl{Slanted: off first buffer efficient fly baffle.}
+
+\textbf{\textsl{Boldslanted: off first buffer efficient fly baffle.}}
+
+\textsc{Smallcaps: off first buffer efficient fly baffle.}
+
+Marked text.\footnote{Note: off first buffer efficient fly baffle.}
+
+\begin{theorem}
+Theorem: off first buffer efficient fly baffle.
+\end{theorem}
+
+{\fontfamily{XCharter-LF}\selectfont Lining: off first buffer efficient fly baffle.}
+
+{\fontfamily{XCharter-OsF}\selectfont Oldstyle: off first buffer efficient fly baffle.}
+
+{\fontfamily{XCharter-TOsF}\selectfont Tabularoldstyle: off first buffer efficient fly baffle.}
+
+{\fontfamily{XCharter-TLF}\selectfont Tabularlining: off first buffer efficient fly baffle.}
+
+\textsf{Sans: off first buffer efficient fly baffle.}
+
+\texttt{Mono: off first buffer efficient fly baffle.}
+\end{document}

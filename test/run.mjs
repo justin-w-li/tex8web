@@ -1181,6 +1181,19 @@ const verbatim = {
     /vf-custom-fancyXaXb/, /vf-custom-fancy-blockXaXb/],
 };
 
+// The f-ligatures of fonts whose TFMs put them in other slots than their
+// encoding's: each line's words, in the text with tags removed and each
+// ligature character as its letters. The small capitals, sans serif, and
+// typewriter lines have no ligatures.
+const ligature = 'off first buffer efficient fly baffle.';
+const ligatures = {
+  'test-xcharter': ['Baffled officers fly', ...['Upright', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Boldslanted',
+    'Smallcaps', 'Note', 'Theorem', 'Lining', 'Oldstyle', 'Tabularoldstyle', 'Tabularlining', 'Sans', 'Mono']
+    .map(line => `${line}: ${ligature}`)],
+  'test-xcharter-osf': ['Upright', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Smallcaps', 'Theorem']
+    .map(line => `${line}: ${ligature}`),
+};
+
 // the fonts listed in data-fonts on the inline script
 const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1] ?? '').split(/\s+/).filter(Boolean);
 
@@ -1464,6 +1477,11 @@ function check(doc, result, out, aux) {
       if (!pattern.test(withStyles ? flat + styles : flat)) problems.push(`no ${pattern.source} ${what}`);
     }
   }
+  const words = flat.replace(/<[^>]*>/g, '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16))).normalize('NFKC');
+  for (const line of ligatures[doc.name] ?? []) {
+    if (!words.includes(line)) problems.push(`no '${line}' in the text`);
+  }
   if (preloads[doc.name]) {
     const found = fontsListed(html).map(href => href.match(/^fonts\/(.+)\.woff2$/)?.[1]).sort().join(' ');
     const wanted = [...preloads[doc.name]].sort().join(' ');
@@ -1512,7 +1530,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, glyphs, expected, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, glyphs, ligatures, expected, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 
