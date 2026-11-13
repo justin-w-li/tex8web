@@ -378,14 +378,14 @@
 }{}
 
 % a picture in display math is typeset by TeX, rescanning the source,
-% which tex4ht read with & as a letter: a display with a tikzcd, and one
-% whose body is only a tikzpicture, a \tikz, an \includegraphics, or a
-% picture environment, with at most a \label and a \qedhere. MathJax
-% knows none of them. A picture beside math stays MathJax's.
+% which tex4ht read with & as a letter: a body that is only a tikzpicture,
+% a \tikz, a tikzcd, an \includegraphics, or a picture environment, with
+% at most a \label and a \qedhere, and a \[ \] with a tikzcd. MathJax
+% knows none of them. Other pictures beside math stay MathJax's.
 \regex_const:Nn \c__web_picture_regex {
-    \\begin \s* \{ tikzcd \}
-    | \A \s* (?:
+    \A \s* (?:
         \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
+        | \\begin \s* \{ tikzcd \} .* \\end \s* \{ tikzcd \}
         | \\begin \s* \{ picture \} .* \\end \s* \{ picture \}
         | \\includegraphics \s* \*? \s* (?: \[ [^\]]* \] \s* )* \{ [^\{\}]* \}
         | \\tikz \b \s* (?: \[ [^\]]* \] \s* )? (?: \{ .* \} | [^;\{]* ; )
@@ -410,16 +410,20 @@
     \__web_if_picture:nTF {#1} { \__web_picture:n { \hbox{#1} $$ } } { \__web_AltlDisplayDollars:w #1 $$ }
 }
 \cs_set:Npn \AltlDisplay #1 \] {
-    \__web_if_picture:nTF {#1}
+    \str_if_in:nnTF {#1} {\begin{tikzcd}}
         { \__web_picture:n {#1\]} }
         {
-            \str_if_in:nnTF {#1} {\qedhere}
+            \__web_if_picture:nTF {#1}
+                { \__web_picture:n {#1\]} }
                 {
-                    \tl_clear:N \l__web_alignment_tl
-                    \__web_rows:nn {equation*} {#1}
-                    \exp_after:wN \__web_AltlDisplay:w \l__web_body_tl \]
+                    \str_if_in:nnTF {#1} {\qedhere}
+                        {
+                            \tl_clear:N \l__web_alignment_tl
+                            \__web_rows:nn {equation*} {#1}
+                            \exp_after:wN \__web_AltlDisplay:w \l__web_body_tl \]
+                        }
+                        { \__web_AltlDisplay:w #1 \] }
                 }
-                { \__web_AltlDisplay:w #1 \] }
         }
 }
 
