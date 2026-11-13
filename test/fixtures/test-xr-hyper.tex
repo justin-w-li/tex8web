@@ -1,12 +1,21 @@
 % References to labels of another document with xr-hyper, from an .aux
 % that LaTeX wrote under hyperref, with no .xref beside it. Each prints
-% its number, page, or name as in the PDF.
+% its number, page, or name as in the PDF, as does a label from an .aux
+% that LaTeX wrote without hyperref. A label of this document still links
+% to its heading.
 \documentclass{article}
 \usepackage{xr-hyper}
 \usepackage{hyperref}
 \externaldocument[X-]{test-xr/latex}
+\externaldocument[P-]{test-xr/plain}
 \begin{document}
 Starred \ref*{X-s}. Section \ref{X-ss}. Page \pageref{X-front}.
 Item \ref{X-item}. Bold \ref{X-emph}. Empty [\ref{X-none}].
 Named \nameref{X-thm}. Named in italics \nameref{X-emph}.
+Spaced \ref{X-step}. Included \ref{X-c}.
+
+Without hyperref: subsection \ref{P-ss}, page \pageref{P-front}.
+
+\section{Here}\label{here}
+Local \ref{here}.
 \end{document}

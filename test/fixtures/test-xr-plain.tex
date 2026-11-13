@@ -2,7 +2,8 @@
 % an .aux that LaTeX wrote without hyperref (two fields per label) and
 % from one written under hyperref (five fields). Each prints its number
 % or page as in the PDF. A label in an .aux that tex4ht wrote, with its
-% .xref, still links to that document's page.
+% .xref, still links to that document's page, and a label of this
+% document to its heading.
 \documentclass{article}
 \usepackage{xr}
 \externaldocument[P-]{test-xr/plain}
@@ -13,7 +14,10 @@ Section \ref{P-s}, subsection \ref{P-ss}, page \pageref{P-front},
 item \ref{P-item}, bold \ref{P-emph}, empty [\ref{P-none}].
 
 Under hyperref: subsection \ref{H-ss}, page \pageref{H-front},
-bold \ref{H-emph}.
+bold \ref{H-emph}, spaced \ref{H-step}, included \ref{H-c}.
 
 Written by tex4ht: \ref{T-oss}.
+
+\section{Here}\label{here}
+Local \ref{here}.
 \end{document}

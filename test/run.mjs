@@ -1059,30 +1059,39 @@ const numbers = {
 };
 
 // References to labels of another document, with xr and xr-hyper, from an
-// .aux that LaTeX wrote: the number, page, or name as in the PDF, with
-// nothing else. A sentence of the fixture, where a space is any white space
-// or tags, and each @ a reference's text, with or without tags around it.
-const said = (sentence, ...texts) => new RegExp(sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '(?:\\s|<[^>]*>)+')
-  .split('@').map((part, i) => (i ? `(?:<[^>]*>)*${texts[i - 1]}(?:<[^>]*>)*` : '') + part).join(''));
+// .aux that LaTeX wrote: the number, page, or name as in the PDF, with no
+// link. A sentence of the fixture, where a space is any white space or tags
+// inside one paragraph, and each @ a reference's text, with or without tags
+// other than a link around it.
+const tag = "<(?!\\/?(?:a|p|div)\\b)[^>]*>";
+const said = (sentence, ...texts) => new RegExp(sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, `(?:\\s|${tag})+`)
+  .split('@').map((part, i) => (i ? `(?:${tag})*${texts[i - 1]}(?:${tag})*` : '') + part).join(''));
 const bold = "<span class='cmbx-10'>A<\\/span>", italic = "<span class='cmti-10'>Intro<\\/span>";
 const latexAux = [
   said('Starred @.', '1'), said('Section @.', '1\\.1'), said('Page @.', 'iv'), said('Item @.', '\\(a\\)'),
   said('Bold @.', bold), said('Empty [@].', ''), said('Named @.', 'Main\\s+theorem'), said('Named in italics @.', italic),
+  said('Spaced @.', 'Step 2'), said('Included @.', '3'),
 ];
-// (a label of an .aux that tex4ht wrote, with its .xref beside it: a link
-// to that document's page)
-const tex4htAux = /Written by tex4ht: <a href='test-xr\/other\.html#x1-20001\.1'>1\.1<\/a>\./;
+// (a label of this document: a link to its heading)
+const local = number => new RegExp(`Local <a href='#here'>${number}(?:<!--[^>]*-->)?<\\/a>\\.`);
 const external = {
   // (under hyperref, in italics, a footnote, sans-serif, typewriter, a
-  // theorem, and a heading)
-  'test-xr': [...latexAux, tex4htAux,
-    ...['In italics', 'In a footnote', 'In sans-serif', 'In typewriter', 'In a theorem'].map(context => said(`${context}, @.`, '1\\.1')),
-    /<h4 class='subsectionHead'[^>]*>(?:(?!<\/h4>)[^])*Heading\s*(?:<[^>]*>)*1\.1(?:<[^>]*>)*\s*<\/h4>/],
+  // theorem, and a heading, each in its font; a label of an .aux that
+  // tex4ht wrote under hyperref, with its .xref beside it: links to that
+  // document's page)
+  'test-xr': [...latexAux, said('Equation @.', '\\(3\\)'),
+    ...[['cmti-10', 'In italics'], ['cmr-8', 'In a footnote'], ['cmss-10', 'In sans-serif'], ['cmtt-10', 'In typewriter'], ['cmti-10', 'In a theorem']]
+      .map(([font, context]) => new RegExp(`<span class='${font}'>${context}, 1\\.1\\.\\s*<\\/span>`)),
+    /<h4 class='subsectionHead'[^>]*>(?:(?!<\/h4>)[^])*>Heading 1\.1<\/h4>/,
+    /Written by tex4ht under hyperref: <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>1\.1<\/a>, <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>Two<\/a>\./,
+    local(2)],
   // (without hyperref, from an .aux written without hyperref and from one
-  // written under it)
+  // written under it; a label of an .aux that tex4ht wrote, with its .xref)
   'test-xr-plain': [said('Section @, subsection @, page @, item @, bold @, empty [@].', '1', '1\\.1', 'iv', '\\(a\\)', bold, ''),
-    said('Under hyperref: subsection @, page @, bold @.', '1\\.1', 'iv', bold), tex4htAux],
-  'test-xr-hyper': latexAux,
+    said('Under hyperref: subsection @, page @, bold @, spaced @, included @.', '1\\.1', 'iv', bold, 'Step 2', '3'),
+    /Written by tex4ht: <a href='test-xr\/\.\.\/test-xr-plain\.html#x1-20001\.1'>1\.1<\/a>\./, local(1)],
+  // (also from an .aux written without hyperref)
+  'test-xr-hyper': [...latexAux, said('Without hyperref: subsection @, page @.', '1\\.1', 'iv'), local(1)],
 };
 
 // Text after the last \hfill of a line, up to the end of the paragraph or of
