@@ -1066,15 +1066,18 @@ const numbers = {
 const tag = "<(?!\\/?(?:a|p|div)\\b)[^>]*>";
 const said = (sentence, ...texts) => new RegExp(sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, `(?:\\s|${tag})+`)
   .split('@').map((part, i) => (i ? `(?:${tag})*${texts[i - 1]}(?:${tag})*` : '') + part).join(''));
+const nbsp = "<span class='tex8web-nbsp'>[^<]*<\\/span>";
 const bold = "<span class='cmbx-10'>A<\\/span>", italic = "<span class='cmti-10'>Intro<\\/span>";
 const latexAux = [
   said('Starred @.', '1'), said('Section @.', '1\\.1'), said('Page @.', 'iv'), said('Item @.', '\\(a\\)'),
   said('Bold @.', bold), said('Empty [@].', ''), said('Named @.', 'Main\\s+theorem'), said('Named in italics @.', italic),
   said('Spaced @.', 'Step 2'), said('Included @.', '3'),
-  // (\autoref with no name, a cleveref field kept as written, and
-  // \hyperref's text or the number)
-  said('Auto @.', '2'), said('Cleveref’s @.', "\\[section\\]\\[\\]\\[\\]<span class='cmti-10'>A<\\/span>"),
-  said('Hyperref @.', '(?:text|1\\.1)'),
+  // (\autoref with its name, a cleveref field kept as written, and
+  // \hyperref's text, once: a reference in it, or after it, prints its number)
+  said('Auto @.', `Theorem${nbsp}2`), said('Cleveref’s @.', "\\[section\\]\\[\\]\\[\\]<span class='cmti-10'>A<\\/span>"),
+  said('Auto section @. Auto starred @.', `subsection${nbsp}1\\.1`, `Theorem${nbsp}2`),
+  said('Hyperref @.', 'text'), said('Hyperref around see @.', '1'),
+  /Local around <a href='#here'>see 1\.1<\/a>\./, said('After @.', '1\\.1'),
 ];
 // (\autoref of a label that tex4ht wrote under hyperref: only the link to
 // that document's page)

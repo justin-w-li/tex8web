@@ -141,8 +141,11 @@
 % a robust command in a field stops them too. Each field is read here
 % instead. A field that starts with \rEfLiNK becomes xr.4ht's link to the
 % other document's page. Any other field is kept as written, so a reference
-% to it prints its number, page, or name with no link. A cleveref field
-% starts with [, so it is kept as written too. xr.4ht also drops the other
+% to it prints its number, page, or name with no link. Its number also
+% prints \autoref's name, and \hyperref prints its text in place of the
+% number, as tex4ht's \rEfLiNK does for a label of this document. A
+% cleveref field starts with [, so it is kept as written too, and the
+% number of a cleveref label is not changed. xr.4ht also drops the other
 % document's folder from an \@input, which \include writes, where xr.sty
 % keeps it. Each .4ht file defines \XR@test, so each is wrapped after it is
 % read.
@@ -168,7 +171,15 @@
       {
         \token_if_eq_meaning:NNTF #1 \newlabel
           {
-            \tl_gset:ce { r@ \XR@prefix #2 } { \tl_map_function:nN {#3} \__web_xr_field:n }
+            \str_if_in:nnTF {#2} { @cref }
+              { \tl_gset:ce { r@ \XR@prefix #2 } { \tl_map_function:nN {#3} \__web_xr_field:n } }
+              {
+                \tl_gset:ce { r@ \XR@prefix #2 }
+                  {
+                    \exp_args:Ne \__web_xr_number:n { \tl_head:n {#3} }
+                    \exp_args:Ne \tl_map_function:nN { \tl_tail:n {#3} } \__web_xr_field:n
+                  }
+              }
             \__web_xr_next:
           }
           { \__web_xr_test:w #1 {#2} {#3} #4 \XR@ }
@@ -180,6 +191,42 @@
   { { \__web_xr_if_link:w \q_mark #1 \q_mark \rEfLiNK \q_stop { \__web_xr_link:w #1 } { \exp_not:n {#1} } } }
 \cs_new:Npn \__web_xr_if_link:w #1 \q_mark \rEfLiNK #2 \q_stop { \tl_if_empty:nTF {#1} }
 \cs_new:Npn \__web_xr_link:w \rEfLiNK #1#2 { \xr:rEfLiNK \rEfLiNK {#1} \exp_not:n { {#2} } }
+\cs_new:Npn \__web_xr_number:n #1
+  {
+    {
+      \__web_xr_if_link:w \q_mark #1 \q_mark \rEfLiNK \q_stop
+        { \__web_xr_link:w #1 } { \exp_not:n { \__web_xr_text:n {#1} } }
+    }
+  }
+% (the name that \autoref put in \:autoref, as tex4ht's labels print it,
+% then the number; or the text of the \hyperref around the reference,
+% once, so a reference in that text prints its own number)
+\tl_new:N \g__web_xr_text_tl
+\tl_new:N \l__web_xr_text_tl
+\cs_new_protected:Npn \__web_xr_text:n #1
+  {
+    \tl_if_empty:NTF \g__web_xr_text_tl
+      { \cs_if_exist_use:c { :autoref } { { } } #1 }
+      {
+        \tl_set_eq:NN \l__web_xr_text_tl \g__web_xr_text_tl
+        \tl_gclear:N \g__web_xr_text_tl
+        \tl_use:N \l__web_xr_text_tl
+      }
+  }
+% (hyperref.4ht's \label@@hyperref: its text, kept until the text prints,
+% for a reference to another document's label that LaTeX wrote)
+\AddToHook { file/hyperref.4ht/after } { \__web_xr_wrap_hyperref: }
+\cs_new_protected:Npn \__web_xr_wrap_hyperref:
+  {
+    \web@needs { label@@hyperref }
+    \cs_gset_eq:NN \__web_xr_hyperref:Nnn \label@@hyperref
+    \cs_gset:Npn \label@@hyperref ##1##2##3
+      {
+        \tl_gset:Nn \g__web_xr_text_tl {##3}
+        \__web_xr_hyperref:Nnn ##1 {##2} { \tl_gclear:N \g__web_xr_text_tl ##3 }
+        \tl_gclear:N \g__web_xr_text_tl
+      }
+  }
 \ExplSyntaxOff
 
 % hyperref's hidelinks, under which tex8web-page.tex leaves links unmarked:

@@ -400,7 +400,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **mdframed.** A box has its middle line (`linewidth`), its colors, and its space inside and around it. Inner and outer lines, rounded corners, shadows, and anything drawn with TikZ or PSTricks are missing. A `frametitle` is inside the box padding, without a separate title bar.
 - **URL breaks.** A URL breaks only after url.sty's default characters. Characters added to `\UrlBreaks` or `\UrlBigBreaks`, the `hyphens` option of url, and xurl are ignored.
 - **`\FrameSep` of framed.** A framed box has no padding between its rule and its text.
-- **xr and xr-hyper.** A reference to a label of another document, read from an `.aux` that LaTeX wrote, shows its number, page, or name with no link. A label read from an `.aux` that tex4ht wrote, with its `.xref` file beside it, links to that document's page.
+- **xr and xr-hyper.** A reference to a label of another document, read from an `.aux` that LaTeX wrote, shows its number, page, or name with no link. `\autoref` shows its name before the number, and `\hyperref` its text, also with no link. A label read from an `.aux` that tex4ht wrote, with its `.xref` file beside it, links to that document's page.
 - **tocloft fonts for lists of figures and tables.** `\cftfigfont` and `\cfttabfont` are ignored, and these lists are in the text font.
 
 ### Pictures
