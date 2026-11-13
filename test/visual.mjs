@@ -514,10 +514,11 @@ async function hanging(page, doc, where) {
 }
 
 // Each picture alone in display math, centered in the column as in the
-// PDF, within 0.5px, and not lowered or raised. An equation number or QED
-// box after the picture is at the column's right, on the picture's bottom
-// line. centers has the numbers of such pictures and of the marks after
-// them. Failures: [the picture, what is wrong]
+// PDF, within 0.5px, and not lowered or raised, or left of center beside
+// a wide mark. An equation number or QED box after the picture is at the
+// column's right, on the picture's bottom line, and a QED box under a
+// number is in the display. centers has the numbers of such pictures and
+// of the marks after them. Failures: [the picture, what is wrong]
 const centered = `(() => {
   const column = document.querySelector('main') ?? document.body, style = getComputedStyle(column);
   const box = column.getBoundingClientRect();
@@ -529,7 +530,15 @@ const centered = `(() => {
     const name = img.alt || img.getAttribute('src');
     const mark = img.nextElementSibling?.matches('.tex8web-picture-tag, .tex8web-qed') && img.nextElementSibling.getBoundingClientRect();
     if (mark) marks++;
-    return [...Math.abs(off) > 0.5 ? [[name, \`its center \${off.toFixed(1)}px from the column's\`]] : [],
+    // (a picture beside a wide mark may be left of center, up to 1em from the mark)
+    const em = parseFloat(getComputedStyle(img.parentElement).fontSize);
+    const moved = mark && off < 0 && mark.left - at.right < em + 0.5;
+    // every mark after the picture, in the display's box
+    const block = img.parentElement.getBoundingClientRect();
+    const after = [...img.parentElement.querySelectorAll(':scope > img ~ :is(.tex8web-picture-tag, .tex8web-qed)')];
+    return [...Math.abs(off) > 0.5 && !moved ? [[name, \`its center \${off.toFixed(1)}px from the column's\`]] : [],
+      ...after.filter(e => e.getBoundingClientRect().bottom > block.bottom + 0.5 || e.getBoundingClientRect().right > box.right - parseFloat(style.paddingRight) + 0.5)
+        .map(e => [name, \`its \${e.className} is outside the display\`]),
       ...img.style.verticalAlign ? [[name, \`vertical-align \${img.style.verticalAlign}\`]] : [],
       ...mark && Math.abs(mark.bottom - at.bottom) > 0.5 ? [[name, \`the mark after it ends \${(mark.bottom - at.bottom).toFixed(1)}px below its bottom\`]] : [],
       ...mark && Math.abs(mark.right - (box.right - parseFloat(style.paddingRight))) > 0.5 ? [[name, 'the mark after it is not at the right']] : [],
@@ -537,7 +546,7 @@ const centered = `(() => {
   });
   return { checked: [pictures.length, marks], wrong };
 })()`;
-const centers = { 'test-display-picture': [26, 7], 'test-display-picture-hyperref': [4, 1] };
+const centers = { 'test-display-picture': [27, 8], 'test-display-picture-hyperref': [5, 2] };
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.

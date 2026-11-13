@@ -4,7 +4,7 @@
 % theorem, in a proof with \qedhere, and with a \label. Each case follows a
 % paragraph that names it. Also a \label before the picture, \tag, \tag*,
 % \notag, a \tikz path with braces, a \resizebox, a picture as wide as
-% the text with a number, a display after a blank line, and \qedhere in a
+% the text with a number and with a long \tag*, a display after a blank line, and \qedhere in a
 % numbered equation. Ordinary display math stays as it is.
 \documentclass{article}
 \usepackage{amsmath}
@@ -111,6 +111,11 @@ Equation star resizebox.
 Equation wide graphics.
 \begin{equation}
 \includegraphics[alt={wide graphics},width=\linewidth]{test-picture.png}
+\end{equation}
+
+Equation long tag.
+\begin{equation}
+\includegraphics[alt={long tag graphics},width=\linewidth]{test-picture.png} \tag*{the long tag}
 \end{equation}
 
 Equation after a blank line.

@@ -402,7 +402,7 @@ const pictureCases = ['Dollars tikzpicture', 'Bracket tikzpicture', 'Bracket tik
 // more cases, each with the number or tag its display shows ('' for none)
 const pictureNumbers = { 'Equation label first': '(2)', 'Equation tag graphics': '(A)', 'Equation star tag': 'B',
   'Equation notag': '', 'Bracket tikz node': '', 'Equation star resizebox': '', 'Equation wide graphics': '(3)',
-  'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)' };
+  'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)', 'Equation long tag': 'the long tag' };
 pictureCases.push(...Object.keys(pictureNumbers));
 // the first element whose opening tag matches the pattern, whose first
 // group is the tag's name, up to its closing tag ('' if there is none)
@@ -420,8 +420,9 @@ const displayPictures = {
   'test-display-picture': { pictures: pictureCases, math: ['Ordinary display', 'Ordinary dollars'] },
   'test-display-picture-two': { pictures: [], math: ['Two diagrams', 'Two rows'] },
   'test-display-picture-hyperref': {
-    pictures: ['Dollars tikzpicture', 'Bracket graphics', ['Equation tikzpicture', '(1)'], 'Theorem tikzpicture'],
-    math: ['Ordinary display'] },
+    pictures: ['Dollars tikzpicture', 'Bracket graphics', ['Equation tikzpicture', '(1)'], 'Equation tag tikzpicture',
+      'Theorem tikzpicture'],
+    math: ['Equation after the tag', 'Ordinary display'] },
 };
 
 // The title of a page without \maketitle, for the tab and link previews:

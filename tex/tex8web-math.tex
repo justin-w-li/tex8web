@@ -383,8 +383,8 @@
 % maybe in a \resizebox or a \scalebox, with \label, \notag, and
 % \nonumber anywhere around it, and \qedhere and \tag after it; and a \[ \]
 % with a tikzcd. MathJax knows none of them. Other pictures beside math,
-% and a body with two pictures, stay MathJax's. Only a numbered or
-% unnumbered equation environment takes a \tag.
+% and a body with two pictures, stay MathJax's. A display environment
+% takes a \tag; \[ \], $$ $$, and displaymath do not.
 \tl_const:Nn \c__web_picture_tl {
     (?: \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
         | \\begin \s* \{ tikzcd \} .* \\end \s* \{ tikzcd \}
@@ -410,11 +410,13 @@
     { \\end \s* \{ (?: tikzpicture | tikzcd | picture ) \} | \\tikz \b }
 \str_new:N \l__web_picture_str
 \int_new:N \l__web_picture_int
-% (the regex runs only on a body with a picture's command)
+% (the regexes run only on a body with a picture's command. \str_if_in
+% is needed for the \begin{...} commands: \tl_if_in is true for any body
+% when the text it looks for has braces)
 \prg_new_protected_conditional:Npnn \__web_if_picture:n #1 { TF } {
-    \__web_if_picture_command:nTF {#1}
+    \str_set:Nn \l__web_picture_str {#1}
+    \__web_if_picture_command:TF
         {
-            \str_set:Nn \l__web_picture_str {#1}
             \exp_args:NNV \regex_count:NnN \c__web_picture_end_regex \l__web_picture_str \l__web_picture_int
             \int_compare:nNnTF \l__web_picture_int < 2
                 {
@@ -425,12 +427,12 @@
         }
         { \prg_return_false: }
 }
-\cs_new_protected:Npn \__web_if_picture_command:nTF #1#2#3 {
-    \tl_if_in:nnTF {#1} {\includegraphics} {#2} {
-        \tl_if_in:nnTF {#1} {\tikz} {#2} {
-            \tl_if_in:nnTF {#1} {\begin{tikzpicture}} {#2} {
-                \tl_if_in:nnTF {#1} {\begin{tikzcd}} {#2}
-                    { \tl_if_in:nnTF {#1} {\begin{picture}} {#2} {#3} }
+\cs_new_protected:Npn \__web_if_picture_command:TF #1#2 {
+    \str_if_in:NnTF \l__web_picture_str {\includegraphics} {#1} {
+        \str_if_in:NnTF \l__web_picture_str {\tikz} {#1} {
+            \str_if_in:NnTF \l__web_picture_str {\begin{tikzpicture}} {#1} {
+                \str_if_in:NnTF \l__web_picture_str {\begin{tikzcd}} {#1}
+                    { \str_if_in:NnTF \l__web_picture_str {\begin{picture}} {#1} {#2} }
             }
         }
     }
@@ -812,13 +814,18 @@
 }
 % (a step of the counter, with the tag as its number, for the anchor
 % before the picture that a \label names, wherever it is; the counter is
-% set back after the picture's \label)
+% set back after the picture's \label. hyperref names the anchor from
+% \theHequation, which is given a name of its own, so that the next
+% numbered equation's anchor has another)
 \int_new:N \l__web_picture_count_int
+\int_new:N \g__web_picture_tag_int
 \bool_new:N \l__web_picture_back_bool
 \cs_new_protected:Npn \__web_picture_label:n #1 {
     \int_set:Nn \l__web_picture_count_int { \value{equation} }
     \bool_set_true:N \l__web_picture_back_bool
     \cs_set:Npn \theequation {#1}
+    \int_gincr:N \g__web_picture_tag_int
+    \cs_set:Npe \theHequation { tag. \int_use:N \g__web_picture_tag_int }
     \refstepcounter{equation}
 }
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,

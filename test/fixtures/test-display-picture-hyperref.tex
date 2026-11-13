@@ -1,7 +1,7 @@
 % Display math whose body is only a picture, with hyperref: a tikzpicture
 % in $$ $$, an \includegraphics in \[ \], a numbered equation with a
-% \label and an \eqref, and a picture in a theorem. Each case follows a
-% paragraph that names it.
+% \label and an \eqref, a \tag followed by a numbered equation, and a
+% picture in a theorem. Each case follows a paragraph that names it.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -28,6 +28,15 @@ Theorem tikzpicture.
 \end{theorem}
 
 Reference to the triangle: \eqref{eq:triangle}.
+
+Equation tag tikzpicture.
+\begin{equation}
+\begin{tikzpicture}\draw (0,0) -- (1,1);\end{tikzpicture} \tag{A}\label{eq:a}
+\end{equation}
+
+Equation after the tag.
+\begin{equation} y = 2 \label{eq:after} \end{equation}
+Reference to the tag and the next: \eqref{eq:a}, \eqref{eq:after}.
 
 Ordinary display.
 \[ y = 1 \]
