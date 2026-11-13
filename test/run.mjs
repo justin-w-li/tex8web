@@ -1635,7 +1635,8 @@ function check(doc, result, out, aux) {
       const outside = text.replace(/<span class='tex8web-qed'>(?:(?!<\/mjx-container>)[^])*<\/mjx-container><\/span>/g, '');
       // the display element, from its opening tag to its closing one
       const display = element(text, /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
-      if (!/^<[^>]+>(?:(?!<\/)[^])*<img /.test(display)) problems.push(`${name}: no picture in the display`);
+      // (an empty anchor of a \label may come before the picture)
+      if (!/^<[^>]+>(?:(?!<\/)[^])*<img /.test(display.replace(/<a id='[^']*'><\/a>/g, ''))) problems.push(`${name}: no picture in the display`);
       if (outside.includes('<mjx-container')) problems.push(`${name}: MathJax in the display`);
       if (extra === 'tex8web-qed' && !display.includes(`class='${extra}'`)) problems.push(`${name}: no ${extra} in the display`);
       if (extra?.startsWith('(')) {

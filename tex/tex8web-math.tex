@@ -377,15 +377,41 @@
     \AddToHook { begindocument/end } { \HLet \ce \__web_ce: }
 }{}
 
-% a tikzcd in display math (\[ \begin{tikzcd} .. \]) is a picture, so TeX
-% typesets it, rescanning the source, which tex4ht read with & as a letter.
+% a picture in display math is typeset by TeX, rescanning the source,
+% which tex4ht read with & as a letter: a display with a tikzcd, and one
+% whose body is only a tikzpicture, a \tikz, an \includegraphics, or a
+% picture environment, with at most a \label and a \qedhere. MathJax
+% knows none of them. A picture beside math stays MathJax's.
+\regex_const:Nn \c__web_picture_regex {
+    \\begin \s* \{ tikzcd \}
+    | \A \s* (?:
+        \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
+        | \\begin \s* \{ picture \} .* \\end \s* \{ picture \}
+        | \\includegraphics \s* \*? \s* (?: \[ [^\]]* \] \s* )* \{ [^\{\}]* \}
+        | \\tikz \b \s* (?: \[ [^\]]* \] \s* )? (?: \{ .* \} | [^;\{]* ; )
+    ) (?: \s | \\label \s* \{ [^\{\}]* \} | \\qedhere \b )* \Z
+}
+\str_new:N \l__web_picture_str
+\prg_new_protected_conditional:Npnn \__web_if_picture:n #1 { TF } {
+    \str_set:Nn \l__web_picture_str {#1}
+    \exp_args:NNV \regex_match:NnTF \c__web_picture_regex \l__web_picture_str
+        { \prg_return_true: } { \prg_return_false: }
+}
+\cs_new_protected:Npn \__web_picture:n #1 {
+    \char_set_catcode_alignment:N \& \tex_scantokens:D {#1}
+}
 % A \[ \] with a \qedhere is walked for its box (see \__web_part:nn)
 \web@needs{AltlDisplay}
+\web@needs{AltlDisplayDollars}
 \web@needs{VerbMathToks}
 \cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
+\cs_set_eq:NN \__web_AltlDisplayDollars:w \AltlDisplayDollars
+\cs_set:Npn \AltlDisplayDollars #1 $$ {
+    \__web_if_picture:nTF {#1} { \__web_picture:n { \hbox{#1} $$ } } { \__web_AltlDisplayDollars:w #1 $$ }
+}
 \cs_set:Npn \AltlDisplay #1 \] {
-    \str_if_in:nnTF {#1} {\begin{tikzcd}}
-        { \char_set_catcode_alignment:N \& \tex_scantokens:D {#1\]} }
+    \__web_if_picture:nTF {#1}
+        { \__web_picture:n {#1\]} }
         {
             \str_if_in:nnTF {#1} {\qedhere}
                 {
@@ -680,12 +706,33 @@
     \tl_put_right:NV \l__web_body_tl \l__web_qed_tag_tl
 }
 \cs_generate_variant:Nn \__web_qed_row:n { e }
+% a display environment whose body is only a picture is set as a \[ \]
+% is (see \c__web_picture_regex). A numbered one gets its number in the
+% display, after the picture (css/tex8web.css)
+\cs_new_protected:Npn \__web_picture_display:nn #1#2 {
+    \a:MathjaxBlock
+    \clist_if_in:NnTF \c__web_numbered_clist {#1}
+        {
+            \refstepcounter{equation}
+            \__web_picture:n {#2}
+            \HCode{<span~class="tex8web-picture-tag">} (\theequation) \HCode{</span>}
+        }
+        { \__web_picture:n {#2} }
+    \b:MathjaxBlock
+}
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
         flalign, flalign*, multline, multline*, eqnarray, eqnarray* } {
     \cs_if_exist:cT {#1} {
-        \RenewDocumentEnvironment{#1}{+!b}{ \__web_display:nn {#1} {##1} }{}
+        \RenewDocumentEnvironment{#1}{+!b}{
+            \__web_if_picture:nTF {##1}
+                { \__web_picture_display:nn {#1} {##1} } { \__web_display:nn {#1} {##1} }
+        }{}
     }
 }
+\RenewDocumentEnvironment{displaymath}{+!b}{
+    \__web_if_picture:nTF {#1}
+        { \__web_picture_display:nn {displaymath} {#1} } { \__web_mathjax:nn {#1} {displaymath} }
+}{}
 \ExplSyntaxOff
 
 \makeatother
