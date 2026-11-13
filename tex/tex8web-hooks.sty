@@ -204,7 +204,9 @@
 % these, the field expands to the number, as tex4ht's own labels do, for
 % \getrefnumber in an \edef such as \ifthenelse's or a label's. The two
 % assignments are protected, with names that the .aux can hold, since they
-% run only as text prints.)
+% run only as text prints. \g__web_xr_hyperref_bool tells whether a
+% \hyperref is around the reference, since its text may be empty.)
+\bool_new:N \g__web_xr_hyperref_bool
 \tl_new:N \g__web_xr_text_tl
 \tl_new:N \l__web_xr_text_tl
 \cs_new_eq:NN \web@xr@cref \use_ii:nn
@@ -213,17 +215,22 @@
     \web@xr@cref
       { \web@xr@endlink }
       {
-        \tl_if_empty:NTF \g__web_xr_text_tl
-          { \cs_if_exist:cT { :autoref } { \use:c { :autoref } { } } #1 }
+        \bool_if:NTF \g__web_xr_hyperref_bool
           { \web@xr@hyperref }
+          { \cs_if_exist:cT { :autoref } { \use:c { :autoref } { } } #1 }
       }
   }
 \cs_new_protected:Npn \web@xr@endlink { \cs_set_eq:NN \EndLink \scan_stop: }
 \cs_new_protected:Npn \web@xr@hyperref
   {
     \tl_set_eq:NN \l__web_xr_text_tl \g__web_xr_text_tl
-    \tl_gclear:N \g__web_xr_text_tl
+    \__web_xr_hyperref_clear:
     \tl_use:N \l__web_xr_text_tl
+  }
+\cs_new_protected:Npn \__web_xr_hyperref_clear:
+  {
+    \bool_gset_false:N \g__web_xr_hyperref_bool
+    \tl_gclear:N \g__web_xr_text_tl
   }
 % (hyperref.4ht's \label@@hyperref: its text, kept until the text prints,
 % for a reference to another document's label that LaTeX wrote)
@@ -234,9 +241,10 @@
     \cs_gset_eq:NN \__web_xr_hyperref:Nnn \label@@hyperref
     \cs_gset:Npn \label@@hyperref ##1##2##3
       {
+        \bool_gset_true:N \g__web_xr_hyperref_bool
         \tl_gset:Nn \g__web_xr_text_tl {##3}
-        \__web_xr_hyperref:Nnn ##1 {##2} { \tl_gclear:N \g__web_xr_text_tl ##3 }
-        \tl_gclear:N \g__web_xr_text_tl
+        \__web_xr_hyperref:Nnn ##1 {##2} { \__web_xr_hyperref_clear: ##3 }
+        \__web_xr_hyperref_clear:
       }
   }
 \ExplSyntaxOff

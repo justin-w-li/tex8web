@@ -1077,6 +1077,7 @@ const latexAux = [
   said('Auto @.', `Theorem${nbsp}2`), said('Cleveref’s @.', "\\[section\\]\\[\\]\\[\\]<span class='cmti-10'>A<\\/span>"),
   said('Auto section @. Auto starred @.', `subsection${nbsp}1\\.1`, `Theorem${nbsp}2`),
   said('Hyperref @.', 'text'), said('Hyperref around see @.', '1'),
+  said('Hyperref empty [@].', ''),
   /Local around <a href='#here'>see 1\.1<\/a>\./, said('After @.', '1\\.1'),
 ];
 // (\autoref of a label that tex4ht wrote under hyperref: only the link to
