@@ -1183,15 +1183,18 @@ const verbatim = {
 
 // The f-ligatures of fonts whose TFMs put them in other slots than their
 // encoding's: each line's words, in the text with tags removed and each
-// ligature character as its letters. The small capitals, sans serif, and
-// typewriter lines have no ligatures.
+// ligature character as its letters, as many times as listed. The title is
+// in <title> and on the page. The sans serif line, in ecss, has T1's order
+// and guards against a remap of every T1 font.
 const ligature = 'off first buffer efficient fly baffle.';
 const ligatures = {
-  'test-xcharter': ['Baffled officers fly', ...['Upright', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Boldslanted',
+  'test-xcharter': ['Efficient office staff', 'Efficient office staff', 'Baffled officers fly', ...['Upright', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Boldslanted',
     'Smallcaps', 'Note', 'Theorem', 'Lining', 'Oldstyle', 'Tabularoldstyle', 'Tabularlining', 'Sans', 'Mono']
     .map(line => `${line}: ${ligature}`)],
-  'test-xcharter-osf': ['Upright', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Smallcaps', 'Theorem']
+  'test-xcharter-osf': ['Upright', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Boldslanted', 'Smallcaps', 'Theorem']
     .map(line => `${line}: ${ligature}`),
+  'test-xcharter-osfi': ['Upright', 'Italic', 'Bold', 'Bolditalic', 'Slanted', 'Boldslanted', 'Oldstyle',
+    'Oldstyleitalic', 'Oldstyleslanted'].map(line => `${line}: ${ligature}`),
 };
 
 // the fonts listed in data-fonts on the inline script
@@ -1479,8 +1482,10 @@ function check(doc, result, out, aux) {
   }
   const words = flat.replace(/<[^>]*>/g, '')
     .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16))).normalize('NFKC');
-  for (const line of ligatures[doc.name] ?? []) {
-    if (!words.includes(line)) problems.push(`no '${line}' in the text`);
+  const lines = ligatures[doc.name] ?? [];
+  for (const line of new Set(lines)) {
+    const wanted = lines.filter(other => other === line).length, found = words.split(line).length - 1;
+    if (found < wanted) problems.push(`'${line}' ${found} times in the text, not ${wanted}`);
   }
   if (preloads[doc.name]) {
     const found = fontsListed(html).map(href => href.match(/^fonts\/(.+)\.woff2$/)?.[1]).sort().join(' ');

@@ -1,8 +1,7 @@
 % XCharter in T1 with the osf option, whose fonts are XCharter1-*,
 % without hyperref. The page shows the f-ligatures as the PDF does (see
 % test-xcharter.tex). The theorem font, XCharter1TH-Italic-osf-t1, has
-% T1's order of the ligatures, and guards against a remap of every
-% XCharter font.
+% no f-ligatures.
 \documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage{amsthm}
@@ -18,6 +17,8 @@ Upright: off first buffer efficient fly baffle.
 \textbf{\textit{Bolditalic: off first buffer efficient fly baffle.}}
 
 \textsl{Slanted: off first buffer efficient fly baffle.}
+
+\textbf{\textsl{Boldslanted: off first buffer efficient fly baffle.}}
 
 \textsc{Smallcaps: off first buffer efficient fly baffle.}
 

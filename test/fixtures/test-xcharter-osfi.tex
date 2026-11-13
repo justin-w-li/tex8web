@@ -1,0 +1,25 @@
+% XCharter in T1 with the osfI option, whose fonts are XCharter-*-tosf-t1
+% and, in the XCharter-OsF family, XCharter-*-osf-t1. The page shows the
+% f-ligatures as the PDF does (see test-xcharter.tex).
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[osfI]{XCharter}
+\begin{document}
+Upright: off first buffer efficient fly baffle.
+
+\textit{Italic: off first buffer efficient fly baffle.}
+
+\textbf{Bold: off first buffer efficient fly baffle.}
+
+\textbf{\textit{Bolditalic: off first buffer efficient fly baffle.}}
+
+\textsl{Slanted: off first buffer efficient fly baffle.}
+
+\textbf{\textsl{Boldslanted: off first buffer efficient fly baffle.}}
+
+{\fontfamily{XCharter-OsF}\selectfont Oldstyle: off first buffer efficient fly baffle.
+
+\textit{Oldstyleitalic: off first buffer efficient fly baffle.}
+
+\textsl{Oldstyleslanted: off first buffer efficient fly baffle.}\par}
+\end{document}

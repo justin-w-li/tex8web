@@ -1,15 +1,21 @@
 % XCharter in T1, whose TFMs put the f-ligatures in slots 27 to 31 in
 % another order than T1's: 29 ff, 31 fi, 30 fl, 28 ffi, and 27 ffl. Each
 % line below is one of the package's fonts in T1, with every ligature, and
-% the page shows the letters the PDF shows. The small capitals, the sans
-% serif, and the typewriter text have no such ligatures, and guard them.
+% the page shows the letters the PDF shows. The sans serif text, in
+% ecss, has T1's order, and guards against a remap of every T1 font. The
+% small capitals and the typewriter text have no f-ligatures.
 \documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage{XCharter}
 \usepackage{amsthm}
 \usepackage{hyperref}
 \newtheorem{theorem}{Theorem}
+\title{Efficient office staff}
+\author{A}
+\date{}
 \begin{document}
+\maketitle
+
 \section{Baffled officers fly}
 
 Upright: off first buffer efficient fly baffle.
