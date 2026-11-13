@@ -157,6 +157,28 @@
 \def\web@outdated#1{\PackageWarningNoLine{tex8web}{#1 has changed or gone,
     and tex8web needs updating for it}}
 
+% A package asked for again: tex4ht.sty's wrapper of \@onefilewithoptions
+% inputs the package's .4ht files from a one-shot \@reset@ptions, which
+% LaTeX runs before it reads a new package. For a package already loaded,
+% LaTeX runs it only at the end, after the option code of a package with key
+% options, and xcolor's table key loads colortbl there. That load saves the
+% one-shot in the same scratch macro, \:temp, which usepackage.4ht then
+% redefines, and the one-shot leaves \@reset@ptions broken: every later
+% package load fails. tex4ht has read a loaded package's .4ht files, so a
+% package asked for again skips the wrapper. This also keeps colortbl's
+% hooks from being read twice, which fails, when colortbl comes before
+% xcolor's table option.
+\ExplSyntaxOn
+\web@needs { :onefilewithoptions }
+\cs_set_eq:NN \web@onefilewithoptions \@onefilewithoptions
+\cs_set:Npn \@onefilewithoptions #1[#2][#3]#4
+    {
+        \@ifl@aded {#4} {#1}
+            { \:onefilewithoptions #1[#2][#3]{#4} }
+            { \web@onefilewithoptions #1[#2][#3]{#4} }
+    }
+\ExplSyntaxOff
+
 % xcolor: the names of the colors the document defines, once each, for
 % tex8web-page.tex to give MathJax their values. \definecolor, \colorlet,
 % \providecolor, and the color sets all log the name, expanded, with
@@ -172,18 +194,8 @@
 \ExplSyntaxOn
 \clist_new:N \g__web_colors_clist
 \bool_new:N \g__web_xcolor_bool
-% xcolor's table option requires colortbl again once xcolor is done. tex4ht
-% would then input colortbl-hooks.4ht a second time, and its \newcommand
-% would fail, so the hook is removed when colortbl is already loaded.
 \AddToHook { package/xcolor/before }
-    {
-        \@ifpackageloaded { colortbl }
-            {
-                \web@needs { package:hooks:colortbl.sty }
-                \cs_undefine:c { package:hooks:colortbl.sty }
-            }
-            { \bool_gset_true:N \g__web_xcolor_bool }
-    }
+    { \@ifpackageloaded { colortbl } { } { \bool_gset_true:N \g__web_xcolor_bool } }
 \bool_new:N \g__web_record_bool
 \cs_new_protected:Npn \__web_record_colors: {
     \bool_lazy_or:nnF { \g__web_record_bool } { ! \cs_if_exist_p:N \XC@logdef }
