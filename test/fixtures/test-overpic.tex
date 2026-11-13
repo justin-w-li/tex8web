@@ -8,10 +8,10 @@
 % extension, italic and math labels, a minipage, a table cell, a JPEG, a
 % PDF with its MediaBox away from 0 0, a PDF with a CropBox, the second
 % page of a PDF, a PNG at 144 dpi, a folder in the name, a LaTeX picture
-% at natural size, and a subfigure. The last overpic has its .xbb file,
-% which the fix must not break. Nor must it change a plain \includegraphics
-% of a PNG without its .xbb file, outside any picture, sized with width,
-% scale, or height after an overpic of the same PNG.
+% at natural size, and a subfigure. Plain \includegraphics of a PNG
+% without its .xbb file, outside any picture, sized with width, scale, or
+% height after an overpic of the same PNG, keep their sizes. The last
+% overpic has its .xbb file, and is sized from it.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}

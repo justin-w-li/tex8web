@@ -2,9 +2,9 @@
 % whose pictures dvisvgm draws: an overpic with plain, italic, and math
 % labels, a LaTeX picture that holds an \includegraphics, and a TikZ node
 % that holds one. Each one builds at its size in the PDF, with its labels
-% in its image. The last node's picture has its .xbb file, which the fix
-% must not break. Nor must it change a plain \includegraphics of a PNG
-% without its .xbb file, outside any picture.
+% in its image. The last node's picture has its .xbb file, and is sized
+% from it. The page ends with a plain \includegraphics of a PNG without its
+% .xbb file, outside any picture.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}
