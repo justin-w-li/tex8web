@@ -193,16 +193,17 @@ export function empty(dir) {
   for (const name of readdirSync(dir)) rmSync(join(dir, name), { recursive: true, force: true });
 }
 
-// the first entry under dir, its build directory included, that is not a
-// file or a directory that can be read, such as a link, a FIFO, or a path
-// too long, or null
-export function special(dir) {
+// the first entry under dir, its build directories included unless outputs
+// is false, that is not a file or a directory that can be read, such as a
+// link, a FIFO, or a path too long, or null
+export function special(dir, { outputs = true } = {}) {
   // (a directory that cannot be read, or holds an entry that cannot be, is
   // returned itself)
   try {
     for (const name of readdirSync(dir)) {
+      if (!outputs && name === 'build') continue;
       const path = join(dir, name), stat = lstatSync(path);
-      const found = stat.isDirectory() ? special(path) : !stat.isFile() && path;
+      const found = stat.isDirectory() ? special(path, { outputs }) : !stat.isFile() && path;
       if (found) return found;
     }
     return null;
@@ -245,12 +246,12 @@ function tools() {
 }
 
 // the stamps of a build. page: the tools above, the files in the document's
-// directory, the config (which may be elsewhere), the arguments, the
-// environment variables the build reads, and the size and time of the
-// linked PDF, as a page built before the PDF existed lacks the link, and
-// the day, for \today, unless the date is fixed. The files are hashed, so
-// uncommitted edits and files unknown to git count. latex: the LaTeX
-// tools, the same document inputs, and the day
+// directory, or in doc.sourceRoot if set, the config (which may be
+// elsewhere), the arguments, the environment variables the build reads,
+// and the size and time of the linked PDF, as a page built before the PDF
+// existed lacks the link, and the day, for \today, unless the date is
+// fixed. The files are hashed, so uncommitted edits and files unknown to
+// git count. latex: the LaTeX tools, the same document inputs, and the day
 function stamps(doc, args, env, pdf) {
   const all = { ...process.env, ...env };
   // (TEX8WEB_SLOTS* and TEX8WEB_SPEECH_CACHE change no page)
@@ -259,7 +260,7 @@ function stamps(doc, args, env, pdf) {
   const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
   // (a build through a runner, whose tools are the image's, is never reused
   // as a host build, nor the reverse)
-  const rest = [hashFiles(doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf,
+  const rest = [hashFiles(doc.sourceRoot ?? doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf,
     ...doc.runner ? [[doc.runner, ...[doc.runner[0], join(root, 'Dockerfile')].map(file => readFileSync(file, 'utf8'))]] : []];
   const hash = (...head) => createHash('sha256').update(JSON.stringify([...head, ...rest])).digest('hex');
   return { page: hash(tools().page, day), latex: hash(tools().latex, day) };
@@ -281,7 +282,9 @@ function stamps(doc, args, env, pdf) {
 // previous build in aux. For a document with noLatexmk, the PDF is built
 // elsewhere, and a missing PDF is not built here. With doc.runner, the argv
 // of a runner such as test/lib/contain.mjs, make4ht and latexmk run
-// through that runner
+// through that runner. doc.sourceRoot, a directory that holds the
+// document's, is then mounted read-only too, for a document that reads
+// files above its directory
 export async function build(doc, out, aux, env = {}) {
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
@@ -294,7 +297,10 @@ export async function build(doc, out, aux, env = {}) {
       const left = await clean(doc, [join(doc.dir, 'build'), out, aux, `${aux}.latex`]
         .filter(dir => lstatSync(dir, { throwIfNoEntry: false })?.isDirectory()));
       if (left) return { ...left, log: `${left.log}the cleaning before the build failed, or removed what is listed above\n` };
-      const odd = special(doc.dir);
+      // (the root without its build directories, which other builds may be
+      // writing, and which the stamps leave out. regress.mjs checks the
+      // whole root before any build)
+      const odd = special(doc.dir) || doc.sourceRoot && special(doc.sourceRoot, { outputs: false });
       if (odd) return { code: 2, log: `refusing to build ${doc.name}: ${odd} is not a file or a directory that can be read\n` };
     }
     return await buildHere(doc, out, aux, env);
@@ -382,16 +388,19 @@ async function buildHere(doc, out, aux, env) {
 }
 
 // runs command on a document with run() and options: through doc.runner if
-// set, with -r for each path in read outside the document's directory, and
-// -w for each directory in write. The total limit is then longer than the
-// runner's default of 900 s, so that the runner, started later, stops the
-// command first, with its own line. However the runner ended, even killed
-// by run(), its --clean then cleans the directories in write, and the run
-// fails if that removed anything or failed
+// set, with -r for doc.sourceRoot if set, and for each path in read outside
+// it or the document's directory, and -w for each directory in write. The
+// total limit is then longer than the runner's default of 900 s, so that
+// the runner, started later, stops the command first, with its own line.
+// However the runner ended, even killed by run(), its --clean then cleans
+// the directories in write, and the run fails if that removed anything or
+// failed
 export async function runOn(doc, read, write, command, args, options) {
   if (!doc.runner) return run(command, args, options);
-  const result = await run(doc.runner[0], [...doc.runner.slice(1), ...read.filter(file => /^\.\.(\/|$)/.test(relative(doc.dir, file)))
-    .flatMap(file => ['-r', file]), ...write.flatMap(dir => ['-w', dir]), '--', command, ...args], { ...options, total: 930 });
+  const top = doc.sourceRoot ?? doc.dir;
+  const mounts = [...doc.sourceRoot ? [doc.sourceRoot] : [], ...read.filter(file => /^\.\.(\/|$)/.test(relative(top, file)))];
+  const result = await run(doc.runner[0], [...doc.runner.slice(1), ...mounts.flatMap(file => ['-r', file]),
+    ...write.flatMap(dir => ['-w', dir]), '--', command, ...args], { ...options, total: 930 });
   const left = await clean(doc, write);
   return left ? { ...result, code: result.code || 1, log: result.log + left.log } : result;
 }

@@ -141,9 +141,29 @@ describe('regress.mjs', { concurrency: true }, () => {
     }
   });
 
+  test('regress.mjs --contain --root mounts the root read-only for each command, and the stamp covers the root', async () => {
+    const dir = scratch({ 'src/a/b/main.tex': article('\\input{../../top}'), 'src/top.tex': 'Top.' });
+    try {
+      let result = await regress(dir, '--contain', '--latexmk', '--root', 'src', 'src/a/b');
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.includes(`target=${join(dir, 'src/a/b')},readonly `));
+      for (const command of [' latexmk -norc ', '/bin/tex8web -c ']) {
+        assert.ok(runs.some(line => line.includes(command) && line.includes(`target=${join(dir, 'src')},readonly `)), `${command}: ${runs.join('\n')}`);
+      }
+      result = await regress(dir, '--contain', '--root', 'src', 'src/a/b');
+      assert.match(result.stdout, /^reusing b's b build/m);
+      writeFileSync(join(dir, 'src/top.tex'), 'Top, changed.');
+      result = await regress(dir, '--contain', '--root', 'src', 'src/a/b');
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.doesNotMatch(result.stdout, /^reusing b's b build/m);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
   test('regress.mjs refuses what it cannot do before it builds anything', async () => {
     const dir = scratch({ 'one/main.tex': article('First'), 'a/dup/main.tex': article('A'), 'b/dup/main.tex': article('B'),
-      'empty/readme.txt': 'no TeX', 'two/a.tex': article('A'), 'two/b.tex': article('B') });
+      'empty/readme.txt': 'no TeX', 'two/a.tex': article('A'), 'two/b.tex': article('B'), 'r/doc/main.tex': article('R') });
     try {
       const refused = async (pattern, ...args) => {
         const result = await regress(dir, ...args);
@@ -158,6 +178,11 @@ describe('regress.mjs', { concurrency: true }, () => {
       await refused(/main\.tex/, 'two');
       await refused(/same name.*dup/, 'a/dup', 'b/dup');
       await refused(/make4ht/, '--out', 'my-out', 'one');
+      await refused(/--root is for --contain only/, '--root', 'one', 'one');
+      await refused(/not a directory: empty\/readme\.txt/, '--contain', '--root', 'empty/readme.txt', 'one');
+      await refused(/refusing one: it is not in --root two/, '--contain', '--root', 'two', 'one');
+      await refused(/--out .*one\/out is in --root one/, '--contain', '--root', 'one', '--out', 'one/out', 'one');
+      await refused(/--shots-cache .*one\/cache is in --root \./, '--contain', '--root', '.', '--out', '../elsewhere', '--shots-cache', 'one/cache', 'one');
       // (a source that is not trusted: a link where its PDF lock was is
       // removed, and the source refused; so is a source that holds a link,
       // or is named through one)
@@ -169,6 +194,10 @@ describe('regress.mjs', { concurrency: true }, () => {
       await refused(/refusing one: .*one\/zero\.tex is not a file or a directory that can be read/, '--contain', 'one');
       symlinkSync(join(dir, 'one'), join(dir, 'linked'));
       await refused(/refusing linked: it is a symbolic link/, '--contain', 'linked');
+      // (a link in the root, outside the document's directory)
+      symlinkSync('/dev/zero', join(dir, 'r/zero.tex'));
+      await refused(/refusing --root r: .*r\/zero\.tex is not a file or a directory that can be read/, '--contain', '--root', 'r', 'r/doc');
+      await refused(/refusing .*: it is a symbolic link/, '--contain', '--root', 'linked', 'one');
     } finally {
       rmSync(dir, { recursive: true });
     }

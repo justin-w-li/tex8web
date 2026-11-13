@@ -34,6 +34,12 @@
 //                      as a symbolic link. Other links in the paths given
 //                      are resolved. latexmk then writes the PDF to the
 //                      document's build/pdf, and reads no .latexmkrc
+//   --root <dir>       with --contain, also mount dir read-only, for a
+//                      document that reads files above its directory. dir
+//                      must hold every document given, and no --out,
+//                      --baseline, or --shots-cache. It is refused, like a
+//                      document's directory, if it holds anything but files
+//                      and directories
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -58,7 +64,7 @@ const at = (path, source) => {
   if (lstatSync(real, { throwIfNoEntry: false })?.isSymbolicLink()) refuse(`refusing ${path}: it is a symbolic link`);
   return real;
 };
-const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain] [--shots-cache <dir>] <dir or .tex file>...';
+const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain [--root <dir>]] [--shots-cache <dir>] <dir or .tex file>...';
 const refuse = message => {
   console.error(message);
   process.exit(2);
@@ -69,6 +75,7 @@ try {
   parsed = parseArgs({ allowPositionals: true, options: {
     c: { type: 'string', short: 'c' }, baseline: { type: 'string' }, out: { type: 'string' },
     accept: { type: 'boolean' }, draft: { type: 'boolean' }, latexmk: { type: 'boolean' }, contain: { type: 'boolean' },
+    root: { type: 'string' },
     'shots-cache': { type: 'string' },
   } });
 } catch (error) {
@@ -77,6 +84,10 @@ try {
 const { values: options, positionals } = parsed;
 if (!positionals.length) refuse(usage);
 if (options.draft && options.accept) refuse('--draft pages are not to be trusted, so --draft and --accept don\'t go together');
+// (a build on the host reads any file, so --root is only for --contain)
+if (options.root && !options.contain) refuse('--root is for --contain only');
+const top = options.root && at(options.root, true);
+if (top && !statSync(top, { throwIfNoEntry: false })?.isDirectory()) refuse(`not a directory: ${options.root}`);
 
 const out = at(options.out ?? 'build/regress');
 const baseline = at(options.baseline ?? join(out, 'accepted'));
@@ -84,6 +95,13 @@ const logs = join(out, 'logs');
 const shotsCache = at(options['shots-cache'] ?? join(out, 'shots-cache'));
 const cfg = at(options.c ?? join(root, 'tex8web.cfg'));
 if (!existsSync(cfg)) refuse(`no such config: ${options.c}`);
+// (a container writes the outputs, and in the root the host would read
+// them: the stamps hash the root except its build directories, and the
+// check below walks all of it)
+const inRoot = path => top && !/^\.\.(\/|$)/.test(relative(top, path));
+for (const [name, path] of [['--out', out], ['--baseline', baseline], ['--shots-cache', shotsCache]]) {
+  if (inRoot(path)) refuse(`${name} ${path} is in --root ${options.root}; put it outside`);
+}
 
 function document(arg) {
   const path = at(arg, true);
@@ -105,15 +123,20 @@ function document(arg) {
     ['--clean', '-w', outputs], { stdio: ['ignore', 2, 2], timeout: 960000, killSignal: 'SIGKILL' }).status !== 0) {
     refuse(`refusing ${arg}: cleaning ${outputs} failed, or removed what is listed above`);
   }
-  const odd = options.contain && special(dir);
+  if (top && !inRoot(dir)) refuse(`refusing ${arg}: it is not in --root ${options.root}`);
+  const odd = options.contain && !top && special(dir);
   if (odd) refuse(`refusing ${arg}: ${odd} is not a file or a directory that can be read`);
   // build() does not build the PDFs a config's \WebPDF links; latexmk()
   // builds them with --latexmk
   return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true,
-    ...options.contain && { runner: [join(root, 'test/lib/contain.mjs')] } };
+    ...options.contain && { runner: [join(root, 'test/lib/contain.mjs')] }, ...top && { sourceRoot: top } };
 }
 
 const docs = positionals.map(document);
+// (once every document's build directory is clean, as a killed build may
+// have left one uncleaned)
+const rootOdd = top && special(top);
+if (rootOdd) refuse(`refusing --root ${options.root}: ${rootOdd} is not a file or a directory that can be read`);
 for (const doc of docs) {
   const same = docs.filter(other => other.name.replace(/[^A-Za-z0-9]/g, '_') === doc.name.replace(/[^A-Za-z0-9]/g, '_'));
   if (same.length > 1) refuse(`documents with the same name ${doc.name}, as each is named by its directory: ${same.map(d => d.dir).join(', ')}`);

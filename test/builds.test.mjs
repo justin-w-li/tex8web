@@ -170,6 +170,35 @@ test('a build is reused only while nothing it was built from has changed', { tim
   }
 });
 
+test('a contained build with a source root mounts it, and refuses a link in it outside its build directories', { timeout: 30000 }, async () => {
+  const top = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webtop')));
+  const path = process.env.PATH;
+  process.env.PATH = stubbed.PATH;
+  try {
+    const dir = join(top, 'a/b');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nText\n\\end{document}\n');
+    // (another document's build directory, which another build may be writing)
+    mkdirSync(join(top, 'other/build'), { recursive: true });
+    symlinkSync('/dev/zero', join(top, 'other/build/zero'));
+    const doc = { name: 'rooted', dir, tex: 'doc.tex', cfg: join(root, 'tex8web.cfg'), runner: [join(root, 'test/lib/contain.mjs')], sourceRoot: top };
+    const make = () => build(doc, join(dir, 'build/html'), join(dir, 'build/aux'), stubbed);
+    writeFileSync(dockerLog, '');
+    const built = await make();
+    assert.equal(built.code, 0, built.log);
+    const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.includes('/bin/tex8web -c '));
+    assert.ok(runs.length === 1 && runs[0].includes(`type=bind,source=${top},target=${top},readonly `), runs.join('\n'));
+
+    symlinkSync('/dev/zero', join(top, 'zero.tex'));
+    const refused = await make();
+    assert.equal(refused.code, 2);
+    assert.match(refused.log, /^refusing to build rooted: .*\/zero\.tex is not a file or a directory that can be read$/m);
+  } finally {
+    process.env.PATH = path;
+    rmSync(top, { recursive: true });
+  }
+});
+
 test('a document with a runner builds its PDF and page through it, and is never reused as a host build', { timeout: 30000 }, async () => {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webrunner')));
   const elsewhere = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webelsewhere')));

@@ -7,15 +7,17 @@
 // A case passes when its build fails if it must, its logs have the
 // expected line, no file appeared in its directory, in tex8web's
 // directory, or in a scratch directory on the host, and no container is
-// left. Four cases differ: bibindex builds a test fixture, which must
-// build and match its build on the host; mountlink gives the runner a link
+// left. Five cases differ: bibindex builds a test fixture, which must
+// build and match its build on the host; root builds a document that reads
+// a file above its directory, which must fail without the source's root
+// mounted and build with it; mountlink gives the runner a link
 // to mount; labels runs --clean on one of a running command's -w
 // directories; kill builds loop in another process, kills that process
 // once loop's .make4ht has run, and builds loop again on what was left.
 // The documents in test/contain are built only through the runner, never
 // on the host. Each docker call has a deadline.
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -131,6 +133,32 @@ async function bibindex() {
   return { line: 'built, with its citation, index, and math, the same as on the host' };
 }
 
+// builds root/a/b/main.tex, which inputs root/top.tex: without
+// sourceRoot, top.tex is not mounted and the build must fail; with
+// sourceRoot set to root, the page must have top.tex's text. The source is
+// copied out of tex8web, which is mounted whole, into a scratch directory.
+// The outputs are kept there too, as the path from the source to tex4ht's
+// files would otherwise hold the checkout's name, and make4ht cannot read
+// a - in it
+async function rooted() {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webroot')));
+  process.on('exit', () => rmSync(own, { recursive: true }));
+  const top = join(own, 'root'), dir = join(top, 'a/b');
+  cpSync(join(root, 'test/contain/root'), top, { recursive: true });
+  const doc = { name: 'root', dir, tex: 'main.tex', cfg: join(root, 'tex8web.cfg'), runner: [join(root, 'test/lib/contain.mjs')] };
+  const out = join(own, 'html'), aux = join(own, 'aux');
+  let result = await build(doc, out, aux);
+  if (result.code === 0) return 'built without the source\'s root';
+  if (!/LaTeX Error: File `\.\.\/\.\.\/top\.tex' not found/.test(result.log)) {
+    return `no line on top.tex in the build without the source's root:\n${result.log.trim().split('\n').slice(-8).join('\n')}`;
+  }
+  result = await build({ ...doc, sourceRoot: top }, out, aux);
+  if (result.code !== 0) return `the build with the source's root exited with ${result.code}:\n${result.log.trim().split('\n').slice(-8).join('\n')}`;
+  if (!readFileSync(join(out, 'main.html'), 'utf8').includes('Text from the top of the source.')) return 'no text from top.tex in the page';
+  if (containers()) return `a container was left: ${containers()}`;
+  return { line: 'failed without the source\'s root, and built with it' };
+}
+
 // gives the runner a -w directory through a symbolic link, which Docker
 // Desktop would follow
 function mountlink() {
@@ -189,7 +217,7 @@ async function labels() {
   }
 }
 
-const others = { bibindex, mountlink, labels, kill };
+const others = { bibindex, root: rooted, mountlink, labels, kill };
 const all = [...Object.keys(cases), ...Object.keys(others)];
 const names = process.argv.slice(2);
 const unknown = names.filter(name => !all.includes(name));
