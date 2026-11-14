@@ -1,0 +1,44 @@
+% Packages given pdfTeX's driver option, as a document written for pdflatex
+% loads them: hyperref with spaces and a braced comma in its options, and
+% bookmark after it; one option list for two packages; xcolor's from
+% \PassOptionsToPackage; rotating, epsfig, and colortbl, which pass it on;
+% pict2e, geometry, and \hypersetup{pdftex} after hyperref loaded. Each
+% input's page is the same as without the option.
+\documentclass{article}
+\usepackage[pdftex]{geometry}
+\PassOptionsToPackage{pdftex}{xcolor}
+\usepackage[pdftex]{color,graphicx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[pdftex]{rotating}
+\usepackage[pdftex]{epsfig}
+\usepackage[pdftex]{colortbl}
+\usepackage[pdftex]{pict2e}
+\usepackage[ pdftex , colorlinks, pdftitle={A, B and C}, linkcolor=red, pdfauthor={X}]{hyperref}
+\usepackage[pdftex]{bookmark}
+\hypersetup{pdftex, urlcolor=blue}
+\begin{document}
+\section{Colors in \textcolor{ForestGreen}{green}}\label{colors}
+
+Text in \textcolor{red}{red} and \textcolor{ForestGreen}{forest}.
+A link to section~\ref{colors}, and to \href{https://example.com/}{a site}.\footnote{A
+note with a link to section~\ref{colors}.}
+
+Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
+After the picture.
+
+Rotated: \rotatebox{90}{up}. After the rotation.
+
+Epsfig: \epsfig{file=test-picture.png, width=1cm}. After epsfig.
+
+\begin{tabular}{ll}
+\rowcolor{yellow} one & two \\
+three & four \\
+\end{tabular}
+
+\setlength{\unitlength}{1pt}
+\begin{picture}(40,20)
+\put(0,0){\line(3,2){30}}
+\put(20,10){\circle{10}}
+\end{picture}
+After the drawing.
+\end{document}

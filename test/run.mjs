@@ -62,6 +62,7 @@ const switched = {
   'test': 'tex8web-plain-links', 'test-hidelinks': 'tex8web-plain-links',
   'test-declared': 'tex8web-plain-links', 'examples/basic': 'tex8web-plain-links',
   'examples/complex': 'tex8web-plain-links', 'test-likepdf': 'tex8web-like-pdf',
+  'test-pdftex': 'tex8web-plain-links', 'test-pdftex-class': 'tex8web-plain-links',
 };
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
@@ -84,6 +85,12 @@ const measured = {
   // (linkcolor=.: no property, so a link is in the color of the text around it)
   'examples/complex': { '--tex8web-link': null },
   'test-tocentry': { '--tex8web-toc-chapter-skip': '1em' },
+  // (hyperref's linkcolor after a braced comma in its options, and urlcolor
+  // from \hypersetup; with the class's option, colorlinks' magenta URLs)
+  'test-pdftex': { '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))',
+    '--tex8web-url': 'light-dark(#0000FF, oklch(from #0000FF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
+  'test-pdftex-class': { '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))',
+    '--tex8web-url': 'light-dark(#FF00FF, oklch(from #FF00FF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
   // (float.sty's ruled style: rules of 0.8pt and 0.4pt, 2pt from the text)
   'test-algorithmic': { '--tex8web-float-rule': '0.08em', '--tex8web-float-midrule': '0.04em',
     '--tex8web-float-endrule': '0.04em', '--tex8web-float-sep': '0.2em', '--tex8web-float-bodysep': '0.2em' },
@@ -920,6 +927,38 @@ const bibliographies = {
   'test-biblatex-authoryear': [hanging('0em', '1.5em', " class='thebibliography tex8web-bibhang'")],
 };
 
+// Packages given pdfTeX's driver option, which tex4ht's DVI mode cannot
+// use: each package's output as without the option. test-pdftex gives it to
+// each package, test-pdftex-class to the class.
+const pdftexText = hex => new RegExp(`<span style='color:${lightDark(hex, 'color')};'>`);
+const pdftexLinks = id => [new RegExp(`A link to section<span class='tex8web-nbsp'> </span><a href='#${id}'>1<!--`),
+  /and to <a href='https:\/\/example\.com\/'>a site<\/a>/];
+const drivers = {
+  'test-pdftex': [
+    // (xcolor's dvipsnames, with pdftex from \PassOptionsToPackage, in a heading)
+    new RegExp(`Colors in <span style='color:${lightDark('#00E000', 'color')};'>green</span></h3>`),
+    pdftexText('#FF0000'),
+    ...pdftexLinks('colors-in-forestgreengreen'),
+    // (a reference in a footnote)
+    /A note with a link to section<span class='tex8web-nbsp'> <\/span><\/span><a href='#colors-in-forestgreengreen'><span class='cmr-8'>1<\/span>/,
+    // (graphicx and epsfig, as wide as in the PDF with geometry's text width)
+    /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1323\)' \/>\. After the picture\./,
+    /<img alt='' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.0662\)' \/>\. After epsfig\./,
+    /Rotated: <span class='rotatebox' style='transform: rotate\(-90deg\);'> up <\/span>\. After the rotation\./,
+    // (colortbl's \rowcolor)
+    new RegExp(`#TBL-1-1- td\\{ background-color:${lightDark('#FFFF00', 'background')}\\}`),
+    // (pict2e's drawing)
+    /<img alt='PICT' src='test-pdftex0x\.png' \/> After the drawing\./,
+  ],
+  'test-pdftex-class': [
+    // (ForestGreen from the class's dvipsnames)
+    pdftexText('#FF0000'), pdftexText('#00E000'),
+    ...pdftexLinks('colors'),
+    /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
+    /<img alt='PICT' src='test-pdftex-class0x\.png' \/> After the drawing\./,
+  ],
+};
+
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
 // hyphenated in the PDF, and html4.4ht's overflow-wrap still breaks one too
 // long for a line): the stylesheet's rule, and the URLs as links of that class.
@@ -1732,6 +1771,7 @@ const patterns = [
   [external, 'among the references to another document'],
   [glossaries, 'in the glossaries'],
   [surds, 'at the square root signs'],
+  [drivers, 'with the driver option', true],
 ];
 
 // the problems in a built page's logs, the page, and the files beside it

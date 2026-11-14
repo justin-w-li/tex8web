@@ -1,0 +1,30 @@
+% pdfTeX's driver option given to the class, which every package reads,
+% with dvipsnames beside it, which xcolor reads; graphicx loaded with
+% \ifpdf, which takes the DVI branch. The page is the same as without the
+% option.
+\documentclass[pdftex,dvipsnames]{article}
+\usepackage{ifpdf}
+\ifpdf
+  \usepackage[pdftex]{graphicx}
+\else
+  \usepackage{graphicx}
+\fi
+\usepackage{xcolor}
+\usepackage{pict2e}
+\usepackage[colorlinks]{hyperref}
+\begin{document}
+\section{Colors}\label{colors}
+
+Text in \textcolor{red}{red} and \textcolor{ForestGreen}{forest}.
+A link to section~\ref{colors}, and to \href{https://example.com/}{a site}.
+
+Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
+After the picture.
+
+\setlength{\unitlength}{1pt}
+\begin{picture}(40,20)
+\put(0,0){\line(3,2){30}}
+\put(20,10){\circle{10}}
+\end{picture}
+After the drawing.
+\end{document}
