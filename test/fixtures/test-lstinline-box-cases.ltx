@@ -42,3 +42,34 @@ Under \underline{\lstinline|under|} then $\mathcal{L}$.
 \parbox{8em}{\lstinline|parbox|} then $\mathcal{M}$.
 
 \begin{tabular}{p{8em}} \lstinline|pcol| \end{tabular} then $\mathcal{N}$.
+
+\colorbox{yellow}{\lstinline|cbox|} then $\mathcal{Q}$.
+
+\fcolorbox{black}{yellow}{\lstinline|fcbox|} then $\mathcal{R}$.
+
+In \hbox{\lstinline|hbox|} then $\mathcal{S}$.
+
+\sbox0{\lstinline|sbox|}In \usebox{0} then $\mathcal{T}$.
+
+\newsavebox\lstsaved
+\savebox\lstsaved{\lstinline|savebox|}In \usebox{\lstsaved} then $\mathcal{U}$.
+
+In \raisebox{1pt}{\lstinline|raise|} then $\mathcal{V}$.
+
+In \framebox{\lstinline|frame|} then $\mathcal{W}$.
+
+\begin{tabular}{ll} \multicolumn{2}{l}{\lstinline|multi|} \end{tabular} then $\mathcal{X}$.
+
+\begin{longtable}{l} \lstinline|long| \end{longtable}
+After it, then $\mathcal{Y}$.
+
+\begin{figure}\caption{\lstinline|cap|}\end{figure}
+After the figure, then $\mathcal{Z}$.
+
+% (other math delimiters after a box)
+In \mbox{\lstinline|delims|} then \(y+1\), and then
+\[z+1\]
+
+% (the literate case of the tabular above, in a paragraph: MathJax leaves
+% math in a code element as TeX, in both)
+Paragraph \lstinline[literate={<=}{{$\leq$}}1]|e<=1| beside.

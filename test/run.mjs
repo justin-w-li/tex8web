@@ -1677,19 +1677,38 @@ function check(doc, result, out, aux) {
   // each formula after one, typeset, with the space before it; a listing
   // in a box, with the spaces of its source as in a paragraph)
   if (doc.name.startsWith('test-lstinline-box')) {
-    const texts = [...html.matchAll(/<code class='lstinline'>([^]*?)<\/code>/g)]
-      .map(([, code]) => code.replace(/<[^>]*>/g, '').replace(/\s+/g, ' '));
+    const hyperref = doc.name.endsWith('-hyperref');
+    const codes = [...html.matchAll(/<code class='lstinline'>([^]*?)<\/code>/g)].map(([, code]) => code);
+    const raw = codes.map(code => code.replace(/<[^>]*>/g, ''));
+    const texts = raw.map(text => text.replace(/\s+/g, ' ').trim());
+    // (the box's runs of spaces: a real edge space of a listing is one)
+    const runs = raw.filter(text => /^\s{2}|\s{2}$/.test(text));
+    if (runs.length) problems.push(`inline listings with runs of spaces: '${runs.join("', '")}'`);
+    // (the paragraph form gives one no-break space before x; the box form
+    // drops it, and the space after y, so only the inner text is compared)
+    if (raw[1]?.replace(/^\s|\s$/g, '') !== 'x y' || raw[2] !== 'x y') problems.push(`the spaces of a boxed inline listing: '${raw[1]}' and '${raw[2]}'`);
+    const literal = codes.length - (hyperref ? 3 : 2);
+    if (!/^e\S+1$/.test(texts[11] ?? '') || texts[11] !== texts[literal]) problems.push(`the literate listing reads '${texts[11]}' in a box and '${texts[literal]}' in a paragraph`);
+    const shown = texts.map((text, i) => i === 1 || i === 2 ? 'SPACES' : i === 11 || i === literal ? 'LITERATE' : text);
     const expected = ['para', 'SPACES', 'SPACES', 'cellL', 'cellC', 'cellR', 'mbox', 'fbox', 'makebox', 'label',
-      'short', 'e≤1', 'italic', 'sans', 'thm', 'under', 'parbox', 'pcol',
-      ...(doc.name.endsWith('-hyperref') ? ['link'] : []), 'note'];
-    if (texts[1]?.trim() !== 'x y' || texts[2] !== texts[1]) problems.push(`the spaces of a boxed inline listing: '${texts[1]}' and '${texts[2]}'`);
-    const shown = texts.map((text, i) => i === 1 || i === 2 ? 'SPACES' : text);
+      'short', 'LITERATE', 'italic', 'sans', 'thm', 'under', 'parbox', 'pcol', 'cbox', 'fcbox', 'hbox', 'sbox',
+      'savebox', 'raise', 'frame', 'multi', 'long', 'cap', 'delims', 'LITERATE', ...(hyperref ? ['link'] : []), 'note'];
     if (shown.join('|') !== expected.join('|')) problems.push(`the inline listings read '${shown.join('|')}'`);
-    const formulas = [...html.replace(/\s+/g, ' ').matchAll(/(\S*) <mjx-container aria-label='([^']*)'/g)]
-      .map(([, before, label]) => `${before} ${label}`);
-    const letters = 'ABCDEFGHIJKLMN' + (doc.name.endsWith('-hyperref') ? 'O' : '') + 'P';
-    const wanted = ['then x plus 1', ...[...letters].map(letter => `then script ${letter}`)];
+    const [italic, sans] = [12, 13].map(i => codes[i] ?? '');
+    if (!(hyperref ? /class='ec-lmtti-10'/ : /class='cmti-10'/).test(italic)) problems.push(`the italic listing is not italic: ${italic}`);
+    if (!(hyperref ? /class='ec-lmtt-10'/ : /class='cmss-10'/).test(sans)) problems.push(`the sans listing is not in the font of its basicstyle: ${sans}`);
+    if (codes.some((code, i) => i !== 11 && i !== literal && /mathjax|\\\(|<mjx/.test(code))) problems.push('math in an inline listing');
+    const flat = html.replace(/\s+/g, ' ');
+    // (a word, maybe in a font span, then a space, before each formula)
+    const formulas = [...flat.matchAll(/(\S*) (?:<\/span>)?(?:<span class='tex8web-nowrap'>)?(?:<span class='mathjax-inline'[^>]*>)?<mjx-container aria-label='([^']*)'/g)]
+      .map(([, before, label]) => `${before.replace(/^.*>/, '')} ${label}`);
+    const letters = 'ABCDEFGHIJKLMNQRSTUVWXYZ';
+    const wanted = ['then x plus 1', ...[...letters].map(letter => `then script ${letter}`), 'then y plus 1',
+      ...(hyperref ? ['then script O'] : []), 'then script P'];
     if (formulas.join('|') !== wanted.join('|')) problems.push(`the formulas after the inline listings read '${formulas.join('|')}'`);
+    if (!/then <span class='mathjax-block'><mjx-container aria-label='z plus 1'/.test(flat)) problems.push('no display z+1 after the inline listings');
+    const count = (flat.match(/<mjx-container/g) ?? []).length;
+    if (count !== wanted.length + 1) problems.push(`${count} formulas, not ${wanted.length + 1}`);
     if (html.includes('tex8web-long-literal')) problems.push('a short inline listing in a long-literal box');
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
