@@ -1,0 +1,33 @@
+% Floats, footnotes, and a wide part in a revtex4-2 article. revtex4.4ht
+% configures these as well as the headings.
+\documentclass{revtex4-2}
+\usepackage{hyperref}
+\begin{document}
+\title{Revhead floats}
+\author{Someone}
+\maketitle
+\section{Floats}
+Text before the floats, with a footnote.\footnote{Text of the footnote.}
+\begin{table}
+\caption{A small table.}\label{tab:one}
+\begin{ruledtabular}
+\begin{tabular}{cc}
+a & b\\
+c & d
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+\begin{table*}
+\caption{A wide table.}
+\begin{tabular}{cc}
+e & f
+\end{tabular}
+\end{table*}
+\begin{widetext}
+Text of the wide part, and table~\ref{tab:one}.
+\end{widetext}
+\begin{figure}
+\caption{A figure.}\label{fig:one}
+\end{figure}
+Text after figure~\ref{fig:one}.
+\end{document}

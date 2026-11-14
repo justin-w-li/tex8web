@@ -1,0 +1,41 @@
+% A revtex4-2 article with a title, an abstract, and headings of each
+% level. tex4ht has no revtex4-2.4ht, so the headings were bold text in
+% one paragraph, each with the same id, and the title and abstract
+% repeated the ids of revtex4-2's table of contents lines.
+\documentclass{revtex4-2}
+\usepackage{hyperref}
+\begin{document}
+\title{Revhead title}
+\author{Someone}
+\begin{abstract}
+Text of the abstract.
+\end{abstract}
+\maketitle
+\section{First section}\label{sec:first}
+Text of the first section, before section~\ref{sec:math}.
+\subsection{A subsection}\label{sec:sub}
+Text of the subsection.
+\subsubsection{A subsubsection}
+Text of the subsubsection.
+\paragraph{A paragraph.}
+Text of the paragraph.
+\section{Mass $m$ and \emph{energy}}\label{sec:math}
+Text after math, back to section~\ref{sec:first} and
+subsection~\ref{sec:sub}.
+\section*{Starred section}
+Text of the starred section.
+\subsection*{Starred subsection}
+Text of the starred subsection.
+\subsubsection*{Starred subsubsection}
+Text of the starred subsubsection.
+\section[Short]{Long title of a section}
+Text of the long section.
+\begin{acknowledgments}
+Text of the acknowledgments.
+\end{acknowledgments}
+\appendix
+\section{Numerical details}
+Text of the appendix.
+\section*{Unnumbered appendix}
+Text of the unnumbered appendix.
+\end{document}

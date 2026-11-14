@@ -1,0 +1,26 @@
+% A revtex4-1 article without hyperref, with a title, an abstract, and
+% headings of each level. tex4ht has no revtex4-1.4ht either.
+\documentclass{revtex4-1}
+\begin{document}
+\title{Revhead old title}
+\author{Someone}
+\begin{abstract}
+Text of the old abstract.
+\end{abstract}
+\maketitle
+\section{First section}\label{sec:first}
+Text of the first section.
+\subsection{A subsection}
+Text of the subsection.
+\subsubsection{A subsubsection}
+Text of the subsubsection.
+\paragraph{A paragraph.}
+Text of the paragraph.
+\section*{Starred section}
+Text of the starred section, after section~\ref{sec:first}.
+\section[Short]{Long title of a section}
+Text of the long section.
+\begin{acknowledgments}
+Text of the acknowledgments.
+\end{acknowledgments}
+\end{document}

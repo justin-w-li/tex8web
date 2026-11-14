@@ -696,6 +696,63 @@ const contents = {
     /<span class='paragraphHead' id='a-paragraph'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*A paragraph\.<\/span>\s*Text of the paragraph\./,
     /<h3 class='sectionHead' id='second-section'>(?:(?!<\/h3>)[^])*<span class='titlemark'>II\.<\/span>(?:(?!<\/h3>)[^])*Second section<\/h3>\s*<p class='noindent'>Text of the second section\./,
   ],
+  // (revtex4-2's and revtex4-1's title, abstract, and headings, as
+  // revtex4's: each heading an element with its number, then its text.
+  // The class sets some titles in capitals, so their case is not checked.
+  // A \ref links to its heading, and the heading's text is not repeated.)
+  'test-revhead': [
+    /<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead title(?:(?!<\/h1>)[^])*<\/h1>(?:(?!<h3)[^])*Text of the abstract\./,
+    /<h3 class='sectionHead' id='([^']+)'>(?:(?!<\/h3>)[^])*<span class='titlemark'>I\.<\/span>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section, before section<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>II<[^]*back to section<span class='tex8web-nbsp'> <\/span><a href='#\1'>I</i,
+    /<h4 class='subsectionHead' id='([^']+)'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\.[^]*subsection<span class='tex8web-nbsp'> <\/span><a href='#\1'>I ?A</,
+    /<h5 class='subsubsectionHead' id='[^']+'>(?:(?!<\/h5>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h5>)[^])*A subsubsection<\/h5>\s*<p class='noindent'>Text of the subsubsection\./,
+    /<span class='paragraphHead' id='[^']+'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*A paragraph\.<\/span>\s*Text of the paragraph\./,
+    /^(?![^]*A paragraph\.[^]*A paragraph\.)/,
+    /section<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>II<[^]*<h3 class='sectionHead' id='\1'>(?:(?!<\/h3>)[^])*<span class='titlemark'>II\.<\/span>(?:(?!<\/h3>)[^])*Mass (?:(?!<\/h3>)[^])*<mjx-container(?:(?!<\/h3>)[^])*energy(?:(?!<\/h3>)[^])*<\/h3>\s*<p class='noindent'>Text after math/i,
+    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Starred section<\/h3>\s*<p class='noindent'>Text of the starred section\./i,
+    /<h4 class='likesubsectionHead' id='[^']+'>(?:(?!<\/h4>|titlemark)[^])*Starred subsection<\/h4>\s*<p class='noindent'>Text of the starred subsection\./,
+    /<h5 class='likesubsubsectionHead' id='[^']+'>(?:(?!<\/h5>|titlemark)[^])*Starred subsubsection<\/h5>\s*<p class='noindent'>Text of the starred subsubsection\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*<span class='titlemark'>III\.<\/span>(?:(?!<\/h3>)[^])*Long title of a section<\/h3>\s*<p class='noindent'>Text of the long section\./i,
+    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Acknowledgments<\/h3>\s*<p class='noindent'>Text of the acknowledgments\./i,
+    // (the appendix's label is not checked)
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Numerical details<\/h3>\s*<p class='noindent'>Text of the appendix\./i,
+    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Unnumbered appendix<\/h3>\s*<p class='noindent'>Text of the unnumbered appendix\./i,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  'test-revhead-41': [
+    /<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead old title(?:(?!<\/h1>)[^])*<\/h1>(?:(?!<h3)[^])*Text of the old abstract\./,
+    /<h3 class='sectionHead' id='([^']+)'>(?:(?!<\/h3>)[^])*<span class='titlemark'>I\.<\/span>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\.[^]*after section<span class='tex8web-nbsp'> <\/span><a href='#\1'>I</i,
+    /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./,
+    /<h5 class='subsubsectionHead' id='[^']+'>(?:(?!<\/h5>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h5>)[^])*A subsubsection<\/h5>\s*<p class='noindent'>Text of the subsubsection\./,
+    /<span class='paragraphHead' id='[^']+'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*A paragraph\.<\/span>\s*Text of the paragraph\./,
+    /^(?![^]*A paragraph\.[^]*A paragraph\.)/,
+    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Starred section<\/h3>\s*<p class='noindent'>Text of the starred section/i,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*<span class='titlemark'>II\.<\/span>(?:(?!<\/h3>)[^])*Long title of a section<\/h3>\s*<p class='noindent'>Text of the long section\./i,
+    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Acknowledgments<\/h3>\s*<p class='noindent'>Text of the acknowledgments\./i,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  // (prl numbers no section, and its acknowledgments have no heading, as
+  // in the PDF. Nothing after the page's end.)
+  'test-revhead-reprint': [
+    /<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead letter(?:(?!<\/h1>)[^])*<\/h1>(?:(?!<h3)[^])*Text of the letter.s abstract\./,
+    /<h3 class='[^']*sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\./i,
+    /<h4 class='[^']*subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./i,
+    /<h3 class='[^']*sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Second section<\/h3>\s*<p class='noindent'>Text of the second section\./i,
+    /Text of the acknowledgments\./,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  // (revtex4-2's floats, footnote, and wide text, which revtex4.4ht also
+  // configures, with a \ref to a table and a figure)
+  'test-revhead-floats': [
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Floats<\/h3>/i,
+    /class='caption'(?:(?!<\/(?:figcaption|div)>)[^])*TABLE(?:<[^>]*>|\s)*I:(?:(?!<\/(?:figcaption|div)>)[^])*A small table\./,
+    /<table[^>]*>(?:(?!<\/table>)[^])*>\s*a\s*<(?:(?!<\/table>)[^])*>\s*b\s*<(?:(?!<\/table>)[^])*>\s*c\s*<(?:(?!<\/table>)[^])*>\s*d\s*<(?:(?!<\/table>)[^])*<\/table>/,
+    /class='caption'(?:(?!<\/(?:figcaption|div)>)[^])*TABLE(?:<[^>]*>|\s)*II:(?:(?!<\/(?:figcaption|div)>)[^])*A wide table\./,
+    /class='caption'(?:(?!<\/(?:figcaption|div)>)[^])*FIG\.(?:<[^>]*>|\s)*1:(?:(?!<\/(?:figcaption|div)>)[^])*A figure\./,
+    /Text of the wide part, and table<span class='tex8web-nbsp'> <\/span><a href='#[^']+'>I</,
+    /Text after figure<span class='tex8web-nbsp'> <\/span><a href='#[^']+'>1</,
+    /Text of the footnote\./,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
   'test-report': [
     /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
     /<\/nav>(?:(?!<\/nav>)[^])*<div class='tableofcontents'>\s*<span class='lofToc'>/,
