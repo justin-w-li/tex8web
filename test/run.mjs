@@ -391,9 +391,11 @@ const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : j
 // a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
 const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
 // the files in the folders of test-pdfpic's source pictures before any
-// build, to check that a build writes nothing there
+// build, and those beside the fixture named test-pdfpic*, such as
+// test-pdfpic-box.pdf, to check that a build writes nothing there
 const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic'];
-const pdfpicListing = () => pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))).sort();
+const pdfpicListing = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))),
+  ...readdirSync(join(root, 'test/fixtures')).filter(f => f.startsWith('test-pdfpic')).map(f => join('test/fixtures', f))].sort();
 const pdfpicSources = pdfpicListing();
 const pdfpicWritten = () => pdfpicListing().filter(f => !pdfpicSources.includes(f));
 const pictures = {
@@ -2035,6 +2037,9 @@ function check(doc, result, out, aux) {
       else if (typeof source === 'number' ? !(Math.abs(pngAspect(data) / source - 1) < 0.03) : !data.equals(readFileSync(join(root, 'test', source)))) {
         problems.push(`${alt}: ${shown[alt]} is not ${typeof source === 'number' ? `a PNG ${source.toFixed(3)} times as wide as high` : `a copy of ${source}`}`);
       }
+      // (color types 4 and 6 have an alpha channel: a converted picture has
+      // the white background of the PDF's page, so its lines show in dark mode)
+      if (data && typeof source === 'number' && [4, 6].includes(data[25])) problems.push(`${alt}: ${shown[alt]} has a transparent background`);
     }
     const written = pdfpicWritten();
     if (written.length) problems.push(`files written beside the source's pictures: ${written.join(', ')}`);

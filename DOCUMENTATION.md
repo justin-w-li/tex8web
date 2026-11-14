@@ -187,7 +187,7 @@ To fade between the other pages of your site too, add `@view-transition { naviga
 
 The page uses the system setting for light or dark mode until the reader picks a theme with the theme button. This choice is saved in the browser for every tex8web page on the same origin. To set a default for your site, put `data-theme="light"` or `data-theme="dark"` on the `<html>` element. A choice made by the reader takes precedence over this default.
 
-In light mode, colors are as in the PDF. In dark mode, dark text becomes light and light backgrounds become dark, with the same hues. Colored links keep their hue but are lighter and less saturated. TikZ pictures are inverted.
+In light mode, colors are as in the PDF. In dark mode, dark text becomes light and light backgrounds become dark, with the same hues. Colored links keep their hue but are lighter and less saturated. TikZ pictures are inverted. Other pictures are shown as they are, and a PDF or EPS picture keeps the white background it has on the PDF's page.
 
 ### Table of contents
 

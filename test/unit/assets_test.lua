@@ -184,4 +184,49 @@ return {
     equal(html, "<head><script data-fonts='fonts/lmroman10-regular.woff2'"
       .. " id='tex8web-fonts'></script></head>")
   end,
+
+  -- (Ghostscript is not run: os.execute only records the command)
+  ["assets.convert: a page that is not a whole number is page 1, and a newer PNG is kept"] = function()
+    local dir = os.tmpname()
+    os.remove(dir)
+    lfs.mkdir(dir)
+    local picture = dir .. "/pic.pdf"
+    local f = assert(io.open(picture, "w"))
+    f:write("%PDF")
+    f:close()
+    lfs.touch(picture, os.time() - 100)
+    local commands, execute, make = {}, os.execute, Make
+    os.execute = function(command) commands[#commands + 1] = command; return true end
+    Make = {add_file = function() end}
+    local function convert(page)
+      local img = dom.html_parse("<html><body><img src='x'/></body></html>"):query_selector("img")[1]
+      local ok, err = pcall(assets.convert, picture, page, img, {dir = dir}, {})
+      return ok and img:get_attribute("src") or error(err)
+    end
+    local ok, err = pcall(function()
+      local src = convert("1;touch x")
+      check(src:match("^tex8web%-pictures/%x+/pic%-1%.png$"), src)
+      check(commands[1]:find("-dFirstPage=1 -dLastPage=1 ", 1, true) and not commands[1]:find("touch"), commands[1])
+      check(commands[1]:find("-sDEVICE=png16m ", 1, true), commands[1])
+      src = convert("1/../../x")
+      check(src:match("^tex8web%-pictures/%x+/pic%-1%.png$"), src)
+      -- (the PNG, made after the picture)
+      local png = dir .. "/" .. src
+      os.execute = execute
+      os.execute("mkdir -p '" .. png:match("^(.*)/") .. "'")
+      os.execute = function(command) commands[#commands + 1] = command; return true end
+      f = assert(io.open(png, "w"))
+      f:write("png")
+      f:close()
+      local before = #commands
+      convert("1")
+      equal(#commands, before)
+      lfs.touch(picture, os.time() + 100)
+      convert("1")
+      equal(#commands, before + 1)
+    end)
+    os.execute, Make = execute, make
+    os.execute("rm -rf '" .. dir .. "'")
+    check(ok, err)
+  end,
 }

@@ -401,7 +401,6 @@ end
 -- relative to the document's folder. A picture outside that folder goes
 -- in a folder of tex8web-pictures/ named by a hash of its path, so that two
 -- pictures never share a name and no folder of the writer's shows in it.
--- (M.add copies a file under its name, into the folder of its path.)
 function M.inside(path)
   local parts = parts_of(path)
   if not M.leaves(path) then return table.concat(parts, "/") end
@@ -415,22 +414,35 @@ end
 -- folder, and the PNG is written in the page's folder, never beside the
 -- picture: the source may be read-only. A picture that is not found from
 -- the document's folder, such as one in TeX Live, is looked up in kpathsea.
--- converted lists the PNGs already made for the page.
+-- converted lists the PNGs already made for the page. A PNG left by an
+-- earlier build, newer than its picture, is kept, as html4.4ht kept it.
+-- The PNG has a white background, as the picture has on the PDF's page, so
+-- that its lines show in dark mode too. A page that is not a whole number
+-- (graphicx's page=, which goes into the command and the PNG's name) is
+-- page 1, with a warning.
 function M.convert(src, page, img, context, converted)
   local file = src:gsub('"', "")
   file = exists(file) and file or kpse.find_file(file, "graphic/figure") or file
+  if not page:match("^%d+$") then
+    log:warning("page " .. page .. " of " .. file .. " is not a whole number; page 1 is shown")
+    page = "1"
+  end
   local png = M.inside(file):gsub("%.[^./]*$", "") .. "-" .. page .. ".png"
   local path = context.dir .. "/" .. png
   img:set_attribute("src", png)
   if converted[path] then return end
   converted[path] = true
-  local crop = file:lower():find("%.eps$") and "-dEPSCrop" or "-dusecropbox"
-  local command = ("mkdir -p %s && rungs -q -dNOPAUSE -dBATCH %s -sDEVICE=pngalpha -r300 "
-    .. "-dFirstPage=%s -dLastPage=%s -sOutputFile=%s %s"):format(files.quote(path:match("^(.*)/")),
-    crop, page, page, files.quote(path), files.quote(file))
-  if not os.execute(command) or not exists(path) then
-    log:error("Ghostscript could not convert " .. file .. " to " .. png)
+  local made, source = lfs.attributes(path), lfs.attributes(file)
+  if not (made and made.size > 0 and source and made.modification >= source.modification) then
+    local crop = file:lower():find("%.eps$") and "-dEPSCrop" or "-dusecropbox"
+    local command = ("mkdir -p %s && rungs -q -dNOPAUSE -dBATCH %s -sDEVICE=png16m -r300 "
+      .. "-dFirstPage=%s -dLastPage=%s -sOutputFile=%s %s"):format(files.quote(path:match("^(.*)/")),
+      crop, page, page, files.quote(path), files.quote(file))
+    if not os.execute(command) or not exists(path) then
+      log:error("Ghostscript could not convert " .. file .. " to " .. png)
+    end
   end
+  -- (after the conversion: Make:add_file copies the file at once)
   Make:add_file(path)
 end
 
