@@ -1,0 +1,10 @@
+% The package of test-pdftex-class.tex, loaded before graphicx: it reads
+% the class's options and stops at pdfTeX's driver option in DVI mode, as
+% packages that need pdfTeX's PDF output do.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{test-pdftex-early}[2026/11/13 tex8web test package]
+\DeclareOption{pdftex}{%
+  \ifnum\pdfoutput<1
+    \PackageError{test-pdftex-early}{pdfTeX's driver option in DVI mode}{}%
+  \fi}
+\ProcessOptions\relax

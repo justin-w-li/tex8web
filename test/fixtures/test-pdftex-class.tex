@@ -1,8 +1,10 @@
 % pdfTeX's driver option given to the class, which every package reads,
-% with dvipsnames beside it, which xcolor reads; graphicx loaded with
-% \ifpdf, which takes the DVI branch; pict2e's slope and arc as in
-% test-pdftex. The page is the same as without the option.
+% with dvipsnames beside it, which xcolor reads; a package that reads the
+% option before graphicx loads; graphicx loaded with \ifpdf, which takes
+% the DVI branch; pict2e's slope and arc as in test-pdftex. The page is the
+% same as without the option.
 \documentclass[pdftex,dvipsnames]{article}
+\usepackage{test-pdftex-early}
 \usepackage{ifpdf}
 \ifpdf
   \usepackage[pdftex]{graphicx}

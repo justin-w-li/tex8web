@@ -359,31 +359,37 @@
 % the packages that choose a driver, or to the class. tex4ht runs LaTeX in
 % DVI mode: hyperref stops at "Wrong driver option", and the pdftex drivers
 % of graphics, color, and pict2e stop at pdfTeX's PDF primitives. The
-% option is dropped from each such package's options before it loads, and
-% from the class's, which xcolor's \ProcessKeyOptions reads. The raw lists
-% keep the spaces around each option, so they are set as clists first. The
-% option is put back in the package's options after it loads, so that
-% loading the package again with the option is no clash, as in pdflatex.
+% option is dropped from the class's options before the class loads: from
+% \@classoptionslist, which \ProcessOptions reads in every package, and
+% from \@raw@classoptionslist, which \ProcessKeyOptions reads. After the
+% class, it is dropped from the unused options, so that LaTeX does not warn
+% of it. It is dropped from each such package's options before the package
+% loads, and put back after, so that loading the package again with the
+% option is no clash, as in pdflatex. The raw lists keep the spaces around
+% each option, so they are set as clists first.
 \ExplSyntaxOn
 \cs_new_protected:Npn \__web_drop_pdftex:N #1
     {
-        \clist_gset:Ne #1 { \exp_not:V #1 }
+        \clist_gset:No #1 {#1}
         \clist_gremove_all:Nn #1 { pdftex }
     }
-\cs_generate_variant:Nn \__web_drop_pdftex:N { c }
+% #3 after dropping the option from the list #1 and the raw list #2, if #1
+% holds it
+\cs_new_protected:Npn \__web_drop_pdftex:NNn #1#2#3
+    {
+        \clist_if_in:NnT #1 { pdftex }
+            { \__web_drop_pdftex:N #1 \__web_drop_pdftex:N #2 #3 }
+    }
+\cs_generate_variant:Nn \__web_drop_pdftex:NNn { cc }
+\AddToHook { class/before }
+    { \__web_drop_pdftex:NNn \@classoptionslist \@raw@classoptionslist { } }
+\AddToHook { class/after } { \clist_gremove_all:Nn \@unusedoptionlist { pdftex } }
 \clist_map_inline:nn { hyperref, graphics, graphicx, color, xcolor, pict2e, lscape }
     {
         \AddToHook { package/#1/before }
             {
-                \clist_if_in:NnT \@classoptionslist { pdftex }
+                \__web_drop_pdftex:ccn { opt@#1.sty } { @raw@opt@#1.sty }
                     {
-                        \__web_drop_pdftex:N \@classoptionslist
-                        \__web_drop_pdftex:N \@raw@classoptionslist
-                    }
-                \clist_if_in:cnT { opt@#1.sty } { pdftex }
-                    {
-                        \__web_drop_pdftex:c { opt@#1.sty }
-                        \__web_drop_pdftex:c { @raw@opt@#1.sty }
                         \AddToHook { package/#1/after }
                             { \clist_gput_right:cn { opt@#1.sty } { pdftex } }
                     }
