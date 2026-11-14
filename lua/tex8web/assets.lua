@@ -365,10 +365,11 @@ function M.copy(document, context)
   local converted = {}
   for _, img in ipairs(document:query_selector("img")) do
     local src = img:get_attribute("src") or ""
-    local page = img:get_attribute("data-tex8web-page")
-    if page then
+    local file, page = img:get_attribute("data-tex8web-file"), img:get_attribute("data-tex8web-page")
+    if file then
+      img:set_attribute("data-tex8web-file", nil)
       img:set_attribute("data-tex8web-page", nil)
-      M.convert(src, page, img, context, converted)
+      M.convert(file, page, img, context, converted)
     elseif src ~= "" and not src:match("^%a+:") and exists(src)
         and (M.leaves(src) or not exists(context.dir .. "/" .. src)) then
       img:set_attribute("src", M.inside(src))

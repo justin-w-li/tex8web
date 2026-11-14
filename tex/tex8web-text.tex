@@ -1091,13 +1091,17 @@
         \fi
         \web@Gread@eps@aux{#1}}
 \fi
-% a PDF or EPS picture, named by its file and marked with its page, for
-% assets.copy to convert into the page's folder. html4.4ht's conversion,
-% which t4ht runs, names the file relative to the document's folder from
-% the build directory, where Ghostscript does not find it, and writes the
-% PNG beside the picture, in the source.
+% a PDF or EPS picture, its file and page marked for assets.copy, which
+% converts it into the page's folder. html4.4ht's conversion, which t4ht
+% runs, names the file relative to the document's folder from the build
+% directory, where Ghostscript does not find it, and writes the PNG beside
+% the picture, in the source. The space before the picture is html4.4ht's:
+% without it, the picture's box in overpic's Overpic has no width, and
+% overpic stops at "Arithmetic overflow".
 \ifdefined\Gin@setfile
-    \def\web@converted{\Picture[\a:GraphicsAlt]{{\Gin@base\Gin@ext}
+    \def\web@converted{\ifdefined\Gin@page\else\def\Gin@page{1}\fi
+        { }\Picture[\a:GraphicsAlt]{{\Gin@base-\Gin@page.png}
+        data-tex8web-file="\Gin@base\Gin@ext"
         data-tex8web-page="\ifx\Gin@page\@empty 1\else\Gin@page\fi"
         \csname a:Gin-dim\endcsname}}
     \Configure{graphics*}{pdf}{\web@converted}
