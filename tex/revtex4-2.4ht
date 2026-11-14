@@ -3,6 +3,51 @@
 % bold text in one paragraph. tex4ht reads <class>.4ht from tex8web's
 % tex/, which tex8web.mk4 puts on TEXINPUTS.
 \input revtex4.4ht
+% revtex4.4ht's title block restores \@makefnmark@latex and
+% \@footnotemark@latex, which revtex4.cls saves as the document starts and
+% revtex4-2 does not, and counts the title's notes as footnotes. revtex4-2
+% counts them as mpfootnotes, so the body's footnotes start at 1.
+\appdef\class@documenthook{%
+ \let\@makefnmark@latex\@makefnmark
+ \let\@footnotemark@latex\@footnotemark}
+\pend:def\frontmatter@setup{\ltx@footnote@pop
+ \def\@mpfn{mpfootnote}\def\thempfn{\thempfootnote}\c@mpfootnote\z@
+ \web@revfntext}
+% The mark of a \footnote in the title block links to the anchor that
+% hyperref writes with the note's text, which tex4ht's text leaves out.
+% The class names that anchor, and links to it, without hyperref too,
+% where its \hyper@anchorstart writes nothing, so tex4ht's \Link writes
+% the anchors of the title block's notes.
+\def\web@revanchor#1{\Link{}{#1}\EndLink}
+\def\web@revfntext{%
+ \let\web@revfootnotetext\@footnotetext
+ \long\def\@footnotetext##1{\web@revfootnotetext{%
+   \ifdefined\Hy@footnote@currentHref
+     \web@revanchor{\Hy@footnote@currentHref}\fi##1}}}
+% The note's anchor is named as revtex4-2's marks link to it, from the
+% mpfootnote count.
+\long\def\frontmatter@makefntext#1{%
+ \parindent 1em
+ \c:frontpagefootnote \a:footnotetext
+ \noindent
+ \web@revanchor{frontmatter.\expandafter\the\csname c@\@mpfn\endcsname}%
+ \@makefnmark
+ \b:footnotetext \a:footnotebody
+ #1%
+ \b:footnotebody \c:footnotetext \d:frontpagefootnote
+}
+% latex.4ht's \thanks, set after the class's, writes a mark where it
+% stands and keeps the note for LaTeX's \maketitle, which revtex4-2 does
+% not use. revtex4-2's \thanks adds a note to the title block, as
+% \email does.
+\let\thanks\frontmatter@thanks
+% The marks of the title's notes are LaTeX's footnote symbols in math,
+% whose \ifcase would reach MathJax as it is. They are set as text.
+\def\frontmatter@thefootnote{%
+ \altaffilletter@sw{\@alph}{\web@revfnsymbol}{\csname c@\@mpfn\endcsname}}
+\def\web@revfnsymbol#1{\ifcase#1\or *\or \textdagger\or \textdaggerdbl\or
+ \textsection\or \textparagraph\or **\or \textdagger\textdagger\or
+ \textdaggerdbl\textdaggerdbl\else\@ctrerr\fi}
 % revtex4-2 adds contents lines for the title and the abstract, which
 % revtex4.4ht does not configure: each repeats the anchor of the line
 % before it in the page.
@@ -15,6 +60,9 @@
 \def\close@column{\newpage}
 % revtex4-2's \appendix* sets \thesection to \unskip, which tex4ht writes
 % into the anchor of the section that follows, and the next run stops on
-% it. The section is left without a number.
+% it. The section is left without a number, and its heading starts with
+% "Appendix:", as in the PDF.
 \let\web@revappendix\appendix
-\def\appendix{\@ifstar{\web@revappendix*\def\thesection{}}\web@revappendix}
+\def\appendix{\@ifstar{\web@revappendix*\def\thesection{}%
+    \ConfigureMark{section}{\HCode{<span class="titlemark">}\appendixname{}:\HCode{</span>}}}%
+  \web@revappendix}

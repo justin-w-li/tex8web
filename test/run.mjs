@@ -720,6 +720,10 @@ const contents = {
   ],
   'test-revhead-41': [
     /<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead old title(?:(?!<\/h1>)[^])*<\/h1>(?:(?!<h3)[^])*Text of the old abstract\./,
+    // (the author's notes without hyperref: a \footnote, and \email with
+    // \thanks in one note, as in the PDF)
+    /Someone(?:<[^>]*>)*<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*a<(?:(?!<\/div>)[^])*<\/div>[^]*<aside class='footnotetext'(?:(?!<\/aside>)[^])*<a id='\1'><\/a>(?:<[^>]*>)*A\s+note\s+on\s+the\s+old\s+author\./,
+    /Someone(?:(?!<\/div>)[^])*<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*†<(?:(?!<\/div>)[^])*<\/div>[^]*<aside class='footnotetext'(?:(?!<\/aside>)[^])*<a id='\1'><\/a><sup[^>]*>(?:<[^>]*>)*†<(?:(?!<\/aside>)[^])*old@example\.com;\s+A\s+thanks\s+of\s+the\s+old\s+author\./,
     /<h3 class='sectionHead' id='([^']+)'>(?:(?!<\/h3>)[^])*<span class='titlemark'>I\.<\/span>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\.[^]*after section<span class='tex8web-nbsp'> <\/span><a href='#\1'>I</i,
     /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./,
     /<h5 class='subsubsectionHead' id='[^']+'>(?:(?!<\/h5>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h5>)[^])*A subsubsection<\/h5>\s*<p class='noindent'>Text of the subsubsection\./,
@@ -763,6 +767,7 @@ const contents = {
     /<span class='paragraphHead' id='[^']+'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*One\.<\/span>\s*Text of the first paragraph\.\s*<\/p>\s*<p class='noindent'><span class='paragraphHead' id='[^']+'><span class='titlemark'>b\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*Two\.<\/span>\s*Text of the second paragraph,/,
     /<main>(?!(?:(?!<\/main>)[^])*(?:One\.|Text of the first paragraph)(?:(?!<\/main>)[^])*Two\.(?:(?!<\/main>)[^])*(?:One\.|Text of the first paragraph))/,
     /appendix<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>A<[^]*<h3 class='sectionHead' id='\1'>(?:(?!<\/h3>)[^])*Details<\/h3>\s*<p class='noindent'>Text of the appendix\.\s*<\/p>\s*<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*Part<\/h4>\s*<p class='noindent'>Text of the appendix.s part\./i,
+     /<\/main><\/body> ?<\/html> ?$/,
   ],
   // (a revtex4-2 preprint for an aip journal, and a single appendix from
   // \appendix*, whose label is not checked)
@@ -770,7 +775,21 @@ const contents = {
     /<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead preprint(?:(?!<\/h1>)[^])*<\/h1>/,
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*<span class='titlemark'>I\.<\/span>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\./i,
     /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./,
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Only appendix<\/h3>\s*<p class='noindent'>Text of the only appendix\./i,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Only appendix<\/h3>\s*<p class='noindent'>Text of the only appendix\./i,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  // (revtex4-2's notes in the title block: an author's \footnote, \email,
+  // and \thanks, each marked where it stands and linked to its text, as in
+  // the PDF, which leaves out a \thanks in the title. The marks are text,
+  // not math. The body's footnotes are numbered from 1.)
+  'test-revhead-front': [
+    /<main>\s*<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead front(?:(?!<\/h1>|<sup|thank)[^])*<\/h1>/,
+    /^(?![^]*(?:thank-mark|ifcase|A note on the title))/,
+    /First Author<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*a<(?:(?!<\/div>)[^])*<\/div>[^]*<aside class='footnotetext'(?:(?!<\/aside>)[^])*<a id='\1'><\/a>(?:<[^>]*>)*A\s+note\s+on\s+the\s+author\./,
+    /First Author(?:(?!<\/div>)[^])*<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*†<(?:(?!<\/div>)[^])*<\/div>[^]*<aside class='footnotetext'(?:(?!<\/aside>)[^])*<a id='\1'><\/a><sup[^>]*>(?:<[^>]*>)*†<(?:(?!<\/aside>)[^])*first@example\.com/,
+    /Second\s+Author<\/span><a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*‡<(?:(?!<\/div>)[^])*<\/div>[^]*<aside class='footnotetext'(?:(?!<\/aside>)[^])*<a id='\1'><\/a><sup[^>]*>(?:<[^>]*>)*‡<(?:(?!<\/aside>)[^])*A\s+thanks\s+of\s+the\s+second\s+author\./,
+    /Text of the first section\.\[<a href='#[^']+'>1<\/a>\] More text\.\[<a href='#[^']+'>2<\/a>\]/,
+    /<\/main><\/body> ?<\/html> ?$/,
   ],
   'test-report': [
     /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,

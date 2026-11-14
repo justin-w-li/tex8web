@@ -1,0 +1,22 @@
+% Notes in a revtex4-2 title block: an author's \footnote, \email, and
+% \thanks, a \thanks in the title, which the PDF leaves out, and body
+% footnotes after them. tex4ht's revtex4.4ht reads macros that revtex4.cls
+% saves and revtex4-2 does not.
+\documentclass{revtex4-2}
+\usepackage{hyperref}
+\begin{document}
+\title{Revhead front\thanks{A note on the title.}}
+\author{First Author\footnote{A note on the author.}}
+\email{first@example.com}
+\affiliation{A University}
+\author{Second Author}
+\thanks{A thanks of the second author.}
+\affiliation{Another Institute}
+\begin{abstract}
+Text of the abstract.
+\end{abstract}
+\maketitle
+\section{First section}
+Text of the first section.\footnote{A body footnote.}
+More text.\footnote{A second body footnote.}
+\end{document}

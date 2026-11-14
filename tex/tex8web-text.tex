@@ -99,8 +99,12 @@
 % each \thanks mark where the \thanks is, as in the PDF. tex4ht (latex.4ht)
 % puts it there only where \footnote is \thanks: LaTeX's \maketitle makes
 % it so, and titling's does not. The marks are not links, as in the PDF.
+% revtex4-2.4ht sets revtex4-2's \thanks, which adds a note to the title
+% block, as \email does, and is kept.
 \let\web@thanks\thanks
-\def\thanks#1{{\let\footnote\thanks\web@thanks{#1}}}
+\ifx\thanks\frontmatter@thanks\else
+    \def\thanks#1{{\let\footnote\thanks\web@thanks{#1}}}
+\fi
 \web@needs{a:thank-mark}
 \web@needs{b:thank-mark}
 \Configure{thank}
