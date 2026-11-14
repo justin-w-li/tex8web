@@ -12,7 +12,9 @@
 % of another in another folder, one with dots in its name, in display math,
 % and in a subfigure; an EPS picture without its extension. A PDF and an EPS
 % picture in parentheses, and two PDF pictures half the line wide side by
-% side, with no space before them. A picture inside the folder is a guard.
+% side, with no space before them. A PDF and an EPS picture with the same
+% name in one folder, and a PDF beside a PNG named as its conversion was
+% (own.pdf and own-1.png). A picture inside the folder is a guard.
 % run.mjs builds this page again with \PdfpicAbsolute and \PdfpicAbsolutePdf
 % set to absolute paths of a PNG and a PDF picture.
 \documentclass{article}
@@ -77,12 +79,20 @@ Parentheses: (\includegraphics[alt={pdf parentheses}, width=1cm]{test-pdfpic/box
 
 \noindent\includegraphics[alt={pdf half one}, width=.5\linewidth]{test-pdfpic/box}\includegraphics[alt={pdf half two}, width=.5\linewidth]{test-pdfpic/box}
 
+Twin PDF: \includegraphics[alt={twin pdf}, width=2cm]{test-pdfpic/twin.pdf}
+
+Own PDF: \includegraphics[alt={own pdf}, width=2cm]{test-pdfpic/own.pdf}
+
+Own PNG: \includegraphics[alt={own png}]{test-pdfpic/own-1.png}
+
 \section{EPS pictures}
 EPS: \includegraphics[alt={eps}, width=2cm]{test-pdfpic/boxeps.eps}
 
 Without extension: \includegraphics[alt={eps bare}, width=2cm]{test-pdfpic/boxeps}
 
 EPS parentheses: (\includegraphics[alt={eps parentheses}, width=1cm]{test-pdfpic/boxeps})
+
+Twin EPS: \includegraphics[alt={twin eps}, width=1cm]{test-pdfpic/twin.eps}
 
 \section{Pictures above the folder}
 Graphicspath: \includegraphics[alt={above graphicspath}]{pic.png}

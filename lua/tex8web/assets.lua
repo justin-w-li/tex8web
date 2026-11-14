@@ -427,7 +427,9 @@ function M.convert(src, page, img, context, converted)
     log:warning("page " .. page .. " of " .. file .. " is not a whole number; page 1 is shown")
     page = "1"
   end
-  local png = M.inside(file):gsub("%.[^./]*$", "") .. "-" .. page .. ".png"
+  -- (the name keeps the picture's extension: plot.pdf and plot.eps, or
+  -- fig.pdf and the writer's own fig-1.png, never share a PNG)
+  local png = M.inside(file) .. "-" .. page .. ".png"
   local path = context.dir .. "/" .. png
   img:set_attribute("src", png)
   if converted[path] then return end
@@ -438,7 +440,11 @@ function M.convert(src, page, img, context, converted)
     local command = ("mkdir -p %s && rungs -q -dNOPAUSE -dBATCH %s -sDEVICE=png16m -r300 "
       .. "-dFirstPage=%s -dLastPage=%s -sOutputFile=%s %s"):format(files.quote(path:match("^(.*)/")),
       crop, page, page, files.quote(path), files.quote(file))
-    if not os.execute(command) or not exists(path) then
+    -- (removed first, so that a failed run never leaves an earlier PNG;
+    -- texlua's os.execute returns the exit status, not Lua 5.3's true)
+    os.remove(path)
+    if os.execute(command) ~= 0 or not exists(path) then
+      os.remove(path)
       log:error("Ghostscript could not convert " .. file .. " to " .. png)
       return
     end

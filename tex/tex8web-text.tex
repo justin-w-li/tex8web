@@ -1097,8 +1097,8 @@
 % directory, where Ghostscript does not find it, and writes the PNG beside
 % the picture, in the source.
 \ifdefined\Gin@setfile
-    \def\web@converted{\ifdefined\Gin@page\else\def\Gin@page{1}\fi
-        \Picture[\a:GraphicsAlt]{{\Gin@base-\Gin@page.png}
+    \def\web@converted{%
+        \Picture[\a:GraphicsAlt]{{\Gin@base\Gin@ext.png}
         data-tex8web-file="\Gin@base\Gin@ext"
         data-tex8web-page="\ifx\Gin@page\@empty 1\else\Gin@page\fi"
         \csname a:Gin-dim\endcsname}}

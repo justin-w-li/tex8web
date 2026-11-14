@@ -3,7 +3,7 @@
 // run beside them. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -377,6 +377,9 @@ const copied = {
     'pdf page one': 64 / 48, 'pdf page two': 120 / 30, 'pdf graphicspath': 120 / 30, 'pdf figure': 120 / 30,
     'pdf space': 1, 'pdf beside': 100 / 20, 'pdf kpathsea': 4 / 3, 'pdf same name': 30 / 60, 'pdf dots': 50 / 25,
     'eps': 57 / 28, 'eps bare': 57 / 28, 'eps parentheses': 57 / 28, 'above pdf': 90 / 30, 'above eps': 30 / 45,
+    // (a PDF and an EPS picture with one name, and a PDF beside a PNG named
+    // as its conversion was)
+    'twin pdf': 80 / 20, 'twin eps': 20 / 40, 'own pdf': 96 / 32, 'own png': 'fixtures/test-pdfpic/own-1.png',
     // (the same name in two parent folders, two copies; the same picture
     // named three ways, one)
     'above graphicspath': 'pdfpic-above/pic.png', 'above again': 'pdfpic-above/pic.png', 'above figure': 'pdfpic-above/pic.png',
@@ -395,14 +398,30 @@ const unspaced = {
 const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
 // a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
 const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
-// the files in the folders of test-pdfpic's source pictures before any
-// build, and those beside the fixture named test-pdfpic*, such as
-// test-pdfpic-box.pdf, to check that a build writes nothing there
+// the files and folders in the folders of test-pdfpic's source pictures,
+// and those beside the fixture named test-pdfpic*, such as
+// test-pdfpic-box.pdf, to check that a build writes nothing there: those
+// git does not track, or, outside a git checkout of tex8web, those that
+// were not there before any build. (safe.directory: CI's container checks
+// out as another user)
 const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic'];
 const pdfpicListing = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))),
   ...readdirSync(join(root, 'test/fixtures')).filter(f => f.startsWith('test-pdfpic')).map(f => join('test/fixtures', f))].sort();
-const pdfpicSources = pdfpicListing();
-const pdfpicWritten = () => pdfpicListing().filter(f => !pdfpicSources.includes(f));
+const pdfpicTracked = () => {
+  const git = (...args) => spawnSync('git', ['-c', 'safe.directory=*', '-C', root, ...args], { encoding: 'utf8' });
+  const top = git('rev-parse', '--show-toplevel');
+  if (top.status !== 0 || realpathSync(top.stdout.trim()) !== realpathSync(root)) return null;
+  const files = git('ls-files', '-z', '--', ...pdfpicFolders, 'test/fixtures/test-pdfpic*');
+  if (files.status !== 0) return null;
+  const tracked = new Set();
+  for (const file of files.stdout.split('\0').filter(Boolean)) {
+    for (let at = file.indexOf('/'); at !== -1; at = file.indexOf('/', at + 1)) tracked.add(file.slice(0, at));
+    tracked.add(file);
+  }
+  return tracked;
+};
+const pdfpicSources = pdfpicTracked() ?? new Set(pdfpicListing());
+const pdfpicWritten = () => pdfpicListing().filter(f => !pdfpicSources.has(f));
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without

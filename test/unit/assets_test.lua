@@ -196,7 +196,7 @@ return {
     f:close()
     lfs.touch(picture, os.time() - 100)
     local commands, execute, make = {}, os.execute, Make
-    os.execute = function(command) commands[#commands + 1] = command; return true end
+    os.execute = function(command) commands[#commands + 1] = command; return 0 end
     Make = {add_file = function() end}
     local function convert(page)
       local img = dom.html_parse("<html><body><img src='x'/></body></html>"):query_selector("img")[1]
@@ -205,16 +205,16 @@ return {
     end
     local ok, err = pcall(function()
       local src = convert("1;touch x")
-      check(src:match("^tex8web%-pictures/%x+/pic%-1%.png$"), src)
+      check(src:match("^tex8web%-pictures/%x+/pic%.pdf%-1%.png$"), src)
       check(commands[1]:find("-dFirstPage=1 -dLastPage=1 ", 1, true) and not commands[1]:find("touch"), commands[1])
       check(commands[1]:find("-sDEVICE=png16m ", 1, true), commands[1])
       src = convert("1/../../x")
-      check(src:match("^tex8web%-pictures/%x+/pic%-1%.png$"), src)
+      check(src:match("^tex8web%-pictures/%x+/pic%.pdf%-1%.png$"), src)
       -- (the PNG, made after the picture)
       local png = dir .. "/" .. src
       os.execute = execute
       os.execute("mkdir -p '" .. png:match("^(.*)/") .. "'")
-      os.execute = function(command) commands[#commands + 1] = command; return true end
+      os.execute = function(command) commands[#commands + 1] = command; return 0 end
       f = assert(io.open(png, "w"))
       f:write("png")
       f:close()
@@ -224,6 +224,47 @@ return {
       lfs.touch(picture, os.time() + 100)
       convert("1")
       equal(#commands, before + 1)
+    end)
+    os.execute, Make = execute, make
+    os.execute("rm -rf '" .. dir .. "'")
+    check(ok, err)
+  end,
+
+  -- (Ghostscript is not run: os.execute fails, or writes the PNG and exits 0)
+  ["assets.convert: a failed conversion leaves no PNG, an earlier one either"] = function()
+    local dir = os.tmpname()
+    os.remove(dir)
+    lfs.mkdir(dir)
+    local picture = dir .. "/pic.pdf"
+    local f = assert(io.open(picture, "w"))
+    f:write("%PDF")
+    f:close()
+    local execute, make, added = os.execute, Make, {}
+    Make = {add_file = function(file) added[#added + 1] = file end}
+    local png
+    local function convert(status)
+      os.execute = function(command)
+        execute("mkdir -p '" .. png:match("^(.*)/") .. "'")
+        local out = assert(io.open(png, "w"))
+        out:write("partial")
+        out:close()
+        return status
+      end
+      local img = dom.html_parse("<html><body><img src='x'/></body></html>"):query_selector("img")[1]
+      assert(pcall(assets.convert, picture, "1", img, {dir = dir}, {}))
+      os.execute = execute
+      return img:get_attribute("src")
+    end
+    local ok, err = pcall(function()
+      png = dir .. "/" .. assets.inside(picture) .. "-1.png"
+      convert(0)
+      equal(#added, 1)
+      -- (a newer picture that Ghostscript cannot render, over the PNG of an
+      -- earlier build)
+      lfs.touch(picture, os.time() + 100)
+      convert(1)
+      equal(#added, 1)
+      check(not lfs.attributes(png), "the PNG is still there")
     end)
     os.execute, Make = execute, make
     os.execute("rm -rf '" .. dir .. "'")
