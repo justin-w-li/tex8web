@@ -1,10 +1,12 @@
-% A \par in \title: in the text, in a font group, in italic, sans-serif,
-% and typewriter text, and from a macro, beside math, \thanks, a \\ with
-% space, and \endgraf. The document builds, and the page's title holds the
-% text with a space for each \par.
+% A \par in \title: from a blank line, in the text, in a font group, in
+% italic, sans-serif, and typewriter text, and from a macro, beside math,
+% \thanks, a \\ with space, and \endgraf. The document builds, and the
+% page's title holds the text with a space for each \par.
 \documentclass{article}
 \newcommand\br{\par}
-\title{First\par Second {\Large\bfseries Third\par} {\itshape Fourth\par}
+\title{
+
+First\par Second {\Large\bfseries Third\par} {\itshape Fourth\par}
   {\sffamily Fifth\par} {\ttfamily Sixth\par} on $x^2+1$\br
   Seventh\endgraf Eighth\thanks{A note on the title.}\\[1ex] Ninth}
 \author{Someone}

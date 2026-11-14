@@ -1,7 +1,7 @@
 % \title redefined to call the saved \title with a blank line and an
-% environment, with hyperref: every title starts with a \par. The document
-% builds, and the page's title holds the text.
-\documentclass{article}
+% environment, with hyperref, in the exam class: every title starts with a
+% \par. The document builds, and the page's title holds the text.
+\documentclass{exam}
 \usepackage{hyperref}
 \let\oldtitle\title
 \renewcommand\title[1]{\oldtitle{

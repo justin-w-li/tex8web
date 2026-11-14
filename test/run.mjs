@@ -576,12 +576,8 @@ const titles = {
   ],
   'test-titlepar-hyperref': [/<title>\s*Heading text\s*<\/title>/, /<meta content='Heading text' property='og:title' \/>/,
     titleHead("<div class='flushright'>", 'Heading text</div>')],
-  'test-titlepar-report': [/<title>\s*Heading text\s*<\/title>/, /<meta content='Heading text' property='og:title' \/>/,
-    titleHead('Heading text')],
   'test-titlepar-koma': [/<title>\s*Main\s+Title\s*<\/title>/, /<meta content='Main\s+Title' property='og:title' \/>/,
     titleHead('Main', 'Title'), /<\/h1>\s*<div class='subtitle'><span[^>]*>Sub<\/span><\/div>/],
-  'test-titlepar-exam': [/<title>\s*Worksheet\s*<\/title>/, /<meta content='Worksheet' property='og:title' \/>/,
-    titleHead("<div class='flushright'>", 'Worksheet</div>')],
   'test-titlepar-memoir': [/<title>\s*First\s+Second\s+Third\s*<\/title>/,
     /<meta content='First\s+Second\s+Third' property='og:title' \/>/, titleHead('First', 'Second', 'Third')],
   // (without \maketitle, and in the sidebar's link to the top)
