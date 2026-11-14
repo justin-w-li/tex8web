@@ -1090,27 +1090,41 @@
                 \relax}%
         \fi
         \web@Gread@eps@aux{#1}}
+    % a PDF picture's bounding box outside these pictures too, read from
+    % extractbb when no .xbb file is beside the picture, so its natural size
+    % is the PDF's. graphics.sty keeps that size, which is right for the
+    % file, so it is not dropped.
+    \edef\web@pdf@ext{\detokenize{.pdf}}
+    \def\Gread@eps@aux#1{%
+        \ifx\Gin@ext\web@pdf@ext
+            \web@Gread@bb{#1}\global\let\web@Gread@drop\relax
+        \else
+            \web@Gread@eps@aux{#1}%
+        \fi}
 \fi
 % a PDF or EPS picture, its file and page marked for assets.copy, which
-% converts it into the page's folder. html4.4ht's conversion, which t4ht
+% converts it into the build directory. html4.4ht's conversion, which t4ht
 % runs, names the file relative to the document's folder from the build
 % directory, where Ghostscript does not find it, and writes the PNG beside
-% the picture, in the source.
+% the picture, in the source. A converted picture with no size is as wide
+% as in the PDF (\ifweb@natural in Gin-dim), since its PNG has more pixels
+% than the PDF has points.
+\newif\ifweb@natural
 \ifdefined\Gin@setfile
     \def\web@converted{%
+        \web@naturaltrue
         \Picture[\a:GraphicsAlt]{{\Gin@base\Gin@ext.png}
         data-tex8web-file="\Gin@base\Gin@ext"
         data-tex8web-page="\ifx\Gin@page\@empty 1\else\Gin@page\fi"
-        \csname a:Gin-dim\endcsname}}
+        \csname a:Gin-dim\endcsname}%
+        \web@naturalfalse}
     \Configure{graphics*}{pdf}{\web@converted}
     \Configure{graphics*}{eps}{\web@converted}
 \fi
 % overpic's overpic and Overpic environments, whose picture is a box made
 % before the picture starts. tex4ht's \includegraphics there gives a box of
-% no width, and overpic,
-% which divides by the width, stops at "Arithmetic overflow". Such a box
-% gets the width of a space, which html4.4ht's PDF configuration wrote
-% before the picture, so the picture keeps its size.
+% no width, and overpic, which divides by the width, stops at "Arithmetic
+% overflow". Such a box gets the width of a space instead.
 \@ifpackageloaded{overpic}{%
     \let\web@OVP@picture\OVP@picture
     \def\OVP@picture{\ifdim\wd\OVP@box=\z@ \wd\OVP@box=\fontdimen2\font \fi
@@ -1124,13 +1138,14 @@
 % picture. The height it is shown at, from the width and the natural aspect,
 % in the same unit, is a data attribute for text.pictures, which lowers a
 % picture turned over and then removes the attribute. tex4ht's size is kept
-% when no size is asked for. It is kept when graphicx resizes a box around
-% the picture instead (a size after angle, or scale with a size): then
-% \Gin@@ewidth or \Gin@@eheight is missing, since graphicx sets them only in
-% the other case. It is kept when the width depends on a natural size that
-% tex4ht does not know (no .xbb file beside a bitmap: \noBoundingBox in
-% graphics.4ht). \web@textwidth is used because a minipage, and so a
-% tcolorbox or subfigure, sets \textwidth to its width.
+% when no size is asked for, except for a converted picture. It is kept
+% when graphicx resizes a box around the picture instead (a size after
+% angle, or scale with a size): then \Gin@@ewidth or \Gin@@eheight is
+% missing, since graphicx sets them only in the other case. It is kept
+% when the width depends on a natural size that tex4ht does not know (no
+% .xbb file beside a bitmap: \noBoundingBox in graphics.4ht).
+% \web@textwidth is used because a minipage, and so a tcolorbox or
+% subfigure, sets \textwidth to its width.
 \ExplSyntaxOn
 \cs_if_exist:NT \Gin@req@width
   {
@@ -1143,6 +1158,7 @@
         \bool_if:nTF
           {
             (
+              \cs_if_eq_p:NN \ifweb@natural \iftrue ||
               ! \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation ||
               ! \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation ||
               ! \str_if_eq_p:Vn \Gin@scalex { 1 }

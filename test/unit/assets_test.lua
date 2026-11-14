@@ -230,6 +230,16 @@ return {
     check(ok, err)
   end,
 
+  ["assets.lg_leaves: a .lg entry outside the document's folder, joined to the build directory or not"] = function()
+    check(not assets.lg_leaves("build/tex4ht/pic.png", "build/tex4ht"))
+    check(not assets.lg_leaves("figs/pic.png", "build/tex4ht"))
+    check(not assets.lg_leaves("pic.png", ""))
+    check(assets.lg_leaves("build/tex4ht/../../x.png", "build/tex4ht"))
+    check(assets.lg_leaves("../x.png", "build/tex4ht"))
+    check(assets.lg_leaves("/abs/x.png", "build/tex4ht"))
+    check(assets.lg_leaves("../x.png", ""))
+  end,
+
   -- (Ghostscript is not run: os.execute fails, or writes the PNG and exits 0)
   ["assets.convert: a failed conversion leaves no PNG, an earlier one either"] = function()
     local dir = os.tmpname()

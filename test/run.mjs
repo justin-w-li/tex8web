@@ -375,6 +375,8 @@ const copied = {
     ...Object.fromEntries(['bare', 'extension', 'starred', 'options', 'italic', 'footnote', 'link', 'minipage', 'display',
       'subfigure', 'parentheses', 'half one', 'half two'].map(alt => [`pdf ${alt}`, 64 / 48])),
     'pdf page one': 64 / 48, 'pdf page two': 120 / 30, 'pdf graphicspath': 120 / 30, 'pdf figure': 120 / 30,
+    'pdf natural': 64 / 48, 'pdf height': 64 / 48, 'pdf scale': 64 / 48, 'pdf page natural': 120 / 30,
+    'pdf kpathsea natural': 4 / 3,
     'pdf space': 1, 'pdf beside': 100 / 20, 'pdf kpathsea': 4 / 3, 'pdf same name': 30 / 60, 'pdf dots': 50 / 25,
     'eps': 57 / 28, 'eps bare': 57 / 28, 'eps parentheses': 57 / 28, 'above pdf': 90 / 30, 'above eps': 30 / 45,
     // (a PDF and an EPS picture with one name, and a PDF beside a PNG named
@@ -400,21 +402,27 @@ const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : j
 const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
 // the files and folders in the folders of test-pdfpic's source pictures,
 // and those beside the fixture named test-pdfpic*, such as
-// test-pdfpic-box.pdf, that a build wrote there: in a git checkout of
-// tex8web, those git neither tracks nor ignores (Finder's .DS_Store is
-// ignored), and outside one, those that were not there before any build.
+// test-pdfpic-box.pdf, that a build wrote or changed there: in a git
+// checkout of tex8web, those git lists as untracked or modified (Finder's
+// .DS_Store is ignored), and outside one, those that were not there before
+// any build. Either way a file already there or already listed when this
+// script started, such as the fixture being edited, counts only if its time
+// of change is later.
 // (safe.directory: CI's container checks out as another user)
 const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic'];
 const pdfpicListing = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))),
   ...readdirSync(join(root, 'test/fixtures')).filter(f => f.startsWith('test-pdfpic')).map(f => join('test/fixtures', f))].sort();
 const pdfpicGit = (...args) => spawnSync('git', ['-c', 'safe.directory=*', '-C', root, ...args], { encoding: 'utf8' });
 const pdfpicTop = pdfpicGit('rev-parse', '--show-toplevel');
-const pdfpicBefore = pdfpicTop.status === 0 && realpathSync(pdfpicTop.stdout.trim()) === realpathSync(root) ? null : new Set(pdfpicListing());
-const pdfpicWritten = () => {
-  if (pdfpicBefore) return pdfpicListing().filter(f => !pdfpicBefore.has(f));
-  const files = pdfpicGit('ls-files', '-z', '--others', '--exclude-standard', '--directory', '--', ...pdfpicFolders, 'test/fixtures/test-pdfpic*');
-  return files.status === 0 ? files.stdout.split('\0').filter(Boolean).sort() : [`(git ls-files failed: ${files.stderr.trim()})`];
+const pdfpicInGit = pdfpicTop.status === 0 && realpathSync(pdfpicTop.stdout.trim()) === realpathSync(root);
+const pdfpicStatus = () => {
+  if (!pdfpicInGit) return pdfpicListing();
+  const files = pdfpicGit('status', '--porcelain', '-z', '--untracked-files=all', '--', ...pdfpicFolders, 'test/fixtures/test-pdfpic*');
+  return files.status === 0 ? files.stdout.split('\0').filter(Boolean).map(f => f.slice(3)) : [`(git status failed: ${files.stderr.trim()})`];
 };
+const pdfpicTime = f => { try { const st = statSync(join(root, f)); return st.isFile() ? st.mtimeMs : 0; } catch { return -1; } };
+const pdfpicBefore = new Map(pdfpicStatus().map(f => [f, pdfpicTime(f)]));
+const pdfpicWritten = () => pdfpicStatus().filter(f => !pdfpicBefore.has(f) || pdfpicTime(f) !== pdfpicBefore.get(f)).sort();
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -424,6 +432,12 @@ const pictures = {
     share('both', '0.2899'), share('fitted', '0.1546'), share('angle last', '0.2899'), /<img alt='bare' (?:(?!style=)[^>])*\/>/,
     // (a size after angle, and scale with a size: left to tex4ht)
     ...['rotated', 'scaled first', 'scaled last'].map(alt => new RegExp(`<img alt='${alt}' (?:(?!style=)[^>])*\\/>`))],
+  // (PDF pictures without a .xbb file, sized from the PDF's bounding box in
+  // a 345pt text width, for a picture 64bp by 48bp: no size, 3cm high, and
+  // half its size; page 2 of a PDF, 120bp wide, with no size; and a quarter
+  // of TeX Live's example-image-a.pdf, 320bp wide)
+  'test-pdfpic': [share('pdf natural', '0.1862'), share('pdf height', '0.3299'), share('pdf scale', '0.0931'),
+    share('pdf page natural', '0.3491'), share('pdf kpathsea natural', '0.2328')],
   // (the graphics package: a picture without a size or a .xbb, left to tex4ht)
   'test-graphics-only': [/<img (?:(?!style=)[^>])*\/>/],
   // (pictures over a PDF or PNG without its .xbb file, and one with it:

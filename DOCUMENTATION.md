@@ -31,7 +31,8 @@ The options:
 The output directory contains:
 
 - `document.html` and its stylesheets
-- the pictures, and the PDF if you link it with `-p` or `\WebPDF`. PDF and EPS pictures are converted to PNG files at 300 dpi. A picture from outside the document's directory, such as one named with `../` or an absolute path, is copied to a folder of `tex8web-pictures/`.
+- the pictures, as PNG files for PDF and EPS pictures, and the PDF if you link it with `-p` or `\WebPDF`
+- `tex8web-pictures/`, with a copy of each picture from outside the document's directory, such as one named with `../` or an absolute path
 - `fonts/`, with Latin Modern, TeX Gyre or XCharter, the MathJax fonts, and `LICENSE.txt` with their licenses
 - `tex8web-head.js` and `tex8web-page.js`, for the controls
 - in a page built [without Node](#without-node), `tex8web.js` in place of the MathJax fonts

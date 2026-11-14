@@ -397,6 +397,16 @@ function M.leaves(path)
   return path:find("^/") ~= nil or parts_of(path)[1] == ".."
 end
 
+-- whether an entry of the .lg names a picture outside the document's
+-- folder. make4ht joins the entry's name to the build directory builddir
+-- ("" for none) when the file is found there, and a ../ name joined so
+-- still leaves the folder.
+function M.lg_leaves(filename, builddir)
+  local prefix = builddir ~= "" and builddir .. "/"
+  if prefix and filename:sub(1, #prefix) == prefix then filename = filename:sub(#prefix + 1) end
+  return M.leaves(filename)
+end
+
 -- the name inside the page's folder for a picture the page names by path,
 -- relative to the document's folder. A picture outside that folder goes
 -- in a folder of tex8web-pictures/ named by a hash of its path, so that two
@@ -409,11 +419,12 @@ function M.inside(path)
 end
 
 -- converts page page of the PDF or EPS picture src into a PNG in the
--- page's folder, with Ghostscript's options from html4.4ht's PdfConvert and
--- EpsConvert, and points img at it. Ghostscript runs from the document's
--- folder, and the PNG is written in the page's folder, never beside the
--- picture: the source may be read-only. A picture that is not found from
--- the document's folder, such as one in TeX Live, is looked up in kpathsea.
+-- build directory, with Ghostscript's options from html4.4ht's PdfConvert
+-- and EpsConvert, and points img at it. Ghostscript runs from the
+-- document's folder, and the PNG is written in the build directory
+-- (context.dir), never beside the picture: the source may be read-only. A
+-- picture that is not found from the document's folder, such as one in TeX
+-- Live, is looked up in kpathsea.
 -- converted lists the PNGs already made for the page. A PNG left by an
 -- earlier build, newer than its picture, is kept, as html4.4ht kept it.
 -- The PNG has a white background, as the picture has on the PDF's page, so
@@ -439,8 +450,8 @@ function M.convert(src, page, img, context, converted)
     local command = ("mkdir -p %s && rungs -q -dNOPAUSE -dBATCH %s -sDEVICE=png16m -r300 "
       .. "-dFirstPage=%s -dLastPage=%s -sOutputFile=%s %s"):format(files.quote(path:match("^(.*)/")),
       crop, page, page, files.quote(path), files.quote(file))
-    -- (removed first, so that a failed run never leaves an earlier PNG;
-    -- texlua's os.execute returns the exit status, not Lua 5.3's true)
+    -- (removed first, so that a failed run never leaves an earlier PNG.
+    -- texlua's os.execute returns the exit status, not Lua 5.3's true.)
     os.remove(path)
     if os.execute(command) ~= 0 or not exists(path) then
       os.remove(path)

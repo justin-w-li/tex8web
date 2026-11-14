@@ -134,9 +134,8 @@ Make:match("4idx$", function() return false end)
 -- outside the page's folder, and an absolute one puts the writer's folders
 -- in the page's folder. assets.copy copies it to tex8web-pictures instead.)
 Make:match(".", function(filename, par)
-  local builddir = par.builddir ~= "" and par.builddir .. "/"
-  if not (builddir and filename:sub(1, #builddir) == builddir) and assets.leaves(filename) then
-    return false, "outside the document's folder"
+  if assets.lg_leaves(filename, par.builddir) then
+    return false, filename .. " is outside the document's folder"
   end
 end)
 
