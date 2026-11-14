@@ -8,12 +8,13 @@
 % a list, one page, no pages option (page 1), the name with .pdf, a PDF
 % found through \graphicspath, \includepdfmerge with a range for each
 % document, doublepages, duplicatepages, a lastpage hint, openright (a
-% blank page, no picture), and \includepdfset{pages=-}. Then last as the
-% end of a range, a list with spaces, \includepdfmerge with documents
-% without a range (pages= or page 1), a PDF found only through kpathsea
-% (mwe's), and pages of eight.pdf, written by pdftex with object streams
-% and a nested page tree (\pdfobjcompresslevel=2, eight \shipout pages,
-% page k \pdfpagewidth 30(k + 10)bp, \pdfpageheight 30bp). With hyperref;
+% blank page, no picture), last as the end of a range, a list with
+% spaces, \includepdfmerge with documents without a range (pages= or page
+% 1), a PDF found only through kpathsea (mwe's), pages of eight.pdf,
+% written by pdftex with object streams and a nested page tree
+% (\pdfobjcompresslevel=2, eight \shipout pages, page k \pdfpagewidth
+% 30(k + 10)bp, \pdfpageheight 30bp), and last \includepdfset{pages=-},
+% which applies to every later \includepdf. With hyperref;
 % test-pdfpages-plain has some of the same pages without it.
 \documentclass{article}
 \usepackage{pdfpages}
@@ -78,10 +79,6 @@ Run lastpage.
 Run openright.
 \includepdf[pages={1-2},openright]{test-pdfpages/two}
 
-Run set.
-\includepdfset{pages=-}
-\includepdf{test-pdfpages/two}
-
 Run last end.
 \includepdf[pages={2-last}]{test-pdfpages/four}
 
@@ -102,6 +99,10 @@ Run eight.
 
 Run eight open.
 \includepdf[pages={7-}]{test-pdfpages/eight}
+
+Run set.
+\includepdfset{pages=-}
+\includepdf{test-pdfpages/two}
 
 Run end.
 \end{document}
