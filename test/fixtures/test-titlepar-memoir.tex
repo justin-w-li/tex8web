@@ -1,0 +1,11 @@
+% A \par in memoir's \title, with its \pretitle and \posttitle, and an
+% \endgraf. The document builds, and the page's title holds the text.
+\documentclass{memoir}
+\pretitle{\begin{center}\LARGE}
+\posttitle{\par\end{center}}
+\title{First\par Second\endgraf Third}
+\author{Someone}
+\begin{document}
+\maketitle
+Some text.
+\end{document}

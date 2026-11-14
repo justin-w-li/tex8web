@@ -556,12 +556,34 @@ const displayPictures = {
     math: ['Equation after the tag', 'Ordinary display'] },
 };
 
+// \maketitle's heading, holding these parts in order
+const titleHead = (...parts) => new RegExp(`<h1 class='titleHead'>${parts.map(part =>
+  `(?:(?!</h1>)[^])*${part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).join('')}(?:(?!</h1>)[^])*</h1>`);
+
 // The title of a page without \maketitle, for the tab and link previews:
 // \title's text as \maketitle sets it, without the \thanks.
 const titles = {
   'test-title': [/<title>Notes on Groups\s+and Rings<\/title>/,
     /<meta content='Notes on Groups\s+and Rings' property='og:title' \/>/],
   'test-nomaketitle': [/<title>Without a maketitle<\/title>/],
+  // (a \par in \title, which tex4ht writes to the .xref: a space for each
+  // \par in <title> and og:title, and the heading as \maketitle sets it)
+  'test-titlepar': [
+    /<title>\s*First\s+Second\s+Third\s+Fourth\s+Fifth\s+Sixth\s+on\s+x2\s*\+\s*1\s+Seventh\s+Eighth\s+Ninth\s*<\/title>/,
+    /<meta content='First\s+Second\s+Third\s+Fourth\s+Fifth\s+Sixth\s+on\s+x2\s*\+\s*1\s+Seventh\s+Eighth\s+Ninth' property='og:title' \/>/,
+    titleHead('First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'on <mjx-container', 'Seventh', 'Eighth',
+      "<span class='thank-mark'>∗</span><br />", 'Ninth'),
+  ],
+  'test-titlepar-hyperref': [/<title>\s*Heading text\s*<\/title>/, /<meta content='Heading text' property='og:title' \/>/,
+    titleHead("<div class='flushright'>", 'Heading text</div>')],
+  'test-titlepar-report': [/<title>\s*Heading text\s*<\/title>/, /<meta content='Heading text' property='og:title' \/>/,
+    titleHead('Heading text')],
+  'test-titlepar-koma': [/<title>\s*Main\s+Title\s*<\/title>/, /<meta content='Main\s+Title' property='og:title' \/>/,
+    titleHead('Main', 'Title'), /<\/h1>\s*<div class='subtitle'><span[^>]*>Sub<\/span><\/div>/],
+  'test-titlepar-exam': [/<title>\s*Worksheet\s*<\/title>/, /<meta content='Worksheet' property='og:title' \/>/,
+    titleHead("<div class='flushright'>", 'Worksheet</div>')],
+  'test-titlepar-memoir': [/<title>\s*First\s+Second\s+Third\s*<\/title>/,
+    /<meta content='First\s+Second\s+Third' property='og:title' \/>/, titleHead('First', 'Second', 'Third')],
 };
 
 // \today, at the fixed date set in lib/build.mjs
