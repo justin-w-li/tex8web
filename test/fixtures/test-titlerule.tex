@@ -6,8 +6,10 @@
 % the font of its format. Also titletoc, which defines \titlerule too,
 % with \titlerule* in a \titlecontents format that tex4ht does not
 % typeset, since tex4ht builds its own table of contents. And \titlerule,
-% \titlerule*, and \titleline as paragraphs of the text, which pdflatex
-% builds.
+% \titlerule*, and \titleline as paragraphs outside any format, which
+% pdflatex builds. They are in a narrow minipage because the page shows
+% each rule as a line of characters as wide as the PDF's, which is
+% wider than a phone's screen.
 \documentclass{article}
 \usepackage{amssymb}
 \usepackage[explicit]{titlesec}
@@ -40,11 +42,13 @@ Text after the subsubsection.
 \section{Rules in the text}
 Text before the rules.
 
+\begin{minipage}{10em}
 \titlerule
 
 \titlerule*[1em]{-}
 
 \titleline[c]{Middle}
+\end{minipage}
 
 Text after the rules.
 \end{document}

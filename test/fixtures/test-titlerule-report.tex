@@ -1,9 +1,8 @@
 % titlesec's rules in report's headings, without hyperref: a part's and a
 % chapter's display format starting with \titlerule, a chapter's label and
 % after-code with \titlerule, a section's block format ending with
-% \titlerule, \titleformat* with \titlerule, and a subsubsection's label
-% with \titlerule, which tex8web typesets in the heading. Each heading
-% keeps the font and alignment of its format.
+% \titlerule, and \titleformat* with \titlerule. Each heading keeps the
+% font and alignment of its format.
 \documentclass{report}
 \usepackage{titlesec}
 \titleformat{\part}[display]{\titlerule\filcenter\Huge\scshape}
@@ -13,9 +12,6 @@
     {\titlerule\vspace{1ex}\chaptertitlename\ \thechapter}{20pt}{}[\titlerule]
 \titleformat{\section}[block]{\Large\bfseries\titlerule}{\thesection}{1em}{}
 \titleformat*{\subsection}{\titlerule\itshape\large}
-\setcounter{secnumdepth}{3}
-\titleformat{\subsubsection}{\bfseries}
-    {\thesubsubsection\enspace\titlerule[1pt]}{1em}{}
 \begin{document}
 \part{Beginnings}
 \chapter{Alpha}
@@ -24,6 +20,4 @@ Text after the chapter.
 Text after the section.
 \subsection{Gamma}
 Text after the subsection.
-\subsubsection{Delta}
-Text after the subsubsection.
 \end{document}
