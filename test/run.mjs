@@ -2153,7 +2153,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, unspaced, expected, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, expected, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 
