@@ -86,8 +86,11 @@
 % revtex4-2's \appendix* sets \thesection to \unskip, which tex4ht writes
 % into the anchor of the section that follows, and the next run stops on
 % it. The section is left without a number, and its heading starts with
-% "Appendix:", as in the PDF.
+% "Appendix:", as in the PDF, unless the document numbers no section, as
+% prl does: html4.4ht's test of secnumdepth is kept.
 \let\web@revappendix\appendix
 \def\appendix{\@ifstar{\web@revappendix*\def\thesection{}%
-    \ConfigureMark{section}{\HCode{<span class="titlemark">}\appendixname{}:\HCode{</span>}}}%
+    \ConfigureMark{section}{\ifnum\c:secnumdepth>\c@secnumdepth
+        \expandafter\:gobble
+      \else\HCode{<span class="titlemark">}\appendixname{}:\HCode{</span>}\fi}}%
   \web@revappendix}

@@ -1,6 +1,6 @@
 % A revtex4-2 letter in two columns: the reprint option sets the page
 % with ltxgrid, and prl numbers no section and puts the title's notes in
-% the references.
+% the references. Its single appendix, from \appendix*, has no label.
 \documentclass[aps,prl,twocolumn,reprint]{revtex4-2}
 \usepackage{hyperref}
 \begin{document}
@@ -20,4 +20,7 @@ Text of the second section.
 \begin{acknowledgments}
 Text of the acknowledgments.
 \end{acknowledgments}
+\appendix*
+\section{Only appendix}
+Text of the only appendix.
 \end{document}

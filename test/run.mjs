@@ -741,6 +741,8 @@ const contents = {
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\./i,
     /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>|titlemark)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./i,
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Second section<\/h3>\s*<p class='noindent'>Text of the second section\./i,
+    // (prl's single appendix from \appendix* has no label, as in the PDF)
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark|Appendix:)[^])*Only appendix<\/h3>\s*<p class='noindent'>Text of the only appendix\./,
     // (guards: the text is kept, and nothing follows the page's end)
     /Text of the acknowledgments\./,
     /<\/main><\/body> ?<\/html> ?$/,
