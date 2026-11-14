@@ -378,6 +378,7 @@ const copied = {
     'pdf natural': 64 / 48, 'pdf height': 64 / 48, 'pdf scale': 64 / 48, 'pdf page natural': 120 / 30,
     'pdf kpathsea natural': 4 / 3,
     'pdf space natural': 64 / 48, 'pdf space height': 64 / 48, 'pdf space scale': 64 / 48, 'pdf space fitted': 64 / 48,
+    'pdf space width to height': 64 / 48,
     'pdf space': 1, 'pdf beside': 100 / 20, 'pdf kpathsea': 4 / 3, 'pdf same name': 30 / 60, 'pdf dots': 50 / 25,
     'eps': 57 / 28, 'eps bare': 57 / 28, 'eps parentheses': 57 / 28, 'above pdf': 90 / 30, 'above eps': 30 / 45,
     // (a PDF and an EPS picture with one name, and a PDF beside a PNG named
@@ -441,14 +442,17 @@ const pictures = {
   // by 200 pixels at 300 dpi: no size, 3cm high, half its size, and
   // fitted in 5cm by 1cm; in a \scalebox{2}, 1cm high and with no size;
   // in a \resizebox to 3cm wide, to 1cm high, to half the text width, and
-  // to 3cm by 1cm inside a \scalebox{.5})
+  // to 3cm by 1cm inside a \scalebox{.5}; 2cm wide in a \resizebox to 1cm
+  // high, to 3cm wide, and to 3cm by 1cm; 1cm wide in a \scalebox{2})
   'test-pdfpic': [share('pdf natural', '0.1862'), share('pdf height', '0.3299'), share('pdf scale', '0.0931'),
     share('pdf page natural', '0.3491'), share('pdf kpathsea natural', '0.2328'),
     share('pdf space natural', '0.1864'), share('pdf space height', '0.3303'), share('pdf space scale', '0.0932'),
     share('pdf space fitted', '0.1101'), share('pdf space scalebox', '0.2203'),
     share('pdf space scalebox natural', '0.3729'), share('pdf space resizebox', '0.2474'),
     share('pdf space resizebox height', '0.1101'), share('pdf space resizebox half', '0.5'),
-    share('pdf space resizebox scaled', '0.1237')],
+    share('pdf space resizebox scaled', '0.1237'),
+    share('pdf space width to height', '0.1101'), share('pdf space width to width', '0.2474'),
+    share('pdf space width to both', '0.2474'), share('pdf space scalebox width', '0.165')],
   // (the graphics package: a picture without a size or a .xbb, left to tex4ht)
   'test-graphics-only': [/<img (?:(?!style=)[^>])*\/>/],
   // (pictures over a PDF or PNG without its .xbb file, and one with it:

@@ -1173,7 +1173,10 @@
                 \cs_if_eq_p:NN \noBoundingBox \UnDefined ||
                 (
                   ! \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
-                  ( \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_eq_p:NN \ifGin@iso \iffalse )
+                  (
+                    ( ! \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation && \cs_if_eq_p:NN \ifGin@iso \iffalse ) ||
+                    ( \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation && \cs_if_eq_p:NN \ifweb@natural \iffalse )
+                  )
                 )
               }
               {
@@ -1188,7 +1191,9 @@
               {
                 % (a converted picture whose bounding box extractbb could
                 % not read: the size asked for, which assets.convert
-                % applies to the PNG's size)
+                % applies to the PNG's size. A width alone comes here too,
+                % since a \resizebox's factor from the box in the DVI is
+                % wrong for it.)
                 \cs_if_eq:NNTF \ifweb@natural \iftrue
                   { data-tex8web-size="\__web_gin_share:N \Gin:ewidth,\__web_gin_share:N \Gin:eheight,\Gin@scalex" }
                   { \__web_gin_dim: }
@@ -1222,11 +1227,11 @@
 % \resizebox: the mark also carries the width or else the height asked
 % for, in pt. A converted picture whose bounding box TeX could not read is
 % a 72bp square in the DVI (graphics.sty), so the factor is wrong for it,
-% and text.pictures gives it this size when it is alone in the box. The
-% end of the box's content names the size to keep, so that a box inside it
-% takes its own first. The size is read in \Gscale@div, which gets it
-% evaluated: \width and \height, which the size may use, are defined only
-% after the content.
+% and text.pictures gives it this size when it is the only picture in the
+% box. The end of the box's content names the size to keep, so that a box
+% inside it takes its own first. The size is read in \Gscale@div, which
+% gets it evaluated: \width and \height, which the size may use, are
+% defined only after the content.
 \tl_new:N \g__web_target_tl
 \tl_new:N \g__web_target_kind_tl
 \cs_new_protected:Npn \__web_target:n #1

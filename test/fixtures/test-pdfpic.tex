@@ -6,15 +6,17 @@
 % size, one from TeX Live scaled, with options, in a subfolder by name and by
 % \graphicspath, in italic, in a footnote, in a link, in a minipage, and in a
 % figure with a caption. PDF pictures with a space in the name, whose
-% bounding box TeX cannot read: with a width, with no size, with a height or
-% a scale alone, with a width and height kept in proportion, in a \scalebox
-% with a height and with no size, and in a \resizebox to a width, to a
-% height, to half the text width, and to both inside a \scalebox. Text in
-% a \resizebox to 1.5\width and to 2\height. EPS
-% pictures, converted by Ghostscript. Pictures named with ../ (by
-% \graphicspath, by name, two levels up, the same name in two parent
-% folders, a name with a space, PNG, JPEG, PDF, and EPS), the same picture
-% twice, an import.sty chapter, an \import from a parent folder, and epsfig.
+% bounding box TeX cannot read: with a width, with no size, with a height
+% or a scale alone, with a width and height kept in proportion, in a
+% \scalebox with a height, with no size, and with a width, and in a
+% \resizebox to a width, to a height, to half the text width, and to both
+% inside a \scalebox. The same with a width in a \resizebox to a height,
+% to a width, and to both. Text in a \resizebox to 1.5\width and to
+% 2\height. EPS pictures, converted by Ghostscript. Pictures named with
+% ../ (by \graphicspath, by name, two levels up, the same name in two
+% parent folders, a name with a space, PNG, JPEG, PDF, and EPS), the same
+% picture twice, an import.sty chapter, an \import from a parent folder,
+% and epsfig.
 % A PDF beside the document, one found by kpathsea, one with the name
 % of another in another folder, one with dots in its name, in display math,
 % and in a subfigure; an EPS picture without its extension. A PDF and an EPS
@@ -86,6 +88,18 @@ Space resizebox half:
 
 Space resizebox scaled:
 \scalebox{.5}{\resizebox{3cm}{1cm}{\includegraphics[alt={pdf space resizebox scaled}]{"test-pdfpic/wide fig"}}}
+
+Space resizebox width to height:
+\resizebox{!}{1cm}{\includegraphics[alt={pdf space width to height}, width=2cm]{"test-pdfpic/wide fig"}}
+
+Space resizebox width to width:
+\resizebox{3cm}{!}{\includegraphics[alt={pdf space width to width}, width=2cm]{"test-pdfpic/wide fig"}}
+
+Space resizebox width to both:
+\resizebox{3cm}{1cm}{\includegraphics[alt={pdf space width to both}, width=2cm]{"test-pdfpic/wide fig"}}
+
+Space scalebox width:
+\scalebox{2}{\includegraphics[alt={pdf space scalebox width}, width=1cm]{"test-pdfpic/wide fig"}}
 
 Resizebox text: \resizebox{1.5\width}{!}{wider text} and \resizebox{!}{2\height}{taller text}.
 
