@@ -1147,6 +1147,57 @@
         \web@OVP@picture}}{}
 \catcode58 12
 
+% pdfpages' \includepdf and \includepdfmerge: a converted picture for each
+% entry of pdfpages' lists of pages and documents, which \AM@readlist
+% fills from the ranges, last, doublepages, and duplicatepages.
+% pdfpages.4ht passes the raw pages= value to \includegraphics instead,
+% so a range shows its first page alone. An empty entry is a blank page in
+% the PDF and gets no picture. In DVI mode, ppnull.def sets the page count
+% to 1, or to the lastpage hint, for every document, so the count is read
+% from extractbb, which TeX Live's restricted shell escape allows. Without
+% shell escape the count stays 1, as in ppnull.def.
+\ExplSyntaxOn
+\@ifpackageloaded{pdfpages}
+  {
+    \web@needs{AM@readlist}
+    \ior_new:N \g__web_pdfpages_ior
+    \seq_new:N \l__web_pdfpages_seq
+    \seq_new:N \l__web_pdfpages_docs_seq
+    \tl_new:N \l__web_pdfpages_doc_tl
+    \cs_set_protected:Npn \AM@getpagecount
+      {
+        \tl_set:Nn \AM@pagecount { 1 }
+        \sys_if_shell:T
+          {
+            \exp_args:NNe \ior_shell_open:Nn \g__web_pdfpages_ior { extractbb~-O~\AM@currentdocname }
+            \ior_str_map_inline:Nn \g__web_pdfpages_ior
+              {
+                \regex_extract_once:nnNT { \A\%\%Pages:\s*(\d+) } {##1} \l__web_pdfpages_seq
+                  {
+                    \tl_set:Ne \AM@pagecount { \seq_item:Nn \l__web_pdfpages_seq { 2 } }
+                    \ior_map_break:
+                  }
+              }
+            \ior_close:N \g__web_pdfpages_ior
+          }
+      }
+    \cs_set_protected:Npn \AM@output #1
+      {
+        \seq_set_split:NnV \l__web_pdfpages_docs_seq { , } \AM@doclist
+        \seq_set_split:NnV \l__web_pdfpages_seq { , } \AM@pagelist
+        \seq_map_indexed_inline:Nn \l__web_pdfpages_seq
+          {
+            \tl_if_empty:nF {##2}
+              {
+                \tl_set:Ne \l__web_pdfpages_doc_tl { \seq_item:Nn \l__web_pdfpages_docs_seq {##1} }
+                \includegraphics [ page = ##2 ] { \l__web_pdfpages_doc_tl }
+              }
+          }
+      }
+  }
+  { }
+\ExplSyntaxOff
+
 % an \includegraphics picture as wide as in the PDF, as a fraction of the
 % PDF's text width. The picture shrinks only in a column narrower than that
 % (img's max-width). The width is the one graphicx computes from width,
