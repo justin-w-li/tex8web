@@ -380,6 +380,10 @@ figure .tex8web-minipages { justify-content: space-evenly; }
 .tex8web-minipages > .tex8web-minipage-t { align-self: baseline; }
 .tex8web-minipages > .tex8web-minipage-b { align-self: last baseline; }
 .mathjax-block img { display: block; margin: var(--tex8web-display-above) auto var(--tex8web-display-below); }
+/* the pages of a PDF included with pdfpages (tex8web-text.tex): each a
+   page of its own, as in the PDF, centered on its own line with the space
+   of a display above and below, as a picture in display math */
+.tex8web-pdfpages > img { display: block; margin: var(--tex8web-display-above) auto var(--tex8web-display-below); }
 /* the number of an equation whose body is a picture (tex8web-math.tex),
    and the QED box of a \qedhere after a picture, at the right, on the
    picture's bottom line, as in the PDF. The picture is centered between

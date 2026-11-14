@@ -506,6 +506,12 @@ const checkPdfPages = (runs, flat, out) => {
     if (got.length !== want.length || got.some((g, i) => want[i].endsWith('.png') ? !g.endsWith(want[i]) : g !== want[i])) {
       problems.push(`run ${run}: pictures ${got.join(', ')}, not ${want.join(', ')} (${pages}; a number is a picture's width over its height)`);
     }
+    // (each page of its own in the PDF: the pictures in one block, outside
+    // any paragraph, with nothing else in it)
+    const block = part.match(/<div class=['"]tex8web-pdfpages['"]>([^]*?)<\/div>/)?.[1];
+    if (block === undefined || block.replace(/<img [^>]*>/g, '').trim() || part.split(/<div class=['"]tex8web-pdfpages['"]>/).length !== 2) {
+      problems.push(`run ${run}: the pictures are not alone in one div.tex8web-pdfpages`);
+    }
   }
   if (/<img /.test(flat.split('Run dash.')[0]) || /<img /.test(flat.split('Run end.')[1] ?? '')) problems.push('a picture before the first run or after the run end');
   return problems;

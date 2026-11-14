@@ -1149,7 +1149,10 @@
 
 % pdfpages' \includepdf and \includepdfmerge: a converted picture for each
 % entry of pdfpages' lists of pages and documents, which \AM@readlist
-% fills from the ranges, last, doublepages, and duplicatepages.
+% fills from the ranges, last, doublepages, and duplicatepages. The
+% pictures are in a div of their own, outside any paragraph, since each is
+% a page of its own in the PDF (css/tex8web.css). Blank pages alone get
+% no div.
 % pdfpages.4ht passes the raw pages= value to \includegraphics instead,
 % so a range shows its first page alone. An empty entry is a blank page in
 % the PDF and gets no picture. In DVI mode, ppnull.def sets the page count
@@ -1184,18 +1187,28 @@
             \ior_close:N \g__web_pdfpages_ior
           }
       }
+    \bool_new:N \l__web_pdfpages_open_bool
     \cs_set_protected:Npn \AM@output #1
       {
         \seq_set_split:NnV \l__web_pdfpages_docs_seq { , } \AM@doclist
         \seq_set_split:NnV \l__web_pdfpages_seq { , } \AM@pagelist
+        \bool_set_false:N \l__web_pdfpages_open_bool
         \seq_map_indexed_inline:Nn \l__web_pdfpages_seq
           {
             \tl_if_empty:nF {##2}
               {
+                \bool_if:NF \l__web_pdfpages_open_bool
+                  {
+                    \bool_set_true:N \l__web_pdfpages_open_bool
+                    \mode_if_vertical:T { \IgnorePar } \EndP
+                    \HCode { <div~class="tex8web-pdfpages"> } \IgnorePar
+                  }
                 \tl_set:Ne \l__web_pdfpages_doc_tl { \seq_item:Nn \l__web_pdfpages_docs_seq {##1} }
                 \includegraphics [ page = ##2 ] { \l__web_pdfpages_doc_tl }
               }
           }
+        \bool_if:NT \l__web_pdfpages_open_bool
+          { \par \HCode { </div> } }
       }
   }
   { }

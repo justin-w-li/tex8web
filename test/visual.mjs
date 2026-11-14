@@ -555,6 +555,27 @@ const centered = `(() => {
   return { checked: [pictures.length, marks], wrong };
 })()`;
 const centers = { 'test-display-picture': [41, 15], 'test-display-picture-hyperref': [5, 2] };
+// The pages of a PDF included with pdfpages, each a page of its own in the
+// PDF: each picture centered in the column within 0.5px, inside it, and
+// below the picture before it in its block, with a space between them.
+// pdfPageCounts has the number of such pictures. Failures: [the picture,
+// what is wrong]
+const pdfPagesStacked = `(() => {
+  const column = document.querySelector('main') ?? document.body, style = getComputedStyle(column);
+  const box = column.getBoundingClientRect();
+  const left = box.left + parseFloat(style.paddingLeft), right = box.right - parseFloat(style.paddingRight);
+  const pictures = [...document.querySelectorAll('.tex8web-pdfpages > img')];
+  const wrong = pictures.flatMap((img, i) => {
+    const at = img.getBoundingClientRect(), name = img.getAttribute('src') + ' (' + (i + 1) + ')';
+    const before = img.previousElementSibling?.matches('img') && img.previousElementSibling.getBoundingClientRect();
+    const off = (at.left + at.right) / 2 - (left + right) / 2;
+    return [...Math.abs(off) > 0.5 ? [[name, \`its center \${off.toFixed(1)}px from the column's\`]] : [],
+      ...at.left < left - 0.5 || at.right > right + 0.5 ? [[name, 'outside the column']] : [],
+      ...before && !(at.top > before.bottom + 1) ? [[name, \`its top \${(at.top - before.bottom).toFixed(1)}px below the picture before it\`]] : []];
+  });
+  return { checked: pictures.length, wrong };
+})()`;
+const pdfPageCounts = { 'test-pdfpages': 76, 'test-pdfpages-plain': 9, 'test-pdfpages-hint': 7 };
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
@@ -1323,6 +1344,13 @@ async function compare(chrome, doc, ok) {
             for (const [text, what] of boxes.wrong) problems.push(`${html}: the \\lefteqn "${text}": ${what}`);
           }
           if (doc.name in hangs) problems.push(...await hanging(page, doc, html));
+          if (doc.name in pdfPageCounts) {
+            const pages = await page.evaluate(pdfPagesStacked);
+            if (pages.checked !== pdfPageCounts[doc.name]) problems.push(`${html}: ${pages.checked} pages included with pdfpages, not ${pdfPageCounts[doc.name]}`);
+            for (const [name, what] of pages.wrong) problems.push(`${html}: the included page ${name}: ${what}`);
+            const phone = await chrome.withPage(pathToFileURL(file).href, { javascript: false, width: 390 }, at => at.evaluate(pdfPagesStacked));
+            for (const [name, what] of phone.wrong) problems.push(`${html} at 390px: the included page ${name}: ${what}`);
+          }
           if (doc.name in centers) {
             const pictures = await page.evaluate(centered);
             if (`${pictures.checked}` !== `${centers[doc.name]}`) problems.push(`${html}: ${pictures.checked} pictures in display math and marks after them, not ${centers[doc.name]}`);
