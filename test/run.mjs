@@ -373,10 +373,10 @@ const plainSized = ['scaled', 'height'].map(after =>
 const copied = {
   'test-pdfpic': {
     ...Object.fromEntries(['bare', 'extension', 'starred', 'options', 'italic', 'footnote', 'link', 'minipage', 'display',
-      'subfigure'].map(alt => [`pdf ${alt}`, 64 / 48])),
+      'subfigure', 'parentheses', 'half one', 'half two'].map(alt => [`pdf ${alt}`, 64 / 48])),
     'pdf page one': 64 / 48, 'pdf page two': 120 / 30, 'pdf graphicspath': 120 / 30, 'pdf figure': 120 / 30,
     'pdf space': 1, 'pdf beside': 100 / 20, 'pdf kpathsea': 4 / 3, 'pdf same name': 30 / 60, 'pdf dots': 50 / 25,
-    'eps': 57 / 28, 'eps bare': 57 / 28, 'above pdf': 90 / 30, 'above eps': 30 / 45,
+    'eps': 57 / 28, 'eps bare': 57 / 28, 'eps parentheses': 57 / 28, 'above pdf': 90 / 30, 'above eps': 30 / 45,
     // (the same name in two parent folders, two copies; the same picture
     // named three ways, one)
     'above graphicspath': 'pdfpic-above/pic.png', 'above again': 'pdfpic-above/pic.png', 'above figure': 'pdfpic-above/pic.png',
@@ -385,6 +385,11 @@ const copied = {
     'above deep': 'pdfpic-above/deep/pic.jpg', 'above space': 'pdfpic-above/two words.png',
     'imported': 'pdfpic-above/shared/shared.png', 'inside': 'fixtures/test-pdfpic/inside.png',
   },
+};
+// converted pictures with no space before them in the source, by alt: the
+// page must have none before their <img> either
+const unspaced = {
+  'test-pdfpic': ['pdf link', 'pdf parentheses', 'pdf half one', 'pdf half two', 'eps parentheses'],
 };
 // the file a src names in the page's folder, or null if the src leaves it
 const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
@@ -2044,6 +2049,9 @@ function check(doc, result, out, aux) {
     const written = pdfpicWritten();
     if (written.length) problems.push(`files written beside the source's pictures: ${written.join(', ')}`);
   }
+  for (const alt of unspaced[doc.name] ?? []) {
+    if (flat.includes(` <img alt='${alt}'`)) problems.push(`${alt}: a space before the picture`);
+  }
   if (pictureSizes[doc.name]) {
     const [ext, sizes] = pictureSizes[doc.name];
     const measure = after => {
@@ -2099,7 +2107,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, expected, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, unspaced, expected, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

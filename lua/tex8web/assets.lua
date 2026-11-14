@@ -440,6 +440,7 @@ function M.convert(src, page, img, context, converted)
       crop, page, page, files.quote(path), files.quote(file))
     if not os.execute(command) or not exists(path) then
       log:error("Ghostscript could not convert " .. file .. " to " .. png)
+      return
     end
   end
   -- (after the conversion: Make:add_file copies the file at once)

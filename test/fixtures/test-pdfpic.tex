@@ -10,9 +10,11 @@
 % picture twice, an import.sty chapter, an \import from a parent folder, and
 % epsfig. A PDF beside the document, one found by kpathsea, one with the name
 % of another in another folder, one with dots in its name, in display math,
-% and in a subfigure; an EPS picture without its extension. A picture inside the folder is a guard. run.mjs builds this page
-% again with \PdfpicAbsolute and \PdfpicAbsolutePdf set to absolute paths of
-% a PNG and a PDF picture.
+% and in a subfigure; an EPS picture without its extension. A PDF and an EPS
+% picture in parentheses, and two PDF pictures half the line wide side by
+% side, with no space before them. A picture inside the folder is a guard.
+% run.mjs builds this page again with \PdfpicAbsolute and \PdfpicAbsolutePdf
+% set to absolute paths of a PNG and a PDF picture.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{epsfig}
@@ -71,10 +73,16 @@ Dots: \includegraphics[alt={pdf dots}, width=2cm]{test-pdfpic/fig.v2.pdf}
 \end{subfigure}
 \end{figure}
 
+Parentheses: (\includegraphics[alt={pdf parentheses}, width=1cm]{test-pdfpic/box})
+
+\noindent\includegraphics[alt={pdf half one}, width=.5\linewidth]{test-pdfpic/box}\includegraphics[alt={pdf half two}, width=.5\linewidth]{test-pdfpic/box}
+
 \section{EPS pictures}
 EPS: \includegraphics[alt={eps}, width=2cm]{test-pdfpic/boxeps.eps}
 
 Without extension: \includegraphics[alt={eps bare}, width=2cm]{test-pdfpic/boxeps}
+
+EPS parentheses: (\includegraphics[alt={eps parentheses}, width=1cm]{test-pdfpic/boxeps})
 
 \section{Pictures above the folder}
 Graphicspath: \includegraphics[alt={above graphicspath}]{pic.png}

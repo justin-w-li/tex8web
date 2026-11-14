@@ -1095,18 +1095,25 @@
 % converts it into the page's folder. html4.4ht's conversion, which t4ht
 % runs, names the file relative to the document's folder from the build
 % directory, where Ghostscript does not find it, and writes the PNG beside
-% the picture, in the source. The space before the picture is html4.4ht's:
-% without it, the picture's box in overpic's Overpic has no width, and
-% overpic stops at "Arithmetic overflow".
+% the picture, in the source.
 \ifdefined\Gin@setfile
     \def\web@converted{\ifdefined\Gin@page\else\def\Gin@page{1}\fi
-        { }\Picture[\a:GraphicsAlt]{{\Gin@base-\Gin@page.png}
+        \Picture[\a:GraphicsAlt]{{\Gin@base-\Gin@page.png}
         data-tex8web-file="\Gin@base\Gin@ext"
         data-tex8web-page="\ifx\Gin@page\@empty 1\else\Gin@page\fi"
         \csname a:Gin-dim\endcsname}}
     \Configure{graphics*}{pdf}{\web@converted}
     \Configure{graphics*}{eps}{\web@converted}
 \fi
+% overpic's Overpic, whose picture is a box made before the picture starts.
+% tex4ht's \includegraphics there gives a box of no width, and overpic,
+% which divides by the width, stops at "Arithmetic overflow". Such a box
+% gets the width of a space, which html4.4ht's PDF configuration wrote
+% before the picture, so the picture keeps its size.
+\@ifpackageloaded{overpic}{%
+    \let\web@OVP@picture\OVP@picture
+    \def\OVP@picture{\ifdim\wd\OVP@box=\z@ \wd\OVP@box=\fontdimen2\font \fi
+        \web@OVP@picture}}{}
 \catcode58 12
 
 % an \includegraphics picture as wide as in the PDF, as a fraction of the
