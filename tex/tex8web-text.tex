@@ -1153,9 +1153,11 @@
 % pdfpages.4ht passes the raw pages= value to \includegraphics instead,
 % so a range shows its first page alone. An empty entry is a blank page in
 % the PDF and gets no picture. In DVI mode, ppnull.def sets the page count
-% to 1, or to the lastpage hint, for every document, so the count is read
-% from extractbb, which TeX Live's restricted shell escape allows. Without
-% shell escape the count stays 1, as in ppnull.def.
+% to the lastpage hint, or to 1 without it, for every document, so the
+% count is read from extractbb, which TeX Live's restricted shell escape
+% allows. Without shell escape, or with a space in the file name, which
+% extractbb gets as two arguments, the count is the hint or 1, as in
+% ppnull.def.
 \ExplSyntaxOn
 \@ifpackageloaded{pdfpages}
   {
@@ -1166,7 +1168,7 @@
     \tl_new:N \l__web_pdfpages_doc_tl
     \cs_set_protected:Npn \AM@getpagecount
       {
-        \tl_set:Nn \AM@pagecount { 1 }
+        \cs_if_exist:NF \AM@pagecount { \tl_set:Nn \AM@pagecount { 1 } }
         \sys_if_shell:T
           {
             \exp_args:NNe \ior_shell_open:Nn \g__web_pdfpages_ior { extractbb~-O~\AM@currentdocname }

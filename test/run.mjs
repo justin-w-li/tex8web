@@ -478,17 +478,40 @@ const pdfPages = {
     eight: 'eight 6, eight 7, eight 8', 'eight open': 'eight 7, eight 8',
   },
   'test-pdfpages-plain': { dash: 'four 1, four 2, four 3, four 4', closed: 'four 2, four 3', merge: 'two 1, two 2, four 4' },
+  'test-pdfpages-hint': { dash: 'four 1, four 2, four 3, four 4', last: 'four 2, four 3, four 4' },
 };
 const pdfPageAspect = { four: 1, two: 5, three: 7, eight: 10 };
 // the file a src names in the page's folder, or null if the src leaves it
 const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
 // a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
 const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
-// the files and folders in the folders of test-pdfpic's source pictures
-// and of test-pdfpages' PDFs, and those beside the fixture named
-// test-pdfpic*, such as test-pdfpic-box.pdf, that a build wrote or changed there: those not
-// there when this script started, and those whose time of change is later,
-// such as a tracked picture written over. Finder's .DS_Store is left out.
+// the problems with the runs of pdfPages[name] on a page, flat, with its
+// whitespace runs made single spaces, in the folder out
+const checkPdfPages = (name, flat, out) => {
+  const problems = [];
+  for (const [run, pages] of Object.entries(pdfPages[name])) {
+    const part = flat.match(new RegExp(`Run ${run}\\.([^]*?)Run `))?.[1];
+    if (part === undefined) { problems.push(`no run ${run}`); continue; }
+    const want = pages.split(', ').map(page => { const [file, k] = page.split(' '); return file in pdfPageAspect ? String(Number(k) + pdfPageAspect[file]) : `-${k}.png`; });
+    const got = [...part.matchAll(/<img [^>]*>/g)].map(([tag], i) => {
+      const file = inPage(out, tag.match(/ src='([^']*)'/)?.[1]);
+      const aspect = file && existsSync(file) ? pngAspect(readFileSync(file)) : NaN;
+      if (isNaN(aspect)) return 'NaN';
+      return want[i]?.endsWith('.png') ? basename(file) : String(Math.round(aspect * 10) / 10);
+    });
+    if (got.length !== want.length || got.some((g, i) => want[i].endsWith('.png') ? !g.endsWith(want[i]) : g !== want[i])) {
+      problems.push(`run ${run}: pictures ${got.join(', ')}, not ${want.join(', ')} (${pages}; a number is a picture's width over its height)`);
+    }
+  }
+  if (/<img /.test(flat.split('Run dash.')[0]) || /<img /.test(flat.split('Run end.')[1] ?? '')) problems.push('a picture before the first run or after the run end');
+  return problems;
+};
+// the files and folders in the folders of test-pdfpic's source pictures and
+// of test-pdfpages' PDFs, and those beside the fixture named test-pdfpic*,
+// such as test-pdfpic-box.pdf, that a build wrote or changed there: those
+// not there when this script started, and those whose time of change is
+// later, such as a tracked picture written over. Finder's .DS_Store is left
+// out. Each page's check takes those in its own folders.
 const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic', 'test/fixtures/test-pdfpages'];
 const pdfpicStatus = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))),
   ...readdirSync(join(root, 'test/fixtures')).filter(f => f.startsWith('test-pdfpic')).map(f => join('test/fixtures', f))]
@@ -496,6 +519,9 @@ const pdfpicStatus = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(roo
 const pdfpicTime = f => { try { const st = statSync(join(root, f)); return st.isFile() ? st.mtimeMs : 0; } catch { return -1; } };
 const pdfpicBefore = new Map(pdfpicStatus().map(f => [f, pdfpicTime(f)]));
 const pdfpicWritten = () => pdfpicStatus().filter(f => !pdfpicBefore.has(f) || pdfpicTime(f) !== pdfpicBefore.get(f)).sort();
+const pdfpagesFolder = 'test/fixtures/test-pdfpages/';
+const pdfpicOnly = () => pdfpicWritten().filter(f => !f.startsWith(pdfpagesFolder));
+const pdfpagesOnly = () => pdfpicWritten().filter(f => f.startsWith(pdfpagesFolder));
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -2320,28 +2346,15 @@ function check(doc, result, out, aux) {
       // the white background of the PDF's page, so its lines show in dark mode)
       if (data && typeof source === 'number' && [4, 6].includes(data[25])) problems.push(`${alt}: ${shown[alt]} has a transparent background`);
     }
-    const written = pdfpicWritten();
+    const written = pdfpicOnly();
     if (written.length) problems.push(`files written beside the source's pictures: ${written.join(', ')}`);
   }
   for (const alt of unspaced[doc.name] ?? []) {
     if (flat.includes(` <img alt='${alt}'`)) problems.push(`${alt}: a space before the picture`);
   }
-  for (const [run, pages] of Object.entries(pdfPages[doc.name] ?? {})) {
-    const part = flat.match(new RegExp(`Run ${run}\\.([^]*?)Run `))?.[1];
-    if (part === undefined) { problems.push(`no run ${run}`); continue; }
-    const want = pages.split(', ').map(page => { const [file, k] = page.split(' '); return file in pdfPageAspect ? String(Number(k) + pdfPageAspect[file]) : `-${k}.png`; });
-    const got = [...part.matchAll(/<img [^>]*>/g)].map(([tag], i) => {
-      const file = inPage(out, tag.match(/ src='([^']*)'/)?.[1]);
-      if (!file || !existsSync(file) || isNaN(pngAspect(readFileSync(file)))) return 'NaN';
-      return want[i]?.endsWith('.png') ? basename(file) : String(Math.round(pngAspect(readFileSync(file)) * 10) / 10);
-    });
-    if (got.length !== want.length || got.some((g, i) => want[i].endsWith('.png') ? !g.endsWith(want[i]) : g !== want[i])) {
-      problems.push(`run ${run}: pictures ${got.join(', ')}, not ${want.join(', ')} (${pages}; a number is a picture's width over its height)`);
-    }
-  }
   if (pdfPages[doc.name]) {
-    if (/<img /.test(flat.split('Run dash.')[0]) || /<img /.test(flat.split('Run end.')[1] ?? '')) problems.push('a picture before the first run or after the run end');
-    const written = pdfpicWritten().filter(f => f.startsWith('test/fixtures/test-pdfpages'));
+    problems.push(...checkPdfPages(doc.name, flat, out));
+    const written = pdfpagesOnly();
     if (written.length) problems.push(`files written beside the included PDFs: ${written.join(', ')}`);
   }
   if (pictureSizes[doc.name]) {
@@ -2504,12 +2517,31 @@ if (pdfpic) jobs.push(async () => {
   if (!converted || !existsSync(converted) || !(Math.abs(pngAspect(readFileSync(converted)) / 3 - 1) < 0.03)) {
     problems.push(`the absolute PDF picture is ${pdf}, not a PNG of it inside the page's folder`);
   }
-  const written = pdfpicWritten();
+  const written = pdfpicOnly();
   if (written.length) problems.push(`files written beside the source's pictures: ${written.join(', ')}`);
   const beside = readdirSync(top).filter(name => !/^(html|aux)(\.|$)|^(absolute\.cfg|make4ht\.log)$/.test(name));
   if (beside.length) problems.push(`written beside the page's folder: ${beside.join(', ')}`);
   if (existsSync(join(testDir(pdfpic), 'test'))) problems.push('written two levels above the page\'s folder');
   report(`${pdfpic.name} (an absolute path)`, problems);
+});
+
+// test-pdfpages-hint built again without shell escape, as with --contain
+// (kpathsea reads shell_escape from the environment before texmf.cnf):
+// pdfpages' lastpage hint gives the number of pages, so the page shows the
+// same pictures.
+const hint = docs.find(d => d.name === 'test-pdfpages-hint');
+if (hint) jobs.push(async () => {
+  const top = join(testDir(hint), 'noshell'), out = join(top, 'html'), aux = join(top, 'aux');
+  rmSync(top, { recursive: true, force: true });
+  const result = await build(hint, out, aux, { shell_escape: 'f' });
+  const problems = [];
+  if (result.code !== 0) {
+    problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]/.test(line)));
+  }
+  const page = join(out, 'test-pdfpages-hint.html');
+  if (!existsSync(page)) problems.push('no page');
+  else problems.push(...checkPdfPages(hint.name, readFileSync(page, 'utf8').replace(/[^\S ]+/g, ' '), out));
+  report(`${hint.name} (without shell escape)`, problems);
 });
 
 // test-glossaries-ist built over a build directory that holds another
