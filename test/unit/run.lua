@@ -17,7 +17,7 @@ logging = {new = function()
   local function keep(level)
     return function(_, ...) logged[#logged + 1] = level .. ": " .. table.concat({...}, " ") end
   end
-  return {warning = keep("warning"), info = keep("info"), debug = keep("debug")}
+  return {warning = keep("warning"), status = keep("status"), info = keep("info"), debug = keep("debug")}
 end}
 
 function check(value, message)

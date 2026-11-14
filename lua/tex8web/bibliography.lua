@@ -70,7 +70,9 @@ function M.run(par)
       local found = p:read("a")
       p:close()
       if found == "" then
-        log:info("bibliography: " .. name .. " is missing, so the .bbl beside the document is used")
+        -- (Shown at make4ht's default level, status. latexmk prints this
+        -- as a message, not among its warnings.)
+        log:status("bibliography: " .. name .. " is missing, so the .bbl beside the document is used")
         -- (The build directory may name the document's own directory,
         -- as ./ or by its absolute path, where the .bbl is the one beside.)
         local a, b = lfs.attributes(dir), lfs.attributes(".")

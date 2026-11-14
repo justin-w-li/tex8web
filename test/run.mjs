@@ -987,6 +987,13 @@ const ties = {
     new RegExp(`See Lemma${tie}1 and`)],
 };
 
+// The lines that make4ht's log must hold, with their level: the tests
+// build at -a info, and make4ht shows status and above by default.
+// (a missing .bib beside a shipped .bbl, with bibtex and with biber)
+const logs = {
+  'test-bblnobib': [/^\[STATUS\] +tex8web: bibliography: test-bblnobib-gone is missing/m],
+  'test-bblnobib-biber': [/^\[STATUS\] +tex8web: bibliography: test-bblnobib-gone\.bib is missing/m],
+};
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width
@@ -1946,6 +1953,9 @@ function check(doc, result, out, aux) {
       if (file.endsWith('.xbb') && !tracked.includes(file)) problems.push(`test/fixtures/${file} written beside the fixtures`);
     }
   }
+  for (const pattern of logs[doc.name] ?? []) {
+    if (!pattern.test(result.log)) problems.push(`no ${pattern.source} in make4ht's log`);
+  }
   for (const [file, pattern] of glyphs[doc.name] ?? []) {
     const svg = existsSync(join(out, file)) ? readFileSync(join(out, file), 'utf8') : '';
     if (!pattern.test(svg)) problems.push(`no ${pattern.source} in ${file}`);
@@ -1971,7 +1981,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, glyphs, ligatures, expected, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, expected, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

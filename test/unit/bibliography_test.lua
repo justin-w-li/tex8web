@@ -23,10 +23,10 @@ end
 -- x.bbl with one entry and the files in beside (by paths from doc, which
 -- may lead into a subdirectory or to doc's parent). The build directory
 -- doc/b holds the files in built and, unless they include one, the empty
--- x.bbl of an earlier failed run. If builddir is given, it returns, from
--- doc's path, the name that bibliography.run gets for doc itself as its
--- build directory, which then holds the files in built. bibtex and biber
--- are not started. Returns the .bbl that LaTeX reads next (the build
+-- x.bbl of an earlier failed run. builddir, if given, is a function that
+-- returns, from doc's path, the name that bibliography.run gets for doc
+-- itself as its build directory, which then holds the files in built.
+-- bibtex and biber are not started. Returns the .bbl that LaTeX reads next (the build
 -- directory's, or else the document's), and the command that started
 -- bibtex or biber, if any.
 local function run_beside(built, beside, builddir)
@@ -98,6 +98,8 @@ return {
   ["bibliography.run: the .bbl beside the document when the .bib is missing"] = function()
     local read = skipped({["x.aux"] = "\\bibstyle{plain}\n\\bibdata{tex8web-missing}\n"})
     check(read:find("\\bibitem{one}", 1, true), read)
+    -- (at make4ht's default level)
+    check(logged[1] and logged[1]:find("^status: bibliography: tex8web%-missing is missing"), logged[1] or "nothing logged")
   end,
   -- (the build directory's copy of the .bbl beside, from an earlier run,
   -- before the .bbl beside changed)
