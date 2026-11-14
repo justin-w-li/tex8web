@@ -1,0 +1,10 @@
+% Checks a case the use of a .bbl beside the document must not break:
+% every .bib that \bibliography names is there, one by name and one by a
+% ../ path with its .bib extension. bibtex runs, as latexmk runs it, and
+% the stale .bbl beside is not read.
+\documentclass{article}
+\begin{document}
+Citations~\cite{groups,lattices}.
+\bibliographystyle{plain}
+\bibliography{test-bibindex,../fixtures/test-bibpath.bib}
+\end{document}

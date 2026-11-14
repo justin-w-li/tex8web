@@ -1,0 +1,12 @@
+% Checks a case the use of a .bbl beside the document must not break:
+% biblatex's bibtex backend, whose \bibdata also names the -blx.bib that
+% biblatex writes into the build directory, the .bib that
+% \addbibresource names, and a stale .bbl beside. bibtex runs, and the
+% stale .bbl is not read.
+\documentclass{article}
+\usepackage[backend=bibtex]{biblatex}
+\addbibresource{test-biblatex-authoryear.bib}
+\begin{document}
+A citation~\cite{book}.
+\printbibliography
+\end{document}

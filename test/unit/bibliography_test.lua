@@ -1,5 +1,39 @@
 -- bibliography.lua: the run of bibtex or biber
 local bibliography = require "tex8web.bibliography"
+local files = require "tex8web.files"
+
+-- runs bibliography.run in a new document directory that holds x.bbl
+-- with one entry, and whose build directory b holds the given files and
+-- the empty x.bbl of an earlier failed run. Returns the .bbl that LaTeX
+-- reads next: the build directory's, or else the document's.
+local function rerun(built)
+  local doc = os.tmpname()
+  os.remove(doc)
+  lfs.mkdir(doc)
+  lfs.mkdir(doc .. "/b")
+  built["x.bbl"] = ""
+  local f = assert(io.open(doc .. "/x.bbl", "w"))
+  f:write("\\begin{thebibliography}{1}\n\\bibitem{one} An entry.\n\\end{thebibliography}\n")
+  f:close()
+  for name, text in pairs(built) do
+    local f = assert(io.open(doc .. "/b/" .. name, "w"))
+    f:write(text)
+    f:close()
+  end
+  local back = lfs.currentdir()
+  lfs.chdir(doc)
+  local ok, err = pcall(bibliography.run, {builddir = "b", input = "x"})
+  lfs.chdir(back)
+  local read = files.read(doc .. "/b/x.bbl") or files.read(doc .. "/x.bbl")
+  for _, dir in ipairs({doc .. "/b", doc}) do
+    for file in lfs.dir(dir) do
+      if file ~= "." and file ~= ".." then os.remove(dir .. "/" .. file) end
+    end
+    lfs.rmdir(dir)
+  end
+  check(ok, err)
+  return read
+end
 
 return {
   ["bibliography.run: a warning when bibtex fails"] = function()
@@ -17,5 +51,20 @@ return {
     lfs.rmdir(dir)
     local last = logged[#logged]
     check(#logged > before and last:find("^warning: the bibliography failed"), last)
+  end,
+  -- (a .bbl beside the document, and a missing .bib: the document's
+  -- .bbl, as latexmk keeps it, over a build directory that holds the empty
+  -- .bbl of an earlier run)
+  ["bibliography.run: the .bbl beside the document when the .bib is missing"] = function()
+    local read = rerun({["x.aux"] = "\\bibstyle{plain}\n\\bibdata{tex8web-missing}\n"})
+    check(read:find("\\bibitem{one}", 1, true), read)
+  end,
+  ["bibliography.run: the .bbl beside the document when biber's .bib is missing"] = function()
+    local read = rerun({["x.aux"] = "", ["x.bcf"] = '<?xml version="1.0" encoding="UTF-8"?>\n'
+      .. '<bcf:controlfile version="3.11" bltxversion="3.20" xmlns:bcf="https://sourceforge.net/projects/biblatex">\n'
+      .. '  <bcf:bibdata section="0">\n'
+      .. '    <bcf:datasource type="file" datatype="bibtex" glob="false">tex8web-missing.bib</bcf:datasource>\n'
+      .. '  </bcf:bibdata>\n</bcf:controlfile>\n'})
+    check(read:find("\\bibitem{one}", 1, true), read)
   end,
 }

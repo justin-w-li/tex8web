@@ -1,0 +1,11 @@
+% A .bbl without the two .bib files that \bibliography names: one by a
+% path that begins with ../, the other with its .bib extension. natbib's
+% numbers, with hyperref.
+\documentclass{article}
+\usepackage[numbers]{natbib}
+\usepackage{hyperref}
+\begin{document}
+Citations~\citep{one,two}.
+\bibliographystyle{plainnat}
+\bibliography{../fixtures/test-bblnobib-gone,test-bblnobib-none.bib}
+\end{document}

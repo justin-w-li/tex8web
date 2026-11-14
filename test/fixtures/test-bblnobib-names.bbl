@@ -1,0 +1,18 @@
+\begin{thebibliography}{2}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[One(2001)]{one}
+Ann One.
+\newblock \emph{The First Shipped Entry}.
+\newblock A Publisher, 2001.
+
+\bibitem[Two(2002)]{two}
+Bo~Two.
+\newblock \emph{The Second Shipped Entry}.
+\newblock A Publisher, 2002.
+
+\end{thebibliography}

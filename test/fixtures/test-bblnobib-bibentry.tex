@@ -1,0 +1,10 @@
+% bibentry's \nobibliography, which writes \bibdata as \bibliography
+% does: a .bbl beside, without the .bib, gives the entry in the text.
+\documentclass{article}
+\usepackage{natbib}
+\usepackage{bibentry}
+\begin{document}
+\bibliographystyle{plainnat}
+\nobibliography{test-bblnobib-gone}
+The entry: \bibentry{one}.
+\end{document}

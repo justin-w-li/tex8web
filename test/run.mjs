@@ -578,6 +578,35 @@ const contents = {
   'test-bibpath': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
   // (the same from a .bst beside the document, named without a path)
   'test-bibstyle': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
+  // (a .bbl beside the document, and a .bib that \bibliography or
+  // \addbibresource names missing: the citations and entries from that
+  // .bbl, as in the PDF. natbib's author-year and numbers with hyperref,
+  // two missing names, one .bib of two, biber, and bibentry)
+  'test-bblnobib': [
+    /As <a href='#Xone'>One<\/a><span class='tex8web-nbsp'> <\/span>\[<a href='#Xone'>2001<\/a>\] says, and as \[<a href='#Xtwo'>Two<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xtwo'>2002<\/a>\] shows/,
+    /See also <\/span><a href='#Xtwo'><span class='cmr-8'>Two<\/span><\/a>/,
+    /<dd><a id='Xone'><\/a>Ann One\. <span class='cmti-10'>The First Shipped Entry<\/span>/,
+    /<dd><a id='Xtwo'><\/a>Bo<span class='tex8web-nbsp'> <\/span>Two\. <span class='cmti-10'>The Second Shipped Entry<\/span>/],
+  'test-bblnobib-names': [
+    /Citations<span class='tex8web-nbsp'> <\/span>\[<a href='#Xone'>1<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xtwo'>2<\/a>\]\./,
+    /<dd><a id='Xone'><\/a>Ann One\. <span class='cmti-10'>The First Shipped Entry<\/span>/,
+    /<dd><a id='Xtwo'><\/a>Bo<span class='tex8web-nbsp'> <\/span>Two\. <span class='cmti-10'>The Second Shipped Entry<\/span>/],
+  'test-bblnobib-partial': [
+    /<span class='cite'>\[<a href='#Xgroups'>1<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xone'>2<\/a>\]<\/span>/,
+    /<dd><a id='Xgroups'><\/a>Anne Author\. <span class='cmti-10'>Groups and Their Orders<\/span>/,
+    /<dd><a id='Xone'><\/a>Ann One\. <span class='cmti-10'>The First Shipped Entry<\/span>/],
+  'test-bblnobib-biber': [
+    /A citation<span class='tex8web-nbsp'> <\/span>\[(?:<a id='[^']*'><\/a>)*<a href='#X0-one'>1<\/a>\]/,
+    /<dt class='thebibliography' id='X0-one'>/, /Ann One\. <span class='cmti-10'>The First Shipped Entry<\/span>\. A Publisher, 2001\./],
+  'test-bblnobib-bibentry': [/The entry: <a id='one'><\/a>Ann One\. <span class='cmti-10'>The First Shipped Entry<\/span>\. A Publisher, 2001\./],
+  // (every .bib there, and a stale .bbl beside: the entries from the .bib
+  // files, through bibtex, biber, or biblatex's bibtex backend)
+  'test-bblnobib-guard': [
+    /<span class='cite'>\[<a href='#Xgroups'>2<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xlattices'>1<\/a>\]<\/span>/,
+    /<dd><a id='Xlattices'><\/a>Notes on distributive lattices\./,
+    /<dd><a id='Xgroups'><\/a>Anne Author\. <span class='cmti-10'>Groups and Their Orders<\/span>/, /^(?![^]*Stale)/],
+  'test-bblnobib-biberguard': [/<a href='#X0-book'>1<\/a>\]/, /A Book with a Title Long Enough to Wrap/, /^(?![^]*Stale)/],
+  'test-bblnobib-blxguard': [/<a href='#X0-book'>1<\/a>\]/, /A Book with a Title Long Enough to Wrap/, /^(?![^]*Stale)/],
   // (! active in the preamble: babel's shorthands, in a heading and the
   // table of contents, the text, a footnote, a theorem, three fonts, and
   // math, with no space after a bare ! as in the PDF, and literal in

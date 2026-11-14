@@ -1,0 +1,9 @@
+% biblatex with biber: a .bbl beside, written by biber, and without the
+% .bib that \addbibresource names.
+\documentclass{article}
+\usepackage[backend=biber]{biblatex}
+\addbibresource{test-bblnobib-gone.bib}
+\begin{document}
+A citation~\cite{one}.
+\printbibliography
+\end{document}

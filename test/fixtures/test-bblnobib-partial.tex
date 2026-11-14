@@ -1,0 +1,10 @@
+% A .bbl beside, with one of the two .bib files that \bibliography names:
+% the other, named by a ../ path with its .bib extension, is missing. The
+% .bbl holds both entries, and plain \cite with a standard style cites
+% them.
+\documentclass{article}
+\begin{document}
+Citations~\cite{groups,one}.
+\bibliographystyle{plain}
+\bibliography{test-bibindex,../fixtures/test-bblnobib-gone.bib}
+\end{document}

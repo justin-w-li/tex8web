@@ -1,0 +1,10 @@
+% Checks a case the use of a .bbl beside the document must not break:
+% biblatex with biber, the .bib that \addbibresource names, and a stale
+% .bbl beside. biber runs, and the stale .bbl is not read.
+\documentclass{article}
+\usepackage[backend=biber]{biblatex}
+\addbibresource{test-biblatex-authoryear.bib}
+\begin{document}
+A citation~\cite{book}.
+\printbibliography
+\end{document}

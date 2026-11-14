@@ -1,0 +1,12 @@
+% A document that comes with its .bbl and without the .bib that
+% \bibliography names, as many arXiv sources do. LaTeX reads that .bbl,
+% so the PDF has the references: natbib's author-year citations, with
+% hyperref, in the text and in a footnote.
+\documentclass{article}
+\usepackage{natbib}
+\usepackage{hyperref}
+\begin{document}
+As \citet{one} says, and as \citep{two} shows.\footnote{See also \citet{two}.}
+\bibliographystyle{plainnat}
+\bibliography{test-bblnobib-gone}
+\end{document}
