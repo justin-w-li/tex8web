@@ -105,3 +105,24 @@
 \def\web@revappopt[#1]#2{\web@revappmark{#2}\web@revsection[{#1}]{#2}}
 \def\web@revappmark#1{\def\web@revappcolon{#1}%
   \ifx\web@revappcolon\@empty\else\def\web@revappcolon{:}\fi}
+% aps and prl draw a tapered rule in place of the references' heading
+% (\bib@device), whose leaders tex4ht writes as underscores, a line that
+% does not wrap. The rule is written as a \rule of the device's width,
+% centered, which the stylesheet keeps within the column. The device's
+% contents line stays. The center environment would start the list's
+% first item, so its markup is written as html4.4ht writes it.
+\def\web@revbibdevice#1#2{\par\IgnorePar\EndP
+  \HCode{<div class="center">}\ShowPar\endgraf\noindent\phantomsection
+  \addcontentsline{toc}{section}{\protect\numberline{}\refname}%
+  \rule[-.5\p@]{#2}{\p@}\par\IgnorePar\EndP\HCode{</div>}\ShowPar}
+\appdef\class@documenthook{%
+  \ifdefined\bib@device \let\bib@device\web@revbibdevice \fi}
+% html4.4ht's bibliography list ends each label with three no-break
+% spaces, which make4ht joins into one span when the bibliography is in
+% the body's font, as aapm's is. The PDF sets \labelsep after the label,
+% nearer one space than three. \begin has set up the list
+% (\this:listConfigure) before \thebibliography starts.
+\ExplSyntaxOn
+\pend:defI\thebibliography{\cs_if_exist:NT \this:listConfigure
+  {\regex_replace_all:nnN {\c{:nbsp}\c{:nbsp}\c{:nbsp}} {\c{:nbsp}} \this:listConfigure}}
+\ExplSyntaxOff

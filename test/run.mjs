@@ -801,6 +801,10 @@ const contents = {
     /<\/main><\/body> ?<\/html> ?$/,
     ...[['Nine', 'nine', '§§'], ['Ten', 'ten', '¶¶'], ['Eleven', 'eleven', '\\*\\*\\*']].map(([author, user, mark]) =>
       new RegExp(`Author\\s+${author}</span>,?<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*${mark}<(?:(?!</div>)[^])*</div>[^]*<aside class='footnotetext'(?:(?!</aside>)[^])*<a id='\\1'></a><sup[^>]*>(?:<[^>]*>)*${mark}<(?:(?!</aside>)[^])*${user}@example\\.com`)),
+    // (aps's rule in place of the references' heading, as a rule of
+    // its width, centered, and not as a line of underscores)
+    /<div class='center'>\s*<p[^>]*>(?:<a id='[^']*'><\/a>)*<span class='tex8web-rule' style='--tex8web-rule-width: 0\.\d+;[^]*<div class='thebibliography'>/,
+    /^(?![^]*_{8})/,
   ],
   // (revtex4-2's aapm option marks the title's notes a) and b), as in
   // the PDF, and lists them in the references)
