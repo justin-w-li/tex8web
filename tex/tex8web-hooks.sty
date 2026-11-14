@@ -355,6 +355,42 @@
     { \@ifpackageloaded { color } { } { \bool_gset_true:N \g__web_late_color_bool } }
 \ExplSyntaxOff
 
+% pdfTeX's driver option, which a document written for pdflatex gives to
+% the packages that choose a driver, or to the class. tex4ht runs LaTeX in
+% DVI mode: hyperref stops at "Wrong driver option", and the pdftex drivers
+% of graphics, color, and pict2e stop at pdfTeX's PDF primitives. The
+% option is dropped from each such package's options before it loads, and
+% from the class's, which xcolor's \ProcessKeyOptions reads. The raw lists
+% keep the spaces around each option, so they are set as clists first. The
+% option is put back in the package's options after it loads, so that
+% loading the package again with the option is no clash, as in pdflatex.
+\ExplSyntaxOn
+\cs_new_protected:Npn \__web_drop_pdftex:N #1
+    {
+        \clist_gset:Ne #1 { \exp_not:V #1 }
+        \clist_gremove_all:Nn #1 { pdftex }
+    }
+\cs_generate_variant:Nn \__web_drop_pdftex:N { c }
+\clist_map_inline:nn { hyperref, graphics, graphicx, color, xcolor, pict2e, lscape }
+    {
+        \AddToHook { package/#1/before }
+            {
+                \clist_if_in:NnT \@classoptionslist { pdftex }
+                    {
+                        \__web_drop_pdftex:N \@classoptionslist
+                        \__web_drop_pdftex:N \@raw@classoptionslist
+                    }
+                \clist_if_in:cnT { opt@#1.sty } { pdftex }
+                    {
+                        \__web_drop_pdftex:c { opt@#1.sty }
+                        \__web_drop_pdftex:c { @raw@opt@#1.sty }
+                        \AddToHook { package/#1/after }
+                            { \clist_gput_right:cn { opt@#1.sty } { pdftex } }
+                    }
+            }
+    }
+\ExplSyntaxOff
+
 % report, book, and memoir: \@makechapterhead as the preamble leaves it,
 % for tex8web-page.tex to read the chapter's spacing, and \part and \@part
 % for a part's. report.4ht and book.4ht empty \@makechapterhead and replace
