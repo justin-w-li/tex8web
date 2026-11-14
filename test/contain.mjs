@@ -7,13 +7,14 @@
 // A case passes when its build fails if it must, its logs have the
 // expected line, no file appeared in its directory, in tex8web's
 // directory, or in a scratch directory on the host, and no container is
-// left. Seven cases differ: bibindex builds a test fixture, which must
+// left. Eight cases differ: bibindex builds a test fixture, which must
 // build and match its build on the host; root builds a document that reads
 // a file above its directory, which must fail without the source's root
 // mounted and build with it; bibpath and includes build a PDF with
 // regress.mjs --contain --latexmk, which must build it: bibpath's .aux
 // names its .bib and .bst by a path above its directory, and includes
-// \includes files from six directories; mountlink gives the runner a link
+// \includes files from six directories; picparent also builds a page whose
+// pictures lie above its directory; mountlink gives the runner a link
 // to mount; labels runs --clean on one of a running command's -w
 // directories; kill builds loop in another process, kills that process
 // once loop's .make4ht has run, and builds loop again on what was left.
@@ -180,6 +181,32 @@ function pdf(name, sub, bbl) {
   return { line: 'built its PDF' };
 }
 
+// builds the PDF and page of test/contain/picparent/chapters with
+// regress.mjs --contain --latexmk, with the source's root mounted, as pdf()
+// does. Its pictures lie in ../graphics, named by \graphicspath and by
+// import.sty's doubled name in a chapter: each <img> must name a copy
+// inside the page's folder, and the source must be left as it was
+function picparent() {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webpic')));
+  process.on('exit', () => rmSync(own, { recursive: true }));
+  const top = join(own, 'picparent'), dir = join(top, 'chapters');
+  cpSync(join(root, 'test/contain/picparent'), top, { recursive: true });
+  const before = listing(join(top, 'graphics'));
+  const result = sync(process.execPath, [join(root, 'test/regress.mjs'), '--contain', '--latexmk', '--root', top,
+    '--out', join(own, 'out'), dir], {}, 600);
+  const log = `${result.stderr}${result.stdout}`;
+  if (result.status !== 0) return `regress.mjs exited with ${result.status}:\n${log.trim().split('\n').slice(-8).join('\n')}`;
+  const html = join(own, 'out/html/chapters');
+  const page = existsSync(join(html, 'main.html')) ? readFileSync(join(html, 'main.html'), 'utf8') : '';
+  const srcs = [...page.matchAll(/<img [^>]*src='([^']*)'/g)].map(([, src]) => src);
+  if (srcs.length !== 4) return `${srcs.length} pictures in the page, not 4`;
+  const outside = srcs.filter(src => /^\/|(^|\/)\.\.(\/|$)/.test(src) || !existsSync(join(html, src)));
+  if (outside.length) return `pictures not inside the page's folder: ${outside.join(', ')}`;
+  if (listing(join(top, 'graphics')) !== before) return 'a file appeared in the source\'s graphics folder';
+  if (containers()) return `a container was left: ${containers()}`;
+  return { line: 'built, with its pictures inside the page\'s folder' };
+}
+
 // gives the runner a -w directory through a symbolic link, which Docker
 // Desktop would follow
 function mountlink() {
@@ -238,7 +265,7 @@ async function labels() {
   }
 }
 
-const others = { bibindex, root: rooted, bibpath: () => pdf('bibpath', 'doc', /\\bibitem\{entry\}/), includes: () => pdf('includes'), mountlink, labels, kill };
+const others = { bibindex, root: rooted, bibpath: () => pdf('bibpath', 'doc', /\\bibitem\{entry\}/), includes: () => pdf('includes'), picparent, mountlink, labels, kill };
 const all = [...Object.keys(cases), ...Object.keys(others)];
 const names = process.argv.slice(2);
 const unknown = names.filter(name => !all.includes(name));

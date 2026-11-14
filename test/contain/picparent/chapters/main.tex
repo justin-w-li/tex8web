@@ -1,0 +1,16 @@
+% A document whose pictures lie in a folder beside its own, named through
+% \graphicspath{{./../graphics/}}, also from a chapter included with
+% import.sty, which names them ./../graphics/./../graphics/<name>. Its PDF
+% and page are built with regress.mjs --contain --latexmk, with the source's
+% root mounted.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{import}
+\graphicspath{{./../graphics/}}
+\begin{document}
+A picture: \includegraphics{pic.png}
+
+A PDF picture: \includegraphics[width=2cm]{box}
+
+\subincludefrom{./ch1/}{ch1}
+\end{document}

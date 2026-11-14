@@ -1,0 +1,92 @@
+% Pictures that need a conversion or that lie outside the document's folder.
+% Each must be a file inside the page's folder, named by a src that does not
+% leave it, and nothing is written outside the build and page folders.
+% PDF pictures: without and with the extension, starred, a page of a
+% two-page PDF, in a subfolder by name and by \graphicspath, with a space in
+% the name, with options, in a figure with a caption, in a minipage, in a
+% footnote, and in a link. EPS pictures, converted by Ghostscript. Pictures
+% named with ../ (by \graphicspath, by name, two levels up, the same name in
+% two parent folders, a name with a space, PNG, JPEG, PDF, and EPS), the same
+% picture twice, an import.sty chapter, an \import from a parent folder, and
+% epsfig. A picture inside the folder is a guard. run.mjs builds this page
+% again with \PdfpicAbsolute set to an absolute path of a picture.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{epsfig}
+\usepackage{import}
+\usepackage{hyperref}
+\graphicspath{{test-pdfpic/sub/}{./../pdfpic-above/}}
+\begin{document}
+\section{PDF pictures}
+Bare: \includegraphics[alt={pdf bare}, width=2cm]{test-pdfpic/box}
+
+Extension: \includegraphics[alt={pdf extension}, width=2cm]{test-pdfpic/box.pdf}
+
+Starred: \includegraphics*[alt={pdf starred}, width=2cm]{test-pdfpic/box}
+
+Page one: \includegraphics[alt={pdf page one}, page=1, width=4cm]{test-pdfpic/pages}
+
+Page two: \includegraphics[alt={pdf page two}, page=2, width=4cm]{test-pdfpic/pages}
+
+Options: \includegraphics[alt={pdf options}, trim=1mm 1mm 1mm 1mm, clip, angle=90, width=1cm]{test-pdfpic/box}
+
+Path: \includegraphics[alt={pdf graphicspath}, width=3cm]{inner}
+
+Space: \includegraphics[alt={pdf space}, width=2cm]{"test-pdfpic/my fig"}
+
+\textit{Italic: \includegraphics[alt={pdf italic}, width=1cm]{test-pdfpic/box}}
+and a footnote.\footnote{Footnote: \includegraphics[alt={pdf footnote}, width=1cm]{test-pdfpic/box}}
+
+\href{https://example.com}{\includegraphics[alt={pdf link}, width=1cm]{test-pdfpic/box}}
+
+\begin{minipage}{0.4\textwidth}
+Minipage: \includegraphics[alt={pdf minipage}, width=2cm]{test-pdfpic/box}
+\end{minipage}
+
+\begin{figure}[h]
+\centering
+\includegraphics[alt={pdf figure}, width=3cm]{test-pdfpic/sub/inner}
+\caption{A PDF picture}\label{fig:pdf}
+\end{figure}
+Figure~\ref{fig:pdf}.
+
+\section{EPS pictures}
+EPS: \includegraphics[alt={eps}, width=2cm]{test-pdfpic/boxeps.eps}
+
+\section{Pictures above the folder}
+Graphicspath: \includegraphics[alt={above graphicspath}]{pic.png}
+
+Again: \includegraphics[alt={above again}]{pic}
+
+\begin{figure}[h]
+\centering
+\includegraphics[alt={above figure}]{pic}
+\caption{A picture above the folder}
+\end{figure}
+
+Other: \includegraphics[alt={above other}, width=2cm]{../pdfpic-above/other/pic.png}
+
+Deep: \includegraphics[alt={above deep}, width=2cm]{../../test/pdfpic-above/deep/pic.jpg}
+
+Space: \includegraphics[alt={above space}]{"two words".png}
+
+Starred: \includegraphics*[alt={above starred}]{../pdfpic-above/pic.png}
+
+Link: \href{https://example.com}{\includegraphics[alt={above link}]{../pdfpic-above/pic.png}}
+
+PDF: \includegraphics[alt={above pdf}, width=3cm]{up}
+
+EPS: \includegraphics[alt={above eps}, width=2cm]{../pdfpic-above/upeps.eps}
+
+Epsfig: \epsfig{file=../pdfpic-above/other/pic.png, width=2cm}
+
+\import{../pdfpic-above/shared/}{part}
+
+Inside: \includegraphics[alt={inside}]{test-pdfpic/inside.png}
+
+\ifdefined\PdfpicAbsolute
+Absolute: \includegraphics[alt={absolute}, width=2cm]{\PdfpicAbsolute}
+\fi
+
+\subincludefrom{test-pdfpic/ch1/}{ch1}
+\end{document}
