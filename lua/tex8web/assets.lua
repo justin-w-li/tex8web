@@ -502,7 +502,7 @@ function M.size(img, path, size, context)
   if width and height then shown = math.min(width, height * aspect)
   elseif height then shown = height * aspect
   elseif width then shown = width
-  -- (a negative scale mirrors the picture, at the size of its absolute value)
+  -- (in the PDF, a negative scale mirrors the picture at the size of its absolute value)
   else shown = natural * math.abs(tonumber(scale) or 1) end
   shown = shown * (tonumber(factor) or 1)
   dom.add_style(img, ("width:calc(var(--tex8web-textwidth) * %.4f)"):format(shown))
