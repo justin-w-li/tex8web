@@ -581,8 +581,8 @@ const contents = {
   // (a .bbl beside the document, and a .bib that \bibliography or
   // \addbibresource names missing: the citations and entries from that
   // .bbl, as in the PDF. natbib's author-year and numbers with hyperref,
-  // three missing names, one .bib of two, biber with one .bib of two,
-  // biblatex's bibtex backend, and bibentry)
+  // a missing name in a subdirectory beside two there, one .bib of two,
+  // biber with one .bib of two, biblatex's bibtex backend, and bibentry)
   'test-bblnobib': [
     /As <a href='#Xone'>One<\/a><span class='tex8web-nbsp'> <\/span>\[<a href='#Xone'>2001<\/a>\] says, and as \[<a href='#Xtwo'>Two<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xtwo'>2002<\/a>\] shows/,
     /See also <\/span><a href='#Xtwo'><span class='cmr-8'>Two<\/span><\/a>/,

@@ -22,9 +22,12 @@ function M.run(par)
   if bcf then
     command = "biber --input-directory " .. files.quote(dir) .. " --output-directory "
       .. files.quote(dir) .. " " .. files.quote(par.input)
-    for name in bcf:gmatch('<bcf:datasource type="file"[^>]*>([^<]*)</bcf:datasource>') do
-      -- (biber also looks in its input directory)
-      if not lfs.isfile(dir .. "/" .. name) then names[#names + 1] = name end
+    -- (Only names that end in .bib, as latexmk checks: kpsewhich does
+    -- not find a file of another type, or a glob pattern. biber also
+    -- looks in its input directory.)
+    for attributes, name in bcf:gmatch('<bcf:datasource type="file"([^>]*)>([^<]*)</bcf:datasource>') do
+      if name:find("%.bib$") and not attributes:find('glob="true"', 1, true)
+        and not lfs.isfile(dir .. "/" .. name) then names[#names + 1] = name end
     end
     from = here
   elseif aux:find("\\bibdata", 1, true) then
@@ -53,10 +56,10 @@ function M.run(par)
   else
     return 0
   end
-  -- A .bbl beside the document, with a .bib that it names missing, is what
-  -- LaTeX reads for the PDF, and latexmk then skips bibtex and biber. Their
-  -- empty .bbl, or one from an earlier run, in the build directory would
-  -- be read first.
+  -- When a .bib that the document names is missing, latexmk skips bibtex
+  -- and biber, and LaTeX reads the .bbl beside the document for the PDF.
+  -- The empty .bbl of bibtex or biber, or one from an earlier run, in the
+  -- build directory would be read first.
   if lfs.isfile(par.input .. ".bbl") then
     for _, name in ipairs(names) do
       local p = io.popen("cd " .. files.quote(from) .. " && " .. path("BIBINPUTS")
