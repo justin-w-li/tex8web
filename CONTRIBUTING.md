@@ -60,7 +60,7 @@ tex8web runs bibtex or biber, makeindex, makeglossaries, and the passes in `lua/
 
 Before LaTeX's first run, each directory of the document is made in tex4ht's build directory (`-B`). LaTeX writes the `.aux` of `\include{dir/file}` to `dir` there, and cannot make that directory. Hidden directories, `build`, links, and the build directory itself are skipped.
 
-bibtex runs in the build directory, with `BIBINPUTS` and `BSTINPUTS` set to the document's directory. kpathsea looks up a name that begins with `./` or `../` only from the current directory. So before bibtex runs, such names in the `\bibdata` and `\bibstyle` lines of the `.aux` are made absolute from the document's directory.
+bibtex runs in the build directory, with `BIBINPUTS` and `BSTINPUTS` set to the document's directory. kpathsea looks up a name that begins with `./` or `../` only from the current directory. So before bibtex runs, such names in the `\bibdata` and `\bibstyle` lines of the `.aux` are made absolute from the document's directory. When `kpsewhich` does not find a `.bib` named in `\bibdata` or in biber's `.bcf`, and a `.bbl` sits beside the document, bibtex and biber are skipped and the `.bbl` in the build directory is removed, so LaTeX reads the one beside.
 
 #### Macros in math (`macros.lua`, `preamble.lua`)
 

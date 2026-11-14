@@ -13,10 +13,20 @@ local M = {}
 function M.run(par)
   local dir = (par.builddir ~= "" and par.builddir) or "."
   local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""
-  local command
-  if files.read(dir .. "/" .. par.input .. ".bcf") then
+  local bcf = files.read(dir .. "/" .. par.input .. ".bcf")
+  local here = lfs.currentdir()
+  -- (after the paths already set, as tex8web.mk4 sets TEXINPUTS)
+  local function path(name) return name .. "=" .. files.quote(here .. ":" .. (os.getenv(name) or "")) end
+  -- the .bib files named, and the directory bibtex or biber looks them up from
+  local command, names, from = nil, {}, dir
+  if bcf then
     command = "biber --input-directory " .. files.quote(dir) .. " --output-directory "
       .. files.quote(dir) .. " " .. files.quote(par.input)
+    for name in bcf:gmatch('<bcf:datasource type="file"[^>]*>([^<]*)</bcf:datasource>') do
+      -- (biber also looks in its input directory)
+      if not lfs.isfile(dir .. "/" .. name) then names[#names + 1] = name end
+    end
+    from = here
   elseif aux:find("\\bibdata", 1, true) then
     -- bibtex runs in the build directory, which it may not write to from
     -- here. BIBINPUTS and BSTINPUTS find the .bib and .bst files in the
@@ -24,10 +34,9 @@ function M.run(par)
     -- or ../ only from the current directory, so such names in \bibdata
     -- and \bibstyle are made absolute. LaTeX writes the .aux again on its
     -- next run, and ignores both commands.
-    local here = lfs.currentdir()
-    local fixed = aux:gsub("(\\bib%a+){([^}]*)}", function(cs, names)
+    local fixed = aux:gsub("(\\bib%a+){([^}]*)}", function(cs, list)
       if cs ~= "\\bibdata" and cs ~= "\\bibstyle" then return end
-      return cs .. "{" .. names:gsub("[^,]+", function(name)
+      return cs .. "{" .. list:gsub("[^,]+", function(name)
         if name:find("^%.%.?/") then return here .. "/" .. name end
       end) .. "}"
     end)
@@ -36,12 +45,30 @@ function M.run(par)
       f:write(fixed)
       f:close()
     end
-    -- (after the paths already set, as tex8web.mk4 sets TEXINPUTS)
-    local function path(name) return name .. "=" .. files.quote(here .. ":" .. (os.getenv(name) or "")) end
+    for list in fixed:gmatch("\\bibdata{([^}]*)}") do
+      for name in list:gmatch("[^,]+") do names[#names + 1] = name end
+    end
     command = "cd " .. files.quote(dir) .. " && " .. path("BIBINPUTS") .. " " .. path("BSTINPUTS")
       .. " bibtex " .. files.quote(par.input)
   else
     return 0
+  end
+  -- A .bbl beside the document, with a .bib that it names missing, is what
+  -- LaTeX reads for the PDF, and latexmk then skips bibtex and biber. Their
+  -- empty .bbl, or one from an earlier run, in the build directory would
+  -- be read first.
+  if lfs.isfile(par.input .. ".bbl") then
+    for _, name in ipairs(names) do
+      local p = io.popen("cd " .. files.quote(from) .. " && " .. path("BIBINPUTS")
+        .. " kpsewhich -format=bib " .. files.quote(name))
+      local found = p:read("a")
+      p:close()
+      if found == "" then
+        log:info("bibliography: " .. name .. " is missing, so the .bbl beside the document is used")
+        if dir ~= "." then os.remove(dir .. "/" .. par.input .. ".bbl") end
+        return 0
+      end
+    end
   end
   log:info("bibliography: " .. command)
   -- (texlua's os.execute returns the exit status, not Lua 5.3's true)

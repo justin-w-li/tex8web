@@ -40,7 +40,7 @@ All paths in the page are relative, so you can publish the output directory as i
 
 ### Bibliographies, indexes, and glossaries
 
-tex8web runs bibtex or biber when your document has a bibliography. For each makeidx or imakeidx index, tex8web runs makeindex with the style file given in its `\makeindex` options. Style files are looked up next to your document and in the `INDEXSTYLE` directories. For glossaries with `\makeglossaries`, tex8web runs makeglossaries. A style file set with `\noist` and `\setStyleFile` is looked up next to your document.
+tex8web runs bibtex or biber when your document has a bibliography. If a `.bib` file that your document names is missing and a `.bbl` sits next to your document, tex8web uses that `.bbl`, as LaTeX and latexmk do. For each makeidx or imakeidx index, tex8web runs makeindex with the style file given in its `\makeindex` options. Style files are looked up next to your document and in the `INDEXSTYLE` directories. For glossaries with `\makeglossaries`, tex8web runs makeglossaries. A style file set with `\noist` and `\setStyleFile` is looked up next to your document.
 
 ### Without Node
 
