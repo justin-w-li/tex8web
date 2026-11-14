@@ -149,6 +149,11 @@ const measured = {
     '--tex8web-toc-section-number': '2.36388em', '--tex8web-toc-chapter-weight': 'bold',
     '--tex8web-toc-section-weight': 'normal', '--tex8web-chapter-before': null,
     '--tex8web-chapter-label-after': null },
+  // (revtex's table of contents: its \l@section reads widths that the
+  // class sets only in \tableofcontents, so each level keeps article's)
+  'test-revtoc': { '--tex8web-toc-section-number': '1.5em', '--tex8web-toc-section-skip': '1em',
+    '--tex8web-toc-subsection-indent': '1.5em', '--tex8web-toc-subsection-number': '2.3em',
+    '--tex8web-toc-subsubsection-indent': '3.8em', '--tex8web-toc-subsubsection-number': '3.2em' },
   // (chapter styles left with the stylesheet's spacing: memoir's chappell,
   // with four skips, one of them zero, and fncychap's Glenn, with a
   // negative space between label and title)
@@ -492,6 +497,14 @@ const contents = {
   'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/\?a=1&amp;b=2#top'/],
   'test-russian': titled('Содержание'),
   'test-greek': titled('Περιεχόμενα'),
+  // (revtex's headings, numbered in its style, with the text after each)
+  'test-revtoc': [
+    /<h3 class='sectionHead' id='first-section'>(?:(?!<\/h3>)[^])*<span class='titlemark'>I\.<\/span>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\./,
+    /<h4 class='subsectionHead' id='a-subsection'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./,
+    /<h5 class='subsubsectionHead' id='a-subsubsection'>(?:(?!<\/h5>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h5>)[^])*A subsubsection<\/h5>/,
+    /<span class='paragraphHead' id='a-paragraph'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*A paragraph\.<\/span>\s*Text of the paragraph\./,
+    /<h3 class='sectionHead' id='second-section'>(?:(?!<\/h3>)[^])*<span class='titlemark'>II\.<\/span>(?:(?!<\/h3>)[^])*Second section<\/h3>/,
+  ],
   'test-report': [
     /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
     /<\/nav>(?:(?!<\/nav>)[^])*<div class='tableofcontents'>\s*<span class='lofToc'>/,

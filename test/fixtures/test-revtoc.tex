@@ -1,0 +1,20 @@
+% A revtex4 article with headings at four levels. revtex's \l@section
+% reads \tocleft@section, which the class defines only in
+% \tableofcontents, so measuring its table of contents failed the build.
+\documentclass{revtex4}
+\usepackage{hyperref}
+\begin{document}
+\title{Revtoc}
+\author{Someone}
+\maketitle
+\section{First section}
+Text of the first section.
+\subsection{A subsection}
+Text of the subsection.
+\subsubsection{A subsubsection}
+Text of the subsubsection.
+\paragraph{A paragraph.}
+Text of the paragraph.
+\section{Second section}
+Text of the second section.
+\end{document}
