@@ -362,13 +362,75 @@ function M.copy(document, context)
     document:query_selector("script#tex8web-fonts")[1]
       :set_attribute("data-fonts", table.concat(preloaded, " "))
   end
+  local converted = {}
   for _, img in ipairs(document:query_selector("img")) do
     local src = img:get_attribute("src") or ""
-    if src ~= "" and not src:match("^%a+:") and not exists(context.dir .. "/" .. src)
-        and exists(src) then
-      M.add(src, context.dir .. "/" .. src)
+    local page = img:get_attribute("data-tex8web-page")
+    if page then
+      img:set_attribute("data-tex8web-page", nil)
+      M.convert(src, page, img, context, converted)
+    elseif src ~= "" and not src:match("^%a+:") and exists(src)
+        and (M.leaves(src) or not exists(context.dir .. "/" .. src)) then
+      img:set_attribute("src", M.inside(src))
+      M.add(src, context.dir .. "/" .. M.inside(src))
     end
   end
+end
+
+-- the picture's path without ./ and dir/.., as a list of its parts
+local function parts_of(path)
+  local parts = {}
+  for part in path:gmatch("[^/]+") do
+    if part == ".." and #parts > 0 and parts[#parts] ~= ".." then
+      table.remove(parts)
+    elseif part ~= "." then
+      parts[#parts + 1] = part
+    end
+  end
+  return parts
+end
+
+-- whether a picture named by path, relative to the document's folder,
+-- lies outside that folder
+function M.leaves(path)
+  return path:find("^/") ~= nil or parts_of(path)[1] == ".."
+end
+
+-- the name inside the page's folder for a picture the page names by path,
+-- relative to the document's folder. A picture outside that folder goes
+-- in a folder of tex8web-pictures/ named by a hash of its path, so that two
+-- pictures never share a name and no folder of the writer's shows in it.
+-- (M.add copies a file under its name, into the folder of its path.)
+function M.inside(path)
+  local parts = parts_of(path)
+  if not M.leaves(path) then return table.concat(parts, "/") end
+  local hash = md5.sumhexa((path:find("^/") and "/" or "") .. table.concat(parts, "/")):sub(1, 8)
+  return "tex8web-pictures/" .. hash .. "/" .. parts[#parts]
+end
+
+-- converts page page of the PDF or EPS picture src into a PNG in the
+-- page's folder, with Ghostscript's options from html4.4ht's PdfConvert and
+-- EpsConvert, and points img at it. Ghostscript runs from the document's
+-- folder, and the PNG is written in the page's folder, never beside the
+-- picture: the source may be read-only. A picture that is not found from
+-- the document's folder, such as one in TeX Live, is looked up in kpathsea.
+-- converted lists the PNGs already made for the page.
+function M.convert(src, page, img, context, converted)
+  local file = src:gsub('"', "")
+  file = exists(file) and file or kpse.find_file(file, "graphic/figure") or file
+  local png = M.inside(file):gsub("%.[^./]*$", "") .. "-" .. page .. ".png"
+  local path = context.dir .. "/" .. png
+  img:set_attribute("src", png)
+  if converted[path] then return end
+  converted[path] = true
+  local crop = file:lower():find("%.eps$") and "-dEPSCrop" or "-dusecropbox"
+  local command = ("mkdir -p %s && rungs -q -dNOPAUSE -dBATCH %s -sDEVICE=pngalpha -r300 "
+    .. "-dFirstPage=%s -dLastPage=%s -sOutputFile=%s %s"):format(files.quote(path:match("^(.*)/")),
+    crop, page, page, files.quote(path), files.quote(file))
+  if not os.execute(command) or not exists(path) then
+    log:error("Ghostscript could not convert " .. file .. " to " .. png)
+  end
+  Make:add_file(path)
 end
 
 -- copies the fonts of context.roles (set in M.copy) whole from TeX Live,

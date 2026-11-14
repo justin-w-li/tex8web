@@ -129,6 +129,15 @@ Make:htf {}
 -- tex4ht's index script: \warn:idx in article.4ht. make4ht never makes the
 -- file, and copying it to -d logs an error.)
 Make:match("4idx$", function() return false end)
+-- (the .lg names a picture outside the document's folder by its ../ or
+-- absolute path, and make4ht would copy it to that path from -d, outside
+-- the page's folder. assets.copy copies it inside instead.)
+Make:match(".", function(filename, par)
+  local builddir = par.builddir ~= "" and par.builddir .. "/"
+  if not (builddir and filename:sub(1, #builddir) == builddir) and assets.leaves(filename) then
+    return false, "outside the document's folder"
+  end
+end)
 
 -- Each pass is function(document, context). The order matters for:
 -- - page.build_data: first, as it fills context and removes its scripts
