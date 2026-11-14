@@ -303,18 +303,22 @@ const typeset = {
   ],
   // text-mode commands in math, as LaTeX sets them: \enskip as half an em
   // of space, in a display, inline, between \left( and \right), in a
-  // footnote, and inside \text; \textsubscript and \textsuperscript as
-  // upright text on an empty base, so after a subscripted or superscripted
-  // base there is no double script, and a superscript after one goes on
-  // the group; the counter commands as nothing, with no trace of their
-  // arguments; \emph and \textsl as italic text, \textsc as upright text,
-  // also inside \text, and \textup and \textnormal as before
+  // footnote, inside \text, and through a macro; \textsubscript and
+  // \textsuperscript as upright text on an empty base, so after a
+  // subscripted or superscripted base there is no double script, and a
+  // superscript after one goes on the group, also inside \text; the counter
+  // commands as nothing, with no trace of their arguments; \emph and \textsl
+  // as italic text, \textsc and \textmd as upright text, also inside \text,
+  // and \textup and \textnormal as before; and no command name in red
   'test-textmath': [
     /<mi>f<\/mi><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mi>g<\/mi>/,
     /<mi>a<\/mi><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mi>b<\/mi>/,
     /<mi>p<\/mi><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mi>q<\/mi>/,
     /<\/msub><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><msub><mi>k<\/mi>/,
     /<mtext>c<\/mtext><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mtext>d<\/mtext>/,
+    /<mi>μ<\/mi><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mi>ν<\/mi>/,
+    /<mtext>H<\/mtext>(?:<mrow[^>]*>)?<msub>(?:<mrow[^>]*><\/mrow>|<mi><\/mi>)<mrow[^>]*><mtext>2<\/mtext><\/mrow><\/msub>(?:<\/mrow>)?<mtext>O<\/mtext>/,
+    /<mtext>the 2<\/mtext>(?:<mrow[^>]*>)?<msup>(?:<mrow[^>]*><\/mrow>|<mi><\/mi>)<mrow[^>]*><mtext>nd<\/mtext><\/mrow><\/msup>(?:<\/mrow>)?<mtext> term<\/mtext>/,
     ...[['<mi>V<\\/mi>', 'P'], ['<mi>W<\\/mi>', 'S'], ['<mi>Z<\\/mi>', 'B'], ['<mn>0<\\/mn><\\/mrow><\\/msub>', 'Q']].map(([base, sub]) =>
       new RegExp(`${base}(?:<mrow[^>]*>)?<msub>(?:<mrow[^>]*><\\/mrow>|<mi><\\/mi>)<mrow[^>]*><mtext>${sub}<\\/mtext><\\/mrow><\\/msub>`)),
     /<mi>T<\/mi><msup><mrow[^>]*><msub>(?:<mrow[^>]*><\/mrow>|<mi><\/mi>)<mrow[^>]*><mtext>R<\/mtext><\/mrow><\/msub><\/mrow><mrow[^>]*><mn>2<\/mn><\/mrow><\/msup>/,
@@ -322,13 +326,15 @@ const typeset = {
       new RegExp(`${base}(?:<mrow[^>]*>)?<msup>(?:<mrow[^>]*><\\/mrow>|<mi><\\/mi>)<mrow[^>]*><mtext>${sup}<\\/mtext><\\/mrow><\\/msup>`)),
     /<math display='block'[^>]*>(?:<mrow[^>]*>)?<mtable [^>]*data-tex8web-env='matrix'/,
     /<msub><mi>n<\/mi><mn>1<\/mn><\/msub><\/mtd>/,
-    /^(?![^]*(?:𝑀𝑎𝑥𝑀𝑎𝑡𝑟𝑖𝑥𝐶𝑜𝑙𝑠|𝑒𝑞𝑢𝑎𝑡𝑖𝑜𝑛))/,
+    /^(?![^]*(?:𝑀𝑎𝑥𝑀𝑎𝑡𝑟𝑖𝑥𝐶𝑜𝑙𝑠|𝑒𝑞𝑢𝑎𝑡𝑖𝑜𝑛|<mi>M<\/mi><mi>a<\/mi>|>MaxMatrixCols<|<mi>e<\/mi><mi>q<\/mi>))/,
+    /^(?![^]*<mtext mathcolor='light-dark\(red)/,
     /<mi>x<\/mi><mo>\.<\/mo>(?:<mrow[^>]*>)?<mtext[^>]* mathvariant='italic'[^>]*>(?:of|𝑜𝑓)<\/mtext><mspace (?:[^>]* )?width='0pt'[^>]*><\/mspace><mtext[^>]* mathvariant='italic'[^>]*>(?:f|𝑓)<\/mtext>/,
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext[^>]* mathvariant='italic'[^>]*>(?:ab|𝑎𝑏)<\/mtext>/,
     /<mtext>see <\/mtext><mtext[^>]* mathvariant='italic'[^>]*>(?:cd|𝑐𝑑)<\/mtext>/,
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext(?![^>]*(?:mathcolor|italic))[^>]*>gh<\/mtext>/,
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext[^>]* mathvariant='italic'[^>]*>(?:ij|𝑖𝑗)<\/mtext>/,
     /<math xmlns='[^']*'><mrow><mtext>kl<\/mtext><mtext> and <\/mtext><mtext[^>]* mathvariant='italic'[^>]*>(?:mn|𝑚𝑛)<\/mtext><\/mrow><\/math>/,
+    /<math xmlns='[^']*'><mtext>st<\/mtext><\/math>/,
     /<math xmlns='[^']*'><mtext>op<\/mtext><\/math>/,
     /<math xmlns='[^']*'><mtext>qr<\/mtext><\/math>/,
   ],
@@ -365,11 +371,18 @@ const speech = {
     /aria-label='v equals 3 times m s to the negative 1 power'/,
     /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,
     /aria-label='E equals 1\.6 times 10 to the negative 19 power J Label 1'/],
-  // (\enskip and the counter commands, read as nothing)
-  'test-textmath': [/aria-label='f g'/, /aria-label='a b'/, /aria-label='p q'/, /aria-label='c d'/,
-    /aria-label='open paren h sub l m k sub l m close paren Label 1'/,
+  // (\enskip as "empty", as MathJax reads \quad; the counter commands as
+  // nothing; the scripts and fonts as their text)
+  'test-textmath': [/aria-label='f empty g'/, /aria-label='a empty b'/, /aria-label='p empty q'/,
+    /aria-label='c empty d'/, /aria-label='mu empty nu'/,
+    /aria-label='open paren h sub l m empty k sub l m close paren Label 1'/,
     /aria-label='r equals s'/, /aria-label='t equals u Label \d+'/,
-    /aria-label='v equals w'/, /aria-label='e equals o'/],
+    /aria-label='v equals w'/, /aria-label='alpha equals beta Label \d+'/, /aria-label='e equals o'/,
+    /aria-label='W sub cap S'/, /aria-label='V sub cap P'/, /aria-label='U sub 0 sub cap Q'/,
+    /aria-label='T sub cap R and super 2'/, /aria-label='Z sub cap B'/, /aria-label='cap H sub 2 cap O'/,
+    /aria-label='x raised to the th power'/, /aria-label='y squared super nd'/,
+    /aria-label='the 2 super nd term'/, /aria-label='x period italic of italic f sine x Label \d+'/,
+    /aria-label='italic ab'/, /aria-label='gh'/, /aria-label='italic ij'/, /aria-label='st'/],
 };
 
 // Pictures sized by \includegraphics's width, scale, or height: a share of
