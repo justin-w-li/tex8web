@@ -1673,6 +1673,25 @@ function check(doc, result, out, aux) {
       }
     }
   }
+  // (each inline listing's text, with its spaces as a reader sees them, and
+  // each formula after one, typeset, with the space before it; a listing
+  // in a box, with the spaces of its source as in a paragraph)
+  if (doc.name.startsWith('test-lstinline-box')) {
+    const texts = [...html.matchAll(/<code class='lstinline'>([^]*?)<\/code>/g)]
+      .map(([, code]) => code.replace(/<[^>]*>/g, '').replace(/\s+/g, ' '));
+    const expected = ['para', 'SPACES', 'SPACES', 'cellL', 'cellC', 'cellR', 'mbox', 'fbox', 'makebox', 'label',
+      'short', 'e≤1', 'italic', 'sans', 'thm', 'under', 'parbox', 'pcol',
+      ...(doc.name.endsWith('-hyperref') ? ['link'] : []), 'note'];
+    if (texts[1]?.trim() !== 'x y' || texts[2] !== texts[1]) problems.push(`the spaces of a boxed inline listing: '${texts[1]}' and '${texts[2]}'`);
+    const shown = texts.map((text, i) => i === 1 || i === 2 ? 'SPACES' : text);
+    if (shown.join('|') !== expected.join('|')) problems.push(`the inline listings read '${shown.join('|')}'`);
+    const formulas = [...html.replace(/\s+/g, ' ').matchAll(/(\S*) <mjx-container aria-label='([^']*)'/g)]
+      .map(([, before, label]) => `${before} ${label}`);
+    const letters = 'ABCDEFGHIJKLMN' + (doc.name.endsWith('-hyperref') ? 'O' : '') + 'P';
+    const wanted = ['then x plus 1', ...[...letters].map(letter => `then script ${letter}`)];
+    if (formulas.join('|') !== wanted.join('|')) problems.push(`the formulas after the inline listings read '${formulas.join('|')}'`);
+    if (html.includes('tex8web-long-literal')) problems.push('a short inline listing in a long-literal box');
+  }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
     const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];
     if (codes.length !== 11) problems.push('expected eleven review literals');

@@ -1,0 +1,44 @@
+% \lstinline in a box: listings sets an inline listing in an inner
+% horizontal box between two $ (\lst@Init and \lst@DeInit). Each listing
+% is followed by a formula, preceded by "then", which must be typeset.
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Inline listings in boxes}
+% (guards: unboxed, in a paragraph, \underline, \parbox, and a p column)
+Plain \lstinline|para| then $x+1$.
+
+Spaces \lstinline|  x  y  | beside \mbox{\lstinline|  x  y  |} in a box.
+
+\begin{tabular}{l} \lstinline|cellL| \end{tabular} then $\mathcal{A}$.
+
+\begin{tabular}{cr} \lstinline|cellC| & \lstinline{cellR} \end{tabular} then $\mathcal{B}$.
+
+In \mbox{\lstinline|mbox|} then $\mathcal{C}$.
+
+In \fbox{\lstinline|fbox|} then $\mathcal{D}$.
+
+In \makebox[6em][l]{\lstinline|makebox|} then $\mathcal{E}$.
+
+\begin{description}
+\item[\lstinline|label|] A label, then $\mathcal{F}$.
+\end{description}
+
+\lstMakeShortInline"
+\begin{tabular}{l} "short" \end{tabular} then $\mathcal{G}$.
+\lstDeleteShortInline"
+
+\begin{tabular}{l} \lstinline[literate={<=}{{$\leq$}}1]|e<=1| \end{tabular} then $\mathcal{H}$.
+
+\emph{Italic \mbox{\lstinline|italic|}} then $\mathcal{I}$.
+
+\textsf{Sans \fbox{\lstinline|sans|}} then $\mathcal{J}$.
+
+\begin{theorem}
+\begin{tabular}{l} \lstinline|thm| \end{tabular} then $\mathcal{K}$.
+\end{theorem}
+
+Under \underline{\lstinline|under|} then $\mathcal{L}$.
+
+\parbox{8em}{\lstinline|parbox|} then $\mathcal{M}$.
+
+\begin{tabular}{p{8em}} \lstinline|pcol| \end{tabular} then $\mathcal{N}$.

@@ -1,0 +1,10 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,listingsutf8,hyperref}
+\lstset{basicstyle=\ttfamily,language=C}
+\input{test-lstinline-box-cases.ltx}
+
+A link \href{https://example.org}{\mbox{\lstinline|link|}} then $\mathcal{O}$.
+
+Footnote\footnote{In \mbox{\lstinline|note|} then $\mathcal{P}$.} ends.
+\end{document}
