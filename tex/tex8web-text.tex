@@ -1108,7 +1108,8 @@
 % directory, where Ghostscript does not find it, and writes the PNG beside
 % the picture, in the source. A converted picture with no size is as wide
 % as in the PDF (\ifweb@natural in Gin-dim), since its PNG has more pixels
-% than the PDF has points.
+% than the PDF has points. An EPS picture with a PNG of its name beside it
+% shows that PNG, as in html4.4ht, which converts only when it is missing.
 \newif\ifweb@natural
 \ifdefined\Gin@setfile
     \def\web@converted{%
@@ -1119,7 +1120,11 @@
         \csname a:Gin-dim\endcsname}%
         \web@naturalfalse}
     \Configure{graphics*}{pdf}{\web@converted}
-    \Configure{graphics*}{eps}{\web@converted}
+    \Configure{graphics*}{eps}{%
+        \IfFileExists{\Gin@base.png}{%
+            {\Configure{Needs}{File: \Gin@base.png}\Needs{}}%
+            \Picture[\a:GraphicsAlt]{{\Gin@base.png} \csname a:Gin-dim\endcsname}}%
+          {\web@converted}}
 \fi
 % overpic's overpic and Overpic environments, whose picture is a box made
 % before the picture starts. tex4ht's \includegraphics there gives a box of

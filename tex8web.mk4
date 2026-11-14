@@ -132,7 +132,9 @@ Make:match("4idx$", function() return false end)
 -- (the .lg names a picture outside the document's folder by its ../ or
 -- absolute path, and make4ht would append that path to -d: a ../ path goes
 -- outside the page's folder, and an absolute one puts the writer's folders
--- in the page's folder. assets.copy copies it to tex8web-pictures instead.)
+-- in the page's folder. assets.copy copies it to tex8web-pictures instead.
+-- Other files, such as stylesheets and fonts, are left to make4ht:
+-- assets.lg_leaves.)
 Make:match(".", function(filename, par)
   if assets.lg_leaves(filename, par.builddir) then
     return false, filename .. " is outside the document's folder"

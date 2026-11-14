@@ -310,4 +310,28 @@ return {
     check(ok, err)
     equal(failed, 1)
   end,
+
+  ["assets.lg_leaves: only a picture outside the document's folder, not a stylesheet, script, or font"] = function()
+    check(assets.lg_leaves("../x.png", ""))
+    check(assets.lg_leaves("../x.JPG", ""))
+    check(assets.lg_leaves("/abs/fig.pdf-1.png", ""))
+    check(not assets.lg_leaves("../site.css", ""))
+    check(not assets.lg_leaves("../site.js", ""))
+    check(not assets.lg_leaves("/abs/font.woff2", ""))
+    check(not assets.lg_leaves("build/tex4ht/../../x.otf", "build/tex4ht"))
+  end,
+
+  ["assets.size: a negative scale gives the size of its absolute value, as a share to four places"] = function()
+    -- (the start of a PNG 600 by 300 pixels: 0.4190 of a 345pt text width)
+    local png = os.tmpname()
+    local f = assert(io.open(png, "wb"))
+    f:write("\137PNG\r\n\26\n" .. string.pack(">I4", 13) .. "IHDR" .. string.pack(">I4I4", 600, 300))
+    f:close()
+    for _, scale in ipairs({"-1", "1"}) do
+      local img = dom.html_parse("<html><body><img src='x'/></body></html>"):query_selector("img")[1]
+      assets.size(img, png, "-,-," .. scale, {textwidth = 345})
+      equal(img:get_attribute("style"), "width:calc(var(--tex8web-textwidth) * 0.4190)")
+    end
+    os.remove(png)
+  end,
 }

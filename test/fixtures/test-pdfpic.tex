@@ -22,8 +22,10 @@
 % and in a subfigure; an EPS picture without its extension. A PDF and an EPS
 % picture in parentheses, and two PDF pictures half the line wide side by
 % side, with no space before them. A PDF and an EPS picture with the same
-% name in one folder, and a PDF beside a PNG named as its conversion was
-% (own.pdf and own-1.png). A picture inside the folder is a guard.
+% name in one folder, a PDF beside a PNG named as its conversion was
+% (own.pdf and own-1.png), and an EPS beside a PNG of its name, which is
+% shown in its place, as tex4ht does. A picture inside the folder is a
+% guard.
 % run.mjs builds this page again with \PdfpicAbsolute and \PdfpicAbsolutePdf
 % set to absolute paths of a PNG and a PDF picture.
 \documentclass{article}
@@ -155,6 +157,8 @@ Without extension: \includegraphics[alt={eps bare}, width=2cm]{test-pdfpic/boxep
 EPS parentheses: (\includegraphics[alt={eps parentheses}, width=1cm]{test-pdfpic/boxeps})
 
 Twin EPS: \includegraphics[alt={twin eps}, width=1cm]{test-pdfpic/twin.eps}
+
+Own EPS: \includegraphics[alt={own eps}, width=2cm]{test-pdfpic/owneps.eps}
 
 \section{Pictures above the folder}
 Graphicspath: \includegraphics[alt={above graphicspath}]{pic.png}

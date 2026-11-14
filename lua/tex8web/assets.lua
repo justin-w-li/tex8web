@@ -399,10 +399,14 @@ function M.leaves(path)
 end
 
 -- whether an entry of the .lg names a picture outside the document's
--- folder. make4ht joins the entry's name to the build directory builddir
--- ("" for none) when the file is found there, and a ../ name joined so
--- still leaves the folder.
+-- folder, by the extensions of html4.4ht's pictures and of the conversions.
+-- Other entries, such as \Configure{AddCss} and \AddFontFace files
+-- (html4.4ht) and embedfile.4ht's files, stay with make4ht. make4ht joins
+-- the entry's name to the build directory builddir ("" for none) when the
+-- file is found there, and a ../ name joined so still leaves the folder.
+local picture_extensions = {png = true, jpg = true, jpeg = true, gif = true, svg = true, pdf = true, eps = true}
 function M.lg_leaves(filename, builddir)
+  if not picture_extensions[(filename:match("%.([^./]+)$") or ""):lower()] then return false end
   local prefix = builddir ~= "" and builddir .. "/"
   if prefix and filename:sub(1, #prefix) == prefix then filename = filename:sub(#prefix + 1) end
   return M.leaves(filename)
@@ -420,8 +424,8 @@ function M.inside(path)
 end
 
 -- converts page page of the PDF or EPS picture src into a PNG in the
--- build directory, with Ghostscript's options from html4.4ht's PdfConvert
--- and EpsConvert, and points img at it. Ghostscript runs from the
+-- build directory, at 300 dpi, with the crop options of html4.4ht's
+-- PdfConvert and EpsConvert, and points img at it. Ghostscript runs from the
 -- document's folder, and the PNG is written in the build directory
 -- (context.dir), never beside the picture: the source may be read-only. A
 -- picture that is not found from the document's folder, such as one in TeX
@@ -435,8 +439,9 @@ end
 -- conversion worked, so that a failed one is tried and reported once. A
 -- PNG left by an earlier build, newer than its picture, is kept, as
 -- html4.4ht kept it.
--- The PNG has a white background, as the picture has on the PDF's page, so
--- that its lines show in dark mode too. A page that is not a whole number
+-- The PNG has a white background (png16m, where html4.4ht has pngalpha),
+-- as the picture has on the PDF's page, so that its lines show in dark
+-- mode too. A page that is not a whole number
 -- (graphicx's page=, which goes into the command and the PNG's name) is
 -- page 1, with a warning.
 function M.convert(src, page, img, context, converted)
@@ -497,10 +502,10 @@ function M.size(img, path, size, context)
   if width and height then shown = math.min(width, height * aspect)
   elseif height then shown = height * aspect
   elseif width then shown = width
-  else shown = natural * (tonumber(scale) or 1) end
+  -- (a negative scale mirrors the picture, at the size of its absolute value)
+  else shown = natural * math.abs(tonumber(scale) or 1) end
   shown = shown * (tonumber(factor) or 1)
-  local share = ("%.4f"):format(shown):gsub("0+$", ""):gsub("%.$", "")
-  dom.add_style(img, "width:calc(var(--tex8web-textwidth) * " .. share .. ")")
+  dom.add_style(img, ("width:calc(var(--tex8web-textwidth) * %.4f)"):format(shown))
 end
 
 -- copies the fonts of context.roles (set in M.copy) whole from TeX Live,

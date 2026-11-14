@@ -720,7 +720,7 @@ function M.pictures(document, context)
           function(start) return string.format("%s%.4f)", start, wide) end)))
       end
       -- (a converted picture whose bounding box TeX could not read gets its
-      -- width later, in assets.convert, which multiplies it by this factor)
+      -- width later, in assets.size, which multiplies it by this factor)
       local size = el:get_attribute("data-tex8web-size")
       if x ~= 1 and size then el:set_attribute("data-tex8web-size", string.format("%s,%.4f", size, x)) end
       -- (an \includegraphics: the height that tex8web-text.tex writes beside

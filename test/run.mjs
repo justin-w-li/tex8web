@@ -3,7 +3,7 @@
 // run beside them. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -381,9 +381,11 @@ const copied = {
     'pdf space width to height': 64 / 48,
     'pdf space': 1, 'pdf beside': 100 / 20, 'pdf kpathsea': 4 / 3, 'pdf same name': 30 / 60, 'pdf dots': 50 / 25,
     'eps': 57 / 28, 'eps bare': 57 / 28, 'eps parentheses': 57 / 28, 'above pdf': 90 / 30, 'above eps': 30 / 45,
-    // (a PDF and an EPS picture with one name, and a PDF beside a PNG named
-    // as its conversion was)
+    // (a PDF and an EPS picture with one name, a PDF beside a PNG named as
+    // its conversion was, and an EPS beside a PNG of its name, which tex4ht
+    // shows in its place)
     'twin pdf': 80 / 20, 'twin eps': 20 / 40, 'own pdf': 96 / 32, 'own png': 'fixtures/test-pdfpic/own-1.png',
+    'own eps': 'fixtures/test-pdfpic/owneps.png',
     // (the same name in two parent folders, two copies; the same picture
     // named three ways, one)
     'above graphicspath': 'pdfpic-above/pic.png', 'above again': 'pdfpic-above/pic.png', 'above figure': 'pdfpic-above/pic.png',
@@ -404,24 +406,13 @@ const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : j
 const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
 // the files and folders in the folders of test-pdfpic's source pictures,
 // and those beside the fixture named test-pdfpic*, such as
-// test-pdfpic-box.pdf, that a build wrote or changed there: in a git
-// checkout of tex8web, those git lists as untracked or modified (Finder's
-// .DS_Store is ignored), and outside one, those that were not there before
-// any build. Either way a file already there or already listed when this
-// script started, such as the fixture being edited, counts only if its time
-// of change is later.
-// (safe.directory: CI's container checks out as another user)
+// test-pdfpic-box.pdf, that a build wrote or changed there: those not
+// there when this script started, and those whose time of change is later,
+// such as a tracked picture written over. Finder's .DS_Store is left out.
 const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic'];
-const pdfpicListing = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))),
-  ...readdirSync(join(root, 'test/fixtures')).filter(f => f.startsWith('test-pdfpic')).map(f => join('test/fixtures', f))].sort();
-const pdfpicGit = (...args) => spawnSync('git', ['-c', 'safe.directory=*', '-C', root, ...args], { encoding: 'utf8' });
-const pdfpicTop = pdfpicGit('rev-parse', '--show-toplevel');
-const pdfpicInGit = pdfpicTop.status === 0 && realpathSync(pdfpicTop.stdout.trim()) === realpathSync(root);
-const pdfpicStatus = () => {
-  if (!pdfpicInGit) return pdfpicListing();
-  const files = pdfpicGit('status', '--porcelain', '-z', '--untracked-files=all', '--', ...pdfpicFolders, 'test/fixtures/test-pdfpic*');
-  return files.status === 0 ? files.stdout.split('\0').filter(Boolean).map(f => f.slice(3)) : [`(git status failed: ${files.stderr.trim()})`];
-};
+const pdfpicStatus = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))),
+  ...readdirSync(join(root, 'test/fixtures')).filter(f => f.startsWith('test-pdfpic')).map(f => join('test/fixtures', f))]
+  .filter(f => !f.endsWith('.DS_Store'));
 const pdfpicTime = f => { try { const st = statSync(join(root, f)); return st.isFile() ? st.mtimeMs : 0; } catch { return -1; } };
 const pdfpicBefore = new Map(pdfpicStatus().map(f => [f, pdfpicTime(f)]));
 const pdfpicWritten = () => pdfpicStatus().filter(f => !pdfpicBefore.has(f) || pdfpicTime(f) !== pdfpicBefore.get(f)).sort();
@@ -449,10 +440,10 @@ const pictures = {
     share('pdf space natural', '0.1864'), share('pdf space height', '0.3303'), share('pdf space scale', '0.0932'),
     share('pdf space fitted', '0.1101'), share('pdf space scalebox', '0.2203'),
     share('pdf space scalebox natural', '0.3729'), share('pdf space resizebox', '0.2474'),
-    share('pdf space resizebox height', '0.1101'), share('pdf space resizebox half', '0.5'),
+    share('pdf space resizebox height', '0.1101'), share('pdf space resizebox half', '0.5000'),
     share('pdf space resizebox scaled', '0.1237'),
     share('pdf space width to height', '0.1101'), share('pdf space width to width', '0.2474'),
-    share('pdf space width to both', '0.2474'), share('pdf space scalebox width', '0.165')],
+    share('pdf space width to both', '0.2474'), share('pdf space scalebox width', '0.1650')],
   // (the graphics package: a picture without a size or a .xbb, left to tex4ht)
   'test-graphics-only': [/<img (?:(?!style=)[^>])*\/>/],
   // (pictures over a PDF or PNG without its .xbb file, and one with it:
