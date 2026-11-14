@@ -79,14 +79,12 @@
 % (mathjax-latex-4ht.4ht) then reads the source up to the next $. An
 % inline listing has no \par, so it is set without the box, in listings'
 % TextStyle hook, where a document's own \Configure{lstinline} leaves it.
-% The PDF's box drops the listing's edge spaces, and the page has none
-% there either.
 \@ifpackageloaded{listings}{%
     \Configure{lstinline}
         {\HCode{<code class="lstinline">}\HtmlParOff
          \expandafter\def\csname a:listings-init\endcsname{\ht:special{t4ht@(}}}
         {\HtmlParOn\HCode{</code>}}%
-    \lst@AddToHook{TextStyle}{\lst@ifmode\else\let\lst@boxtrue\relax\fi}}{}
+    \lst@AddToHook{TextStyle}{\let\lst@boxtrue\relax}}{}
 \catcode58 12
 
 % The virtual Courier fonts map character 32 to an ordinary space.

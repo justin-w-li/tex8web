@@ -1675,7 +1675,8 @@ function check(doc, result, out, aux) {
   }
   // (each inline listing's text, with its spaces as a reader sees them, and
   // each formula after one, typeset, with the space before it; a listing
-  // in a box without its edge spaces, as in the PDF, whose box drops them;
+  // in \mbox without its edge spaces, as in the PDF, where \mbox reads its
+  // argument before \lstinline does, which drops them and collapses runs;
   // the hyperref fixture's config sets its own \Configure{lstinline})
   if (doc.name.startsWith('test-lstinline-box')) {
     const hyperref = doc.name.endsWith('-hyperref');
@@ -1686,16 +1687,17 @@ function check(doc, result, out, aux) {
     // (the box's runs of spaces: a real edge space of a listing is one)
     const runs = raw.filter(text => /^\s{2}|\s{2}$/.test(text));
     if (runs.length) problems.push(`inline listings with runs of spaces: '${runs.join("', '")}'`);
-    // (the "Spaces" line, in a paragraph and then in \mbox: the paragraph
-    // form gives one no-break space before x, and the box form none)
+    // (the "Spaces" line, in a paragraph and then in \mbox, and the same
+    // listing in a tabular cell: the paragraph form gives one no-break
+    // space before x, the \mbox form none, and the cell the paragraph's)
     const spaced = where(text => text === 'x y');
-    const [para, boxed] = spaced.map(i => raw[i]);
-    if (spaced.length !== 2 || para?.replace(/^\s|\s$/g, '') !== 'x y' || boxed !== 'x y') problems.push(`the spaces of a boxed inline listing: '${para}' and '${boxed}'`);
+    const [para, boxed, cell] = spaced.map(i => raw[i]);
+    if (spaced.length !== 3 || para?.replace(/^\s|\s$/g, '') !== 'x y' || boxed !== 'x y' || cell !== para) problems.push(`the spaces of a boxed inline listing: '${para}', '${boxed}', and '${cell}'`);
     // (the literate listing, in a tabular cell and then in a paragraph)
     const literate = where(text => /^e.*1$/.test(text));
     if (literate.length !== 2 || !/^e\S+1$/.test(texts[literate[0]]) || texts[literate[0]] !== texts[literate[1]]) problems.push(`the literate listings read '${literate.map(i => texts[i]).join("' and '")}'`);
     const shown = texts.map((text, i) => spaced.includes(i) ? 'SPACES' : literate.includes(i) ? 'LITERATE' : text);
-    const expected = ['para', 'SPACES', 'SPACES', 'cellL', 'cellC', 'cellR', 'mbox', 'fbox', 'makebox', 'label',
+    const expected = ['para', 'SPACES', 'SPACES', 'SPACES', 'cellL', 'cellC', 'cellR', 'mbox', 'fbox', 'makebox', 'label',
       'short', 'LITERATE', 'italic', 'sans', 'thm', 'under', 'parbox', 'pcol', 'cbox', 'fcbox', 'hbox', 'sbox',
       'savebox', 'raise', 'frame', 'multi', 'long', 'cap', 'delims', 'LITERATE', ...(hyperref ? ['link'] : []), 'note'];
     if (shown.join('|') !== expected.join('|')) problems.push(`the inline listings read '${shown.join('|')}'`);
