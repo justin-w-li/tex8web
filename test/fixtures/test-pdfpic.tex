@@ -7,11 +7,12 @@
 % \graphicspath, in italic, in a footnote, in a link, in a minipage, and in a
 % figure with a caption. PDF pictures with a space in the name, whose
 % bounding box TeX cannot read: with a width, with no size, with a height or
-% a scale alone, and with a width and height kept in proportion. EPS pictures, converted by Ghostscript. Pictures
-% named with ../ (by \graphicspath, by name, two levels up, the same name in
-% two parent folders, a name with a space, PNG, JPEG, PDF, and EPS), the same
-% picture twice, an import.sty chapter, an \import from a parent folder, and
-% epsfig. A PDF beside the document, one found by kpathsea, one with the name
+% a scale alone, with a width and height kept in proportion, and in a
+% \scalebox with a height and with no size. EPS pictures, converted by
+% Ghostscript. Pictures named with ../ (by \graphicspath, by name, two levels
+% up, the same name in two parent folders, a name with a space, PNG, JPEG,
+% PDF, and EPS), the same picture twice, an import.sty chapter, an \import
+% from a parent folder, and epsfig. A PDF beside the document, one found by kpathsea, one with the name
 % of another in another folder, one with dots in its name, in display math,
 % and in a subfigure; an EPS picture without its extension. A PDF and an EPS
 % picture in parentheses, and two PDF pictures half the line wide side by
@@ -62,6 +63,10 @@ Space height: \includegraphics[alt={pdf space height}, height=3cm]{"test-pdfpic/
 Space scale: \includegraphics[alt={pdf space scale}, scale=.5]{"test-pdfpic/wide fig"}
 
 Space fitted: \includegraphics[alt={pdf space fitted}, width=5cm, height=1cm, keepaspectratio]{"test-pdfpic/wide fig"}
+
+Space scalebox: \scalebox{2}{\includegraphics[alt={pdf space scalebox}, height=1cm]{"test-pdfpic/wide fig"}}
+
+Space scalebox no size: \scalebox{2}{\includegraphics[alt={pdf space scalebox natural}]{"test-pdfpic/wide fig"}}
 
 \textit{Italic: \includegraphics[alt={pdf italic}, width=1cm]{test-pdfpic/box}}
 and a footnote.\footnote{Footnote: \includegraphics[alt={pdf footnote}, width=1cm]{test-pdfpic/box}}

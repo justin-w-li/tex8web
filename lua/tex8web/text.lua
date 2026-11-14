@@ -707,6 +707,10 @@ function M.pictures(document, context)
         el:set_attribute("style", (style:gsub("(width:calc%(var%(%-%-tex8web%-textwidth%) %* )[%d.]+%)",
           function(start) return string.format("%s%.4f)", start, wide) end)))
       end
+      -- (a converted picture whose bounding box TeX could not read gets its
+      -- width later, in assets.convert, which multiplies it by this factor)
+      local size = el:get_attribute("data-tex8web-size")
+      if x ~= 1 and size then el:set_attribute("data-tex8web-size", string.format("%s,%.4f", size, x)) end
       -- (an \includegraphics: the height that tex8web-text.tex writes beside
       -- a width, as a share of the text width. Only the width is scaled, so
       -- the picture is shown x times that high, whatever y is. tex4ht's

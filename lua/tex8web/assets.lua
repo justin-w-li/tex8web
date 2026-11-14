@@ -428,7 +428,8 @@ end
 -- Live, is looked up in kpathsea.
 -- A picture whose bounding box TeX could not read carries the size asked
 -- for (data-tex8web-size: a width and a height as shares of the text
--- width, - for none, and a scale, between commas), which is applied to the
+-- width, - for none, a scale, and the factor of the \scalebox or
+-- \resizebox around it if any, between commas), which is applied to the
 -- PNG's size.
 -- converted holds, for each PNG of the page already tried, whether its
 -- conversion worked, so that a failed one is tried and reported once. A
@@ -480,10 +481,11 @@ function M.convert_file(file, page, path, png)
 end
 
 -- sets img's width from size, the width and height shares and the scale
--- that TeX asked for, and from the natural size of the PNG at path, made
--- at 300 dpi. Both shares come only with keepaspectratio.
+-- that TeX asked for and the factor of the boxes around the picture, and
+-- from the natural size of the PNG at path, made at 300 dpi. Both shares
+-- come only with keepaspectratio.
 function M.size(img, path, size, context)
-  local width, height, scale = size:match("^([^,]+),([^,]+),([^,]+)$")
+  local width, height, scale, factor = size:match("^([^,]+),([^,]+),([^,]+),?([^,]*)$")
   local f = assert(io.open(path, "rb"))
   local header = f:read(24)
   f:close()
@@ -496,6 +498,7 @@ function M.size(img, path, size, context)
   elseif height then shown = height * aspect
   elseif width then shown = width
   else shown = natural * (tonumber(scale) or 1) end
+  shown = shown * (tonumber(factor) or 1)
   local share = ("%.4f"):format(shown):gsub("0+$", ""):gsub("%.$", "")
   dom.add_style(img, "width:calc(var(--tex8web-textwidth) * " .. share .. ")")
 end
