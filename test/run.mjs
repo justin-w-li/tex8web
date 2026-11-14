@@ -706,7 +706,7 @@ const contents = {
     /<h4 class='subsectionHead' id='([^']+)'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\.[^]*subsection<span class='tex8web-nbsp'> <\/span><a href='#\1'>I ?A</,
     /<h5 class='subsubsectionHead' id='[^']+'>(?:(?!<\/h5>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h5>)[^])*A subsubsection<\/h5>\s*<p class='noindent'>Text of the subsubsection\./,
     /<span class='paragraphHead' id='[^']+'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*A paragraph\.<\/span>\s*Text of the paragraph\./,
-    /^(?![^]*A paragraph\.[^]*A paragraph\.)/,
+    /<main>(?!(?:(?!<\/main>)[^])*A paragraph\.(?:(?!<\/main>)[^])*A paragraph\.)/,
     /section<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>II<[^]*<h3 class='sectionHead' id='\1'>(?:(?!<\/h3>)[^])*<span class='titlemark'>II\.<\/span>(?:(?!<\/h3>)[^])*Mass (?:(?!<\/h3>)[^])*<mjx-container(?:(?!<\/h3>)[^])*energy(?:(?!<\/h3>)[^])*<\/h3>\s*<p class='noindent'>Text after math/i,
     /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Starred section<\/h3>\s*<p class='noindent'>Text of the starred section\./i,
     /<h4 class='likesubsectionHead' id='[^']+'>(?:(?!<\/h4>|titlemark)[^])*Starred subsection<\/h4>\s*<p class='noindent'>Text of the starred subsection\./,
@@ -724,7 +724,7 @@ const contents = {
     /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./,
     /<h5 class='subsubsectionHead' id='[^']+'>(?:(?!<\/h5>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h5>)[^])*A subsubsection<\/h5>\s*<p class='noindent'>Text of the subsubsection\./,
     /<span class='paragraphHead' id='[^']+'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*A paragraph\.<\/span>\s*Text of the paragraph\./,
-    /^(?![^]*A paragraph\.[^]*A paragraph\.)/,
+    /<main>(?!(?:(?!<\/main>)[^])*A paragraph\.(?:(?!<\/main>)[^])*A paragraph\.)/,
     /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Starred section<\/h3>\s*<p class='noindent'>Text of the starred section/i,
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*<span class='titlemark'>II\.<\/span>(?:(?!<\/h3>)[^])*Long title of a section<\/h3>\s*<p class='noindent'>Text of the long section\./i,
     /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Acknowledgments<\/h3>\s*<p class='noindent'>Text of the acknowledgments\./i,
@@ -734,9 +734,10 @@ const contents = {
   // in the PDF. Nothing after the page's end.)
   'test-revhead-reprint': [
     /<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead letter(?:(?!<\/h1>)[^])*<\/h1>(?:(?!<h3)[^])*Text of the letter.s abstract\./,
-    /<h3 class='[^']*sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\./i,
-    /<h4 class='[^']*subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./i,
-    /<h3 class='[^']*sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Second section<\/h3>\s*<p class='noindent'>Text of the second section\./i,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\./i,
+    /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>|titlemark)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./i,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Second section<\/h3>\s*<p class='noindent'>Text of the second section\./i,
+    // (guards: the text is kept, and nothing follows the page's end)
     /Text of the acknowledgments\./,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
@@ -748,10 +749,30 @@ const contents = {
     /<table[^>]*>(?:(?!<\/table>)[^])*>\s*a\s*<(?:(?!<\/table>)[^])*>\s*b\s*<(?:(?!<\/table>)[^])*>\s*c\s*<(?:(?!<\/table>)[^])*>\s*d\s*<(?:(?!<\/table>)[^])*<\/table>/,
     /class='caption'(?:(?!<\/(?:figcaption|div)>)[^])*TABLE(?:<[^>]*>|\s)*II:(?:(?!<\/(?:figcaption|div)>)[^])*A wide table\./,
     /class='caption'(?:(?!<\/(?:figcaption|div)>)[^])*FIG\.(?:<[^>]*>|\s)*1:(?:(?!<\/(?:figcaption|div)>)[^])*A figure\./,
-    /Text of the wide part, and table<span class='tex8web-nbsp'> <\/span><a href='#[^']+'>I</,
-    /Text after figure<span class='tex8web-nbsp'> <\/span><a href='#[^']+'>1</,
-    /Text of the footnote\./,
+    /id='([^']+)'>(?:(?!<\/p>)[^])*<\/p><hr class='float' \/><div class='float'>\s*<div class='caption'(?:(?!<\/div>)[^])*A small table\.[^]*Text of the wide part, and table<span class='tex8web-nbsp'> <\/span><a href='#\1'>I</,
+    /<div class='figure' id='([^']+)'>(?:(?!<\/div>)[^])*A figure\.[^]*Text after figure<span class='tex8web-nbsp'> <\/span><a href='#\1'>1</,
+    /class='caption'(?:(?!<\/(?:figcaption|div)>)[^])*FIG\.(?:<[^>]*>|\s)*2:(?:(?!<\/(?:figcaption|div)>)[^])*A wide figure\./,
+    // (aps sets footnotes as numbered notes at the end, as in the PDF)
+    /with a footnote\.\[<a href='#([^']+)'>1<\/a>\][^]*<a id='\1'><\/a>(?:<[^>]*>)*Text of the footnote\./,
     /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  // (revtex4-2 without hyperref: a \label in a heading's title, headings
+  // with no text between them, two \paragraph headings, and an appendix.
+  // The appendix's label is not checked.)
+  'test-revhead-plain': [
+    /<h3 class='sectionHead' id='([^']+)'>(?:(?!<\/h3>)[^])*<span class='titlemark'>I\.<\/span>(?:(?!<\/h3>)[^])*Introduction<\/h3>\s*<p class='noindent'>Text of the introduction[^]*after section<span class='tex8web-nbsp'> <\/span><a href='#\1'>I</i,
+    /before section<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>II<[^]*<h3 class='sectionHead' id='\1'>(?:(?!<\/h3>)[^])*<span class='titlemark'>II\.<\/span>(?:(?!<\/h3>)[^])*Nested<\/h3>\s*<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*Nested subsection<\/h4>\s*<h5 class='subsubsectionHead' id='[^']+'>(?:(?!<\/h5>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h5>)[^])*Nested subsubsection<\/h5>\s*<p class='noindent'>Text after the nested headings\./i,
+    /<span class='paragraphHead' id='[^']+'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*One\.<\/span>\s*Text of the first paragraph\.\s*<\/p>\s*<p class='noindent'><span class='paragraphHead' id='[^']+'><span class='titlemark'>b\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*Two\.<\/span>\s*Text of the second paragraph,/,
+    /<main>(?!(?:(?!<\/main>)[^])*(?:One\.|Text of the first paragraph)(?:(?!<\/main>)[^])*Two\.(?:(?!<\/main>)[^])*(?:One\.|Text of the first paragraph))/,
+    /appendix<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>A<[^]*<h3 class='sectionHead' id='\1'>(?:(?!<\/h3>)[^])*Details<\/h3>\s*<p class='noindent'>Text of the appendix\.\s*<\/p>\s*<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*Part<\/h4>\s*<p class='noindent'>Text of the appendix.s part\./i,
+  ],
+  // (a revtex4-2 preprint for an aip journal, and a single appendix from
+  // \appendix*, whose label is not checked)
+  'test-revhead-preprint': [
+    /<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead preprint(?:(?!<\/h1>)[^])*<\/h1>/,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*<span class='titlemark'>I\.<\/span>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\./i,
+    /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Only appendix<\/h3>\s*<p class='noindent'>Text of the only appendix\./i,
   ],
   'test-report': [
     /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,

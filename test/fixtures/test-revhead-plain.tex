@@ -1,0 +1,25 @@
+% A revtex4-2 article without hyperref: a \label in a heading's title,
+% headings with no text between them, two \paragraph headings, an
+% appendix with a subsection.
+\documentclass{revtex4-2}
+\begin{document}
+\title{Revhead plain}
+\author{Someone}
+\maketitle
+\section{Introduction\label{sec:intro}}
+Text of the introduction, before section~\ref{sec:nested}.
+\section{Nested}\label{sec:nested}
+\subsection{Nested subsection}
+\subsubsection{Nested subsubsection}
+Text after the nested headings.
+\paragraph{One.}
+Text of the first paragraph.
+\paragraph{Two.}
+Text of the second paragraph, after section~\ref{sec:intro} and
+appendix~\ref{app:a}.
+\appendix
+\section{Details}\label{app:a}
+Text of the appendix.
+\subsection{Part}
+Text of the appendix's part.
+\end{document}

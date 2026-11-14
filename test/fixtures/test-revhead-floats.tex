@@ -19,9 +19,11 @@ c & d
 \end{table}
 \begin{table*}
 \caption{A wide table.}
+\begin{ruledtabular}
 \begin{tabular}{cc}
 e & f
 \end{tabular}
+\end{ruledtabular}
 \end{table*}
 \begin{widetext}
 Text of the wide part, and table~\ref{tab:one}.
@@ -29,5 +31,8 @@ Text of the wide part, and table~\ref{tab:one}.
 \begin{figure}
 \caption{A figure.}\label{fig:one}
 \end{figure}
+\begin{figure*}
+\caption{A wide figure.}
+\end{figure*}
 Text after figure~\ref{fig:one}.
 \end{document}

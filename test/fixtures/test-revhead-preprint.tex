@@ -1,0 +1,18 @@
+% A revtex4-2 preprint for an aip journal, in one column with wider
+% spacing, with a single appendix from \appendix*. aip writes its
+% bibliography's \bibdata line twice, and bibtex fails, unless the
+% document has a \bibliography, here with nothing cited.
+\documentclass[aip,jcp,preprint]{revtex4-2}
+\begin{document}
+\title{Revhead preprint}
+\author{Someone}
+\maketitle
+\section{First section}
+Text of the first section.
+\subsection{A subsection}
+Text of the subsection.
+\appendix*
+\section{Only appendix}
+Text of the only appendix.
+\bibliography{test-bibindex}
+\end{document}
