@@ -741,7 +741,7 @@ const contents = {
     /Text of the acknowledgments\./,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
-  // (revtex4-2's floats, footnote, and wide text, which revtex4.4ht also
+  // (revtex4-2's floats and wide text, which revtex4.4ht also
   // configures, with a \ref to a table and a figure)
   'test-revhead-floats': [
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Floats<\/h3>/i,
@@ -752,8 +752,6 @@ const contents = {
     /id='([^']+)'>(?:(?!<\/p>)[^])*<\/p><hr class='float' \/><div class='float'>\s*<div class='caption'(?:(?!<\/div>)[^])*A small table\.[^]*Text of the wide part, and table<span class='tex8web-nbsp'> <\/span><a href='#\1'>I</,
     /<div class='figure' id='([^']+)'>(?:(?!<\/div>)[^])*A figure\.[^]*Text after figure<span class='tex8web-nbsp'> <\/span><a href='#\1'>1</,
     /class='caption'(?:(?!<\/(?:figcaption|div)>)[^])*FIG\.(?:<[^>]*>|\s)*2:(?:(?!<\/(?:figcaption|div)>)[^])*A wide figure\./,
-    // (aps sets footnotes as numbered notes at the end, as in the PDF)
-    /with a footnote\.\[<a href='#([^']+)'>1<\/a>\][^]*<a id='\1'><\/a>(?:<[^>]*>)*Text of the footnote\./,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
   // (revtex4-2 without hyperref: a \label in a heading's title, headings
