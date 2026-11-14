@@ -41,18 +41,43 @@
 % not use. revtex4-2's \thanks adds a note to the title block, as
 % \email does.
 \let\thanks\frontmatter@thanks
-% The marks of the title's notes are LaTeX's footnote symbols in math,
-% whose \ifcase would reach MathJax as it is. They are set as text.
+% aps marks the title's notes with footnote symbols in math, whose
+% \ifcase would reach MathJax as it is, so they are set as text, with the
+% 15 symbols of aps4-2.rtx. The other societies set \@fnsymbol to \@alph.
 \def\frontmatter@thefootnote{%
- \altaffilletter@sw{\@alph}{\web@revfnsymbol}{\csname c@\@mpfn\endcsname}}
+ \altaffilletter@sw{\@alph}{\ifx\@fnsymbol\@alph
+   \expandafter\@alph\else\expandafter\web@revfnsymbol\fi}%
+ {\csname c@\@mpfn\endcsname}}
 \def\web@revfnsymbol#1{\ifcase#1\or *\or \textdagger\or \textdaggerdbl\or
  \textsection\or \textparagraph\or **\or \textdagger\textdagger\or
- \textdaggerdbl\textdaggerdbl\else\@ctrerr\fi}
+ \textdaggerdbl\textdaggerdbl\or \textsection\textsection\or
+ \textparagraph\textparagraph\or ***\or
+ \textdagger\textdagger\textdagger\or
+ \textdaggerdbl\textdaggerdbl\textdaggerdbl\or
+ \textsection\textsection\textsection\or
+ \textparagraph\textparagraph\textparagraph\else\@ctrerr\fi}
+% The prl and aapm options put the title's notes in the references.
+% Their anchors are written with \Hy@raisedlink and \hyper@anchorstart,
+% which write nothing without hyperref, so tex4ht's \Link writes them.
+% The label is set by \item before the text starts.
+\let\web@revbibnote\present@bibnote
+\def\present@bibnote#1#2{%
+ \let\web@revraisedlink\Hy@raisedlink
+ \let\web@revanchorstart\hyper@anchorstart
+ \let\web@revanchorend\hyper@anchorend
+ \let\Hy@raisedlink\@firstofone
+ \let\hyper@anchorstart\web@revanchor \let\hyper@anchorend\relax
+ \web@revbibnote{#1}{\let\Hy@raisedlink\web@revraisedlink
+   \let\hyper@anchorstart\web@revanchorstart
+   \let\hyper@anchorend\web@revanchorend #2}}
 % revtex4-2 adds contents lines for the title and the abstract, which
 % revtex4.4ht does not configure: each repeats the anchor of the line
 % before it in the page.
 \def\addcontents@abstract{}
 \pend:def\frontmatter@title@produce{\let\addcontentsline\@gobblethree}
+% prl's acknowledgments have no heading, and their contents line writes
+% the anchor that the references' line after them writes again.
+\pend:def\acknowledgments{\acknowledgments@sw{}{\let\addcontentsline\@gobblethree}}
 % revtex4.4ht sets the page in one column, but the reprint and twocolumn
 % options choose the two-column grid's \close@column as the class loads.
 % Its \onecolumngrid at the end of the document writes a paragraph after

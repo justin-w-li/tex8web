@@ -1,7 +1,8 @@
 % Notes in a revtex4-2 title block: an author's \footnote, \email, and
 % \thanks, a \thanks in the title, which the PDF leaves out, and body
-% footnotes after them. tex4ht's revtex4.4ht reads macros that revtex4.cls
-% saves and revtex4-2 does not.
+% footnotes after them. Eight more authors' \email notes run the marks
+% past the eighth symbol, as aps's list of fifteen does. tex4ht's
+% revtex4.4ht reads macros that revtex4.cls saves and revtex4-2 does not.
 \documentclass{revtex4-2}
 \usepackage{hyperref}
 \begin{document}
@@ -12,6 +13,23 @@
 \author{Second Author}
 \thanks{A thanks of the second author.}
 \affiliation{Another Institute}
+\author{Author Four}
+\email{four@example.com}
+\author{Author Five}
+\email{five@example.com}
+\author{Author Six}
+\email{six@example.com}
+\author{Author Seven}
+\email{seven@example.com}
+\author{Author Eight}
+\email{eight@example.com}
+\author{Author Nine}
+\email{nine@example.com}
+\author{Author Ten}
+\email{ten@example.com}
+\author{Author Eleven}
+\email{eleven@example.com}
+\affiliation{A Third Institute}
 \begin{abstract}
 Text of the abstract.
 \end{abstract}

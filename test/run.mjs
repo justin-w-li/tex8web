@@ -744,6 +744,8 @@ const contents = {
     // (guards: the text is kept, and nothing follows the page's end)
     /Text of the acknowledgments\./,
     /<\/main><\/body> ?<\/html> ?$/,
+    // (prl lists the title's notes in the references)
+    /Someone<\/span>(?:<\/span><span class='cite'>)?<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*\*<[^]*<div class='thebibliography'>(?:(?!<\/div>)[^])*<sup[^>]*><a id='\1'><\/a>(?:<[^>]*>)*\*<(?:(?!<\/p>)[^])*someone@example\.com/,
   ],
   // (revtex4-2's floats and wide text, which revtex4.4ht also
   // configures, with a \ref to a table and a figure)
@@ -789,6 +791,16 @@ const contents = {
     /First Author(?:(?!<\/div>)[^])*<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*†<(?:(?!<\/div>)[^])*<\/div>[^]*<aside class='footnotetext'(?:(?!<\/aside>)[^])*<a id='\1'><\/a><sup[^>]*>(?:<[^>]*>)*†<(?:(?!<\/aside>)[^])*first@example\.com/,
     /Second\s+Author<\/span><a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*‡<(?:(?!<\/div>)[^])*<\/div>[^]*<aside class='footnotetext'(?:(?!<\/aside>)[^])*<a id='\1'><\/a><sup[^>]*>(?:<[^>]*>)*‡<(?:(?!<\/aside>)[^])*A\s+thanks\s+of\s+the\s+second\s+author\./,
     /Text of the first section\.\[<a href='#[^']+'>1<\/a>\] More text\.\[<a href='#[^']+'>2<\/a>\]/,
+    /<\/main><\/body> ?<\/html> ?$/,
+    ...[['Nine', 'nine', '§§'], ['Ten', 'ten', '¶¶'], ['Eleven', 'eleven', '\\*\\*\\*']].map(([author, user, mark]) =>
+      new RegExp(`Author\\s+${author}</span>,?<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*${mark}<(?:(?!</div>)[^])*</div>[^]*<aside class='footnotetext'(?:(?!</aside>)[^])*<a id='\\1'></a><sup[^>]*>(?:<[^>]*>)*${mark}<(?:(?!</aside>)[^])*${user}@example\\.com`)),
+  ],
+  // (revtex4-2's aapm option marks the title's notes a) and b), as in
+  // the PDF, and lists them in the references)
+  'test-revhead-aapm': [
+    ...[['First', 'first', 'a'], ['Second', 'second', 'b']].map(([author, user, mark]) =>
+      new RegExp(`${author}\\s+Author</span></span><span class='cite'><a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*${mark}\\)<[^]*<div class='thebibliography'>(?:(?!</div>)[^])*<sup[^>]*><a id='\\1'></a>(?:<[^>]*>)*${mark}\\)<(?:(?!</p>)[^])*Electronic mail: ${user}@example\\.com`)),
+    /^(?![^]*<sup class='textsuperscript'>(?:<[^>]*>)*[*†‡])/,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
   'test-report': [
