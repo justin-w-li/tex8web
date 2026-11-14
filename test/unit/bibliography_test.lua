@@ -135,6 +135,41 @@ return {
       {["refs.bltxml"] = "<entries/>\n"})
     check(command and command:find("^biber "), command)
   end,
+  -- (a .bib that filecontents wrote into the build directory, where
+  -- kpsewhich from the document's directory does not find it)
+  ["bibliography.run: biber with a .bib in the build directory"] = function()
+    local _, command = run_beside({["x.aux"] = "", ["x.bcf"] = bcf({'datatype="bibtex" glob="false"', "x.bib"}),
+      ["x.bib"] = entry})
+    check(command and command:find("^biber "), command)
+  end,
+  -- (biblatex's location=remote: a URL in a datasource of type file)
+  ["bibliography.run: biber with a remote .bib"] = function()
+    local _, command = run_beside({["x.aux"] = "",
+      ["x.bcf"] = bcf({'datatype="bibtex" glob="false"', "https://example.org/refs.bib"})})
+    check(command and command:find("^biber "), command)
+  end,
+  -- (a build directory that names the document's own directory, by ./ and
+  -- by its absolute path: the .bbl beside stays when a .bib is missing)
+  ["bibliography.run: the .bbl beside the document when the build directory is its directory"] = function()
+    for _, form in ipairs({"./", "absolute"}) do
+      local doc = os.tmpname()
+      os.remove(doc)
+      lfs.mkdir(doc)
+      write(doc .. "/x.aux", "\\bibstyle{plain}\n\\bibdata{tex8web-missing}\n")
+      write(doc .. "/x.bbl", "\\begin{thebibliography}{1}\n\\bibitem{one} An entry.\n\\end{thebibliography}\n")
+      local back, execute, command = lfs.currentdir(), os.execute, nil
+      os.execute = function(c) command = c return 0 end
+      lfs.chdir(doc)
+      local ok, err = pcall(bibliography.run, {builddir = form == "./" and "./" or lfs.currentdir(), input = "x"})
+      lfs.chdir(back)
+      os.execute = execute
+      local read = files.read(doc .. "/x.bbl") or ""
+      remove(doc)
+      check(ok, err)
+      check(not command, command)
+      check(read:find("\\bibitem{one}", 1, true), form .. ": " .. read)
+    end
+  end,
   ["bibliography.run: biber with a glob pattern"] = function()
     local _, command = run_beside({["x.aux"] = "", ["x.bcf"] = bcf({'datatype="bibtex" glob="true"', "bibs/*.bib"})},
       {["bibs/a.bib"] = entry})

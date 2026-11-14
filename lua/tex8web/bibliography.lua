@@ -23,11 +23,14 @@ function M.run(par)
     command = "biber --input-directory " .. files.quote(dir) .. " --output-directory "
       .. files.quote(dir) .. " " .. files.quote(par.input)
     -- (Only names that end in .bib, as latexmk checks: kpsewhich does
-    -- not find a file of another type, or a glob pattern. biber also
-    -- looks in its input directory.)
+    -- not find a file of another type, a glob pattern, or a URL, which
+    -- biblatex's location=remote leaves in a datasource of type file.
+    -- biber also looks in its input directory, where filecontents writes.)
     for attributes, name in bcf:gmatch('<bcf:datasource type="file"([^>]*)>([^<]*)</bcf:datasource>') do
       if name:find("%.bib$") and not attributes:find('glob="true"', 1, true)
-        and not lfs.isfile(dir .. "/" .. name) then names[#names + 1] = name end
+        and not name:find("^%a[%w+.-]*://") and not lfs.isfile(dir .. "/" .. name) then
+        names[#names + 1] = name
+      end
     end
     from = here
   elseif aux:find("\\bibdata", 1, true) then
@@ -68,7 +71,10 @@ function M.run(par)
       p:close()
       if found == "" then
         log:info("bibliography: " .. name .. " is missing, so the .bbl beside the document is used")
-        if dir ~= "." then os.remove(dir .. "/" .. par.input .. ".bbl") end
+        -- (The build directory may name the document's own directory,
+        -- as ./ or by its absolute path, where the .bbl is the one beside.)
+        local a, b = lfs.attributes(dir), lfs.attributes(".")
+        if not (a and a.ino == b.ino and a.dev == b.dev) then os.remove(dir .. "/" .. par.input .. ".bbl") end
         return 0
       end
     end
