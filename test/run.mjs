@@ -367,22 +367,35 @@ const plainSized = ['scaled', 'height'].map(after =>
   new RegExp(`<img (?:(?!style=)[^>])*src='test-overpic-hidpi\\.png'(?:(?!style=)[^>])*\\/> After plain ${after}\\.`));
 // Pictures converted to PNG (PDF and EPS) or named by a path that leaves
 // the document's folder: by alt, the file each <img> must show, a source
-// picture (from test/) whose copy it is, or 'png' for a conversion. Every
-// <img> of the page must name a file inside the page's folder.
+// picture (from test/) whose copy it is, or, for a conversion, the width
+// over the height of its PDF page or EPS bounding box, which the PNG must
+// have. Every <img> of the page must name a file inside the page's folder.
 const copied = {
   'test-pdfpic': {
-    ...Object.fromEntries(['bare', 'extension', 'starred', 'page one', 'page two', 'options', 'graphicspath', 'space', 'italic',
-      'footnote', 'link', 'minipage', 'figure'].map(alt => [`pdf ${alt}`, 'png'])),
-    'eps': 'png', 'above pdf': 'png', 'above eps': 'png',
+    ...Object.fromEntries(['bare', 'extension', 'starred', 'options', 'italic', 'footnote', 'link', 'minipage', 'display',
+      'subfigure'].map(alt => [`pdf ${alt}`, 64 / 48])),
+    'pdf page one': 64 / 48, 'pdf page two': 120 / 30, 'pdf graphicspath': 120 / 30, 'pdf figure': 120 / 30,
+    'pdf space': 1, 'pdf beside': 100 / 20, 'pdf kpathsea': 4 / 3, 'pdf same name': 30 / 60, 'pdf dots': 50 / 25,
+    'eps': 57 / 28, 'eps bare': 57 / 28, 'above pdf': 90 / 30, 'above eps': 30 / 45,
     // (the same name in two parent folders, two copies; the same picture
     // named three ways, one)
     'above graphicspath': 'pdfpic-above/pic.png', 'above again': 'pdfpic-above/pic.png', 'above figure': 'pdfpic-above/pic.png',
     'above starred': 'pdfpic-above/pic.png', 'above link': 'pdfpic-above/pic.png', 'chapter': 'pdfpic-above/pic.png',
-    'above other': 'pdfpic-above/other/pic.png', 'above deep': 'pdfpic-above/deep/pic.jpg',
-    'above space': 'pdfpic-above/two words.png', 'imported': 'pdfpic-above/shared/shared.png',
-    'inside': 'fixtures/test-pdfpic/inside.png',
+    'above other': 'pdfpic-above/other/pic.png', 'above epsfig': 'pdfpic-above/other/pic.png',
+    'above deep': 'pdfpic-above/deep/pic.jpg', 'above space': 'pdfpic-above/two words.png',
+    'imported': 'pdfpic-above/shared/shared.png', 'inside': 'fixtures/test-pdfpic/inside.png',
   },
 };
+// the file a src names in the page's folder, or null if the src leaves it
+const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
+// a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
+const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
+// the files in the folders of test-pdfpic's source pictures before any
+// build, to check that a build writes nothing there
+const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic'];
+const pdfpicListing = () => pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))).sort();
+const pdfpicSources = pdfpicListing();
+const pdfpicWritten = () => pdfpicListing().filter(f => !pdfpicSources.includes(f));
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -2013,21 +2026,18 @@ function check(doc, result, out, aux) {
       const src = tag.match(/ src='([^']*)'/)?.[1] ?? '';
       const alt = tag.match(/ alt='([^']*)'/)?.[1];
       if (alt in copied[doc.name]) shown[alt] = src;
-      else if (!src.startsWith('data:') && (/^\/|(^|\/)\.\.(\/|$)/.test(src) || !existsSync(join(out, src)))) problems.push(`${src}: not a file inside the page's folder`);
+      else if (!src.startsWith('data:') && !existsSync(inPage(out, src) ?? '')) problems.push(`${src}: not a file inside the page's folder`);
     }
     for (const [alt, source] of Object.entries(copied[doc.name])) {
-      const src = shown[alt];
-      const data = src && existsSync(join(out, src)) && !/^\/|(^|\/)\.\.(\/|$)/.test(src) ? readFileSync(join(out, src)) : null;
-      if (!data) problems.push(`${alt}: no picture inside the page's folder (src ${src})`);
-      else if (source === 'png' ? data.readUInt32BE(0) !== 0x89504e47 : !data.equals(readFileSync(join(root, 'test', source)))) {
-        problems.push(`${alt}: ${src} is not ${source === 'png' ? 'a PNG' : `a copy of ${source}`}`);
+      const file = inPage(out, shown[alt]);
+      const data = file && existsSync(file) ? readFileSync(file) : null;
+      if (!data) problems.push(`${alt}: no picture inside the page's folder (src ${shown[alt]})`);
+      else if (typeof source === 'number' ? !(Math.abs(pngAspect(data) / source - 1) < 0.03) : !data.equals(readFileSync(join(root, 'test', source)))) {
+        problems.push(`${alt}: ${shown[alt]} is not ${typeof source === 'number' ? `a PNG ${source.toFixed(3)} times as wide as high` : `a copy of ${source}`}`);
       }
     }
-    // (each page of a PDF its own picture)
-    if (shown['pdf page one'] === shown['pdf page two']) problems.push('both pages of the PDF are one picture');
-    // (nothing written into the source's picture folders)
-    const left = spawnSync('git', ['-C', root, 'ls-files', '--others', '--', 'test/pdfpic-above', 'test/fixtures/test-pdfpic'], { encoding: 'utf8' }).stdout.trim();
-    if (left) problems.push(`files written beside the source's pictures: ${left.split('\n').join(', ')}`);
+    const written = pdfpicWritten();
+    if (written.length) problems.push(`files written beside the source's pictures: ${written.join(', ')}`);
   }
   if (pictureSizes[doc.name]) {
     const [ext, sizes] = pictureSizes[doc.name];
@@ -2047,7 +2057,7 @@ function check(doc, result, out, aux) {
       }
     }
     // (extractbb writes no .xbb file beside a picture)
-    const tracked = ['test-picture.xbb', 'test-wide.xbb'];
+    const tracked = ['test-picture.xbb', 'test-wide.xbb', 'test-pdfpic/inside.xbb'];
     for (const file of readdirSync(join(root, 'test/fixtures'), { recursive: true })) {
       if (file.endsWith('.xbb') && !tracked.includes(file)) problems.push(`test/fixtures/${file} written beside the fixtures`);
     }
@@ -2160,9 +2170,10 @@ if (escaping) jobs.push(async () => {
   report(`${escaping.name} (escaping as tex4ht's)`, problems);
 });
 
-// test-pdfpic built again with \PdfpicAbsolute set to the absolute path of
-// a picture, in a folder of its own: the picture is copied inside the page's
-// folder, under a name without the path, and no file is written beside the
+// test-pdfpic built again with \PdfpicAbsolute and \PdfpicAbsolutePdf set
+// to the absolute paths of a PNG and a PDF picture, in a folder of its own:
+// the PNG is copied and the PDF converted inside the page's folder, under
+// names without the path, and no file is written beside the
 // page's folder or two levels above it, where its ../ and ../../ pictures
 // would go.
 const pdfpic = docs.find(d => d.name === 'test-pdfpic');
@@ -2171,7 +2182,8 @@ if (pdfpic) jobs.push(async () => {
   for (const dir of [top, join(testDir(pdfpic), 'test')]) rmSync(dir, { recursive: true, force: true });
   mkdirSync(top, { recursive: true });
   const picture = join(root, 'test/pdfpic-above/other/pic.png'), cfg = join(top, 'absolute.cfg');
-  writeFileSync(cfg, `\\def\\PdfpicAbsolute{${picture}}\n${readFileSync(pdfpic.cfg, 'utf8')}`);
+  writeFileSync(cfg, `\\def\\PdfpicAbsolute{${picture}}\\def\\PdfpicAbsolutePdf{${join(root, 'test/pdfpic-above/up.pdf')}}\n`
+    + readFileSync(pdfpic.cfg, 'utf8'));
   const result = await build({ ...pdfpic, cfg }, out, aux);
   const problems = [];
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
@@ -2180,6 +2192,13 @@ if (pdfpic) jobs.push(async () => {
   if (!src) problems.push('no absolute picture');
   else if (src.startsWith('/') || src.includes(root) || /(^|\/)\.\.(\/|$)/.test(src) || !existsSync(join(out, src))) problems.push(`the absolute picture is ${src}`);
   else if (!readFileSync(join(out, src)).equals(readFileSync(picture))) problems.push(`${src} is not a copy of the absolute picture`);
+  const pdf = (existsSync(page) ? readFileSync(page, 'utf8') : '').match(/<img alt='absolute pdf' [^>]*src='([^']*)'/)?.[1];
+  const converted = !pdf || pdf.includes(root) ? null : inPage(out, pdf);
+  if (!converted || !existsSync(converted) || !(Math.abs(pngAspect(readFileSync(converted)) / 3 - 1) < 0.03)) {
+    problems.push(`the absolute PDF picture is ${pdf}, not a PNG of it inside the page's folder`);
+  }
+  const written = pdfpicWritten();
+  if (written.length) problems.push(`files written beside the source's pictures: ${written.join(', ')}`);
   const beside = readdirSync(top).filter(name => !/^(html|aux)(\.|$)|^(absolute\.cfg|make4ht\.log)$/.test(name));
   if (beside.length) problems.push(`written beside the page's folder: ${beside.join(', ')}`);
   if (existsSync(join(testDir(pdfpic), 'test'))) problems.push('written two levels above the page\'s folder');

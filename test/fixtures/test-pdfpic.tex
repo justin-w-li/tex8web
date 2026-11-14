@@ -8,12 +8,16 @@
 % named with ../ (by \graphicspath, by name, two levels up, the same name in
 % two parent folders, a name with a space, PNG, JPEG, PDF, and EPS), the same
 % picture twice, an import.sty chapter, an \import from a parent folder, and
-% epsfig. A picture inside the folder is a guard. run.mjs builds this page
-% again with \PdfpicAbsolute set to an absolute path of a picture.
+% epsfig. A PDF beside the document, one found by kpathsea, one with the name
+% of another in another folder, one with dots in its name, in display math,
+% and in a subfigure; an EPS picture without its extension. A picture inside the folder is a guard. run.mjs builds this page
+% again with \PdfpicAbsolute and \PdfpicAbsolutePdf set to absolute paths of
+% a PNG and a PDF picture.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{epsfig}
 \usepackage{import}
+\usepackage{subcaption}
 \usepackage{hyperref}
 \graphicspath{{test-pdfpic/sub/}{./../pdfpic-above/}}
 \begin{document}
@@ -50,8 +54,27 @@ Minipage: \includegraphics[alt={pdf minipage}, width=2cm]{test-pdfpic/box}
 \end{figure}
 Figure~\ref{fig:pdf}.
 
+Beside: \includegraphics[alt={pdf beside}, width=2cm]{test-pdfpic-box}
+
+TeX Live: \includegraphics[alt={pdf kpathsea}, width=2cm]{example-image-a}
+
+Same name: \includegraphics[alt={pdf same name}, width=1cm]{test-pdfpic/sub/box}
+
+Dots: \includegraphics[alt={pdf dots}, width=2cm]{test-pdfpic/fig.v2.pdf}
+
+\[ \includegraphics[alt={pdf display}, width=2cm]{test-pdfpic/box} \]
+
+\begin{figure}[h]
+\begin{subfigure}{.4\textwidth}
+\includegraphics[alt={pdf subfigure}, width=\linewidth]{test-pdfpic/box}
+\caption{a}
+\end{subfigure}
+\end{figure}
+
 \section{EPS pictures}
 EPS: \includegraphics[alt={eps}, width=2cm]{test-pdfpic/boxeps.eps}
+
+Without extension: \includegraphics[alt={eps bare}, width=2cm]{test-pdfpic/boxeps}
 
 \section{Pictures above the folder}
 Graphicspath: \includegraphics[alt={above graphicspath}]{pic.png}
@@ -78,7 +101,7 @@ PDF: \includegraphics[alt={above pdf}, width=3cm]{up}
 
 EPS: \includegraphics[alt={above eps}, width=2cm]{../pdfpic-above/upeps.eps}
 
-Epsfig: \epsfig{file=../pdfpic-above/other/pic.png, width=2cm}
+Epsfig: \epsfig{file=../pdfpic-above/other/pic.png, width=2cm, alt={above epsfig}}
 
 \import{../pdfpic-above/shared/}{part}
 
@@ -86,6 +109,8 @@ Inside: \includegraphics[alt={inside}]{test-pdfpic/inside.png}
 
 \ifdefined\PdfpicAbsolute
 Absolute: \includegraphics[alt={absolute}, width=2cm]{\PdfpicAbsolute}
+
+Absolute PDF: \includegraphics[alt={absolute pdf}, width=2cm]{\PdfpicAbsolutePdf}
 \fi
 
 \subincludefrom{test-pdfpic/ch1/}{ch1}
