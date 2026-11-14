@@ -1,7 +1,7 @@
 % pdfTeX's driver option given to the class, which every package reads,
 % with dvipsnames beside it, which xcolor reads; graphicx loaded with
-% \ifpdf, which takes the DVI branch. The page is the same as without the
-% option.
+% \ifpdf, which takes the DVI branch; pict2e's slope and arc as in
+% test-pdftex. The page is the same as without the option.
 \documentclass[pdftex,dvipsnames]{article}
 \usepackage{ifpdf}
 \ifpdf
@@ -23,8 +23,8 @@ After the picture.
 
 \setlength{\unitlength}{1pt}
 \begin{picture}(40,20)
-\put(0,0){\line(3,2){30}}
-\put(20,10){\circle{10}}
+\put(0,0){\line(7,3){30}}
+\put(20,10){\arc[0,180]{10}}
 \end{picture}
 After the drawing.
 \end{document}

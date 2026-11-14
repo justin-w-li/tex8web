@@ -63,6 +63,7 @@ const switched = {
   'test-declared': 'tex8web-plain-links', 'examples/basic': 'tex8web-plain-links',
   'examples/complex': 'tex8web-plain-links', 'test-likepdf': 'tex8web-like-pdf',
   'test-pdftex': 'tex8web-plain-links', 'test-pdftex-class': 'tex8web-plain-links',
+  'test-pdftex-sty': 'tex8web-plain-links',
 };
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
@@ -86,11 +87,13 @@ const measured = {
   'examples/complex': { '--tex8web-link': null },
   'test-tocentry': { '--tex8web-toc-chapter-skip': '1em' },
   // (hyperref's linkcolor after a braced comma in its options, and urlcolor
-  // from \hypersetup; with the class's option, colorlinks' magenta URLs)
-  'test-pdftex': { '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))',
+  // from \hypersetup; with the class's option, colorlinks' magenta URLs;
+  // with \PassOptionsToPackage, its linkcolor)
+  'test-pdftex': { '--tex8web-link': 'light-dark(#00FFFF, oklch(from #00FFFF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))',
     '--tex8web-url': 'light-dark(#0000FF, oklch(from #0000FF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
   'test-pdftex-class': { '--tex8web-link': 'light-dark(#FF0000, oklch(from #FF0000 var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))',
     '--tex8web-url': 'light-dark(#FF00FF, oklch(from #FF00FF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
+  'test-pdftex-sty': { '--tex8web-link': 'light-dark(#00FFFF, oklch(from #00FFFF var(--tex8web-dark-link) var(--tex8web-dark-link-chroma) h))' },
   // (float.sty's ruled style: rules of 0.8pt and 0.4pt, 2pt from the text)
   'test-algorithmic': { '--tex8web-float-rule': '0.08em', '--tex8web-float-midrule': '0.04em',
     '--tex8web-float-endrule': '0.04em', '--tex8web-float-sep': '0.2em', '--tex8web-float-bodysep': '0.2em' },
@@ -929,15 +932,16 @@ const bibliographies = {
 
 // Packages given pdfTeX's driver option, which tex4ht's DVI mode cannot
 // use: each package's output as without the option. test-pdftex gives it to
-// each package, test-pdftex-class to the class.
-const pdftexText = hex => new RegExp(`<span style='color:${lightDark(hex, 'color')};'>`);
+// each package, test-pdftex-class to the class, and test-pdftex-sty through
+// a local package.
+const pdftexText = (hex, text) => new RegExp(`<span style='color:${lightDark(hex, 'color')};'>${text}</span>`);
 const pdftexLinks = id => [new RegExp(`A link to section<span class='tex8web-nbsp'> </span><a href='#${id}'>1<!--`),
   /and to <a href='https:\/\/example\.com\/'>a site<\/a>/];
 const drivers = {
   'test-pdftex': [
     // (xcolor's dvipsnames, with pdftex from \PassOptionsToPackage, in a heading)
     new RegExp(`Colors in <span style='color:${lightDark('#00E000', 'color')};'>green</span></h3>`),
-    pdftexText('#FF0000'),
+    pdftexText('#FF0000', 'red'),
     ...pdftexLinks('colors-in-forestgreengreen'),
     // (a reference in a footnote)
     /A note with a link to section<span class='tex8web-nbsp'> <\/span><\/span><a href='#colors-in-forestgreengreen'><span class='cmr-8'>1<\/span>/,
@@ -952,10 +956,18 @@ const drivers = {
   ],
   'test-pdftex-class': [
     // (ForestGreen from the class's dvipsnames)
-    pdftexText('#FF0000'), pdftexText('#00E000'),
+    pdftexText('#FF0000', 'red'), pdftexText('#00E000', 'forest'),
     ...pdftexLinks('colors'),
     /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
     /<img alt='PICT' src='test-pdftex-class0x\.png' \/> After the drawing\./,
+  ],
+  // (lscape loading graphics first, xcolor's option beside name options,
+  // and graphicx loaded again with the option)
+  'test-pdftex-sty': [
+    pdftexText('#FF0000', 'red'), pdftexText('#00E000', 'forest'),
+    ...pdftexLinks('colors'),
+    /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
+    /Rotated: <span class='rotatebox' style='transform: rotate\(-90deg\);'> up <\/span>\. After the rotation\./,
   ],
 };
 

@@ -2,8 +2,9 @@
 % loads them: hyperref with spaces and a braced comma in its options, and
 % bookmark after it; one option list for two packages; xcolor's from
 % \PassOptionsToPackage; rotating, epsfig, and colortbl, which pass it on;
-% pict2e, geometry, and \hypersetup{pdftex} after hyperref loaded. Each
-% input's page is the same as without the option.
+% pict2e, with a slope and an arc that LaTeX's picture mode lacks; geometry;
+% and \hypersetup{pdftex} after hyperref loaded. Each input's page is the
+% same as without the option.
 \documentclass{article}
 \usepackage[pdftex]{geometry}
 \PassOptionsToPackage{pdftex}{xcolor}
@@ -13,7 +14,7 @@
 \usepackage[pdftex]{epsfig}
 \usepackage[pdftex]{colortbl}
 \usepackage[pdftex]{pict2e}
-\usepackage[ pdftex , colorlinks, pdftitle={A, B and C}, linkcolor=red, pdfauthor={X}]{hyperref}
+\usepackage[ pdftex , pdftitle={A, B and C}, pdfauthor={X}, colorlinks, linkcolor=cyan]{hyperref}
 \usepackage[pdftex]{bookmark}
 \hypersetup{pdftex, urlcolor=blue}
 \begin{document}
@@ -37,8 +38,8 @@ three & four \\
 
 \setlength{\unitlength}{1pt}
 \begin{picture}(40,20)
-\put(0,0){\line(3,2){30}}
-\put(20,10){\circle{10}}
+\put(0,0){\line(7,3){30}}
+\put(20,10){\arc[0,180]{10}}
 \end{picture}
 After the drawing.
 \end{document}

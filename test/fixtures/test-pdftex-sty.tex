@@ -1,0 +1,23 @@
+% pdfTeX's driver option given by a local package, test-pdftex-sty.sty,
+% and by the document: hyperref's from \PassOptionsToPackage, and graphicx
+% loaded again with \ifx\pdfoutput\undefined, which takes the pdftex branch
+% under tex4ht's latex. The page is the same as without the option.
+\documentclass{article}
+\PassOptionsToPackage{pdftex,colorlinks,linkcolor=cyan}{hyperref}
+\usepackage{test-pdftex-sty}
+\ifx\pdfoutput\undefined
+  \usepackage{graphicx}
+\else
+  \usepackage[pdftex]{graphicx}
+\fi
+\begin{document}
+\section{Colors}\label{colors}
+
+Text in \textcolor{red}{red} and \textcolor{ForestGreen}{forest}.
+A link to section~\ref{colors}, and to \href{https://example.com/}{a site}.
+
+Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
+After the picture.
+
+Rotated: \rotatebox{90}{up}. After the rotation.
+\end{document}

@@ -1,0 +1,10 @@
+% The package of test-pdftex-sty.tex, as a template written for pdflatex
+% loads packages: lscape first, which passes pdfTeX's driver option to
+% graphics, then graphicx, xcolor beside name options, and hyperref, each
+% given the option.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{test-pdftex-sty}[2026/11/13 tex8web test package]
+\RequirePackage[pdftex]{lscape}
+\RequirePackage[pdftex]{graphicx}
+\RequirePackage[usenames,dvipsnames,pdftex]{xcolor}
+\RequirePackage[pdftex]{hyperref}
