@@ -102,8 +102,11 @@ export async function launch({ fontSize, offline, netLog } = {}) {
       ...fontSize && { webkit: { webprefs: { default_font_size: fontSize } } },
       ...offline && { webrtc: { ip_handling_policy: 'disable_non_proxied_udp' } } }));
   }
-  // (Chrome refuses to run as root with its sandbox, as in a container)
-  const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars',
+  // (Chrome refuses to run as root with its sandbox, as in a container.
+  // One raster thread: with several, a picture shown at a few sizes can
+  // have its small copies scaled differently in two loads of a page, by up
+  // to 22 levels, in Chrome 157)
+  const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--num-raster-threads=1',
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
     // (offline: every host name fails to resolve, with no DNS lookup. The
     // rules map IP addresses too, loopback included, in Chrome 157)
