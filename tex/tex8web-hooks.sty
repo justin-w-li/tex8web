@@ -10,7 +10,12 @@
 % \web@titlefont@<name>, \web@titleshape@<name>, \web@titlelabel@<name>,
 % and \web@titlesep@<name>. The shapes display and frame put the space
 % elsewhere, so it is not kept for them.
+% titlesec defines \ttl@makeline only in its heading code, which tex4ht
+% does not run, and \titlerule and \titleline call it (titlesec.sty).
+% Defined here, \ttl@makeline lets a format that holds them be typeset to
+% read its font, and lets them build as paragraphs of the text.
 \AddToHook{package/titlesec/after}{%
+    \providecommand\ttl@makeline[1]{#1}%
     \let\web@titleformat\titleformat
     \def\titleformat{\@ifstar\web@titleformat@s\web@titleformat@i}%
 }
