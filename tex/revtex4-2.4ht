@@ -123,6 +123,6 @@
 % nearer one space than three. \begin has set up the list
 % (\this:listConfigure) before \thebibliography starts.
 \ExplSyntaxOn
-\pend:defI\thebibliography{\cs_if_exist:NT \this:listConfigure
-  {\regex_replace_all:nnN {\c{:nbsp}\c{:nbsp}\c{:nbsp}} {\c{:nbsp}} \this:listConfigure}}
+\pend:defI\thebibliography{%
+  \regex_replace_all:nnN {\c{:nbsp}\c{:nbsp}\c{:nbsp}} {\c{:nbsp}} \this:listConfigure}
 \ExplSyntaxOff
