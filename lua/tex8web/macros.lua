@@ -24,6 +24,23 @@ local fallbacks = {
   -- (LaTeX's \rlap{$\displaystyle #1$}, in latex.ltx. MathJax's \rlap
   -- takes math in math, so the dollar signs would be drawn.)
   ["\\lefteqn"] = "\\newcommand{\\lefteqn}[1]{\\rlap{\\displaystyle #1}}",
+  -- LaTeX's text commands, which it also sets in math. MathJax expands these
+  -- in \text too (textmacros), so each body is valid in text and in math. A
+  -- script is math in \(...\), which textmacros reads in text, and which
+  -- are empty in math. The script goes on an empty base in a group, as
+  -- after V_{0} a bare _ is a double subscript.
+  ["\\enskip"] = "\\newcommand{\\enskip}{\\enspace}",
+  ["\\textsubscript"] = "\\def\\({}\\def\\){}\\newcommand{\\textsubscript}[1]{{\\({}_{\\text{#1}}\\)}}",
+  ["\\textsuperscript"] = "\\def\\({}\\def\\){}\\newcommand{\\textsuperscript}[1]{{\\({}^{\\text{#1}}\\)}}",
+  ["\\emph"] = "\\newcommand{\\emph}[1]{\\textit{#1}}",
+  ["\\textsl"] = "\\newcommand{\\textsl}[1]{\\textit{#1}}",
+  ["\\textsc"] = "\\newcommand{\\textsc}[1]{\\textup{#1}}",
+  ["\\textmd"] = "\\newcommand{\\textmd}[1]{\\textup{#1}}",
+  -- (counters mean nothing to MathJax)
+  ["\\setcounter"] = "\\newcommand{\\setcounter}[2]{}",
+  ["\\addtocounter"] = "\\newcommand{\\addtocounter}[2]{}",
+  ["\\stepcounter"] = "\\newcommand{\\stepcounter}[1]{}",
+  ["\\refstepcounter"] = "\\newcommand{\\refstepcounter}[1]{}",
 }
 
 -- The math's colors that MathJax would get wrong (see "Macros in math" in

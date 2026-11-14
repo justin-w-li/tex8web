@@ -259,6 +259,7 @@ Differences from the PDF too small for the [known limitations](DOCUMENTATION.md#
 - **Delimiters and radicals** can differ slightly in size from the PDF, as they come from the MathJax font.
 - **The space before inline math after a word in another font**, for example an algorithm2e keyword before its argument. It can be in the word's font without Node, and is in the text font with Node. The two pages can be a pixel apart, and neither always matches the PDF.
 - **An `\fbox` or `\colorbox` in a line** is a few points taller than in the PDF. Its text is as tall as a line of the font, where TeX's box is as tall as its letters.
+- **Text commands in math.** `\emph` in math is always italic, also in italic text such as a theorem, where the PDF sets it upright. `\textsc` in math is upright, without small capitals.
 - **Two [H] algorithms of algorithm2e in a row** are 2em apart, the margins of both. In the PDF, they are about 1em apart.
 - **A long caption of algorithm2e's plain, boxed, or plainruled style** ends short of the right edge where the PDF's caption reaches it.
 - **A row taller than its strut** in an alignment or in mathtools' cases environments is `\lineskip`, usually 1pt, closer to the next row than in the PDF. In the PDF, `\openup\jot` raises `\lineskip` as well as `\baselineskip`, so such rows are `\lineskip` plus `\jot` apart.
