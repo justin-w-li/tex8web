@@ -425,11 +425,12 @@ end
 
 -- converts page page of the PDF or EPS picture src into a PNG in the
 -- build directory, at 300 dpi, with the crop options of html4.4ht's
--- PdfConvert and EpsConvert, and points img at it. Ghostscript runs from the
--- document's folder, and the PNG is written in the build directory
--- (context.dir), never beside the picture: the source may be read-only. A
--- picture that is not found from the document's folder, such as one in TeX
--- Live, is looked up in kpathsea.
+-- PdfConvert and EpsConvert, and points img at it. html4.4ht spells the PDF
+-- one -dusecropbox, which Ghostscript ignores: it is -dUseCropBox here.
+-- Ghostscript runs from the document's folder, and the PNG is written in
+-- the build directory (context.dir), never beside the picture: the source
+-- may be read-only. A picture that is not found from the document's
+-- folder, such as one in TeX Live, is looked up in kpathsea.
 -- A picture whose bounding box TeX could not read carries the size asked
 -- for (data-tex8web-size: a width and a height as shares of the text
 -- width, - for none, a scale, and the factor of the \scalebox or
@@ -467,7 +468,7 @@ end
 function M.convert_file(file, page, path, png)
   local made, source = lfs.attributes(path), lfs.attributes(file)
   if not (made and made.size > 0 and source and made.modification >= source.modification) then
-    local crop = file:lower():find("%.eps$") and "-dEPSCrop" or "-dusecropbox"
+    local crop = file:lower():find("%.eps$") and "-dEPSCrop" or "-dUseCropBox"
     local command = ("mkdir -p %s && rungs -q -dNOPAUSE -dBATCH %s -sDEVICE=png16m -r300 "
       .. "-dFirstPage=%s -dLastPage=%s -sOutputFile=%s %s"):format(files.quote(path:match("^(.*)/")),
       crop, page, page, files.quote(path), files.quote(file))
