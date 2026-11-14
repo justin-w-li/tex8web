@@ -8,8 +8,13 @@
 % a list, one page, no pages option (page 1), the name with .pdf, a PDF
 % found through \graphicspath, \includepdfmerge with a range for each
 % document, doublepages, duplicatepages, a lastpage hint, openright (a
-% blank page, no picture), and \includepdfset{pages=-}. With hyperref;
-% test-pdfpages-plain has the same pages without it.
+% blank page, no picture), and \includepdfset{pages=-}. Then last as the
+% end of a range, a list with spaces, \includepdfmerge with documents
+% without a range (pages= or page 1), a PDF found only through kpathsea
+% (mwe's), and pages of eight.pdf, written by pdftex with object streams
+% and a nested page tree (\pdfobjcompresslevel=2, eight \shipout pages,
+% page k \pdfpagewidth 30(k + 10)bp, \pdfpageheight 30bp). With hyperref;
+% test-pdfpages-plain has some of the same pages without it.
 \documentclass{article}
 \usepackage{pdfpages}
 \usepackage{hyperref}
@@ -76,6 +81,27 @@ Run openright.
 Run set.
 \includepdfset{pages=-}
 \includepdf{test-pdfpages/two}
+
+Run last end.
+\includepdf[pages={2-last}]{test-pdfpages/four}
+
+Run spaces.
+\includepdf[pages={3, 1-2}]{test-pdfpages/four}
+
+Run merge default.
+\includepdfmerge{test-pdfpages/two,test-pdfpages/four,3}
+
+Run merge pages.
+\includepdfmerge[pages=-]{test-pdfpages/two,test-pdfpages/four,3}
+
+Run kpathsea.
+\includepdf[pages={2-3}]{example-image-letter-numbered}
+
+Run eight.
+\includepdf[pages={6-8}]{test-pdfpages/eight}
+
+Run eight open.
+\includepdf[pages={7-}]{test-pdfpages/eight}
 
 Run end.
 \end{document}

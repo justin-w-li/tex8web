@@ -4,7 +4,7 @@
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 
@@ -460,7 +460,10 @@ const unspaced = {
 // them: the pages the PDF shows there, in order, each a picture inside the
 // page's folder before the next run. The PDFs in test/fixtures/test-pdfpages/
 // have pages 30bp high and of widths that name them: page k of four.pdf is
-// 30(k + 1)bp wide, of two.pdf 30(k + 5)bp, and of three.pdf 30(k + 7)bp.
+// 30(k + 1)bp wide, of two.pdf 30(k + 5)bp, of three.pdf 30(k + 7)bp, and of
+// eight.pdf 30(k + 10)bp. mwe's pages all have one size, so a page of
+// example-image-letter-numbered is named by its PNG's name, which ends in -k.png.
+// No picture comes before the first run or after the run "end".
 const pdfPages = {
   'test-pdfpages': {
     dash: 'four 1, four 2, four 3, four 4', closed: 'four 1, four 2, four 3', 'open end': 'four 3, four 4',
@@ -470,20 +473,23 @@ const pdfPages = {
     graphicspath: 'three 1, three 2, three 3', merge: 'four 2, four 3, two 1, two 2',
     doublepages: 'four 1, four 1, four 2, four 2', duplicatepages: 'four 2, four 2, four 2, four 3, four 3, four 3',
     lastpage: 'four 1, four 2, four 3, four 4', openright: 'two 1, two 2', set: 'two 1, two 2',
+    'last end': 'four 2, four 3, four 4', spaces: 'four 3, four 1, four 2', 'merge default': 'two 1, four 3',
+    'merge pages': 'two 1, two 2, four 3', kpathsea: 'example-image-letter-numbered 2, example-image-letter-numbered 3',
+    eight: 'eight 6, eight 7, eight 8', 'eight open': 'eight 7, eight 8',
   },
   'test-pdfpages-plain': { dash: 'four 1, four 2, four 3, four 4', closed: 'four 2, four 3', merge: 'two 1, two 2, four 4' },
 };
-const pdfPageAspect = { four: 1, two: 5, three: 7 };
+const pdfPageAspect = { four: 1, two: 5, three: 7, eight: 10 };
 // the file a src names in the page's folder, or null if the src leaves it
 const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
 // a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
 const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
-// the files and folders in the folders of test-pdfpic's source pictures,
-// and those beside the fixture named test-pdfpic*, such as
-// test-pdfpic-box.pdf, that a build wrote or changed there: those not
+// the files and folders in the folders of test-pdfpic's source pictures
+// and of test-pdfpages' PDFs, and those beside the fixture named
+// test-pdfpic*, such as test-pdfpic-box.pdf, that a build wrote or changed there: those not
 // there when this script started, and those whose time of change is later,
 // such as a tracked picture written over. Finder's .DS_Store is left out.
-const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic'];
+const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic', 'test/fixtures/test-pdfpages'];
 const pdfpicStatus = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))),
   ...readdirSync(join(root, 'test/fixtures')).filter(f => f.startsWith('test-pdfpic')).map(f => join('test/fixtures', f))]
   .filter(f => !f.endsWith('.DS_Store'));
@@ -2323,16 +2329,21 @@ function check(doc, result, out, aux) {
   for (const [run, pages] of Object.entries(pdfPages[doc.name] ?? {})) {
     const part = flat.match(new RegExp(`Run ${run}\\.([^]*?)Run `))?.[1];
     if (part === undefined) { problems.push(`no run ${run}`); continue; }
-    const want = pages.split(', ').map(page => { const [file, k] = page.split(' '); return Number(k) + pdfPageAspect[file]; });
-    const got = [...part.matchAll(/<img [^>]*>/g)].map(([tag]) => {
+    const want = pages.split(', ').map(page => { const [file, k] = page.split(' '); return file in pdfPageAspect ? String(Number(k) + pdfPageAspect[file]) : `-${k}.png`; });
+    const got = [...part.matchAll(/<img [^>]*>/g)].map(([tag], i) => {
       const file = inPage(out, tag.match(/ src='([^']*)'/)?.[1]);
-      return file && existsSync(file) ? Math.round(pngAspect(readFileSync(file)) * 10) / 10 : NaN;
+      if (!file || !existsSync(file) || isNaN(pngAspect(readFileSync(file)))) return 'NaN';
+      return want[i]?.endsWith('.png') ? basename(file) : String(Math.round(pngAspect(readFileSync(file)) * 10) / 10);
     });
-    if (got.join() !== want.join()) {
-      problems.push(`run ${run}: pictures ${got.join(', ')} times as wide as high, not ${want.join(', ')} (${pages})`);
+    if (got.length !== want.length || got.some((g, i) => want[i].endsWith('.png') ? !g.endsWith(want[i]) : g !== want[i])) {
+      problems.push(`run ${run}: pictures ${got.join(', ')}, not ${want.join(', ')} (${pages}; a number is a picture's width over its height)`);
     }
   }
-  if (pdfPages[doc.name] && /is not a whole number/.test(result.log)) problems.push('a page of an included PDF is not a whole number');
+  if (pdfPages[doc.name]) {
+    if (/<img /.test(flat.split('Run dash.')[0]) || /<img /.test(flat.split('Run end.')[1] ?? '')) problems.push('a picture before the first run or after the run end');
+    const written = pdfpicWritten().filter(f => f.startsWith('test/fixtures/test-pdfpages'));
+    if (written.length) problems.push(`files written beside the included PDFs: ${written.join(', ')}`);
+  }
   if (pictureSizes[doc.name]) {
     const [ext, sizes] = pictureSizes[doc.name];
     const measure = after => {
