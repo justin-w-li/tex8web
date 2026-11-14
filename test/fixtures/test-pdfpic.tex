@@ -9,7 +9,8 @@
 % bounding box TeX cannot read: with a width, with no size, with a height or
 % a scale alone, with a width and height kept in proportion, in a \scalebox
 % with a height and with no size, and in a \resizebox to a width, to a
-% height, to half the text width, and to both inside a \scalebox. EPS
+% height, to half the text width, and to both inside a \scalebox. Text in
+% a \resizebox to 1.5\width and to 2\height. EPS
 % pictures, converted by Ghostscript. Pictures named with ../ (by
 % \graphicspath, by name, two levels up, the same name in two parent
 % folders, a name with a space, PNG, JPEG, PDF, and EPS), the same picture
@@ -85,6 +86,8 @@ Space resizebox half:
 
 Space resizebox scaled:
 \scalebox{.5}{\resizebox{3cm}{1cm}{\includegraphics[alt={pdf space resizebox scaled}]{"test-pdfpic/wide fig"}}}
+
+Resizebox text: \resizebox{1.5\width}{!}{wider text} and \resizebox{!}{2\height}{taller text}.
 
 \textit{Italic: \includegraphics[alt={pdf italic}, width=1cm]{test-pdfpic/box}}
 and a footnote.\footnote{Footnote: \includegraphics[alt={pdf footnote}, width=1cm]{test-pdfpic/box}}
