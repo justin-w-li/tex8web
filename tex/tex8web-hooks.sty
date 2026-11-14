@@ -358,15 +358,16 @@
 % pdfTeX's driver option, which a document written for pdflatex gives to
 % the packages that choose a driver, or to the class. tex4ht runs LaTeX in
 % DVI mode: hyperref stops at "Wrong driver option", and the pdftex drivers
-% of graphics, color, and pict2e stop at pdfTeX's PDF primitives. The
-% option is dropped from the class's options before the class loads: from
-% \@classoptionslist, which \ProcessOptions reads in every package, and
-% from \@raw@classoptionslist, which \ProcessKeyOptions reads. After the
-% class, it is dropped from the unused options, so that LaTeX does not warn
-% of it. It is dropped from each such package's options before the package
-% loads, and put back after, so that loading the package again with the
-% option is no clash, as in pdflatex. The raw lists keep the spaces around
-% each option, so they are set as clists first.
+% of graphics, color, and pict2e stop at pdfTeX's PDF primitives. Before
+% the class loads, the option is dropped from the global lists that
+% packages read: \@classoptionslist, which \ProcessOptions reads, and
+% \@raw@classoptionslist, which \ProcessKeyOptions reads. The class still
+% receives it in its own options and leaves it unused, so after the class
+% it is dropped from \@unusedoptionlist, and LaTeX does not warn of it as
+% an unused global option. It is dropped from each such package's options
+% before the package loads, and put back after, so that loading the package
+% again with the option is no clash, as in pdflatex. The raw lists keep the
+% spaces around each option, so they are set as clists first.
 \ExplSyntaxOn
 \cs_new_protected:Npn \__web_drop_pdftex:N #1
     {

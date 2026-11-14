@@ -2028,8 +2028,13 @@ function check(doc, result, out, aux) {
   if (html.includes('<mjx-container') && !html.includes('<mjx-assistive-mml')) {
     problems.push('no MathML for screen readers, with TEX8WEB_MATHML');
   }
-  return [...problems, ...checkTexLog(join(aux, doc.tex.replace(/\.tex$/, '.log'))), ...checkLog(result.log),
-    ...checkOutput(out)];
+  const texLog = join(aux, doc.tex.replace(/\.tex$/, '.log'));
+  // (the class leaves pdfTeX's driver option unused, and xcolor uses the
+  // fixture's other class option, dvipsnames)
+  if (doc.name === 'test-pdftex-class' && existsSync(texLog) && /Unused global option/.test(readFileSync(texLog, 'utf8'))) {
+    problems.push('LaTeX warns of an unused global option');
+  }
+  return [...problems, ...checkTexLog(texLog), ...checkLog(result.log), ...checkOutput(out)];
 }
 
 if (!only.length) {
