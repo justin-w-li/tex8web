@@ -611,9 +611,9 @@
             % revtex's \l@@sections reads widths that its \tableofcontents
             % sets (\toc@pre@auto, revtex4.cls), so only its \l@f@<level>,
             % with the space above and the font, is typeset
-            \edef\web@tocline{\expandafter\meaning\csname l@#1\endcsname}%
-            \edef\web@tocline{\noexpand\in@{\detokenize{\l@@sections}}{\web@tocline}}%
-            \web@tocline
+            \edef\web@tocin{\noexpand\in@{\detokenize{\l@@sections}}%
+                {\expandafter\meaning\csname l@#1\endcsname}}%
+            \web@tocin
             \ifin@\def\web@tocline{\csname l@f@#1\endcsname\leavevmode}%
             \else\def\web@tocline{\csname l@#1\endcsname{\web@tocentry}{}}\fi
             \setbox\z@\vbox{\web@tocline}%

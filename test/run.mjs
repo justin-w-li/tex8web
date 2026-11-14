@@ -156,7 +156,8 @@ const measured = {
     '--tex8web-toc-subsubsection-indent': '3.8em', '--tex8web-toc-subsubsection-number': '3.2em',
     '--tex8web-toc-paragraph-indent': '7.00002em', '--tex8web-toc-paragraph-number': '4.1em',
     '--tex8web-toc-subparagraph-indent': '10.00002em', '--tex8web-toc-section-weight': 'bold' },
-  // (revtex4-2's section entries: the space above, and no bold)
+  // (revtex4-2's section entries in its default aps style: the space
+  // above, and no bold)
   'test-revtoc-weight': { '--tex8web-toc-section-skip': '1em', '--tex8web-toc-section-weight': 'normal' },
   // (chapter styles left with the stylesheet's spacing: memoir's chappell,
   // with four skips, one of them zero, and fncychap's Glenn, with a
