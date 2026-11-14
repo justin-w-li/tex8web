@@ -421,8 +421,7 @@ end
 -- (graphicx's page=, which goes into the command and the PNG's name) is
 -- page 1, with a warning.
 function M.convert(src, page, img, context, converted)
-  local file = src:gsub('"', "")
-  file = exists(file) and file or kpse.find_file(file, "graphic/figure") or file
+  local file = exists(src) and src or kpse.find_file(src, "graphic/figure") or src
   if not page:match("^%d+$") then
     log:warning("page " .. page .. " of " .. file .. " is not a whole number; page 1 is shown")
     page = "1"

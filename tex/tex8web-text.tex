@@ -1105,8 +1105,9 @@
     \Configure{graphics*}{pdf}{\web@converted}
     \Configure{graphics*}{eps}{\web@converted}
 \fi
-% overpic's Overpic, whose picture is a box made before the picture starts.
-% tex4ht's \includegraphics there gives a box of no width, and overpic,
+% overpic's overpic and Overpic environments, whose picture is a box made
+% before the picture starts. tex4ht's \includegraphics there gives a box of
+% no width, and overpic,
 % which divides by the width, stops at "Arithmetic overflow". Such a box
 % gets the width of a space, which html4.4ht's PDF configuration wrote
 % before the picture, so the picture keeps its size.

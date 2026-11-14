@@ -400,28 +400,21 @@ const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : j
 const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
 // the files and folders in the folders of test-pdfpic's source pictures,
 // and those beside the fixture named test-pdfpic*, such as
-// test-pdfpic-box.pdf, to check that a build writes nothing there: those
-// git does not track, or, outside a git checkout of tex8web, those that
-// were not there before any build. (safe.directory: CI's container checks
-// out as another user)
+// test-pdfpic-box.pdf, that a build wrote there: in a git checkout of
+// tex8web, those git neither tracks nor ignores (Finder's .DS_Store is
+// ignored), and outside one, those that were not there before any build.
+// (safe.directory: CI's container checks out as another user)
 const pdfpicFolders = ['test/pdfpic-above', 'test/fixtures/test-pdfpic'];
 const pdfpicListing = () => [...pdfpicFolders.flatMap(dir => readdirSync(join(root, dir), { recursive: true }).map(f => join(dir, f))),
   ...readdirSync(join(root, 'test/fixtures')).filter(f => f.startsWith('test-pdfpic')).map(f => join('test/fixtures', f))].sort();
-const pdfpicTracked = () => {
-  const git = (...args) => spawnSync('git', ['-c', 'safe.directory=*', '-C', root, ...args], { encoding: 'utf8' });
-  const top = git('rev-parse', '--show-toplevel');
-  if (top.status !== 0 || realpathSync(top.stdout.trim()) !== realpathSync(root)) return null;
-  const files = git('ls-files', '-z', '--', ...pdfpicFolders, 'test/fixtures/test-pdfpic*');
-  if (files.status !== 0) return null;
-  const tracked = new Set();
-  for (const file of files.stdout.split('\0').filter(Boolean)) {
-    for (let at = file.indexOf('/'); at !== -1; at = file.indexOf('/', at + 1)) tracked.add(file.slice(0, at));
-    tracked.add(file);
-  }
-  return tracked;
+const pdfpicGit = (...args) => spawnSync('git', ['-c', 'safe.directory=*', '-C', root, ...args], { encoding: 'utf8' });
+const pdfpicTop = pdfpicGit('rev-parse', '--show-toplevel');
+const pdfpicBefore = pdfpicTop.status === 0 && realpathSync(pdfpicTop.stdout.trim()) === realpathSync(root) ? null : new Set(pdfpicListing());
+const pdfpicWritten = () => {
+  if (pdfpicBefore) return pdfpicListing().filter(f => !pdfpicBefore.has(f));
+  const files = pdfpicGit('ls-files', '-z', '--others', '--exclude-standard', '--directory', '--', ...pdfpicFolders, 'test/fixtures/test-pdfpic*');
+  return files.status === 0 ? files.stdout.split('\0').filter(Boolean).sort() : [`(git ls-files failed: ${files.stderr.trim()})`];
 };
-const pdfpicSources = pdfpicTracked() ?? new Set(pdfpicListing());
-const pdfpicWritten = () => pdfpicListing().filter(f => !pdfpicSources.has(f));
 const pictures = {
   // (in a 345pt text width, for a picture 64bp by 48bp: 100pt wide, 1.5
   // times its size, 96pt high so 128pt wide, and 100pt by 40pt without
@@ -2089,7 +2082,7 @@ function check(doc, result, out, aux) {
       }
     }
     // (extractbb writes no .xbb file beside a picture)
-    const tracked = ['test-picture.xbb', 'test-wide.xbb', 'test-pdfpic/inside.xbb'];
+    const tracked = ['test-picture.xbb', 'test-wide.xbb', 'test-pdfpic/inside.xbb', 'test-pdfpic/own-1.xbb'];
     for (const file of readdirSync(join(root, 'test/fixtures'), { recursive: true })) {
       if (file.endsWith('.xbb') && !tracked.includes(file)) problems.push(`test/fixtures/${file} written beside the fixtures`);
     }

@@ -46,7 +46,7 @@ All known differences are listed in [Known limitations](DOCUMENTATION.md#known-l
 
 ## Install
 
-You need TeX Live with make4ht, and Node 22 or later. tex8web is tested with TeX Live 2026 on macOS and Linux. PDF and EPS pictures also need Ghostscript (`gs`), which converts them to PNG. MacTeX includes it; TeX Live's own installer does not, except on Windows.
+You need TeX Live with make4ht, and Node 22 or later. tex8web is tested with TeX Live 2026 on macOS and Linux. PDF and EPS pictures also need Ghostscript (`gs`), which converts them to PNG. MacTeX includes it. TeX Live's own installer does not, except on Windows.
 
 ```sh
 git clone https://github.com/justin-w-li/tex8web.git
