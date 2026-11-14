@@ -1,0 +1,20 @@
+% tex4ht has revtex4.4ht and no file for revtex4-2, whose headings,
+% title, and floats are revtex4's. Without this file the headings are
+% bold text in one paragraph. tex4ht reads <class>.4ht from tex8web's
+% tex/, which tex8web.mk4 puts on TEXINPUTS.
+\input revtex4.4ht
+% revtex4-2 adds contents lines for the title and the abstract, which
+% revtex4.4ht does not configure: each repeats the anchor of the line
+% before it in the page.
+\def\addcontents@abstract{}
+\pend:def\frontmatter@title@produce{\let\addcontentsline\@gobblethree}
+% revtex4.4ht sets the page in one column, but the reprint and twocolumn
+% options choose the two-column grid's \close@column as the class loads.
+% Its \onecolumngrid at the end of the document writes a paragraph after
+% </html>, so the one-column \close@column of revtex4-2.cls is restored.
+\def\close@column{\newpage}
+% revtex4-2's \appendix* sets \thesection to \unskip, which tex4ht writes
+% into the anchor of the section that follows, and the next run stops on
+% it. The section is left without a number.
+\let\web@revappendix\appendix
+\def\appendix{\@ifstar{\web@revappendix*\def\thesection{}}\web@revappendix}
