@@ -301,6 +301,37 @@ const typeset = {
     // with long following rows, in a display wider than a phone
     /<mpadded width='0'><mstyle><munderover>(?:(?!<\/mpadded>)[^])*<mi>k<\/mi>(?:(?!<\/mpadded>)[^])*<mo[^>]*>=<\/mo><\/mstyle><\/mpadded>(?:(?!<mtr)[^])*<mtr>(?:(?!<\/mtr>)[^])*<msub><mi>b<\/mi><mn>1<\/mn>/,
   ],
+  // text-mode commands in math, as LaTeX sets them: \enskip as half an em
+  // of space, in a display, inline, between \left( and \right), in a
+  // footnote, and inside \text; \textsubscript and \textsuperscript as
+  // upright text on an empty base, so after a subscripted or superscripted
+  // base there is no double script, and a superscript after one goes on
+  // the group; the counter commands as nothing, with no trace of their
+  // arguments; \emph and \textsl as italic text, \textsc as upright text,
+  // also inside \text, and \textup and \textnormal as before
+  'test-textmath': [
+    /<mi>f<\/mi><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mi>g<\/mi>/,
+    /<mi>a<\/mi><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mi>b<\/mi>/,
+    /<mi>p<\/mi><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mi>q<\/mi>/,
+    /<\/msub><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><msub><mi>k<\/mi>/,
+    /<mtext>c<\/mtext><mspace (?:[^>]* )?width='0\.5em'[^>]*><\/mspace><mtext>d<\/mtext>/,
+    ...[['<mi>V<\\/mi>', 'P'], ['<mi>W<\\/mi>', 'S'], ['<mi>Z<\\/mi>', 'B'], ['<mn>0<\\/mn><\\/mrow><\\/msub>', 'Q']].map(([base, sub]) =>
+      new RegExp(`${base}(?:<mrow[^>]*>)?<msub>(?:<mrow[^>]*><\\/mrow>|<mi><\\/mi>)<mrow[^>]*><mtext>${sub}<\\/mtext><\\/mrow><\\/msub>`)),
+    /<mi>T<\/mi><msup><mrow[^>]*><msub>(?:<mrow[^>]*><\/mrow>|<mi><\/mi>)<mrow[^>]*><mtext>R<\/mtext><\/mrow><\/msub><\/mrow><mrow[^>]*><mn>2<\/mn><\/mrow><\/msup>/,
+    ...[['<mi>x<\\/mi>', 'th'], ['<mn>2<\\/mn><\\/mrow><\\/msup>', 'nd']].map(([base, sup]) =>
+      new RegExp(`${base}(?:<mrow[^>]*>)?<msup>(?:<mrow[^>]*><\\/mrow>|<mi><\\/mi>)<mrow[^>]*><mtext>${sup}<\\/mtext><\\/mrow><\\/msup>`)),
+    /<math display='block'[^>]*>(?:<mrow[^>]*>)?<mtable [^>]*data-tex8web-env='matrix'/,
+    /<msub><mi>n<\/mi><mn>1<\/mn><\/msub><\/mtd>/,
+    /^(?![^]*(?:𝑀𝑎𝑥𝑀𝑎𝑡𝑟𝑖𝑥𝐶𝑜𝑙𝑠|𝑒𝑞𝑢𝑎𝑡𝑖𝑜𝑛))/,
+    /<mi>x<\/mi><mo>\.<\/mo>(?:<mrow[^>]*>)?<mtext[^>]* mathvariant='italic'[^>]*>(?:of|𝑜𝑓)<\/mtext><mspace (?:[^>]* )?width='0pt'[^>]*><\/mspace><mtext[^>]* mathvariant='italic'[^>]*>(?:f|𝑓)<\/mtext>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext[^>]* mathvariant='italic'[^>]*>(?:ab|𝑎𝑏)<\/mtext>/,
+    /<mtext>see <\/mtext><mtext[^>]* mathvariant='italic'[^>]*>(?:cd|𝑐𝑑)<\/mtext>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext(?![^>]*(?:mathcolor|italic))[^>]*>gh<\/mtext>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext[^>]* mathvariant='italic'[^>]*>(?:ij|𝑖𝑗)<\/mtext>/,
+    /<math xmlns='[^']*'><mrow><mtext>kl<\/mtext><mtext> and <\/mtext><mtext[^>]* mathvariant='italic'[^>]*>(?:mn|𝑚𝑛)<\/mtext><\/mrow><\/math>/,
+    /<math xmlns='[^']*'><mtext>op<\/mtext><\/math>/,
+    /<math xmlns='[^']*'><mtext>qr<\/mtext><\/math>/,
+  ],
 };
 
 // What screen readers hear: ClearSpeak's words, | as "given" with
@@ -334,6 +365,11 @@ const speech = {
     /aria-label='v equals 3 times m s to the negative 1 power'/,
     /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,
     /aria-label='E equals 1\.6 times 10 to the negative 19 power J Label 1'/],
+  // (\enskip and the counter commands, read as nothing)
+  'test-textmath': [/aria-label='f g'/, /aria-label='a b'/, /aria-label='p q'/, /aria-label='c d'/,
+    /aria-label='open paren h sub l m k sub l m close paren Label 1'/,
+    /aria-label='r equals s'/, /aria-label='t equals u Label \d+'/,
+    /aria-label='v equals w'/, /aria-label='e equals o'/],
 };
 
 // Pictures sized by \includegraphics's width, scale, or height: a share of

@@ -1,0 +1,61 @@
+% Text-mode commands that LaTeX accepts in math and MathJax lacks, set as in
+% the PDF. \enskip, a space of half an em: in a display, in inline math,
+% between \left( and \right) with subscripts, in a footnote, and inside
+% \text, where MathJax knows it. \textsubscript and \textsuperscript, each
+% a braced group of upright text: after a plain base, after a subscripted
+% or superscripted base, before a superscript, in a theorem, and in a
+% heading. \setcounter, \addtocounter, \stepcounter, and \refstepcounter,
+% which draw nothing: in equation, equation*, and align*, before a matrix,
+% and inside a matrix. \emph, \textsc, and \textsl as text in their font:
+% in a numbered equation with a \kern inside, in inline math, and inside
+% \text, where MathJax knows them. \textup and \textnormal, which MathJax
+% knows, stay as they are.
+\documentclass{article}
+\usepackage{amsmath,amsthm}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Waves of speed $W\textsubscript{S}$}
+Display:
+\[ f \enskip g \]
+Inline, $a \enskip b$, and in a numbered equation:
+\begin{equation}
+\left( h_{lm} \enskip k_{lm} \right)
+\end{equation}
+In text, $\text{c\enskip d}$.\footnote{In a footnote, $p \enskip q$.}
+
+Subscripts: $V\textsubscript{P}$, $U_{0}\textsubscript{Q}$, and
+$T\textsubscript{R}^{2}$. Superscripts: $x\textsuperscript{th}$ and
+$y^{2}\textsuperscript{nd}$.
+\begin{theorem}
+The speed $Z\textsubscript{B}$ is finite.
+\end{theorem}
+
+Counters:
+\begin{equation*}
+\setcounter{MaxMatrixCols}{20}
+\begin{matrix} m_1 & m_2 \end{matrix}
+\end{equation*}
+\begin{equation*}
+\begin{pmatrix} n_1 \setcounter{MaxMatrixCols}{20} & n_2 \end{pmatrix}
+\end{equation*}
+\begin{align*}
+\setcounter{MaxMatrixCols}{20} r &= s
+\end{align*}
+\begin{equation}
+\addtocounter{equation}{4} t = u
+\end{equation}
+\begin{equation*}
+\stepcounter{equation} v = w
+\end{equation*}
+\begin{equation*}
+\refstepcounter{equation} e = o
+\end{equation*}
+
+Fonts:
+\begin{equation}
+x.\emph{of\kern0pt f}\sin x
+\end{equation}
+Inline, $\emph{ab}$, $\text{see \emph{cd}}$, $\textsc{gh}$, $\textsl{ij}$,
+$\text{\textsc{kl} and \textsl{mn}}$, $\textup{op}$, and $\textnormal{qr}$.
+\end{document}
