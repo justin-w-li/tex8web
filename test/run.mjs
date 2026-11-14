@@ -377,6 +377,7 @@ const copied = {
     'pdf page one': 64 / 48, 'pdf page two': 120 / 30, 'pdf graphicspath': 120 / 30, 'pdf figure': 120 / 30,
     'pdf natural': 64 / 48, 'pdf height': 64 / 48, 'pdf scale': 64 / 48, 'pdf page natural': 120 / 30,
     'pdf kpathsea natural': 4 / 3,
+    'pdf space natural': 64 / 48, 'pdf space height': 64 / 48, 'pdf space scale': 64 / 48, 'pdf space fitted': 64 / 48,
     'pdf space': 1, 'pdf beside': 100 / 20, 'pdf kpathsea': 4 / 3, 'pdf same name': 30 / 60, 'pdf dots': 50 / 25,
     'eps': 57 / 28, 'eps bare': 57 / 28, 'eps parentheses': 57 / 28, 'above pdf': 90 / 30, 'above eps': 30 / 45,
     // (a PDF and an EPS picture with one name, and a PDF beside a PNG named
@@ -435,9 +436,14 @@ const pictures = {
   // (PDF pictures without a .xbb file, sized from the PDF's bounding box in
   // a 345pt text width, for a picture 64bp by 48bp: no size, 3cm high, and
   // half its size; page 2 of a PDF, 120bp wide, with no size; and a quarter
-  // of TeX Live's example-image-a.pdf, 320bp wide)
+  // of TeX Live's example-image-a.pdf, 320bp wide. The same picture with a
+  // space in its name, whose box TeX cannot read, sized from its PNG of 267
+  // by 200 pixels at 300 dpi: no size, 3cm high, half its size, and
+  // fitted in 5cm by 1cm)
   'test-pdfpic': [share('pdf natural', '0.1862'), share('pdf height', '0.3299'), share('pdf scale', '0.0931'),
-    share('pdf page natural', '0.3491'), share('pdf kpathsea natural', '0.2328')],
+    share('pdf page natural', '0.3491'), share('pdf kpathsea natural', '0.2328'),
+    share('pdf space natural', '0.1864'), share('pdf space height', '0.3303'), share('pdf space scale', '0.0932'),
+    share('pdf space fitted', '0.1101')],
   // (the graphics package: a picture without a size or a .xbb, left to tex4ht)
   'test-graphics-only': [/<img (?:(?!style=)[^>])*\/>/],
   // (pictures over a PDF or PNG without its .xbb file, and one with it:

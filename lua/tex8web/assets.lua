@@ -372,8 +372,9 @@ function M.copy(document, context)
       M.convert(file, page, img, context, converted)
     elseif src ~= "" and not src:match("^%a+:") and exists(src)
         and (M.leaves(src) or not exists(context.dir .. "/" .. src)) then
-      img:set_attribute("src", M.inside(src))
-      M.add(src, context.dir .. "/" .. M.inside(src))
+      local inside = M.inside(src)
+      img:set_attribute("src", inside)
+      M.add(src, context.dir .. "/" .. inside)
     end
   end
 end
@@ -425,6 +426,10 @@ end
 -- (context.dir), never beside the picture: the source may be read-only. A
 -- picture that is not found from the document's folder, such as one in TeX
 -- Live, is looked up in kpathsea.
+-- A picture whose bounding box TeX could not read carries the size asked
+-- for (data-tex8web-size: a width and a height as shares of the text
+-- width, - for none, and a scale, between commas), which is applied to the
+-- PNG's size.
 -- converted lists the PNGs already made for the page. A PNG left by an
 -- earlier build, newer than its picture, is kept, as html4.4ht kept it.
 -- The PNG has a white background, as the picture has on the PDF's page, so
@@ -442,8 +447,19 @@ function M.convert(src, page, img, context, converted)
   local png = M.inside(file) .. "-" .. page .. ".png"
   local path = context.dir .. "/" .. png
   img:set_attribute("src", png)
-  if converted[path] then return end
-  converted[path] = true
+  local size = img:get_attribute("data-tex8web-size")
+  img:set_attribute("data-tex8web-size", nil)
+  if not converted[path] then
+    converted[path] = true
+    if not M.convert_file(file, page, path, png) then return end
+  end
+  if size then M.size(img, path, size, context) end
+end
+
+-- runs Ghostscript on page page of file into path, unless the PNG there is
+-- newer than the picture, and adds the PNG to the page's files; false when
+-- the conversion failed
+function M.convert_file(file, page, path, png)
   local made, source = lfs.attributes(path), lfs.attributes(file)
   if not (made and made.size > 0 and source and made.modification >= source.modification) then
     local crop = file:lower():find("%.eps$") and "-dEPSCrop" or "-dusecropbox"
@@ -456,11 +472,33 @@ function M.convert(src, page, img, context, converted)
     if os.execute(command) ~= 0 or not exists(path) then
       os.remove(path)
       log:error("Ghostscript could not convert " .. file .. " to " .. png)
-      return
+      return false
     end
   end
   -- (after the conversion: Make:add_file copies the file at once)
   Make:add_file(path)
+  return true
+end
+
+-- sets img's width from size, the width and height shares and the scale
+-- that TeX asked for, and from the natural size of the PNG at path, made
+-- at 300 dpi. Both shares come only with keepaspectratio.
+function M.size(img, path, size, context)
+  local width, height, scale = size:match("^([^,]+),([^,]+),([^,]+)$")
+  local f = assert(io.open(path, "rb"))
+  local header = f:read(24)
+  f:close()
+  local px, py = string.unpack(">I4I4", header, 17)
+  local natural = px / 300 * 72.27 / context.textwidth
+  local aspect = px / py
+  width, height = tonumber(width), tonumber(height)
+  local shown
+  if width and height then shown = math.min(width, height * aspect)
+  elseif height then shown = height * aspect
+  elseif width then shown = width
+  else shown = natural * (tonumber(scale) or 1) end
+  local share = ("%.4f"):format(shown):gsub("0+$", ""):gsub("%.$", "")
+  dom.add_style(img, "width:calc(var(--tex8web-textwidth) * " .. share .. ")")
 end
 
 -- copies the fonts of context.roles (set in M.copy) whole from TeX Live,

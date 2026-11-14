@@ -1143,7 +1143,8 @@
 % angle, or scale with a size): then \Gin@@ewidth or \Gin@@eheight is
 % missing, since graphicx sets them only in the other case. It is kept
 % when the width depends on a natural size that tex4ht does not know (no
-% .xbb file beside a bitmap: \noBoundingBox in graphics.4ht).
+% .xbb file beside a bitmap: \noBoundingBox in graphics.4ht), except for a
+% converted picture, whose PNG gives the natural size.
 % \web@textwidth is used because a minipage, and so a tcolorbox or
 % subfigure, sets \textwidth to its width.
 \ExplSyntaxOn
@@ -1164,26 +1165,40 @@
               ! \str_if_eq_p:Vn \Gin@scalex { 1 }
             ) &&
             ( \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation || \cs_if_exist_p:N \Gin@@ewidth ) &&
-            ( \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_exist_p:N \Gin@@eheight ) &&
-            (
-              \cs_if_eq_p:NN \noBoundingBox \UnDefined ||
-              (
-                ! \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
-                ( \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_eq_p:NN \ifGin@iso \iffalse )
-              )
-            )
+            ( \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_exist_p:N \Gin@@eheight )
           }
           {
-            style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\web@textwidth,4)})"~
-            % (without a bounding box, graphics.sty's natural size is
-            % 72bp square, so the height is unknown)
-            \cs_if_eq:NNT \noBoundingBox \UnDefined
+            \bool_if:nTF
               {
-                data-tex8web-height="\fp_eval:n{round(\Gin@req@width*\Gin@nat@height/\Gin@nat@width/\web@textwidth,4)}"
+                \cs_if_eq_p:NN \noBoundingBox \UnDefined ||
+                (
+                  ! \cs_if_eq_p:NN \Gin:ewidth \Gin@exclamation &&
+                  ( \cs_if_eq_p:NN \Gin:eheight \Gin@exclamation || \cs_if_eq_p:NN \ifGin@iso \iffalse )
+                )
+              }
+              {
+                style="width:calc(var(--tex8web-textwidth)~*~\fp_eval:n{round(\Gin@req@width/\web@textwidth,4)})"~
+                % (without a bounding box, graphics.sty's natural size is
+                % 72bp square, so the height is unknown)
+                \cs_if_eq:NNT \noBoundingBox \UnDefined
+                  {
+                    data-tex8web-height="\fp_eval:n{round(\Gin@req@width*\Gin@nat@height/\Gin@nat@width/\web@textwidth,4)}"
+                  }
+              }
+              {
+                % (a converted picture whose bounding box extractbb could
+                % not read: the size asked for, which assets.convert
+                % applies to the PNG's size)
+                \cs_if_eq:NNTF \ifweb@natural \iftrue
+                  { data-tex8web-size="\__web_gin_share:N \Gin:ewidth,\__web_gin_share:N \Gin:eheight,\Gin@scalex" }
+                  { \__web_gin_dim: }
               }
           }
           { \__web_gin_dim: }
     }
+    % a requested width or height as a share of the text width, or - for none
+    \cs_new:Npn \__web_gin_share:N #1
+      { \cs_if_eq:NNTF #1 \Gin@exclamation { - } { \fp_eval:n { round(\dim_to_fp:n {#1} / \web@textwidth, 4) } } }
   }
 
 % \scalebox, \resizebox, and \reflectbox: dvisvgm draws a picture in such a
