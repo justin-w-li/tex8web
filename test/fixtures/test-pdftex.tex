@@ -1,6 +1,7 @@
 % Packages given pdfTeX's driver option, as a document written for pdflatex
 % loads them: hyperref with spaces and a braced comma in its options, and
-% bookmark after it; one option list for two packages; xcolor's from
+% bookmark after it; one option list for two packages, and graphics given
+% the option after graphicx passed it on; xcolor's from
 % \PassOptionsToPackage; rotating, epsfig, and colortbl, which pass it on;
 % pict2e, with a slope and an arc that LaTeX's picture mode lacks; geometry;
 % and \hypersetup{pdftex} after hyperref loaded. Each input's page is the
@@ -9,6 +10,7 @@
 \usepackage[pdftex]{geometry}
 \PassOptionsToPackage{pdftex}{xcolor}
 \usepackage[pdftex]{color,graphicx}
+\usepackage[pdftex]{graphics}
 \usepackage[dvipsnames]{xcolor}
 \usepackage[pdftex]{rotating}
 \usepackage[pdftex]{epsfig}

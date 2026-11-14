@@ -366,8 +366,10 @@
 % it is dropped from \@unusedoptionlist, and LaTeX does not warn of it as
 % an unused global option. It is dropped from each such package's options
 % before the package loads, and put back after, so that loading the package
-% again with the option is no clash, as in pdflatex. The raw lists keep the
-% spaces around each option, so they are set as clists first.
+% again with the option is no clash, as in pdflatex. graphicx and lscape
+% pass their options to graphics, so it goes back into graphics' options
+% too when graphics loaded with one of them. The raw lists keep the spaces
+% around each option, so they are set as clists first.
 \ExplSyntaxOn
 \cs_new_protected:Npn \__web_drop_pdftex:N #1
     {
@@ -385,7 +387,7 @@
 \AddToHook { class/before }
     { \__web_drop_pdftex:NNn \@classoptionslist \@raw@classoptionslist { } }
 \AddToHook { class/after } { \clist_gremove_all:Nn \@unusedoptionlist { pdftex } }
-\clist_map_inline:nn { hyperref, graphics, graphicx, color, xcolor, pict2e, lscape }
+\clist_map_inline:nn { hyperref, graphics, color, xcolor, pict2e }
     {
         \AddToHook { package/#1/before }
             {
@@ -393,6 +395,29 @@
                     {
                         \AddToHook { package/#1/after }
                             { \clist_gput_right:cn { opt@#1.sty } { pdftex } }
+                    }
+            }
+    }
+\clist_map_inline:nn { graphicx, lscape }
+    {
+        \AddToHook { package/#1/before }
+            {
+                \__web_drop_pdftex:ccn { opt@#1.sty } { @raw@opt@#1.sty }
+                    {
+                        \@ifpackageloaded { graphics }
+                            {
+                                \AddToHook { package/#1/after }
+                                    { \clist_gput_right:cn { opt@#1.sty } { pdftex } }
+                            }
+                            {
+                                \AddToHook { package/#1/after }
+                                    {
+                                        \clist_gput_right:cn { opt@#1.sty } { pdftex }
+                                        \@ifpackageloaded { graphics }
+                                            { \clist_gput_right:cn { opt@graphics.sty } { pdftex } }
+                                            { }
+                                    }
+                            }
                     }
             }
     }

@@ -971,6 +971,13 @@ const drivers = {
   ],
 };
 
+// Warnings a document's TeX log must not hold. test-pdftex-class's class
+// leaves pdfTeX's driver option unused, and xcolor uses the fixture's other
+// class option, dvipsnames, so LaTeX warns of no unused global option.
+const texWarnings = {
+  'test-pdftex-class': [/Unused global option/],
+};
+
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
 // hyphenated in the PDF, and html4.4ht's overflow-wrap still breaks one too
 // long for a line): the stylesheet's rule, and the URLs as links of that class.
@@ -2029,16 +2036,15 @@ function check(doc, result, out, aux) {
     problems.push('no MathML for screen readers, with TEX8WEB_MATHML');
   }
   const texLog = join(aux, doc.tex.replace(/\.tex$/, '.log'));
-  // (the class leaves pdfTeX's driver option unused, and xcolor uses the
-  // fixture's other class option, dvipsnames)
-  if (doc.name === 'test-pdftex-class' && existsSync(texLog) && /Unused global option/.test(readFileSync(texLog, 'utf8'))) {
-    problems.push('LaTeX warns of an unused global option');
+  const texLogText = existsSync(texLog) ? readFileSync(texLog, 'latin1') : '';
+  for (const pattern of texWarnings[doc.name] ?? []) {
+    if (pattern.test(texLogText)) problems.push(`${pattern.source} in the TeX log`);
   }
   return [...problems, ...checkTexLog(texLog), ...checkLog(result.log), ...checkOutput(out)];
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, expected, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, expected, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 
