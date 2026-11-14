@@ -1,14 +1,20 @@
 % titlesec's rules at the start of a \titleformat's format: \titlerule,
 % \titlerule with a height, \titlerule* with a text, \titleline, and
 % \titleline* with an alignment, in each heading level, with the option
-% explicit and hyperref. Each heading keeps the font of its format. Also
-% \titlerule* in titletoc's \titlecontents, and \titlerule, \titlerule*,
-% and \titleline as paragraphs of the text, which pdflatex builds.
+% explicit and hyperref, and a part's display format with \titlerule,
+% which an article reads apart from a report's part. Each heading keeps
+% the font of its format. Also titletoc, which defines \titlerule too,
+% with \titlerule* in a \titlecontents format that tex4ht does not
+% typeset, since tex4ht builds its own table of contents. And \titlerule,
+% \titlerule*, and \titleline as paragraphs of the text, which pdflatex
+% builds.
 \documentclass{article}
 \usepackage{amssymb}
 \usepackage[explicit]{titlesec}
 \usepackage{titletoc}
 \usepackage{hyperref}
+\titleformat{\part}[display]{\titlerule\filcenter\huge\bfseries}
+    {\partname~\thepart}{1em}{#1}
 \titleformat{\section}{\titlerule\vspace{.8ex}\Large\bfseries}
     {\llap{\thesection}}{0.0em}{$\blacktriangle$ #1}
 \titleformat{\subsection}{\titlerule*[1em]{x}\sffamily\itshape\large}
@@ -22,6 +28,7 @@
     {\titlerule*[1pc]{.}\contentspage}
 \begin{document}
 \tableofcontents
+\part{Start}
 \section{Alpha}
 Text after the section.
 \subsection{Beta}

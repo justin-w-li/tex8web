@@ -204,11 +204,14 @@ const measured = {
     '--tex8web-toc-subsection-weight': 'bold', '--tex8web-toc-subsubsection-size': '1.2',
     '--tex8web-toc-subsubsection-family': 'var(--tex8web-sans)',
     '--tex8web-toc-paragraph-family': 'var(--tex8web-mono)', '--tex8web-toc-subparagraph-style': 'italic' },
-  // (titlesec formats with a rule first: \titlerule before \Large\bfseries,
-  // \titlerule* before \sffamily\itshape\large, \titleline* before
-  // \ttfamily, \titlerule[2pt] before a run-in paragraph's \sffamily\bfseries,
-  // and \titleline before a run-in subparagraph's \itshape)
-  'test-titlerule': { '--tex8web-section-size': '1.44em', '--tex8web-section-family': 'inherit',
+  // (titlesec formats with a rule first: \titlerule before an article's
+  // part in \huge bold centered by \filcenter, \titlerule before
+  // \Large\bfseries, \titlerule* before \sffamily\itshape\large,
+  // \titleline* before \ttfamily, \titlerule[2pt] before a run-in
+  // paragraph's \sffamily\bfseries, and \titleline before a run-in
+  // subparagraph's \itshape)
+  'test-titlerule': { '--tex8web-part-size': '2.074em', '--tex8web-part-weight': 'bold',
+    '--tex8web-part-align': 'center', '--tex8web-section-size': '1.44em', '--tex8web-section-family': 'inherit',
     '--tex8web-section-weight': 'bold', '--tex8web-section-style': 'normal',
     '--tex8web-subsection-size': '1.2em', '--tex8web-subsection-family': 'var(--tex8web-sans)',
     '--tex8web-subsection-weight': 'normal', '--tex8web-subsection-style': 'italic',
@@ -217,13 +220,15 @@ const measured = {
     '--tex8web-subparagraph-family': 'inherit', '--tex8web-subparagraph-style': 'italic' },
   // (report's part in \Huge small capitals and chapter in \huge sans-serif
   // bold, both centered by \filcenter after a \titlerule; a block section
-  // with \titlerule after \Large\bfseries; \titleformat*'s \itshape\large)
+  // with \titlerule after \Large\bfseries; \titleformat*'s \itshape\large;
+  // a bold subsubsection with \titlerule in its label)
   'test-titlerule-report': { '--tex8web-part-size': '2.488em', '--tex8web-part-variant': 'small-caps',
     '--tex8web-part-align': 'center', '--tex8web-chapter-size': '2.074em',
     '--tex8web-chapter-family': 'var(--tex8web-sans)', '--tex8web-chapter-weight': 'bold',
     '--tex8web-chapter-align': 'center', '--tex8web-section-size': '1.44em',
     '--tex8web-section-weight': 'bold', '--tex8web-subsection-size': '1.2em',
-    '--tex8web-subsection-style': 'italic', '--tex8web-subsection-weight': 'normal' },
+    '--tex8web-subsection-style': 'italic', '--tex8web-subsection-weight': 'normal',
+    '--tex8web-subsubsection-weight': 'bold' },
 };
 
 // test.tex's math as tex8web.js typesets it through MathJax's internals,
@@ -540,8 +545,10 @@ const contents = {
     new RegExp(`<a href='#${title.toLowerCase()}'>${title}</a>[^]*<h[34] class='like\\w*Head' id='${title.toLowerCase()}'>`)),
   // (headings with titlesec's rules in their formats, each with its number
   // and title, and the text after \titlerule, \titlerule*, and \titleline
-  // as paragraphs)
-  'test-titlerule': [/<h3 class='sectionHead' id='alpha'>.*<span class='titlemark'>1<\/span>.*Alpha<\/h3>/,
+  // as paragraphs. The rules themselves are not checked, in the headings,
+  // in a label, or in the text.)
+  'test-titlerule': [/<h1 class='partHead' id='start'>.*Part.*I.*Start<\/h1>/,
+    /<h3 class='sectionHead' id='alpha'>.*<span class='titlemark'>1<\/span>.*Alpha<\/h3>/,
     /<h4 class='subsectionHead' id='beta'>.*<span class='titlemark'>1\.1<\/span>.*Beta<\/h4>/,
     /<h5 class='subsubsectionHead' id='gamma'>.*<span class='titlemark'>1\.1\.1<\/span>.*Gamma<\/h5>/,
     /<span class='paragraphHead' id='delta'><a id='[^']+'><\/a>Delta<\/span>/,
@@ -550,7 +557,8 @@ const contents = {
   'test-titlerule-report': [/<h1 class='partHead' id='beginnings'>.*Part.*I.*Beginnings<\/h1>/,
     /<h2 class='chapterHead' id='alpha'>.*Chapter.*1.*Alpha<\/h2>/,
     /<h3 class='sectionHead' id='beta'>.*<span class='titlemark'>1\.1<\/span>.*Beta<\/h3>/,
-    /<h4 class='subsectionHead' id='gamma'>.*<span class='titlemark'>1\.1\.1<\/span>.*Gamma<\/h4>/],
+    /<h4 class='subsectionHead' id='gamma'>.*<span class='titlemark'>1\.1\.1<\/span>.*Gamma<\/h4>/,
+    /<h5 class='subsubsectionHead' id='delta'>.*<span class='titlemark'>1\.1\.1\.1[^<]*<\/span>.*Delta<\/h5>/],
   // (a citation and its entry from bibtex, and an index from makeindex, in
   // one document)
   'test-bibindex': [/<span class='cite'>\[<a href='#Xgroups'>1<\/a>\]<\/span>/, /Groups and Their Orders/,
