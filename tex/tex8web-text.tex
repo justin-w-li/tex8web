@@ -1159,8 +1159,8 @@
 % to the lastpage hint, or to 1 without it, for every document, so the
 % count is read from extractbb, which TeX Live's restricted shell escape
 % allows. Without shell escape, or with a space in the file name, which
-% extractbb gets as two arguments, the count is the hint or 1, as in
-% ppnull.def.
+% extractbb gets as two arguments, ppnull.def's macro runs after extractbb
+% and gives the hint, or 1 with its warning that names the hint.
 \ExplSyntaxOn
 \@ifpackageloaded{pdfpages}
   {
@@ -1170,9 +1170,9 @@
     \seq_new:N \l__web_pdfpages_seq
     \seq_new:N \l__web_pdfpages_docs_seq
     \tl_new:N \l__web_pdfpages_doc_tl
+    \cs_set_eq:NN \__web_pdfpages_count: \AM@getpagecount
     \cs_set_protected:Npn \AM@getpagecount
       {
-        \cs_if_exist:NF \AM@pagecount { \tl_set:Nn \AM@pagecount { 1 } }
         \sys_if_shell:T
           {
             \exp_args:NNe \ior_shell_open:Nn \g__web_pdfpages_ior { extractbb~-O~\AM@currentdocname }
@@ -1186,6 +1186,7 @@
               }
             \ior_close:N \g__web_pdfpages_ior
           }
+        \__web_pdfpages_count:
       }
     \bool_new:N \g__web_pdfpages_open_bool
     % (pdfpages' \AM@output does nothing when the file is missing, and the

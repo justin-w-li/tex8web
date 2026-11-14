@@ -3,7 +3,9 @@
 % also builds this page without shell escape, as with --contain, where the
 % number of pages is not read and the hint gives it, so the last page is 3.
 % With shell escape, the number read overrides the hint, as pdflatex does,
-% and the last page is 4. Each run starts with a paragraph "Run name."
+% and the last page is 4. The run nohint has no hint: without shell
+% escape it shows page 1 alone, and pdfpages' warning in the TeX log names
+% the hint. Each run starts with a paragraph "Run name."
 % test/run.mjs builds it again with \PdfpagesMissing defined, for a run
 % that includes a PDF that does not exist: pdfpages' error, and no picture.
 \documentclass{article}
@@ -14,6 +16,9 @@ Run dash.
 
 Run last.
 \includepdf[pages={2-last},lastpage=3]{test-pdfpages/four}
+
+Run nohint.
+\includepdf[pages=-]{test-pdfpages/four}
 
 \ifdefined\PdfpagesMissing
 Run missing.
