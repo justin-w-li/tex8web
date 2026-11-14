@@ -480,16 +480,20 @@ const pdfPages = {
   'test-pdfpages-plain': { dash: 'four 1, four 2, four 3, four 4', closed: 'four 2, four 3', merge: 'two 1, two 2, four 4' },
   'test-pdfpages-hint': { dash: 'four 1, four 2, four 3, four 4', last: 'four 2, four 3, four 4' },
 };
+// the runs of test-pdfpages-hint built without shell escape: the lastpage
+// hint of 3 gives the number of pages, short of four.pdf's 4, so only a
+// build that used the hint shows these
+const pdfPagesNoShell = { dash: 'four 1, four 2, four 3', last: 'four 2, four 3' };
 const pdfPageAspect = { four: 1, two: 5, three: 7, eight: 10 };
 // the file a src names in the page's folder, or null if the src leaves it
 const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
 // a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
 const pngAspect = data => data.readUInt32BE(0) === 0x89504e47 ? data.readUInt32BE(16) / data.readUInt32BE(20) : NaN;
-// the problems with the runs of pdfPages[name] on a page, flat, with its
+// the problems with runs, such as pdfPages[name], on a page, flat, with its
 // whitespace runs made single spaces, in the folder out
-const checkPdfPages = (name, flat, out) => {
+const checkPdfPages = (runs, flat, out) => {
   const problems = [];
-  for (const [run, pages] of Object.entries(pdfPages[name])) {
+  for (const [run, pages] of Object.entries(runs)) {
     const part = flat.match(new RegExp(`Run ${run}\\.([^]*?)Run `))?.[1];
     if (part === undefined) { problems.push(`no run ${run}`); continue; }
     const want = pages.split(', ').map(page => { const [file, k] = page.split(' '); return file in pdfPageAspect ? String(Number(k) + pdfPageAspect[file]) : `-${k}.png`; });
@@ -2353,7 +2357,7 @@ function check(doc, result, out, aux) {
     if (flat.includes(` <img alt='${alt}'`)) problems.push(`${alt}: a space before the picture`);
   }
   if (pdfPages[doc.name]) {
-    problems.push(...checkPdfPages(doc.name, flat, out));
+    problems.push(...checkPdfPages(pdfPages[doc.name], flat, out));
     const written = pdfpagesOnly();
     if (written.length) problems.push(`files written beside the included PDFs: ${written.join(', ')}`);
   }
@@ -2527,8 +2531,8 @@ if (pdfpic) jobs.push(async () => {
 
 // test-pdfpages-hint built again without shell escape, as with --contain
 // (kpathsea reads shell_escape from the environment before texmf.cnf):
-// pdfpages' lastpage hint gives the number of pages, so the page shows the
-// same pictures.
+// pdfpages' lastpage hint gives the number of pages, one short of the
+// PDF's, so the page shows the pictures of pdfPagesNoShell.
 const hint = docs.find(d => d.name === 'test-pdfpages-hint');
 if (hint) jobs.push(async () => {
   const top = join(testDir(hint), 'noshell'), out = join(top, 'html'), aux = join(top, 'aux');
@@ -2540,7 +2544,9 @@ if (hint) jobs.push(async () => {
   }
   const page = join(out, 'test-pdfpages-hint.html');
   if (!existsSync(page)) problems.push('no page');
-  else problems.push(...checkPdfPages(hint.name, readFileSync(page, 'utf8').replace(/[^\S ]+/g, ' '), out));
+  else problems.push(...checkPdfPages(pdfPagesNoShell, readFileSync(page, 'utf8').replace(/[^\S ]+/g, ' '), out));
+  const written = pdfpagesOnly();
+  if (written.length) problems.push(`files written beside the included PDFs: ${written.join(', ')}`);
   report(`${hint.name} (without shell escape)`, problems);
 });
 

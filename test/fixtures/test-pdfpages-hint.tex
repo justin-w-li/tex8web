@@ -1,17 +1,17 @@
-% Pages of a PDF included with pdfpages, with a lastpage hint: every page,
-% and a range to the last page. test/run.mjs also builds this page without
-% shell escape, as with --contain, where the number of pages is not read
-% and the hint gives it. With shell escape, the number read overrides the
-% hint, as in test-pdfpages' run "lastpage". Each run starts with a
-% paragraph "Run name."
+% Pages of a PDF included with pdfpages, with a lastpage hint of 3 for a
+% PDF of 4 pages: every page, and a range to the last page. test/run.mjs
+% also builds this page without shell escape, as with --contain, where the
+% number of pages is not read and the hint gives it, so the last page is 3.
+% With shell escape, the number read overrides the hint, as pdflatex does,
+% and the last page is 4. Each run starts with a paragraph "Run name."
 \documentclass{article}
 \usepackage{pdfpages}
 \begin{document}
 Run dash.
-\includepdf[pages=-,lastpage=4]{test-pdfpages/four}
+\includepdf[pages=-,lastpage=3]{test-pdfpages/four}
 
 Run last.
-\includepdf[pages={2-last},lastpage=4]{test-pdfpages/four}
+\includepdf[pages={2-last},lastpage=3]{test-pdfpages/four}
 
 Run end.
 \end{document}
