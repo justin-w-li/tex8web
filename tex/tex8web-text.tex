@@ -1211,7 +1211,8 @@
       }
     % entry #1 of the lists, page #2. The first picture opens the div; the
     % later ones load only when they near the screen, since each is a page
-    % at 300 dpi. pdfpages ends the paragraph before \AM@output
+    % at 300 dpi (assets.convert gives them their height before they load).
+    % pdfpages ends the paragraph before \AM@output
     % (\AM@SuspendTagging), so the div starts in vertical mode.
     \cs_new_protected:Npn \__web_pdfpages_page:nn #1#2
       {

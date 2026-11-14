@@ -576,6 +576,23 @@ const pdfPagesStacked = `(() => {
   return { checked: pictures.length, wrong };
 })()`;
 const pdfPageCounts = { 'test-pdfpages': 76, 'test-pdfpages-plain': 9, 'test-pdfpages-hint': 7 };
+// Each page of pdfpages that loads only near the screen has its height
+// before it loads: a copy of the picture with no src, put beside it, is as
+// tall as the loaded picture within 1px. (Without JavaScript, Chrome loads
+// lazy pictures at once, so the picture itself has loaded.) Failures: [the
+// picture, its height without src, its height]
+const pdfPagesReserved = `(() => {
+  const pictures = [...document.querySelectorAll('.tex8web-pdfpages > img[loading=lazy]')];
+  const wrong = pictures.flatMap(img => {
+    const copy = img.cloneNode();
+    copy.removeAttribute('src');
+    img.after(copy);
+    const before = copy.getBoundingClientRect().height, after = img.getBoundingClientRect().height;
+    copy.remove();
+    return Math.abs(before - after) > 1 ? [[img.getAttribute('src'), before.toFixed(1), after.toFixed(1)]] : [];
+  });
+  return { checked: pictures.length, wrong };
+})()`;
 
 // Measure literal text against its intended font, including visible spaces.
 // Counts guard the cases; style, weight, and size guard their TeX context.
@@ -1350,6 +1367,11 @@ async function compare(chrome, doc, ok) {
             for (const [name, what] of pages.wrong) problems.push(`${html}: the included page ${name}: ${what}`);
             const phone = await chrome.withPage(pathToFileURL(file).href, { javascript: false, width: 390 }, at => at.evaluate(pdfPagesStacked));
             for (const [name, what] of phone.wrong) problems.push(`${html} at 390px: the included page ${name}: ${what}`);
+            for (const width of [undefined, 390]) {
+              const reserved = await chrome.withPage(pathToFileURL(file).href, { javascript: false, ...width && { width } }, at => at.evaluate(pdfPagesReserved));
+              if (!reserved.checked) problems.push(`${html}: no page of pdfpages loads lazily`);
+              for (const [name, before, after] of reserved.wrong) problems.push(`${html}${width ? ` at ${width}px` : ''}: the included page ${name}: ${before}px tall before it loads, not ${after}px`);
+            }
           }
           if (doc.name in centers) {
             const pictures = await page.evaluate(centered);

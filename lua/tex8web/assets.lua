@@ -423,6 +423,14 @@ function M.inside(path)
   return "tex8web-pictures/" .. hash .. "/" .. parts[#parts]
 end
 
+-- the width and height in pixels of the PNG at path, from its header
+local function png_size(path)
+  local f = assert(io.open(path, "rb"))
+  local header = f:read(24)
+  f:close()
+  return string.unpack(">I4I4", header, 17)
+end
+
 -- converts page page of the PDF or EPS picture src into a PNG in the
 -- build directory, at 300 dpi, with the crop options of html4.4ht's
 -- PdfConvert and EpsConvert, and points img at it. html4.4ht spells the PDF
@@ -460,6 +468,14 @@ function M.convert(src, page, img, context, converted)
   img:set_attribute("data-tex8web-size", nil)
   if converted[path] == nil then converted[path] = M.convert_file(file, page, path, png) end
   if converted[path] and size then M.size(img, path, size, context) end
+  -- (a picture that loads only near the screen, such as a later page of
+  -- pdfpages: its height before it loads, from the PNG's aspect, so that
+  -- the text below does not move when it loads. auto keeps the PNG's own
+  -- aspect once loaded.)
+  if converted[path] and img:get_attribute("loading") == "lazy" then
+    local px, py = png_size(path)
+    dom.add_style(img, ("aspect-ratio:auto %d / %d"):format(px, py))
+  end
 end
 
 -- runs Ghostscript on page page of file into path, unless the PNG there is
@@ -492,10 +508,7 @@ end
 -- come only with keepaspectratio.
 function M.size(img, path, size, context)
   local width, height, scale, factor = size:match("^([^,]+),([^,]+),([^,]+),?([^,]*)$")
-  local f = assert(io.open(path, "rb"))
-  local header = f:read(24)
-  f:close()
-  local px, py = string.unpack(">I4I4", header, 17)
+  local px, py = png_size(path)
   local natural = px / 300 * 72.27 / context.textwidth
   local aspect = px / py
   width, height = tonumber(width), tonumber(height)
