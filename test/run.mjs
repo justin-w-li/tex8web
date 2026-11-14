@@ -386,6 +386,8 @@ const copied = {
     // shows in its place)
     'twin pdf': 80 / 20, 'twin eps': 20 / 40, 'own pdf': 96 / 32, 'own png': 'fixtures/test-pdfpic/own-1.png',
     'own eps': 'fixtures/test-pdfpic/owneps.png',
+    // (a PDF with a 400bp square MediaBox and a CropBox 160bp by 80bp)
+    'pdf cropbox': 160 / 80,
     // (the same name in two parent folders, two copies; the same picture
     // named three ways, one)
     'above graphicspath': 'pdfpic-above/pic.png', 'above again': 'pdfpic-above/pic.png', 'above figure': 'pdfpic-above/pic.png',
@@ -394,6 +396,11 @@ const copied = {
     'above deep': 'pdfpic-above/deep/pic.jpg', 'above space': 'pdfpic-above/two words.png',
     'imported': 'pdfpic-above/shared/shared.png', 'inside': 'fixtures/test-pdfpic/inside.png',
   },
+};
+// converted pictures by alt: the width and height in pixels the PNG must
+// have at 300 dpi, within two pixels
+const pixelSizes = {
+  'test-pdfpic': { 'pdf cropbox': [667, 333] },
 };
 // converted pictures with no space before them in the source, by alt: the
 // page must have none before their <img> either
@@ -428,7 +435,8 @@ const pictures = {
   // (PDF pictures without a .xbb file, sized from the PDF's bounding box in
   // a 345pt text width, for a picture 64bp by 48bp: no size, 3cm high, and
   // half its size; page 2 of a PDF, 120bp wide, with no size; and a quarter
-  // of TeX Live's example-image-a.pdf, 320bp wide. The same picture with a
+  // of TeX Live's example-image-a.pdf, 320bp wide; a PDF with a CropBox
+  // 160bp wide in a MediaBox 400bp wide. The same picture with a
   // space in its name, whose box TeX cannot read, sized from its PNG of 267
   // by 200 pixels at 300 dpi: no size, 3cm high, half its size, and
   // fitted in 5cm by 1cm; in a \scalebox{2}, 1cm high and with no size;
@@ -437,6 +445,7 @@ const pictures = {
   // high, to 3cm wide, and to 3cm by 1cm; 1cm wide in a \scalebox{2})
   'test-pdfpic': [share('pdf natural', '0.1862'), share('pdf height', '0.3299'), share('pdf scale', '0.0931'),
     share('pdf page natural', '0.3491'), share('pdf kpathsea natural', '0.2328'),
+    share('pdf cropbox', '0.4655'),
     share('pdf space natural', '0.1864'), share('pdf space height', '0.3303'), share('pdf space scale', '0.0932'),
     share('pdf space fitted', '0.1101'), share('pdf space scalebox', '0.2203'),
     share('pdf space scalebox natural', '0.3729'), share('pdf space resizebox', '0.2474'),
@@ -2073,6 +2082,11 @@ function check(doc, result, out, aux) {
       if (!data) problems.push(`${alt}: no picture inside the page's folder (src ${shown[alt]})`);
       else if (typeof source === 'number' ? !(Math.abs(pngAspect(data) / source - 1) < 0.03) : !data.equals(readFileSync(join(root, 'test', source)))) {
         problems.push(`${alt}: ${shown[alt]} is not ${typeof source === 'number' ? `a PNG ${source.toFixed(3)} times as wide as high` : `a copy of ${source}`}`);
+      }
+      const pixels = pixelSizes[doc.name]?.[alt];
+      if (data && pixels) {
+        const got = [data.readUInt32BE(16), data.readUInt32BE(20)];
+        if (!pixels.every((px, i) => Math.abs(got[i] - px) <= 2)) problems.push(`${alt}: ${shown[alt]} is ${got.join(' by ')} pixels, not ${pixels.join(' by ')}`);
       }
       // (color types 4 and 6 have an alpha channel: a converted picture has
       // the white background of the PDF's page, so its lines show in dark mode)

@@ -24,8 +24,8 @@
 % side, with no space before them. A PDF and an EPS picture with the same
 % name in one folder, a PDF beside a PNG named as its conversion was
 % (own.pdf and own-1.png), and an EPS beside a PNG of its name, which is
-% shown in its place, as tex4ht does. A picture inside the folder is a
-% guard.
+% shown in its place, as tex4ht does. A PDF whose CropBox is smaller than
+% its MediaBox. A picture inside the folder is a guard.
 % run.mjs builds this page again with \PdfpicAbsolute and \PdfpicAbsolutePdf
 % set to absolute paths of a PNG and a PDF picture.
 \documentclass{article}
@@ -148,6 +148,8 @@ Twin PDF: \includegraphics[alt={twin pdf}, width=2cm]{test-pdfpic/twin.pdf}
 Own PDF: \includegraphics[alt={own pdf}, width=2cm]{test-pdfpic/own.pdf}
 
 Own PNG: \includegraphics[alt={own png}]{test-pdfpic/own-1.png}
+
+Cropped: \includegraphics[alt={pdf cropbox}]{test-pdfpic/crop}
 
 \section{EPS pictures}
 EPS: \includegraphics[alt={eps}, width=2cm]{test-pdfpic/boxeps.eps}
