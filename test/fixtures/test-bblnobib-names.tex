@@ -1,11 +1,11 @@
-% A .bbl without the two .bib files that \bibliography names: one by a
-% path that begins with ../, the other with its .bib extension. natbib's
-% numbers, with hyperref.
+% A .bbl without the three .bib files that \bibliography names: one by a
+% path that begins with ../, one with its .bib extension, and one by a
+% path into a subdirectory. natbib's numbers, with hyperref.
 \documentclass{article}
 \usepackage[numbers]{natbib}
 \usepackage{hyperref}
 \begin{document}
 Citations~\citep{one,two}.
 \bibliographystyle{plainnat}
-\bibliography{../fixtures/test-bblnobib-gone,test-bblnobib-none.bib}
+\bibliography{../fixtures/test-bblnobib-gone,test-bblnobib-none.bib,test-bblnobib-sub/test-bblnobib-gone}
 \end{document}

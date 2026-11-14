@@ -1,7 +1,8 @@
-% biblatex with biber: a .bbl beside, written by biber, and without the
-% .bib that \addbibresource names.
+% biblatex with biber: a .bbl beside, written by biber, with one of the
+% two .bib files that \addbibresource names missing.
 \documentclass{article}
 \usepackage[backend=biber]{biblatex}
+\addbibresource{test-biblatex-authoryear.bib}
 \addbibresource{test-bblnobib-gone.bib}
 \begin{document}
 A citation~\cite{one}.

@@ -581,7 +581,8 @@ const contents = {
   // (a .bbl beside the document, and a .bib that \bibliography or
   // \addbibresource names missing: the citations and entries from that
   // .bbl, as in the PDF. natbib's author-year and numbers with hyperref,
-  // two missing names, one .bib of two, biber, and bibentry)
+  // three missing names, one .bib of two, biber with one .bib of two,
+  // biblatex's bibtex backend, and bibentry)
   'test-bblnobib': [
     /As <a href='#Xone'>One<\/a><span class='tex8web-nbsp'> <\/span>\[<a href='#Xone'>2001<\/a>\] says, and as \[<a href='#Xtwo'>Two<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xtwo'>2002<\/a>\] shows/,
     /See also <\/span><a href='#Xtwo'><span class='cmr-8'>Two<\/span><\/a>/,
@@ -598,13 +599,19 @@ const contents = {
   'test-bblnobib-biber': [
     /A citation<span class='tex8web-nbsp'> <\/span>\[(?:<a id='[^']*'><\/a>)*<a href='#X0-one'>1<\/a>\]/,
     /<dt class='thebibliography' id='X0-one'>/, /Ann One\. <span class='cmti-10'>The First Shipped Entry<\/span>\. A Publisher, 2001\./],
+  'test-bblnobib-blx': [
+    /A citation<span class='tex8web-nbsp'> <\/span>\[(?:<a id='[^']*'><\/a>)*<a href='#X0-one'>1<\/a>\]/,
+    /Ann One\. <span class='cmti-10'>The First Shipped Entry<\/span>\. A Publisher, 2001\./],
   'test-bblnobib-bibentry': [/The entry: <a id='one'><\/a>Ann One\. <span class='cmti-10'>The First Shipped Entry<\/span>\. A Publisher, 2001\./],
-  // (every .bib there, and a stale .bbl beside: the entries from the .bib
+  // (every .bib there, one of them found only by kpathsea in the TeX
+  // distribution, and a stale .bbl beside: the entries from the .bib
   // files, through bibtex, biber, or biblatex's bibtex backend)
   'test-bblnobib-guard': [
-    /<span class='cite'>\[<a href='#Xgroups'>2<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xlattices'>1<\/a>\]<\/span>/,
+    /<span class='cite'>\[<a href='#Xgroups'>3<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xlattices'>1<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xsub'>4<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xarticle-full'>2<\/a>\]<\/span>/,
     /<dd><a id='Xlattices'><\/a>Notes on distributive lattices\./,
-    /<dd><a id='Xgroups'><\/a>Anne Author\. <span class='cmti-10'>Groups and Their Orders<\/span>/, /^(?![^]*Stale)/],
+    /<dd><a id='Xgroups'><\/a>Anne Author\. <span class='cmti-10'>Groups and Their Orders<\/span>/,
+    /<dd><a id='Xsub'><\/a>Sue Sub\. <span class='cmti-10'>An Entry from a Subdirectory<\/span>/,
+    /<dd><a id='Xarticle-full'><\/a>L\[eslie\]<span class='tex8web-nbsp'> <\/span>A\. Aamport\./, /^(?![^]*Stale)/],
   'test-bblnobib-biberguard': [/<a href='#X0-book'>1<\/a>\]/, /A Book with a Title Long Enough to Wrap/, /^(?![^]*Stale)/],
   'test-bblnobib-blxguard': [/<a href='#X0-book'>1<\/a>\]/, /A Book with a Title Long Enough to Wrap/, /^(?![^]*Stale)/],
   // (! active in the preamble: babel's shorthands, in a heading and the

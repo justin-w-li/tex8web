@@ -1,10 +1,11 @@
 % Checks a case the use of a .bbl beside the document must not break:
-% every .bib that \bibliography names is there, one by name and one by a
-% ../ path with its .bib extension. bibtex runs, as latexmk runs it, and
-% the stale .bbl beside is not read.
+% every .bib that \bibliography names is there: one by name, one by a
+% ../ path with its .bib extension, one by a path into a subdirectory,
+% and one that kpathsea finds in the TeX distribution. bibtex runs, as
+% latexmk runs it, and the stale .bbl beside is not read.
 \documentclass{article}
 \begin{document}
-Citations~\cite{groups,lattices}.
+Citations~\cite{groups,lattices,sub,article-full}.
 \bibliographystyle{plain}
-\bibliography{test-bibindex,../fixtures/test-bibpath.bib}
+\bibliography{test-bibindex,../fixtures/test-bibpath.bib,test-bblnobib-sub/test-bblnobib-sub,xampl}
 \end{document}

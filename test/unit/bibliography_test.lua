@@ -3,15 +3,16 @@ local bibliography = require "tex8web.bibliography"
 local files = require "tex8web.files"
 
 -- runs bibliography.run in a new document directory that holds x.bbl
--- with one entry, and whose build directory b holds the given files and
--- the empty x.bbl of an earlier failed run. Returns the .bbl that LaTeX
--- reads next: the build directory's, or else the document's.
+-- with one entry, and whose build directory b holds the given files and,
+-- unless they include one, the empty x.bbl of an earlier failed run.
+-- Checks that neither bibtex nor biber ran, and returns the .bbl that
+-- LaTeX reads next: the build directory's, or else the document's.
 local function rerun(built)
   local doc = os.tmpname()
   os.remove(doc)
   lfs.mkdir(doc)
   lfs.mkdir(doc .. "/b")
-  built["x.bbl"] = ""
+  built["x.bbl"] = built["x.bbl"] or ""
   local f = assert(io.open(doc .. "/x.bbl", "w"))
   f:write("\\begin{thebibliography}{1}\n\\bibitem{one} An entry.\n\\end{thebibliography}\n")
   f:close()
@@ -32,6 +33,7 @@ local function rerun(built)
     lfs.rmdir(dir)
   end
   check(ok, err)
+  for _, line in ipairs(logged) do check(not line:find("bibtex ") and not line:find("biber "), line) end
   return read
 end
 
@@ -57,6 +59,13 @@ return {
   -- .bbl of an earlier run)
   ["bibliography.run: the .bbl beside the document when the .bib is missing"] = function()
     local read = rerun({["x.aux"] = "\\bibstyle{plain}\n\\bibdata{tex8web-missing}\n"})
+    check(read:find("\\bibitem{one}", 1, true), read)
+  end,
+  -- (the build directory's copy of the .bbl beside, from an earlier run,
+  -- before the .bbl beside changed)
+  ["bibliography.run: the changed .bbl beside the document when the .bib is missing"] = function()
+    local read = rerun({["x.aux"] = "\\bibstyle{plain}\n\\bibdata{tex8web-missing}\n",
+      ["x.bbl"] = "\\begin{thebibliography}{1}\n\\bibitem{old} An old entry.\n\\end{thebibliography}\n"})
     check(read:find("\\bibitem{one}", 1, true), read)
   end,
   ["bibliography.run: the .bbl beside the document when biber's .bib is missing"] = function()

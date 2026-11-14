@@ -1,0 +1,10 @@
+% biblatex's bibtex backend: a .bbl beside, without the .bib that
+% \addbibresource names. \bibdata also names the -blx.bib that biblatex
+% writes into the build directory.
+\documentclass{article}
+\usepackage[backend=bibtex]{biblatex}
+\addbibresource{test-bblnobib-gone.bib}
+\begin{document}
+A citation~\cite{one}.
+\printbibliography
+\end{document}
