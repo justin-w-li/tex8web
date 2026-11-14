@@ -814,6 +814,16 @@ const contents = {
     /^(?![^]*<sup class='textsuperscript'>(?:<[^>]*>)*[*†‡])/,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
+  // (revtex4-2's keywords and PACS numbers under the abstract, each shown
+  // only when the paper gives it, as in the PDF)
+  'test-revhead-keys': [
+    /Text of the abstract\.(?:(?!<h3|Text of the body)[^])*<div class='keywords'>(?:(?!<\/div>)[^])*Keywords:(?:(?!<\/div>)[^])*first keyword, second keyword/,
+    /^(?![^]*(?:PACS|class='pacs'))/,
+  ],
+  'test-revhead-nokeys': [
+    /Text of the abstract\.[^]*Text of the body\./,
+    /^(?![^]*(?:PACS|Keywords|class='pacs'|class='keywords'))/,
+  ],
   'test-report': [
     /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
     /<\/nav>(?:(?!<\/nav>)[^])*<div class='tableofcontents'>\s*<span class='lofToc'>/,

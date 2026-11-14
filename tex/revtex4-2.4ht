@@ -78,6 +78,14 @@
 % prl's acknowledgments have no heading, and their contents line writes
 % the anchor that the references' line after them writes again.
 \pend:def\acknowledgments{\acknowledgments@sw{}{\let\addcontentsline\@gobblethree}}
+% revtex4.4ht's title block shows the PACS numbers and the keywords
+% whenever showpacs and showkeys are on, where revtex4-2's shows each
+% only when the paper gives it, so a paper with none shows a lone
+% "Keywords:" line. The title block's group turns each option off when
+% its list is empty, after the abstract and before revtex4.4ht's test.
+\append:def\frontmatter@abstract@produce{%
+ \@ifx@empty\@pacs{\@booleanfalse\showPACS@sw}{}%
+ \@ifx@empty\@keywords{\@booleanfalse\showKEYS@sw}{}}
 % revtex4.4ht sets the page in one column, but the reprint and twocolumn
 % options choose the two-column grid's \close@column as the class loads.
 % Its \onecolumngrid at the end of the document writes a paragraph after
