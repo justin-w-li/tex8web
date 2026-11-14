@@ -1,0 +1,43 @@
+% titlesec's rules at the start of a \titleformat's format: \titlerule,
+% \titlerule with a height, \titlerule* with a text, \titleline, and
+% \titleline* with an alignment, in each heading level, with the option
+% explicit and hyperref. Each heading keeps the font of its format. Also
+% \titlerule* in titletoc's \titlecontents, and \titlerule, \titlerule*,
+% and \titleline as paragraphs of the text, which pdflatex builds.
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage[explicit]{titlesec}
+\usepackage{titletoc}
+\usepackage{hyperref}
+\titleformat{\section}{\titlerule\vspace{.8ex}\Large\bfseries}
+    {\llap{\thesection}}{0.0em}{$\blacktriangle$ #1}
+\titleformat{\subsection}{\titlerule*[1em]{x}\sffamily\itshape\large}
+    {\thesubsection}{1em}{#1}
+\titleformat{\subsubsection}{\titleline*[c]{\hrulefill}\ttfamily\normalsize}
+    {\thesubsubsection}{1em}{#1}
+\titleformat{\paragraph}[runin]{\titlerule[2pt]\sffamily\bfseries}{}{0pt}{#1}
+\titleformat{\subparagraph}[runin]{\titleline[r]{\rule{3em}{1pt}}\itshape}
+    {}{0pt}{#1}
+\titlecontents{section}[1.5em]{}{\contentslabel{1.5em}}{}
+    {\titlerule*[1pc]{.}\contentspage}
+\begin{document}
+\tableofcontents
+\section{Alpha}
+Text after the section.
+\subsection{Beta}
+Text after the subsection.
+\subsubsection{Gamma}
+Text after the subsubsection.
+\paragraph{Delta} Text after the paragraph.
+\subparagraph{Epsilon} Text after the subparagraph.
+\section{Rules in the text}
+Text before the rules.
+
+\titlerule
+
+\titlerule*[1em]{-}
+
+\titleline[c]{Middle}
+
+Text after the rules.
+\end{document}

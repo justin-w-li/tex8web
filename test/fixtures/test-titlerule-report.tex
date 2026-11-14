@@ -1,0 +1,23 @@
+% titlesec's rules in report's headings, without hyperref: a part's and a
+% chapter's display format starting with \titlerule, a chapter's label and
+% after-code with \titlerule, a section's block format ending with
+% \titlerule, and \titleformat* with \titlerule. Each heading keeps the
+% font and alignment of its format.
+\documentclass{report}
+\usepackage{titlesec}
+\titleformat{\part}[display]{\titlerule\filcenter\Huge\scshape}
+    {\partname\ \thepart}{20pt}{}
+\titleformat{\chapter}[display]
+    {\titlerule[1pt]\vspace{1ex}\sffamily\huge\bfseries\filcenter}
+    {\titlerule\vspace{1ex}\chaptertitlename\ \thechapter}{20pt}{}[\titlerule]
+\titleformat{\section}[block]{\Large\bfseries\titlerule}{\thesection}{1em}{}
+\titleformat*{\subsection}{\titlerule\itshape\large}
+\begin{document}
+\part{Beginnings}
+\chapter{Alpha}
+Text after the chapter.
+\section{Beta}
+Text after the section.
+\subsection{Gamma}
+Text after the subsection.
+\end{document}
