@@ -1,0 +1,11 @@
+% A revtex4-2 article. revtex4-2's \l@f@section, unlike revtex4's, sets
+% no bold, so its section entries have normal weight. The table of
+% contents is measured as the package loads, so the page fails without a
+% heading. It has none: revtex4-2's headings give repeated ids.
+\documentclass{revtex4-2}
+\begin{document}
+\title{Revtoc weight}
+\author{Someone}
+\maketitle
+Text of the article.
+\end{document}
