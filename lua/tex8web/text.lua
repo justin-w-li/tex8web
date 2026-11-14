@@ -665,13 +665,25 @@ function M.pictures(document, context)
     if dom.has_class(el, "rotatebox") then depths[el] = #scales end
     if dom.has_class(el, "tex8web-scale") then
       local x, y = scales[#scales][1], scales[#scales][2]
-      scales[#scales + 1] = {x * tonumber(el:get_attribute("data-x")), y * tonumber(el:get_attribute("data-y"))}
+      scales[#scales + 1] = {x * tonumber(el:get_attribute("data-x")), y * tonumber(el:get_attribute("data-y")),
+        w = tonumber(el:get_attribute("data-w")), h = tonumber(el:get_attribute("data-h")), imgs = {}}
       marks[#marks + 1] = el
     elseif dom.has_class(el, "tex8web-scale-end") then
+      -- (a \resizebox that holds one converted picture whose bounding box
+      -- TeX could not read: the size asked for, in place of the factor,
+      -- which comes from a 72bp square)
+      local box = scales[#scales]
+      local img = #box.imgs == 1 and box.imgs[1]
+      if (box.w or box.h) and img and img:get_attribute("data-tex8web-size") then
+        local share = string.format("%.4f", (box.w or box.h) / context.textwidth)
+        img:set_attribute("data-tex8web-size", string.format("%s,%s,1,%.4f",
+          box.w and share or "-", box.w and "-" or share, math.abs(scales[#scales - 1][1])))
+      end
       scales[#scales] = nil
       marks[#marks + 1] = el
     end
     if el:get_element_name() ~= "img" then return end
+    for level = 2, #scales do table.insert(scales[level].imgs, el) end
     local x, y = math.abs(scales[#scales][1]), math.abs(scales[#scales][2])
     local src = el:get_attribute("src") or ""
     if src:sub(1, #context.input) == context.input and src:sub(#context.input + 1):match("^%d+x%.svg$") then

@@ -1212,10 +1212,34 @@
     \cs_set_eq:NN \__web_scale_end: \Gscale@end
     \cs_set:Npn \Gscale@start
       {
-        \HCode{<span~class="tex8web-scale"~data-x="\Gscale@x"~data-y="\Gscale@y"></span>}
+        \HCode{<span~class="tex8web-scale"~data-x="\Gscale@x"~data-y="\Gscale@y"~\g__web_target_tl></span>}
+        \tl_gclear:N \g__web_target_tl
         \__web_scale_start:
       }
     \cs_set:Npn \Gscale@end { \__web_scale_end: \HCode{<span~class="tex8web-scale-end"></span>} }
+  }
+
+% \resizebox: the mark also carries the width or else the height asked
+% for, in pt. A converted picture whose bounding box TeX could not read is
+% a 72bp square in the DVI (graphics.sty), so the factor is wrong for it,
+% and text.pictures gives it this size when it is alone in the box. The
+% size is set after the box's content, so that a box inside it takes its
+% own first.
+\tl_new:N \g__web_target_tl
+\cs_new:Npn \__web_target:nn #1#2
+  { \tl_gset:Nx \g__web_target_tl { data-#1="\dim_to_decimal:n {#2}" } }
+\cs_if_exist:NT \Gscale@box@dd
+  {
+    \cs_set_eq:NN \__web_resize_dd:nnn \Gscale@box@dd
+    \cs_set_eq:NN \__web_resize_dddd:nnnnn \Gscale@box@dddd
+    \cs_set:Npn \Gscale@box@dd #1#2#3
+      {
+        \tl_if_eq:nnTF {#2} { \width }
+          { \__web_resize_dd:nnn {#1} {#2} { #3 \__web_target:nn { w } {#1} } }
+          { \__web_resize_dd:nnn {#1} {#2} { #3 \__web_target:nn { h } {#1} } }
+      }
+    \cs_set:Npn \Gscale@box@dddd #1#2#3#4#5
+      { \__web_resize_dddd:nnnnn {#1} {#2} {#3} {#4} { #5 \__web_target:nn { w } {#1} } }
   }
 
 % a minipage, or subcaption's subfigure (a minipage inside), as wide as in

@@ -439,12 +439,16 @@ const pictures = {
   // of TeX Live's example-image-a.pdf, 320bp wide. The same picture with a
   // space in its name, whose box TeX cannot read, sized from its PNG of 267
   // by 200 pixels at 300 dpi: no size, 3cm high, half its size, and
-  // fitted in 5cm by 1cm; in a \scalebox{2}, 1cm high and with no size)
+  // fitted in 5cm by 1cm; in a \scalebox{2}, 1cm high and with no size;
+  // in a \resizebox to 3cm wide, to 1cm high, to half the text width, and
+  // to 3cm by 1cm inside a \scalebox{.5})
   'test-pdfpic': [share('pdf natural', '0.1862'), share('pdf height', '0.3299'), share('pdf scale', '0.0931'),
     share('pdf page natural', '0.3491'), share('pdf kpathsea natural', '0.2328'),
     share('pdf space natural', '0.1864'), share('pdf space height', '0.3303'), share('pdf space scale', '0.0932'),
     share('pdf space fitted', '0.1101'), share('pdf space scalebox', '0.2203'),
-    share('pdf space scalebox natural', '0.3729')],
+    share('pdf space scalebox natural', '0.3729'), share('pdf space resizebox', '0.2474'),
+    share('pdf space resizebox height', '0.1101'), share('pdf space resizebox half', '0.5'),
+    share('pdf space resizebox scaled', '0.1237')],
   // (the graphics package: a picture without a size or a .xbb, left to tex4ht)
   'test-graphics-only': [/<img (?:(?!style=)[^>])*\/>/],
   // (pictures over a PDF or PNG without its .xbb file, and one with it:

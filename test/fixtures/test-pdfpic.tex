@@ -7,12 +7,14 @@
 % \graphicspath, in italic, in a footnote, in a link, in a minipage, and in a
 % figure with a caption. PDF pictures with a space in the name, whose
 % bounding box TeX cannot read: with a width, with no size, with a height or
-% a scale alone, with a width and height kept in proportion, and in a
-% \scalebox with a height and with no size. EPS pictures, converted by
-% Ghostscript. Pictures named with ../ (by \graphicspath, by name, two levels
-% up, the same name in two parent folders, a name with a space, PNG, JPEG,
-% PDF, and EPS), the same picture twice, an import.sty chapter, an \import
-% from a parent folder, and epsfig. A PDF beside the document, one found by kpathsea, one with the name
+% a scale alone, with a width and height kept in proportion, in a \scalebox
+% with a height and with no size, and in a \resizebox to a width, to a
+% height, to half the text width, and to both inside a \scalebox. EPS
+% pictures, converted by Ghostscript. Pictures named with ../ (by
+% \graphicspath, by name, two levels up, the same name in two parent
+% folders, a name with a space, PNG, JPEG, PDF, and EPS), the same picture
+% twice, an import.sty chapter, an \import from a parent folder, and epsfig.
+% A PDF beside the document, one found by kpathsea, one with the name
 % of another in another folder, one with dots in its name, in display math,
 % and in a subfigure; an EPS picture without its extension. A PDF and an EPS
 % picture in parentheses, and two PDF pictures half the line wide side by
@@ -50,7 +52,8 @@ Page no size: \includegraphics[alt={pdf page natural}, page=2]{test-pdfpic/pages
 
 TeX Live no size: \includegraphics[alt={pdf kpathsea natural}, scale=.25]{example-image-a.pdf}
 
-Options: \includegraphics[alt={pdf options}, trim=1mm 1mm 1mm 1mm, clip, angle=90, width=1cm]{test-pdfpic/box}
+Options:
+\includegraphics[alt={pdf options}, trim=1mm 1mm 1mm 1mm, clip, angle=90, width=1cm]{test-pdfpic/box}
 
 Path: \includegraphics[alt={pdf graphicspath}, width=3cm]{inner}
 
@@ -62,11 +65,26 @@ Space height: \includegraphics[alt={pdf space height}, height=3cm]{"test-pdfpic/
 
 Space scale: \includegraphics[alt={pdf space scale}, scale=.5]{"test-pdfpic/wide fig"}
 
-Space fitted: \includegraphics[alt={pdf space fitted}, width=5cm, height=1cm, keepaspectratio]{"test-pdfpic/wide fig"}
+Space fitted:
+\includegraphics[alt={pdf space fitted}, width=5cm, height=1cm, keepaspectratio]{"test-pdfpic/wide fig"}
 
-Space scalebox: \scalebox{2}{\includegraphics[alt={pdf space scalebox}, height=1cm]{"test-pdfpic/wide fig"}}
+Space scalebox:
+\scalebox{2}{\includegraphics[alt={pdf space scalebox}, height=1cm]{"test-pdfpic/wide fig"}}
 
-Space scalebox no size: \scalebox{2}{\includegraphics[alt={pdf space scalebox natural}]{"test-pdfpic/wide fig"}}
+Space scalebox no size:
+\scalebox{2}{\includegraphics[alt={pdf space scalebox natural}]{"test-pdfpic/wide fig"}}
+
+Space resizebox:
+\resizebox{3cm}{!}{\includegraphics[alt={pdf space resizebox}, height=1cm]{"test-pdfpic/wide fig"}}
+
+Space resizebox height:
+\resizebox{!}{1cm}{\includegraphics[alt={pdf space resizebox height}]{"test-pdfpic/wide fig"}}
+
+Space resizebox half:
+\resizebox{.5\textwidth}{!}{\includegraphics[alt={pdf space resizebox half}]{"test-pdfpic/wide fig"}}
+
+Space resizebox scaled:
+\scalebox{.5}{\resizebox{3cm}{1cm}{\includegraphics[alt={pdf space resizebox scaled}]{"test-pdfpic/wide fig"}}}
 
 \textit{Italic: \includegraphics[alt={pdf italic}, width=1cm]{test-pdfpic/box}}
 and a footnote.\footnote{Footnote: \includegraphics[alt={pdf footnote}, width=1cm]{test-pdfpic/box}}
@@ -103,7 +121,8 @@ Dots: \includegraphics[alt={pdf dots}, width=2cm]{test-pdfpic/fig.v2.pdf}
 
 Parentheses: (\includegraphics[alt={pdf parentheses}, width=1cm]{test-pdfpic/box})
 
-\noindent\includegraphics[alt={pdf half one}, width=.5\linewidth]{test-pdfpic/box}\includegraphics[alt={pdf half two}, width=.5\linewidth]{test-pdfpic/box}
+\noindent\includegraphics[alt={pdf half one}, width=.5\linewidth]{test-pdfpic/box}%
+\includegraphics[alt={pdf half two}, width=.5\linewidth]{test-pdfpic/box}
 
 Twin PDF: \includegraphics[alt={twin pdf}, width=2cm]{test-pdfpic/twin.pdf}
 
