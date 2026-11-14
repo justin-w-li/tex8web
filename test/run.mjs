@@ -456,6 +456,24 @@ const pixelSizes = {
 const unspaced = {
   'test-pdfpic': ['pdf link', 'pdf parentheses', 'pdf half one', 'pdf half two', 'eps parentheses'],
 };
+// Pages of a PDF included with pdfpages, by the paragraph "Run name." before
+// them: the pages the PDF shows there, in order, each a picture inside the
+// page's folder before the next run. The PDFs in test/fixtures/test-pdfpages/
+// have pages 30bp high and of widths that name them: page k of four.pdf is
+// 30(k + 1)bp wide, of two.pdf 30(k + 5)bp, and of three.pdf 30(k + 7)bp.
+const pdfPages = {
+  'test-pdfpages': {
+    dash: 'four 1, four 2, four 3, four 4', closed: 'four 1, four 2, four 3', 'open end': 'four 3, four 4',
+    'open start': 'four 1, four 2', last: 'four 4', reversed: 'four 4, four 3, four 2',
+    'last to first': 'four 4, four 3, four 2, four 1', blank: 'four 1, four 4', repeats: 'four 2, four 4, four 1, four 2',
+    list: 'four 3, four 1', one: 'four 2', default: 'four 1', extension: 'four 1, four 2, four 3, four 4',
+    graphicspath: 'three 1, three 2, three 3', merge: 'four 2, four 3, two 1, two 2',
+    doublepages: 'four 1, four 1, four 2, four 2', duplicatepages: 'four 2, four 2, four 2, four 3, four 3, four 3',
+    lastpage: 'four 1, four 2, four 3, four 4', openright: 'two 1, two 2', set: 'two 1, two 2',
+  },
+  'test-pdfpages-plain': { dash: 'four 1, four 2, four 3, four 4', closed: 'four 2, four 3', merge: 'two 1, two 2, four 4' },
+};
+const pdfPageAspect = { four: 1, two: 5, three: 7 };
 // the file a src names in the page's folder, or null if the src leaves it
 const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
 // a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
@@ -2302,6 +2320,19 @@ function check(doc, result, out, aux) {
   for (const alt of unspaced[doc.name] ?? []) {
     if (flat.includes(` <img alt='${alt}'`)) problems.push(`${alt}: a space before the picture`);
   }
+  for (const [run, pages] of Object.entries(pdfPages[doc.name] ?? {})) {
+    const part = flat.match(new RegExp(`Run ${run}\\.([^]*?)Run `))?.[1];
+    if (part === undefined) { problems.push(`no run ${run}`); continue; }
+    const want = pages.split(', ').map(page => { const [file, k] = page.split(' '); return Number(k) + pdfPageAspect[file]; });
+    const got = [...part.matchAll(/<img [^>]*>/g)].map(([tag]) => {
+      const file = inPage(out, tag.match(/ src='([^']*)'/)?.[1]);
+      return file && existsSync(file) ? Math.round(pngAspect(readFileSync(file)) * 10) / 10 : NaN;
+    });
+    if (got.join() !== want.join()) {
+      problems.push(`run ${run}: pictures ${got.join(', ')} times as wide as high, not ${want.join(', ')} (${pages})`);
+    }
+  }
+  if (pdfPages[doc.name] && /is not a whole number/.test(result.log)) problems.push('a page of an included PDF is not a whole number');
   if (pictureSizes[doc.name]) {
     const [ext, sizes] = pictureSizes[doc.name];
     const measure = after => {
@@ -2357,7 +2388,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, expected, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

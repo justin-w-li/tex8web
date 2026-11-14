@@ -1,0 +1,17 @@
+% Pages of a PDF included with pdfpages, without hyperref: every page, a
+% range, and \includepdfmerge with a range for each document. Each run
+% starts with a paragraph "Run name." test-pdfpages has more forms.
+\documentclass{article}
+\usepackage{pdfpages}
+\begin{document}
+Run dash.
+\includepdf[pages=-]{test-pdfpages/four}
+
+Run closed.
+\includepdf[pages={2-3}]{test-pdfpages/four}
+
+Run merge.
+\includepdfmerge{test-pdfpages/two,-,test-pdfpages/four,last}
+
+Run end.
+\end{document}

@@ -1,0 +1,81 @@
+% Pages of a PDF included with pdfpages, each converted to a picture: the
+% page shows the pages the PDF shows, in its order. The PDFs in
+% test-pdfpages/ have pages of different widths and labels ("four 1"), so
+% each picture names its page. Each run starts with a paragraph "Run name."
+% \includepdf with every page (pages=-), a closed range, an open end, an
+% open start, the last page, a reversed range, last to the first page, a
+% blank page in a list (no picture), a list with repeats and the last page,
+% a list, one page, no pages option (page 1), the name with .pdf, a PDF
+% found through \graphicspath, \includepdfmerge with a range for each
+% document, doublepages, duplicatepages, a lastpage hint, openright (a
+% blank page, no picture), and \includepdfset{pages=-}. With hyperref;
+% test-pdfpages-plain has the same pages without it.
+\documentclass{article}
+\usepackage{pdfpages}
+\usepackage{hyperref}
+\graphicspath{{test-pdfpages/sub/}}
+\begin{document}
+\section{Included pages}
+Run dash.
+\includepdf[pages=-]{test-pdfpages/four}
+
+Run closed.
+\includepdf[pages={1-3}]{test-pdfpages/four}
+
+Run open end.
+\includepdf[pages={3-}]{test-pdfpages/four}
+
+Run open start.
+\includepdf[pages={-2}]{test-pdfpages/four}
+
+Run last.
+\includepdf[pages=last]{test-pdfpages/four}
+
+Run reversed.
+\includepdf[pages={4-2}]{test-pdfpages/four}
+
+Run last to first.
+\includepdf[pages={last-1}]{test-pdfpages/four}
+
+Run blank.
+\includepdf[pages={1,{},4}]{test-pdfpages/four}
+
+Run repeats.
+\includepdf[pages={2,last,1-2}]{test-pdfpages/four}
+
+Run list.
+\includepdf[pages={3,1}]{test-pdfpages/four}
+
+Run one.
+\includepdf[pages=2]{test-pdfpages/four}
+
+Run default.
+\includepdf{test-pdfpages/four}
+
+Run extension.
+\includepdf[pages=-]{test-pdfpages/four.pdf}
+
+Run graphicspath.
+\includepdf[pages=-]{three}
+
+Run merge.
+\includepdfmerge{test-pdfpages/four,2-3,test-pdfpages/two,-}
+
+Run doublepages.
+\includepdf[pages={1-2},doublepages]{test-pdfpages/four}
+
+Run duplicatepages.
+\includepdf[pages={2-3},duplicatepages=3]{test-pdfpages/four}
+
+Run lastpage.
+\includepdf[pages=-,lastpage=2]{test-pdfpages/four}
+
+Run openright.
+\includepdf[pages={1-2},openright]{test-pdfpages/two}
+
+Run set.
+\includepdfset{pages=-}
+\includepdf{test-pdfpages/two}
+
+Run end.
+\end{document}
