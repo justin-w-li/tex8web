@@ -280,4 +280,34 @@ return {
     os.execute("rm -rf '" .. dir .. "'")
     check(ok, err)
   end,
+
+  -- (Ghostscript is not run: os.execute fails and writes nothing)
+  ["assets.convert: a failed conversion used twice with no size, one error and no size read"] = function()
+    local dir = os.tmpname()
+    os.remove(dir)
+    lfs.mkdir(dir)
+    local picture = dir .. "/pic.pdf"
+    local f = assert(io.open(picture, "w"))
+    f:write("%PDF")
+    f:close()
+    local execute, make, errors = os.execute, Make, #logged
+    Make = {add_file = function() end}
+    os.execute = function() return 1 end
+    local converted = {}
+    local ok, err = pcall(function()
+      for _ = 1, 2 do
+        local img = dom.html_parse("<html><body><img src='x' data-tex8web-size='-,-,-'/></body></html>")
+          :query_selector("img")[1]
+        assets.convert(picture, "1", img, {dir = dir, textwidth = 345}, converted)
+      end
+    end)
+    os.execute, Make = execute, make
+    local failed = 0
+    for i = errors + 1, #logged do
+      if logged[i]:find("^error: Ghostscript could not convert") then failed = failed + 1 end
+    end
+    os.execute("rm -rf '" .. dir .. "'")
+    check(ok, err)
+    equal(failed, 1)
+  end,
 }

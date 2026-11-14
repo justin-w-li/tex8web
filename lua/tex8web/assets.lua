@@ -430,8 +430,10 @@ end
 -- for (data-tex8web-size: a width and a height as shares of the text
 -- width, - for none, and a scale, between commas), which is applied to the
 -- PNG's size.
--- converted lists the PNGs already made for the page. A PNG left by an
--- earlier build, newer than its picture, is kept, as html4.4ht kept it.
+-- converted holds, for each PNG of the page already tried, whether its
+-- conversion worked, so that a failed one is tried and reported once. A
+-- PNG left by an earlier build, newer than its picture, is kept, as
+-- html4.4ht kept it.
 -- The PNG has a white background, as the picture has on the PDF's page, so
 -- that its lines show in dark mode too. A page that is not a whole number
 -- (graphicx's page=, which goes into the command and the PNG's name) is
@@ -449,11 +451,8 @@ function M.convert(src, page, img, context, converted)
   img:set_attribute("src", png)
   local size = img:get_attribute("data-tex8web-size")
   img:set_attribute("data-tex8web-size", nil)
-  if not converted[path] then
-    converted[path] = true
-    if not M.convert_file(file, page, path, png) then return end
-  end
-  if size then M.size(img, path, size, context) end
+  if converted[path] == nil then converted[path] = M.convert_file(file, page, path, png) end
+  if converted[path] and size then M.size(img, path, size, context) end
 end
 
 -- runs Ghostscript on page page of file into path, unless the PNG there is
