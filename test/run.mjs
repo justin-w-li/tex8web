@@ -584,6 +584,13 @@ const titles = {
     titleHead("<div class='flushright'>", 'Worksheet</div>')],
   'test-titlepar-memoir': [/<title>\s*First\s+Second\s+Third\s*<\/title>/,
     /<meta content='First\s+Second\s+Third' property='og:title' \/>/, titleHead('First', 'Second', 'Third')],
+  // (without \maketitle, and in the sidebar's link to the top)
+  'test-titlepar-toc': [/<title>Main Title<\/title>/, /<meta content='Main Title' property='og:title' \/>/,
+    /<a class='tex8web-toc-doctitle' href='#'>Main Title<\/a>/],
+  // (scrreprt writes the title twice, from its title page and from
+  // \maketitle, so only the start is checked)
+  'test-titlepar-scrreprt': [/<title>Main\s+Title\s+Robust[,<]/, /<meta content='Main\s+Title\s+Robust[,']/,
+    titleHead('Main', 'Title', 'Robust')],
 };
 
 // \today, at the fixed date set in lib/build.mjs

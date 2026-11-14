@@ -1,0 +1,12 @@
+% A \par in \title, in a document without \maketitle and with a table of
+% contents: the page's title, and the sidebar's link to the top, hold the
+% text with a space for each \par.
+\documentclass{article}
+\title{Main\par Title}
+\begin{document}
+\tableofcontents
+\section{One}
+Some text.
+\section{Two}
+More text.
+\end{document}

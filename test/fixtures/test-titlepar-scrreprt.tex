@@ -1,0 +1,11 @@
+% A \par in \title in scrreprt, whose title page writes the title through
+% a tex4ht configuration of its own, and from a robust macro. The document
+% builds, and the page's title holds the text.
+\documentclass{scrreprt}
+\DeclareRobustCommand\br{\par}
+\title{Main\par Title\br Robust}
+\author{Someone}
+\begin{document}
+\maketitle
+Some text.
+\end{document}
