@@ -512,6 +512,10 @@ const checkPdfPages = (runs, flat, out) => {
     if (block === undefined || block.replace(/<img [^>]*>/g, '').trim() || part.split(/<div class=['"]tex8web-pdfpages['"]>/).length !== 2) {
       problems.push(`run ${run}: the pictures are not alone in one div.tex8web-pdfpages`);
     }
+    // (each page is a picture at 300 dpi, so every one after the first
+    // loads only when it nears the screen)
+    const lazy = [...part.matchAll(/<img [^>]*>/g)].map(([tag]) => / loading=['"]lazy['"]/.test(tag));
+    if (lazy.some((l, i) => l !== (i > 0))) problems.push(`run ${run}: loading='lazy' on pictures ${lazy.map(Number).join(', ')}, not on every one after the first`);
   }
   if (/<img /.test(flat.split('Run dash.')[0]) || /<img /.test(flat.split('Run end.')[1] ?? '')) problems.push('a picture before the first run or after the run end');
   return problems;
@@ -2554,6 +2558,30 @@ if (hint) jobs.push(async () => {
   const written = pdfpagesOnly();
   if (written.length) problems.push(`files written beside the included PDFs: ${written.join(', ')}`);
   report(`${hint.name} (without shell escape)`, problems);
+});
+
+// test-pdfpages-hint built again with \PdfpagesMissing defined: its run
+// "missing" includes a PDF that does not exist, so pdfpages' error is in
+// the TeX log, and the run has no picture, as no page is read.
+if (hint) jobs.push(async () => {
+  const top = join(testDir(hint), 'missing'), out = join(top, 'html'), aux = join(top, 'aux');
+  rmSync(top, { recursive: true, force: true });
+  mkdirSync(top, { recursive: true });
+  const cfg = join(top, 'missing.cfg');
+  writeFileSync(cfg, '\\def\\PdfpagesMissing{}\n' + readFileSync(hint.cfg, 'utf8'));
+  await build({ ...hint, cfg }, out, aux);
+  const problems = [];
+  const page = join(out, 'test-pdfpages-hint.html'), texLog = join(aux, 'test-pdfpages-hint.log');
+  if (!existsSync(texLog) || !readFileSync(texLog, 'latin1').includes('Cannot find file')) problems.push("no pdfpages error in the TeX log");
+  if (!existsSync(page)) problems.push('no page');
+  else {
+    const flat = readFileSync(page, 'utf8').replace(/[^\S ]+/g, ' ');
+    const part = flat.match(/Run missing\.([^]*?)Run /)?.[1];
+    if (part === undefined) problems.push('no run missing');
+    else if (/<img /.test(part)) problems.push(`run missing: ${part.match(/<img /g).length} pictures, not none`);
+    problems.push(...checkPdfPages(pdfPages[hint.name], flat, out));
+  }
+  report(`${hint.name} (a missing PDF)`, problems);
 });
 
 // test-glossaries-ist built over a build directory that holds another

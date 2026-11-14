@@ -1187,28 +1187,48 @@
             \ior_close:N \g__web_pdfpages_ior
           }
       }
-    \bool_new:N \l__web_pdfpages_open_bool
+    \bool_new:N \g__web_pdfpages_open_bool
+    % (pdfpages' \AM@output does nothing when the file is missing, and the
+    % document list then holds \relax for each page. pdfpages marks the
+    % missing file by setting \AM@filenotfound to \relax, which
+    % \cs_if_exist:N takes as not defined, so \ifdefined tests it here.)
     \cs_set_protected:Npn \AM@output #1
+      {
+        \if_cs_exist:N \AM@filenotfound
+        \else:
+          \exp_after:wN \__web_pdfpages_output:
+        \fi:
+      }
+    \cs_new_protected:Npn \__web_pdfpages_output:
       {
         \seq_set_split:NnV \l__web_pdfpages_docs_seq { , } \AM@doclist
         \seq_set_split:NnV \l__web_pdfpages_seq { , } \AM@pagelist
-        \bool_set_false:N \l__web_pdfpages_open_bool
+        \bool_gset_false:N \g__web_pdfpages_open_bool
         \seq_map_indexed_inline:Nn \l__web_pdfpages_seq
-          {
-            \tl_if_empty:nF {##2}
-              {
-                \bool_if:NF \l__web_pdfpages_open_bool
-                  {
-                    \bool_set_true:N \l__web_pdfpages_open_bool
-                    \mode_if_vertical:T { \IgnorePar } \EndP
-                    \HCode { <div~class="tex8web-pdfpages"> } \IgnorePar
-                  }
-                \tl_set:Ne \l__web_pdfpages_doc_tl { \seq_item:Nn \l__web_pdfpages_docs_seq {##1} }
-                \includegraphics [ page = ##2 ] { \l__web_pdfpages_doc_tl }
-              }
-          }
-        \bool_if:NT \l__web_pdfpages_open_bool
+          { \tl_if_empty:nF {##2} { \__web_pdfpages_page:nn {##1} {##2} } }
+        \bool_if:NT \g__web_pdfpages_open_bool
           { \par \HCode { </div> } }
+      }
+    % entry #1 of the lists, page #2. The first picture opens the div; the
+    % later ones load only when they near the screen, since each is a page
+    % at 300 dpi. pdfpages ends the paragraph before \AM@output
+    % (\AM@SuspendTagging), so the div starts in vertical mode.
+    \cs_new_protected:Npn \__web_pdfpages_page:nn #1#2
+      {
+        \group_begin:
+        \bool_if:NTF \g__web_pdfpages_open_bool
+          {
+            \cs_set_eq:Nc \__web_pdfpages_dim: { a:Gin-dim }
+            \cs_set:cpn { a:Gin-dim } { loading="lazy"~\__web_pdfpages_dim: }
+          }
+          {
+            \bool_gset_true:N \g__web_pdfpages_open_bool
+            \IgnorePar \EndP
+            \HCode { <div~class="tex8web-pdfpages"> } \IgnorePar
+          }
+        \tl_set:Ne \l__web_pdfpages_doc_tl { \seq_item:Nn \l__web_pdfpages_docs_seq {#1} }
+        \includegraphics [ page = #2 ] { \l__web_pdfpages_doc_tl }
+        \group_end:
       }
   }
   { }

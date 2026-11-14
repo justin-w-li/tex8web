@@ -4,6 +4,8 @@
 % number of pages is not read and the hint gives it, so the last page is 3.
 % With shell escape, the number read overrides the hint, as pdflatex does,
 % and the last page is 4. Each run starts with a paragraph "Run name."
+% test/run.mjs builds it again with \PdfpagesMissing defined, for a run
+% that includes a PDF that does not exist: pdfpages' error, and no picture.
 \documentclass{article}
 \usepackage{pdfpages}
 \begin{document}
@@ -13,5 +15,10 @@ Run dash.
 Run last.
 \includepdf[pages={2-last},lastpage=3]{test-pdfpages/four}
 
+\ifdefined\PdfpagesMissing
+Run missing.
+\includepdf[pages={1-5},lastpage=5]{test-pdfpages/missing}
+
+\fi
 Run end.
 \end{document}
