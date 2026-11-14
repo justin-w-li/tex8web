@@ -23,19 +23,26 @@ end
 -- x.bbl with one entry and the files in beside (by paths from doc, which
 -- may lead into a subdirectory or to doc's parent). The build directory
 -- doc/b holds the files in built and, unless they include one, the empty
--- x.bbl of an earlier failed run. bibtex and biber are not started.
--- Returns the .bbl that LaTeX reads next (the build directory's, or else
--- the document's), and the command that started bibtex or biber, if any.
-local function run_beside(built, beside)
+-- x.bbl of an earlier failed run. If builddir is given, it returns, from
+-- doc's path, the name that bibliography.run gets for doc itself as its
+-- build directory, which then holds the files in built. bibtex and biber
+-- are not started. Returns the .bbl that LaTeX reads next (the build
+-- directory's, or else the document's), and the command that started
+-- bibtex or biber, if any.
+local function run_beside(built, beside, builddir)
   local root = os.tmpname()
   os.remove(root)
   lfs.mkdir(root)
   local doc = root .. "/doc"
   lfs.mkdir(doc)
-  lfs.mkdir(doc .. "/b")
-  built["x.bbl"] = built["x.bbl"] or ""
+  local out = doc
+  if not builddir then
+    out = doc .. "/b"
+    lfs.mkdir(out)
+    built["x.bbl"] = built["x.bbl"] or ""
+  end
   write(doc .. "/x.bbl", "\\begin{thebibliography}{1}\n\\bibitem{one} An entry.\n\\end{thebibliography}\n")
-  for name, text in pairs(built) do write(doc .. "/b/" .. name, text) end
+  for name, text in pairs(built) do write(out .. "/" .. name, text) end
   for name, text in pairs(beside or {}) do
     local sub = name:match("^(.*)/")
     if sub then lfs.mkdir(doc .. "/" .. sub) end
@@ -44,18 +51,18 @@ local function run_beside(built, beside)
   local back, execute, command = lfs.currentdir(), os.execute, nil
   os.execute = function(c) command = c return 0 end
   lfs.chdir(doc)
-  local ok, err = pcall(bibliography.run, {builddir = "b", input = "x"})
+  local ok, err = pcall(bibliography.run, {builddir = builddir and builddir(doc) or "b", input = "x"})
   lfs.chdir(back)
   os.execute = execute
-  local read = files.read(doc .. "/b/x.bbl") or files.read(doc .. "/x.bbl")
+  local read = files.read(out .. "/x.bbl") or files.read(doc .. "/x.bbl")
   remove(root)
   check(ok, err)
   return read, command
 end
 
 -- run_beside, with a check that bibtex and biber were skipped
-local function skipped(built, beside)
-  local read, command = run_beside(built, beside)
+local function skipped(built, beside, builddir)
+  local read, command = run_beside(built, beside, builddir)
   check(not command, command)
   return read
 end
@@ -135,6 +142,11 @@ return {
       {["refs.bltxml"] = "<entries/>\n"})
     check(command and command:find("^biber "), command)
   end,
+  ["bibliography.run: biber with a glob pattern"] = function()
+    local _, command = run_beside({["x.aux"] = "", ["x.bcf"] = bcf({'datatype="bibtex" glob="true"', "bibs/*.bib"})},
+      {["bibs/a.bib"] = entry})
+    check(command and command:find("^biber "), command)
+  end,
   -- (a .bib that filecontents wrote into the build directory, where
   -- kpsewhich from the document's directory does not find it)
   ["bibliography.run: biber with a .bib in the build directory"] = function()
@@ -151,28 +163,9 @@ return {
   -- (a build directory that names the document's own directory, by ./ and
   -- by its absolute path: the .bbl beside stays when a .bib is missing)
   ["bibliography.run: the .bbl beside the document when the build directory is its directory"] = function()
-    for _, form in ipairs({"./", "absolute"}) do
-      local doc = os.tmpname()
-      os.remove(doc)
-      lfs.mkdir(doc)
-      write(doc .. "/x.aux", "\\bibstyle{plain}\n\\bibdata{tex8web-missing}\n")
-      write(doc .. "/x.bbl", "\\begin{thebibliography}{1}\n\\bibitem{one} An entry.\n\\end{thebibliography}\n")
-      local back, execute, command = lfs.currentdir(), os.execute, nil
-      os.execute = function(c) command = c return 0 end
-      lfs.chdir(doc)
-      local ok, err = pcall(bibliography.run, {builddir = form == "./" and "./" or lfs.currentdir(), input = "x"})
-      lfs.chdir(back)
-      os.execute = execute
-      local read = files.read(doc .. "/x.bbl") or ""
-      remove(doc)
-      check(ok, err)
-      check(not command, command)
-      check(read:find("\\bibitem{one}", 1, true), form .. ": " .. read)
+    for _, builddir in ipairs({function() return "./" end, function(doc) return doc end}) do
+      local read = skipped({["x.aux"] = "\\bibstyle{plain}\n\\bibdata{tex8web-missing}\n"}, nil, builddir)
+      check(read:find("\\bibitem{one}", 1, true), read)
     end
-  end,
-  ["bibliography.run: biber with a glob pattern"] = function()
-    local _, command = run_beside({["x.aux"] = "", ["x.bcf"] = bcf({'datatype="bibtex" glob="true"', "bibs/*.bib"})},
-      {["bibs/a.bib"] = entry})
-    check(command and command:find("^biber "), command)
   end,
 }
