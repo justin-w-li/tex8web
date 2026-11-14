@@ -72,11 +72,17 @@
 \fi
 % html4.4ht's listings-init hook sets \ttfamily after basicstyle. An
 % inline listing keeps the font of basicstyle, as in the PDF, so the
-% hook is redefined within the \lstinline group only.
+% hook is redefined within the \lstinline group only. In inner horizontal
+% mode, as in a tabular cell or \mbox, \lst@Init sets a listing in a
+% zero-width box between two $, for the \par of a displayed listing.
+% tex4ht's \everymath takes that $ as inline math, and \AltMathOne
+% (mathjax-latex-4ht.4ht) then reads the source up to the next $. An
+% inline listing has no \par, so it is set without the box.
 \@ifpackageloaded{listings}{%
     \Configure{lstinline}
         {\HCode{<code class="lstinline">}\HtmlParOff
-         \expandafter\def\csname a:listings-init\endcsname{\ht:special{t4ht@(}}}
+         \expandafter\def\csname a:listings-init\endcsname{\ht:special{t4ht@(}}%
+         \let\lst@boxtrue\relax}
         {\HtmlParOn\HCode{</code>}}}{}
 \catcode58 12
 
