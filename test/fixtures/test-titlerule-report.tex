@@ -1,17 +1,21 @@
 % titlesec's rules in report's headings, without hyperref: a part's and a
-% chapter's display format starting with \titlerule, a chapter's label and
-% after-code with \titlerule, a section's block format ending with
-% \titlerule, and \titleformat* with \titlerule. Each heading keeps the
-% font and alignment of its format.
+% chapter's display format starting with \titlerule, a section's block
+% format ending with \titlerule, \titleformat* with \titlerule, and a
+% subsubsection's display label in \titleline, which the page sets
+% inside its heading. Each heading keeps the font and alignment of its
+% format, and the subsubsection's heading holds no paragraph.
 \documentclass{report}
 \usepackage{titlesec}
+\setcounter{secnumdepth}{3}
 \titleformat{\part}[display]{\titlerule\filcenter\Huge\scshape}
     {\partname\ \thepart}{20pt}{}
 \titleformat{\chapter}[display]
     {\titlerule[1pt]\vspace{1ex}\sffamily\huge\bfseries\filcenter}
-    {\titlerule\vspace{1ex}\chaptertitlename\ \thechapter}{20pt}{}[\titlerule]
+    {\chaptertitlename\ \thechapter}{20pt}{}
 \titleformat{\section}[block]{\Large\bfseries\titlerule}{\thesection}{1em}{}
 \titleformat*{\subsection}{\titlerule\itshape\large}
+\titleformat{\subsubsection}[display]{\large}
+    {\titleline[c]{\thesubsubsection}}{1ex}{}
 \begin{document}
 \part{Beginnings}
 \chapter{Alpha}
@@ -20,4 +24,6 @@ Text after the chapter.
 Text after the section.
 \subsection{Gamma}
 Text after the subsection.
+\subsubsection{Delta}
+Text after the subsubsection.
 \end{document}

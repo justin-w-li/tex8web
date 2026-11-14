@@ -2,14 +2,14 @@
 % \titlerule with a height, \titlerule* with a text, \titleline, and
 % \titleline* with an alignment, in each heading level, with the option
 % explicit and hyperref, and a part's display format with \titlerule,
-% which an article reads apart from a report's part. Each heading keeps
-% the font of its format. Also titletoc, which defines \titlerule too,
-% with \titlerule* in a \titlecontents format that tex4ht does not
-% typeset, since tex4ht builds its own table of contents. And \titlerule,
-% \titlerule*, and \titleline as paragraphs outside any format, which
-% pdflatex builds. They are in a narrow minipage because the page shows
-% each rule as a line of characters as wide as the PDF's, which is
-% wider than a phone's screen.
+% read in tex8web-page.tex's \web@headsize{part}{\huge}, the article's
+% branch for parts. Each heading keeps the font of its format. Also
+% titletoc, which defines \titlerule too, with \titlerule* in a
+% \titlecontents format that tex4ht does not typeset, since tex4ht builds
+% its own table of contents. And \titlerule, \titlerule*, and \titleline
+% as paragraphs outside any format, which pdflatex builds. They are in a
+% narrow minipage because the page shows each rule as a line of
+% characters as wide as the PDF's, which is wider than a phone's screen.
 \documentclass{article}
 \usepackage{amssymb}
 \usepackage[explicit]{titlesec}

@@ -543,7 +543,9 @@ const contents = {
     new RegExp(`<a href='#${title.toLowerCase()}'>${title}</a>[^]*<h[34] class='like\\w*Head' id='${title.toLowerCase()}'>`)),
   // (headings with titlesec's rules in their formats, each with its number
   // and title, and the text after \titlerule, \titlerule*, and \titleline
-  // as paragraphs. The rules themselves are not checked.)
+  // as paragraphs; in report, a subsubsection whose label is in \titleline,
+  // with its number and title in one heading and no paragraph inside. The
+  // rules themselves are not checked.)
   'test-titlerule': [/<h1 class='partHead' id='start'>.*Part.*I.*Start<\/h1>/,
     /<h3 class='sectionHead' id='alpha'>.*<span class='titlemark'>1<\/span>.*Alpha<\/h3>/,
     /<h4 class='subsectionHead' id='beta'>.*<span class='titlemark'>1\.1<\/span>.*Beta<\/h4>/,
@@ -554,7 +556,8 @@ const contents = {
   'test-titlerule-report': [/<h1 class='partHead' id='beginnings'>.*Part.*I.*Beginnings<\/h1>/,
     /<h2 class='chapterHead' id='alpha'>.*Chapter.*1.*Alpha<\/h2>/,
     /<h3 class='sectionHead' id='beta'>.*<span class='titlemark'>1\.1<\/span>.*Beta<\/h3>/,
-    /<h4 class='subsectionHead' id='gamma'>.*<span class='titlemark'>1\.1\.1<\/span>.*Gamma<\/h4>/],
+    /<h4 class='subsectionHead' id='gamma'>.*<span class='titlemark'>1\.1\.1<\/span>.*Gamma<\/h4>/,
+    /<h5 class='subsubsectionHead' id='delta'>(?:(?!<p[ >])[^<]|<(?!\/h5>))*1\.1\.1\.1(?:(?!<p[ >])[^<]|<(?!\/h5>))*Delta<\/h5>/],
   // (a citation and its entry from bibtex, and an index from makeindex, in
   // one document)
   'test-bibindex': [/<span class='cite'>\[<a href='#Xgroups'>1<\/a>\]<\/span>/, /Groups and Their Orders/,
