@@ -733,6 +733,8 @@ const contents = {
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*<span class='titlemark'>II\.<\/span>(?:(?!<\/h3>)[^])*Long title of a section<\/h3>\s*<p class='noindent'>Text of the long section\./i,
     /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*Acknowledgments<\/h3>\s*<p class='noindent'>Text of the acknowledgments\./i,
     /<\/main><\/body> ?<\/html> ?$/,
+    // (aps4-1's symbols end after the eighth: the ninth and each after it)
+    ...['Nine', 'Ten', 'Eleven'].map(author => new RegExp(`Author\\s+${author}</span>,?(?:<span class='cite'>)?<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*§§<(?:(?!</div>)[^])*</div>[^]*<aside class='footnotetext'(?:(?!</aside>)[^])*<a id='\\1'></a><sup[^>]*>(?:<[^>]*>)*§§<(?:(?!</aside>)[^])*${author.toLowerCase()}@example\\.com`)),
   ],
   // (prl numbers no section, and its acknowledgments have no heading, as
   // in the PDF. Nothing after the page's end.)
@@ -771,15 +773,18 @@ const contents = {
     /<span class='paragraphHead' id='[^']+'><span class='titlemark'>a\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*One\.<\/span>\s*Text of the first paragraph\.\s*<\/p>\s*<p class='noindent'><span class='paragraphHead' id='[^']+'><span class='titlemark'>b\.<\/span>(?:(?!<\/span>)[^])*<\/span>(?:(?!<\/span>)[^])*Two\.<\/span>\s*Text of the second paragraph,/,
     /<main>(?!(?:(?!<\/main>)[^])*(?:One\.|Text of the first paragraph)(?:(?!<\/main>)[^])*Two\.(?:(?!<\/main>)[^])*(?:One\.|Text of the first paragraph))/,
     /appendix<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>A<[^]*<h3 class='sectionHead' id='\1'>(?:(?!<\/h3>)[^])*Details<\/h3>\s*<p class='noindent'>Text of the appendix\.\s*<\/p>\s*<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*Part<\/h4>\s*<p class='noindent'>Text of the appendix.s part\./i,
-     /<\/main><\/body> ?<\/html> ?$/,
+    /<\/main><\/body> ?<\/html> ?$/,
   ],
-  // (a revtex4-2 preprint for an aip journal, and a single appendix from
-  // \appendix*, whose label is not checked)
+  // (a revtex4-2 preprint for an aip journal, and sections after
+  // \appendix*)
   'test-revhead-preprint': [
     /<div class='maketitle'[^>]*>\s*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*Revhead preprint(?:(?!<\/h1>)[^])*<\/h1>/,
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*<span class='titlemark'>I\.<\/span>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\./i,
     /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>A\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the subsection\./,
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Only appendix<\/h3>\s*<p class='noindent'>Text of the only appendix\./i,
+    // (a section with no title after \appendix*: "Appendix" with no colon,
+    // as in the PDF)
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix<\/span>(?:\s|<[^>]*>)*<\/h3>\s*<p class='noindent'>Text of the bare appendix\./i,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
   // (revtex4-2's notes in the title block: an author's \footnote, \email,

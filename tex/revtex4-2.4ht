@@ -87,10 +87,21 @@
 % into the anchor of the section that follows, and the next run stops on
 % it. The section is left without a number, and its heading starts with
 % "Appendix:", as in the PDF, unless the document numbers no section, as
-% prl does: html4.4ht's test of secnumdepth is kept.
+% prl does: html4.4ht's test of secnumdepth is kept. A section with no
+% title gets "Appendix" with no colon, as aps4-2's \@hangfrom@appendix
+% gives.
 \let\web@revappendix\appendix
 \def\appendix{\@ifstar{\web@revappendix*\def\thesection{}%
+    \ifx\section\web@revappsection\else
+      \let\web@revsection\section \let\section\web@revappsection\fi
     \ConfigureMark{section}{\ifnum\c:secnumdepth>\c@secnumdepth
         \expandafter\:gobble
-      \else\HCode{<span class="titlemark">}\appendixname{}:\HCode{</span>}\fi}}%
+      \else\HCode{<span class="titlemark">}\appendixname
+        \web@revappcolon\HCode{</span>}\fi}}%
   \web@revappendix}
+\def\web@revappsection{\@ifstar{\web@revsection*}%
+  {\@ifnextchar[\web@revappopt\web@revappplain}}
+\def\web@revappplain#1{\web@revappmark{#1}\web@revsection{#1}}
+\def\web@revappopt[#1]#2{\web@revappmark{#2}\web@revsection[{#1}]{#2}}
+\def\web@revappmark#1{\def\web@revappcolon{#1}%
+  \ifx\web@revappcolon\@empty\else\def\web@revappcolon{:}\fi}

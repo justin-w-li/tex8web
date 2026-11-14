@@ -1,2 +1,9 @@
 % revtex4-1 has the headings, title, and abstract of revtex4-2.
 \input revtex4-2.4ht
+% aps4-1.rtx's footnote symbols stop after the eighth: its \else comes
+% after that case, so the ninth note and each after it start with the
+% ninth symbol, and the PDF build stops on errors from the cases after
+% the \else. The HTML gives each of them the ninth symbol alone.
+\def\web@revfnsymbol#1{\ifcase#1\or *\or \textdagger\or \textdaggerdbl\or
+ \textsection\or \textparagraph\or **\or \textdagger\textdagger\or
+ \textdaggerdbl\textdaggerdbl\else \textsection\textsection\fi}

@@ -1,5 +1,6 @@
 % A revtex4-2 preprint for an aip journal, in one column with wider
-% spacing, with a single appendix from \appendix*. aip writes its
+% spacing, with a single appendix from \appendix*, and a section after it
+% with no title, whose heading is "Appendix" alone. aip writes its
 % bibliography's \bibdata line twice, and bibtex fails, unless the
 % document has a \bibliography, here with nothing cited.
 \documentclass[aip,jcp,preprint]{revtex4-2}
@@ -14,5 +15,7 @@ Text of the subsection.
 \appendix*
 \section{Only appendix}
 Text of the only appendix.
+\section{}
+Text of the bare appendix.
 \bibliography{test-bibindex}
 \end{document}
