@@ -2186,7 +2186,9 @@ if (pdfpic) jobs.push(async () => {
     + readFileSync(pdfpic.cfg, 'utf8'));
   const result = await build({ ...pdfpic, cfg }, out, aux);
   const problems = [];
-  if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
+  if (result.code !== 0) {
+    problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]/.test(line)));
+  }
   const page = join(out, 'test-pdfpic.html');
   const src = (existsSync(page) ? readFileSync(page, 'utf8') : '').match(/<img alt='absolute' [^>]*src='([^']*)'/)?.[1];
   if (!src) problems.push('no absolute picture');
