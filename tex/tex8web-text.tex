@@ -209,13 +209,18 @@
 % "\thesection.". tex4ht draws headings with LaTeX's commands
 % (titlesec-hooks.4ht), so it numbers them with LaTeX's \@seccntformat.
 % \thetitle is set here because titlesec defines it only in its heading
-% code. \titleline in a label sets its text alone, since titlesec's
-% \ttl@line would start and end paragraphs inside the heading.
+% code. In a label, \titleline sets its text alone, since titlesec's
+% \ttl@line would start and end paragraphs inside the heading, and
+% \titlerule and \titlerule* set nothing, as the page draws no rule of a
+% heading's format either. In vertical mode they would reach \titleline
+% (titlesec.sty), and in a line their leaders would show as a row of
+% characters.
 \let\web@seccntformat\@seccntformat
 \def\@seccntformat#1{%
     \ifcsname web@titlelabel@#1\endcsname
         {\expandafter\let\expandafter\thetitle\csname the#1\endcsname
          \def\ttl@line##1[##2]##3{##3}%
+         \def\ttl@rule@i[##1]{}\def\ttl@row@i[##1]##2{}%
          \csname web@titlelabel@#1\endcsname}%
     \else
         \web@seccntformat{#1}%

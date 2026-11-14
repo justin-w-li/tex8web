@@ -1,0 +1,22 @@
+% titlesec's rules in a heading's label, which the page sets inside its
+% heading through \@seccntformat: \titlerule* with a text and \titlerule
+% before the number in a display label, where they start in vertical mode
+% and reach \titleline, and \titlerule after the number in a block label,
+% where it is a rule in the line. Each heading holds its number and title
+% and no paragraph.
+\documentclass{article}
+\usepackage{titlesec}
+\setcounter{secnumdepth}{3}
+\titleformat{\section}[display]{\Large}{\titlerule*{.}\thesection}{1ex}{}
+\titleformat{\subsection}[display]{\large\bfseries}
+    {\titlerule\thesubsection}{1ex}{}
+\titleformat{\subsubsection}[block]{\itshape}
+    {\thesubsubsection\titlerule}{1em}{}
+\begin{document}
+\section{Alpha}
+Text after the section.
+\subsection{Beta}
+Text after the subsection.
+\subsubsection{Gamma}
+Text after the subsubsection.
+\end{document}

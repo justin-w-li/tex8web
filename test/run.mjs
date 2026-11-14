@@ -557,7 +557,15 @@ const contents = {
     /<h2 class='chapterHead' id='alpha'>.*Chapter.*1.*Alpha<\/h2>/,
     /<h3 class='sectionHead' id='beta'>.*<span class='titlemark'>1\.1<\/span>.*Beta<\/h3>/,
     /<h4 class='subsectionHead' id='gamma'>.*<span class='titlemark'>1\.1\.1<\/span>.*Gamma<\/h4>/,
-    /<h5 class='subsubsectionHead' id='delta'>(?:(?!<p[ >])[^<]|<(?!\/h5>))*1\.1\.1\.1(?:(?!<p[ >])[^<]|<(?!\/h5>))*Delta<\/h5>/],
+    /<h5 class='subsubsectionHead' id='delta'>(?:[^<]|<(?!\/h5>|p[ >]))*1\.1\.1\.1(?:[^<]|<(?!\/h5>|p[ >]))*Delta<\/h5>/],
+  // (titlesec's rules in a heading's label: \titlerule* and \titlerule
+  // before the number in a display label, and \titlerule after it in a
+  // block label. Each heading's label is its number alone, without the
+  // rule's characters, and the heading holds no paragraph.)
+  'test-titlerule-label': [['h3', 'sectionHead', 'alpha', '1', 'Alpha'],
+    ['h4', 'subsectionHead', 'beta', '1\\.1', 'Beta'],
+    ['h5', 'subsubsectionHead', 'gamma', '1\\.1\\.1', 'Gamma']].map(([h, cls, id, num, title]) =>
+    new RegExp(`<${h} class='${cls}' id='${id}'>(?:[^<]|<(?!\\/${h}>|p[ >]))*<span class='titlemark'>${num}</span>(?:[^<]|<(?!\\/${h}>|p[ >]))*${title}</${h}>`)),
   // (a citation and its entry from bibtex, and an index from makeindex, in
   // one document)
   'test-bibindex': [/<span class='cite'>\[<a href='#Xgroups'>1<\/a>\]<\/span>/, /Groups and Their Orders/,
