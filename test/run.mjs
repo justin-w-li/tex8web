@@ -786,10 +786,8 @@ const runinToc = (entries, before = '') => new RegExp(`<nav [^>]*id='tex8web-toc
 // A heading with its number and title, then the text after it.
 const runinHead = (h, level, id, number, title, text) => new RegExp(`<${h} class='${level}Head' id='${id}'>(?:(?!</${h}>)[^])*` +
   `<span class='titlemark'>${number.replace(/\./g, '\\.')}</span>(?:(?!</${h}>)[^])*${title}(?:(?!</${h}>)[^])*</${h}>\\s*<p class='noindent'>${text}`);
-// A footnote as the PDF reads: its mark, then its words with the spaces
-// between them, in any font's span (KOMA-Script's \deffootnote starts the
-// text left of its mark, which tex4ht took for no space after a narrow
-// first word)
+// A footnote's mark, then its words with whitespace between them, each
+// word in any number of tags, up to the end of the footnote.
 const noteWords = (mark, words) => new RegExp(`<span class='footnote-mark'><a [^>]*><sup class='textsuperscript'>${mark}</sup></a></span>(?:<[^>]*>)*` +
   words.split(' ').map(word => word.replace(/[.*+?()[\]\\]/g, '\\$&')).join('(?:<[^>]*>)*\\s+(?:<[^>]*>)*') + '(?:<[^>]*>)*</p></aside>');
 const contents = {
@@ -1094,15 +1092,14 @@ const contents = {
   ],
   'test-fnspace-scrreprt': [
     noteWords(1, 'I thank a reader for this.'), noteWords(2, 'A measure is finite there.'), noteWords(3, 'We thank the printer too.'),
-    noteWords(9, 'I owe this remark to her.'), noteWords(4, 'a priori it fails.'),
+    noteWords(9, 'I owe this remark to her.'), noteWords(4, 'a priori it fails.'), noteWords(20, 'I owe this here.'),
+    noteWords(1000, 'I am a fan of it.'),
   ],
   'test-fnspace-scrbook': [
     noteWords(1, 'I thank a critic for this.'), noteWords(2, 'A measure is finite again.'), noteWords(3, 'We thank the binder too.'),
     noteWords(4, 'I am in debt to them.'), noteWords('a', 'I add this in a box.'), noteWords(5, 'It is so.'),
     noteWords(6, 'If so, then.'), noteWords(7, 'Me too, then.'),
   ],
-  'test-fnspace-article': [noteWords(1, 'I thank a reader.'), noteWords(2, 'I’d say so.')],
-  'test-fnspace-cm': [noteWords(1, 'I thank a reader.'), noteWords(20, 'I owe this here.'), noteWords(1000, 'I am a fan of it.')],
 };
 
 // Text back in its font after a font command that the PDF keeps in a
