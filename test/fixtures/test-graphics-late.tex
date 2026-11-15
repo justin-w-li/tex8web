@@ -1,8 +1,8 @@
-% mathtools loads graphicx at the start of the document, after tex4ht hooked
-% the preamble's packages, so graphicx is loaded and graphics.4ht is not.
-% The page must build, with no warning about tex8web's graphics hooks.
+% graphicx loaded at the start of the document, after tex4ht read the
+% preamble's packages, so graphicx is loaded and graphics.4ht is not. The
+% page must build, with no warning about tex8web's graphics hooks.
 \documentclass{article}
-\usepackage{mathtools}
+\AtBeginDocument{\RequirePackage{graphicx}}
 \begin{document}
 Text with a formula, $x+y$.
 \end{document}

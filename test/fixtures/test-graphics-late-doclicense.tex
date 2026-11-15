@@ -1,0 +1,11 @@
+% doclicense loads graphicx at the end of the preamble. The license's
+% text and its picture must be on the page. hyperxmp, which doclicense
+% loads, stops when hyperref is not loaded before it, in the PDF too.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage[type=CC,modifier=by-sa,version=4.0]{doclicense}
+\begin{document}
+Text.
+
+\doclicenseThis
+\end{document}

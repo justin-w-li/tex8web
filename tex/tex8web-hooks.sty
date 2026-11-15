@@ -139,6 +139,19 @@
 }
 \AddToHook{begindocument/before}{\catcode`\!=\web@bangcatcode\relax}
 
+% graphicx, which mathtools loads in \AtBeginDocument and doclicense in
+% \AtEndPreamble, loaded here instead, before \Preamble. tex4ht reads .4ht
+% files in \Preamble only for packages loaded by then, so a later graphicx
+% has no graphics.4ht, and \includegraphics stops at a picture with no
+% .xbb file. doclicense's load runs after \Preamble too, with ^ not yet
+% restored to its catcode, and stops in graphics.sty at "Missing number".
+\AddToHook{env/document/before}{%
+    \@ifpackageloaded{graphicx}{}{%
+        \@ifpackageloaded{mathtools}{\RequirePackage{graphicx}}{}%
+        \@ifpackageloaded{doclicense}{\RequirePackage{graphicx}}{}%
+    }%
+}
+
 % xr and xr-hyper: xr.4ht and xr-hyper.4ht expect each label of the other
 % document's .aux as tex4ht writes it, with \rEfLiNK{anchor}{text} in each
 % field. They stop on a label that LaTeX wrote. xr.4ht also stops on the

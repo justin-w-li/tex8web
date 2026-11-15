@@ -1,0 +1,9 @@
+% mathtools loads graphicx at the start of the document. The picture, a
+% PNG with no .xbb file, must be on the page at its requested width.
+\documentclass{article}
+\usepackage{mathtools}
+\begin{document}
+Text with a formula, $x+y$.
+
+\includegraphics[width=2cm,alt=late]{test-bare.png}
+\end{document}
