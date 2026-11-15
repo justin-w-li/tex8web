@@ -1,0 +1,32 @@
+% titletoc's run-in entries, \titlecontents*, each of which leaves a group
+% open until the next entry or \contentsfinish. In report: a subsection
+% with the five mandatory arguments only, and a subsubsection after it
+% with the optional separator and end, two adjacent run-in levels, under
+% a non-starred \titlecontents for the section. The subsubsections are
+% below report's tocdepth and secnumdepth, so they stay out of the table
+% of contents, as in the PDF. No hyperref.
+\documentclass{report}
+\usepackage{titletoc}
+\titlecontents{section}[1.5em]{}{\contentslabel{2.3em}}{}
+    {\titlerule*[1pc]{.}\contentspage}
+\titlecontents*{subsection}[3.7pc]{}{}{}{}
+\titlecontents*{subsubsection}[5pc]{\small}{\thecontentslabel\ }{}
+    {, \thecontentspage}[;\ ][.]
+\begin{document}
+\tableofcontents
+\chapter{Opening chapter}
+Text of the opening chapter.
+\section{First section}
+Text of the first section.
+\subsection{First run-in}
+Text of the first run-in.
+\subsubsection{Deep one}
+Text of deep one.
+\subsection{Second run-in with \emph{italic} and $x^2$}
+Text of the second run-in.
+\section{Second section}
+Text of the second section.
+\chapter{Closing chapter}
+\section{Last section}
+Text of the last section.
+\end{document}

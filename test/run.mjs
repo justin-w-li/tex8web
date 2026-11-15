@@ -237,6 +237,19 @@ const measured = {
     '--tex8web-chapter-align': 'center', '--tex8web-section-size': '1.44em',
     '--tex8web-section-weight': 'bold', '--tex8web-subsection-size': '1.2em',
     '--tex8web-subsection-style': 'italic', '--tex8web-subsection-weight': 'normal' },
+  // (titletoc's run-in entries: the levels around them measured as without
+  // them. report's chapter, 1.5em wide, 1em below the entry before, and
+  // bold, and its non-starred section entry without bold; a run-in
+  // section, top of an article, and a run-in chapter in a book, each bold
+  // from its format and with no space above, as \titlecontents* adds none.
+  // In scrreprt, the subsubsection below a run-in subsection at the
+  // class's 7em and 4.1em)
+  'test-runintoc': { '--tex8web-toc-chapter-number': '1.5em', '--tex8web-toc-chapter-skip': '1em',
+    '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-weight': 'normal' },
+  'test-runintoc-article': { '--tex8web-toc-section-weight': 'bold', '--tex8web-toc-section-skip': '0em' },
+  'test-runintoc-book': { '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-chapter-skip': '0em' },
+  'test-runintoc-koma': { '--tex8web-toc-chapter-skip': '1em', '--tex8web-toc-chapter-weight': 'bold',
+    '--tex8web-toc-subsubsection-indent': '7.00002em', '--tex8web-toc-subsubsection-number': '4.10002em' },
 };
 
 // test.tex's math as tex8web.js typesets it through MathJax's internals,
@@ -764,6 +777,13 @@ const index = {
 // it stays in the text.
 const titled = name => [new RegExp(`<button aria-label='${name}' class='tex8web-control tex8web-contents'[^>]* title='${name}'`),
   new RegExp(`<p class='tex8web-toc-title' id='tex8web-toc-title'>${name}</p>`)];
+// titletoc's run-in entries in the table of contents beside the text, in
+// order, each with its number and a link to its heading, and nothing after
+// them; and a heading with its number and title, then the text after it
+const runinToc = entries => new RegExp(`<nav [^>]*id='tex8web-toc'[^>]*>(?:(?!</nav>)[^])*${entries.map(([level, number, id, title]) =>
+  `<span class='${level}Toc'><span class='tocnumber'>${number.replace(/\./g, '\\.')}</span><a href='#${id}'[^>]*>${title}(?:(?!</span>(?:<br />|\\s)*<span class='\\w+Toc'>)[^])*</a></span>`).join('(?:<br />|\\s)*')}(?:<br />|\\s)*</div></nav>`);
+const runinHead = (h, level, id, number, title, text) => new RegExp(`<${h} class='${level}Head' id='${id}'>(?:(?!</${h}>)[^])*` +
+  `<span class='titlemark'>${number.replace(/\./g, '\\.')}</span>(?:(?!</${h}>)[^])*${title}(?:(?!</${h}>)[^])*</${h}>\\s*<p class='noindent'>${text}`);
 const contents = {
   // (also test.cfg's \WebUp: the first control, with a # and an & in its URL)
   'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/\?a=1&amp;b=2#top'/],
@@ -932,6 +952,41 @@ const contents = {
     /<h3 class='sectionHead' id='beta'>.*<span class='titlemark'>1\.1<\/span>.*Beta<\/h3>/,
     /<h4 class='subsectionHead' id='gamma'>.*<span class='titlemark'>1\.1\.1<\/span>.*Gamma<\/h4>/,
     /<h5 class='subsubsectionHead' id='delta'>(?:[^<]|<(?!\/h5>|p[ >]))*1\.1\.1\.1(?:[^<]|<(?!\/h5>|p[ >]))*Delta<\/h5>/],
+  // (titletoc's run-in entries, \titlecontents*: every entry in the table of
+  // contents and every heading with its text. In report, a run-in
+  // subsection with \emph and math in its title, and no subsubsection,
+  // below report's tocdepth; in an article, run-in sections and
+  // subsections around a \dottedcontents subsubsection; in a book, run-in
+  // chapters and sections, and a chapter with titletoc's partial table of
+  // contents, which is not checked; in scrreprt, run-in subsections, and a
+  // run-in list of figures in the text, with a link to each figure)
+  'test-runintoc': [runinToc([['chapter', '1', 'opening-chapter', 'Opening chapter'],
+    ['section', '1.1', 'first-section', 'First section'], ['subsection', '1.1.1', 'first-runin', 'First run-in'],
+    ['subsection', '1.1.2', 'second-runin-with-italic-and-x2', "Second run-in with\\s<span class='cmti-10'>italic </span>and <mjx-container aria-label='x squared'"],
+    ['section', '1.2', 'second-section', 'Second section'], ['chapter', '2', 'closing-chapter', 'Closing chapter'],
+    ['section', '2.1', 'last-section', 'Last section']]),
+    runinHead('h4', 'subsection', 'first-runin', '1.1.1', 'First run-in', 'Text of the first run-in\\.'),
+    /<h5 class='subsubsectionHead' id='deep-one'>(?:(?!<\/h5>|titlemark)[^])*Deep one<\/h5>\s*<p class='noindent'>Text of deep one\./,
+    runinHead('h4', 'subsection', 'second-runin-with-italic-and-x2', '1.1.2', 'Second run-in', 'Text of the second run-in\\.'),
+    runinHead('h3', 'section', 'last-section', '2.1', 'Last section', 'Text of the last section\\.')],
+  'test-runintoc-article': [runinToc([['section', '1', 'alpha', 'Alpha'], ['subsection', '1.1', 'alpha-one', 'Alpha one'],
+    ['subsubsection', '1.1.1', 'alpha-deep', 'Alpha deep'], ['subsection', '1.2', 'alpha-two', 'Alpha two'],
+    ['section', '2', 'beta-with-italic-and-y1', "Beta with <span class='cmti-10'>italic </span>and <mjx-container aria-label='y sub 1'"]]),
+    runinHead('h3', 'section', 'alpha', '1', 'Alpha', 'Text of alpha\\.'),
+    runinHead('h5', 'subsubsection', 'alpha-deep', '1.1.1', 'Alpha deep', 'Text of alpha deep\\.'),
+    runinHead('h4', 'subsection', 'alpha-two', '1.2', 'Alpha two', 'Text of alpha two\\.'),
+    runinHead('h3', 'section', 'beta-with-italic-and-y1', '2', 'Beta with', 'Text of beta\\.')],
+  'test-runintoc-book': [runinToc([['chapter', '1', 'first-chapter', 'First chapter'], ['section', '1.1', 'gamma', 'Gamma'],
+    ['subsection', '1.1.1', 'gamma-one', 'Gamma one'], ['section', '1.2', 'delta', 'Delta'],
+    ['chapter', '2', 'second-chapter', 'Second chapter'], ['section', '2.1', 'epsilon', 'Epsilon']]),
+    runinHead('h2', 'chapter', 'first-chapter', 'Chapter<span class=\'tex8web-nbsp\'> </span>1', 'First chapter', 'Text of the first chapter\\.'),
+    runinHead('h4', 'subsection', 'gamma-one', '1.1.1', 'Gamma one', 'Text of gamma one\\.'),
+    runinHead('h3', 'section', 'epsilon', '2.1', 'Epsilon', 'Text of epsilon\\.')],
+  'test-runintoc-koma': [runinToc([['chapter', '1', 'koma-chapter', 'Koma'], ['section', '1.1', 'zeta', 'Zeta'],
+    ['subsection', '1.1.1', 'zeta-one', 'Zeta one'], ['subsection', '1.1.2', 'zeta-two', 'Zeta two']]),
+    /<span class='lofToc'>1\.1<span class='tex8web-nbsp'> <\/span><a href='#first-box'>First box<\/a><\/span>(?:<br \/>|\s)*<span class='lofToc'>1\.2<span class='tex8web-nbsp'> <\/span><a href='#second-box'>Second box<\/a>/,
+    /id='first-box'[^]*id='second-box'/,
+    runinHead('h4', 'subsection', 'zeta-two', '1.1.2', 'Zeta two', 'Text of zeta two\\.')],
   // (titlesec's rules in a heading's label: \titlerule* and \titlerule
   // before the number in a display label, and \titlerule after it in a
   // block label. Each heading's label is its number alone, without the

@@ -1,0 +1,26 @@
+% titletoc's run-in entries, \titlecontents*, at the top level of the
+% table of contents: in an article with hyperref, run-in sections with
+% the optional separator and end and \thecontentspage in the entry, and
+% run-in subsections under them, beside a \dottedcontents subsubsection.
+\documentclass{article}
+\usepackage{titletoc}
+\usepackage{hyperref}
+\setcounter{tocdepth}{3}
+\titlecontents*{section}[0pt]{\bfseries}{\thecontentslabel\ }{}
+    {\ \thecontentspage}[\ \textbullet\ ][.]
+\titlecontents*{subsection}[1.5em]{}{\thecontentslabel\ }{}
+    {, \thecontentspage}[;\ ][.]
+\dottedcontents{subsubsection}[3.8em]{}{3.2em}{1pc}
+\begin{document}
+\tableofcontents
+\section{Alpha}
+Text of alpha.
+\subsection{Alpha one}
+Text of alpha one.
+\subsubsection{Alpha deep}
+Text of alpha deep.
+\subsection{Alpha two}
+Text of alpha two.
+\section{Beta with \emph{italic} and $y_1$}
+Text of beta.
+\end{document}

@@ -1,0 +1,28 @@
+% titletoc's run-in entries, \titlecontents*, in a KOMA-Script report:
+% run-in subsections, and a run-in list of figures.
+\documentclass{scrreprt}
+\usepackage{titletoc}
+\titlecontents*{subsection}[3.8em]{}{\thecontentslabel\ }{}
+    {, \thecontentspage}[;\ ][.]
+\titlecontents*{figure}[0pt]{}{\thecontentslabel\ }{}
+    {, \thecontentspage}[;\ ][.]
+\begin{document}
+\tableofcontents
+\listoffigures
+\chapter{Koma chapter}
+Text of the koma chapter.
+\section{Zeta}
+Text of zeta.
+\subsection{Zeta one}
+Text of zeta one.
+\begin{figure}[h]
+\centering\rule{2em}{1em}
+\caption{First box}
+\end{figure}
+\subsection{Zeta two}
+Text of zeta two.
+\begin{figure}[h]
+\centering\rule{2em}{1em}
+\caption{Second box}
+\end{figure}
+\end{document}

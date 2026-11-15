@@ -1,0 +1,28 @@
+% titletoc's run-in entries, \titlecontents*, in a book with hyperref:
+% run-in chapters and run-in sections under them, beside a \dottedcontents
+% subsection, and a chapter's partial table of contents from \startcontents
+% and \printcontents.
+\documentclass{book}
+\usepackage{titletoc}
+\usepackage{hyperref}
+\titlecontents*{chapter}[0pt]{\bfseries}{\thecontentslabel\ }{}
+    {\ \thecontentspage}[\ \textbullet\ ][.]
+\titlecontents*{section}[1.5em]{}{\thecontentslabel\ }{}
+    {, \thecontentspage}[;\ ][.]
+\dottedcontents{subsection}[3.8em]{}{3.2em}{1pc}
+\begin{document}
+\tableofcontents
+\chapter{First chapter}
+\startcontents
+\printcontents{}{1}{}
+Text of the first chapter.
+\section{Gamma}
+Text of gamma.
+\subsection{Gamma one}
+Text of gamma one.
+\section{Delta}
+Text of delta.
+\chapter{Second chapter}
+\section{Epsilon}
+Text of epsilon.
+\end{document}
