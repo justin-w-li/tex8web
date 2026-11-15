@@ -146,8 +146,7 @@
 % \includegraphics stops at a picture with no .xbb file. A later ccicons
 % has no ccicons.4ht, and its icons are letters in a font the page lacks.
 % doclicense's load of graphicx also runs with ^ not yet restored to its
-% catcode, and stops in graphics.sty at "Missing number". The hook runs
-% again at the config's \begin{document}, where each package is loaded.
+% catcode, and stops in graphics.sty at "Missing number".
 \def\web@loadearly#1{\@ifpackageloaded{#1}{}{\RequirePackage{#1}}}
 \AddToHook{env/document/before}{%
     \@ifpackageloaded{mathtools}{\web@loadearly{graphicx}}{}%

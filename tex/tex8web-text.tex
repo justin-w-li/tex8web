@@ -1063,6 +1063,13 @@
 % a tikzcd's picture, with no alt text: tikz-cd.4ht starts it with
 % \Picture+{}, which takes the diagram's labels as the alt text
 \ConfigureEnv{tikzcd}{\Picture+[]{}}{\EndPicture}{}{}
+% a ccicons icon as an SVG picture with no alt text, which follows the
+% theme as TikZ pictures do. ccicons.4ht starts it with \Picture+{}, a PNG
+% unless TikZ is loaded (pgfsys-dvisvgm4ht.def), with the font's letters
+% as the alt text.
+\@ifundefined{c:ccicons:}{}{%
+    \Configure{ccicons}{\begingroup\Configure{Picture}{.svg}\Picture+[]{}}
+        {\EndPicture\endgroup}}
 \catcode58 12
 
 % an \includegraphics without its .xbb file in a picture that tex4ht draws
