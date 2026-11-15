@@ -35,6 +35,8 @@
 //                      links in the paths given are resolved. latexmk
 //                      then writes the PDF to the document's build/pdf,
 //                      and reads no .latexmkrc
+//   --shell-escape     build each page, and with --latexmk each PDF, with
+//                      full shell escape. Refused with --contain
 //   --root <dir>       with --contain, also mount dir read-only, for a
 //                      document that reads files above its directory. dir
 //                      must hold every document given, and no --out,
@@ -70,7 +72,7 @@ const at = (path, source) => {
   if (lstatSync(real, { throwIfNoEntry: false })?.isSymbolicLink()) refuse(`refusing ${path}: it is a symbolic link`);
   return real;
 };
-const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain [--root <dir>]] [--pdf] [--up <url>] [--shots-cache <dir>] <dir or .tex file>...';
+const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain [--root <dir>] | --shell-escape] [--pdf] [--up <url>] [--shots-cache <dir>] <dir or .tex file>...';
 const refuse = message => {
   console.error(message);
   process.exit(2);
@@ -81,7 +83,7 @@ try {
   parsed = parseArgs({ allowPositionals: true, options: {
     c: { type: 'string', short: 'c' }, baseline: { type: 'string' }, out: { type: 'string' },
     accept: { type: 'boolean' }, draft: { type: 'boolean' }, latexmk: { type: 'boolean' }, contain: { type: 'boolean' },
-    root: { type: 'string' }, pdf: { type: 'boolean' }, up: { type: 'string' },
+    root: { type: 'string' }, 'shell-escape': { type: 'boolean' }, pdf: { type: 'boolean' }, up: { type: 'string' },
     'shots-cache': { type: 'string' },
   } });
 } catch (error) {
@@ -92,6 +94,9 @@ if (!positionals.length) refuse(usage);
 if (options.draft && options.accept) refuse('--draft pages are not to be trusted, so --draft and --accept don\'t go together');
 // (a build on the host reads any file, so --root is only for --contain)
 if (options.root && !options.contain) refuse('--root is for --contain only');
+// (full shell escape lets a document run any command, so it is for a
+// source that is trusted)
+if (options['shell-escape'] && options.contain) refuse('--shell-escape is for a source you trust, and --contain for one you do not: give one of them');
 const top = options.root && at(options.root, true);
 if (top && !statSync(top, { throwIfNoEntry: false })?.isDirectory()) refuse(`not a directory: ${options.root}`);
 
@@ -136,7 +141,8 @@ function document(arg) {
   // builds them with --latexmk
   return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true,
     ...options.pdf && { pdf: join('build/pdf', tex.replace(/\.tex$/, '.pdf')) }, ...options.up && { up: options.up },
-    ...options.contain && { runner: [join(root, 'test/lib/contain.mjs')] }, ...top && { sourceRoot: top } };
+    ...options.contain && { runner: [join(root, 'test/lib/contain.mjs')] }, ...top && { sourceRoot: top },
+    ...options['shell-escape'] && { shellEscape: true } };
 }
 
 const docs = positionals.map(document);
@@ -187,7 +193,7 @@ async function latexmk(doc) {
     }
     // (latexmk can print nothing for minutes on a long document)
     const result = await runOn(doc, [], [join(doc.dir, 'build')], 'latexmk',
-      [...options.contain ? ['-norc', '-pdf', '-outdir=build/pdf', '-bibfudge-'] : [], '-interaction=nonstopmode', '-halt-on-error', doc.tex],
+      [...options.contain ? ['-norc', '-pdf', '-outdir=build/pdf', '-bibfudge-'] : [], ...options['shell-escape'] ? ['-shell-escape'] : [], '-interaction=nonstopmode', '-halt-on-error', doc.tex],
       { cwd: doc.dir, slot: true, idle: 900 });
     writeFileSync(join(logs, `${doc.name}.pdf.log`), result.log);
     if (result.code !== 0) return `failed to build its PDF, exit ${result.code} (log: ${join(logs, `${doc.name}.pdf.log`)})`;

@@ -284,7 +284,8 @@ function stamps(doc, args, env, pdf) {
 // of a runner such as test/lib/contain.mjs, make4ht and latexmk run
 // through that runner. doc.sourceRoot, a directory that holds the
 // document's, is then mounted read-only too, for a document that reads
-// files above its directory
+// files above its directory. A document with shellEscape is built with
+// full shell escape
 export async function build(doc, out, aux, env = {}) {
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
@@ -320,7 +321,7 @@ async function buildHere(doc, out, aux, env) {
   // whole build, and a stalled build would not show where)
   const args = ['-c', relative(doc.dir, doc.cfg), '-B', relative(doc.dir, aux), '-d', relative(doc.dir, out),
     ...!own && doc.pdf ? ['-p', join(doc.dir, doc.pdf)] : [], ...doc.up ? ['-u', doc.up] : [], ...doc.draft ? ['-m', 'draft'] : [],
-    '-a', 'info', doc.tex];
+    ...doc.shellEscape ? ['--shell-escape'] : [], '-a', 'info', doc.tex];
   const stampNow = () => {
     const made = pdf && statSync(join(doc.dir, pdf), { throwIfNoEntry: false });
     return stamps(doc, args, env, made ? [made.size, made.mtimeMs] : null);

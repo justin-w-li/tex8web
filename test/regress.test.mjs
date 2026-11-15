@@ -124,6 +124,24 @@ describe('regress.mjs', { concurrency: true }, () => {
     }
   });
 
+  test('regress.mjs --shell-escape builds each PDF and page with full shell escape', async () => {
+    // (restricted shell escape, TeX Live's default, does not run touch)
+    const body = article('\\immediate\\write18{touch escaped}First');
+    const dir = scratch({ 'off/main.tex': body, 'on/main.tex': body });
+    try {
+      let result = await regress(dir, '--latexmk', 'off');
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.equal(existsSync(join(dir, 'off/escaped')), false, 'touch ran without --shell-escape');
+      assert.doesNotMatch(readFileSync(join(dir, 'build/regress/logs/off.html.log'), 'utf8'), /^make4ht .*--shell-escape/m);
+      result = await regress(dir, '--latexmk', '--shell-escape', 'on');
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.ok(existsSync(join(dir, 'on/escaped')), 'touch did not run in the PDF build');
+      assert.match(readFileSync(join(dir, 'build/regress/logs/on.html.log'), 'utf8'), /^make4ht .*--shell-escape/m);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
   test('regress.mjs --contain builds each PDF and page in the container, without the .latexmkrc, and --pdf and --up link them', async () => {
     // (a .latexmkrc read would name the PDF rc.pdf. The directory of
     // chapter/part.tex is made in build/pdf for its \include's .aux)
@@ -181,6 +199,7 @@ describe('regress.mjs', { concurrency: true }, () => {
       await refused(/same name.*dup/, 'a/dup', 'b/dup');
       await refused(/make4ht/, '--out', 'my-out', 'one');
       await refused(/--root is for --contain only/, '--root', 'one', 'one');
+      await refused(/--shell-escape is for a source you trust/, '--contain', '--shell-escape', 'one');
       await refused(/not a directory: empty\/readme\.txt/, '--contain', '--root', 'empty/readme.txt', 'one');
       await refused(/refusing one: it is not in --root two/, '--contain', '--root', 'two', 'one');
       await refused(/--out .*one\/out is in --root one/, '--contain', '--root', 'one', '--out', 'one/out', 'one');
