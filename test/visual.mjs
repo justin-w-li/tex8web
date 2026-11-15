@@ -575,7 +575,7 @@ const pdfPagesStacked = `(() => {
   });
   return { checked: pictures.length, wrong };
 })()`;
-const pdfPageCounts = { 'test-pdfpages': 76, 'test-pdfpages-plain': 9, 'test-pdfpages-hint': 15 };
+const pdfPageCounts = { 'test-pdfpages': 76, 'test-pdfpages-plain': 9, 'test-pdfpages-hint': 21 };
 // Each page of pdfpages that loads only near the screen has its height
 // before it loads: a copy of the picture with no src, put beside it, is as
 // tall as the loaded picture within 1px. (Without JavaScript, Chrome loads
