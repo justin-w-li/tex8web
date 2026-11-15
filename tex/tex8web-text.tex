@@ -1086,9 +1086,12 @@
 % the converted pictures, and Gin-dim below are skipped. tex4ht loads .4ht
 % files only for packages loaded before its begindocument/before hook
 % (tex4ht.sty). graphicx loaded in \AtBeginDocument comes after it, unless
-% tex8web-hooks.sty loads it first.
+% tex8web-hooks.sty loads it first. \Configure{graphics*} without
+% graphics.4ht leaves \c:graphics*: as \relax (tex4ht.sty).
+\newif\ifweb@graphics
+\@ifundefined{c:graphics*:}{}{\web@graphicstrue}
 \catcode58 11
-\ifcsname c:graphics*:\endcsname
+\ifweb@graphics
     \web@needs{o:Gin@setfile:}%
     \let\web@Gin@setfile\o:Gin@setfile:
     \let\web@Gread@eps@aux\Gread@eps@aux
@@ -1128,7 +1131,7 @@
 % than the PDF has points. An EPS picture with a PNG of its name beside it
 % shows that PNG, as in html4.4ht, which converts only when it is missing.
 \newif\ifweb@natural
-\ifcsname c:graphics*:\endcsname
+\ifweb@graphics
     \def\web@converted{%
         \web@naturaltrue
         \Picture[\a:GraphicsAlt]{{\Gin@base\Gin@ext.png}
@@ -1282,7 +1285,7 @@
 % \web@textwidth is used because a minipage, and so a tcolorbox or
 % subfigure, sets \textwidth to its width.
 \ExplSyntaxOn
-\cs_if_exist:cT { c:graphics*: }
+\legacy_if:nT { web@graphics }
   {
     \web@needs{a:Gin-dim}
     \cs_set_eq:Nc \__web_gin_dim: { a:Gin-dim }

@@ -555,10 +555,13 @@ const pictures = {
     share('both', '0.2899'), share('fitted', '0.1546'), share('angle last', '0.2899'), /<img alt='bare' (?:(?!style=)[^>])*\/>/,
     // (a size after angle, and scale with a size: left to tex4ht)
     ...['rotated', 'scaled first', 'scaled last'].map(alt => new RegExp(`<img alt='${alt}' (?:(?!style=)[^>])*\\/>`))],
-  // (graphicx loaded by mathtools at \begin{document}, and by doclicense
-  // at the end of the preamble: a PNG 2cm wide, and doclicense's picture)
+  // (graphicx loaded by mathtools at \begin{document}, and graphicx and
+  // ccicons by doclicense at the end of the preamble: a PNG 2cm wide, and
+  // doclicense's text, picture, and icon, which ccicons.4ht makes a picture)
   'test-graphics-late-mathtools': [share('late', '0.1649')],
-  'test-graphics-late-doclicense': [/<img alt='' src='tex8web-pictures\/[0-9a-f]+\/doclicense-CC-by-sa-88x31\.eps-1\.png'/],
+  'test-graphics-late-doclicense': [/Attribution-ShareAlike 4\.0 International/,
+    /<img alt='' src='tex8web-pictures\/[0-9a-f]+\/doclicense-CC-by-sa-88x31\.eps-1\.png'/,
+    /Icon: <img alt='c ba' src='test-graphics-late-doclicense0x\.png' \/>\./],
   // (PDF pictures without a .xbb file, sized from the PDF's bounding box in
   // a 345pt text width, for a picture 64bp by 48bp: no size, 3cm high, and
   // half its size; page 2 of a PDF, 120bp wide, with no size; and a quarter
