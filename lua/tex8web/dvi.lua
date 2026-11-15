@@ -45,9 +45,9 @@ end
 -- a make4ht command: a picture that holds another picture made one
 -- picture, as tex4ht does not nest pictures ("How it works" in
 -- CONTRIBUTING.md). Of the inner pictures, a lock of the bounding box
--- made while one is on is overwritten with its unlock, as dvisvgm does
--- not nest locks, and an inner unlock would let what follows widen the
--- outer picture. Their baseline marks are overwritten too, as
+-- made while one is on is overwritten, and so is its unlock: dvisvgm
+-- does not nest locks, and an inner unlock would let what follows widen
+-- the outer picture. Their baseline marks are overwritten too, as
 -- text.pictures reads the first mark in the SVG.
 function M.nested_pictures(par)
   local path = (par.builddir ~= "" and par.builddir .. "/" or "") .. par.input .. "." .. par.dvi
