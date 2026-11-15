@@ -1964,6 +1964,10 @@ const algorithms = {
   'test-inputname-vendored': [
     /<span class='ALCitem'>1:<\/span>(?:(?!<br)[^])*first line(?:(?!<br)[^])*<br \/><span class='ALCitem'>2:<\/span>(?:(?!<br)[^])*second line(?:(?!<br)[^])*<br \/><span class='ALCitem'>3:<\/span>(?:(?!<br)[^])*a test(?:(?!<br)[^])*<br \/><span class='ALCitem'>4:<\/span>(?:(?!<br)[^])*third line/,
   ],
+  // (a copy of TeX Live's cp1252.def in the document's folder, read by
+  // inputenc: the degree sign as cp1252.4ht sets it, outside the TS1 font's
+  // span)
+  'test-inputname-vendored-def': [/An angle of 30°\./],
   // algorithm2e's, [H] and in \small text too: their style, caption
   // position, and lengths (at the body size), the caption's label and
   // separator, each line a paragraph numbered as in the PDF (the one after

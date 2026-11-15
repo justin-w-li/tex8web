@@ -486,20 +486,25 @@
 % at the first file of that name (\h:input and \no:dupl, html4.4ht). A
 % file of the document named like a .4ht, such as glossary.tex, would get
 % a package's configuration, and LaTeX would stop with errors. Such a
-% file, read from the document's folder and not a .sty or .cls, marks its
-% name as done for tex4ht, unless a file of that name was read before
-% from outside the document's folder, or as a .sty or .cls. A file of
-% that name read later from outside the document's folder, or as a .sty
-% or .cls, such as the package, or a .def file that a package reads from
-% TeX's tree, clears the mark and moves the document's file to the end of
+% file, read from the document's folder and not a file of a package or
+% class (.sty, .cls, .def, .clo, .cfg, .ldf, or .fd, kept as a copy of a
+% package's file can be), marks its name as done for tex4ht, unless a
+% file of that name was read before from outside the document's folder,
+% or as a package's or class's file. A file of that name read later from
+% outside the document's folder, or as a package's or class's file, such
+% as the package, or a .def file that a package reads, clears the mark and
+% moves the document's file to the end of
 % \@filelist: the .4ht is read where that file is listed, after the .4ht
 % files it needs, as dvipsnam.4ht needs color.4ht. The class and its
 % packages are read after this file, so each of them passes through this
 % hook. A file read with a folder in its name, or found through
 % \input@path, is listed with its folder: it matches no .4ht, and
-% neither marks nor clears.
+% neither marks nor clears. A name with a comma stays in braces in
+% \@filelist, as LaTeX's \@addtofilelist writes it.
 \ExplSyntaxOn
 \clist_new:N \l__web_filelist_clist
+\clist_map_inline:nn { sty, cls, def, clo, cfg, ldf, fd }
+    { \cs_new_eq:cN { web@keepext@ #1 } \c_empty_tl }
 \AddToHook { file/before }
     { \exp_last_unbraced:No \web@ownfile \CurrentFileUsed .. \q_stop }
 \cs_new_protected:Npn \web@ownfile #1 . #2 . #3 \q_stop
@@ -508,8 +513,7 @@
             {
                 \bool_lazy_any:nTF
                     {
-                        { \str_if_eq_p:nn {#2} { sty } }
-                        { \str_if_eq_p:nn {#2} { cls } }
+                        { \cs_if_exist_p:c { web@keepext@ #2 } }
                         { \cs_if_exist_p:c { web@keep@ #1 } }
                         { ! \file_if_exist_p:n { ./ \CurrentFileUsed } }
                     }
@@ -521,7 +525,8 @@
                         \cs_gset_eq:cN { #1 :4ht } \c_empty_tl
                         \clist_if_exist:cF { web@own@ #1 }
                             { \clist_new:c { web@own@ #1 } }
-                        \clist_gput_right:cV { web@own@ #1 } \CurrentFileUsed
+                        \clist_gput_right:cx { web@own@ #1 }
+                            { { \exp_not:V \CurrentFileUsed } }
                     }
             }
     }
@@ -536,9 +541,9 @@
                         \clist_map_inline:Nn \@filelist
                             {
                                 \str_if_eq:nnF {####1} {##1}
-                                    { \clist_put_right:Nn \l__web_filelist_clist {####1} }
+                                    { \clist_put_right:Nn \l__web_filelist_clist { {####1} } }
                             }
-                        \clist_put_right:Nn \l__web_filelist_clist {##1}
+                        \clist_put_right:Nn \l__web_filelist_clist { {##1} }
                         \clist_gset_eq:NN \@filelist \l__web_filelist_clist
                     }
                 \cs_undefine:c { web@own@ #1 }

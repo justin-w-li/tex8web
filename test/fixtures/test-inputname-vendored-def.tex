@@ -1,0 +1,12 @@
+% A guard, for files of the document named like a .4ht file: a copy of
+% TeX Live's cp1252.def in the document's folder, which inputenc reads in
+% place of the tree's. No other fixture reads cp1252.def, so the copy
+% changes no other page; replace it with the tree's file after an update
+% of LaTeX. As in the PDF, the degree sign is a degree sign, set as
+% cp1252.4ht sets it.
+\documentclass{article}
+\IfFileExists{./cp1252.def}{}{\errmessage{No copy of cp1252.def beside the document}}
+\usepackage[cp1252]{inputenc}
+\begin{document}
+An angle of 30\textdegree.
+\end{document}
