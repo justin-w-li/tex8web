@@ -7,17 +7,20 @@
 % \@footnotemark@latex, which revtex4.cls saves as the document starts and
 % revtex4-2 does not, and counts the title's notes as footnotes. revtex4-2
 % counts them as mpfootnotes, so the body's footnotes start at 1.
+% The document hook also sets up the references' rule (\web@revbibdevice
+% below).
 \appdef\class@documenthook{%
  \let\@makefnmark@latex\@makefnmark
- \let\@footnotemark@latex\@footnotemark}
+ \let\@footnotemark@latex\@footnotemark
+ \ifdefined\bib@device \let\bib@device\web@revbibdevice \fi}
 \pend:def\frontmatter@setup{\ltx@footnote@pop
  \def\@mpfn{mpfootnote}\def\thempfn{\thempfootnote}\c@mpfootnote\z@
  \web@revfntext}
-% The mark of a \footnote in the title block links to the anchor that
-% hyperref writes with the note's text, which tex4ht's text leaves out.
-% The class names that anchor, and links to it, without hyperref too,
-% where its \hyper@anchorstart writes nothing, so tex4ht's \Link writes
-% the anchors of the title block's notes.
+% The mark of a \footnote in the title block links to an anchor that
+% hyperref writes with the note's text. tex4ht's text leaves that anchor
+% out. The class names the anchor and links to it with or without
+% hyperref, but without hyperref \hyper@anchorstart writes nothing.
+% tex4ht's \Link writes the anchors of the title block's notes instead.
 \def\web@revanchor#1{\Link{}{#1}\EndLink}
 \def\web@revfntext{%
  \let\web@revfootnotetext\@footnotetext
@@ -134,8 +137,6 @@
   \HCode{<div class="center">}\ShowPar\endgraf\noindent\phantomsection
   \addcontentsline{toc}{section}{\protect\numberline{}\refname}%
   \rule[-.5\p@]{#2}{\p@}\par\IgnorePar\EndP\HCode{</div>}\ShowPar}
-\appdef\class@documenthook{%
-  \ifdefined\bib@device \let\bib@device\web@revbibdevice \fi}
 % html4.4ht's bibliography list ends each label with three no-break
 % spaces, which make4ht joins into one span when the bibliography is in
 % the body's font, as aapm's is. The PDF sets \labelsep after the label,
