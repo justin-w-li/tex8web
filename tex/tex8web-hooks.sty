@@ -275,10 +275,11 @@
 % since they are the same without it.
 %
 % hyperref's \H@refstepcounter, which hyperref.sty defines after the
-% point where hyperref stops under tex4ht. hypcap's \capstart, caption,
-% ltcaption, topcapt, subcaptionlite, and cleveref call it, and cleveref
-% copies it when it loads, after this hook. It is tex4ht's \refstepcounter,
-% which sets the anchor that a later \caption and \label use.
+% point where hyperref stops under tex4ht. hypcap's \capstart, topcapt,
+% and subcaptionlite call it. cleveref copies it when it loads, after
+% this hook, and ltcaption copies it in a longtable. It is tex4ht's
+% \refstepcounter, which sets the anchor that a later \caption and \label
+% use.
 \AddToHook{package/hyperref/after}{%
     \@ifundefined{H@refstepcounter}{\def\H@refstepcounter{\refstepcounter}}{}%
     \@ifpackagewith{hyperref}{hidelinks}{\gdef\web@hidelinks{}}{}%
