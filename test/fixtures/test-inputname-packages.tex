@@ -1,0 +1,23 @@
+% Files of the document named like the appendix and abstract packages,
+% read with the packages: appendix.ltx after \usepackage[page]{appendix},
+% and abstract.ltx before \usepackage{abstract}. As in the PDF, each
+% file's text is in the page, and the packages keep their abstract, their
+% appendices, and the page that names them.
+\documentclass{article}
+\usepackage[page]{appendix}
+\input{appendix.ltx}
+\input{abstract.ltx}
+\usepackage{abstract}
+\begin{document}
+\begin{abstract}
+The abstract of the document.
+\end{abstract}
+\section{Files}
+Abstract: \ownabstract
+
+Appendix: \ownappendix
+\begin{appendices}
+\section{Tables}
+The appendix of the document.
+\end{appendices}
+\end{document}

@@ -4,8 +4,10 @@
 % they are not fixtures. As in the PDF, each file's text is in the page,
 % and the abstract and the appendix keep article's form. A file read with
 % the primitive \input, one found through \input@path, and one read after
-% \begin{document} are read the same way.
+% \begin{document} are read the same way. makeidx's index keeps its entry.
 \documentclass{article}
+\usepackage{makeidx}
+\makeindex
 \input{glossary.ltx}
 \input{abstract.ltx}
 \input{appendix.ltx}
@@ -21,6 +23,8 @@
 The abstract of the document.
 \end{abstract}
 \section{Files}
+A ring\index{ring}.
+
 Glossary: \ownglossary
 
 Abstract: \ownabstract
@@ -39,4 +43,5 @@ Errata: \input{errata.ltx}
 \appendix
 \section{Tables}
 The appendix of the document.
+\printindex
 \end{document}

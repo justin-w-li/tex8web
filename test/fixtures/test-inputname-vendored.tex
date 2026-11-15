@@ -3,6 +3,7 @@
 % ship one. As in the PDF, each line of the algorithm is a line of its
 % own.
 \documentclass{article}
+\IfFileExists{./algorithmic.sty}{}{\errmessage{No copy of algorithmic.sty beside the document}}
 \usepackage{algorithmic}
 \begin{document}
 \begin{algorithmic}[1]

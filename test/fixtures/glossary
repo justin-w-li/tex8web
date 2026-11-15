@@ -1,0 +1,3 @@
+% A file of test-inputname-bare.tex, named like glossary.4ht, without an
+% extension.
+\newcommand\ownglossary{Text from the glossary file.}

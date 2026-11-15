@@ -1018,13 +1018,29 @@ const contents = {
   // (files of the document named like tex4ht's .4ht files, read in the
   // preamble: each file's text in the page, with nothing from the .4ht
   // file of its name, such as background.4ht's empty div, and article's
-  // abstract and appendix)
+  // abstract and appendix, as guards: the files' errors show only in the
+  // log; makeidx's index with its title, where index.4ht gave it "0"; and
+  // one page, where glossary.4ht's errors closed the page twice)
   'test-inputname': [
     ...['glossary', 'abstract', 'appendix', 'index', 'background', 'reading', 'proof', 'errata'].map(name =>
       new RegExp(`<p class='[a-z]+'>\\s*${name[0].toUpperCase() + name.slice(1)}: Text from the ${name} file\\.\\s*</p>`)),
     /^(?![^]*class='backgroundmaterial')/,
     /<section class='abstract' role='doc-abstract'>\s*<h3 class='abstracttitle'>\s*<span class='cmbx-9'>Abstract<\/span>\s*<\/h3>\s*<p class='noindent'><span class='cmr-9'>The abstract of the document\.<\/span>/,
     /<h3 class='sectionHead' id='tables'>.*<span class='titlemark'>A<\/span>.*Tables<\/h3>/,
+    /<h3 class='likesectionHead' id='index'>.*Index<\/h3>\s*<div class='theindex'><div class='theindex-letter'>\s*<div class='index-item'>ring, <a href='#[^']+'>1<\/a>/,
+    /^(?![^]*<\/html>[^]*<\/html>)/,
+  ],
+  // (a file of the document named like glossary.4ht, with no extension: its
+  // text, and one page)
+  'test-inputname-bare': [/Glossary: Text from the glossary file\./, /^(?![^]*<\/html>[^]*<\/html>)/],
+  // (files of the document named like the appendix and abstract packages,
+  // read with them: each file's text, and the abstract and the appendices
+  // as appendix.4ht and abstract.4ht set them)
+  'test-inputname-packages': [
+    /Abstract: Text from the abstract file\./,
+    /Appendix: Text from the appendix file\./,
+    /<h3 class='abstracttitle'><span class='cmbx-9'>Abstract<\/span><\/h3>\s*<p class='noindent'>\s*<span class='cmr-9'>The abstract of the document\.<\/span>/,
+    /<div class='appendices'>\s*<h3 class='likesectionHead' id='appendices'>.*Appendices<\/h3>/,
   ],
   // (a citation and its entry from a .bst and a .bib named by a path that
   // begins with ../)
@@ -2326,6 +2342,7 @@ const glossaries = {
   ]])),
   'test-inputname-glossaries-hyperref': [
     new RegExp(`A ${gls('ring', 'ring')}\\. Text from the glossaries file\\. Text from the glossary file\\.`),
+    /^(?![^]*<\/html>[^]*<\/html>)/,
     glossary('Glossary', entry('ring', 'ring', 'a set with two operations\\.')),
   ],
   'test-inputname-glossaries-first-hyperref': [
