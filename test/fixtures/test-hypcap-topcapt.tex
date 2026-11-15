@@ -1,0 +1,36 @@
+% Checks cases the fix must not break: topcapt and subcaptionlite with
+% hyperref and without hypcap, which step a float's counter with
+% \H@refstepcounter when hyperref defines it. Each \ref lands in its float,
+% not on the section before it.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{topcapt}
+\usepackage{subcaptionlite}
+\begin{document}
+\section{Tables}\label{sec:tab}
+\begin{table}[h]
+  \centering
+  \topcaption{Top table}\label{tab:top}
+  \begin{tabular}{c}1\end{tabular}
+\end{table}
+\section{Figures}
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{.4\linewidth}\centering\fbox{Left}\subcaption{Left half}\label{fig:a}\end{subfigure}
+  \begin{subfigure}{.4\linewidth}\centering\fbox{Right}\subcaption{Right half}\label{fig:b}\end{subfigure}
+  \caption{Split figure}\label{fig:split}
+\end{figure}
+\begin{table}[h]
+  \centering
+  \topcaption{Second table}\label{tab:two}
+  \begin{tabular}{c}2\end{tabular}
+\end{table}
+
+Ref: \ref{tab:top}; \ref{fig:split}; \ref{tab:two}.
+
+Autoref: \autoref{tab:top}; \autoref{fig:split}; \autoref{tab:two}.
+
+Sub: \ref{fig:a}; \ref{fig:b}.
+
+Section: \ref{sec:tab}.
+\end{document}

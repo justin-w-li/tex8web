@@ -2263,6 +2263,13 @@ const hypcap = {
       ['Range: figs. 1 and 2.'], ['Ref: 1; 1a; 1b; 1.', ['First figure', 'First figure', 'First figure', 'First table']],
       ['More: fig. 3; a; b.', ['Outside', 'First figure', 'First figure']]],
   },
+  'test-hypcap-topcapt': {
+    captions: ['Table 1: Top table', 'Figure 1: Split figure', 'Table 2: Second table'],
+    texts: ['(a) Left half', '(b) Right half'],
+    refs: [['Ref: 1; 1; 2.', ['Top table', 'Split figure', 'Second table']],
+      ['Autoref: Table 1; Figure 1; Table 2.', ['Top table', 'Split figure', 'Second table']],
+      ['Sub: 1(a); 1(b).', ['Split figure', 'Split figure']], ['Section: 1.', [null]]],
+  },
   'test-hypcap-report': {
     captions: ['Figure 1.1: Long title', 'Figure 2.1: Second figure'],
     texts: ['1.1 Short', '2.1 Second figure'],

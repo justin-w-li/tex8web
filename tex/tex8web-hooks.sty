@@ -273,10 +273,36 @@
 % as a package option, or later in \hypersetup (kvoptions'
 % \KV@Hyp@hidelinks). The link colors and \@pdfborder cannot show it,
 % since they are the same without it.
+%
+% hyperref's \H@refstepcounter, which hyperref.sty defines after the
+% point where hyperref stops under tex4ht. hypcap's \capstart, caption,
+% ltcaption, topcapt, subcaptionlite, and cleveref call it, and cleveref
+% copies it when it loads, after this hook. It is tex4ht's \refstepcounter,
+% which sets the anchor that a later \caption and \label use.
 \AddToHook{package/hyperref/after}{%
+    \@ifundefined{H@refstepcounter}{\def\H@refstepcounter{\refstepcounter}}{}%
     \@ifpackagewith{hyperref}{hidelinks}{\gdef\web@hidelinks{}}{}%
     \expandafter\let\expandafter\web@hidelinks@kv\csname KV@Hyp@hidelinks\endcsname
     \expandafter\def\csname KV@Hyp@hidelinks\endcsname{\gdef\web@hidelinks{}\web@hidelinks@kv}%
+}
+
+% hyperref's anchors, each name once, as in the PDF, where pdfTeX ignores
+% a repeated destination. hypcap's \capstart in a float without a caption
+% writes an anchor and steps the counter back, so the next float's anchor
+% has the same name.
+\AddToHook{file/hyperref.4ht/after}{%
+    \web@needs{hyper@anchorstart}%
+    \let\web@anchorstart\hyper@anchorstart
+    \let\web@anchorend\hyper@anchorend
+    \def\hyper@anchorstart#1{%
+        \ifcsname web@anchor@#1\endcsname
+            \global\let\web@anchor@end\relax
+        \else
+            \global\expandafter\let\csname web@anchor@#1\endcsname\@empty
+            \global\let\web@anchor@end\web@anchorend
+            \web@anchorstart{#1}%
+        \fi}%
+    \def\hyper@anchorend{\web@anchor@end}%
 }
 
 % \@title before any \title, which is the kernel's error. tex8web-text.tex
