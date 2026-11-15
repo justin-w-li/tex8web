@@ -487,15 +487,19 @@
 % file of the document named like a .4ht, such as glossary.tex, would get
 % a package's configuration, and LaTeX would stop with errors. Such a
 % file, read from the document's folder and not a .sty or .cls, marks its
-% name as done for tex4ht, unless the package or class of that name has
-% loaded. Any other file of that name read later, such as the package, or
-% a .def file that a package reads from TeX's tree, clears the mark and
-% moves the document's file to the end of \@filelist: the .4ht is read
-% where that file is listed, after the .4ht files it needs, as
-% dvipsnam.4ht needs color.4ht. A file read with a folder in its name, or
-% found through \input@path, is listed with its folder: it matches no
-% .4ht, and neither marks nor clears.
+% name as done for tex4ht, unless a file of that name was read before
+% from outside the document's folder, or as a .sty or .cls. A file of
+% that name read later from outside the document's folder, or as a .sty
+% or .cls, such as the package, or a .def file that a package reads from
+% TeX's tree, clears the mark and moves the document's file to the end of
+% \@filelist: the .4ht is read where that file is listed, after the .4ht
+% files it needs, as dvipsnam.4ht needs color.4ht. The class and its
+% packages are read after this file, so each of them passes through this
+% hook. A file read with a folder in its name, or found through
+% \input@path, is listed with its folder: it matches no .4ht, and
+% neither marks nor clears.
 \ExplSyntaxOn
+\clist_new:N \l__web_filelist_clist
 \AddToHook { file/before }
     { \exp_last_unbraced:No \web@ownfile \CurrentFileUsed .. \q_stop }
 \cs_new_protected:Npn \web@ownfile #1 . #2 . #3 \q_stop
@@ -506,11 +510,13 @@
                     {
                         { \str_if_eq_p:nn {#2} { sty } }
                         { \str_if_eq_p:nn {#2} { cls } }
-                        { \cs_if_exist_p:c { ver@ #1 .sty } }
-                        { \cs_if_exist_p:c { ver@ #1 .cls } }
+                        { \cs_if_exist_p:c { web@keep@ #1 } }
                         { ! \file_if_exist_p:n { ./ \CurrentFileUsed } }
                     }
-                    { \web@ownfile@clear {#1} }
+                    {
+                        \cs_gset_eq:cN { web@keep@ #1 } \c_empty_tl
+                        \web@ownfile@clear {#1}
+                    }
                     {
                         \cs_gset_eq:cN { #1 :4ht } \c_empty_tl
                         \clist_if_exist:cF { web@own@ #1 }
@@ -526,14 +532,14 @@
                 \cs_undefine:c { #1 :4ht }
                 \clist_map_inline:cn { web@own@ #1 }
                     {
-                        \clist_clear:N \l_tmpa_clist
+                        \clist_clear:N \l__web_filelist_clist
                         \clist_map_inline:Nn \@filelist
                             {
                                 \str_if_eq:nnF {####1} {##1}
-                                    { \clist_put_right:Nn \l_tmpa_clist {####1} }
+                                    { \clist_put_right:Nn \l__web_filelist_clist {####1} }
                             }
-                        \clist_put_right:Nn \l_tmpa_clist {##1}
-                        \clist_gset_eq:NN \@filelist \l_tmpa_clist
+                        \clist_put_right:Nn \l__web_filelist_clist {##1}
+                        \clist_gset_eq:NN \@filelist \l__web_filelist_clist
                     }
                 \cs_undefine:c { web@own@ #1 }
             }

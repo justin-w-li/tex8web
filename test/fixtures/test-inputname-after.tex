@@ -1,0 +1,20 @@
+% Files of the document named like .4ht files, read after a file of the
+% same name from TeX's tree: dvipsnam.ltx after
+% \usepackage[dvipsnames]{xcolor}, which reads dvipsnam.def, and latin1.ltx
+% after \usepackage[latin1]{inputenc}, which reads latin1.def. As in the
+% PDF, each file's text is in the page, a named color keeps its value, and
+% the degree sign is set as latin1.4ht sets it.
+\documentclass{article}
+\usepackage[dvipsnames]{xcolor}
+\input{dvipsnam.ltx}
+\usepackage[latin1]{inputenc}
+\input{latin1.ltx}
+\begin{document}
+Dvipsnam: \owndvipsnam
+
+\textcolor{BrickRed}{Brick red text.}
+
+Latin1: \ownlatin
+
+An angle of 30\textdegree.
+\end{document}

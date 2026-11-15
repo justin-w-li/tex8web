@@ -1044,6 +1044,15 @@ const contents = {
     /Latin1: Text from the latin1 file\./,
     /An angle of 30°\./,
   ],
+  // (the same files, read after xcolor and inputenc read dvipsnam.def and
+  // latin1.def from TeX's tree: each file's text, the named color's value,
+  // and the degree sign as latin1.4ht sets it)
+  'test-inputname-after': [
+    /Dvipsnam: Text from the dvipsnam file\./,
+    /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/,
+    /Latin1: Text from the latin1 file\./,
+    /An angle of 30°\./,
+  ],
   // (a file of the document named like glossary.4ht, with no extension: its
   // text, and one page)
   'test-inputname-bare': [/Glossary: Text from the glossary file\./, /^(?![^]*<\/html>[^]*<\/html>)/],
