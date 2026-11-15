@@ -778,12 +778,12 @@ const index = {
 // it stays in the text.
 const titled = name => [new RegExp(`<button aria-label='${name}' class='tex8web-control tex8web-contents'[^>]* title='${name}'`),
   new RegExp(`<p class='tex8web-toc-title' id='tex8web-toc-title'>${name}</p>`)];
-// titletoc's run-in entries in the table of contents beside the text, in
-// order, each with its number and a link to its heading, and nothing after
-// them, after the entries that before matches; and a heading with its
-// number and title, then the text after it
+// The table of contents beside the text: the entries that before matches,
+// then titletoc's run-in entries in order, each with its number and a link
+// to its heading. The list ends after the last run-in entry.
 const runinToc = (entries, before = '') => new RegExp(`<nav [^>]*id='tex8web-toc'[^>]*>(?:(?!</nav>|<div class='tableofcontents'>)[^])*<div class='tableofcontents'>\\s*${before}${entries.map(([level, number, id, title]) =>
   `<span class='${level}Toc'><span class='tocnumber'>${number.replace(/\./g, '\\.')}</span><a href='#${id}'[^>]*>${title}(?:(?!</span>(?:<br />|\\s)*<span class='\\w+Toc'>)[^])*</a></span>`).join('(?:<br />|\\s)*')}(?:<br />|\\s)*</div></nav>`);
+// A heading with its number and title, then the text after it.
 const runinHead = (h, level, id, number, title, text) => new RegExp(`<${h} class='${level}Head' id='${id}'>(?:(?!</${h}>)[^])*` +
   `<span class='titlemark'>${number.replace(/\./g, '\\.')}</span>(?:(?!</${h}>)[^])*${title}(?:(?!</${h}>)[^])*</${h}>\\s*<p class='noindent'>${text}`);
 const contents = {
