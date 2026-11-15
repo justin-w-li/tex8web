@@ -1,0 +1,26 @@
+% hypcap's all option with hyperref and cleveref in a report: figures
+% numbered by chapter, a short title in the list of figures, and each
+% number, \ref, and \cref as in the PDF.
+\documentclass{report}
+\usepackage{hyperref}
+\usepackage[all]{hypcap}
+\usepackage{cleveref}
+\begin{document}
+\listoffigures
+\chapter{Alpha}
+\begin{figure}[h]
+  \centering
+  \fbox{One}
+  \caption[Short]{Long title}\label{fig:one}
+\end{figure}
+\chapter{Beta}
+\begin{figure}[h]
+  \centering
+  \fbox{Two}
+  \caption{Second figure}\label{fig:two}
+\end{figure}
+
+Cref: \cref{fig:one}; \Cref{fig:two}.
+
+Ref: \ref{fig:one}; \ref{fig:two}.
+\end{document}

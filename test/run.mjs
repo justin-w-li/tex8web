@@ -2222,10 +2222,11 @@ const patterns = [
 ];
 
 // Floats under hypcap, which moves a float's link target to its top: each
-// caption's and subcaption's text, and each paragraph's text as in the PDF, with the
-// caption that each link's target comes before (null for a target outside
-// a float). A paragraph with no list of targets is checked for its text
-// only. test-hypcap-none is test-hypcap without hypcap.
+// caption's and subcaption's text, other text the page must hold, and each
+// paragraph's text as in the PDF, with the caption of the float that each
+// link's target is in (null for a target outside a float). A paragraph with
+// no list of targets is checked for its text only. test-hypcap-none is
+// test-hypcap without hypcap.
 const hypcapPairs = [
   ['Cref: fig. 1; fig. 1a; Figure 1b; fig. 2; table 1; fig. 3; fig. 3a; program 1; section 1.',
     ['First figure', 'First figure', 'First figure', 'Second figure', 'First table', 'Wide figure', 'Wide figure', 'A program', null]],
@@ -2234,17 +2235,21 @@ const hypcapPairs = [
   ['Autoref: Figure 1; Table 1.', ['First figure', 'First table']],
   ['In italics, fig. 2.', ['Second figure']], ['In a footnote, table 1.', ['First table']],
   ['In a theorem, fig. 3.', ['Wide figure']],
+  ['Subref: (a); (b); (a).'],
 ];
 const hypcapMain = {
   captions: ['Figure 1: First figure', 'Fig. 2: Second figure', 'Table 1: First table', 'Figure 3: Wide figure', 'Program 1: A program'],
+  texts: ['(a) Left half', '(b) Right half', '(a) Upper part', '(b) Lower part', '(a) Wide half'],
   refs: hypcapPairs,
 };
 const hypcap = {
   'test-hypcap': hypcapMain, 'test-hypcap-none': hypcapMain,
   'test-hypcap-hyperref': {
-    captions: ['Figure 1: First figure', 'Figure 2: Wide figure', 'Table 1: First table', 'Table 2: Wide table'],
+    captions: ['Figure 1: First figure', 'Figure 2: Wide figure', 'Table 1: First table', 'Table 2: Wide table',
+      'Figure 3: Left', 'Figure 4: Right', 'Figure 5: Inner label'],
     refs: [['Ref: 1; 2; 1; 2.', ['First figure', 'Wide figure', 'First table', 'Wide table']],
-      ['Autoref: Figure 1; Figure 2; Table 1; Table 2.', ['First figure', 'Wide figure', 'First table', 'Wide table']]],
+      ['Autoref: Figure 1; Figure 2; Table 1; Table 2.', ['First figure', 'Wide figure', 'First table', 'Wide table']],
+      ['More: 3; Figure 5.', ['Left', 'Inner label']], ['Second caption: 4.']],
   },
   'test-hypcap-capstart': {
     captions: ['Figure 1: First figure', 'Figure 2: Second figure', 'Table 1: First table'],
@@ -2252,13 +2257,20 @@ const hypcap = {
       ['Autoref: Figure 1; Figure 2; Table 1.', ['First figure', 'Second figure', 'First table']]],
   },
   'test-hypcap-subcaption': {
-    captions: ['(a) Left half', '(b) Right half', 'Figure 1: First figure', 'Fig. 2: Second figure', 'Table 1: First table'],
+    captions: ['(a) Left half', '(b) Right half', 'Figure 1: First figure', 'Fig. 2: Second figure', 'Table 1: First table',
+      'Figure 3: Outside'],
     refs: [['Cref: fig. 1; fig. 1a; Figure 1b; fig. 2; table 1.', ['First figure', 'First figure', 'First figure', 'Second figure', 'First table']],
-      ['Range: figs. 1 and 2.'], ['Ref: 1; 1a; 1b; 1.', ['First figure', 'First figure', 'First figure', 'First table']]],
+      ['Range: figs. 1 and 2.'], ['Ref: 1; 1a; 1b; 1.', ['First figure', 'First figure', 'First figure', 'First table']],
+      ['More: fig. 3; a; b.', ['Outside', 'First figure', 'First figure']]],
+  },
+  'test-hypcap-report': {
+    captions: ['Figure 1.1: Long title', 'Figure 2.1: Second figure'],
+    texts: ['1.1 Short', '2.1 Second figure'],
+    refs: [['Cref: fig. 1.1; Figure 2.1.', ['Long title', 'Second figure']], ['Ref: 1.1; 2.1.', ['Long title', 'Second figure']]],
   },
 };
 const plain = text => text.replace(/<!--[^]*?-->/g, '').replace(/<[^>]*>/g, '').replace(/[\s ]+/g, ' ').trim();
-function hypcapProblems(html, { captions, refs }) {
+function hypcapProblems(html, { captions, texts = [], refs }) {
   const problems = [];
   // (each caption's position, to find the first float caption, the first
   // with a colon, after a link's target. A figure's caption after
@@ -2267,22 +2279,46 @@ function hypcapProblems(html, { captions, refs }) {
     .map(match => [match.index, plain(match[2])]);
   const found = at.map(([, text]) => text);
   if (found.join('|') !== captions.join('|')) problems.push(`the captions read '${found.join("|")}'`);
+  const all = plain(html);
+  for (const text of texts) if (!all.includes(text)) problems.push(`the page does not read '${text}'`);
+  const opens = [...html.matchAll(/<figure[ >]/g)].map(match => match.index);
+  const closes = [...html.matchAll(/<\/figure>/g)].map(match => match.index);
+  const named = ([, text]) => text.includes(': ');
+  // the caption of the float that holds the target at index: the first
+  // caption after it in its <figure>, or in the next <figure> when only tags
+  // come between them. tex4ht puts some floats' anchors right before their
+  // <figure>. A target before a caption outside floats (\captionof) lands
+  // on that caption.
+  function landing(index) {
+    const open = opens.findLast(position => position < index);
+    if (open !== undefined && closes.find(position => position > open) > index) {
+      const close = closes.find(position => position > index);
+      return at.find(caption => named(caption) && caption[0] > index && caption[0] < close)?.[1] ?? 'no caption after';
+    }
+    const next = at.find(caption => named(caption) && caption[0] > index);
+    const nextOpen = opens.find(position => position > index);
+    if (nextOpen !== undefined && (!next || nextOpen < next[0])) {
+      if (plain(html.slice(html.indexOf('>', index) + 1, nextOpen))) return 'outside';
+      const close = closes.find(position => position > nextOpen);
+      return at.find(caption => named(caption) && caption[0] > nextOpen && caption[0] < close)?.[1] ?? 'no caption after';
+    }
+    return next?.[1] ?? 'outside';
+  }
   const paragraphs = [...html.matchAll(/<p [^>]*>([^]*?)<\/p>/g)].map(([, inner]) => inner);
   for (const [sentence, targets] of refs) {
     const inner = paragraphs.find(p => plain(p).includes(sentence));
     if (inner === undefined) { problems.push(`no paragraph reads '${sentence}'`); continue; }
     if (!targets) continue;
     const links = [...inner.matchAll(/<a ([^>]*)>/g)].map(([, attrs]) => attrs)
-      .filter(attrs => !/tex8web-permalink|href='#fn/.test(attrs) && /href='#/.test(attrs))
+      .filter(attrs => !/tex8web-permalink|href='#fn/.test(attrs) && /href='#[^']/.test(attrs))
       .map(attrs => attrs.match(/href='#([^']+)'/)[1]);
     const landed = links.map(id => {
       const index = html.search(new RegExp(` id='${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`));
       if (index < 0) return 'no target';
-      return at.find(([position, text]) => position > index && text.includes(': '))?.[1].replace(/^[^:]*: /, '') ?? 'no caption after';
+      return landing(index).replace(/^[^:]*: /, '');
     });
     const wanted = targets.map(target => target ?? 'outside');
-    const got = landed.map((caption, i) => targets[i] === null ? 'outside' : caption);
-    if (got.join('|') !== wanted.join('|')) problems.push(`the links of '${sentence}' land before '${got.join("|")}'`);
+    if (landed.join('|') !== wanted.join('|')) problems.push(`the links of '${sentence}' land in '${landed.join("|")}'`);
   }
   return problems;
 }

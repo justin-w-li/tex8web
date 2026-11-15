@@ -1,10 +1,12 @@
 % hypcap's all option with hyperref alone, in figure, figure*, table, and
 % table*: each number, \ref, and \autoref as in the PDF, and each link
-% landing in its float.
+% landing in its float. A figure without a caption uses no number, a
+% float may hold two captions, and a label may sit inside a caption.
 \documentclass{article}
 \usepackage{hyperref}
 \usepackage[all]{hypcap}
 \begin{document}
+\begin{figure}[h]\centering\fbox{Bare}\end{figure}
 \begin{figure}[h]
   \centering
   \fbox{One}
@@ -25,8 +27,21 @@
   \caption{Wide table}\label{tab:wide}
   \begin{tabular}{c}2\end{tabular}
 \end{table*}
+\begin{figure}[h]
+  \begin{minipage}{.45\linewidth}\caption{Left}\label{fig:l}\end{minipage}
+  \begin{minipage}{.45\linewidth}\caption{Right}\label{fig:r}\end{minipage}
+\end{figure}
+\begin{figure}[h]
+  \centering
+  \fbox{Inner}
+  \caption{Inner label\label{fig:inner}}
+\end{figure}
 
 Ref: \ref{fig:one}; \ref{fig:wide}; \ref{tab:one}; \ref{tab:wide}.
 
 Autoref: \autoref{fig:one}; \autoref{fig:wide}; \autoref{tab:one}; \autoref{tab:wide}.
+
+More: \ref{fig:l}; \autoref{fig:inner}.
+
+Second caption: \ref{fig:r}.
 \end{document}

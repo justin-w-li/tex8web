@@ -1,5 +1,6 @@
 % hypcap's all option with caption, subcaption, and cleveref: each number,
-% \ref, and \cref as in the PDF, and each link landing in its float.
+% \ref, and \cref as in the PDF, and each link landing in its float, also
+% for a figure caption outside a float.
 \documentclass{article}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -28,10 +29,16 @@
   \caption{First table}\label{tab:one}
   \begin{tabular}{c}1\end{tabular}
 \end{table}
+\begin{center}
+  \fbox{Out}
+  \captionof{figure}{Outside}\label{fig:out}
+\end{center}
 
 Cref: \cref{fig:one}; \cref{fig:a}; \Cref{fig:b}; \cref{fig:two}; \cref{tab:one}.
 
 Range: \cref{fig:one,fig:two}.
 
 Ref: \ref{fig:one}; \ref{fig:a}; \ref{fig:b}; \ref{tab:one}.
+
+More: \cref{fig:out}; \subref{fig:a}; \subref{fig:b}.
 \end{document}
