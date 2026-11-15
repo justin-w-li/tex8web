@@ -1081,10 +1081,11 @@
 % as with dvipdfmx.def: TeX drops the double quotes from the name that
 % \openin reads, kpathsea's restricted shell escape refuses single quotes,
 % and extractbb gets the name as two arguments.
-% tex4ht loads graphics.4ht, which defines \Configure{graphics*}, only for
-% a graphics or graphicx package loaded in the preamble. mathtools loads
-% graphicx at \begin{document}, too late for graphics.4ht. Then this
-% block, the converted pictures, and Gin-dim below are skipped.
+%
+% Without graphics.4ht, which defines \Configure{graphics*}, this block,
+% the converted pictures, and Gin-dim below are skipped. tex4ht loads .4ht
+% files only for packages loaded before its begindocument/before hook
+% (tex4ht.sty), and mathtools loads graphicx at \begin{document}.
 \catcode58 11
 \ifcsname c:graphics*:\endcsname
     \web@needs{o:Gin@setfile:}%
