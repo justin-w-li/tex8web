@@ -1522,7 +1522,8 @@
 % figure whose classes give its style (ruled, for example) and its
 % caption's place (top). Lines are paragraphs, and blocks are divs, with a
 % vertical line where the style has one (vlined) and the short rule that
-% ends such a block. A line's number goes in the margin, as
+% ends such a block. The macros that write a block take a blank line in
+% their argument, as algorithm2e's do. A line's number goes in the margin, as
 % \algocf@printnl puts it (css/tex8web.css). The caption is tex4ht's, with
 % algorithm2e's label and separator. \algocf@latexcaption ends the caption
 % with \IgnorePar, which would leave the next line out of a <p>, so
@@ -1562,11 +1563,11 @@
         \par\egroup\web@algocode{</figure>}%
         \setlength{\skiptotal}{\@defaultskiptotal}%
         \let\;\@mathsemicolon \let\]\@emathdisplay}%
-    \def\web@algoblock#1#2{%
+    \long\def\web@algoblock#1#2{%
         \web@algocode{<div class="tex8web-a2e-block#1">}#2\web@algocode{</div>}}%
-    \def\algocf@Vline#1{\web@algoblock{ tex8web-a2e-vline tex8web-a2e-hook}{#1}}%
-    \def\algocf@Vsline#1{\par\algocf@bblockcode\web@algoblock{ tex8web-a2e-vline}{#1}\algocf@eblockcode}%
-    \def\algocf@Noline#1{\par\algocf@bblockcode\web@algoblock{}{#1}\algocf@eblockcode}%
+    \long\def\algocf@Vline#1{\web@algoblock{ tex8web-a2e-vline tex8web-a2e-hook}{#1}}%
+    \long\def\algocf@Vsline#1{\par\algocf@bblockcode\web@algoblock{ tex8web-a2e-vline}{#1}\algocf@eblockcode}%
+    \long\def\algocf@Noline#1{\par\algocf@bblockcode\web@algoblock{}{#1}\algocf@eblockcode}%
     \def\algocf@printnl#1{\HCode{<span class="tex8web-a2e-nl\ifalgocf@leftlinenumber\else
         \space tex8web-a2e-nl-right\fi">}\NlSty{#1}\HCode{</span>}\ignorespaces}%
     \let\web@algocf@setcaption\algocf@setcaption
