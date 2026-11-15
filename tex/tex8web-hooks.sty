@@ -481,3 +481,47 @@
         \ifdefined\NR@part\global\let\web@@part\NR@part\fi
     \fi
 }
+
+% tex4ht reads <name>.4ht for each file in \@filelist, once per name
+% (\h:input and \no:dupl, html4.4ht). A file of the document named like a
+% .4ht, such as glossary.tex, would get a package's configuration, and
+% LaTeX would stop with errors. Such a file, read from the document's
+% folder and not a .sty or .cls, marks its name as done for tex4ht, unless
+% the package or class of that name has loaded. That package or class,
+% loading after the file, clears the mark. A file found through
+% \input@path is listed with its folder and matches no .4ht.
+\ExplSyntaxOn
+\AddToHook { file/before }
+    { \exp_last_unbraced:No \web@ownfile \CurrentFileUsed .. \q_stop }
+\cs_new_protected:Npn \web@ownfile #1 . #2 . #3 \q_stop
+    {
+        \str_case:nnF {#2}
+            {
+                { sty } { \web@ownfile@clear {#1} }
+                { cls } { \web@ownfile@clear {#1} }
+            }
+            {
+                \bool_lazy_any:nF
+                    {
+                        { ! \tl_if_empty_p:N \CurrentFilePathUsed }
+                        { \cs_if_exist_p:c { ver@ #1 .sty } }
+                        { \cs_if_exist_p:c { ver@ #1 .cls } }
+                    }
+                    {
+                        \file_if_exist:nT { ./ \CurrentFileUsed }
+                            {
+                                \cs_gset_eq:cN { #1 :4ht } \c_empty_tl
+                                \cs_gset_eq:cN { web@own@ #1 } \c_empty_tl
+                            }
+                    }
+            }
+    }
+\cs_new_protected:Npn \web@ownfile@clear #1
+    {
+        \cs_if_exist:cT { web@own@ #1 }
+            {
+                \cs_undefine:c { #1 :4ht }
+                \cs_undefine:c { web@own@ #1 }
+            }
+    }
+\ExplSyntaxOff
