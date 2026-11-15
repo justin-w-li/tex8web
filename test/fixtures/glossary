@@ -1,3 +1,4 @@
 % A file of test-inputname-bare.tex, named like glossary.4ht, without an
-% extension.
+% extension. It names itself.
+\ProvidesFile{glossary}[2024/01/01]
 \newcommand\ownglossary{Text from the glossary file.}

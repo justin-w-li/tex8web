@@ -616,4 +616,22 @@
             }
         \clist_gclear:N \g__web_ownnames_clist
     }
+% tex4ht.sty's \@providesfile adds the name a file gives in \ProvidesFile
+% to \@filelist. The document's marked file can give its name without its
+% extension, or with another one: the name is listed as the file's, so
+% that the check above does not count it as another file.
+\cs_new_eq:NN \__web_providesfile:w \@providesfile
+\cs_gset_protected:Npn \@providesfile #1
+    {
+        \tl_if_empty:NT \CurrentFilePathUsed
+            {
+                \exp_last_unbraced:No \__web_basename:w \CurrentFileUsed .. \q_stop
+                \cs_if_exist:cT { web@own@ \l__web_basename_tl }
+                    {
+                        \clist_if_in:cVT { web@own@ \l__web_basename_tl } \CurrentFileUsed
+                            { \clist_gput_right:cn { web@own@ \l__web_basename_tl } { {#1} } }
+                    }
+            }
+        \__web_providesfile:w {#1}
+    }
 \ExplSyntaxOff
