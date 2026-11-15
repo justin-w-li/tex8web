@@ -1,0 +1,10 @@
+% A guard: cases the fix of KOMA-Script's footnotes must not break. In
+% article with Times, a footnote's text starts at its mark, and each
+% footnote keeps the words and spaces of the PDF: a narrow first word
+% with a space after it, and one with none.
+\documentclass{article}
+\usepackage{times}
+\begin{document}
+Text one.\footnote{I thank a reader.}
+Text two.\footnote{I'd say so.}
+\end{document}

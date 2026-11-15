@@ -1,0 +1,10 @@
+% KOMA-Script's footnotes in the default font, without hyperref:
+% scrartcl's default \deffootnote, whose text starts left of its mark,
+% with an ordinary mark and a wide one. Each footnote keeps the words and
+% spaces of the PDF.
+\documentclass{scrartcl}
+\begin{document}
+Text one.\footnote{I thank a reader.}
+Text two.\footnote[20]{I owe this here.}
+Text three.\footnote[1000]{I am a fan of it.}
+\end{document}

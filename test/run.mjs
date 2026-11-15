@@ -1088,7 +1088,8 @@ const contents = {
     noteWords(4, 'I am grateful to her.'), noteWords(20, 'I owe this point to him.'), noteWords(5, 'I stress this word.'),
     noteWords(6, 'I, too, agree with it.'), noteWords(7, 'Ian thanks a colleague.'), noteWords(8, 'a fortiori it holds.'),
     noteWords(9, 'I say this in sans.'), noteWords(10, 'I type this in mono.'), noteWords(11, 'I.e. the same again.'),
-    noteWords('a', 'I note this in a box.'),
+    noteWords('a', 'I note this in a box.'), noteWords(1000, 'I am a fan of it.'), noteWords(12, 'I thank a reader here.'),
+    noteWords(13, 'We are so in it.'),
     /<span class='thank-mark'>(?:<[^>]*>)*\*(?:<[^>]*>)*<\/span>I\s+thank\s+a\s+funder\s+of\s+this\s+work\./,
   ],
   'test-fnspace-scrreprt': [
@@ -1097,8 +1098,11 @@ const contents = {
   ],
   'test-fnspace-scrbook': [
     noteWords(1, 'I thank a critic for this.'), noteWords(2, 'A measure is finite again.'), noteWords(3, 'We thank the binder too.'),
-    noteWords(4, 'I am in debt to them.'), noteWords('a', 'I add this in a box.'),
+    noteWords(4, 'I am in debt to them.'), noteWords('a', 'I add this in a box.'), noteWords(5, 'It is so.'),
+    noteWords(6, 'If so, then.'), noteWords(7, 'Me too, then.'),
   ],
+  'test-fnspace-article': [noteWords(1, 'I thank a reader.'), noteWords(2, 'I’d say so.')],
+  'test-fnspace-cm': [noteWords(1, 'I thank a reader.'), noteWords(20, 'I owe this here.'), noteWords(1000, 'I am a fan of it.')],
 };
 
 // Text back in its font after a font command that the PDF keeps in a
