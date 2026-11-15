@@ -14,9 +14,10 @@ after(() => rmSync(pooled, { recursive: true, force: true }));
 
 // The stand-in is first on the PATH of the builds and regress.mjs runs that
 // pass `stubbed`, for the tests of what happens around a build. bin/tex8web
-// runs it as make4ht. Its page is the document's text, and a document with
-// \undefinedcs fails. It saves and reuses the LaTeX run as tex8web.mk4 does,
-// printing 'LaTeX ran' in LaTeX's part of the log when not reusing it.
+// runs it as make4ht. Its page is the document's text, with the PDF and the
+// up link that -p and -u give, and a document with \undefinedcs fails. It
+// saves and reuses the LaTeX run as tex8web.mk4 does, printing 'LaTeX ran'
+// in LaTeX's part of the log when not reusing it.
 const stubs = join(pooled, 'stubs');
 mkdirSync(stubs);
 writeFileSync(join(stubs, 'make4ht'), `#!/bin/sh
@@ -33,7 +34,8 @@ if [ -z "$TEX8WEB_LATEX_REUSE" ]; then
   [ -z "$TEX8WEB_LATEX_SAVE" ] || mkdir -p "$TEX8WEB_LATEX_SAVE"
 fi
 echo tex8web-latex-end
-{ echo "<head><script id='tex8web-fonts'>/*<![CDATA[*/ /*]]>*/</script></head>"; cat "$1"; } > "$out/\${1%.tex}.html"
+{ echo "<head><script id='tex8web-fonts'>/*<![CDATA[*/ /*]]>*/</script></head>"; cat "$1"
+  [ -z "$TEX8WEB_PDF$TEX8WEB_UP" ] || echo "<!-- pdf $TEX8WEB_PDF up $TEX8WEB_UP -->"; } > "$out/\${1%.tex}.html"
 : > "$aux/\${1%.tex}.log"
 `, { mode: 0o755 });
 // A stand-in for docker, for test/lib/contain.mjs: it adds each call's

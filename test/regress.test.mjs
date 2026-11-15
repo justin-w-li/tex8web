@@ -124,16 +124,16 @@ describe('regress.mjs', { concurrency: true }, () => {
     }
   });
 
-  test('regress.mjs --contain builds each PDF and page in the container, without the .latexmkrc', async () => {
+  test('regress.mjs --contain builds each PDF and page in the container, without the .latexmkrc, and --pdf and --up link them', async () => {
     // (a .latexmkrc read would name the PDF rc.pdf. The directory of
     // chapter/part.tex is made in build/pdf for its \include's .aux)
     const dir = scratch({ 'one/main.tex': article('First'), 'one/.latexmkrc': "$jobname = 'rc';", 'one/chapter/part.tex': 'Part.' });
     try {
-      const result = await regress(dir, '--contain', '--latexmk', 'one');
+      const result = await regress(dir, '--contain', '--latexmk', '--pdf', '--up', '../../index.html', 'one');
       assert.equal(result.status, 0, result.stderr + result.stdout);
       assert.ok(existsSync(join(dir, 'one/build/pdf/main.pdf')), 'no PDF');
       assert.ok(existsSync(join(dir, 'one/build/pdf/chapter')), 'no chapter in build/pdf');
-      assert.ok(existsSync(join(dir, 'build/regress/html/one/main.html')));
+      assert.match(readFileSync(join(dir, 'build/regress/html/one/main.html'), 'utf8'), /<!-- pdf \/\S*\/one\/build\/pdf\/main\.pdf up \.\.\/\.\.\/index\.html -->/);
       const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.includes(`target=${join(dir, 'one')},readonly `));
       assert.ok(runs.some(line => line.includes(`target=${join(dir, 'one/build')} `)
         && line.endsWith(' latexmk -norc -pdf -outdir=build/pdf -bibfudge- -interaction=nonstopmode -halt-on-error main.tex')), runs.join('\n'));

@@ -40,6 +40,11 @@
 //                      --baseline, or --shots-cache. It is refused, like a
 //                      document's directory, if it holds anything but files
 //                      and directories
+//   --pdf              link each page to build/pdf/<file>.pdf in its
+//                      document's directory, as -p does, where --contain
+//                      --latexmk writes the PDF
+//   --up <url>         link each page to the page above it, as -u does.
+//                      url is relative to the page, html/<name>/<file>.html
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -64,7 +69,7 @@ const at = (path, source) => {
   if (lstatSync(real, { throwIfNoEntry: false })?.isSymbolicLink()) refuse(`refusing ${path}: it is a symbolic link`);
   return real;
 };
-const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain [--root <dir>]] [--shots-cache <dir>] <dir or .tex file>...';
+const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain [--root <dir>]] [--pdf] [--up <url>] [--shots-cache <dir>] <dir or .tex file>...';
 const refuse = message => {
   console.error(message);
   process.exit(2);
@@ -75,7 +80,7 @@ try {
   parsed = parseArgs({ allowPositionals: true, options: {
     c: { type: 'string', short: 'c' }, baseline: { type: 'string' }, out: { type: 'string' },
     accept: { type: 'boolean' }, draft: { type: 'boolean' }, latexmk: { type: 'boolean' }, contain: { type: 'boolean' },
-    root: { type: 'string' },
+    root: { type: 'string' }, pdf: { type: 'boolean' }, up: { type: 'string' },
     'shots-cache': { type: 'string' },
   } });
 } catch (error) {
@@ -129,6 +134,7 @@ function document(arg) {
   // build() does not build the PDFs a config's \WebPDF links; latexmk()
   // builds them with --latexmk
   return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true,
+    ...options.pdf && { pdf: join('build/pdf', tex.replace(/\.tex$/, '.pdf')) }, ...options.up && { up: options.up },
     ...options.contain && { runner: [join(root, 'test/lib/contain.mjs')] }, ...top && { sourceRoot: top } };
 }
 
