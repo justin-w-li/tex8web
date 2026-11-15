@@ -1,7 +1,11 @@
-% A shell command through \write18, which would write into the document's
-% build directory, writable in the container.
+% Shell commands through \write18: touch, which restricted shell escape
+% refuses, would write into the document's build directory, writable in
+% the container. makeindex, which it allows, would write into the
+% document's directory, \ContainSource, which the config that
+% test/contain.mjs writes defines.
 \documentclass{article}
 \begin{document}
 \immediate\write18{touch build/escaped-write18}
+\immediate\write18{makeindex -o \ContainSource/escaped-makeindex.ind main.tex}
 Text.
 \end{document}

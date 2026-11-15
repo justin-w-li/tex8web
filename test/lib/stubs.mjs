@@ -16,9 +16,9 @@ after(() => rmSync(pooled, { recursive: true, force: true }));
 // pass `stubbed`, for the tests of what happens around a build. bin/tex8web
 // runs it as make4ht. It prints its arguments. Its page is the document's
 // text, with the PDF and the up link that -p and -u give, and a document
-// with \undefinedcs fails. It
-// saves and reuses the LaTeX run as tex8web.mk4 does, printing 'LaTeX ran'
-// in LaTeX's part of the log when not reusing it.
+// with \undefinedcs fails. It saves and reuses the LaTeX run as
+// tex8web.mk4 does, printing 'LaTeX ran' in LaTeX's part of the log when
+// not reusing it.
 const stubs = join(pooled, 'stubs');
 mkdirSync(stubs);
 writeFileSync(join(stubs, 'make4ht'), `#!/bin/sh

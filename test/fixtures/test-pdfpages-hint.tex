@@ -1,7 +1,7 @@
 % Pages of a PDF included with pdfpages, with a lastpage hint of 3 for a
 % PDF of 4 pages: every page, and a range to the last page. test/run.mjs
-% also builds this page without shell escape, as with --contain, where the
-% number of pages is not read and the hint gives it, so the last page is 3.
+% also builds this page without shell escape, where the number of pages
+% is not read and the hint gives it, so the last page is 3.
 % With shell escape, the number read overrides the hint, as pdflatex does,
 % and the last page is 4. The run nohint has no hint: without shell
 % escape it shows page 1 alone, and pdfpages' warning in the TeX log names

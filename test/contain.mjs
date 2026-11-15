@@ -16,7 +16,7 @@
 // \includes files from six directories; picparent also builds a page whose
 // pictures lie above its directory; shellescape builds a PDF and page
 // with minted and pdfpages, which run commands that restricted shell
-// escape allows; mountlink gives the runner a link
+// escape allows, with four.pdf from test-pdfpages; mountlink gives the runner a link
 // to mount; labels runs --clean on one of a running command's -w
 // directories; kill builds loop in another process, kills that process
 // once loop's .make4ht has run, and builds loop again on what was left.
@@ -58,7 +58,7 @@ writeFileSync(join(scratch, 'secret.tex'), 'Secret.\n');
 // fails: the build must fail. line: in its log, or in a TeX or biber log,
 // or several lines. twice: built again, on what the first build left
 const cases = {
-  write18: { line: /runsystem\(touch build\/escaped-write18\)\.\.\.disabled \(restricted\)/ },
+  write18: { line: [/runsystem\(touch build\/escaped-write18\)\.\.\.disabled \(restricted\)/, /runsystem\(makeindex -o [^)]*\)\.\.\.executed safely \(allowed\)/] },
   openout: { fails: true, line: /! I can't write on file `\/.*/ },
   openouthost: { fails: true, line: /! I can't write on file `\/.*/ },
   make4ht: { line: /contain case: escaped-make4ht: Read-only file system\n.*contain case: \.\.\/\.\.\/\.\.\/escaped-make4ht: Read-only file system/ },
@@ -219,6 +219,7 @@ function shellescape() {
   process.on('exit', () => rmSync(own, { recursive: true }));
   const dir = join(own, 'shellescape');
   cpSync(join(root, 'test/contain/shellescape'), dir, { recursive: true });
+  cpSync(join(root, 'test/fixtures/test-pdfpages/four.pdf'), join(dir, 'four.pdf'));
   const result = sync(process.execPath, [join(root, 'test/regress.mjs'), '--contain', '--latexmk', '--out', join(own, 'out'), dir], {}, 600);
   const log = `${result.stderr}${result.stdout}`;
   if (result.status !== 0) return `regress.mjs exited with ${result.status}:\n${log.trim().split('\n').slice(-8).join('\n')}`;
