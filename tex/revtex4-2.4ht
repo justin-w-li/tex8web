@@ -22,8 +22,7 @@
 \def\web@revfntext{%
  \let\web@revfootnotetext\@footnotetext
  \long\def\@footnotetext##1{\web@revfootnotetext{%
-   \ifdefined\Hy@footnote@currentHref
-     \web@revanchor{\Hy@footnote@currentHref}\fi##1}}}
+   \web@revanchor{\Hy@footnote@currentHref}##1}}}
 % The note's anchor is named as revtex4-2's marks link to it, from the
 % mpfootnote count.
 \long\def\frontmatter@makefntext#1{%
@@ -83,9 +82,21 @@
 % only when the paper gives it, so a paper with none shows a lone
 % "Keywords:" line. The title block's group turns each option off when
 % its list is empty, after the abstract and before revtex4.4ht's test.
+% aip4-2.rtx's title block shows the keywords above the PACS numbers,
+% where revtex4.4ht's shows them below, so under aip the keywords are
+% written first, and the keywords' turn in revtex4.4ht writes nothing.
 \append:def\frontmatter@abstract@produce{%
  \@ifx@empty\@pacs{\@booleanfalse\showPACS@sw}{}%
- \@ifx@empty\@keywords{\@booleanfalse\showKEYS@sw}{}}
+ \@ifx@empty\@keywords{\@booleanfalse\showKEYS@sw}{}%
+ \web@revkeysfirst{\showKEYS@sw{\par\a:keywords\par
+   \@keywords@produce\@keywords \par\b:keywords\par
+   \@booleanfalse\showKEYS@sw \let\@keywords\@empty}{}}}
+\def\web@revaip{aip}
+\ifx\@society\web@revaip
+  \let\web@revkeysfirst\@firstofone
+\else
+  \let\web@revkeysfirst\@gobble
+\fi
 % revtex4.4ht sets the page in one column, but the reprint and twocolumn
 % options choose the two-column grid's \close@column as the class loads.
 % Its \onecolumngrid at the end of the document writes a paragraph after

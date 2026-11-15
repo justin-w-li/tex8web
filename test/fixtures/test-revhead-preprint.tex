@@ -2,11 +2,14 @@
 % spacing, with a single appendix from \appendix*, and a section after it
 % with no title, whose heading is "Appendix" alone. aip writes its
 % bibliography's \bibdata line twice, and bibtex fails, unless the
-% document has a \bibliography, here with nothing cited.
+% document has a \bibliography, here with nothing cited. aip shows the
+% keywords above the PACS numbers.
 \documentclass[aip,jcp,preprint]{revtex4-2}
 \begin{document}
 \title{Revhead preprint}
 \author{Someone}
+\pacs{01.01}
+\keywords{first keyword}
 \maketitle
 \section{First section}
 Text of the first section.

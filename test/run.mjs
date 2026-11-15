@@ -785,6 +785,8 @@ const contents = {
     // (a section with no title after \appendix*: "Appendix" with no colon,
     // as in the PDF)
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix<\/span>(?:\s|<[^>]*>)*<\/h3>\s*<p class='noindent'>Text of the bare appendix\./i,
+    // (aip's keywords above its PACS numbers, as in the PDF)
+    /<div class='keywords'>(?:(?!<\/div>)[^])*first keyword(?:(?!<\/div>)[^])*<\/div>(?:(?!<h3)[^])*<div class='pacs'>(?:(?!<\/div>)[^])*01\.01/,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
   // (revtex4-2's notes in the title block: an author's \footnote, \email,
