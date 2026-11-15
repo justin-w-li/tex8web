@@ -2221,6 +2221,72 @@ const patterns = [
   [drivers, 'with the driver option', true],
 ];
 
+// Floats under hypcap, which moves a float's link target to its top: each
+// caption's and subcaption's text, and each paragraph's text as in the PDF, with the
+// caption that each link's target comes before (null for a target outside
+// a float). A paragraph with no list of targets is checked for its text
+// only. test-hypcap-none is test-hypcap without hypcap.
+const hypcapPairs = [
+  ['Cref: fig. 1; fig. 1a; Figure 1b; fig. 2; table 1; fig. 3; fig. 3a; program 1; section 1.',
+    ['First figure', 'First figure', 'First figure', 'Second figure', 'First table', 'Wide figure', 'Wide figure', 'A program', null]],
+  ['Range: figs. 1 to 3.'],
+  ['Ref: 1; 1a; 2; 1; 3; 1.', ['First figure', 'First figure', 'Second figure', 'First table', 'Wide figure', 'A program']],
+  ['Autoref: Figure 1; Table 1.', ['First figure', 'First table']],
+  ['In italics, fig. 2.', ['Second figure']], ['In a footnote, table 1.', ['First table']],
+  ['In a theorem, fig. 3.', ['Wide figure']],
+];
+const hypcapMain = {
+  captions: ['Figure 1: First figure', 'Fig. 2: Second figure', 'Table 1: First table', 'Figure 3: Wide figure', 'Program 1: A program'],
+  refs: hypcapPairs,
+};
+const hypcap = {
+  'test-hypcap': hypcapMain, 'test-hypcap-none': hypcapMain,
+  'test-hypcap-hyperref': {
+    captions: ['Figure 1: First figure', 'Figure 2: Wide figure', 'Table 1: First table', 'Table 2: Wide table'],
+    refs: [['Ref: 1; 2; 1; 2.', ['First figure', 'Wide figure', 'First table', 'Wide table']],
+      ['Autoref: Figure 1; Figure 2; Table 1; Table 2.', ['First figure', 'Wide figure', 'First table', 'Wide table']]],
+  },
+  'test-hypcap-capstart': {
+    captions: ['Figure 1: First figure', 'Figure 2: Second figure', 'Table 1: First table'],
+    refs: [['Ref: 1; 2; 1.', ['First figure', 'Second figure', 'First table']],
+      ['Autoref: Figure 1; Figure 2; Table 1.', ['First figure', 'Second figure', 'First table']]],
+  },
+  'test-hypcap-subcaption': {
+    captions: ['(a) Left half', '(b) Right half', 'Figure 1: First figure', 'Fig. 2: Second figure', 'Table 1: First table'],
+    refs: [['Cref: fig. 1; fig. 1a; Figure 1b; fig. 2; table 1.', ['First figure', 'First figure', 'First figure', 'Second figure', 'First table']],
+      ['Range: figs. 1 and 2.'], ['Ref: 1; 1a; 1b; 1.', ['First figure', 'First figure', 'First figure', 'First table']]],
+  },
+};
+const plain = text => text.replace(/<!--[^]*?-->/g, '').replace(/<[^>]*>/g, '').replace(/[\s ]+/g, ' ').trim();
+function hypcapProblems(html, { captions, refs }) {
+  const problems = [];
+  // (each caption's position, to find the first float caption, the first
+  // with a colon, after a link's target. A figure's caption after
+  // subcaption's subfigures is a <div>, as are subcaptions)
+  const at = [...html.matchAll(/<(figcaption|div class='caption')[^>]*>([^]*?)<\/(?:figcaption|div)>/g)]
+    .map(match => [match.index, plain(match[2])]);
+  const found = at.map(([, text]) => text);
+  if (found.join('|') !== captions.join('|')) problems.push(`the captions read '${found.join("|")}'`);
+  const paragraphs = [...html.matchAll(/<p [^>]*>([^]*?)<\/p>/g)].map(([, inner]) => inner);
+  for (const [sentence, targets] of refs) {
+    const inner = paragraphs.find(p => plain(p).includes(sentence));
+    if (inner === undefined) { problems.push(`no paragraph reads '${sentence}'`); continue; }
+    if (!targets) continue;
+    const links = [...inner.matchAll(/<a ([^>]*)>/g)].map(([, attrs]) => attrs)
+      .filter(attrs => !/tex8web-permalink|href='#fn/.test(attrs) && /href='#/.test(attrs))
+      .map(attrs => attrs.match(/href='#([^']+)'/)[1]);
+    const landed = links.map(id => {
+      const index = html.search(new RegExp(` id='${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}'`));
+      if (index < 0) return 'no target';
+      return at.find(([position, text]) => position > index && text.includes(': '))?.[1].replace(/^[^:]*: /, '') ?? 'no caption after';
+    });
+    const wanted = targets.map(target => target ?? 'outside');
+    const got = landed.map((caption, i) => targets[i] === null ? 'outside' : caption);
+    if (got.join('|') !== wanted.join('|')) problems.push(`the links of '${sentence}' land before '${got.join("|")}'`);
+  }
+  return problems;
+}
+
 // the problems in a built page's logs, the page, and the files beside it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -2240,6 +2306,7 @@ function check(doc, result, out, aux) {
   if (styles && !/^li p:last-child/m.test(styles)) problems.push("no html4.4ht's rules for <li>");
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  if (hypcap[doc.name]) problems.push(...hypcapProblems(html, hypcap[doc.name]));
   // memoir emulates moreverb without its tex4ht configuration hooks.
   if (/<head>(?:(?!<\/head>)[^])*<div class='listinginput'>/.test(html)) problems.push('listinginput in the head');
   if (doc.name.startsWith('test-verbatim-font-listings')) {
@@ -2511,7 +2578,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

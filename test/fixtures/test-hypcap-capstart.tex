@@ -1,0 +1,29 @@
+% hypcap without options, with a manual \capstart in a figure and a table,
+% and a figure without one: each number, \ref, and \autoref as in the PDF,
+% and each link landing in its float.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{hypcap}
+\begin{document}
+\begin{figure}[h]
+  \capstart
+  \centering
+  \fbox{One}
+  \caption{First figure}\label{fig:one}
+\end{figure}
+\begin{figure}[h]
+  \centering
+  \fbox{Two}
+  \caption{Second figure}\label{fig:two}
+\end{figure}
+\begin{table}[h]
+  \capstart
+  \centering
+  \caption{First table}\label{tab:one}
+  \begin{tabular}{c}1\end{tabular}
+\end{table}
+
+Ref: \ref{fig:one}; \ref{fig:two}; \ref{tab:one}.
+
+Autoref: \autoref{fig:one}; \autoref{fig:two}; \autoref{tab:one}.
+\end{document}

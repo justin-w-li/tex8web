@@ -1,0 +1,32 @@
+% hypcap's all option with hyperref alone, in figure, figure*, table, and
+% table*: each number, \ref, and \autoref as in the PDF, and each link
+% landing in its float.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage[all]{hypcap}
+\begin{document}
+\begin{figure}[h]
+  \centering
+  \fbox{One}
+  \caption{First figure}\label{fig:one}
+\end{figure}
+\begin{figure*}[h]
+  \centering
+  \fbox{Wide}
+  \caption{Wide figure}\label{fig:wide}
+\end{figure*}
+\begin{table}[h]
+  \centering
+  \caption{First table}\label{tab:one}
+  \begin{tabular}{c}1\end{tabular}
+\end{table}
+\begin{table*}[h]
+  \centering
+  \caption{Wide table}\label{tab:wide}
+  \begin{tabular}{c}2\end{tabular}
+\end{table*}
+
+Ref: \ref{fig:one}; \ref{fig:wide}; \ref{tab:one}; \ref{tab:wide}.
+
+Autoref: \autoref{fig:one}; \autoref{fig:wide}; \autoref{tab:one}; \autoref{tab:wide}.
+\end{document}

@@ -1,0 +1,37 @@
+% hypcap's all option with caption, subcaption, and cleveref: each number,
+% \ref, and \cref as in the PDF, and each link landing in its float.
+\documentclass{article}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage[all]{hypcap}
+\usepackage{cleveref}
+\begin{document}
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}{0.4\textwidth}
+    \centering
+    \fbox{Left}
+    \caption{Left half}\label{fig:a}
+  \end{subfigure}
+  \subcaptionbox{Right half\label{fig:b}}{\fbox{Right}}
+  \caption{First figure}\label{fig:one}
+\end{figure}
+\begin{figure}[h]
+  \centering
+  \captionsetup{name=Fig.}
+  \fbox{Second}
+  \caption{Second figure}\label{fig:two}
+\end{figure}
+\begin{table}[h]
+  \centering
+  \caption{First table}\label{tab:one}
+  \begin{tabular}{c}1\end{tabular}
+\end{table}
+
+Cref: \cref{fig:one}; \cref{fig:a}; \Cref{fig:b}; \cref{fig:two}; \cref{tab:one}.
+
+Range: \cref{fig:one,fig:two}.
+
+Ref: \ref{fig:one}; \ref{fig:a}; \ref{fig:b}; \ref{tab:one}.
+\end{document}

@@ -1,0 +1,58 @@
+% hypcap, which moves a float's link target to the float's top, with
+% hyperref, subfig, cleveref, and float: each number, \ref, \autoref, and
+% \cref as in the PDF, and each link landing in its float.
+\documentclass{article}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage[all]{hypcap}
+\usepackage[caption=false]{subfig}
+\usepackage{cleveref}
+\newfloat{program}{tbp}{lop}
+\floatname{program}{Program}
+\crefname{program}{program}{programs}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Results}\label{sec:res}
+\begin{figure}[h]
+  \centering
+  \subfloat[Left half]{\fbox{Left}\label{fig:a}}\quad
+  \subfloat[Right half]{\fbox{Right}\label{fig:b}}
+  \caption{First figure}\label{fig:one}
+\end{figure}
+\begin{figure}[h]
+  \centering
+  \captionsetup{name=Fig.}
+  \fbox{Second}
+  \caption{Second figure}\label{fig:two}
+\end{figure}
+\begin{table}[h]
+  \centering
+  \caption{First table}\label{tab:one}
+  \subfloat[Upper part]{\begin{tabular}{c}1\end{tabular}}\quad
+  \subfloat[Lower part]{\begin{tabular}{c}2\end{tabular}}
+\end{table}
+\begin{figure*}[h]
+  \centering
+  \subfloat[Wide half]{\fbox{Wide}\label{fig:wide-a}}
+  \caption{Wide figure}\label{fig:wide}
+\end{figure*}
+\begin{program}[h]
+  \capstart
+  \fbox{Code}
+  \caption{A program}\label{prog:one}
+\end{program}
+
+Cref: \cref{fig:one}; \cref{fig:a}; \Cref{fig:b}; \cref{fig:two}; \cref{tab:one}; \cref{fig:wide}; \cref{fig:wide-a}; \cref{prog:one}; \cref{sec:res}.
+
+Range: \cref{fig:one,fig:two,fig:wide}.
+
+Ref: \ref{fig:one}; \ref{fig:a}; \ref{fig:two}; \ref{tab:one}; \ref{fig:wide}; \ref{prog:one}.
+
+Autoref: \autoref{fig:one}; \autoref{tab:one}.
+
+\emph{In italics, \cref{fig:two}.} In a footnote.\footnote{In a footnote, \cref{tab:one}.}
+
+\begin{theorem}
+In a theorem, \cref{fig:wide}.
+\end{theorem}
+\end{document}
