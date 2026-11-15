@@ -1,0 +1,10 @@
+% A guard, for files of the document named like a .4ht file: a copy of
+% the plain TeX macro file epsf.tex in the document's folder, as old
+% papers ship one, read with \input. The copy's name ends in .ltx, so
+% that it is not a fixture. As in the PDF, the picture is shown.
+\documentclass{article}
+\IfFileExists{./epsf.ltx}{}{\errmessage{No copy of epsf.tex beside the document}}
+\input{epsf.ltx}
+\begin{document}
+A picture: \epsfbox{test-inputname-epsf.eps}
+\end{document}

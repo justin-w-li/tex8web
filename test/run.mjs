@@ -1968,6 +1968,9 @@ const algorithms = {
   // inputenc: the degree sign as cp1252.4ht sets it, outside the TS1 font's
   // span)
   'test-inputname-vendored-def': [/An angle of 30°\./],
+  // (a copy of the plain TeX macro file epsf.tex in the document's folder,
+  // read with \input: the picture of \epsfbox, as epsf.4ht sets it)
+  'test-inputname-vendored-epsf': [/A picture: <img alt='' src='test-inputname-vendored-epsf0x\.png' \/>/],
   // algorithm2e's, [H] and in \small text too: their style, caption
   // position, and lengths (at the body size), the caption's label and
   // separator, each line a paragraph numbered as in the PDF (the one after

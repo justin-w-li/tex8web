@@ -487,17 +487,20 @@
 % file of the document named like a .4ht, such as glossary.tex, would get
 % a package's configuration, and LaTeX would stop with errors. Such a
 % file, read from the document's folder and not a file of a package or
-% class (.sty, .cls, .def, .clo, .cfg, .ldf, or .fd, kept as a copy of a
-% package's file can be), marks its name as done for tex4ht, unless a
-% file of that name was read before from outside the document's folder,
-% or as a package's or class's file. A file of that name read later from
-% outside the document's folder, or as a package's or class's file, such
-% as the package, or a .def file that a package reads, clears the mark and
-% moves the document's file to the end of
-% \@filelist: the .4ht is read where that file is listed, after the .4ht
-% files it needs, as dvipsnam.4ht needs color.4ht. The class and its
-% packages are read after this file, so each of them passes through this
-% hook. A file read with a folder in its name, or found through
+% class (.sty, .cls, .def, .clo, .cfg, .ldf, or .fd, kept, because the
+% file can be a copy of a package's file), marks its name as done for
+% tex4ht, unless a file of that name was read before from outside the
+% document's folder, or as a package's or class's file. The names listed
+% below are kept too. Each is a .4ht file's name for which kpsewhich finds
+% a <name>.tex in TeX Live 2026: the file can be a copy of a macro file,
+% such as the epsf.tex that old documents ship, and epsf.4ht makes
+% \epsfbox a picture. A file of that name read later from outside the
+% document's folder, or as a package's or class's file, such as the
+% package, or a .def file that a package reads, clears the mark and moves
+% the document's file to the end of \@filelist: the .4ht is read where
+% that file is listed, after the .4ht files it needs, as dvipsnam.4ht
+% needs color.4ht. The class and its packages are read after this file,
+% so each of them passes through this hook. A file read with a folder in its name, or found through
 % \input@path, is listed with its folder: it matches no .4ht, and
 % neither marks nor clears. A name with a comma stays in braces in
 % \@filelist, as LaTeX's \@addtofilelist writes it.
@@ -505,6 +508,13 @@
 \clist_new:N \l__web_filelist_clist
 \clist_map_inline:nn { sty, cls, def, clo, cfg, ldf, fd }
     { \cs_new_eq:cN { web@keepext@ #1 } \c_empty_tl }
+\clist_map_inline:nn
+    {
+        2up, amstex, chemfig, color, eplain, epsf, gloss, graphicx, hebtex,
+        luavlna, manmac, mex, mfpic, pgf, pictex, plain, pst-jtree, pstricks,
+        standalone, syntax, tabto, texinfo, xy
+    }
+    { \cs_new_eq:cN { web@keep@ #1 } \c_empty_tl }
 \AddToHook { file/before }
     { \exp_last_unbraced:No \web@ownfile \CurrentFileUsed .. \q_stop }
 \cs_new_protected:Npn \web@ownfile #1 . #2 . #3 \q_stop
