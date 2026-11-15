@@ -179,10 +179,11 @@
     }
 }
 % the colors the math can name, for macros.lua to define in MathJax:
-% "name v,v,v" for each color the document defines and each xcolor base
+% "name v,v,v;" for each color the document defines and each xcolor base
 % color, which mixes start from. Values are unrounded, in gray or cmyk for
 % those models and otherwise in rgb, because macros.lua mixes them as
-% xcolor does ("Macros in math" in CONTRIBUTING.md)
+% xcolor does ("Macros in math" in CONTRIBUTING.md). A name may hold a
+% space, as pgfplots' mapped color does, but no comma or semicolon.
 \clist_const:Nn \c__web_colors_clist
     { black, blue, brown, cyan, darkgray, gray, green, lightgray, lime, magenta,
       olive, orange, pink, purple, red, teal, violet, white, yellow }
@@ -202,7 +203,7 @@
             \extractcolorspecs {#1} \web@model \web@spec
             \str_case_e:nnF { \web@model } { {gray} {} {cmyk} {} }
                 { \convertcolorspec \web@model \web@spec {rgb} \web@spec }
-            \tl_put_right:Ne \l__web_colors_tl { \tl_to_str:n {#1} ~ \web@spec \c_space_tl }
+            \tl_put_right:Ne \l__web_colors_tl { \tl_to_str:n {#1} ~ \web@spec ; }
         }
 }
 \AtEndDocument{\__web_colors_element:}

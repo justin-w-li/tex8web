@@ -1336,6 +1336,9 @@ const colors = {
   // extension with it: a color the document defines, a \colorlet, a model)
   'test-color-math': ['#c80064', '#00ff00', '#3366cc'].map(hex =>
     new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'color')};'>`)),
+  // (a color whose name has a space, and a color defined after it)
+  'test-color-space': ['#cc3300', '#336699'].map(hex =>
+    new RegExp(`<mjx-mstyle style='color: ${lightDark(hex, 'color')};'>`)),
   // Table colors as in the PDF: \rowcolors' alternating rows, from the row
   // it starts at, then \columncolor, \rowcolor[HTML], \cellcolor, and a
   // \rowcolor on a \multicolumn's row. The document loads colortbl before

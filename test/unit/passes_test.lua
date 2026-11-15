@@ -369,11 +369,11 @@ return {
     local d = parse("", [[<script type="text/x-tex8web-build" data-pdf="build/doc.pdf" data-fonts="phv ptm phv pcr">\newcommand{\x}{x}</script>]]
       .. [[<script type="text/x-tex8web-contents">
 Table des
-matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.39216 </script>]])
+matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.39216;</script>]])
     local context = {}
     page.build_data(d, context)
     equal(context, {pdf = "build/doc.pdf", contents = "Table des matières", macros = "\\newcommand{\\x}{x}",
-      colors = "ink 0.78432,0,0.39216 ", families = {body = "phv", roman = "ptm", sans = "phv", mono = "pcr"}})
+      colors = "ink 0.78432,0,0.39216;", families = {body = "phv", roman = "ptm", sans = "phv", mono = "pcr"}})
     equal(#d:query_selector("script"), 0)
     local e = parse("", [[<script type="text/x-tex8web-build" data-pdf=""></script>]]
       .. [[<script type="text/x-tex8web-contents">Contents</script>]]
@@ -580,8 +580,8 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
       .. [[\textcolor{red!50}{d}\fcolorbox{black}{teal}{e}\warm{f}\textcolor{nope!50}{g}\)</span>]]
       .. [[<span class="mathjax-inline">\(\textcolor{gray!50}{h}\textcolor{ink!50!yellow!50}{i}\textcolor{-ink}{j}]]
       .. [[\textcolor{-red!50!black}{k}\textcolor{red!50!-blue}{l}\textcolor{--ink}{m}\textcolor{red!150!black}{n}\textcolor{red!150}{o}\)</span>]])
-    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216 red 1,0,0 black 0,0,0 green 0,1,0 "
-      .. "teal 0,0.5,0.5 yellow 1,1,0 gray 0.5,0.5,0.5 blue 0,0,1 "})
+    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216;red 1,0,0;black 0,0,0;green 0,1,0;"
+      .. "teal 0,0.5,0.5;yellow 1,1,0;gray 0.5,0.5,0.5;blue 0,0,1;"})
     os.remove(tex)
     local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
     for _, line in ipairs({"\\definecolor{ink}{RGB}{200,0,100}", "\\definecolor{green}{RGB}{0,255,0}",
@@ -601,7 +601,7 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
   ["macros.define: the colors come before the macros (MathJax reruns them after a \\definecolor)"] = function()
     local tex = tmpfile([[\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}]])
     local d = parse([[<span class="mathjax-inline">\(\abs{\textcolor{ink}{a}}\)</span>]])
-    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216 "})
+    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216;"})
     os.remove(tex)
     local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
     local color, macro = definitions:find("\\definecolor", 1, true), definitions:find("\\DeclarePairedDelimiter", 1, true)
@@ -615,8 +615,8 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
       .. [[\textcolor{black!-50!white!50!red}{i}\textcolor{gray!100!red!50!BrickRed}{j}]]
       .. [[\textcolor{olive!-50!white!50!red}{k}\textcolor{BrickRed!150!-blue}{l}\textcolor{BrickRed!50!red!-60!blue}{m}\)</span>]])
     local tex = tmpfile("")
-    macros.define(d, {tex_file = tex, colors = "olive 0,0,1,0.5 BrickRed 0,0.89,0.94,0.28 "
-      .. "Mahogany 0,0.85,0.87,0.35 Goldenrod 0,0.10,0.84,0 gray 0.5 red 1,0,0 black 0 white 1 blue 0,0,1 "})
+    macros.define(d, {tex_file = tex, colors = "olive 0,0,1,0.5;BrickRed 0,0.89,0.94,0.28;"
+      .. "Mahogany 0,0.85,0.87,0.35;Goldenrod 0,0.10,0.84,0;gray 0.5;red 1,0,0;black 0;white 1;blue 0,0,1;"})
     os.remove(tex)
     local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
     -- (each as xcolor gives it: \convertcolorspec to HTML, converted values
@@ -635,7 +635,7 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
   ["macros.define: a color a macro of the math names, given as its argument"] = function()
     local tex = tmpfile([[\newcommand\hl[2]{\textcolor{#1}{#2}}]])
     local d = parse([[<span class="mathjax-inline">\(\hl{ink}{x} + \hl{ink!50}{y}\)</span>]])
-    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216 "})
+    macros.define(d, {tex_file = tex, colors = "ink 0.78432,0,0.39216;"})
     os.remove(tex)
     local definitions = d:query_selector("body > div#tex8web-macros")[1]:get_text()
     check(definitions:find("\\definecolor{ink}{RGB}{200,0,100}", 1, true), definitions)

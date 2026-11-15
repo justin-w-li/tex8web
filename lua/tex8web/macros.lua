@@ -45,7 +45,7 @@ local fallbacks = {
 
 -- The math's colors that MathJax would get wrong (see "Macros in math" in
 -- CONTRIBUTING.md) are given as \definecolor lines, from the values
--- tex8web-page.tex writes as "name v,v,v", in the color's xcolor model:
+-- tex8web-page.tex writes as "name v,v,v;", in the color's xcolor model:
 -- gray (one value), rgb (three), or cmyk (four). css holds MathJax's
 -- values; a name whose xcolor value is the same is left out.
 local css = {red = "FF0000", blue = "0000FF", cyan = "00FFFF", magenta = "FF00FF",
@@ -126,7 +126,7 @@ end
 -- is tried, so a color passed through a macro's argument is found too.
 local function color_definitions(texts, values_text)
   local known = {}
-  for name, values in values_text:gmatch("(%S+) (%S+)") do
+  for name, values in values_text:gmatch("([^;]-)%s+([^;%s]+);") do
     local color = {}
     for value in values:gmatch("[^,]+") do color[#color + 1] = tonumber(value) end
     known[name] = color

@@ -1,0 +1,10 @@
+% Colors whose names have a space, as in pgfplots' mapped color, before a
+% color the math uses. A brace group in the math made the build fail.
+\documentclass{article}
+\usepackage{xcolor}
+\definecolor{my color}{rgb}{0.8,0.2,0}
+\definecolor{dark}{gray}{0}
+\definecolor{ink}{rgb}{0.2,0.4,0.6}
+\begin{document}
+In math, $\frac{0}{1} + \textcolor{ink}{x} + \textcolor{my color}{y}$.
+\end{document}
