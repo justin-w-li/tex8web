@@ -478,12 +478,13 @@ const pdfPages = {
     eight: 'eight 6, eight 7, eight 8', 'eight open': 'eight 7, eight 8',
   },
   'test-pdfpages-plain': { dash: 'four 1, four 2, four 3, four 4', closed: 'four 2, four 3', merge: 'two 1, two 2, four 4' },
-  'test-pdfpages-hint': { dash: 'four 1, four 2, four 3, four 4', last: 'four 2, four 3, four 4', nohint: 'four 1, four 2, four 3, four 4' },
+  'test-pdfpages-hint': { dash: 'four 1, four 2, four 3, four 4', last: 'four 2, four 3, four 4', nohint: 'four 1, four 2, four 3, four 4', closed: 'four 1, four 2, four 3, four 4' },
 };
 // the runs of test-pdfpages-hint built without shell escape: the lastpage
 // hint of 3 gives the number of pages, short of four.pdf's 4, so only a
-// build that used the hint shows these; without the hint, the number is 1
-const pdfPagesNoShell = { dash: 'four 1, four 2, four 3', last: 'four 2, four 3', nohint: 'four 1' };
+// build that used the hint shows these; without the hint, the number is 1,
+// and a closed range needs no number
+const pdfPagesNoShell = { dash: 'four 1, four 2, four 3', last: 'four 2, four 3', nohint: 'four 1', closed: 'four 1, four 2, four 3, four 4' };
 // pdfpages' warning, in the TeX log, when it has no number of pages and no
 // lastpage hint (ppnull.def)
 const pdfpagesHintWarning = "You can use the option `lastpage' to give me a hint";
@@ -2546,7 +2547,8 @@ if (pdfpic) jobs.push(async () => {
 // (kpathsea reads shell_escape from the environment before texmf.cnf):
 // pdfpages' lastpage hint gives the number of pages, one short of the
 // PDF's, so the page shows the pictures of pdfPagesNoShell. The run
-// without the hint gives pdfpages' warning in the TeX log.
+// without the hint gives pdfpages' warning in the TeX log, and the closed
+// range no LaTeX error that a page does not exist.
 const hint = docs.find(d => d.name === 'test-pdfpages-hint');
 if (hint) jobs.push(async () => {
   const top = join(testDir(hint), 'noshell'), out = join(top, 'html'), aux = join(top, 'aux');
@@ -2560,6 +2562,7 @@ if (hint) jobs.push(async () => {
   if (!existsSync(page)) problems.push('no page');
   else problems.push(...checkPdfPages(pdfPagesNoShell, readFileSync(page, 'utf8').replace(/[^\S ]+/g, ' '), out));
   if (!existsSync(texLog) || !readFileSync(texLog, 'latin1').includes(pdfpagesHintWarning)) problems.push('no pdfpages warning that names the lastpage hint in the TeX log');
+  if (existsSync(texLog) && readFileSync(texLog, 'latin1').includes('does not exist')) problems.push('a LaTeX error in the TeX log that a page does not exist');
   const written = pdfpagesOnly();
   if (written.length) problems.push(`files written beside the included PDFs: ${written.join(', ')}`);
   report(`${hint.name} (without shell escape)`, problems);

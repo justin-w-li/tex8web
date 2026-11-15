@@ -5,7 +5,9 @@
 % With shell escape, the number read overrides the hint, as pdflatex does,
 % and the last page is 4. The run nohint has no hint: without shell
 % escape it shows page 1 alone, and pdfpages' warning in the TeX log names
-% the hint. Each run starts with a paragraph "Run name."
+% the hint. The run closed has no hint either: a closed range needs no
+% number of pages, so it shows every page of the range, with no LaTeX
+% error. Each run starts with a paragraph "Run name."
 % test/run.mjs builds it again with \PdfpagesMissing defined, for a run
 % that includes a PDF that does not exist: pdfpages' error, and no picture.
 \documentclass{article}
@@ -19,6 +21,9 @@ Run last.
 
 Run nohint.
 \includepdf[pages=-]{test-pdfpages/four}
+
+Run closed.
+\includepdf[pages={1-4}]{test-pdfpages/four}
 
 \ifdefined\PdfpagesMissing
 Run missing.

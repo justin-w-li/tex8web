@@ -1192,7 +1192,8 @@
     % (pdfpages' \AM@output does nothing when the file is missing, and the
     % document list then holds \relax for each page. pdfpages marks the
     % missing file by setting \AM@filenotfound to \relax, which
-    % \cs_if_exist:N takes as not defined, so \ifdefined tests it here.)
+    % \cs_if_exist:N takes as not defined, so \if_cs_exist:N, the expl3
+    % name of \ifdefined, tests it here.)
     \cs_set_protected:Npn \AM@output #1
       {
         \if_cs_exist:N \AM@filenotfound
