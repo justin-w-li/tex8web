@@ -6,8 +6,10 @@
 % the algorithm, algorithm*, procedure, and function environments, with
 % procnumbered. A blank line may come first or last in a block, follow a
 % line without \;, or come twice, and a \label after one is the target
-% of its \ref. A blank line between lines outside any block was already
-% right, and is checked so it stays right.
+% of its \ref, also on a line numbered with \nl in an algorithm without
+% line numbers. A blank line between lines or blocks outside any block,
+% and before the algorithm's end, was already right, and is checked so it
+% stays right.
 \documentclass{article}
 \usepackage[vlined,linesnumbered,procnumbered]{algorithm2e}
 \SetKwProg{Fn}{Function}{ is}{end}
@@ -103,6 +105,31 @@ Line~\ref{line:bthree} of Algorithm~\ref{alg:vlined} follows a blank line.
 line eone\;
 
 line etwo\;
+\end{algorithm}
+
+\LinesNotNumbered
+\begin{algorithm}[H]
+\caption{Lines without numbers}
+\If{case N}{
+  line none\;
+
+  line ntwo\;
+}
+\If{case M}{
+  line mone\;
+
+  \nl line mtwo\;\label{line:mtwo}
+}
+\end{algorithm}
+\LinesNumbered
+Line~\ref{line:mtwo} is numbered by hand.
+
+\begin{algorithm}[H]
+\caption{Blank lines between blocks}
+\If{case T}{line tone\;}
+
+\For{case T2}{line ttwo\;}
+
 \end{algorithm}
 
 \begin{procedure}[H]

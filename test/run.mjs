@@ -1869,6 +1869,7 @@ const a2eLine = (n, words) => String.raw`${a2eNumber(n)}${words.split(' ').join(
 const a2eHead = (n, keyword) => String.raw`${a2eNumber(n)}<span class='cmbx-10'>${keyword}<(?:(?!<\/p>)[^])*<\/p>\s*`;
 const a2eOpen = classes => String.raw`<div class='tex8web-a2e-block${classes}'>\s*`;
 const a2eBlock = (classes, ...lines) => String.raw`${a2eOpen(classes)}${lines.join('')}<\/div>\s*`;
+const a2eBare = content => String.raw`<p class='noindent'>${content}<\/p>\s*`;
 const a2e = (...parts) => new RegExp(parts.join(''));
 const vline = ' tex8web-a2e-vline', hook = ' tex8web-a2e-vline tex8web-a2e-hook';
 
@@ -1921,7 +1922,6 @@ const algorithms = {
   // blank line leads to it. Outside the blocks, a blank line between two
   // lines leaves them numbered 1 and 2.
   'test-algorithm2e-blank': [
-    /^(?:(?!<figure class='tex8web-a2e )[^])*(?:<figure class='tex8web-a2e (?:(?!<figure class='tex8web-a2e )[^])*){7}$/,
     /^(?![^]*<figure class='tex8web-a2e (?:(?!<\/figure>)[^])*<p[^>]*>(?:\s|<a id='[^']+'><\/a>)*<\/p>)/,
     // (vlined: \If, then nested \For and \If)
     a2e(a2eHead(1, 'if'), a2eBlock(hook, a2eLine(2, 'line aone;'), a2eLine(3, 'line atwo;')),
@@ -1948,6 +1948,17 @@ const algorithms = {
       a2eHead(7, 'end'), '<\\/figure>'),
     // (outside the blocks)
     a2e(String.raw`<\/figcaption>(?:\s*<!--[^>]*-->)*\s*`, a2eLine(1, 'line eone;'), a2eLine(2, 'line etwo;'), '<\\/figure>'),
+    // (without line numbers: two lines run together or apart show only
+    // here, and a line numbered with \nl after a blank line is line 1)
+    a2e(a2eBare(String.raw`<span class='cmbx-10'>if<(?:(?!<\/p>)[^])*`), a2eOpen(hook),
+      a2eBare('line\\s+none;\\s*'), a2eBare('line\\s+ntwo;\\s*'), '<\\/div>\\s*',
+      a2eBare(String.raw`<span class='cmbx-10'>if<(?:(?!<\/p>)[^])*`), a2eOpen(hook),
+      a2eBare(String.raw`line\s+mone;\s*(?:<a id='[^']+'><\/a>\s*)?`),
+      String.raw`<p class='noindent'>(?:<a id='[^']+'><\/a>)?<span class='tex8web-a2e-nl'><span class='cmbx-7'>1<\/span><\/span>line\s+mtwo;\s*<\/p>\s*`,
+      '<\\/div>\\s*<\\/figure>(?:(?!<\\/p>)[^])*', String.raw`Line<span class='tex8web-nbsp'>.<\/span><a href='#[^']+'>1<!--[^>]*--><\/a> is numbered by hand`),
+    // (blank lines between blocks and before the algorithm's end)
+    a2e(a2eHead(1, 'if'), a2eBlock(hook, a2eLine(2, 'line tone;')), a2eHead(3, 'for'),
+      a2eBlock(hook, a2eLine(4, 'line ttwo;')), '<\\/figure>'),
     // (procedure with \SetAlgoNoEnd: \Switch, \Case, \uIf, \Else, and \Other)
     a2e(a2eHead(1, 'switch'), a2eOpen(vline), a2eHead(2, 'case'),
       a2eBlock(vline, a2eLine(3, 'line fone;'), a2eLine(4, 'line ftwo;')),
@@ -1965,7 +1976,6 @@ const algorithms = {
   ],
   // the same with hyperref, and the algo2e option's environment, ruled
   'test-algorithm2e-blank-hyperref': [
-    /<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'/,
     a2e(a2eHead(1, 'if'), a2eBlock(hook, a2eLine(2, 'line rone;'), a2eLine(3, 'line rtwo;')), '<\\/figure>'),
     /See line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>3<!--[^>]*--><\/a>[^]*<a id='\1'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>3<\/span><\/span>line\s+rtwo;/,
   ],
