@@ -641,7 +641,10 @@
             \web@tocin
             \ifin@\def\web@tocline{\csname l@f@#1\endcsname\leavevmode}%
             \else\def\web@tocline{\csname l@#1\endcsname{\web@tocentry}{}}\fi
-            \setbox\z@\vbox{\web@tocline}%
+            % titletoc's run-in entry, from \titlecontents*, leaves a group
+            % open until \contentsfinish, which closes it inside the box
+            % and does nothing when no run-in entry is open
+            \setbox\z@\vbox{\web@tocline\ifdefined\contentsfinish\contentsfinish\fi}%
         \endgroup\fi\fi}
     \ifdefined\c@chapter\web@tocmeasure{chapter}{0pt}{1.5em}{1em}{bold}\fi
     \web@tocmeasure{section}{0pt}{1.5em}{1em}{bold}
