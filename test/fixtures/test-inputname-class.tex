@@ -1,0 +1,25 @@
+% Files of the document named like .4ht files that TeX's tree also has:
+% report.ltx after \documentclass{report}, dvipsnam.ltx before
+% \usepackage[dvipsnames]{xcolor}, which reads dvipsnam.def, and latin1.ltx
+% before \usepackage[latin1]{inputenc}, which reads latin1.def. As in the
+% PDF, each file's text is in the page, the chapter keeps report's form,
+% a named color keeps its value, and the degree sign is set as latin1.4ht
+% sets it.
+\documentclass{report}
+\input{report.ltx}
+\input{dvipsnam.ltx}
+\usepackage[dvipsnames]{xcolor}
+\input{latin1.ltx}
+\usepackage[latin1]{inputenc}
+\begin{document}
+\chapter{Files}
+Report: \ownreport
+
+Dvipsnam: \owndvipsnam
+
+\textcolor{BrickRed}{Brick red text.}
+
+Latin1: \ownlatin
+
+An angle of 30\textdegree.
+\end{document}

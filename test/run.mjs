@@ -1024,11 +1024,25 @@ const contents = {
   'test-inputname': [
     ...['glossary', 'abstract', 'appendix', 'index', 'background', 'reading', 'proof', 'errata'].map(name =>
       new RegExp(`<p class='[a-z]+'>\\s*${name[0].toUpperCase() + name.slice(1)}: Text from the ${name} file\\.\\s*</p>`)),
+    /<p class='[a-z]+'>\s*Subfolder: Text from the subfolder glossary file\.\s*<\/p>/,
     /^(?![^]*class='backgroundmaterial')/,
     /<section class='abstract' role='doc-abstract'>\s*<h3 class='abstracttitle'>\s*<span class='cmbx-9'>Abstract<\/span>\s*<\/h3>\s*<p class='noindent'><span class='cmr-9'>The abstract of the document\.<\/span>/,
     /<h3 class='sectionHead' id='tables'>.*<span class='titlemark'>A<\/span>.*Tables<\/h3>/,
     /<h3 class='likesectionHead' id='index'>.*Index<\/h3>\s*<div class='theindex'><div class='theindex-letter'>\s*<div class='index-item'>ring, <a href='#[^']+'>1<\/a>/,
     /^(?![^]*<\/html>[^]*<\/html>)/,
+  ],
+  // (files of the document named like report.4ht, dvipsnam.4ht, and
+  // latin1.4ht, read after the report class and before xcolor and inputenc
+  // read dvipsnam.def and latin1.def: each file's text, the chapter as
+  // report.4ht sets it, the named color's value, and the degree sign as
+  // latin1.4ht sets it, outside the TS1 font's span)
+  'test-inputname-class': [
+    /Report: Text from the report file\./,
+    /Dvipsnam: Text from the dvipsnam file\./,
+    /<h2 class='chapterHead' id='files'>.*<span class='titlemark'>Chapter<span class='tex8web-nbsp'>[^<]*<\/span>1<\/span><br \/><a id='[^']+'><\/a>Files<\/h2>/,
+    /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/,
+    /Latin1: Text from the latin1 file\./,
+    /An angle of 30°\./,
   ],
   // (a file of the document named like glossary.4ht, with no extension: its
   // text, and one page)
