@@ -7,14 +7,16 @@
 // A case passes when its build fails if it must, its logs have the
 // expected line, no file appeared in its directory, in tex8web's
 // directory, or in a scratch directory on the host, and no container is
-// left. Eight cases differ: bibindex builds a test fixture, which must
+// left. Nine cases differ: bibindex builds a test fixture, which must
 // build and match its build on the host; root builds a document that reads
 // a file above its directory, which must fail without the source's root
 // mounted and build with it; bibpath and includes build a PDF with
 // regress.mjs --contain --latexmk, which must build it: bibpath's .aux
 // names its .bib and .bst by a path above its directory, and includes
 // \includes files from six directories; picparent also builds a page whose
-// pictures lie above its directory; mountlink gives the runner a link
+// pictures lie above its directory; shellescape builds a PDF and page
+// with minted and pdfpages, which run commands that restricted shell
+// escape allows; mountlink gives the runner a link
 // to mount; labels runs --clean on one of a running command's -w
 // directories; kill builds loop in another process, kills that process
 // once loop's .make4ht has run, and builds loop again on what was left.
@@ -56,7 +58,7 @@ writeFileSync(join(scratch, 'secret.tex'), 'Secret.\n');
 // fails: the build must fail. line: in its log, or in a TeX or biber log,
 // or several lines. twice: built again, on what the first build left
 const cases = {
-  write18: { line: /runsystem\(touch build\/escaped-write18\)\.\.\.disabled/ },
+  write18: { line: /runsystem\(touch build\/escaped-write18\)\.\.\.disabled \(restricted\)/ },
   openout: { fails: true, line: /! I can't write on file `\/.*/ },
   openouthost: { fails: true, line: /! I can't write on file `\/.*/ },
   make4ht: { line: /contain case: escaped-make4ht: Read-only file system\n.*contain case: \.\.\/\.\.\/\.\.\/escaped-make4ht: Read-only file system/ },
@@ -207,6 +209,28 @@ function picparent() {
   return { line: 'built, with its pictures inside the page\'s folder' };
 }
 
+// builds the PDF and page of test/contain/shellescape with regress.mjs
+// --contain --latexmk, on a copy, as pdf() does. Its commands are allowed
+// by restricted shell escape: the page must have minted's colors, which
+// latexminted writes, and four pictures from pdfpages, whose number of
+// pages extractbb reads
+function shellescape() {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webshell')));
+  process.on('exit', () => rmSync(own, { recursive: true }));
+  const dir = join(own, 'shellescape');
+  cpSync(join(root, 'test/contain/shellescape'), dir, { recursive: true });
+  const result = sync(process.execPath, [join(root, 'test/regress.mjs'), '--contain', '--latexmk', '--out', join(own, 'out'), dir], {}, 600);
+  const log = `${result.stderr}${result.stdout}`;
+  if (result.status !== 0) return `regress.mjs exited with ${result.status}:\n${log.trim().split('\n').slice(-8).join('\n')}`;
+  if (!existsSync(join(dir, 'build/pdf/main.pdf'))) return 'no PDF';
+  const page = readFileSync(join(own, 'out/html/shellescape/main.html'), 'utf8');
+  if (!/<span style='color:[^']*'><span class='cmtt-10'>def<\/span>/.test(page)) return 'no colored def from minted in the page';
+  const pictures = page.match(/<img /g)?.length ?? 0;
+  if (pictures !== 4) return `${pictures} pictures from pdfpages in the page, not 4`;
+  if (containers()) return `a container was left: ${containers()}`;
+  return { line: 'built, with minted\'s colors and the four pages of four.pdf' };
+}
+
 // gives the runner a -w directory through a symbolic link, which Docker
 // Desktop would follow
 function mountlink() {
@@ -265,7 +289,7 @@ async function labels() {
   }
 }
 
-const others = { bibindex, root: rooted, bibpath: () => pdf('bibpath', 'doc', /\\bibitem\{entry\}/), includes: () => pdf('includes'), picparent, mountlink, labels, kill };
+const others = { bibindex, root: rooted, bibpath: () => pdf('bibpath', 'doc', /\\bibitem\{entry\}/), includes: () => pdf('includes'), picparent, shellescape, mountlink, labels, kill };
 const all = [...Object.keys(cases), ...Object.keys(others)];
 const names = process.argv.slice(2);
 const unknown = names.filter(name => !all.includes(name));

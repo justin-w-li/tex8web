@@ -2560,7 +2560,7 @@ if (pdfpic) jobs.push(async () => {
   report(`${pdfpic.name} (an absolute path)`, problems);
 });
 
-// test-pdfpages-hint built again without shell escape, as with --contain
+// test-pdfpages-hint built again without shell escape
 // (kpathsea reads shell_escape from the environment before texmf.cnf):
 // pdfpages' lastpage hint gives the number of pages, one short of the
 // PDF's, so the page shows the pictures of pdfPagesNoShell. The run

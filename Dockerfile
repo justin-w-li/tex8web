@@ -24,3 +24,26 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends poppler-utils \
   && rm -rf /var/lib/apt/lists/* \
   && pdftoppm -v
+# (latexminted 0.7.0 deletes its old message files in LaTeX's working
+# directory on each run, and catches only PermissionError, so the read-only
+# source of a contained build fails every minted document with "Read-only
+# file system". The step fails when latexminted's code differs, so a new
+# release is checked and the step removed once fixed upstream)
+RUN python3 - <<'PATCH'
+import glob, os, shutil, zipfile
+wheel, = glob.glob('/usr/local/texlive/*/texmf-dist/scripts/minted/latexminted-*.whl')
+name = 'latexminted/command_clean.py'
+caught = 'except (PermissionError, PathSecurityError):'
+debug = caught + '\n                continue\n            except FileNotFoundError:\n                break\n'
+with zipfile.ZipFile(wheel) as old:
+    code = old.read(name).decode()
+    assert code.count(caught) == 3 and code.count(debug) == 1, 'latexminted changed: check the patch'
+    # (FileNotFoundError first, as OSError would catch it)
+    code = code.replace(debug, 'except FileNotFoundError:\n                break\n            '
+                        + caught + '\n                continue\n').replace(caught, 'except (OSError, PathSecurityError):')
+    with zipfile.ZipFile('/tmp/patched.whl', 'w', zipfile.ZIP_DEFLATED) as new:
+        for entry in old.infolist():
+            new.writestr(entry, code if entry.filename == name else old.read(entry))
+shutil.copymode(wheel, '/tmp/patched.whl')
+os.replace('/tmp/patched.whl', wheel)
+PATCH

@@ -3,9 +3,10 @@
 // source is not trusted:
 //   test/lib/contain.mjs [-t seconds] [-m memory] [-r path]... [-w dir]... -- command args...
 //   test/lib/contain.mjs --clean [-w dir]...
-// The command runs in the current directory, with no network, no shell
-// escape, and limits on time (default 900 s), memory (default 2g),
-// processes, and file size. Mounted at the same paths inside, read-only:
+// The command runs in the current directory, with no network, TeX Live's
+// restricted shell escape, which runs only the commands texmf.cnf lists
+// in shell_escape_commands, and limits on time (default 900 s), memory
+// (default 2g), processes, and file size. Mounted at the same paths inside, read-only:
 // tex8web, its node_modules, the current directory, and each -r path. Each
 // -w directory is mounted writable, and /tmp is empty. A mount whose path
 // holds a symbolic link is refused. Only TEX8WEB_*, SOURCE_DATE_EPOCH, and
@@ -131,7 +132,7 @@ if (cleanOnly) {
 // (not --rm, so that the container's state can be read after it ends)
 const started = Date.now();
 const child = spawn('docker', ['run', '--name', name, ...labels.flatMap(label => ['--label', label]), ...limited,
-  '-e', 'HOME=/tmp', '-e', 'TEXMFVAR=/tmp/texmf-var', '-e', 'shell_escape=f', '-e', 'openout_any=p',
+  '-e', 'HOME=/tmp', '-e', 'TEXMFVAR=/tmp/texmf-var', '-e', 'shell_escape=p', '-e', 'openout_any=p',
   ...Object.keys(process.env).filter(name => /^(TEX8WEB_|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).flatMap(name => ['-e', name]),
   ...[...mounts].flatMap(([path, mode]) => ['--mount', `type=bind,source=${path},target=${path}${mode}`]),
   '-w', process.cwd(), image, 'timeout', '-k', '5', time, ...command], { stdio: 'inherit' });

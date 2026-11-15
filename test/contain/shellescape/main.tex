@@ -1,0 +1,15 @@
+% Two packages that run a command allowed by TeX Live's restricted shell
+% escape: minted runs latexminted, and pdfpages' number of pages is read
+% with extractbb. four.pdf has four pages.
+\documentclass{article}
+\usepackage{minted}
+\usepackage{pdfpages}
+\begin{document}
+Code:
+\begin{minted}{python}
+def square(x):
+    return x * x  # a comment
+\end{minted}
+Pages:
+\includepdf[pages=-]{four.pdf}
+\end{document}

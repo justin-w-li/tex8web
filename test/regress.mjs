@@ -27,13 +27,14 @@
 //                      fails is not built. Without --latexmk, build the
 //                      PDFs first
 //   --contain          build each page, and with --latexmk each PDF, in a
-//                      container without network or shell escape
-//                      (test/lib/contain.mjs), for a source not trusted.
-//                      A source that holds anything but files and
-//                      directories is refused, and so is a document given
-//                      as a symbolic link. Other links in the paths given
-//                      are resolved. latexmk then writes the PDF to the
-//                      document's build/pdf, and reads no .latexmkrc
+//                      container without network, and with only
+//                      restricted shell escape (test/lib/contain.mjs),
+//                      for a source not trusted. A source that holds
+//                      anything but files and directories is refused, and
+//                      so is a document given as a symbolic link. Other
+//                      links in the paths given are resolved. latexmk
+//                      then writes the PDF to the document's build/pdf,
+//                      and reads no .latexmkrc
 //   --root <dir>       with --contain, also mount dir read-only, for a
 //                      document that reads files above its directory. dir
 //                      must hold every document given, and no --out,
