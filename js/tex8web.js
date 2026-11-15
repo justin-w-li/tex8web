@@ -278,7 +278,28 @@ function tex8web(config, tex) {
   const wideAccents = ['^', '~'];
   let TEXCLASS;
 
+  // \mathclap or \clap around a whole display, or around the one cell of a
+  // numbered row (mathtools.js: an mpadded of no width, moved left by half
+  // its content), given its content's width. The content is centered in
+  // the display as in the PDF, and one wider than the column starts at the
+  // display's left edge, where it can be scrolled to. A clap inside a
+  // larger formula keeps its zero width.
+  function unclap(node) {
+    for (;;) {
+      if (node.isKind('mlabeledtr') && node.childNodes.length === 2) node = node.childNodes[1];
+      else if (node.childNodes.length === 1
+          && ['math', 'mrow', 'TeXAtom', 'mstyle', 'mtable', 'mtr', 'mtd'].some(kind => node.isKind(kind))) node = node.childNodes[0];
+      else break;
+    }
+    if (node.isKind('mpadded') && String(node.attributes.getExplicit('width')) === '0'
+        && node.attributes.getExplicit('lspace') === '-.5width') {
+      node.attributes.unset('width');
+      node.attributes.unset('lspace');
+    }
+  }
+
   function adjust({math, data}) {
+    if (math.display) unclap(data.root);
     const factory = data.nodeFactory;
     const scale = (100 * tex.exscale).toFixed(1) + '%';
     const operators = [];

@@ -1,0 +1,96 @@
+% Blocks wider than the column scroll inside it at every screen width,
+% starting at the column's left edge, and do not scroll up and down: a
+% centered tabular and an alltt block beside a footnote, a verbatim block,
+% a longtable, a \verbatiminput, a display, and \mathclap and \clap
+% formulas wider than their display, one of them numbered. The math in the
+% table's last row, a note above a rule, hangs below the table and would
+% scroll it a few px up and down. A short verbatim block, a tabular that
+% fits, and a \mathclap under a sum do not scroll, and the tabular stays
+% centered.
+\documentclass{article}
+\usepackage{amsmath,mathtools,longtable,alltt,verbatim}
+\begin{document}
+A paragraph with a footnote,\footnote{A footnote beside the wide table on
+a wide screen, which the table must not cover.} before a centered table
+wider than the column.
+
+\begin{center}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+    \hline
+    First column & Second column & Third column & Fourth column & Fifth column & Sixth column & Seventh column & Eighth column \\
+    \hline
+    left end & $a < b$ & $x_{ij}$ & four & five & six & seven & right end \\
+    \hline
+    \multicolumn{7}{c}{A note under the table, $p < 0.01$} \\
+    \hline
+\end{tabular}
+\end{center}
+
+A verbatim block wider than the column.
+
+\begin{verbatim}
+left-end of a verbatim line that is much wider than the column, so that it scrolls sideways at every screen width, right-end
+\end{verbatim}
+
+A longtable wider than the column, with ties, as tex4ht lets its cells wrap.
+
+\begin{longtable}{|l|l|l|l|l|l|l|l|}
+    \hline
+    First~column & Second~column & Third~column & Fourth~column & Fifth~column & Sixth~column & Seventh~column & Eighth~column \\
+    \hline
+    left end & two & three & four & five & six & seven & right end \\
+    \hline
+\end{longtable}
+
+A paragraph with a footnote,\footnote{A footnote beside the wide alltt
+block on a wide screen.} before an alltt block wider than the column.
+
+\begin{alltt}
+left-end of an alltt line that is much wider than the column, so that it scrolls sideways at every screen width, right-end
+\end{alltt}
+
+A \verb|\verbatiminput| wider than the column.
+
+\verbatiminput{test-wideblocks.txt}
+
+A short verbatim block.
+
+\begin{verbatim}
+short
+\end{verbatim}
+
+A centered table that fits.
+
+\begin{center}
+\begin{tabular}{|l|l|}
+    \hline
+    Fits & centered \\
+    \hline
+\end{tabular}
+\end{center}
+
+A display wider than a phone's column.
+\[
+    a_1 + a_2 + a_3 + a_4 + a_5 + a_6 + a_7 + a_8 + a_9 + a_{10} + a_{11} + a_{12} + a_{13} = b
+\]
+A \verb|\mathclap| formula wider than a phone's column.
+\begin{equation*}
+    \mathclap{\begin{matrix} a_{111111} & b_{222222} & c_{333333} & d_{444444} & e_{555555} & f_{666666} & g_{777777} \end{matrix}}
+\end{equation*}
+A \verb|\mathclap| formula wider than a wide screen's column.
+\begin{equation*}
+    \mathclap{\begin{matrix} a_{111111} & b_{222222} & c_{333333} & d_{444444} & e_{555555} & f_{666666} & g_{777777} & h_{888888} & i_{999999} & j_{101010} & k_{111111} & l_{121212} & m_{131313} \end{matrix}}
+\end{equation*}
+A tagged \verb|\mathclap| formula wider than a wide screen's column.
+\begin{equation}
+    \mathclap{\begin{matrix} a_{111111} & b_{222222} & c_{333333} & d_{444444} & e_{555555} & f_{666666} & g_{777777} & h_{888888} & i_{999999} & j_{101010} & k_{111111} & l_{121212} & m_{131313} \end{matrix}}\tag{1}
+\end{equation}
+A \verb|\clap| formula wider than a phone's column.
+\[
+    \clap{left end of a text in a clap, wider than the column of a phone, right end}
+\]
+A \verb|\mathclap| under a sum, which keeps its zero width.
+\[
+    \sum_{\mathclap{1 \le i < j < k \le n}} x_{ijk}
+\]
+\end{document}

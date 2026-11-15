@@ -117,6 +117,8 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 - line breaks in inline math, after relations and never at a space
 - the columns of an alignment split at `\intertext`
 
+A `\mathclap` or `\clap` around a whole display has its content's width in `js/tex8web.js`, so that a display wider than the column can be scrolled to its left end.
+
 ### 4. Prerendering
 
 tex8web runs MathJax in Node with `js/prerender.mjs`, configured as in the browser, and saves the typeset math in the page. The prerendered page is also lighter.

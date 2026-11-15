@@ -1,0 +1,1 @@
+left end of a verbatiminput line that is much wider than the column, so that it scrolls sideways at every screen width, right end

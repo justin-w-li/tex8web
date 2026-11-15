@@ -412,11 +412,15 @@ function M.no_break_spaces(document)
 end
 
 -- HTML parsing drops the first newline of a pre, but not of moreverb's
--- divs. Drop the same newline so these blocks start at the same height.
--- The CSS keeps every space in these divs, so also drop tex4ht's padding
--- spaces on the first line and after the last. Source spaces are no-break
--- spaces, which stay. (The padding may span several text nodes: each edit
--- reads the run of text nodes at that end of the block as one text.)
+-- divs. Drop the same newline from the divs so these blocks start at the
+-- same height. A pre and these divs keep every space, so also drop
+-- tex4ht's padding spaces on the first line and after the last, which
+-- make a short block wider than the column. Source spaces are no-break
+-- spaces, which stay. A pre keeps one space on its first line, so that
+-- the line survives when the page is serialized and parsed again. An
+-- empty first line of a pre is dropped by that second parse. (The
+-- padding may span several text nodes: each edit reads the run of text
+-- nodes at that end of the block as one text.)
 function M.literal_blocks(document)
   local function edit(nodes, change)
     if #nodes == 0 then return end
@@ -424,7 +428,8 @@ function M.literal_blocks(document)
     for i, node in ipairs(nodes) do parts[i] = node:get_text() end
     for i, node in ipairs(nodes) do dom.set_node_text(node, i == 1 and change(table.concat(parts)) or "") end
   end
-  for _, block in ipairs(document:query_selector("div.listing, div.verbatimtabinput")) do
+  for _, block in ipairs(document:query_selector("pre, div.listing, div.verbatimtabinput")) do
+    local pre = block:get_element_name() == "pre"
     local children = block:get_children()
     local first, last = {}, {}
     for _, child in ipairs(children) do
@@ -435,7 +440,10 @@ function M.literal_blocks(document)
       if not children[i]:is_text() then break end
       table.insert(last, 1, children[i])
     end
-    edit(first, function(text) return (text:gsub("^\n", "", 1):gsub("^ +\n", "\n", 1)) end)
+    edit(first, function(text)
+      if pre then return (text:gsub("^\n +\n", "\n \n", 1)) end
+      return (text:gsub("^\n", "", 1):gsub("^ +\n", "\n", 1))
+    end)
     edit(last, function(text) return (text:gsub(" +$", "", 1)) end)
   end
   -- A label that the document defines (tex8web-text.tex) ends in the

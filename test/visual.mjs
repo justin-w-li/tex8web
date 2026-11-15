@@ -7,7 +7,8 @@
 // the rest of each \hfill at the right, algorithm2e's numbers and
 // captions, list labels on their text's baseline, ties as wide as a
 // space and with no line break after them, the fonts of the table of
-// contents, printing, and a width that fits a phone.
+// contents, blocks wider than the column scrolling inside it, printing,
+// and a width that fits a phone.
 // Needs Chrome and the network. Differing screens are saved in
 // build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
@@ -124,7 +125,7 @@ async function printed(chrome, file) {
       const wrong = [];
       const beside = [...document.querySelectorAll('.tex8web-sidenote')].filter(el => getComputedStyle(el).float !== 'none');
       if (beside.length) wrong.push(\`\${beside.length} footnotes beside the text\`);
-      const cut = [...document.querySelectorAll('mjx-container[display], div.tabular, pre')]
+      const cut = [...document.querySelectorAll('mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing, div.listinginput, div.verbatimtabinput')]
         .filter(el => getComputedStyle(el).overflowX !== 'visible');
       if (cut.length) wrong.push(\`\${cut.length} displays, tabulars or verbatims that scroll\`);
       return wrong;
@@ -555,6 +556,72 @@ const centered = `(() => {
   return { checked: [pictures.length, marks], wrong };
 })()`;
 const centers = { 'test-display-picture': [41, 15], 'test-display-picture-hyperref': [5, 2] };
+// Each display, table, and verbatim block (css/tex8web.css) in the
+// column: as wide as the block around it, so not narrowed by a footnote
+// floated beside it, and nothing shown past the column's right edge or
+// over a footnote. One wider than the column scrolls sideways, with its
+// left end shown before it is scrolled, and none scrolls up and down. One
+// in a center that is wider than the column starts at the column's left
+// edge. A centered tabular that fits stays centered. Checked with
+// JavaScript off, on a wide screen and on a phone. wideBlocks has, at each
+// width, the number of blocks wider than the column and the number of
+// claps in a display that keep their zero width (js/tex8web.js widens a
+// clap around a whole display). Failures: [the block's number, its text,
+// what is wrong]
+const scrollers = `(() => {
+  const style = getComputedStyle(document.body), body = document.body.getBoundingClientRect();
+  const left = body.left + parseFloat(style.paddingLeft), right = body.right - parseFloat(style.paddingRight);
+  const notes = [...document.querySelectorAll('.tex8web-sidenote')].map(note => note.getBoundingClientRect());
+  const blocks = [...document.querySelectorAll(
+    'mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing, div.listinginput, '
+    + 'div.verbatimtabinput')];
+  let wide = 0, claps = 0;
+  const wrong = blocks.flatMap((block, i) => {
+    const name = block.textContent.trim().slice(0, 20), problems = [];
+    claps += [...block.querySelectorAll('mjx-mpadded')]
+      .filter(clap => clap.getBoundingClientRect().width < 0.5 && clap.querySelector('mjx-c')).length;
+    const box = block.getBoundingClientRect(), outer = block.parentElement.getBoundingClientRect();
+    const around = getComputedStyle(block.parentElement);
+    if (Math.abs(box.left - outer.left - parseFloat(around.paddingLeft)) > 0.5
+        || Math.abs(outer.right - parseFloat(around.paddingRight) - box.right) > 0.5) {
+      problems.push(\`at \${box.left.toFixed(1)} to \${box.right.toFixed(1)}px in a block at \${outer.left.toFixed(1)} to \${outer.right.toFixed(1)}px\`);
+    }
+    // the content's boxes: its elements and its text
+    const rects = [...block.querySelectorAll('*')].map(el => el.getBoundingClientRect());
+    const text = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    while (text.nextNode()) {
+      const range = document.createRange();
+      range.selectNodeContents(text.currentNode);
+      rects.push(...range.getClientRects());
+    }
+    const content = rects.filter(r => r.width);
+    const shown = getComputedStyle(block).overflowX === 'visible'
+      ? Math.max(box.right, ...content.map(r => r.right)) : box.right;
+    if (shown > right + 0.5) problems.push(\`shown \${(shown - right).toFixed(1)}px past the column\`);
+    if (notes.some(note => note.left < shown - 0.5 && box.left < note.right && note.top < box.bottom && box.top < note.bottom)) {
+      problems.push('over a footnote');
+    }
+    if (block.scrollWidth > block.clientWidth) {
+      wide++;
+      const start = Math.min(...content.map(r => r.left));
+      if (start < box.left - 0.5) problems.push(\`its left end \${(box.left - start).toFixed(1)}px left of it, out of reach\`);
+      if (block.closest('div.center') && Math.abs(box.left - left) > 0.5) {
+        problems.push(\`in a center, \${(box.left - left).toFixed(1)}px from the column's left edge\`);
+      }
+    }
+    block.scrollTop = block.scrollHeight;
+    if (block.scrollTop) problems.push(\`scrolls \${block.scrollTop}px down\`);
+    block.scrollTop = 0;
+    const table = block.querySelector(':scope > table.tex8web-center');
+    if (table && table.offsetWidth < block.clientWidth) {
+      const at = table.getBoundingClientRect(), off = (at.left + at.right - box.left - box.right) / 2;
+      if (Math.abs(off) > 0.5) problems.push(\`its table \${off.toFixed(1)}px from the center\`);
+    }
+    return problems.map(what => [i + 1, name, what]);
+  });
+  return { checked: [blocks.length, wide, claps], wrong };
+})()`;
+const wideBlocks = { 'test-wideblocks': { 1400: [7, 1], 390: [10, 1] } };
 // The pages of a PDF included with pdfpages, each a page of its own in the
 // PDF: each picture centered in the column within 0.5px, inside it, and
 // below the picture before it in its block, with a space between them.
@@ -1200,8 +1267,8 @@ async function listingFonts(chrome, file, family) {
     })()`));
 }
 
-// Long boxed literals must stay inside their frame on a wide screen and
-// in print. On a phone, the literal scrolls inside the frame.
+// Long boxed literals must stay inside their frame in print. On a screen,
+// the literal scrolls inside the frame.
 async function boxedLiterals(chrome, file) {
   const wrong = [];
   for (const [width, media] of [[1600, 'screen'], [1600, 'print'], [740, 'print'], [390, 'screen']]) {
@@ -1215,7 +1282,7 @@ async function boxedLiterals(chrome, file) {
           const range = document.createRange();
           range.selectNodeContents(pre);
           const text = range.getBoundingClientRect(), frame = pre.getBoundingClientRect();
-          if (${media === 'screen' && width === 390}) {
+          if (${media === 'screen'}) {
             return pre.scrollWidth > pre.clientWidth && getComputedStyle(pre).overflowX === 'auto'
               ? [] : ['long literal does not scroll inside its frame'];
           }
@@ -1442,6 +1509,14 @@ async function compare(chrome, doc, ok) {
       problems.push(...await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: 390, height: 844 },
         page => hanging(page, doc, `${html}: at 390px`)));
     }
+    for (const [width, [wide, claps]] of Object.entries(wideBlocks[doc.name] ?? {})) {
+      const blocks = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: Number(width) },
+        page => page.evaluate(scrollers));
+      const [count, shownWide, shownClaps] = blocks.checked;
+      if (shownWide !== wide) problems.push(`${html}: at ${width}px, ${shownWide} of ${count} blocks wider than the column, not ${wide}`);
+      if (shownClaps !== claps) problems.push(`${html}: at ${width}px, ${shownClaps} claps of zero width in a display, not ${claps}`);
+      for (const [n, name, what] of blocks.wrong) problems.push(`${html}: at ${width}px, block ${n} ("${name}"): ${what}`);
+    }
     for (const check of [printed, fits]) {
       problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     }
@@ -1546,6 +1621,7 @@ const never = only.length ? [] : Object.entries(ran).filter(([, count]) => !coun
 const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
 stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
 stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));
+stray.push(...strayKeys(wideBlocks).map(name => `no document ${name} for its wide blocks`));
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);
 failures += never.length + stray.length;
 const strayLiterals = strayKeys(verbatimFamilies);

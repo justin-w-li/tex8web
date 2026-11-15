@@ -334,6 +334,9 @@ div.table + p { margin-top: 0; }
 :where(p + .tex8web-sidenote, .tex8web-sidenote + .tex8web-sidenote) + :is(div.center, div.flushleft, div.flushright, pre.verbatim, div.listing, div.listinginput, div.verbatimtabinput),
 :is(div.center, div.flushleft, div.flushright, pre.verbatim, div.listing, div.listinginput, div.verbatimtabinput) + :is(p, div.tabular) {
     margin-top: calc(var(--tex8web-list-sep) + var(--tex8web-parskip, 0em)); }
+/* LaTeX's center is a trivlist with no side margins, where html4.4ht
+   gives div.center 1em on each side */
+div.center, div.center div.center { margin-inline: 0; }
 /* (browsers indent a <figure>; LaTeX does not indent floats) */
 figure { margin-inline: 0; }
 /* a caption as LaTeX's \@makecaption sets it: centered while it fits on a
@@ -425,12 +428,18 @@ table.tex8web-inline { display: inline-table; vertical-align: middle; }
 .tex8web-rowskip { height: var(--tex8web-rowskip); }
 span.tex8web-rowskip { display: block; }
 tr.tex8web-rowskip td { padding: 0; line-height: 0; }
-/* a tabular or verbatim too wide for a narrow screen scrolls sideways, as
-   a wide display does, so that the page does not widen */
-@media not (--tex8web-wide) {
-    /* An auto table grows to fit its pre, leaving nothing to scroll. */
-    table.boxedverbatim { table-layout: fixed; }
-    div.tabular, pre, div.listing, div.listinginput, div.verbatimtabinput { overflow-x: auto; } }
+/* a table or verbatim block too wide for the column scrolls sideways, as
+   a wide display does, so that it covers no footnote and the page does
+   not widen. The block does not scroll up and down. The line box of each
+   MathJax character is in MathJax's ZERO font (output/chtml.ts), taller
+   than the character. In a last row, these line boxes hang a few px below
+   the block */
+div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing, div.listinginput,
+div.verbatimtabinput { overflow: auto clip; }
+/* An auto table grows to fit its pre, leaving nothing to scroll.
+   html4.4ht centers the lines of a boxed verbatim, which the PDF sets
+   flush left. */
+table.boxedverbatim { table-layout: fixed; text-align: left; }
 /* a box that scrolls sideways fades out at each edge where more of it is
    hidden. Each edge has a separate mask, a fade from that edge, shifted
    out of the box while less than --tex8web-edge is hidden beyond it, so
@@ -1139,12 +1148,13 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
    would print on every sheet. Footnotes follow the sheet's width: after
    their paragraph on paper, as on a narrow screen, and beside the text
    only on a sheet as wide as a wide screen. Their top is reset, as
-   tex8web-page.js sets it for the screen. A display, tabular, or
-   verbatim that scrolls on a narrow screen runs into the margin as in the
-   PDF; !important because MathJax's rule follows this stylesheet. No page
-   break inside a tcolorbox (tcolorbox's default, unless breakable, which
-   tex8web cannot tell), a display, a figure, or a table, nor after a
-   heading. Theorems and framed boxes break, as in the PDF */
+   tex8web-page.js sets it for the screen. A block that scrolls on the
+   screen runs into the margin as in the PDF. Its rule is !important, as
+   MathJax's rule follows this stylesheet. A boxed verbatim's frame grows
+   to fit its longest line, as its table is laid out by its content.
+   No page break inside a tcolorbox (tcolorbox's default, unless
+   breakable, which tex8web cannot tell), a display, a figure, or a table,
+   nor after a heading. Theorems and framed boxes break, as in the PDF */
 @media print {
     :root { color-scheme: light !important; --tex8web-picture-filter: none !important;
         --tex8web-highlight: transparent; print-color-adjust: exact; }
@@ -1152,9 +1162,8 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
         display: none !important; }
     html body { margin-block: 0; padding-inline: 0; --tex8web-column: min(var(--tex8web-textwidth), 100vw); }
     .tex8web-sidenote { top: auto !important; }
-    mjx-container[display], div.tabular, pre, div.listing, div.listinginput, div.verbatimtabinput {
-        overflow: visible !important; }
-    /* The not-wide query also matches a narrow printed page. */
+    mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing,
+    div.listinginput, div.verbatimtabinput { overflow: visible !important; }
     table.boxedverbatim { table-layout: auto; }
     .tex8web-scrolls { mask-image: none; }
     .tcolorbox, mjx-container[display], figure, div.table, table { break-inside: avoid; }

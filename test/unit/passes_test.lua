@@ -669,6 +669,10 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     text.literal_blocks(d)
     equal(d:query_selector("div.listing")[1]:get_text(), "\n\nfirst")
     equal(d:query_selector("div.verbatimtabinput")[1]:get_text(), "\nsecond")
+    -- (a pre keeps the newline that HTML parsing drops, and one space)
+    d = parse("<pre>\n  \n<span>third</span>\n  </pre>")
+    text.literal_blocks(d)
+    equal(d:query_selector("pre")[1]:get_text(), "\n \nthird\n")
   end,
 
   ["text.literal_blocks: bare literal text keeps its source spaces, not the padding"] = function()

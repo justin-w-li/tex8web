@@ -348,16 +348,15 @@
   // on each side. The marks are updated when the layout changes, and by a
   // scroll listener on each element, so scrolling the page runs none of
   // these listeners.
-  const scrolling = 'mjx-container[display], div.tabular, pre, div.listing, div.listinginput, div.verbatimtabinput';
+  const scrolling = 'mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing, div.listinginput, div.verbatimtabinput';
   const listening = new WeakSet();
   function fade(elements) {
     // All measured, then all marked: a mark between two measures would make
     // the second restyle the page, a third of a second on a phone for a long
-    // page's displays. On a wide screen, a tabular or verbatim does not
-    // scroll. It runs into the margin, and a mask would cut it off.
+    // page's displays.
     const hidden = elements.map(element => {
       const width = element.scrollWidth - element.clientWidth;
-      return width > 0 && getComputedStyle(element).overflowX !== 'visible' ? [width, element.scrollLeft] : null;
+      return width > 0 ? [width, element.scrollLeft] : null;
     });
     elements.forEach((element, i) => {
       element.classList.toggle('tex8web-scrolls', Boolean(hidden[i]));
