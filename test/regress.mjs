@@ -43,6 +43,11 @@
 //                      --baseline, or --shots-cache. It is refused, like a
 //                      document's directory, if it holds anything but files
 //                      and directories
+//   --texinputs <dir>  with --contain, search dir for LaTeX's inputs before
+//                      TeX's own folders, as TEXINPUTS does on the host,
+//                      for a document whose .latexmkrc sets TEXINPUTS. dir
+//                      must be in a document's directory or --root. May
+//                      be given more than once
 //   --pdf              link each page to build/pdf/<file>.pdf in its
 //                      document's directory, as -p does, where --contain
 //                      --latexmk writes the PDF
@@ -72,7 +77,7 @@ const at = (path, source) => {
   if (lstatSync(real, { throwIfNoEntry: false })?.isSymbolicLink()) refuse(`refusing ${path}: it is a symbolic link`);
   return real;
 };
-const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain [--root <dir>] | --shell-escape] [--pdf] [--up <url>] [--shots-cache <dir>] <dir or .tex file>...';
+const usage = 'usage: node test/regress.mjs [-c <config>] [--baseline <dir>] [--out <dir>] [--draft | --accept] [--latexmk] [--contain [--root <dir>] [--texinputs <dir>]... | --shell-escape] [--pdf] [--up <url>] [--shots-cache <dir>] <dir or .tex file>...';
 const refuse = message => {
   console.error(message);
   process.exit(2);
@@ -84,7 +89,7 @@ try {
     c: { type: 'string', short: 'c' }, baseline: { type: 'string' }, out: { type: 'string' },
     accept: { type: 'boolean' }, draft: { type: 'boolean' }, latexmk: { type: 'boolean' }, contain: { type: 'boolean' },
     root: { type: 'string' }, 'shell-escape': { type: 'boolean' }, pdf: { type: 'boolean' }, up: { type: 'string' },
-    'shots-cache': { type: 'string' },
+    'shots-cache': { type: 'string' }, texinputs: { type: 'string', multiple: true, default: [] },
   } });
 } catch (error) {
   refuse(`${error.message}\n${usage}`);
@@ -94,6 +99,8 @@ if (!positionals.length) refuse(usage);
 if (options.draft && options.accept) refuse('--draft pages are not to be trusted, so --draft and --accept don\'t go together');
 // (a build on the host reads any file, so --root is only for --contain)
 if (options.root && !options.contain) refuse('--root is for --contain only');
+if (options.texinputs.length && !options.contain) refuse('--texinputs is for --contain only; on the host, set TEXINPUTS');
+const texinputs = options.texinputs.flatMap(dir => ['--texinputs', at(dir, true)]);
 // (full shell escape lets a document run any command, so it is for a
 // source that is trusted)
 if (options['shell-escape'] && options.contain) refuse('--shell-escape is for a source you trust, and --contain for one you do not: give one of them');
@@ -141,7 +148,7 @@ function document(arg) {
   // builds them with --latexmk
   return { name: basename(dir), dir, tex, cfg, draft: options.draft, noLatexmk: true,
     ...options.pdf && { pdf: join('build/pdf', tex.replace(/\.tex$/, '.pdf')) }, ...options.up && { up: options.up },
-    ...options.contain && { runner: [join(root, 'test/lib/contain.mjs')] }, ...top && { sourceRoot: top },
+    ...options.contain && { runner: [join(root, 'test/lib/contain.mjs'), ...texinputs] }, ...top && { sourceRoot: top },
     ...options['shell-escape'] && { shellEscape: true } };
 }
 

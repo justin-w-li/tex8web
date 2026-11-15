@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Runs a command in the image of tex8web's Dockerfile, for a document whose
 // source is not trusted:
-//   test/lib/contain.mjs [-t seconds] [-m memory] [-r path]... [-w dir]... -- command args...
+//   test/lib/contain.mjs [-t seconds] [-m memory] [-r path]... [-w dir]... [--texinputs dir]... -- command args...
 //   test/lib/contain.mjs --clean [-w dir]...
 // The command runs in the current directory, with no network, TeX Live's
 // restricted shell escape, which runs only the commands texmf.cnf lists
@@ -10,7 +10,11 @@
 // tex8web, its node_modules, the current directory, and each -r path. Each
 // -w directory is mounted writable, and /tmp is empty. A mount whose path
 // holds a symbolic link is refused. Only TEX8WEB_*, SOURCE_DATE_EPOCH, and
-// FORCE_SOURCE_DATE are passed from the environment. The image is built
+// FORCE_SOURCE_DATE are passed from the environment. TEXINPUTS is set to
+// the --texinputs directories, searched before TeX's own folders. Each
+// must be in a mount, with no symbolic link in its path, and --clean
+// ignores them, as build.mjs gives both kinds of call the same runner
+// arguments. The image is built
 // when its tag, a hash of the Dockerfile, is missing. Exits with the
 // command's status, after a line on stderr if a limit stopped it, and
 // nonzero if a process was killed for memory. --clean, which build.mjs runs
@@ -23,12 +27,12 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { constants } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const usage = 'usage: test/lib/contain.mjs [-t seconds] [-m memory] [-r path]... [-w dir]... -- command args...\n'
+const usage = 'usage: test/lib/contain.mjs [-t seconds] [-m memory] [-r path]... [-w dir]... [--texinputs dir]... -- command args...\n'
   + '       test/lib/contain.mjs --clean [-w dir]...';
 const refuse = message => {
   console.error(message);
@@ -40,12 +44,12 @@ try {
   parsed = parseArgs({ allowPositionals: true, options: {
     t: { type: 'string', short: 't', default: '900' }, m: { type: 'string', short: 'm', default: '2g' },
     r: { type: 'string', short: 'r', multiple: true, default: [] }, w: { type: 'string', short: 'w', multiple: true, default: [] },
-    clean: { type: 'boolean' },
+    texinputs: { type: 'string', multiple: true, default: [] }, clean: { type: 'boolean' },
   } });
 } catch (error) {
   refuse(`${error.message}\n${usage}`);
 }
-const { values: { t: time, m: memory, r: read, w: write, clean: cleanOnly }, positionals: command } = parsed;
+const { values: { t: time, m: memory, r: read, w: write, texinputs, clean: cleanOnly }, positionals: command } = parsed;
 if (!command.length === !cleanOnly) refuse(usage);
 for (const dir of write) if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory()) refuse(`contain: not a directory: ${dir}`);
 // (Docker Desktop follows a symbolic link in a mount's source on the host,
@@ -63,6 +67,14 @@ for (const path of [process.cwd(), ...read, ...write]) {
 const mounts = new Map();
 for (const path of [root, realpathSync(join(root, 'node_modules')), process.cwd(), ...read]) mounts.set(resolve(path), ',readonly');
 for (const path of write) mounts.set(resolve(path), '');
+// (a directory outside the mounts, or reached through a link, is not in
+// the container)
+const mounted = dir => [...mounts.keys()].some(path => !/^\.\.(\/|$)/.test(relative(path, dir)));
+for (const dir of cleanOnly ? [] : texinputs) {
+  if (real(dir) !== resolve(dir) || !statSync(dir).isDirectory() || !mounted(resolve(dir))) {
+    refuse(`contain: refusing --texinputs ${dir}: it is not a directory, a symbolic link is in its path, or it is in no mount`);
+  }
+}
 
 // runs docker with args, killed after seconds. A call that does not end in
 // time ends this process, with a line
@@ -133,6 +145,8 @@ if (cleanOnly) {
 const started = Date.now();
 const child = spawn('docker', ['run', '--name', name, ...labels.flatMap(label => ['--label', label]), ...limited,
   '-e', 'HOME=/tmp', '-e', 'TEXMFVAR=/tmp/texmf-var', '-e', 'shell_escape=p', '-e', 'openout_any=p',
+  // (the empty last entry stands for TeX's own folders)
+  ...texinputs.length ? ['-e', `TEXINPUTS=${texinputs.map(dir => resolve(dir)).join(':')}:`] : [],
   ...Object.keys(process.env).filter(name => /^(TEX8WEB_|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).flatMap(name => ['-e', name]),
   ...[...mounts].flatMap(([path, mode]) => ['--mount', `type=bind,source=${path},target=${path}${mode}`]),
   '-w', process.cwd(), image, 'timeout', '-k', '5', time, ...command], { stdio: 'inherit' });

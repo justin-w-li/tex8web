@@ -199,6 +199,7 @@ describe('regress.mjs', { concurrency: true }, () => {
       await refused(/same name.*dup/, 'a/dup', 'b/dup');
       await refused(/make4ht/, '--out', 'my-out', 'one');
       await refused(/--root is for --contain only/, '--root', 'one', 'one');
+      await refused(/--texinputs is for --contain only/, '--texinputs', 'one', 'one');
       await refused(/--shell-escape is for a source you trust/, '--contain', '--shell-escape', 'one');
       await refused(/not a directory: empty\/readme\.txt/, '--contain', '--root', 'empty/readme.txt', 'one');
       await refused(/refusing one: it is not in --root two/, '--contain', '--root', 'two', 'one');

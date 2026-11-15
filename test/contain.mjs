@@ -7,7 +7,7 @@
 // A case passes when its build fails if it must, its logs have the
 // expected line, no file appeared in its directory, in tex8web's
 // directory, or in a scratch directory on the host, and no container is
-// left. Nine cases differ: bibindex builds a test fixture, which must
+// left. Ten cases differ: bibindex builds a test fixture, which must
 // build and match its build on the host; root builds a document that reads
 // a file above its directory, which must fail without the source's root
 // mounted and build with it; bibpath and includes build a PDF with
@@ -16,7 +16,8 @@
 // \includes files from six directories; picparent also builds a page whose
 // pictures lie above its directory; shellescape builds a PDF and page
 // with minted and pdfpages, which run commands that restricted shell
-// escape allows, with four.pdf from test-pdfpages; mountlink gives the runner a link
+// escape allows, with four.pdf from test-pdfpages; texinputs builds both
+// with a package from a folder given by --texinputs; mountlink gives the runner a link
 // to mount; labels runs --clean on one of a running command's -w
 // directories; kill builds loop in another process, kills that process
 // once loop's .make4ht has run, and builds loop again on what was left.
@@ -232,6 +233,28 @@ function shellescape() {
   return { line: 'built, with minted\'s colors and the four pages of four.pdf' };
 }
 
+// builds the PDF and page of test/contain/texinputs with regress.mjs
+// --contain --latexmk --texinputs lib, as shellescape() does: its package
+// is in lib/. The runner must refuse a --texinputs directory in no mount
+function texinputs() {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webinputs')));
+  process.on('exit', () => rmSync(own, { recursive: true }));
+  const dir = join(own, 'texinputs');
+  cpSync(join(root, 'test/contain/texinputs'), dir, { recursive: true });
+  const result = sync(process.execPath, [join(root, 'test/regress.mjs'), '--contain', '--latexmk', '--texinputs', join(dir, 'lib'),
+    '--out', join(own, 'out'), dir], {}, 600);
+  const log = `${result.stderr}${result.stdout}`;
+  if (result.status !== 0) return `regress.mjs exited with ${result.status}:\n${log.trim().split('\n').slice(-8).join('\n')}`;
+  if (!existsSync(join(dir, 'build/pdf/main.pdf'))) return 'no PDF';
+  if (!readFileSync(join(own, 'out/html/texinputs/main.html'), 'utf8').includes('Text from the package in lib.')) return 'no text from lib/fromlib.sty in the page';
+  const outside = sync(join(root, 'test/lib/contain.mjs'), ['--texinputs', scratch, '--', 'true']);
+  if (outside.status !== 2 || !/contain: refusing --texinputs .*, or it is in no mount/.test(outside.stderr)) {
+    return `the runner exited with ${outside.status} for a --texinputs directory in no mount:\n${outside.stderr}`;
+  }
+  if (containers()) return `a container was left: ${containers()}`;
+  return { line: 'built with lib/ on TEXINPUTS, and refused a directory in no mount' };
+}
+
 // gives the runner a -w directory through a symbolic link, which Docker
 // Desktop would follow
 function mountlink() {
@@ -290,7 +313,7 @@ async function labels() {
   }
 }
 
-const others = { bibindex, root: rooted, bibpath: () => pdf('bibpath', 'doc', /\\bibitem\{entry\}/), includes: () => pdf('includes'), picparent, shellescape, mountlink, labels, kill };
+const others = { bibindex, root: rooted, bibpath: () => pdf('bibpath', 'doc', /\\bibitem\{entry\}/), includes: () => pdf('includes'), picparent, shellescape, texinputs, mountlink, labels, kill };
 const all = [...Object.keys(cases), ...Object.keys(others)];
 const names = process.argv.slice(2);
 const unknown = names.filter(name => !all.includes(name));

@@ -1,0 +1,8 @@
+% A package in lib/, which LaTeX finds only with lib/ on TEXINPUTS, as a
+% .latexmkrc would set it. test/contain.mjs builds this with
+% regress.mjs --contain --latexmk --texinputs lib.
+\documentclass{article}
+\usepackage{fromlib}
+\begin{document}
+\FromLib
+\end{document}
