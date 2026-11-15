@@ -1,0 +1,19 @@
+% A file of the document named like tex4ht's reading.4ht, read with
+% \input before biblatex's reading style, whose files biblatex reads
+% outside LaTeX's file hooks. As in the PDF, the file's text is in the
+% page, with the bibliography's entry. tex4ht reads reading.4ht for the
+% style. reading.4ht configures macros that the style no longer has, so
+% the page shows that it was read only through \bbx@thebibitem, which it
+% defines: the page's last sentence, which the PDF does not have. (The
+% style's entry head is off: its two items give the entry's id twice.)
+\documentclass{article}
+\input{reading.ltx}
+\usepackage[backend=bibtex,style=reading,entryhead=false]{biblatex}
+\addbibresource{test-biblatex-authoryear.bib}
+\begin{document}
+Some text, as cited in \cite{book}. \ownreading
+\printbibliography
+\makeatletter
+\ifdefined\bbx@thebibitem Read for the web.\fi
+\makeatother
+\end{document}

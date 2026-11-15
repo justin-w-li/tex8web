@@ -1053,6 +1053,15 @@ const contents = {
     /Latin1: Text from the latin1 file\./,
     /An angle of 30°\./,
   ],
+  // (a file of the document named like reading.4ht, read after or before
+  // biblatex's reading style, which biblatex reads outside the file
+  // hooks: the file's text, the entry, and the sentence that shows
+  // reading.4ht read for the style)
+  ...Object.fromEntries(['test-inputname-biblatex', 'test-inputname-biblatex-first'].map(name => [name, [
+    /Text from the reading file\./,
+    /<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/,
+    /Read for the web\./,
+  ]])),
   // (a file of the document named like glossary.4ht, with no extension: its
   // text, and one page)
   'test-inputname-bare': [/Glossary: Text from the glossary file\./, /^(?![^]*<\/html>[^]*<\/html>)/],

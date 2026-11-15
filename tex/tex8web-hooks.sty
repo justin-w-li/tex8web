@@ -509,6 +509,8 @@
 % \@filelist, as LaTeX's \@addtofilelist writes it.
 \ExplSyntaxOn
 \clist_new:N \l__web_filelist_clist
+\clist_new:N \g__web_ownnames_clist
+\bool_new:N \l__web_tree_bool
 \clist_map_inline:nn { sty, cls, def, clo, cfg, ldf, fd }
     { \cs_new_eq:cN { web@keepext@ #1 } \c_empty_tl }
 \clist_map_inline:nn
@@ -538,7 +540,10 @@
                     {
                         \cs_gset_eq:cN { #1 :4ht } \c_empty_tl
                         \clist_if_exist:cF { web@own@ #1 }
-                            { \clist_new:c { web@own@ #1 } }
+                            {
+                                \clist_new:c { web@own@ #1 }
+                                \clist_gput_right:Nn \g__web_ownnames_clist {#1}
+                            }
                         \clist_gput_right:cx { web@own@ #1 }
                             { { \exp_not:V \CurrentFileUsed } }
                     }
@@ -562,5 +567,53 @@
                     }
                 \cs_undefine:c { web@own@ #1 }
             }
+    }
+% biblatex reads its style files (reading.bbx) and its other files with
+% \@@input and lists them with \@addtofilelist, outside the file hooks.
+% Before tex4ht reads the .4ht files, a name still marked whose
+% \@filelist has a file of that name not read as the document's clears
+% its mark, as the hook above would have. The names are compared as
+% strings: \CurrentFileUsed is one, and \@filelist's names are not. This
+% runs once: the second \begin{document} comes after the .4ht files,
+% which tex4ht adds to \@filelist.
+\tl_new:N \l__web_basename_tl
+\tl_new:N \l__web_ext_tl
+\cs_new_protected:Npn \__web_basename:w #1 . #2 . #3 \q_stop
+    {
+        \tl_set:Nn \l__web_basename_tl {#1}
+        \tl_set:Nn \l__web_ext_tl {#2}
+    }
+\AddToHook { env/document/before }
+    {
+        \clist_map_inline:Nn \g__web_ownnames_clist
+            {
+                \cs_if_exist:cT { web@own@ #1 }
+                    {
+                        \bool_set_false:N \l__web_tree_bool
+                        \clist_map_inline:Nn \@filelist
+                            {
+                                \__web_basename:w ##1 .. \q_stop
+                                \bool_lazy_and:nnT
+                                    { \str_if_eq_p:Vn \l__web_basename_tl {#1} }
+                                    { ! \str_if_eq_p:Vn \l__web_ext_tl { 4ht } }
+                                    {
+                                        \bool_set_true:N \l__web_tree_bool
+                                        \clist_map_inline:cn { web@own@ #1 }
+                                            {
+                                                \str_if_eq:nnT {####1} {##1}
+                                                    { \bool_set_false:N \l__web_tree_bool }
+                                            }
+                                        \bool_if:NT \l__web_tree_bool
+                                            { \clist_map_break: }
+                                    }
+                            }
+                        \bool_if:NT \l__web_tree_bool
+                            {
+                                \cs_gset_eq:cN { web@keep@ #1 } \c_empty_tl
+                                \web@ownfile@clear {#1}
+                            }
+                    }
+            }
+        \clist_gclear:N \g__web_ownnames_clist
     }
 \ExplSyntaxOff
