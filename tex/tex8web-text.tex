@@ -94,6 +94,23 @@
     \def\verbvisiblespace{\leavevmode\special{t4ht@+&{35}x2423;}\asciispace}%
 \fi
 
+% --- footnotes --------------------------------------------------------------
+
+% KOMA-Script's \deffootnote[<mark indent>]{<indent>}{...} skips by
+% <mark indent> minus <indent>, mostly less than zero, before the mark's
+% zero-width box (scrkernel-footnotes.dtx). The text then starts left of
+% tex4ht's last position, and tex4ht drops the spaces after the words
+% that end there ("Ithank"). The page sets no such indents, so the skip
+% is removed: \ftn@font is the first command after it.
+\ifdefined\deffootnote
+    \web@needs{ftn@font}
+    \AddtoDoHook{footnote/text/begin}{\web@fntextbegin}
+    \def\web@fntextbegin#1{%
+        \let\web@ftnfont\ftn@font
+        \def\ftn@font{\unskip\let\ftn@font\web@ftnfont\ftn@font}%
+    }
+\fi
+
 % --- title ------------------------------------------------------------------
 
 % each \thanks mark where the \thanks is, as in the PDF. tex4ht (latex.4ht)
