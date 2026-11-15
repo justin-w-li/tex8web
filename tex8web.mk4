@@ -20,6 +20,7 @@ local domfilter = require "make4ht-domfilter"
 local fixinlines = require "make4ht-fixinlines"
 local assets = require "tex8web.assets"
 local bibliography = require "tex8web.bibliography"
+local dvi = require "tex8web.dvi"
 local files = require "tex8web.files"
 local htf = require "tex8web.htf"
 local index = require "tex8web.index"
@@ -125,6 +126,11 @@ end
 -- than their encoding's, for tex4ht, which runs after these commands
 Make:add("htf", htf.write)
 Make:htf {}
+-- a picture that holds another picture made one picture, for tex4ht. A
+-- DVI copied back from TEX8WEB_LATEX_REUSE was saved before this step, and
+-- is changed again.
+Make:add("nested_pictures", dvi.nested_pictures)
+Make:nested_pictures {}
 -- (tex4ht's class files list \jobname.4idx among the page's files, for
 -- tex4ht's index script: \warn:idx in article.4ht. make4ht never makes the
 -- file, and copying it to -d logs an error.)

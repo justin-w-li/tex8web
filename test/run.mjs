@@ -1562,6 +1562,22 @@ const logs = {
   'test-bblnobib': [/^\[STATUS\] +tex8web: bibliography: test-bblnobib-gone is missing/m],
   'test-bblnobib-biber': [/^\[STATUS\] +tex8web: bibliography: test-bblnobib-gone\.bib is missing/m],
 };
+// A box that holds a TikZ picture, placed in another picture, and the
+// pictures beside such boxes (test-nestpic-cases.ltx): between each case's
+// "Before" and "After" is a picture that dvisvgm wrote, and not empty. The
+// text that an outer box holds is in its picture, not the page's text, and
+// no tail of an <img> tag is left as the page's text. Each outer box of
+// the environments, which is 0.8 of the text width with its frame, is as
+// wide on the page, within 0.001: an inner picture's bounding box does not
+// widen it.
+const nestpicCases = ['lrbox', 'setbox', 'sbox', 'savebox', 'pgf', 'two boxes', 'three level', 'box and nest',
+  'nest and box', 'env mixed', 'env three', 'env deep', 'env', 'two inner', 'env list', 'env note', 'thm env', 'theorem',
+  'note', 'stray', 'picture env', 'href', 'picture after link', 'text copy', 'fbox copy', 'later', 'direct', 'minipage',
+  'tcolorbox', 'mdframed'];
+const nestpicTexts = ['Inner mixed B.', 'Outer mixed G.', 'Mid three D.', 'Outer three E.', 'Mid deep D.', 'Outer deep E.',
+  'Outer text after.', 'Outer two E.', 'Outer list C.', 'Outer note C.', 'Outer thm after.'];
+const nestpicOuter = ['env mixed', 'env three', 'env deep', 'env', 'two inner', 'env list', 'env note', 'thm env'];
+const nested = { 'test-nestpic': nestpicCases, 'test-nestpic-hyperref': nestpicCases };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width
@@ -2717,6 +2733,23 @@ function check(doc, result, out, aux) {
       problems.push(`${file} isn't ${share} of the text width`);
     }
   }
+  if (nested[doc.name]) {
+    for (const name of nested[doc.name]) {
+      const part = flat.match(new RegExp(`Before ${name}\\.([^]*?)After ${name}\\.`))?.[1];
+      if (part === undefined) problems.push(`no "Before ${name}." and "After ${name}."`);
+      else if (![...part.matchAll(/<img [^>]*src='([^']+\.svg)'/g)].some(([, src]) => existsSync(join(out, src))
+        && Number(readFileSync(join(out, src), 'utf8').match(/viewBox='\S+ \S+ (\S+)/)?.[1]) > 0)) {
+        problems.push(`no picture that dvisvgm wrote, or only an empty one, between "Before ${name}." and "After ${name}."`);
+      }
+    }
+    for (const name of nestpicOuter) {
+      const share = Number(flat.match(new RegExp(`Before ${name}\\.(?:(?!After )[^])*?<img [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ([\\d.]+)\\)`))?.[1]);
+      if (!(Math.abs(share - 0.8205) < 0.001)) problems.push(`the picture between "Before ${name}." and "After ${name}." is ${share} of the text width, not 0.8205`);
+    }
+    const shown = flat.replace(/<[^>]*>/g, '');
+    for (const text of nestpicTexts) if (shown.includes(text)) problems.push(`"${text}" in the page's text, not in its picture`);
+    if (/\/(?:&gt;|>)/.test(shown)) problems.push("the tail of an <img> tag in the page's text");
+  }
   if (copied[doc.name]) {
     const shown = {};
     for (const [tag] of flat.matchAll(/<img [^>]*>/g)) {
@@ -2811,7 +2844,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, nested, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

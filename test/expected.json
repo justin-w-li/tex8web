@@ -33,5 +33,17 @@
     "allow": [
       "repeated ids: Xbook, Xpaper"
     ]
+  },
+  "test-nestpic": {
+    "why": "the footnote of a minipage in a box that a TikZ picture draws is written after the text, and its link back goes to its mark, which is drawn in the picture. A box with no picture in it does the same.",
+    "allow": [
+      "test-nestpic.html: no target for #fn1x18-bk"
+    ]
+  },
+  "test-nestpic-hyperref": {
+    "why": "the footnote of a minipage in a box that a TikZ picture draws is written after the text, and its link back goes to its mark, which is drawn in the picture. A box with no picture in it does the same.",
+    "allow": [
+      "test-nestpic-hyperref.html: no target for #fn1x18-bk"
+    ]
   }
 }

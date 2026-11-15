@@ -66,6 +66,8 @@ PDF and EPS pictures are converted by `assets.copy`, not by t4ht. html4.4ht's co
 
 A picture named with `../` or an absolute path is copied to `tex8web-pictures/<hash>/`, with the hash of its path. make4ht is kept from copying the `.lg`'s entry for such a picture. make4ht appends the entry's path to the output directory, so a `../` path would go outside the output directory, and an absolute path would put the writer's folders inside it. Only entries with the extension of a picture or a conversion are kept from make4ht (`assets.lg_leaves`). Other entries, such as the files of `\Configure{AddCss}` and `\AddFontFace`, are copied by make4ht.
 
+A box that holds a picture that dvisvgm draws, such as a TikZ picture saved with `\sbox`, can be placed inside another such picture. tex4ht does not nest pictures. It ends the outer picture at the inner one's end, and dvisvgm fails on the outer picture, whose SVG groups are not closed. So after LaTeX, `dvi.nested_pictures` overwrites with spaces every tex4ht special inside a picture that holds another, which keeps the DVI's offsets. tex4ht then cuts one picture, and dvisvgm draws the inner pictures in it, as in the PDF. The inner pictures' locks and unlocks of the bounding box are overwritten too, so that an inner unlock does not let the outer picture grow.
+
 bibtex runs in the build directory, with `BIBINPUTS` and `BSTINPUTS` set to the document's directory. kpathsea looks up a name that begins with `./` or `../` only from the current directory. So before bibtex runs, such names in the `\bibdata` and `\bibstyle` lines of the `.aux` are made absolute from the document's directory. When `kpsewhich` does not find a `.bib` named in `\bibdata` or in biber's `.bcf`, and a `.bbl` sits beside the document, bibtex and biber are skipped. The `.bbl` in the build directory is then removed, so LaTeX reads the one beside. As in latexmk, only biber's names that end in `.bib` and are neither glob patterns nor URLs are checked, and a name found in the build directory, where `filecontents` writes, counts as found. When the build directory is the document's directory, its `.bbl` is the one beside and stays.
 
 #### Macros in math (`macros.lua`, `preamble.lua`)
@@ -341,6 +343,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `lua/tex8web/source.lua`, `text.lua`, `page.lua` | HTML passes: formula source, colors, spacing, theorems in boxes, footnotes, links, page controls, the table of contents, meta tags, and scripts |
 | `lua/tex8web/assets.lua`, `bibliography.lua`, `index.lua`, `prerender.lua` | the files next to the page and font rules, bibtex and biber, makeindex and makeglossaries, and prerendering |
 | `lua/tex8web/htf.lua` | tex4ht's font files for fonts whose f-ligatures are in other slots than their encoding's |
+| `lua/tex8web/dvi.lua` | the DVI file changed before tex4ht reads it: a picture inside another picture made part of it |
 | `lua/tex8web/files.lua`, `dom.lua` | file and DOM helpers |
 | `js/tex8web.js` | MathJax sizes set as in TeX |
 | `js/tex8web-fonts.js` | the font preload links, written inline in the head of each page, before the stylesheet link |

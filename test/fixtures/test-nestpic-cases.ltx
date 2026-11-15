@@ -1,0 +1,216 @@
+% The cases of test-nestpic and test-nestpic-hyperref. Each case's text
+% is "Before <case>." and "After <case>.", which run.mjs reads.
+%
+% A box that holds a TikZ or pgf picture, placed inside another TikZ
+% picture or a LaTeX picture, which is drawn as one picture:
+% - lrbox, \setbox, \sbox, \savebox, and a pgfpicture in a box;
+% - two boxes in one picture, three levels made with \sbox, and a box
+%   beside such a three-level box in one picture, before it and after it;
+% - an environment that draws its box with a tikzpicture node and holds
+%   another such environment: alone, in a theorem, with two inner boxes,
+%   with an inner box and then a box of three levels, with a list after the
+%   inner box, and with a footnote;
+% - three levels of such environments, alone and in a theorem in a list;
+% - a box in a \tikz node, in a theorem and in a footnote;
+% - a box in a LaTeX picture, in a center, and after a link that holds
+%   such a box, or bold text without hyperref.
+%
+% Pictures the nesting must not break:
+% - copies of such a box in text and in \fbox;
+% - a later picture;
+% - a picture written directly in a node, a minipage in a node, tcolorbox,
+%   and mdframed.
+%
+% The text that an outer environment holds is drawn in its picture, as in
+% the PDF, and is not the page's text.
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\usepackage[framemethod=tikz]{mdframed}
+\newtheorem{thm}{Theorem}
+\newsavebox{\bx}
+\newsavebox{\sv}
+\newsavebox{\outerbx}
+\newsavebox{\innerbx}
+\newsavebox{\bxa}
+\newsavebox{\bxb}
+\newsavebox{\bxc}
+\newsavebox{\bxd}
+\newsavebox{\midbx}
+\newsavebox{\bxe}
+\newenvironment{outerbox}{\begin{lrbox}{\outerbx}\begin{minipage}{0.8\textwidth}}{%
+  \end{minipage}\end{lrbox}\begin{center}\begin{tikzpicture}\node[draw]{\usebox{\outerbx}};\end{tikzpicture}\end{center}}
+\newenvironment{innerbox}{\begin{lrbox}{\innerbx}\begin{minipage}{0.6\textwidth}}{%
+  \end{minipage}\end{lrbox}\begin{center}\begin{tikzpicture}\node[draw]{\usebox{\innerbx}};\end{tikzpicture}\end{center}}
+\newenvironment{midbox}{\begin{lrbox}{\midbx}\begin{minipage}{0.7\textwidth}}{%
+  \end{minipage}\end{lrbox}\begin{center}\begin{tikzpicture}\node[draw]{\usebox{\midbx}};\end{tikzpicture}\end{center}}
+\begin{document}
+\begin{lrbox}{\bx}\begin{tikzpicture}\node[draw]{Inner};\end{tikzpicture}\end{lrbox}
+Before lrbox. \begin{tikzpicture}\node[draw]{\usebox{\bx}};\end{tikzpicture} After lrbox.
+
+\setbox0\hbox{\begin{tikzpicture}\draw (0,0)--(1,0);\end{tikzpicture}}
+Before text copy. \copy0\ After text copy.
+
+Before fbox copy. \fbox{\copy0} After fbox copy.
+
+Before setbox. \begin{tikzpicture}\node at (1,1){\copy0};\end{tikzpicture} After setbox.
+
+\sbox{\sv}{\tikz\draw (0,0) rectangle (1,0.5);}
+Before sbox. \tikz\node[draw]{\usebox{\sv}}; After sbox.
+
+\savebox{\sv}{\tikz\draw (0,0) circle (0.25);}
+Before savebox. \tikz\node[draw]{\usebox{\sv}}; After savebox.
+
+\setbox2\hbox{\begin{pgfpicture}\pgfpathcircle{\pgfpointorigin}{5pt}\pgfusepath{draw}\end{pgfpicture}}
+Before pgf. \tikz\node[draw]{\box2}; After pgf.
+
+\sbox{\bxa}{\tikz\draw (0,0) rectangle (0.8,0.4);}
+\sbox{\bxb}{\tikz\draw (0,0) circle (0.2);}
+Before two boxes. \begin{tikzpicture}\node at (0,0){\usebox{\bxa}}; \node at (3,0){\usebox{\bxb}};\end{tikzpicture} After two boxes.
+
+\sbox{\bxc}{\tikz\draw (0,0) circle (0.3);}
+\sbox{\bxd}{\tikz\node[draw]{\usebox{\bxc}};}
+Before three level. \tikz\node{\usebox{\bxd}}; After three level.
+
+Before box and nest. \tikz{\node{\usebox{\bxa}}; \node at (3,0){\usebox{\bxd}};} After box and nest.
+
+Before nest and box. \tikz{\node{\usebox{\bxd}}; \node at (3,0){\usebox{\bxa}};} After nest and box.
+
+Before env mixed.
+\begin{outerbox}
+Outer mixed A.
+\begin{innerbox}
+Inner mixed B.
+\end{innerbox}
+Outer mixed C.
+\begin{midbox}
+Mid mixed D.
+\begin{innerbox}
+Inner mixed E.
+\end{innerbox}
+Mid mixed F.
+\end{midbox}
+Outer mixed G.
+\end{outerbox}
+After env mixed.
+
+Before env three.
+\begin{outerbox}
+Outer three A.
+\begin{midbox}
+Mid three B.
+\begin{innerbox}
+Inner three C.
+\end{innerbox}
+Mid three D.
+\end{midbox}
+Outer three E.
+\end{outerbox}
+After env three.
+
+\begin{itemize}
+\item
+\begin{thm}
+Before env deep.
+\begin{outerbox}
+Outer deep A.
+\begin{midbox}
+Mid deep B.
+\begin{innerbox}
+Inner deep C.
+\end{innerbox}
+Mid deep D.
+\end{midbox}
+Outer deep E.
+\end{outerbox}
+After env deep.
+\end{thm}
+\end{itemize}
+
+Before env.
+\begin{outerbox}
+Outer text.
+\begin{innerbox}
+Inner text with $x^2$.
+\end{innerbox}
+Outer text after.
+\end{outerbox}
+After env.
+
+Before two inner.
+\begin{outerbox}
+Outer two A.
+\begin{innerbox}
+Inner two B.
+\end{innerbox}
+Outer two C.
+\begin{innerbox}
+Inner two D.
+\end{innerbox}
+Outer two E.
+\end{outerbox}
+After two inner.
+
+Before env list.
+\begin{outerbox}
+Outer list A.
+\begin{innerbox}
+Inner list B.
+\end{innerbox}
+\begin{itemize}
+\item Outer list C.
+\end{itemize}
+\end{outerbox}
+After env list.
+
+Before env note.
+\begin{outerbox}
+Outer note A.
+\begin{innerbox}
+Inner note B.
+\end{innerbox}
+Outer note C.\footnote{Env note N.}
+\end{outerbox}
+After env note.
+
+\begin{thm}
+Before thm env.
+\begin{outerbox}
+Outer thm text.
+\begin{innerbox}
+Inner thm text.
+\end{innerbox}
+Outer thm after.
+\end{outerbox}
+After thm env.
+\end{thm}
+
+\begin{thm}
+Before theorem. \tikz\node[draw]{\usebox{\bx}}; After theorem.
+\end{thm}
+
+Text with a note.\footnote{Before note. \tikz\node[draw]{\usebox{\bx}}; After note.}
+
+Before later. \tikz\draw (0,0) circle (0.3); After later.
+
+\sbox{\bxe}{\tikz\draw (0,0) circle (0.3);}
+Before stray. \tikz\node{\usebox{\bxe}}; After stray.
+
+\begin{center}
+Before picture env. \begin{picture}(30,30)\put(0,0){\usebox{\bxe}}\end{picture} After picture env.
+\end{center}
+
+\providecommand{\href}[2]{\textbf{#2}}
+Before href. \href{https://a.b}{x \tikz\node{\usebox{\bxe}}; y} After href. Before picture after link. \begin{picture}(30,30)\put(0,0){\usebox{\bxe}}\end{picture} After picture after link.
+
+Before direct. \begin{tikzpicture}\node[draw]{\begin{tikzpicture}\draw (0,0) circle (0.2);\end{tikzpicture}};\end{tikzpicture} After direct.
+
+Before minipage. \tikz\node[draw]{\begin{minipage}{3cm}\tikz\draw (0,0) circle (0.2);\end{minipage}}; After minipage.
+
+Before tcolorbox.
+\begin{tcolorbox}[enhanced]\tikz\draw (0,0) rectangle (1,0.5);\end{tcolorbox}
+After tcolorbox.
+
+Before mdframed.
+\begin{mdframed}\tikz\draw (0,0) rectangle (1,0.5);\end{mdframed}
+After mdframed.
