@@ -1155,13 +1155,16 @@
 % no div.
 % pdfpages.4ht passes the raw pages= value to \includegraphics instead,
 % so a range shows its first page alone. An empty entry is a blank page in
-% the PDF and gets no picture. In DVI mode, ppnull.def sets the page count
-% to the lastpage hint, or to 1 without it, for every document, so the
-% count is read from extractbb, which TeX Live's restricted shell escape
-% allows. ppnull.def's macro then runs every time, and acts only when
-% extractbb gave no count, as without shell escape, or with a space in the
-% file name, which extractbb gets as two arguments: it gives the hint, or
-% 1 with its warning that names the hint. \AM@readlist reads the count of
+% the PDF and gets no picture. In DVI mode, pdfpages' driver is
+% ppnull.def, or ppdvips.def or ppdvipdfmx.def with those class options.
+% ppnull.def and ppdvips.def read no page count: they keep the lastpage
+% hint, or set 1 without it, for every document. So the count is read
+% from extractbb, which TeX Live's restricted shell escape allows. The
+% driver's macro then runs every time, and sets 1 only when no count was
+% read and there is no hint. No count is read without shell escape, or
+% with a space in the file name, which extractbb gets as two arguments.
+% ppnull.def's warning then names the hint, and ppdvips.def's says that
+% page selections are not supported. \AM@readlist reads the count of
 % each document of \includepdfmerge in turn, and \AM@pagecount is set
 % back to the hint, or undefined, before each, so a document whose count
 % is not read never keeps the count of the one before.
@@ -1181,7 +1184,7 @@
         \cs_set_eq:NN \__web_pdfpages_hint: \AM@pagecount
         \__web_pdfpages_readlist:n
       }
-    \cs_set_protected:Npn \AM@getpagecount
+    \cs_new_protected:Npn \__web_pdfpages_getpagecount:
       {
         \cs_set_eq:NN \AM@pagecount \__web_pdfpages_hint:
         \sys_if_shell:T
@@ -1198,7 +1201,11 @@
             \ior_close:N \g__web_pdfpages_ior
           }
         \__web_pdfpages_count:
+        % (ppdvips.def's macro, when it sets 1, also sets \AM@getpagecount
+        % globally to a macro that always sets 1)
+        \cs_gset_eq:NN \AM@getpagecount \__web_pdfpages_getpagecount:
       }
+    \cs_set_eq:NN \AM@getpagecount \__web_pdfpages_getpagecount:
     \bool_new:N \g__web_pdfpages_open_bool
     % (pdfpages' \AM@output does nothing when the file is missing, and the
     % document list then holds \relax for each page. pdfpages marks the

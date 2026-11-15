@@ -1,0 +1,20 @@
+% Pages of a PDF included with pdfpages and the class option dvips, which
+% loads pdfpages' driver ppdvips.def. The run space includes spaced.pdf, a
+% PDF of 2 pages found through \graphicspath in a folder whose name has a
+% space, with no lastpage hint: extractbb reads no number of pages, so the
+% page shows page 1 alone, with ppdvips.def's warning in the TeX log. The
+% run dash includes every page of four.pdf after it, and shows all 4.
+% ppdvips.def finds a PDF only by its name with .pdf. Each run starts with
+% a paragraph "Run name."
+\documentclass[dvips]{article}
+\usepackage{pdfpages}
+\graphicspath{{test-pdfpages/my dir/}}
+\begin{document}
+Run space.
+\includepdf[pages=-]{spaced.pdf}
+
+Run dash.
+\includepdf[pages=-]{test-pdfpages/four.pdf}
+
+Run end.
+\end{document}

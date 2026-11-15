@@ -479,6 +479,7 @@ const pdfPages = {
   },
   'test-pdfpages-plain': { dash: 'four 1, four 2, four 3, four 4', closed: 'four 2, four 3', merge: 'two 1, two 2, four 4' },
   'test-pdfpages-hint': { dash: 'four 1, four 2, four 3, four 4', last: 'four 2, four 3, four 4', nohint: 'four 1, four 2, four 3, four 4', closed: 'four 1, four 2, four 3, four 4', space: 'four 1, four 2, four 3, four 4, spaced 1, spaced 2' },
+  'test-pdfpages-dvips': { space: 'spaced 1', dash: 'four 1, four 2, four 3, four 4' },
 };
 // the runs of test-pdfpages-hint built without shell escape: the lastpage
 // hint of 3 gives the number of pages, short of four.pdf's 4, so only a
@@ -488,7 +489,10 @@ const pdfPagesNoShell = { dash: 'four 1, four 2, four 3', last: 'four 2, four 3'
 // pdfpages' warning, in the TeX log, when it has no number of pages and no
 // lastpage hint (ppnull.def)
 const pdfpagesHintWarning = "You can use the option `lastpage' to give me a hint";
-const pdfPageAspect = { four: 1, two: 5, spaced: 5, three: 7, eight: 10 };
+// ppdvips.def's warning, in the TeX log, when it has no number of pages,
+// as it replaces its macro that sets the number with one that sets 1
+const pdfpagesDvipsWarning = 'Page selections not supported by driver dvips';
+const pdfPageOffset = { four: 1, two: 5, spaced: 5, three: 7, eight: 10 };
 // the file a src names in the page's folder, or null if the src leaves it
 const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
 // a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
@@ -500,7 +504,7 @@ const checkPdfPages = (runs, flat, out) => {
   for (const [run, pages] of Object.entries(runs)) {
     const part = flat.match(new RegExp(`Run ${run}\\.([^]*?)Run `))?.[1];
     if (part === undefined) { problems.push(`no run ${run}`); continue; }
-    const want = pages.split(', ').map(page => { const [file, k] = page.split(' '); return file in pdfPageAspect ? String(Number(k) + pdfPageAspect[file]) : `-${k}.png`; });
+    const want = pages.split(', ').map(page => { const [file, k] = page.split(' '); return file in pdfPageOffset ? String(Number(k) + pdfPageOffset[file]) : `-${k}.png`; });
     const got = [...part.matchAll(/<img [^>]*>/g)].map(([tag], i) => {
       const file = inPage(out, tag.match(/ src='([^']*)'/)?.[1]);
       const aspect = file && existsSync(file) ? pngAspect(readFileSync(file)) : NaN;
@@ -521,7 +525,7 @@ const checkPdfPages = (runs, flat, out) => {
     const lazy = [...part.matchAll(/<img [^>]*>/g)].map(([tag]) => / loading=['"]lazy['"]/.test(tag));
     if (lazy.some((l, i) => l !== (i > 0))) problems.push(`run ${run}: loading='lazy' on pictures ${lazy.map(Number).join(', ')}, not on every one after the first`);
   }
-  if (/<img /.test(flat.split('Run dash.')[0]) || /<img /.test(flat.split('Run end.')[1] ?? '')) problems.push('a picture before the first run or after the run end');
+  if (/<img /.test(flat.split(`Run ${Object.keys(runs)[0]}.`)[0]) || /<img /.test(flat.split('Run end.')[1] ?? '')) problems.push('a picture before the first run or after the run end');
   return problems;
 };
 // the files and folders in the folders of test-pdfpic's source pictures and
@@ -2372,6 +2376,10 @@ function check(doc, result, out, aux) {
   }
   if (pdfPages[doc.name]) {
     problems.push(...checkPdfPages(pdfPages[doc.name], flat, out));
+    const texLog = join(aux, doc.tex.replace(/\.tex$/, '.log'));
+    if (doc.name === 'test-pdfpages-dvips' && !(existsSync(texLog) && readFileSync(texLog, 'latin1').includes(pdfpagesDvipsWarning))) {
+      problems.push("no ppdvips.def warning that it has no number of pages in the TeX log");
+    }
     const written = pdfpagesOnly();
     if (written.length) problems.push(`files written beside the included PDFs: ${written.join(', ')}`);
   }
