@@ -1,0 +1,14 @@
+% A guard: cases the fix of KOMA-Script's footnotes must not break.
+% scrreprt's default font, with hyperref, and the default \deffootnote,
+% whose text starts left of its mark. Each footnote keeps the words and
+% spaces of the PDF, whatever its first word.
+\documentclass{scrreprt}
+\usepackage{hyperref}
+\begin{document}
+\chapter{First}
+Text one.\footnote{I thank a reader for this.}
+Text two.\footnote{A measure is finite there.}
+Text three.\footnote{We thank the printer too.}
+Text four.\footnote[9]{I owe this remark to her.}
+Text five.\footnote{a priori it fails.}
+\end{document}

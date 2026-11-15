@@ -1,0 +1,19 @@
+% A KOMA-Script document's own \deffootnote, with a mark indent smaller
+% than the text's, in scrbook with Times and hyperref: each footnote
+% keeps the words and spaces of the PDF, whatever its first word. Also a
+% footnote in a minipage.
+\documentclass{scrbook}
+\usepackage{times}
+\usepackage{hyperref}
+\deffootnote[0.5em]{2em}{1em}{\textsuperscript{\thefootnotemark}}
+\begin{document}
+\chapter{First}
+Text one.\footnote{I thank a critic for this.}
+Text two.\footnote{A measure is finite again.}
+Text three.\footnote{We thank the binder too.}
+Text four.\footnote{I am in debt to them.}
+
+\begin{minipage}{0.8\textwidth}
+In a box.\footnote{I add this in a box.}
+\end{minipage}
+\end{document}

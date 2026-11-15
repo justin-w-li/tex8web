@@ -1,0 +1,29 @@
+% KOMA-Script's footnotes in Times: scrartcl's default \deffootnote, whose
+% text starts left of its mark. Each footnote keeps the words and spaces of
+% the PDF, whatever its first word: a narrow one ("I", "a"), a wide one,
+% one in italics, sans-serif, or typewriter, and one with punctuation.
+% Also a footnote with its own number, one in a minipage, and \thanks.
+\documentclass[fontsize=11]{scrartcl}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\title{Spaced notes\thanks{I thank a funder of this work.}}
+\author{Someone}
+\begin{document}
+\maketitle
+Text one.\footnote{I thank a referee for this.}
+Text two.\footnote{A measure is finite here.}
+Text three.\footnote{We thank the editor too.}
+Text four.\footnote{I am grateful to her.}
+Text five.\footnote[20]{I owe this point to him.}
+Text six.\footnote{\emph{I} stress this word.}
+Text seven.\footnote{I, too, agree with it.}
+Text eight.\footnote{Ian thanks a colleague.}
+Text nine.\footnote{a fortiori it holds.}
+Text ten.\footnote{\textsf{I} say this in sans.}
+Text eleven.\footnote{\texttt{I} type this in mono.}
+Text twelve.\footnote{I.e. the same again.}
+
+\begin{minipage}{0.8\textwidth}
+In a box.\footnote{I note this in a box.}
+\end{minipage}
+\end{document}

@@ -786,6 +786,12 @@ const runinToc = (entries, before = '') => new RegExp(`<nav [^>]*id='tex8web-toc
 // A heading with its number and title, then the text after it.
 const runinHead = (h, level, id, number, title, text) => new RegExp(`<${h} class='${level}Head' id='${id}'>(?:(?!</${h}>)[^])*` +
   `<span class='titlemark'>${number.replace(/\./g, '\\.')}</span>(?:(?!</${h}>)[^])*${title}(?:(?!</${h}>)[^])*</${h}>\\s*<p class='noindent'>${text}`);
+// A footnote as the PDF reads: its mark, then its words with the spaces
+// between them, in any font's span (KOMA-Script's \deffootnote starts the
+// text left of its mark, which tex4ht took for no space after a narrow
+// first word)
+const noteWords = (mark, words) => new RegExp(`<span class='footnote-mark'><a [^>]*><sup class='textsuperscript'>${mark}</sup></a></span>(?:<[^>]*>)*` +
+  words.split(' ').map(word => word.replace(/[.*+?()[\]\\]/g, '\\$&')).join('(?:<[^>]*>)*\\s+(?:<[^>]*>)*') + '(?:<[^>]*>)*</p></aside>');
 const contents = {
   // (also test.cfg's \WebUp: the first control, with a # and an & in its URL)
   'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/\?a=1&amp;b=2#top'/],
@@ -1077,6 +1083,22 @@ const contents = {
   'test-bang-shortvrb': [/Type <span class='obeylines-h'><code class='verb'><span class='cmtt-10'>a_b\{c\}<\/span><\/code><\/span> here\./],
   'test-bang-french': [/<p class='noindent'>Un mot ! Et une question \? Oui : non ; fin\./],
   'test-bang-turkish': [/<p class='noindent'>Evet\u202f! Hayır\u202f: belki\./],
+  'test-fnspace-koma': [
+    noteWords(1, 'I thank a referee for this.'), noteWords(2, 'A measure is finite here.'), noteWords(3, 'We thank the editor too.'),
+    noteWords(4, 'I am grateful to her.'), noteWords(20, 'I owe this point to him.'), noteWords(5, 'I stress this word.'),
+    noteWords(6, 'I, too, agree with it.'), noteWords(7, 'Ian thanks a colleague.'), noteWords(8, 'a fortiori it holds.'),
+    noteWords(9, 'I say this in sans.'), noteWords(10, 'I type this in mono.'), noteWords(11, 'I.e. the same again.'),
+    noteWords('a', 'I note this in a box.'),
+    /<span class='thank-mark'>(?:<[^>]*>)*\*(?:<[^>]*>)*<\/span>I\s+thank\s+a\s+funder\s+of\s+this\s+work\./,
+  ],
+  'test-fnspace-scrreprt': [
+    noteWords(1, 'I thank a reader for this.'), noteWords(2, 'A measure is finite there.'), noteWords(3, 'We thank the printer too.'),
+    noteWords(9, 'I owe this remark to her.'), noteWords(4, 'a priori it fails.'),
+  ],
+  'test-fnspace-scrbook': [
+    noteWords(1, 'I thank a critic for this.'), noteWords(2, 'A measure is finite again.'), noteWords(3, 'We thank the binder too.'),
+    noteWords(4, 'I am in debt to them.'), noteWords('a', 'I add this in a box.'),
+  ],
 };
 
 // Text back in its font after a font command that the PDF keeps in a
