@@ -1,0 +1,19 @@
+% A blank line in an algorithm2e block with hyperref and the algo2e
+% option, whose environment is algorithm2e, and ruled style: the block's
+% lines are paragraphs of its div, numbered as in the PDF, and a \ref to a
+% line after the blank line leads to that line.
+\documentclass{article}
+\usepackage[algo2e,ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{hyperref}
+\begin{document}
+See line~\ref{line:rtwo}.
+
+\begin{algorithm2e}
+\caption{With hyperref}
+\If{case R}{
+  line rone\;
+
+  line rtwo\label{line:rtwo}\;
+}
+\end{algorithm2e}
+\end{document}

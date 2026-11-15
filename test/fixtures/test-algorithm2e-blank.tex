@@ -1,0 +1,157 @@
+% Blank lines inside the braces of algorithm2e's blocks, as in the PDF:
+% each line of a block is a paragraph of the block's div, numbered as in
+% the PDF, and a blank line adds no empty paragraph. The blocks are those
+% of every style (vlined, lined, without lines, and \SetNothing), with the
+% ends of noend, ShortEnd, and LongEnd, and of every keyword family, in
+% the algorithm, algorithm*, procedure, and function environments, with
+% procnumbered. A blank line may come first or last in a block, follow a
+% line without \;, or come twice, and a \label after one is the target
+% of its \ref. A blank line between lines outside any block was already
+% right, and is checked so it stays right.
+\documentclass{article}
+\usepackage[vlined,linesnumbered,procnumbered]{algorithm2e}
+\SetKwProg{Fn}{Function}{ is}{end}
+\SetKwBlock{Begin}{begin}{end}
+\begin{document}
+Line~\ref{line:bthree} of Algorithm~\ref{alg:vlined} follows a blank line.
+
+\begin{algorithm}[H]
+\caption{Vlined blocks}\label{alg:vlined}
+\If{case A}{
+  line aone\;
+
+  line atwo\;
+}
+\For{case B}{
+
+  line bone\;
+  \If{case B inner}{
+    line btwo without a semicolon
+
+    line bthree\label{line:bthree}\;
+
+  }
+
+}
+\eIf{case C}{
+  line cone\;
+
+  line ctwo\;
+}{
+  line cthree\;
+
+  line cfour\;
+}
+\uIf{case U}{
+  line uone\;
+
+  line utwo\;
+}
+\ElseIf{case U else if}{
+  line uthree\;
+
+  line ufour\;
+}
+\Else{
+  line ufive\;
+
+  line usix\;
+}
+\While{case W}{
+  line wone\;
+
+
+  line wtwo\;\par
+  \tcp{a comment after a blank line}
+
+  line wthree\;
+}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\SetAlgoLined
+\caption{Lined blocks}
+\While{case lined}{
+  line lone\;
+
+  line ltwo\;
+}
+\SetAlgoLongEnd
+\For{case long}{
+  line gone\;
+
+  line gtwo\;
+}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\SetAlgoNoLine
+\caption{Blocks without lines}
+\Fn{case D}{
+  line done\;
+
+  \Repeat{case D until}{
+    line dtwo\;
+
+    line dthree\;
+  }
+}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{A blank line outside the blocks}
+line eone\;
+
+line etwo\;
+\end{algorithm}
+
+\begin{procedure}[H]
+\SetAlgoNoEnd
+\caption{proc()}
+\Switch{case F}{
+  \Case{case F one}{
+    line fone\;
+
+    line ftwo\;
+  }
+  \uIf{case F if}{
+    line fthree\;
+
+    line ffour\;
+  }
+  \Else{
+    line ffive\;
+
+    line fsix\;
+  }
+  \Other{
+    line fseven\;
+
+    line feight\;
+  }
+}
+\end{procedure}
+
+\begin{function}[H]
+\SetNothing
+\caption{func()}
+\Begin{
+  line hone\;
+
+  line htwo\;
+}
+\end{function}
+
+\begin{algorithm*}
+\SetAlgoShortEnd
+\SetAlgoLined
+\caption{A wide algorithm}
+\ForEach{case H}{
+  line kone\;
+
+  \lIf{case H one-line}{line ktwo}
+
+  line kthree\;
+}
+\end{algorithm*}
+\end{document}

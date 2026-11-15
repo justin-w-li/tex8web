@@ -1861,6 +1861,17 @@ const tables = {
   ],
 };
 
+// algorithm2e's lines as patterns: a numbered line with its words, the
+// line that opens a block, starting with its keyword, and a block's div,
+// with its classes after tex8web-a2e-block, holding its lines
+const a2eNumber = n => String.raw`<p class='noindent'><a id='[^']+'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>${n}<\/span><\/span>`;
+const a2eLine = (n, words) => String.raw`${a2eNumber(n)}${words.split(' ').join('\\s+')}\s*<\/p>\s*`;
+const a2eHead = (n, keyword) => String.raw`${a2eNumber(n)}<span class='cmbx-10'>${keyword}<(?:(?!<\/p>)[^])*<\/p>\s*`;
+const a2eOpen = classes => String.raw`<div class='tex8web-a2e-block${classes}'>\s*`;
+const a2eBlock = (classes, ...lines) => String.raw`${a2eOpen(classes)}${lines.join('')}<\/div>\s*`;
+const a2e = (...parts) => new RegExp(parts.join(''));
+const vline = ' tex8web-a2e-vline', hook = ' tex8web-a2e-vline tex8web-a2e-hook';
+
 const algorithms = {
   // algorithm's ruled floats, with a space after the caption's label instead
   // of a colon. algorithmicx's lines, each with its number in its font
@@ -1902,6 +1913,61 @@ const algorithms = {
   // the line numbers at the right
   'test-algorithm2e-rightnl': [
     /^(?:(?!<span class='tex8web-a2e-nl)[^])*(?:<span class='tex8web-a2e-nl tex8web-a2e-nl-right'><span class='cmbx-7'>\d+<\/span><\/span>(?:(?!<span class='tex8web-a2e-nl)[^])*){11}$/,
+  ],
+  // a blank line in a block of each style and keyword family: the block's
+  // lines are paragraphs of its div, numbered as in the PDF, with no empty
+  // paragraph, also when the blank line is first or last in the block,
+  // follows a line without \;, or comes twice. A \ref to a line after a
+  // blank line leads to it. Outside the blocks, a blank line between two
+  // lines leaves them numbered 1 and 2.
+  'test-algorithm2e-blank': [
+    /^(?:(?!<figure class='tex8web-a2e )[^])*(?:<figure class='tex8web-a2e (?:(?!<figure class='tex8web-a2e )[^])*){7}$/,
+    /^(?![^]*<figure class='tex8web-a2e (?:(?!<\/figure>)[^])*<p[^>]*>(?:\s|<a id='[^']+'><\/a>)*<\/p>)/,
+    // (vlined: \If, then nested \For and \If)
+    a2e(a2eHead(1, 'if'), a2eBlock(hook, a2eLine(2, 'line aone;'), a2eLine(3, 'line atwo;')),
+      a2eHead(4, 'for'), a2eOpen(hook), a2eLine(5, 'line bone;'), a2eHead(6, 'if'),
+      a2eBlock(hook, a2eLine(7, 'line btwo without a semicolon'), a2eLine(8, 'line bthree;')), '<\\/div>'),
+    /Line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>8<!--[^>]*--><\/a>[^]*<a id='\1'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>8<\/span><\/span>line\s+bthree;/,
+    // (\eIf, then \uIf, \ElseIf, and \Else, then \While with two blank
+    // lines, a \par, and a comment)
+    a2e(a2eHead(9, 'if'), a2eBlock(vline, a2eLine(10, 'line cone;'), a2eLine(11, 'line ctwo;')),
+      a2eHead(12, 'else'), a2eBlock(hook, a2eLine(13, 'line cthree;'), a2eLine(14, 'line cfour;'))),
+    a2e(a2eHead(15, 'if'), a2eBlock(vline, a2eLine(16, 'line uone;'), a2eLine(17, 'line utwo;')),
+      a2eHead(18, 'else\\s+if'), a2eBlock(hook, a2eLine(19, 'line uthree;'), a2eLine(20, 'line ufour;')),
+      a2eHead(21, 'else'), a2eBlock(hook, a2eLine(22, 'line ufive;'), a2eLine(23, 'line usix;'))),
+    a2e(a2eHead(24, 'while'), a2eBlock(hook, a2eLine(25, 'line wone;'), a2eLine(26, 'line wtwo;'),
+      String.raw`<p class='noindent'><span class='cmtt-10'>\/\/\s+a\s+comment(?:(?!<\/p>)[^])*<\/p>\s*`,
+      a2eLine(27, 'line wthree;')), '<\\/figure>'),
+    // (\SetAlgoLined: \While, then \For with \SetAlgoLongEnd)
+    a2e(a2eHead(1, 'while'), a2eBlock(vline, a2eLine(2, 'line lone;'), a2eLine(3, 'line ltwo;')), a2eHead(4, 'end'),
+      a2eHead(5, 'for'), a2eBlock(vline, a2eLine(6, 'line gone;'), a2eLine(7, 'line gtwo;')),
+      a2eHead(8, 'end\\s+for'), '<\\/figure>'),
+    // (\SetAlgoNoLine: \SetKwProg's block holding \Repeat)
+    a2e(a2eHead(1, 'Function'), a2eBlock('', a2eLine(2, 'line done;'), a2eHead(3, 'repeat'),
+      a2eBlock('', a2eLine(4, 'line dtwo;'), a2eLine(5, 'line dthree;')), a2eHead(6, 'until')),
+      a2eHead(7, 'end'), '<\\/figure>'),
+    // (outside the blocks)
+    a2e(String.raw`<\/figcaption>(?:\s*<!--[^>]*-->)*\s*`, a2eLine(1, 'line eone;'), a2eLine(2, 'line etwo;'), '<\\/figure>'),
+    // (procedure with \SetAlgoNoEnd: \Switch, \Case, \uIf, \Else, and \Other)
+    a2e(a2eHead(1, 'switch'), a2eOpen(vline), a2eHead(2, 'case'),
+      a2eBlock(vline, a2eLine(3, 'line fone;'), a2eLine(4, 'line ftwo;')),
+      a2eHead(5, 'if'), a2eBlock(vline, a2eLine(6, 'line fthree;'), a2eLine(7, 'line ffour;')),
+      a2eHead(8, 'else'), a2eBlock(vline, a2eLine(9, 'line ffive;'), a2eLine(10, 'line fsix;')),
+      a2eHead(11, 'otherwise\\s+do'), a2eBlock(vline, a2eLine(12, 'line fseven;'), a2eLine(13, 'line feight;')),
+      '<\\/div>\\s*<\\/figure>'),
+    // (function with \SetNothing: \SetKwBlock's block)
+    a2e(a2eHead(1, 'begin'), a2eBlock('', a2eLine(2, 'line hone;'), a2eLine(3, 'line htwo;')), '<\\/figure>'),
+    // (algorithm* with \SetAlgoShortEnd and \SetAlgoLined: \ForEach, with
+    // an \lIf between blank lines)
+    a2e(a2eHead(1, 'foreach'), a2eBlock(vline, a2eLine(2, 'line kone;'),
+      a2eNumber(3), String.raw`<span class='cmbx-10'>if<(?:(?!<\/p>)[^])*line\s+ktwo;\s*<\/p>\s*`,
+      a2eLine(4, 'line kthree;')), a2eHead(5, 'end'), '<\\/figure>'),
+  ],
+  // the same with hyperref, and the algo2e option's environment, ruled
+  'test-algorithm2e-blank-hyperref': [
+    /<figure class='tex8web-a2e tex8web-a2e-ruled tex8web-a2e-caption-top'/,
+    a2e(a2eHead(1, 'if'), a2eBlock(hook, a2eLine(2, 'line rone;'), a2eLine(3, 'line rtwo;')), '<\\/figure>'),
+    /See line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>3<!--[^>]*--><\/a>[^]*<a id='\1'><\/a><span class='tex8web-a2e-nl'><span class='cmbx-7'>3<\/span><\/span>line\s+rtwo;/,
   ],
 };
 
