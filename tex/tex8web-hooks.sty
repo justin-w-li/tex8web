@@ -491,18 +491,21 @@
 % file can be a copy of a package's file), marks its name as done for
 % tex4ht, unless a file of that name was read before from outside the
 % document's folder, or as a package's or class's file. The names listed
-% below are kept too. Each is a .4ht file's name for which kpsewhich finds
-% a <name>.tex in TeX Live 2026: the file can be a copy of a macro file,
-% such as the epsf.tex that old documents ship, and epsf.4ht makes
-% \epsfbox a picture. A file of that name read later from outside the
-% document's folder, or as a package's or class's file, such as the
-% package, or a .def file that a package reads, clears the mark and moves
-% the document's file to the end of \@filelist: the .4ht is read where
-% that file is listed, after the .4ht files it needs, as dvipsnam.4ht
-% needs color.4ht. The class and its packages are read after this file,
-% so each of them passes through this hook. A file read with a folder in its name, or found through
-% \input@path, is listed with its folder: it matches no .4ht, and
-% neither marks nor clears. A name with a comma stays in braces in
+% below are kept too, because the document's file of that name can be a
+% copy of a plain TeX macro file that a .4ht configures, such as the
+% epsf.tex that old documents ship: epsf.4ht makes \epsfbox a picture.
+% They are the names of the .4ht files for which kpsewhich finds a
+% <name>.tex in TeX Live 2026, and of those for plain TeX macro files that
+% TeX Live does not ship as .tex: psfig, diagrams, fig4tex, dratex, and
+% DraTex. A file of that name read later from outside the document's
+% folder, or as a package's or class's file, such as the package, or a
+% .def file that a package reads, clears the mark and moves the
+% document's file to the end of \@filelist: the .4ht is read where that
+% file is listed, after the .4ht files it needs, as dvipsnam.4ht needs
+% color.4ht. The class and its packages are read after this file, so each
+% of them passes through this hook. A file read with a folder in its
+% name, or found through \input@path, is listed with its folder: it
+% matches no .4ht, and neither marks nor clears. A name with a comma stays in braces in
 % \@filelist, as LaTeX's \@addtofilelist writes it.
 \ExplSyntaxOn
 \clist_new:N \l__web_filelist_clist
@@ -512,7 +515,8 @@
     {
         2up, amstex, chemfig, color, eplain, epsf, gloss, graphicx, hebtex,
         luavlna, manmac, mex, mfpic, pgf, pictex, plain, pst-jtree, pstricks,
-        standalone, syntax, tabto, texinfo, xy
+        standalone, syntax, tabto, texinfo, xy,
+        psfig, diagrams, fig4tex, dratex, DraTex
     }
     { \cs_new_eq:cN { web@keep@ #1 } \c_empty_tl }
 \AddToHook { file/before }

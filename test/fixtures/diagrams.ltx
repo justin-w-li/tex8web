@@ -1,0 +1,11 @@
+% A stand-in, written for test-inputname-vendored-diagrams, for a copy of
+% Paul Taylor's plain TeX macro file diagrams.tex, which TeX Live does not
+% ship. It defines only what diagrams.4ht patches: \CD@bC at the start of
+% a diagram and \CD@ED at its end, and the switch \ifincommdiag.
+\catcode`\@=11
+\newif\ifincommdiag
+\def\CD@bC{}
+\def\CD@ED{}
+\def\diagram#1{\leavevmode\CD@bC\hbox{$#1$}\CD@ED}
+\catcode`\@=12
+\endinput

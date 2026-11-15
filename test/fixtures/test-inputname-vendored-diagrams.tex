@@ -1,0 +1,11 @@
+% A guard, for files of the document named like a .4ht file: a copy of a
+% plain TeX macro file that TeX Live does not ship as .tex, Paul Taylor's
+% diagrams.tex, in the document's folder, read with \input. diagrams.ltx
+% stands in for the copy; its name ends in .ltx, so that it is not a
+% fixture. As tex4ht's diagrams.4ht sets it, the diagram is a picture.
+\documentclass{article}
+\IfFileExists{./diagrams.ltx}{}{\errmessage{No copy of diagrams.tex beside the document}}
+\input{diagrams.ltx}
+\begin{document}
+A diagram: \diagram{A\to B}
+\end{document}

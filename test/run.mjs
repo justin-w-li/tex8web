@@ -1971,6 +1971,10 @@ const algorithms = {
   // (a copy of the plain TeX macro file epsf.tex in the document's folder,
   // read with \input: the picture of \epsfbox, as epsf.4ht sets it)
   'test-inputname-vendored-epsf': [/A picture: <img alt='' src='test-inputname-vendored-epsf0x\.png' \/>/],
+  // (a stand-in for a copy of the plain TeX macro file diagrams.tex, which
+  // TeX Live does not ship, read with \input: the diagram a picture, as
+  // diagrams.4ht sets it)
+  'test-inputname-vendored-diagrams': [/A diagram: <img\b[^>]*src='test-inputname-vendored-diagrams0x\.png'/],
   // algorithm2e's, [H] and in \small text too: their style, caption
   // position, and lengths (at the body size), the caption's label and
   // separator, each line a paragraph numbered as in the PDF (the one after
