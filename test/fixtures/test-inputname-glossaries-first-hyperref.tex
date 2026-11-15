@@ -1,0 +1,16 @@
+% A guard, for files of the document named like a .4ht file: one named
+% like the glossaries package, read with \input before
+% \usepackage{glossaries}, with hyperref. As in the PDF, the file's text
+% is in the page, and the term links to its entry in the glossary.
+\documentclass{article}
+\usepackage{hyperref}
+\input{glossaries.ltx}
+\usepackage{glossaries}
+\makenoidxglossaries
+\newglossaryentry{ring}{name={ring},
+  description={a set with two operations}}
+\begin{document}
+\section{Rings}
+A \gls{ring}. \ownglossaries
+\printnoidxglossaries
+\end{document}

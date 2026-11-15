@@ -1,0 +1,15 @@
+% A guard, for files of the document named like a .4ht file: a copy of
+% the algorithmic package in the document's folder, as some documents
+% ship one. As in the PDF, each line of the algorithm is a line of its
+% own.
+\documentclass{article}
+\usepackage{algorithmic}
+\begin{document}
+\begin{algorithmic}[1]
+\STATE first line
+\STATE second line
+\IF{a test}
+\STATE third line
+\ENDIF
+\end{algorithmic}
+\end{document}

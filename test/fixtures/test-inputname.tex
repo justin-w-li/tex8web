@@ -1,0 +1,42 @@
+% Files of the document named like tex4ht's .4ht files, read in the
+% preamble: glossary, abstract, appendix, and index with \input, and
+% background with \InputIfFileExists. Their names end in .ltx, so that
+% they are not fixtures. As in the PDF, each file's text is in the page,
+% and the abstract and the appendix keep article's form. A file read with
+% the primitive \input, one found through \input@path, and one read after
+% \begin{document} are read the same way.
+\documentclass{article}
+\input{glossary.ltx}
+\input{abstract.ltx}
+\input{appendix.ltx}
+\input{index.ltx}
+\InputIfFileExists{background.ltx}{}{\newcommand\ownbackground{No background file.}}
+\input reading.ltx
+\makeatletter
+\def\input@path{{test-inputname/}}
+\makeatother
+\input{proof}
+\begin{document}
+\begin{abstract}
+The abstract of the document.
+\end{abstract}
+\section{Files}
+Glossary: \ownglossary
+
+Abstract: \ownabstract
+
+Appendix: \ownappendix
+
+Index: \ownindex
+
+Background: \ownbackground
+
+Reading: \ownreading
+
+Proof: \ownproof
+
+Errata: \input{errata.ltx}
+\appendix
+\section{Tables}
+The appendix of the document.
+\end{document}

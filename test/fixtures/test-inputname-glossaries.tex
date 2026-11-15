@@ -1,0 +1,15 @@
+% A guard, for files of the document named like a .4ht file: one named
+% like the glossaries package, read with \input after
+% \usepackage{glossaries}. As in the PDF, the file's text is in the
+% page, and the package's glossary has its entry.
+\documentclass{article}
+\usepackage{glossaries}
+\input{glossaries.ltx}
+\makenoidxglossaries
+\newglossaryentry{ring}{name={ring},
+  description={a set with two operations}}
+\begin{document}
+\section{Rings}
+A \gls{ring}. \ownglossaries
+\printnoidxglossaries
+\end{document}

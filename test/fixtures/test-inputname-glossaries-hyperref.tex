@@ -1,0 +1,17 @@
+% Files of the document named like a .4ht file, read with \input after
+% \usepackage{glossaries}, with hyperref: one named like the glossaries
+% package, and one like glossary.4ht. As in the PDF, each file's text is
+% in the page, and the term links to its entry in the glossary.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{glossaries}
+\input{glossaries.ltx}
+\input{glossary.ltx}
+\makenoidxglossaries
+\newglossaryentry{ring}{name={ring},
+  description={a set with two operations}}
+\begin{document}
+\section{Rings}
+A \gls{ring}. \ownglossaries{} \ownglossary
+\printnoidxglossaries
+\end{document}

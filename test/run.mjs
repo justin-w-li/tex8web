@@ -1015,6 +1015,17 @@ const contents = {
   // (a file \included from a folder, with a \ref each way)
   'test-include': [/The included part is section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#included'>2</,
     /Text from the included file, which follows section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#opening'>1</],
+  // (files of the document named like tex4ht's .4ht files, read in the
+  // preamble: each file's text in the page, with nothing from the .4ht
+  // file of its name, such as background.4ht's empty div, and article's
+  // abstract and appendix)
+  'test-inputname': [
+    ...['glossary', 'abstract', 'appendix', 'index', 'background', 'reading', 'proof', 'errata'].map(name =>
+      new RegExp(`<p class='[a-z]+'>\\s*${name[0].toUpperCase() + name.slice(1)}: Text from the ${name} file\\.\\s*</p>`)),
+    /^(?![^]*class='backgroundmaterial')/,
+    /<section class='abstract' role='doc-abstract'>\s*<h3 class='abstracttitle'>\s*<span class='cmbx-9'>Abstract<\/span>\s*<\/h3>\s*<p class='noindent'><span class='cmr-9'>The abstract of the document\.<\/span>/,
+    /<h3 class='sectionHead' id='tables'>.*<span class='titlemark'>A<\/span>.*Tables<\/h3>/,
+  ],
   // (a citation and its entry from a .bst and a .bib named by a path that
   // begins with ../)
   'test-bibpath': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
@@ -1909,6 +1920,11 @@ const algorithms = {
     /<div class='tex8web-alg-notext'>/,
     /line<span class='tex8web-nbsp'>.<\/span><a href='#([^']+)'>11[^]*<a id='\1'><\/a>\s*<span class='cmbx-10'>return/,
   ],
+  // (a copy of the algorithmic package in the document's folder: each line
+  // after a line break, with its number, as algorithmic.4ht sets it)
+  'test-inputname-vendored': [
+    /<span class='ALCitem'>1:<\/span>(?:(?!<br)[^])*first line(?:(?!<br)[^])*<br \/><span class='ALCitem'>2:<\/span>(?:(?!<br)[^])*second line(?:(?!<br)[^])*<br \/><span class='ALCitem'>3:<\/span>(?:(?!<br)[^])*a test(?:(?!<br)[^])*<br \/><span class='ALCitem'>4:<\/span>(?:(?!<br)[^])*third line/,
+  ],
   // algorithm2e's, [H] and in \small text too: their style, caption
   // position, and lengths (at the body size), the caption's label and
   // separator, each line a paragraph numbered as in the PDF (the one after
@@ -2300,6 +2316,21 @@ const glossaries = {
     new RegExp(`A ${gls('ring', 'ring')} is a ${gls('group', 'group')}\\. The ${gls('gcd', 'greatest common divisor \\(GCD\\)')}, then the ${gls('gcd', 'GCD')}\\.`),
     glossary('Glossary', entry('group', 'group', 'a set with an associative operation\\.'), entry('ring', 'ring', 'a set with two operations\\.')),
     glossary('Acronyms', entry('gcd', 'GCD', 'greatest common divisor\\.')),
+  ],
+  // (files of the document named like the glossaries package, and like
+  // glossary.4ht, read before or after the package: each file's text, and
+  // the package's glossary with its entry, linked to with hyperref)
+  ...Object.fromEntries(['test-inputname-glossaries', 'test-inputname-glossaries-first'].map(name => [name, [
+    /A ring\. Text from the glossaries file\./,
+    glossary('Glossary', entry('ring', 'ring', 'a set with two operations\\.')),
+  ]])),
+  'test-inputname-glossaries-hyperref': [
+    new RegExp(`A ${gls('ring', 'ring')}\\. Text from the glossaries file\\. Text from the glossary file\\.`),
+    glossary('Glossary', entry('ring', 'ring', 'a set with two operations\\.')),
+  ],
+  'test-inputname-glossaries-first-hyperref': [
+    new RegExp(`A ${gls('ring', 'ring')}\\. Text from the glossaries file\\.`),
+    glossary('Glossary', entry('ring', 'ring', 'a set with two operations\\.')),
   ],
 };
 
