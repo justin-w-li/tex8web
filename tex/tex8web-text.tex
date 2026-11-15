@@ -1081,8 +1081,12 @@
 % as with dvipdfmx.def: TeX drops the double quotes from the name that
 % \openin reads, kpathsea's restricted shell escape refuses single quotes,
 % and extractbb gets the name as two arguments.
+% tex4ht loads graphics.4ht, which defines \Configure{graphics*}, only for
+% a graphics or graphicx package loaded in the preamble. mathtools loads
+% graphicx at \begin{document}, too late for graphics.4ht. Then this
+% block, the converted pictures, and Gin-dim below are skipped.
 \catcode58 11
-\ifdefined\Gin@setfile
+\ifcsname c:graphics*:\endcsname
     \web@needs{o:Gin@setfile:}%
     \let\web@Gin@setfile\o:Gin@setfile:
     \let\web@Gread@eps@aux\Gread@eps@aux
@@ -1122,7 +1126,7 @@
 % than the PDF has points. An EPS picture with a PNG of its name beside it
 % shows that PNG, as in html4.4ht, which converts only when it is missing.
 \newif\ifweb@natural
-\ifdefined\Gin@setfile
+\ifcsname c:graphics*:\endcsname
     \def\web@converted{%
         \web@naturaltrue
         \Picture[\a:GraphicsAlt]{{\Gin@base\Gin@ext.png}
@@ -1276,7 +1280,7 @@
 % \web@textwidth is used because a minipage, and so a tcolorbox or
 % subfigure, sets \textwidth to its width.
 \ExplSyntaxOn
-\cs_if_exist:NT \Gin@req@width
+\cs_if_exist:cT { c:graphics*: }
   {
     \web@needs{a:Gin-dim}
     \cs_set_eq:Nc \__web_gin_dim: { a:Gin-dim }
