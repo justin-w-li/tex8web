@@ -1572,11 +1572,18 @@ const logs = {
 // widen it.
 const nestpicCases = ['lrbox', 'setbox', 'sbox', 'savebox', 'pgf', 'two boxes', 'three level', 'box and nest',
   'nest and box', 'env mixed', 'env three', 'env deep', 'env', 'two inner', 'env list', 'env note', 'thm env', 'theorem',
-  'note', 'stray', 'picture env', 'href', 'picture after link', 'text copy', 'fbox copy', 'later', 'direct', 'minipage',
-  'tcolorbox', 'mdframed'];
+  'note', 'stray', 'picture env', 'href', 'picture after link', 'key', 'picture baseline', 'own baseline',
+  'picture overlay', 'text copy', 'fbox copy', 'later', 'direct', 'minipage', 'tcolorbox', 'mdframed'];
 const nestpicTexts = ['Inner mixed B.', 'Outer mixed G.', 'Mid three D.', 'Outer three E.', 'Mid deep D.', 'Outer deep E.',
   'Outer text after.', 'Outer two E.', 'Outer list C.', 'Outer note C.', 'Outer thm after.'];
-const nestpicOuter = ['env mixed', 'env three', 'env deep', 'env', 'two inner', 'env list', 'env note', 'thm env'];
+const nestpicOuter = ['env mixed', 'env three', 'env deep', 'env', 'two inner', 'env list', 'env note', 'thm env', 'key'];
+// the paths that the outer picture draws, with those of its inner
+// pictures: frames, rectangles, and circles
+const nestpicPaths = { lrbox: 2, sbox: 2, pgf: 2, 'two boxes': 2, 'three level': 2, 'picture env': 1, 'env three': 3, key: 2 };
+// whether the outer picture is lowered: only by its own TikZ baseline,
+// not by that of an inner picture. A LaTeX picture with an overlay node
+// inside is as wide as one without.
+const nestpicLowered = { key: false, 'picture baseline': false, 'picture overlay': false, 'own baseline': true };
 const nested = { 'test-nestpic': nestpicCases, 'test-nestpic-hyperref': nestpicCases };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
@@ -2734,18 +2741,30 @@ function check(doc, result, out, aux) {
     }
   }
   if (nested[doc.name]) {
+    // (each case's first <img> of an SVG that dvisvgm wrote, as its style
+    // and its file's text)
+    const pictures = {};
     for (const name of nested[doc.name]) {
       const part = flat.match(new RegExp(`Before ${name}\\.([^]*?)After ${name}\\.`))?.[1];
-      if (part === undefined) problems.push(`no "Before ${name}." and "After ${name}."`);
-      else if (![...part.matchAll(/<img [^>]*src='([^']+\.svg)'/g)].some(([, src]) => existsSync(join(out, src))
-        && Number(readFileSync(join(out, src), 'utf8').match(/viewBox='\S+ \S+ (\S+)/)?.[1]) > 0)) {
-        problems.push(`no picture that dvisvgm wrote, or only an empty one, between "Before ${name}." and "After ${name}."`);
+      if (part === undefined) { problems.push(`no "Before ${name}." and "After ${name}."`); continue; }
+      for (const [, src, style] of part.matchAll(/<img [^>]*src='([^']+\.svg)' style='([^']*)'/g)) {
+        const svg = existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
+        if (Number(svg.match(/viewBox='\S+ \S+ (\S+)/)?.[1]) > 0) { pictures[name] = { style, svg }; break; }
       }
+      if (!pictures[name]) problems.push(`no picture that dvisvgm wrote, or only an empty one, between "Before ${name}." and "After ${name}."`);
     }
+    const share = name => Number(pictures[name]?.style.match(/width:calc\(var\(--tex8web-textwidth\) \* ([\d.]+)\)/)?.[1]);
     for (const name of nestpicOuter) {
-      const share = Number(flat.match(new RegExp(`Before ${name}\\.(?:(?!After )[^])*?<img [^>]*style='width:calc\\(var\\(--tex8web-textwidth\\) \\* ([\\d.]+)\\)`))?.[1]);
-      if (!(Math.abs(share - 0.8205) < 0.001)) problems.push(`the picture between "Before ${name}." and "After ${name}." is ${share} of the text width, not 0.8205`);
+      if (!(Math.abs(share(name) - 0.8205) < 0.001)) problems.push(`the picture between "Before ${name}." and "After ${name}." is ${share(name)} of the text width, not 0.8205`);
     }
+    for (const [name, count] of Object.entries(nestpicPaths)) {
+      const paths = (pictures[name]?.svg.match(/<path d=/g) ?? []).length;
+      if (paths !== count) problems.push(`the picture between "Before ${name}." and "After ${name}." draws ${paths} paths, not ${count}`);
+    }
+    for (const [name, lowered] of Object.entries(nestpicLowered)) {
+      if (pictures[name] && pictures[name].style.includes('vertical-align') !== lowered) problems.push(`the picture between "Before ${name}." and "After ${name}." is ${lowered ? 'not ' : ''}lowered`);
+    }
+    if (share('picture overlay') !== share('picture env')) problems.push(`the LaTeX picture with an overlay node is ${share('picture overlay')} of the text width, not ${share('picture env')}`);
     const shown = flat.replace(/<[^>]*>/g, '');
     for (const text of nestpicTexts) if (shown.includes(text)) problems.push(`"${text}" in the page's text, not in its picture`);
     if (/\/(?:&gt;|>)/.test(shown)) problems.push("the tail of an <img> tag in the page's text");

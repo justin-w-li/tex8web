@@ -13,7 +13,11 @@
 % - three levels of such environments, alone and in a theorem in a list;
 % - a box in a \tikz node, in a theorem and in a footnote;
 % - a box in a LaTeX picture, in a center, and after a link that holds
-%   such a box, or bold text without hyperref.
+%   such a box, or bold text without hyperref;
+% - a box with its own TikZ baseline, in an environment's box, in a LaTeX
+%   picture, and in a picture with a baseline of its own;
+% - a box with an overlay node, in a LaTeX picture, which has no bounding
+%   box of its own.
 %
 % Pictures the nesting must not break:
 % - copies of such a box in text and in \fbox;
@@ -38,6 +42,10 @@
 \newsavebox{\bxd}
 \newsavebox{\midbx}
 \newsavebox{\bxe}
+\newsavebox{\bl}
+\newsavebox{\kb}
+\newsavebox{\ov}
+\newcommand\key[1]{\tikz[baseline=(k.base)]\node(k)[draw]{#1};}
 \newenvironment{outerbox}{\begin{lrbox}{\outerbx}\begin{minipage}{0.8\textwidth}}{%
   \end{minipage}\end{lrbox}\begin{center}\begin{tikzpicture}\node[draw]{\usebox{\outerbx}};\end{tikzpicture}\end{center}}
 \newenvironment{innerbox}{\begin{lrbox}{\innerbx}\begin{minipage}{0.6\textwidth}}{%
@@ -202,6 +210,21 @@ Before picture env. \begin{picture}(30,30)\put(0,0){\usebox{\bxe}}\end{picture} 
 
 \providecommand{\href}[2]{\textbf{#2}}
 Before href. \href{https://a.b}{x \tikz\node{\usebox{\bxe}}; y} After href. Before picture after link. \begin{picture}(30,30)\put(0,0){\usebox{\bxe}}\end{picture} After picture after link.
+
+Before key.
+\begin{outerbox}
+Press \key{Ctrl}.
+\end{outerbox}
+After key.
+
+\sbox{\bl}{\tikz[baseline=-.5ex]\draw (0,0) circle (0.3);}
+Before picture baseline. \begin{picture}(30,30)\put(0,0){\usebox{\bl}}\end{picture} After picture baseline.
+
+\sbox{\kb}{\key{Ctrl}}
+Before own baseline. \tikz[baseline=(o.base)]\node(o)[draw]{Out \usebox{\kb}}; After own baseline.
+
+\sbox{\ov}{\tikz{\draw (0,0) circle (0.3); \node[overlay] at (2,0) {Far};}}
+Before picture overlay. \begin{picture}(30,30)\put(0,0){\usebox{\ov}}\end{picture} After picture overlay.
 
 Before direct. \begin{tikzpicture}\node[draw]{\begin{tikzpicture}\draw (0,0) circle (0.2);\end{tikzpicture}};\end{tikzpicture} After direct.
 

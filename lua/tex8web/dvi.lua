@@ -36,20 +36,19 @@ local function specials(dvi)
   end
 end
 
--- a make4ht command: a picture that holds another picture, such as a box
--- made of a TikZ picture and used in a TikZ node, made one picture. tex4ht
--- does not nest pictures: it ends the outer picture at the inner one's
--- end, and dvisvgm draws an outer picture whose groups are not closed. So
--- every tex4ht special inside such a picture is overwritten with spaces of
--- its length, which keeps every offset of the DVI. dvisvgm then draws the
--- inner picture as part of the outer one, as in the PDF. A picture runs
--- from tex4ht's special t4ht++<file> to its matching t4ht+ (tex4ht.sty).
--- The inner pictures' locks and unlocks of the bounding box are
--- overwritten too: pgf locks a picture's bounding box, and an inner unlock
--- would let what follows widen the outer picture. The inner pictures'
--- sizes stay, for an outer picture with none, such as a LaTeX picture.
-local locks = {["dvisvgm:bbox lock"] = true, ["dvisvgm:bbox unlock"] = true}
+-- what follows a tex4ht special's prefix, which tex4ht takes in either
+-- case (tex4ht-c.tex), or nil for another special
+local function tex4ht(text)
+  if text:sub(1, 4):lower() == "t4ht" then return text:sub(5) end
+end
 
+-- a make4ht command: a picture that holds another picture made one
+-- picture, as tex4ht does not nest pictures ("How it works" in
+-- CONTRIBUTING.md). Of the inner pictures, a lock of the bounding box
+-- made while one is on is overwritten with its unlock, as dvisvgm does
+-- not nest locks, and an inner unlock would let what follows widen the
+-- outer picture. Their baseline marks are overwritten too, as
+-- text.pictures reads the first mark in the SVG.
 function M.nested_pictures(par)
   local path = (par.builddir ~= "" and par.builddir .. "/" or "") .. par.input .. "." .. par.dvi
   local dvi = assert(files.read(path))
@@ -57,16 +56,28 @@ function M.nested_pictures(par)
   local blank, depth, start, nested = {}, 0, nil, false
   for i, special in ipairs(list) do
     texts[i] = dvi:sub(special[1], special[1] + special[2] - 1)
-    if texts[i]:find("^t4ht%+%+") then
+    local rest = tex4ht(texts[i])
+    if rest and rest:find("^%+%+") then
       depth = depth + 1
       if depth == 1 then start, nested = i, false else nested = true end
-    elseif texts[i] == "t4ht+" then
+    elseif rest == "+" then
       depth = depth - 1
       if depth == 0 and nested then
+        -- (for each lock not yet unlocked, whether it is kept)
+        local locked, kept = false, {}
         for j = start + 1, i - 1 do
-          if texts[j]:find("^t4ht") or depths[j] > 1 and locks[texts[j]] then
-            blank[#blank + 1] = list[j]
+          local text, drop = texts[j]
+          if text == "dvisvgm:bbox lock" then
+            drop = locked
+            kept[#kept + 1] = not locked
+            locked = true
+          elseif text == "dvisvgm:bbox unlock" then
+            drop = not table.remove(kept)
+            if not drop then locked = false end
+          else
+            drop = tex4ht(text) or depths[j] > 1 and text:find("^dvisvgm:raw <g class='tex8web%-baseline'")
           end
+          if drop then blank[#blank + 1] = list[j] end
         end
       end
     end
