@@ -1,0 +1,282 @@
+% The body of the test-desclabel documents: description lists after
+% footnotes, which a wide screen floats beside the text, checked by
+% visual.mjs at 1400px: each list and label where it is without the
+% footnotes, with the label next to a block that starts its item or ends
+% its list. Then the text after an \hfill and a proof's QED box, also
+% floats, after footnotes, and footnotes that reach below the end of the
+% text. A list before any footnote, and enumitem's \newlist, are guards.
+\usepackage{amsmath}
+\usepackage{tikz}
+\makeindex
+\makeatletter
+\@ifpackageloaded{enumitem}{\newlist{terms}{description}{1}}{}
+\makeatother
+\newtheorem{theorem}{Theorem}
+\newcommand\longnote[1]{\footnote{#1: a long footnote, so that the notes
+  beside the text reach far below the paragraph with their marks. It goes
+  on for several lines in the margin, with words that fill each line of
+  the narrow column there, and more words after them, until the note is
+  taller than the paragraph and the list that follow it.}}
+\begin{document}
+\section{Lists}
+
+Before any footnote:
+\begin{description}
+\item[Guard one:] a list with no footnote before it.
+\item[Guard two:] its second item.
+\end{description}
+A paragraph after the guard list.
+
+A paragraph with three notes.\longnote{First}
+Another sentence.\longnote{Second} A third.\longnote{Third}
+\begin{description}
+\item[Month I, Day 3:] the first item, after the notes.
+\item[Month II, Day 14:] the second item.
+\item[Month III, Day 27:] the third item.
+\end{description}
+A paragraph after the first list.
+
+A paragraph with two notes.\longnote{Fourth} More text.\longnote{Fifth}
+\begin{description}
+\item[Wrapping:] an item whose text goes on for several lines, so that
+  its second and third lines hang at the list's margin as in the PDF,
+  with enough words in it to wrap at every width of the screen, and a
+  few more words to make the third line.
+\item[A label much wider than the margin:] its text after the label.
+\item[\textit{Italic label}] text after an italic label.
+\item[\texttt{--typewriter}] text after a typewriter label.
+\item[$n \geq 1$:] text after a label with math.
+\end{description}
+A paragraph after the wrapping list.
+
+A paragraph with two notes.\longnote{Sixth} More text.\longnote{Seventh}
+\begin{description}
+\item[Noted:] an item with a footnote\footnote{A short note in an item.}
+  in its text.
+\item[After the note:] the item after it.
+\item[Last noted:] the last item, with a footnote.\footnote{A note in
+  the last item, which goes on for a few lines in the margin beside the
+  list and the paragraph after it.}
+\end{description}
+A paragraph after the list with notes.
+
+A paragraph with two notes.\longnote{Eighth} More text.\longnote{Ninth}
+\begin{description}
+\item[Outer:] an item with a nested list:
+  \begin{description}
+  \item[Inner one:] the first nested item.
+  \item[Inner two:] the second nested item.
+  \end{description}
+\item[Outer two:] the item after the nested list.
+\end{description}
+A paragraph after the nested list.
+
+A paragraph with two notes.\longnote{Twenty-second} More text.\longnote{Twenty-third}
+\begin{description}
+\item[Ends nested:] an item that ends with a nested list:
+  \begin{description}
+  \item[Inner last:] the nested list that ends the outer list.
+  \end{description}
+\end{description}
+A paragraph after a list whose last item ends with a nested list.
+
+A paragraph with two notes.\longnote{Twenty-fourth} More text.\longnote{Twenty-fifth}
+\begin{description}
+\item[Outer:] \begin{description}
+  \item[Inner:] a nested list that starts its item, whose text goes on
+    for several lines, so that its later lines hang at the nested list's
+    margin, with enough words in it to wrap at every width of the screen.
+  \item[Two:] its second item.
+  \end{description}
+\item[Outer two:] \begin{description}
+  \item[Inner again:] a nested list that starts a later item.
+  \item[Again two:] its second item.
+  \end{description}
+\end{description}
+A paragraph after the lists nested at an item's start.
+
+A paragraph with two notes.\longnote{Twenty-eighth} More text.\longnote{Twenty-ninth}
+\begin{description}
+\item[Indexed outer:] \index{nested}\begin{description}
+  \item[Inner:] a nested list that starts its item after an index entry,
+    whose text goes on for several lines, so that its later lines hang at
+    the nested list's margin, with enough words in it to wrap at every width.
+  \item[Two:] its second item.
+  \end{description}
+\item[Labelled outer:] \label{desc:nested}\index{labelled}\begin{description}
+  \item[Inner again:] a nested list after a label and an index entry.
+  \item[Again two:] its second item.
+  \end{description}
+\end{description}
+A paragraph after the lists nested after an index entry.
+{\small
+\begin{description}
+\item[Small displayed:] a small item that ends with a display:
+  \[ y = x^2 + 1 \]
+\end{description}}
+A paragraph after a small list whose last item ends with a display.
+\begin{description}
+\item[Ends picture:] an item that ends with a displayed picture:
+  \[ \begin{tikzpicture}\draw (0,0) rectangle (2,0.5);\end{tikzpicture} \]
+\end{description}
+A paragraph after a list whose last item ends with a picture.
+\begin{description}
+\item[Ends picture punct:] an item that ends with a picture and a period:
+  \[ \begin{tikzpicture}\draw (0,0) rectangle (2,0.5);\end{tikzpicture}. \]
+\end{description}
+A paragraph after a list whose last item ends with a picture and a period.
+\begin{description}
+\item[Ends enumerated:] an item that ends with an enumerate:
+  \begin{enumerate}\item the enumerate that ends the list.\end{enumerate}
+\end{description}
+A paragraph after a list whose last item ends with an enumerate.
+\begin{description}
+\item[Ends displayed:] an item that ends with a display:
+  \[ a^2 + b^2 = c^2 \]
+\end{description}
+A paragraph after a list whose last item ends with a display.
+\begin{description}
+\item[Ends indexed:] an item whose last display an index entry follows:
+  \[ e^{i\pi} + 1 = 0 \]\index{Euler}
+\end{description}
+A paragraph after a list whose last display an index entry follows.
+\begin{description}
+\item[Ends equation:] an item that ends with a numbered equation:
+  \begin{equation} x = 1 \end{equation}
+\end{description}
+A paragraph after a list whose last item ends with an equation.
+\begin{description}
+\item[Ends aligned:] an item that ends with an align:
+  \begin{align} y &= 2 \\ z &= 3 \end{align}
+\end{description}
+A paragraph after a list whose last item ends with an align.
+\begin{description}
+\item[Ends theorem:] an item that ends with a theorem:
+  \begin{theorem} A theorem that ends the list. \end{theorem}
+\end{description}
+A paragraph after a list whose last item ends with a theorem.
+\begin{description}
+\item[Ends theorem display:] an item that ends with a theorem:
+  \begin{theorem} A theorem that ends with a display: \[ u = v \] \end{theorem}
+\end{description}
+A paragraph after a list whose last item ends with a theorem's display.
+\begin{description}
+\item[Ends quote:] an item that ends with a quote:
+  \begin{quote} A quote that ends with a display: \[ p = q \] \end{quote}
+\end{description}
+A paragraph after a list whose last item ends with a quote's display.
+\makeatletter
+\@ifundefined{qedhere}{\let\ifproofs\iffalse}{\let\ifproofs\iftrue}
+\makeatother
+\ifproofs
+\begin{description}
+\item[Ends proof:] an item that ends with a proof:
+  \begin{proof} A proof that ends with a display: \[ r = s \qedhere \] \end{proof}
+\end{description}
+A paragraph after a list whose last item ends with a proof's display.
+\fi
+
+A paragraph before a list whose first item starts with an enumerate.
+\begin{description}
+\item[Starts enumerated:] \begin{enumerate}\item an enumerate that
+  starts the first item.\end{enumerate}
+\item[Second:] its second item.
+\end{description}
+A paragraph before a list whose first item starts with a theorem.
+\begin{description}
+\item[Starts theorem:] \begin{theorem} A theorem that starts the first
+  item. \end{theorem}
+\item[Second:] its second item.
+\end{description}
+A paragraph before a list whose first item starts with a quote.
+\begin{description}
+\item[Starts quote:] \begin{quote} A quote that starts the first
+  item. \end{quote}
+\item[Second:] its second item.
+\end{description}
+A paragraph after the lists whose first item starts with a block.
+
+A paragraph with two notes.\longnote{Tenth} More text.\longnote{Eleventh}
+\begin{theorem}
+A theorem with a list:
+\begin{description}
+\item[In a theorem:] an item in the theorem.
+\item[Second:] its second item.
+\end{description}
+\end{theorem}
+{\sffamily A paragraph in sans-serif.
+\begin{description}
+\item[Sans label:] an item in sans-serif.
+\item[Sans two:] its second item.
+\end{description}}
+A paragraph after the sans list.
+
+\makeatletter
+\@ifpackageloaded{enumitem}{%
+A paragraph with two notes.\longnote{Twelfth} More text.\longnote{Thirteenth}
+\begin{description}[leftmargin=4em, style=sameline]
+\item[Sameline:] an item of a list with enumitem's options, whose text
+  wraps to a second line, with enough words to wrap at every width of
+  the screen.
+\item[Second:] its second item.
+\end{description}
+\begin{terms}
+\item[Term:] an item of enumitem's \texttt{\string\newlist}.
+\item[Term two:] its second item.
+\end{terms}
+A paragraph after enumitem's lists.
+
+}{}
+\makeatother
+A paragraph with two notes.\longnote{Sixteenth} More text.\longnote{Seventeenth}
+\begin{description}
+\item[a)] text after a short label.
+\item text of an item with no label.
+\item[] text of an item with an empty label.
+\item[List:] \begin{enumerate}\item an enumerate that starts the item\end{enumerate}
+\item[Display:] \[ x^2 + y^2 \]
+\item[A label on a line of its own]\hfill\\ text on the next line.
+\item[Term\footnote{A note in a label.}] text after a label with a note.
+\end{description}
+A paragraph after the list of short labels and blocks.%
+\footnote{A note with a list:
+\begin{description}\item[In a note:] an item in a footnote.\end{description}}
+
+A paragraph with two notes.\longnote{Eighteenth} More text.\longnote{Nineteenth}
+\begin{enumerate}
+\item an enumerated item with a list:
+  \begin{description}
+  \item[In an enumerate:] an item in an enumerated item.
+  \end{description}
+\end{enumerate}
+A paragraph after the enumerate.
+
+A paragraph with two notes.\longnote{Twentieth} More text.\longnote{Twenty-first}
+\section{After a heading}
+\begin{description}
+\item[After a heading:] a list right after a heading, beside the notes
+  of the section before.
+\item[Second:] its second item.
+\end{description}
+A paragraph after the list after a heading.
+
+A paragraph with two notes.\longnote{Twenty-sixth} More text.\longnote{Twenty-seventh}
+
+A line with a date at its right.\hfill 15 November
+\ifdefined\qedsymbol
+\begin{proof}
+A short proof after the notes.
+\end{proof}
+\fi
+
+A paragraph with two notes.\longnote{Fourteenth} More text.\longnote{Fifteenth}
+\begin{description}
+\item[Before the references:] a list right before the bibliography.
+\end{description}
+\begin{thebibliography}{9}
+\bibitem{one} A. Author, \emph{A book}, 2001.
+\bibitem{two} B. Author, \emph{Another book}, 2002.
+\end{thebibliography}
+A last paragraph with two notes, which reach below the end of the
+text.\longnote{Thirtieth} More text.\longnote{Thirty-first}
+\end{document}

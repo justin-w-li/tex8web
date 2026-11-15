@@ -320,6 +320,8 @@
   // footnotes beside the text (floated there by css/tex8web.css on a wide
   // screen): each level with its mark, or below the footnote above it.
   // Placed again whenever the layout changes (pictures, fonts, the width).
+  // css/tex8web.css stops stacking them while tex8web-sidenotes is on the
+  // root.
   function sidenotes() {
     const notes = [...document.querySelectorAll('.tex8web-sidenote')]
       .map(note => {
@@ -328,19 +330,26 @@
       })
       .filter(({ mark }) => mark);
     const place = () => {
-      for (const { note } of notes) note.style.top = '';
+      for (const { note } of notes) {
+        note.style.top = '';
+        note.style.removeProperty('--tex8web-sidenote-room');
+      }
       const tops = notes.map(({ note, mark }) => getComputedStyle(note).float === 'none' ? null : {
         at: note.getBoundingClientRect().top, mark: mark.getBoundingClientRect().top,
         height: note.offsetHeight + parseFloat(getComputedStyle(note).marginBottom) });
-      let below = -Infinity;
+      let below = -Infinity, last;
       tops.forEach((top, i) => {
         if (!top) return;
         const want = Math.max(top.mark, below);
         notes[i].note.style.top = `${want - top.at}px`;
         below = want + top.height;
+        last = { note: notes[i].note, down: want - top.at };
       });
+      if (last?.down > 0) last.note.style.setProperty('--tex8web-sidenote-room', `${last.down}px`);
     };
-    if (notes.length) new ResizeObserver(place).observe(document.body);
+    if (!notes.length) return;
+    root.classList.add('tex8web-sidenotes');
+    new ResizeObserver(place).observe(document.body);
   }
 
   // What scrolls sideways fades out at each edge with more hidden past it

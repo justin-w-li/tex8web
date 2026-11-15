@@ -1088,8 +1088,16 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
     margin-top: var(--tex8web-parskip, 1em); }
 @media (--tex8web-wide) {
     .tex8web-sidenote { float: right; clear: right; position: relative;
-        width: var(--tex8web-margin); margin: 0 calc(-1 * var(--tex8web-gap) - var(--tex8web-margin)) 0.75em 0;
+        width: var(--tex8web-margin);
+        margin: 0 calc(-1 * var(--tex8web-gap) - var(--tex8web-margin)) calc(0.75em + var(--tex8web-sidenote-room, 0px)) 0;
         padding: 0; border: 0; }
+    /* (stacked by tex8web-page.js once it runs. A float is placed no
+       higher than an earlier float (CSS 2.1, 9.5.1, rule 5), so a
+       footnote's box left below the others would push a later float down
+       to it, such as a description's term. The last footnote, if moved
+       below its box, is given the room it moved into, so the page ends
+       below it and its space. Print drops the script's offsets and room) */
+    @media screen { .tex8web-sidenotes .tex8web-sidenote { clear: none; } }
 }
 
 /* a preview of a link's target on the page (tex8web-page.js), at most
@@ -1161,7 +1169,7 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
     .tex8web-controls, .tex8web-toc, .tex8web-preview, .tex8web-viewer, .tex8web-permalink {
         display: none !important; }
     html body { margin-block: 0; padding-inline: 0; --tex8web-column: min(var(--tex8web-textwidth), 100vw); }
-    .tex8web-sidenote { top: auto !important; }
+    .tex8web-sidenote { top: auto !important; --tex8web-sidenote-room: 0px !important; }
     mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing,
     div.listinginput, div.verbatimtabinput { overflow: visible !important; }
     table.boxedverbatim { table-layout: auto; }

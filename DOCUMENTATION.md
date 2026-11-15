@@ -422,5 +422,6 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 
 - **The controls are in English**, whatever the document language, and so is the speech for math. In the speech, `|` is "divides", or "given" with [`\WebSpeechGiven`](#your-own-config). In a document that uses `|` in both ways, one of them is spoken wrongly, for example `P(A | B)` as "P of open paren A divides B close paren". Two bars in one formula, as in `a \mid b, b \mid c`, are spoken as an absolute value.
 - **Find in page.** Readers can find single characters of a formula with the browser's find-in-page command, but not a run of characters such as `Δ(S)`.
+- **Long footnotes, with JavaScript off.** On a wide screen, after long footnotes, the labels of a description list can be below their text. So can the text after an `\hfill` and a proof's QED box.
 - **A page opened from disk, or read with JavaScript off.** Fonts are not preloaded. On a phone, the layout of a long page can take a moment longer to settle.
 - **Safari after a swipe back.** After a swipe back to a page in Safari, the pages no longer slide when the reader returns to that page from history with the up or back button. The reader still returns to the same place.

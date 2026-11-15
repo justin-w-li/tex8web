@@ -622,6 +622,92 @@ const scrollers = `(() => {
   return { checked: [blocks.length, wide, claps], wrong };
 })()`;
 const wideBlocks = { 'test-wideblocks': { 1400: [7, 1], 390: [10, 1] } };
+// Description lists after footnotes beside the text, on a wide screen
+// with the page script, which stacks the footnotes. Each list's box, each
+// label's box, and its text's first line are the same within 0.5px with
+// the footnotes hidden, as CSS places a float, such as a label, no higher
+// than an earlier float, and so are the text after an \hfill and a
+// proof's QED box. Each footnote is level with its mark or below the
+// footnote above it, all start at the same left, and the page ends below
+// the last one and its space. A list inside a footnote is not measured.
+// descLabels has the number of labels, of footnotes beside the text, and
+// of the other floats. Failures: [the label, float, or footnote, what is
+// wrong].
+const descLabeled = `(async () => {
+  await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+  const lists = [...document.querySelectorAll('dl.description')].filter(dl => !dl.closest('.tex8web-sidenote'));
+  const floats = [...document.querySelectorAll('.tex8web-hfill, .tex8web-qed')];
+  // (a footnote hidden by display: none keeps its computed float)
+  const aside = el => el?.matches('.tex8web-sidenote') && getComputedStyle(el).float !== 'none';
+  const probe = parent => {
+    const p = document.createElement('tex8web-probe');
+    p.style.cssText = 'display: inline-block; width: 0; height: 0';
+    parent.prepend(p);
+    const box = p.getBoundingClientRect();
+    p.remove();
+    return box;
+  };
+  const name = el => el.textContent.trim().replace(/\\s+/g, ' ').slice(0, 30);
+  // the block of an item's first line: past empty paragraphs, and into a
+  // list, a theorem, or a quote that starts the item
+  const start = dd => {
+    let el = dd.querySelector(':scope > p') ?? dd;
+    while (el.matches('p') && !el.textContent.trim() && el.nextElementSibling) el = el.nextElementSibling;
+    while (!el.matches('p, li, dd')) {
+      const first = [...el.children].find(c => c.textContent.trim());
+      if (!first) break;
+      el = first;
+    }
+    return el;
+  };
+  const measures = () => lists.flatMap(dl => {
+    const box = dl.getBoundingClientRect();
+    let next = dl.nextElementSibling;
+    while (aside(next)) next = next.nextElementSibling;
+    return [[name(dl.querySelector('dt')) + ' (its list)', 'the list', [box.top, box.left, box.width, box.height, next ? next.getBoundingClientRect().top : 0]],
+      ...[...dl.querySelectorAll(':scope > dt')].map(dt => {
+        const label = dt.getBoundingClientRect(), line = probe(start(dt.nextElementSibling));
+        return [name(dt), 'the label and its line', [label.top, label.left, line.left, line.bottom]];
+      })];
+  }).concat(floats.map(el => {
+    const box = el.getBoundingClientRect();
+    return [name(el), 'the float', [box.top, box.left]];
+  }));
+  const wrong = [];
+  const notes = [...document.querySelectorAll('.tex8web-sidenote')].filter(aside);
+  let below = -Infinity, before;
+  const left = notes[0]?.getBoundingClientRect().left;
+  for (const note of notes) {
+    const box = note.getBoundingClientRect(), back = note.querySelector('.footnote-mark a');
+    const mark = document.getElementById(decodeURIComponent(back.hash.slice(1))).getBoundingClientRect().top;
+    const want = Math.max(mark, below);
+    if (Math.abs(box.top - want) > 0.5) wrong.push([name(note), \`the footnote at \${box.top.toFixed(1)}px, not \${want.toFixed(1)}px (\${want === mark ? 'its mark' : 'below ' + name(before)})\`]);
+    if (Math.abs(box.left - left) > 0.5) wrong.push([name(note), \`the footnote \${(box.left - left).toFixed(1)}px right of the first\`]);
+    // (without the room the page script gives the last footnote below it)
+    const room = parseFloat(note.style.getPropertyValue('--tex8web-sidenote-room')) || 0;
+    below = box.bottom + parseFloat(getComputedStyle(note).marginBottom) - room;
+    before = note;
+  }
+  if (before && document.documentElement.scrollHeight < below + scrollY - 0.5) {
+    wrong.push([name(before), \`the page ends \${(below + scrollY - document.documentElement.scrollHeight).toFixed(1)}px above the last footnote's space\`]);
+  }
+  const shown = measures();
+  const hide = document.createElement('style');
+  hide.textContent = '.tex8web-sidenote { display: none !important; }';
+  document.head.append(hide);
+  const hidden = measures();
+  hide.remove();
+  // (the footnotes take no room in the text, so hiding them moves nothing
+  // above the list)
+  shown.forEach(([who, what, got], i) => {
+    const want = hidden[i][2];
+    if (got.some((x, j) => Math.abs(x - want[j]) > 0.5)) {
+      wrong.push([who, \`\${what} at \${got.map(x => x.toFixed(1)).join(', ')} beside footnotes, \${want.map(x => x.toFixed(1)).join(', ')} without them\`]);
+    }
+  });
+  return { checked: [lists.reduce((n, dl) => n + dl.querySelectorAll(':scope > dt').length, 0), notes.length, floats.length], wrong };
+})()`;
+const descLabels = { 'test-desclabel': [66, 35, 2], 'test-desclabel-report': [63, 33, 1], 'test-desclabel-amsart': [66, 35, 2] };
 // The pages of a PDF included with pdfpages, each a page of its own in the
 // PDF: each picture centered in the column within 0.5px, inside it, and
 // below the picture before it in its block, with a space between them.
@@ -1517,6 +1603,15 @@ async function compare(chrome, doc, ok) {
       if (shownClaps !== claps) problems.push(`${html}: at ${width}px, ${shownClaps} claps of zero width in a display, not ${claps}`);
       for (const [n, name, what] of blocks.wrong) problems.push(`${html}: at ${width}px, block ${n} ("${name}"): ${what}`);
     }
+    if (doc.name in descLabels) {
+      const labels = await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 1400 },
+        page => page.evaluate(descLabeled));
+      const [count, notes, floats] = labels.checked, [wantCount, wantNotes, wantFloats] = descLabels[doc.name];
+      if (count !== wantCount) problems.push(`${html}: ${count} description labels, not ${wantCount}`);
+      if (notes !== wantNotes) problems.push(`${html}: ${notes} footnotes beside the text, not ${wantNotes}`);
+      if (floats !== wantFloats) problems.push(`${html}: ${floats} floats after an \\hfill or of a QED box, not ${wantFloats}`);
+      for (const [name, what] of labels.wrong) problems.push(`${html}: at 1400px, "${name}": ${what}`);
+    }
     for (const check of [printed, fits]) {
       problems.push(...(await check(chrome, join(pre, html))).map(p => `${html}: ${p}`));
     }
@@ -1622,6 +1717,7 @@ const stray = strayKeys(tocFonts).map(name => `no document ${name} for its conte
 stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
 stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));
 stray.push(...strayKeys(wideBlocks).map(name => `no document ${name} for its wide blocks`));
+stray.push(...strayKeys(descLabels).map(name => `no document ${name} for its description labels`));
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);
 failures += never.length + stray.length;
 const strayLiterals = strayKeys(verbatimFamilies);
