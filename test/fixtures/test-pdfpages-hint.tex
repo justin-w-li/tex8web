@@ -7,11 +7,16 @@
 % escape it shows page 1 alone, and pdfpages' warning in the TeX log names
 % the hint. The run closed has no hint either: a closed range needs no
 % number of pages, so it shows every page of the range, with no LaTeX
-% error. Each run starts with a paragraph "Run name."
+% error. The run space merges four.pdf with spaced.pdf, a PDF of 2 pages
+% found through \graphicspath in a folder whose name has a space, so
+% extractbb reads four.pdf's number of pages and not spaced.pdf's:
+% spaced.pdf gets the lastpage hint of 2, never four.pdf's 4. Each run
+% starts with a paragraph "Run name."
 % test/run.mjs builds it again with \PdfpagesMissing defined, for a run
 % that includes a PDF that does not exist: pdfpages' error, and no picture.
 \documentclass{article}
 \usepackage{pdfpages}
+\graphicspath{{test-pdfpages/my dir/}}
 \begin{document}
 Run dash.
 \includepdf[pages=-,lastpage=3]{test-pdfpages/four}
@@ -24,6 +29,9 @@ Run nohint.
 
 Run closed.
 \includepdf[pages={1-4}]{test-pdfpages/four}
+
+Run space.
+\includepdfmerge[lastpage=2]{test-pdfpages/four,-,spaced,-}
 
 \ifdefined\PdfpagesMissing
 Run missing.

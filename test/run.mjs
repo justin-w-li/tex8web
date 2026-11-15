@@ -478,17 +478,17 @@ const pdfPages = {
     eight: 'eight 6, eight 7, eight 8', 'eight open': 'eight 7, eight 8',
   },
   'test-pdfpages-plain': { dash: 'four 1, four 2, four 3, four 4', closed: 'four 2, four 3', merge: 'two 1, two 2, four 4' },
-  'test-pdfpages-hint': { dash: 'four 1, four 2, four 3, four 4', last: 'four 2, four 3, four 4', nohint: 'four 1, four 2, four 3, four 4', closed: 'four 1, four 2, four 3, four 4' },
+  'test-pdfpages-hint': { dash: 'four 1, four 2, four 3, four 4', last: 'four 2, four 3, four 4', nohint: 'four 1, four 2, four 3, four 4', closed: 'four 1, four 2, four 3, four 4', space: 'four 1, four 2, four 3, four 4, spaced 1, spaced 2' },
 };
 // the runs of test-pdfpages-hint built without shell escape: the lastpage
 // hint of 3 gives the number of pages, short of four.pdf's 4, so only a
 // build that used the hint shows these; without the hint, the number is 1,
 // and a closed range needs no number
-const pdfPagesNoShell = { dash: 'four 1, four 2, four 3', last: 'four 2, four 3', nohint: 'four 1', closed: 'four 1, four 2, four 3, four 4' };
+const pdfPagesNoShell = { dash: 'four 1, four 2, four 3', last: 'four 2, four 3', nohint: 'four 1', closed: 'four 1, four 2, four 3, four 4', space: 'four 1, four 2, spaced 1, spaced 2' };
 // pdfpages' warning, in the TeX log, when it has no number of pages and no
 // lastpage hint (ppnull.def)
 const pdfpagesHintWarning = "You can use the option `lastpage' to give me a hint";
-const pdfPageAspect = { four: 1, two: 5, three: 7, eight: 10 };
+const pdfPageAspect = { four: 1, two: 5, spaced: 5, three: 7, eight: 10 };
 // the file a src names in the page's folder, or null if the src leaves it
 const inPage = (out, src) => !src || /^\/|(^|\/)\.\.(\/|$)/.test(src) ? null : join(out, decodeURIComponent(src));
 // a PNG's width over its height (its IHDR chunk), or NaN if it is no PNG
