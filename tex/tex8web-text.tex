@@ -1085,7 +1085,8 @@
 % Without graphics.4ht, which defines \Configure{graphics*}, this block,
 % the converted pictures, and Gin-dim below are skipped. tex4ht loads .4ht
 % files only for packages loaded before its begindocument/before hook
-% (tex4ht.sty), and mathtools loads graphicx at \begin{document}.
+% (tex4ht.sty). graphicx loaded in \AtBeginDocument comes after it, unless
+% tex8web-hooks.sty loads it first.
 \catcode58 11
 \ifcsname c:graphics*:\endcsname
     \web@needs{o:Gin@setfile:}%
