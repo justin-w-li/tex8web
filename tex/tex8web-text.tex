@@ -1207,6 +1207,7 @@
       }
     \cs_set_eq:NN \AM@getpagecount \__web_pdfpages_getpagecount:
     \bool_new:N \g__web_pdfpages_open_bool
+    \bool_new:N \g__web_pdfpages_lazy_bool
     % (pdfpages' \AM@output does nothing when the file is missing, and the
     % document list then holds \relax for each page. pdfpages marks the
     % missing file by setting \AM@filenotfound to \relax, which
@@ -1229,24 +1230,27 @@
         \bool_if:NT \g__web_pdfpages_open_bool
           { \par \HCode { </div> } }
       }
-    % entry #1 of the lists, page #2. The first picture opens the div; the
-    % later ones load only when they near the screen, since each is a page
-    % at 300 dpi (assets.convert gives them their height before they load).
+    % entry #1 of the lists, page #2. The first picture opens the div.
+    % Every picture after the first on the page loads only when it nears the
+    % screen, since each is a page at 300 dpi (assets.convert gives it its
+    % height before it loads).
     % pdfpages ends the paragraph before \AM@output
     % (\AM@SuspendTagging), so the div starts in vertical mode.
     \cs_new_protected:Npn \__web_pdfpages_page:nn #1#2
       {
         \group_begin:
-        \bool_if:NTF \g__web_pdfpages_open_bool
-          {
-            \cs_set_eq:Nc \__web_pdfpages_dim: { a:Gin-dim }
-            \cs_set:cpn { a:Gin-dim } { loading="lazy"~\__web_pdfpages_dim: }
-          }
+        \bool_if:NF \g__web_pdfpages_open_bool
           {
             \bool_gset_true:N \g__web_pdfpages_open_bool
             \IgnorePar \EndP
             \HCode { <div~class="tex8web-pdfpages"> } \IgnorePar
           }
+        \bool_if:NT \g__web_pdfpages_lazy_bool
+          {
+            \cs_set_eq:Nc \__web_pdfpages_dim: { a:Gin-dim }
+            \cs_set:cpn { a:Gin-dim } { loading="lazy"~\__web_pdfpages_dim: }
+          }
+        \bool_gset_true:N \g__web_pdfpages_lazy_bool
         \tl_set:Ne \l__web_pdfpages_doc_tl { \seq_item:Nn \l__web_pdfpages_docs_seq {#1} }
         \includegraphics [ page = #2 ] { \l__web_pdfpages_doc_tl }
         \group_end:

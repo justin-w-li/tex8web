@@ -520,11 +520,13 @@ const checkPdfPages = (runs, flat, out) => {
     if (block === undefined || block.replace(/<img [^>]*>/g, '').trim() || part.split(/<div class=['"]tex8web-pdfpages['"]>/).length !== 2) {
       problems.push(`run ${run}: the pictures are not alone in one div.tex8web-pdfpages`);
     }
-    // (each page is a picture at 300 dpi, so every one after the first
-    // loads only when it nears the screen)
-    const lazy = [...part.matchAll(/<img [^>]*>/g)].map(([tag]) => / loading=['"]lazy['"]/.test(tag));
-    if (lazy.some((l, i) => l !== (i > 0))) problems.push(`run ${run}: loading='lazy' on pictures ${lazy.map(Number).join(', ')}, not on every one after the first`);
   }
+  // (each page is a picture at 300 dpi, so every one after the first on the
+  // page loads only when it nears the screen, also in a run of one page
+  // after another, such as the runs one and default of test-pdfpages)
+  const lazy = [...flat.matchAll(/<div class=['"]tex8web-pdfpages['"]>([^]*?)<\/div>/g)]
+    .flatMap(([, block]) => [...block.matchAll(/<img [^>]*>/g)].map(([tag]) => / loading=['"]lazy['"]/.test(tag)));
+  if (lazy.some((l, i) => l !== (i > 0))) problems.push(`loading='lazy' on the pictures of pdfpages ${lazy.map(Number).join(', ')}, not on every one after the first`);
   if (/<img /.test(flat.split(`Run ${Object.keys(runs)[0]}.`)[0]) || /<img /.test(flat.split('Run end.')[1] ?? '')) problems.push('a picture before the first run or after the run end');
   return problems;
 };
