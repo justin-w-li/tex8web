@@ -1,0 +1,16 @@
+% titletoc's run-in entries, \titlecontents*, at the top level of an
+% article without hyperref: a run-in section whose format adds space above
+% the entry and sets no bold, so the measured space and weight differ from
+% article's.
+\documentclass{article}
+\usepackage{titletoc}
+\titlecontents*{section}[0pt]{\addvspace{1pc}}{\thecontentslabel\ }{}{}
+\begin{document}
+\tableofcontents
+\section{Iota}
+Text of iota.
+\subsection{Iota one}
+Text of iota one.
+\section{Kappa}
+Text of kappa.
+\end{document}

@@ -248,6 +248,7 @@ const measured = {
     '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-section-weight': 'normal' },
   'test-runintoc-article': { '--tex8web-toc-section-weight': 'bold', '--tex8web-toc-section-skip': '0em' },
   'test-runintoc-book': { '--tex8web-toc-chapter-weight': 'bold', '--tex8web-toc-chapter-skip': '0em' },
+  'test-runintoc-skip': { '--tex8web-toc-section-weight': 'normal', '--tex8web-toc-section-skip': '1.2em' },
   'test-runintoc-koma': { '--tex8web-toc-chapter-skip': '1em', '--tex8web-toc-chapter-weight': 'bold',
     '--tex8web-toc-subsubsection-indent': '7.00002em', '--tex8web-toc-subsubsection-number': '4.10002em' },
 };
@@ -780,7 +781,7 @@ const titled = name => [new RegExp(`<button aria-label='${name}' class='tex8web-
 // titletoc's run-in entries in the table of contents beside the text, in
 // order, each with its number and a link to its heading, and nothing after
 // them; and a heading with its number and title, then the text after it
-const runinToc = entries => new RegExp(`<nav [^>]*id='tex8web-toc'[^>]*>(?:(?!</nav>)[^])*${entries.map(([level, number, id, title]) =>
+const runinToc = entries => new RegExp(`<nav [^>]*id='tex8web-toc'[^>]*>(?:(?!</nav>|<div class='tableofcontents'>)[^])*<div class='tableofcontents'>\\s*${entries.map(([level, number, id, title]) =>
   `<span class='${level}Toc'><span class='tocnumber'>${number.replace(/\./g, '\\.')}</span><a href='#${id}'[^>]*>${title}(?:(?!</span>(?:<br />|\\s)*<span class='\\w+Toc'>)[^])*</a></span>`).join('(?:<br />|\\s)*')}(?:<br />|\\s)*</div></nav>`);
 const runinHead = (h, level, id, number, title, text) => new RegExp(`<${h} class='${level}Head' id='${id}'>(?:(?!</${h}>)[^])*` +
   `<span class='titlemark'>${number.replace(/\./g, '\\.')}</span>(?:(?!</${h}>)[^])*${title}(?:(?!</${h}>)[^])*</${h}>\\s*<p class='noindent'>${text}`);
@@ -982,7 +983,14 @@ const contents = {
     runinHead('h2', 'chapter', 'first-chapter', 'Chapter<span class=\'tex8web-nbsp\'> </span>1', 'First chapter', 'Text of the first chapter\\.'),
     runinHead('h4', 'subsection', 'gamma-one', '1.1.1', 'Gamma one', 'Text of gamma one\\.'),
     runinHead('h3', 'section', 'epsilon', '2.1', 'Epsilon', 'Text of epsilon\\.')],
-  'test-runintoc-koma': [runinToc([['chapter', '1', 'koma-chapter', 'Koma'], ['section', '1.1', 'zeta', 'Zeta'],
+  'test-runintoc-skip': [runinToc([['section', '1', 'iota', 'Iota'], ['subsection', '1.1', 'iota-one', 'Iota one'],
+    ['section', '2', 'kappa', 'Kappa']]),
+    runinHead('h3', 'section', 'iota', '1', 'Iota', 'Text of iota\\.'),
+    runinHead('h3', 'section', 'kappa', '2', 'Kappa', 'Text of kappa\\.')],
+  // (scrreprt's table of contents and list of figures are not headings
+  // numbered 0 in the text)
+  'test-runintoc-koma': [/^(?![^]*<span class='titlemark'>0<\/span>)/, /^(?![^]*nonumber=true)/,
+    runinToc([['chapter', '1', 'koma-chapter', 'Koma\\schapter'], ['section', '1.1', 'zeta', 'Zeta'],
     ['subsection', '1.1.1', 'zeta-one', 'Zeta one'], ['subsection', '1.1.2', 'zeta-two', 'Zeta two']]),
     /<span class='lofToc'>1\.1<span class='tex8web-nbsp'> <\/span><a href='#first-box'>First box<\/a><\/span>(?:<br \/>|\s)*<span class='lofToc'>1\.2<span class='tex8web-nbsp'> <\/span><a href='#second-box'>Second box<\/a>/,
     /id='first-box'[^]*id='second-box'/,
