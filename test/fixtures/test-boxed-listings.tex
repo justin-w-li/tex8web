@@ -60,6 +60,41 @@ wideD(); /* a line wider than the column of a phone screen */
 \end{lstlisting}\end{lrbox}
 Raised \fbox{\raisebox{1pt}{\usebox{\lstbox}}} then $i$.
 
+% (spaces as wide as the letters, so that the columns line up)
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+a b c x;
+abcde y;
+\end{lstlisting}\end{lrbox}
+Aligned \fbox{\usebox{\lstbox}} then $j$.
+
+% (centered on the line by default, at its top with boxpos=t, and with
+% its last line on the baseline with boxpos=b)
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+centerA();
+centerB();
+centerC();
+\end{lstlisting}\end{lrbox}
+Center \fbox{\usebox{\lstbox}} then $k$.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}[boxpos=t]
+topA();
+topB();
+topC();
+\end{lstlisting}\end{lrbox}
+Top \fbox{\usebox{\lstbox}} then $l$.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}[boxpos=b]
+bottomA();
+bottomB();
+bottomC();
+\end{lstlisting}\end{lrbox}
+Bottom \fbox{\usebox{\lstbox}} then $m$.
+
+% (a bottom caption in a table cell, with no mark left in the page)
+\begin{tabular}{l}\begin{lstlisting}[caption={Cell below},captionpos=b]
+cell();
+\end{lstlisting}\end{tabular}
+
 % (frame=shadowbox with a black rulesepcolor: a shadow in the text's
 % color, also in dark mode)
 \begin{lstlisting}[frame=shadowbox,rulesepcolor=\color{black}]

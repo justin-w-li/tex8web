@@ -3110,7 +3110,7 @@ function check(doc, result, out, aux) {
   // text's color; the formulas typeset)
   if (doc.name === 'test-boxed-listings') {
     const flat = html.replace(/\s+/g, ' ').replace(/<!--(?:(?!-->)[^])*-->/g, '');
-    const boxes = flat.split(/<span class='tex8web-boxed-listing'/).slice(1).map(segment => {
+    const boxes = flat.split(/<span class='tex8web-boxed-listing(?: [\w-]+)*'/).slice(1).map(segment => {
       const box = segment.split(/ then <span class='tex8web-nowrap'>|<\/p>/)[0];
       const code = box.match(/<code class='lstlisting'[^>]*>((?:(?!<\/code>)[^])*)<\/code>/);
       const text = value => value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
@@ -3121,12 +3121,15 @@ function check(doc, result, out, aux) {
     const want = ['wide(); /* a line wider than the column of a phone screen */', 'bottomenv(); below Below env',
       'twoA();', 'twoB(); above Above second', 'pairA(); below Below first', 'pairB(); above Above next',
       'titleA();', 'titleB(); above Titled next',
-      ...['A', 'B', 'C', 'D'].map(name => `wide${name}(); /* a line wider than the column of a phone screen */`)];
+      ...['A', 'B', 'C', 'D'].map(name => `wide${name}(); /* a line wider than the column of a phone screen */`),
+      'a b c x; abcde y;', ...['center', 'top', 'bottom'].map(name => `${name}A(); ${name}B(); ${name}C();`)];
     if (boxes.join('|') !== want.join('|')) problems.push(`the boxed listings read '${boxes.join('|')}'`);
     const black = flat.match(/<pre class='lstlisting' id='([\w-]+)'>(?:(?!<\/pre>)[^])*blackshadow/)?.[1];
     if (!(black && new RegExp(`#${black}\\s*\\{\\s*box-shadow:[^;}]*\\scurrentColor\\s*[;}]`).test(styles))) problems.push('the listing \'blackshadow();\' has no shadow in the text\'s color');
     const formulas = [...flat.matchAll(/then (?:<span class='tex8web-nowrap'>)?<mjx-container aria-label='([^']*)'/g)].map(([, label]) => label);
-    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
+    // (tex8web-text.tex's marks for text.boxed_listings, also of a caption in a cell)
+    if (html.includes('tex8web:')) problems.push('a mark of tex8web-text.tex is left in the page');
+    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i|j|k|l|m') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
     const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];

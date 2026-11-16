@@ -96,7 +96,7 @@
 % listings.4ht writes a caption without \@makecaption (\web@capskip).
 % A boxed listing's bottom caption is marked, for text.boxed_listings: the
 % lstlisting environment's </pre> comes before it, and the next listing's
-% top caption would come there too. The shadow of frame=shadowbox gets
+% top caption would come there too. A boxpos= other than c is marked too. The shadow of frame=shadowbox gets
 % the lightness of a border in dark mode, as assets.colors_in_dark_mode
 % gives the frame's rulecolor.
 \@ifpackageloaded{listings}{%
@@ -107,6 +107,7 @@
     \lst@AddToHook{TextStyle}{\let\lst@boxtrue\relax}%
     \newtoks\web@lsteverymath
     \lst@AddToHook{BoxUnsafe}{\lst@ifbox\web@lsteverymath\everymath\everymath{}%
+        \if c\lst@boxpos\else\HCode{<!-- tex8web:boxpos \lst@boxpos\space-->}\fi
         \let\web@lstMakeCaption\lst@MakeCaption
         \def\lst@MakeCaption##1{\everymath\web@lsteverymath
             \ifx b##1\ifx\lst@caption\@empty\else\lst@IfSubstring b\lst@captionpos

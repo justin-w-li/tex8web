@@ -1489,6 +1489,34 @@ const boxedListingScroll = `(() => {
   const gap = caption && caption.getBoundingClientRect().top - bottom.getBoundingClientRect().bottom;
   const em = caption && parseFloat(getComputedStyle(caption).fontSize);
   if (!(Math.abs(gap - 0.3 * em) < 1)) problems.push(\`the caption below bottomenv(); is \${gap}px from it, not 0.3em\`);
+  // (the spaces of a boxed listing as wide as its letters, also a space
+  // outside the spans of fonts, so that columns line up)
+  const aligned = [...document.querySelectorAll('.tex8web-boxed-listing > code')].find(el => el.textContent.includes('abcde y;'));
+  const widths = [];
+  const walker = aligned && document.createTreeWalker(aligned, NodeFilter.SHOW_TEXT);
+  for (let node; walker && (node = walker.nextNode());) {
+    for (let i = 0; i < node.data.length; i++) {
+      if (node.data[i] === '\\n') continue;
+      const range = document.createRange(); range.setStart(node, i); range.setEnd(node, i + 1);
+      widths.push([node.data[i], range.getBoundingClientRect().width]);
+    }
+  }
+  const letter = widths.find(([c]) => c === 'a')?.[1], space = widths.find(([c]) => c === ' ' )?.[1];
+  const narrow = widths.filter(([, w]) => !(Math.abs(w - letter) < 0.2));
+  if (!letter || !space || narrow.length) problems.push(\`characters of the aligned listing not as wide as its letters: \${JSON.stringify(narrow)}\`);
+  // (centered on the line, at its top with boxpos=t, and with its last
+  // line on the baseline with boxpos=b: the word before the box is in the
+  // middle, at the top, or at the bottom of the listing)
+  for (const name of ['center', 'top', 'bottom']) {
+    const code = [...document.querySelectorAll('.tex8web-boxed-listing > code')].find(el => el.textContent.includes(name + 'A();'));
+    const word = code?.closest('p').firstChild;
+    if (!code || word?.nodeType !== 3) { problems.push(\`no listing \${name}A();, or no word before it\`); continue; }
+    const range = document.createRange(); range.selectNodeContents(word);
+    const w = range.getBoundingClientRect(), box = code.getBoundingClientRect(), size = parseFloat(getComputedStyle(code).fontSize);
+    const where = Math.abs((box.top + box.bottom) / 2 - (w.top + w.bottom) / 2) < 0.5 * size ? 'middle'
+      : Math.abs(box.top - w.top) < size ? 'top' : Math.abs(box.bottom - w.bottom) < size ? 'bottom' : 'nowhere';
+    if (where !== { center: 'middle', top: 'top', bottom: 'bottom' }[name]) problems.push(\`the word before \${name}A(); is at the \${where} of it\`);
+  }
   return problems;
 })()`;
 

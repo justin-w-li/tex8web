@@ -563,7 +563,15 @@ function M.boxed_listings(document)
       end
       local text = listing:get_children()[1]
       if text and text:is_text() then dom.set_node_text(text, (text:get_text():gsub("^\n", "", 1))) end
-      local box = parent:create_element("span", {class = "tex8web-boxed-listing"})
+      -- (tex8web-text.tex's mark of boxpos=t or b, before the listing and its caption)
+      local class = "tex8web-boxed-listing"
+      for i = first - 1, 1, -1 do
+        local node = nodes[i]
+        local pos = (dom.comment_text(node) or ""):match("tex8web:boxpos (%a)")
+        if pos then class = class .. ({t = " tex8web-boxed-top", b = " tex8web-boxed-bottom"})[pos] or "" break end
+        if node:is_element() or node:is_text() and node:get_text():find("%S") then break end
+      end
+      local box = parent:create_element("span", {class = class})
       local inside, around = {}, {}
       for i, node in ipairs(nodes) do
         if i == first then around[#around + 1] = box end
@@ -1268,10 +1276,12 @@ function M.url_breaks(document)
 end
 
 -- tex4ht's <!--l. 65--> before each paragraph gives its line in the .tex,
--- which readers do not need and which makes the page larger
+-- which readers do not need and which makes the page larger, and
+-- tex8web-text.tex's marks for the passes (<!-- tex8web:... -->) go too
 function M.line_comments(document)
   document:traverse(function(node)
-    if (dom.comment_text(node) or ""):match("^%s*l%.%s*%d+%s*$") then
+    local comment = dom.comment_text(node) or ""
+    if comment:match("^%s*l%.%s*%d+%s*$") or comment:match("^%s*tex8web:") then
       document:remove_node(node)
     end
   end)

@@ -125,17 +125,28 @@ code.verb, code.lstinline { white-space: nowrap; }
    short blocks do not scroll. */
 div.listing, div.verbatimtabinput { white-space: pre; }
 /* a displayed listing in a box in a paragraph, and its caption
-   (text.boxed_listings), on the baseline of the line. listings centers it
-   on the line (\vcenter), but Chrome then aligns a list's label with the
-   inline block in place of the line. */
-.tex8web-boxed-listing { display: inline-block; max-width: 100%; text-align: left; text-indent: 0; }
+   (text.boxed_listings), centered on the line as listings sets it
+   (\vcenter), or with boxpos=t at the top of the line (\vtop) and with
+   boxpos=b on the baseline (\vbox) */
+.tex8web-boxed-listing { display: inline-block; max-width: 100%; text-align: left; text-indent: 0;
+    vertical-align: middle; }
+.tex8web-boxed-listing.tex8web-boxed-top { vertical-align: top; }
+.tex8web-boxed-listing.tex8web-boxed-bottom { vertical-align: baseline; }
+/* (in a list, on the baseline: Chrome takes the baseline of a grid item
+   from an inline block in its first line, so the label would be out of
+   line with the text) */
+.tex8web-list .tex8web-boxed-listing { vertical-align: baseline; }
 /* (a line wider than the column scrolls, as a <pre> does, inside the
    frame. The <code> scrolls, so that the inline block keeps the baseline
    of its last line. Every frame around the listing, also a frame around
    another frame, is no wider than the column: a frame's width comes from
    its content's, and a limit in percent on a frame inside it does not
    count there) */
-.tex8web-boxed-listing > code { display: block; overflow: auto clip; white-space: pre; font: inherit; }
+/* (in the text's size and in typewriter, as html4.4ht sets a <pre> of
+   listings in monospace: a space outside the spans of fonts is then as
+   wide as a typewriter letter) */
+.tex8web-boxed-listing > code { display: block; overflow: auto clip; white-space: pre; font: inherit;
+    font-family: var(--tex8web-mono); }
 :is(span.fbox, span.colorbox, .framebox-c, .framebox-l, .framebox-r):has(.tex8web-boxed-listing) {
     max-width: 100%; box-sizing: border-box; }
 /* (the caption skips, as for a caption outside a box) */

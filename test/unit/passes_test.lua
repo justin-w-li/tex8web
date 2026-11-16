@@ -870,6 +870,12 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(body(d), "<p>a</p>\n<p>b</p><!--  keep  --><p>cd</p>")
   end,
 
+  ["text.line_comments: tex8web-text.tex's marks go, also outside a paragraph"] = function()
+    local d = parse("<td><pre>x</pre><!-- tex8web:bottom caption --><figcaption>c</figcaption></td><!-- tex8web -->")
+    text.line_comments(d)
+    equal(body(d), "<td><pre>x</pre><figcaption>c</figcaption></td><!--  tex8web  -->")
+  end,
+
   ["dom.has_class: whole class names; class_starts: a prefix of one"] = function()
     local dom = require "tex8web.dom"
     local d = parse([[<div class="newtheorem lemma"></div><div class="newtheoremx"></div>]]
