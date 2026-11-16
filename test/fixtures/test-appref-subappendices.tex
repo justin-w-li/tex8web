@@ -1,0 +1,19 @@
+% Checks cases that a fix of references to appendix chapters must not
+% break: the appendix package's subappendices environment in a report
+% with hyperref.
+\documentclass{report}
+\usepackage{appendix}
+\usepackage{hyperref}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{s:p}; \ref{s:q}; \ref{main}.
+\begin{subappendices}
+\section{Proof}\label{s:p}
+Text of the proof.
+\end{subappendices}
+\chapter{Next}
+\begin{subappendices}
+\section{Other proof}\label{s:q}
+Text of the other proof.
+\end{subappendices}
+\end{document}

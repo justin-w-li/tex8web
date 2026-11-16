@@ -2628,7 +2628,8 @@ const appendixRefs = {
     // (a label after \chapter* takes the last number outside a group, as in
     // the PDF)
     ['After: A; B; C; (C.1); starred C.', ['extra', 'second-extra', 'short', null, null]],
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*About appendix <a href='#extra'>A(?:<!--(?:(?!-->)[^])*-->)?<\/a><\/h3>/,
+    // (tex4ht may write a \ref in a heading without its link)
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*About appendix (?:<a href='#extra'>)?A(?:<!--(?:(?!-->)[^])*-->)?(?:<\/a>)?<\/h3>/,
     // (the contents entries of appendix chapters, with a short title)
     new RegExp(`${toc('A', 'extra', 'Extra')}[^]*${toc('B', 'second-extra', 'Second extra')}[^]*${toc('C', 'short', 'Short')}`),
   ],
@@ -2666,6 +2667,18 @@ const appendixRefs = {
     ['Cref: section A; Section A.1.', ['extra', 'more']],
   ],
   'test-appref-appendices': [['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']]],
+  'test-appref-amsbook': [
+    ['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']],
+    ['Here A.', ['extra']], ['In B: B.', ['second-extra']],
+  ],
+  // (labels inside chapter titles, and chapters with nothing numbered
+  // between them)
+  'test-appref-inside': [
+    ['Ref: A; B; C; D; 1.', ['extra', 'second-extra', 'third', 'fourth', 'main']],
+    ['Here C.', ['third']],
+  ],
+  'test-appref-handmade': [['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']]],
+  'test-appref-subappendices': [['Ref: 1.A; 2.A; 1.', [null, null, 'main']]],
 };
 function appendixRefProblems(html, checks) {
   const problems = [];
@@ -2683,7 +2696,8 @@ function appendixRefProblems(html, checks) {
       continue;
     }
     if (!targets) continue;
-    const links = [...inner.matchAll(/<a [^>]*href='#([^']+)'/g)].map(([, id]) => id).filter(id => !id.startsWith('fn'));
+    const links = [...inner.matchAll(/<a ((?:(?!class='tex8web-permalink')[^>])*)href='#([^']+)'/g)]
+      .filter(([, attrs]) => !attrs.includes('tex8web-permalink')).map(([, , id]) => id).filter(id => !id.startsWith('fn'));
     const got = targets.map((id, i) => id === null ? null : links[i]);
     if (got.join('|') !== targets.join('|')) problems.push(`the links of '${sentence}' go to '${links.join('|')}'`);
   }

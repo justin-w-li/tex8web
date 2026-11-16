@@ -1,0 +1,15 @@
+% References to appendix chapters in amsbook with hyperref: to the
+% chapters and to a section in one.
+\documentclass{amsbook}
+\usepackage{hyperref}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sec:a}; \ref{main}.
+\appendix
+\chapter{Extra}\label{app:a}
+Here \ref{app:a}.
+\section{More}\label{sec:a}
+Text of the section.
+\chapter{Second extra}\label{app:b}
+In B: \ref{app:b}.
+\end{document}

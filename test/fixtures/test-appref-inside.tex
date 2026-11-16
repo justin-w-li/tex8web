@@ -1,0 +1,14 @@
+% References to appendix chapters in a report, with labels inside the
+% chapter titles, and to chapters with nothing numbered between them.
+\documentclass{report}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{app:c}; \ref{app:d}; \ref{main}.
+\appendix
+\chapter{Extra\label{app:a}}
+\chapter{Second extra}\label{app:b}
+\chapter{Third\label{app:c}}
+Here \ref{app:c}.
+\chapter{Fourth}\label{app:d}
+Text of the last appendix.
+\end{document}

@@ -1,0 +1,15 @@
+% Checks cases that a fix of references to appendix chapters must not
+% break: an appendix made by hand, with the chapter counter reset and
+% lettered, without \appendix.
+\documentclass{report}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sec:a}; \ref{main}.
+\setcounter{chapter}{0}
+\renewcommand\thechapter{\Alph{chapter}}
+\chapter{Extra}\label{app:a}
+\section{More}\label{sec:a}
+Text of the section.
+\chapter{Second extra}\label{app:b}
+Text of the second appendix.
+\end{document}
