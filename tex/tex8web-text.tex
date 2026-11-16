@@ -88,8 +88,8 @@
 % box. The sides of the frame go in a mark at the start of the <pre>,
 % which css/tex8web.css draws as its border. html4.4ht closes the
 % paragraph before a displayed listing (\EndP), also from inside the
-% <span> of an \fbox or \fcolorbox or a saved box, so no paragraph is
-% closed in inner horizontal mode. The hook of the lstlisting environment
+% <span> of an \fbox or \fcolorbox or an \hbox that a document saves, so
+% no paragraph is closed in inner horizontal mode. The hook of the lstlisting environment
 % runs outside the environment's group, so \EndP is restored after its
 % end.
 % listings.4ht writes a caption without \@makecaption, so the mark of the

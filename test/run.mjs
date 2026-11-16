@@ -3011,7 +3011,7 @@ function check(doc, result, out, aux) {
       : [...['topenv', 'topfile', 'mbox_esc'].map(lines), ...['cellL', 'cellC', 'cellR', 'lrbox', 'fbox', 'mbox_esc'].map(lines),
         ...['cbox', 'fcbox', 'framecell'].map(lines), 'esc = α;', ...['makebox', 'minicell', 'pcol', 'parbox', 'multi', 'long',
         'label', 'thm', 'note', 'raise', 'sbox', 'savebox', 'boxpos', 'hbox', 'italic', 'sans', 'inbox', 'cellmid', 'item',
-        'twoA', 'twoB', 'cellfbox', 'resize', 'newenv', 'saved', 'delims', ...(hyperref ? ['link', 'utf'] : [])].map(lines),
+        'twoA', 'twoB', 'cellfbox', 'resize', 'newenv', 'saved', 'hboxed', 'delims', ...(hyperref ? ['link', 'utf'] : [])].map(lines),
         ...(hyperref ? ['int x;'] : [])];
     if (texts.join('|') !== expected.join('|')) problems.push(`the displayed listings read '${texts.join('|')}'`);
     const celled = caption ? ['cellenv();', 'cellL();', 'minienv();']
@@ -3037,16 +3037,16 @@ function check(doc, result, out, aux) {
       const found = pres[texts.indexOf(text)]?.[0].match(/<pre[^>]*>\s*<span class='tex8web-lstframe' data-sides='(\w*)'/)?.[1];
       if (found !== sides) problems.push(`the listing '${text}' has the frame '${found}', not '${sides}'`);
     }
-    if (!caption) {
-      const saved = pres[texts.indexOf('saved();')];
-      const start = flat.indexOf('Consider the code'), end = saved ? flat.indexOf('then', saved.index) : -1;
-      if (start < 0 || end < 0 || /<\/?p\b/.test(flat.slice(start, end))) problems.push('the paragraph around the saved listing is broken');
+    for (const [words, text] of caption ? [] : [['Consider the code', 'saved();'], ['Consider the box', 'hboxed();']]) {
+      const pre = pres[texts.indexOf(text)];
+      const start = flat.indexOf(words), end = pre ? flat.indexOf('then', pre.index) : -1;
+      if (start < 0 || end < 0 || /<\/?p\b/.test(flat.slice(start, end))) problems.push(`the paragraph around the listing '${text}' is broken`);
     }
     const formulas = [...flat.matchAll(/(\S*) (?:<\/span>)?(?:<span class='[^']*'>)?(?:<span class='tex8web-nowrap'>)?(?:<span class='mathjax-inline'[^>]*>)?<mjx-container aria-label='([^']*)'/g)]
       .map(([, before, label]) => `${before.replace(/^.*>/, '')} ${label}`);
     const wanted = caption ? [...'ABCD'].map(letter => `then script ${letter}`)
       : ['then x plus 1', ...[...'ABCDEFGHIJKLMNOPQRSTUVWXY'].map(letter => `then script ${letter}`),
-        ...[...'abcdefghij'].map(letter => `then ${letter}`), 'then y plus 1', 'then z plus 1',
+        ...[...'abcdefghijk'].map(letter => `then ${letter}`), 'then y plus 1', 'then z plus 1',
         'then script Z', ...(hyperref ? ['then 1 plus 2', 'then 2 plus 3', 'then 3 plus 4'] : [])];
     if (formulas.join('|') !== wanted.join('|')) problems.push(`the formulas after the displayed listings read '${formulas.join('|')}'`);
     if (!caption && !/then <span class='mathjax-block'[^>]*><mjx-container aria-label='z plus 1'/.test(flat)) problems.push('no display z+1 after the displayed listings');

@@ -6,6 +6,7 @@
 \newtheorem{theorem}{Theorem}
 \newsavebox\lstsaved
 \lstnewenvironment{code}{}{}
+\newenvironment{hboxed}{\setbox0\hbox\bgroup}{\egroup\fbox{\box0}}
 \begin{document}
 \section{Displayed listings in boxes}
 % (guards: at the top level, in vertical mode)
@@ -119,12 +120,19 @@ newenv();
 \end{code}
 \end{tabular} then $i$.
 
-% (an open paragraph before a saved listing, and a frame of one side)
+% (an open paragraph before a saved listing, and a frame of one side;
+% html4.4ht's lrbox keeps the paragraph's end, an \hbox does not)
 Consider the code
 \begin{lrbox}{\lstsaved}\begin{lstlisting}[frame=leftline]
 saved();
 \end{lstlisting}\end{lrbox}
 \fbox{\usebox{\lstsaved}} then $j$.
+
+Consider the box
+\begin{hboxed}\begin{lstlisting}
+hboxed();
+\end{lstlisting}\end{hboxed}
+then $k$.
 
 % (other math delimiters after a boxed listing)
 In \mbox{\lstline{25}} then \(y+1\), and then
