@@ -490,6 +490,40 @@ const lapped = `(() => {
 })()`;
 const laps = { 'test-lefteqn': 18 };
 
+// dcolumn's D columns: in each column of a table, the numbers line up on
+// their separators as in the PDF, and an integer ends where the
+// separators start. A cell is a number if its text is digits with at most
+// a minus and one separator. Checked with JavaScript off. decimals has
+// the number of columns with two or more numbers. Failures: [the first
+// row's text, what is wrong]
+const separated = `(() => {
+  const at = cell => {
+    const chars = [], text = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    while (text.nextNode()) for (let i = 0; i < text.currentNode.length; i++) chars.push([text.currentNode, i]);
+    const box = ([node, i]) => { const range = document.createRange(); range.setStart(node, i); range.setEnd(node, i + 1); return range.getBoundingClientRect(); };
+    const sep = chars.find(([node, i]) => /[.,⋅·]/.test(node.data[i]));
+    if (sep) return box(sep).left;
+    const digits = chars.filter(([node, i]) => /\\d/.test(node.data[i]));
+    return box(digits[digits.length - 1]).right;
+  };
+  let checked = 0;
+  const wrong = [...document.querySelectorAll('table')].flatMap(table => {
+    const columns = new Map();
+    for (const row of table.rows) [...row.cells].forEach((cell, i) => {
+      if (!/^[−-]?\\d*(?:[.,⋅·]\\d*)?$/.test(cell.textContent.replace(/\\s/g, '')) || !/\\d/.test(cell.textContent)) return;
+      columns.set(i, [...columns.get(i) || [], [cell.textContent.replace(/\\s/g, ''), at(cell)]]);
+    });
+    return [...columns.values()].filter(cells => cells.length > 1).flatMap(cells => {
+      checked++;
+      const [first, x] = cells[0];
+      return cells.filter(([, y]) => Math.abs(y - x) > 0.5)
+        .map(([text, y]) => [table.rows[0].textContent.trim().slice(0, 20), \`\${text}'s separator \${(y - x).toFixed(1)}px from \${first}'s\`]);
+    });
+  });
+  return { checked, wrong };
+})()`;
+const decimals = { 'test-dcolumn': 11, 'test-dcolumn-hyperref': 1 };
+
 // Each picture lowered below the baseline (text.lua) with the share of its
 // height below the baseline that it has in the PDF, also where the picture
 // is shrunk to the column. The baseline is found with a zero-size
@@ -1539,6 +1573,11 @@ async function compare(chrome, doc, ok) {
             for (const [text, what] of boxes.wrong) problems.push(`${html}: the \\lefteqn "${text}": ${what}`);
           }
           if (doc.name in hangs) problems.push(...await hanging(page, doc, html));
+          if (doc.name in decimals) {
+            const columns = await page.evaluate(separated);
+            if (columns.checked !== decimals[doc.name]) problems.push(`${html}: ${columns.checked} columns of numbers, not ${decimals[doc.name]}`);
+            for (const [name, what] of columns.wrong) problems.push(`${html}: the table "${name}": ${what}`);
+          }
           if (doc.name in pdfPageCounts) {
             const pages = await page.evaluate(pdfPagesStacked);
             if (pages.checked !== pdfPageCounts[doc.name]) problems.push(`${html}: ${pages.checked} pages included with pdfpages, not ${pdfPageCounts[doc.name]}`);

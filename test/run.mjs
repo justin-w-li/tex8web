@@ -2038,6 +2038,12 @@ const breaks = {
   ],
 };
 
+// A table's row, from the text of its cells (tags left out of it)
+const cellGap = '(?:\\s|<(?!/?t[dr]\\b)[^>]*>)*', cellTag = '(?:<(?!/?t[dr]\\b)[^>]*>)*';
+const cellText = text => text === null ? '(?:(?!</td>)[^])*'
+  : cellGap + [...text].map(c => ({ ' ': '\\s+', '-': '\u2212', '*': '[\u22c5\u00b7]', '.': '\\.' })[c] || c).join(cellTag) + cellGap;
+const dcolumn = (...cells) => new RegExp(cells.map(text => `<td[^>]*>${cellText(text)}</td>`).join('\\s*'));
+
 // Where each table sits, from its class: at the indent of a paragraph it
 // starts, at the left after text, a \noindent, or a heading, in a cell's
 // line (a makecell's too), centered by center, \centering, and a float's
@@ -2078,6 +2084,30 @@ const tables = {
     /Department of Tables\s*<\/span><\/td><\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.3em'><td>/,
     /6pt below, then a rule\s*<\/td>\s*<\/tr><tr class='vspace tex8web-rowskip' style='--tex8web-rowskip: 0\.6em'>(?:(?!<\/tr>)[^])*<\/tr><tr class='hline'>/,
     /^(?![^]*font-size:\d)/,
+  ],
+  // dcolumn's D columns: a row's label, then each cell's text as in the
+  // PDF, with no space inside it, a math minus, and \cdot as a dot. null
+  // is any cell, '' an empty one.
+  'test-dcolumn': [
+    dcolumn('Plain one', '1.25'), dcolumn('Plain two', '10.5'), dcolumn('Plain minus', '-12.75'),
+    dcolumn('Plain empty', ''), dcolumn('Plain integer', '3'), dcolumn('Plain point', '.5'),
+    dcolumn('Label', 'Value', 'Other'),
+    dcolumn('Sided one', '123.45', '0.125'), dcolumn('Sided two', '1.5', '42'),
+    dcolumn('Sided minus', '-0.25', '-7.5'), dcolumn('Sided dash', null, '9.75'),
+    dcolumn('Comma one', '3*14', '1,5'), dcolumn('Comma two', '2*718', '20,25'),
+    dcolumn('Long one', '1.25'), dcolumn('Long two', '100.5'),
+    dcolumn('Star one', '2.25'), dcolumn('Star two', '30.5'),
+    dcolumn('X one', '4.25'), dcolumn('X two', '40.5'),
+    dcolumn('Note one', '5.5'), dcolumn('Note two', '50.25'),
+    dcolumn('Theorem one', '6.25'), dcolumn('Theorem two', '60.5'),
+    dcolumn('Sans one', '7.25'), dcolumn('Sans two', '70.5'),
+    /Math after the tables: (?:<[^>]*>)*<mjx-container/,
+  ],
+  'test-dcolumn-hyperref': [
+    dcolumn('Label', 'Value'), dcolumn('Linked one', '1.25'), dcolumn('Linked minus', '-12.75'),
+    dcolumn('Linked integer', '3'),
+    /See table<span class='tex8web-nbsp'> <\/span><a href='#[^']+'>1(?:<!--[^]*?-->)?<\/a>/,
+    /Math after the table: (?:<[^>]*>)*<mjx-container/,
   ],
 };
 

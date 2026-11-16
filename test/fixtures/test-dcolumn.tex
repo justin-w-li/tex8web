@@ -1,0 +1,74 @@
+% dcolumn's D columns: each cell's number as in the PDF, with its output
+% separator, its math minus, and no separator in an integer or an empty
+% cell, in tabular, longtable, tabular*, and tabularx, through a
+% \newcolumntype, with two-sided and negative formats, under a
+% \multicolumn header and booktabs rules, and in a footnote's size, a
+% theorem, and sans-serif text. The separators of a column line up as
+% in the PDF.
+\documentclass{article}
+\usepackage{dcolumn,booktabs,longtable,tabularx,amsthm}
+\newcolumntype{d}[1]{D{.}{.}{#1}}
+\newcolumntype{E}{D{,}{\cdot}{-1}}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\begin{tabular}{l D{.}{.}{2}}
+    Plain one & 1.25 \\
+    Plain two & 10.5 \\
+    Plain minus & -12.75 \\
+    Plain empty & \\
+    Plain integer & 3 \\
+    Plain point & .5 \\
+\end{tabular}
+
+\begin{tabular}{l d{3.2} d{-1}}
+    \toprule
+    Label & \multicolumn{1}{c}{Value} & \multicolumn{1}{c}{Other} \\
+    \midrule
+    Sided one & 123.45 & 0.125 \\
+    Sided two & 1.5 & 42 \\
+    Sided minus & -0.25 & -7.5 \\
+    Sided dash & \multicolumn{1}{c}{--} & 9.75 \\
+    \bottomrule
+\end{tabular}
+
+\begin{tabular}{l E D{.}{,}{2}}
+    Comma one & 3,14 & 1.5 \\
+    Comma two & 2,718 & 20.25 \\
+\end{tabular}
+
+\begin{longtable}{l D{.}{.}{2}}
+    Long one & 1.25 \\
+    Long two & 100.5 \\
+\end{longtable}
+
+\begin{tabular*}{0.6\textwidth}{@{\extracolsep{\fill}} l D{.}{.}{2}}
+    Star one & 2.25 \\
+    Star two & 30.5 \\
+\end{tabular*}
+
+\begin{tabularx}{0.6\textwidth}{X D{.}{.}{2}}
+    X one & 4.25 \\
+    X two & 40.5 \\
+\end{tabularx}
+
+{\footnotesize
+\begin{tabular}{l D{.}{.}{1}}
+    Note one & 5.5 \\
+    Note two & 50.25 \\
+\end{tabular}\par}
+
+\begin{theorem}
+\begin{tabular}{l D{.}{.}{2}}
+    Theorem one & 6.25 \\
+    Theorem two & 60.5 \\
+\end{tabular}
+\end{theorem}
+
+{\sffamily
+\begin{tabular}{l D{.}{.}{2}}
+    Sans one & 7.25 \\
+    Sans two & 70.5 \\
+\end{tabular}\par}
+
+Math after the tables: $x = 1$.
+\end{document}
