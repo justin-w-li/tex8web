@@ -1232,6 +1232,8 @@ const glyphs = {
   'test-surd': [['test-surd0x.svg', /xlink:href='#g\d+-187'/], ['test-surd1x.svg', /xlink:href='#g\d+-187'/]],
   // (a TikZ fill in a color the document defines, after xcolor's reload)
   'test-lateopt-tikz': [['test-lateopt-tikz0x.svg', /fill='#c80064'/]],
+  // (a TikZ circle in a document that sets \pdfoutput=1)
+  'test-pdfoutput': [['test-pdfoutput0x.svg', /<path d='M14\.22636 0C14\.22636 7\.8571 /]],
   // (the labels over pictures without their .xbb file: P, Q, and y in an
   // overpic, R in a LaTeX picture, S in a TikZ node, and T over a picture
   // with its .xbb file)
@@ -1493,21 +1495,29 @@ const drivers = {
     new RegExp(`Colors in <span style='color:${lightDark('#0000FF', 'color')};'>blue</span></h3>`),
     pdftexText('#FF0000', 'red'),
     // (in italic, sans-serif, and typewriter text)
-    ...['cmti-10', 'cmss-10', 'cmtt-10'].map(font => new RegExp(`<span style='color:${lightDark('#FF0000', 'color')};'><span class='${font}'>`)),
+    ...[['cmti-10', 'italic'], ['cmss-10', 'sans'], ['cmtt-10', 'typewriter']].map(([font, text]) => new RegExp(`<span style='color:${lightDark('#FF0000', 'color')};'><span class='${font}'>${text}`)),
     ...pdftexLinks('colors-in-blueblue'),
     /A note with a link to section<span class='tex8web-nbsp'> <\/span><\/span><a href='#colors-in-blueblue'><span class='cmr-8'>1<\/span>/,
     /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
+    // (a PDF named without its extension, and a TikZ picture, whose path
+    // is checked below)
+    /<img alt='pdf bare' src='test-pdfpic\/box\.pdf-1\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the bare name\./,
+    /TikZ: <img alt='' src='test-pdfoutput0x\.svg' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.0836\)' \/> After the TikZ picture\./,
     /Math: <span class='tex8web-nowrap'><mjx-container/,
     // (in a theorem)
     new RegExp(`Theorem 1\\.</span> </span><span class='cmti-10'>A theorem in </span><span style='color:${lightDark('#FF0000', 'color')};'>`),
     /with a link to section<span class='tex8web-nbsp'> <\/span><\/span><a href='#colors-in-blueblue'><span class='cmti-10'>1<\/span>/,
     /Preamble: DVI branch\. Body: DVI branch\./,
+    // (\ifnum\pdfoutput>0, in the preamble and in the body)
+    /Raw: DVI, DVI\./,
   ],
   'test-pdfoutput-late': [
     pdftexText('#FF0000', 'red'),
     ...pdftexLinks('colors'),
     /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
     /Rotated: <span class='rotatebox' style='transform: rotate\(-90deg\);'> up <\/span>\. After the rotation\./,
+    // (pict2e's drawing, which stops the build with pict2e's pdftex driver)
+    /<img alt='PICT' src='test-pdfoutput-late0x\.png' \/> After the drawing\./,
     /Branch: DVI branch\./,
   ],
   'test-pdfoutput-sty': [

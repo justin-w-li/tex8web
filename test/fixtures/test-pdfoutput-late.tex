@@ -1,9 +1,11 @@
 % \pdfoutput set to 1 after \documentclass, in the guarded form
-% \ifdefined\pdfoutput\pdfoutput1\fi, before color, graphicx, and hyperref
+% \ifdefined\pdfoutput\pdfoutput1\fi, before pict2e, which reads the
+% register when it loads, and iftex, color, graphicx, and hyperref, which
 % load without a driver option. iftex's \ifpdf takes the DVI branch, as on
 % any page. The page is the same as without \pdfoutput.
 \documentclass{article}
 \ifdefined\pdfoutput\pdfoutput1\fi
+\usepackage{pict2e}
 \usepackage{iftex}
 \usepackage{color}
 \usepackage{graphicx}
@@ -18,6 +20,10 @@ Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
 After the picture.
 
 Rotated: \rotatebox{90}{up}. After the rotation.
+
+\setlength{\unitlength}{1pt}
+\begin{picture}(20,10)\qbezier(0,0)(10,10)(20,0)\put(10,5){\circle{8}}\end{picture}
+After the drawing.
 
 Branch: \ifpdf PDF branch\else DVI branch\fi.
 \end{document}

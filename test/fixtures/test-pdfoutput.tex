@@ -2,7 +2,9 @@
 % \documentclass, as arXiv asks, with the pdfTeX settings often beside it.
 % graphicx, xcolor, and hyperref then load without a driver option. ifpdf's
 % \ifpdf takes the DVI branch, in the preamble and in the body, as on any
-% page. The page is the same as without \pdfoutput.
+% page, and so does a test of the register itself. TikZ, which takes the
+% driver of graphics, draws its picture, and a PDF included without its
+% extension is found. The page is the same as without \pdfoutput.
 \pdfoutput=1
 \pdfcompresslevel=9
 \pdfminorversion=5
@@ -12,6 +14,7 @@
 \usepackage{xcolor}
 \usepackage{amsthm}
 \usepackage{ifpdf}
+\usepackage{tikz}
 \usepackage[colorlinks]{hyperref}
 \newtheorem{theorem}{Theorem}
 \ifpdf
@@ -19,6 +22,7 @@
 \else
   \newcommand\branch{DVI branch}
 \fi
+\ifnum\pdfoutput>0 \newcommand\rawbranch{PDF}\else \newcommand\rawbranch{DVI}\fi
 \begin{document}
 \section{Colors in \textcolor{blue}{blue}}\label{colors}
 
@@ -30,6 +34,11 @@ note with a link to section~\ref{colors}.}
 Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
 After the picture.
 
+Bare: \includegraphics[alt={pdf bare}, width=2cm]{test-pdfpic/box}.
+After the bare name.
+
+TikZ: \tikz\draw (0,0) circle (0.5); After the TikZ picture.
+
 Math: $x^2 + y^2 = z^2$. After the math.
 
 \begin{theorem}
@@ -37,4 +46,5 @@ A theorem in \textcolor{red}{red}, with a link to section~\ref{colors}.
 \end{theorem}
 
 Preamble: \branch. Body: \ifpdf PDF branch\else DVI branch\fi.
+Raw: \rawbranch, \ifnum\pdfoutput>0 PDF\else DVI\fi.
 \end{document}
