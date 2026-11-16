@@ -4,18 +4,30 @@
 % reads. A table in a LaTeX picture is drawn in the picture's image, as in
 % the PDF:
 % - a tabular in a \put, with one cell, and with two rows, two columns,
-%   \hline, vertical rules, and a math cell;
+%   \hline, vertical rules, and a math cell, and with \multicolumn and
+%   \cline;
 % - array's column types (>{\bfseries}l and p{2cm}), tabular*, tabularx,
 %   a tabular nested in a tabular, and an array in math;
-% - booktabs' rules, alone and with colortbl's \columncolor;
+% - booktabs' rules, alone and with colortbl's \columncolor, and
+%   colortbl's \rowcolor;
+% - a picture with a tabular in a cell of a tabular;
 % - in a figure with a caption, in a theorem, in italic, sans-serif, and
 %   typewriter text, and in \small;
-% - an Inkscape label from a .pdf_tex file: a \makebox of zero size that
-%   holds a \smash'ed tabular[t], over an \includegraphics;
+% - Inkscape labels from a .pdf_tex file, through \input and \import: a
+%   \makebox of zero size that holds a \smash'ed tabular[t], over an
+%   \includegraphics of a PDF, set left, centered on two lines, right, and
+%   turned;
 % - overpic with a tabular in its \put.
-% An ordinary tabular after the pictures stays a table of the page.
+% An ordinary tabular before and after the pictures stays a table of the
+% page.
 \newtheorem{thm}{Theorem}
 \begin{document}
+\begin{tabular}{|l|l|}
+\hline
+First & Guard\\
+\hline
+\end{tabular}
+
 Before plain.
 \begin{picture}(100,40)\put(0,30){\begin{tabular}{l}AlphaOne\end{tabular}}\end{picture}
 After plain.
@@ -26,7 +38,7 @@ After grid.
 
 \ifdefined\newcolumntype
 Before column types.
-\begin{picture}(160,40)\put(0,0){\begin{tabular}{>{\bfseries}lp{2cm}}DeltaBold & DeltaPar\end{tabular}}\end{picture}
+\begin{picture}(160,40)\put(0,0){\begin{tabular}{|>{\bfseries}l|p{2cm}|}DeltaBold & DeltaPar\end{tabular}}\end{picture}
 After column types.
 \fi
 
@@ -36,7 +48,7 @@ After star.
 
 \ifdefined\tabularx
 Before tabularx.
-\begin{picture}(160,30)\put(0,0){\begin{tabularx}{140pt}{lX}Xone & Xtwo\end{tabularx}}\end{picture}
+\begin{picture}(160,30)\put(0,0){\begin{tabularx}{140pt}{|l|X|}Xone & Xtwo\end{tabularx}}\end{picture}
 After tabularx.
 \fi
 
@@ -48,6 +60,16 @@ Before array.
 \begin{picture}(100,40)\put(0,0){$\begin{array}{cc}a & b\\c & d\end{array}$}\end{picture}
 After array.
 
+Before span.
+\begin{picture}(100,50)\put(0,0){\begin{tabular}{ll}\multicolumn{2}{c}{SpanTop}\\\cline{1-1}a & b\end{tabular}}\end{picture}
+After span.
+
+Before in cell.
+\begin{tabular}{c}
+\begin{picture}(100,30)\put(0,0){\begin{tabular}{l}InCell\end{tabular}}\end{picture}
+\end{tabular}
+After in cell.
+
 \ifdefined\toprule
 Before booktabs.
 \begin{picture}(120,60)\put(0,0){\begin{tabular}{lr}\toprule Head & Num\\\midrule Row & 1\end{tabular}}\end{picture}
@@ -58,6 +80,10 @@ After booktabs.
 Before colortbl.
 \begin{picture}(120,60)\put(0,0){\begin{tabular}{>{\columncolor{yellow}}lr}\toprule Hue & Num\\\midrule Row & 1\end{tabular}}\end{picture}
 After colortbl.
+
+Before rowcolor.
+\begin{picture}(120,40)\put(0,0){\begin{tabular}{lr}\rowcolor{yellow}Tint & Num\\Row & 1\end{tabular}}\end{picture}
+After rowcolor.
 \fi
 
 Before figure.
@@ -95,6 +121,13 @@ Before label.
 \def\svgwidth{100pt}
 \input{test-pictab-label.pdf_tex}
 After label.
+\fi
+
+\ifdefined\import
+Before import.
+\def\svgwidth{100pt}
+\import{./}{test-pictab-label.pdf_tex}
+After import.
 \fi
 
 \ifdefined\overpic

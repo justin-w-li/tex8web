@@ -1,0 +1,27 @@
+% Inkscape labels with the array package on a book's title page, before a
+% \part.
+\documentclass{book}
+\usepackage{array}
+\usepackage{color}
+\usepackage{graphicx}
+\begin{document}
+\begin{titlepage}
+Before label.
+\def\svgwidth{100pt}
+\input{test-pictab-label.pdf_tex}
+After label.
+\end{titlepage}
+\part{One}
+\chapter{Two}
+\begin{tabular}{|l|l|}
+\hline
+First & Guard\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|l|l|}
+\hline
+Guard & Table\\
+\hline
+\end{tabular}
+\end{document}

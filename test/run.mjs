@@ -1537,6 +1537,8 @@ const drivers = {
 const texWarnings = {
   'test-pdftex-class': [/Unused global option/],
   'test-boxmath': [/multiply defined/, /qedhere command may not work/],
+  ...Object.fromEntries(['test-pictab', 'test-pictab-hyperref', 'test-pictab-colortbl', 'test-pictab-booktabs',
+    'test-pictab-book', 'test-pictab-plain'].map(name => [name, [/Extra \}, or forgotten \$/, /Misplaced \\noalign/]])),
 };
 
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
@@ -1726,22 +1728,27 @@ const coveredPictures = { 'test-overpic': ['eps'] };
 // to "After <case>.", and its width in pixels at dvipng's resolution
 // (within 10%, as dvipng crops the image to its ink). Without the array
 // package, tex4ht sets tabular* at its natural width, so its width is not
-// checked there. Nor is the width of the Inkscape label and the overpic
-// label, as their images leave out the graphic under the label.
+// checked on those pages. The images of the Inkscape labels and the overpic label
+// leave out the graphic under the labels, so their widths are the labels'.
 const tableWidths = {
-  plain: 88, grid: 158, 'column types': 204, star: 254, tabularx: 115, nested: 148, array: 41, booktabs: 136,
-  colortbl: 129, figure: 75, theorem: 94, italic: 64, sans: 39, typewriter: 40, small: 43, label: null, overpic: null,
+  plain: 88, grid: 158, 'column types': 266, star: 254, tabularx: 279, nested: 148, array: 41, span: 89,
+  'in cell': 53, booktabs: 136, colortbl: 129, rowcolor: 129, figure: 75, theorem: 94, italic: 64, sans: 39,
+  typewriter: 40, small: 43, label: 169, import: 169, overpic: 91,
 };
-const inEveryTablePage = ['plain', 'grid', 'star', 'nested', 'array', 'figure', 'theorem', 'italic', 'sans',
-  'typewriter', 'small'];
+const inEveryTablePage = ['plain', 'grid', 'star', 'nested', 'array', 'span', 'in cell', 'figure', 'theorem',
+  'italic', 'sans', 'typewriter', 'small'];
 const tablePictures = {
-  'test-pictab': Object.keys(tableWidths).filter(name => name !== 'colortbl'),
+  'test-pictab': Object.keys(tableWidths).filter(name => !['colortbl', 'rowcolor'].includes(name)),
   'test-pictab-hyperref': [...inEveryTablePage, 'column types', 'label'],
-  'test-pictab-colortbl': [...inEveryTablePage, 'column types', 'booktabs', 'colortbl'],
+  'test-pictab-colortbl': [...inEveryTablePage, 'column types', 'booktabs', 'colortbl', 'rowcolor'],
+  'test-pictab-booktabs': [...inEveryTablePage, 'booktabs'],
+  'test-pictab-book': ['label'],
   'test-pictab-plain': inEveryTablePage,
 };
 // words of the tables in the pictures, which are not the page's text
-const tablePictureWords = /AlphaOne|Gamma|DeltaBold|Xone|InnerA|InFigure|InTheorem|Slanted|InkLabel|OverLabel|Hue/;
+const tablePictureWords = new RegExp(String.raw`\b(?:` + ['AlphaOne', 'Gamma', 'DeltaBold', 'Left', 'Right', 'Xone', 'InnerA', 'SpanTop',
+  'InCell', 'Head', 'Hue', 'Tint', 'InFigure', 'InTheorem', 'Slanted', 'Sans', 'Mono', 'Small', 'InkLabel', 'InkOne',
+  'InkRight', 'InkRot', 'OverLabel'].join('|') + String.raw`)\b`);
 
 // Terms (\WebTerm), with ids for the table of contents filter; in a heading,
 // only the term's text in the heading's id and table of contents entry
@@ -3212,12 +3219,14 @@ function check(doc, result, out, aux) {
       continue;
     }
     const width = readFileSync(files[0]).readUInt32BE(16), want = tableWidths[name];
-    if (want !== null && !(doc.name === 'test-pictab-plain' && name === 'star') && !(Math.abs(width - want) <= 0.1 * want)) {
+    const natural = name === 'star' && ['test-pictab-plain', 'test-pictab-booktabs'].includes(doc.name);
+    if (!natural && !(Math.abs(width - want) <= 0.1 * want)) {
       problems.push(`the picture of "${name}" is ${width} pixels wide, not ${want}`);
     }
   }
   if (tablePictures[doc.name]) {
-    // (the ordinary tabular after the pictures)
+    // (the ordinary tabulars before and after the pictures)
+    if (!/<td [^>]*> First <\/td> ?<td [^>]*> Guard <\/td>/.test(flat)) problems.push('no table with the cells First and Guard');
     if (!/<td [^>]*> Guard <\/td> ?<td [^>]*> Table <\/td>/.test(flat)) problems.push('no table with the cells Guard and Table');
     const main = flat.split('<main>')[1] ?? '';
     if (tablePictureWords.test(main)) problems.push(`the page's text has ${main.match(tablePictureWords)[0]}, which a picture holds`);
@@ -3254,7 +3263,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, coveredPictures, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, coveredPictures, tablePictures, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 
