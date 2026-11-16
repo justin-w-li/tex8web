@@ -595,7 +595,7 @@
 % build stops with "Misplaced \noalign". There, \o:noalign: is \noalign,
 % and the group of that \noalign keeps it local. With an older array,
 % colortbl runs \@rowc@lors after each \cr, outside a \noalign, where an
-% assignment would start a new row; there \noalign is the primitive and
+% assignment would start a new row. There \noalign is the primitive, and
 % nothing changes.
 \@ifpackageloaded { colortbl }
   {

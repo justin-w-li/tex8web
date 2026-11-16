@@ -5,6 +5,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
+import { inflateSync } from 'node:zlib';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
 import { decode } from './lib/png.mjs';
@@ -1533,13 +1534,10 @@ const drivers = {
 // leaves pdfTeX's driver option unused, and xcolor uses the fixture's other
 // class option, dvipsnames, so LaTeX warns of no unused global option.
 // test-boxmath sets a labelled equation twice, and writes its label once,
-// and sets a \qedhere twice, where amsthm can. The tables in pictures of
-// the test-pictab documents stopped the build with these errors.
+// and sets a \qedhere twice, where amsthm can.
 const texWarnings = {
   'test-pdftex-class': [/Unused global option/],
   'test-boxmath': [/multiply defined/, /qedhere command may not work/],
-  ...Object.fromEntries(['test-pictab', 'test-pictab-hyperref', 'test-pictab-colortbl', 'test-pictab-booktabs',
-    'test-pictab-book', 'test-pictab-plain', 'test-pictab-tikz', 'test-pictab-rollback'].map(name => [name, [/Extra \}, or forgotten \$/, /Misplaced \\noalign/]])),
 };
 
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
@@ -1739,6 +1737,40 @@ const tableWidths = {
 };
 const inEveryTablePage = ['plain', 'grid', 'star', 'nested', 'array', 'span', 'in cell', 'figure', 'theorem',
   'italic', 'sans', 'typewriter', 'small'];
+// the cases whose tables have yellow cells or rows, which cover at least a
+// fifth of the image (in the PDF, about a third or a half)
+const yellowTables = ['colortbl', 'rowcolor', 'rowcolors'];
+// the colors, as 0xRRGGBB, of a PNG with a palette, as dvipng writes,
+// pixel by pixel, or null for a PNG of another type (decode reads only RGB
+// and RGBA)
+const paletteColors = png => {
+  let header, palette;
+  const data = [];
+  for (let at = 8; at < png.length;) {
+    const length = png.readUInt32BE(at), type = png.toString('latin1', at + 4, at + 8), body = png.subarray(at + 8, at + 8 + length);
+    if (type === 'IHDR') header = body;
+    else if (type === 'PLTE') palette = body;
+    else if (type === 'IDAT') data.push(body);
+    at += 12 + length;
+  }
+  if (!header || header[9] !== 3 || header[12] !== 0 || !palette) return null;
+  const [width, height, depth] = [header.readUInt32BE(0), header.readUInt32BE(4), header[8]];
+  const stride = Math.ceil(width * depth / 8), raw = inflateSync(Buffer.concat(data)), rows = Buffer.alloc(height * stride);
+  const colors = [];
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)];
+    for (let x = 0; x < stride; x++) {
+      const at = y * stride + x, left = x ? rows[at - 1] : 0, up = y ? rows[at - stride] : 0, upLeft = x && y ? rows[at - stride - 1] : 0;
+      const p = left + up - upLeft, [a, b, c] = [left, up, upLeft].map(v => Math.abs(p - v));
+      rows[at] = raw[y * (stride + 1) + 1 + x] + [0, left, up, (left + up) >> 1, a <= b && a <= c ? left : b <= c ? up : upLeft][filter];
+    }
+    for (let x = 0; x < width; x++) {
+      const bit = x * depth, index = (rows[y * stride + (bit >> 3)] >> (8 - depth - bit % 8)) & ((1 << depth) - 1);
+      colors.push(palette.readUIntBE(3 * index, 3));
+    }
+  }
+  return colors;
+};
 const tablePictures = {
   'test-pictab': Object.keys(tableWidths).filter(name => !['colortbl', 'rowcolor', 'rowcolors'].includes(name)),
   'test-pictab-hyperref': [...inEveryTablePage, 'column types', 'label'],
@@ -3227,6 +3259,11 @@ function check(doc, result, out, aux) {
     const natural = name === 'star' && ['test-pictab-plain', 'test-pictab-booktabs'].includes(doc.name);
     if (!natural && !(Math.abs(width - want) <= 0.1 * want)) {
       problems.push(`the picture of "${name}" is ${width} pixels wide, not ${want}`);
+    }
+    if (yellowTables.includes(name)) {
+      const colors = paletteColors(readFileSync(files[0])), yellow = colors?.filter(color => color === 0xffff00).length;
+      if (!colors) problems.push(`the picture of "${name}" is not a PNG with a palette`);
+      else if (!(yellow >= colors.length / 5)) problems.push(`the picture of "${name}" is ${yellow} of ${colors.length} pixels yellow, not a fifth`);
     }
   }
   if (tablePictures[doc.name]) {
