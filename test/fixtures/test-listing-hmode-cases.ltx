@@ -43,11 +43,12 @@ In \fbox{\lstline[frame=single]{5}} then $\mathcal{D}$.
 
 E: \mbox{\lstline[mathescape]{4}} then $\mathcal{E}$.
 
-% (color.4ht sets the text of \colorbox and \fcolorbox in the paragraph,
-% not in a box, so a listing there is not in inner horizontal mode)
-In \mbox{\lstline{6}} then $\mathcal{F}$.
+% (color.4ht sets the text of \colorbox in the paragraph, so the
+% listing is in inner horizontal mode there only in a cell; \fcolorbox
+% sets its text in \fbox's \hbox)
+\begin{tabular}{l} \colorbox{yellow}{\lstline{6}} \end{tabular} then $\mathcal{F}$.
 
-In \mbox{\lstline{7}} then $\mathcal{G}$.
+In \fcolorbox{red}{white}{\lstline{7}} then $\mathcal{G}$.
 
 \begin{tabular}{l} \lstline[numbers=left,frame=single]{8} \end{tabular} then $\mathcal{H}$.
 
@@ -117,6 +118,13 @@ In \resizebox{.5\linewidth}{!}{\lstline{34}} then $h$.
 newenv();
 \end{code}
 \end{tabular} then $i$.
+
+% (an open paragraph before a saved listing, and a frame of one side)
+Consider the code
+\begin{lrbox}{\lstsaved}\begin{lstlisting}[frame=leftline]
+saved();
+\end{lstlisting}\end{lrbox}
+\fbox{\usebox{\lstsaved}} then $j$.
 
 % (other math delimiters after a boxed listing)
 In \mbox{\lstline{25}} then \(y+1\), and then

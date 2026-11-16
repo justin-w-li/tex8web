@@ -129,6 +129,14 @@ div.listing, div.verbatimtabinput { white-space: pre; }
    base font has no font span, and is in the text's font (assets.lua for
    text in another font). Labels set no line height, as in TeX. */
 .tex8web-listing-number, .tex8web-listing-label { font-family: var(--tex8web-roman); line-height: 0; }
+/* the frame of a displayed listing in a box, from the sides that a mark at
+   the start of its <pre> lists (tex8web-text.tex), with listings' default
+   framerule and framesep. An upper-case side is a double rule in the PDF. */
+pre:has(> .tex8web-lstframe) { padding: 3pt; }
+pre:has(> .tex8web-lstframe[data-sides*="t" i]) { border-top: 0.4pt solid; }
+pre:has(> .tex8web-lstframe[data-sides*="r" i]) { border-right: 0.4pt solid; }
+pre:has(> .tex8web-lstframe[data-sides*="b" i]) { border-bottom: 0.4pt solid; }
+pre:has(> .tex8web-lstframe[data-sides*="l" i]) { border-left: 0.4pt solid; }
 /* a ~, written as a space by text.lua: pre keeps the space from
    collapsing and the line from breaking after it (CONTRIBUTING.md) */
 .tex8web-nbsp { white-space: pre; }

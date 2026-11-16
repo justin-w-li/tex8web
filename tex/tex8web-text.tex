@@ -82,11 +82,16 @@
 % A displayed listing keeps the box, with an empty \everymath from its
 % BoxUnsafe hook, just before the $. Math escaped in the listing is then
 % typeset by TeX too, as tex4ht's markup of math cannot be in a <pre>.
-% The hook also drops the frame, as listings.4ht means to: lstmisc.sty
-% defines \lst@frameInit again when it loads the frame aspect, and the
-% frame's \par in the box closes the paragraph around the box. html4.4ht
-% closes the paragraph before an \lstinputlisting (\EndP), also from inside
-% the <span> of an \fbox or \colorbox, so no paragraph is closed there.
+% The hook also drops the frame's rules, as listings.4ht means to:
+% lstmisc.sty defines \lst@frameInit again when it loads the frame
+% aspect, and the frame's \par in the box closes the paragraph around the
+% box. The sides of the frame go in a mark at the start of the <pre>,
+% which css/tex8web.css draws as its border. html4.4ht closes the
+% paragraph before a displayed listing (\EndP), also from inside the
+% <span> of an \fbox or \fcolorbox or a saved box, so no paragraph is
+% closed in inner horizontal mode. The hook of the lstlisting environment
+% runs outside the environment's group, so \EndP is restored after its
+% end.
 % listings.4ht writes a caption without \@makecaption, so the mark of the
 % caption's skips is added to its text (\web@capskip, under figures).
 \@ifpackageloaded{listings}{%
@@ -95,10 +100,23 @@
          \expandafter\def\csname a:listings-init\endcsname{\ht:special{t4ht@(}}}
         {\HtmlParOn\HCode{</code>}}%
     \lst@AddToHook{TextStyle}{\let\lst@boxtrue\relax}%
-    \lst@AddToHook{BoxUnsafe}{\everymath{}\let\lst@frameInit\relax\let\lst@frameExit\relax}%
+    \lst@AddToHook{BoxUnsafe}{\everymath{}\let\lst@frameInit\relax\let\lst@frameExit\relax
+        \ifcsname lst@frame\endcsname\ifx\lst@frame\@empty\else
+            \let\web@startLstLn\start:LstLn
+            \gdef\start:LstLn{\web@startLstLn
+                \HCode{<span class="tex8web-lstframe" data-sides="\lst@frame"></span>}}%
+        \fi\fi}%
     \let\web@lstinputlisting\lst@InputListing
     \def\lst@InputListing#1{\begingroup\ifinner\ifhmode\let\EndP\relax\fi\fi
         \web@lstinputlisting{#1}\endgroup}%
+    \web@needs{before:beginlstlisting}%
+    \expandafter\let\expandafter\web@lstbegin\csname before:beginlstlisting\endcsname
+    \expandafter\def\csname before:beginlstlisting\endcsname{%
+        \ifinner\ifhmode
+            \let\web@EndP\EndP\let\EndP\relax
+            \web@lstbegin
+            \expandafter\def\expandafter\after:end\expandafter{\after:end\let\EndP\web@EndP}%
+        \else \web@lstbegin \fi\else \web@lstbegin \fi}%
     \def\web@lstmakecaption#1#2{\cptA: #1\if :#1:\else\cptB:\fi \cptC: #2\cptD:}%
     \ifx\web@lstmakecaption\lst@makecaption
         \def\lst@makecaption#1#2{\web@lstmakecaption{#1}{\web@capskip#2}}%
