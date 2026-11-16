@@ -47,8 +47,9 @@ end
 -- CONTRIBUTING.md). In any picture, a lock of the bounding box made
 -- while one is on is overwritten, and so is its unlock: dvisvgm does not
 -- nest locks, and an inner unlock would let what follows widen the outer
--- picture. Such a lock is an inner picture's, or a \rotatebox's in a
--- TikZ picture (tex8web-text.tex). The inner pictures' baseline marks are
+-- picture. Such a lock is an inner picture's, or a rotation's or scale's in
+-- a picture whose bounding box is locked, such as a TikZ picture
+-- (tex8web-text.tex). The inner pictures' baseline marks are
 -- overwritten too, as text.pictures reads the first mark in the SVG.
 function M.nested_pictures(par)
   local path = (par.builddir ~= "" and par.builddir .. "/" or "") .. par.input .. "." .. par.dvi

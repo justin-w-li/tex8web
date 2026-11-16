@@ -1767,6 +1767,25 @@ async function mirroring(chrome, file) {
   });
 }
 
+// In dark mode, the viewer shows a picture that holds an \includegraphics
+// as it is, as the page does (css/tex8web.css)
+async function uninverting(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { colorScheme: 'dark' }, async page => {
+    const focused = await page.evaluate(`(() => {
+      const img = document.querySelector('figure img.tex8web-graphic.tex8web-zoomable');
+      if (!img) return false;
+      img.scrollIntoView({ block: 'center' });
+      img.focus();
+      return document.activeElement === img;
+    })()`);
+    if (!focused) return ['no picture with a graphic in a figure that opens the viewer'];
+    await page.press('Enter', 13);
+    const shown = await until(() => page.evaluate(`document.querySelector('.tex8web-viewer').matches(':popover-open')
+      && getComputedStyle(document.querySelector('.tex8web-viewer img')).filter`));
+    return shown === 'none' ? [] : [`a picture with a graphic: ${shown ? `the filter ${shown} in the viewer` : 'no viewer'} in dark mode`];
+  });
+}
+
 // Each check, with the fixtures it runs on, which must have its feature:
 // - viewer: an SVG and a raster picture
 // - bar, fade, browsing, and one filter: test.tex's long page, with its
@@ -1786,6 +1805,7 @@ async function mirroring(chrome, file) {
 //   and description lists set away from its default
 // - hang: author-year bibliographies, with entries that wrap
 // - mirror: mirrored pictures in figures, around and inside rotations
+// - graphic: a TikZ picture that holds an \includegraphics, in a figure
 const each = check => async (chrome, docs) => {
   const problems = [];
   for (const doc of docs) problems.push(...(await check(chrome, pageFile(doc), doc)).map(p => `${doc.name}: ${p}`));
@@ -1794,6 +1814,7 @@ const each = check => async (chrome, docs) => {
 const checks = {
   viewer: [['test-article', 'examples/basic'], each(viewing)],
   mirror: [['test-reflectbox'], each(mirroring)],
+  graphic: [['test-boxgfx'], each(uninverting)],
   touch: [['examples/basic'], each(touching)],
   bar: [['test'], each(async (...args) => [...await naming(...args), ...await hiding(...args), ...await landing(...args)])],
   narrow: [['test', 'examples/complex'], each(narrowing)],

@@ -972,8 +972,10 @@
       const box = img.getBoundingClientRect();
       clicked = byKey ? null : img;
       // the same src, which tex8web-page.tex's rule for TikZ pictures in
-      // dark mode selects
+      // dark mode selects, and the class of a picture that holds a graphic,
+      // which css/tex8web.css leaves uninverted
       picture.setAttribute('src', img.getAttribute('src'));
+      picture.classList.toggle('tex8web-graphic', img.classList.contains('tex8web-graphic'));
       picture.alt = img.alt;
       // (a picture mirrored or turned over: text.pictures in text.lua, which
       // puts a mirror around a rotation on its span.rotatebox. The viewer

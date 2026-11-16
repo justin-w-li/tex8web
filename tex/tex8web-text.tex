@@ -1214,9 +1214,10 @@
     % writes ps: specials, which dvisvgm draws only with Ghostscript's
     % library, and not on macOS. dvisvgm.def's bounding box of the turned
     % box needs that library too, so the box is given here as boxes that
-    % start at the current point (dvisvgm takes a negative size). In a TikZ
-    % picture, whose bounding box pgf locks, the inner lock is dropped by
-    % dvi.nested_pictures, as dvisvgm does not nest locks.
+    % start at the current point (dvisvgm takes a negative size). In a
+    % picture whose bounding box is locked already, such as a TikZ
+    % picture, the inner lock is dropped by dvi.nested_pictures, as
+    % dvisvgm does not nest locks.
     \def\web@svg@bbox#1#2#3{\special{dvisvgm:bbox \strip@pt\dimexpr#1\relax pt
         \strip@pt\dimexpr#2\relax pt \strip@pt\dimexpr#3\relax pt}}
     % (graphics.sty's \Grot@box puts the current point \dimen@ right of

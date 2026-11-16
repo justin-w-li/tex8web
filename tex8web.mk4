@@ -126,9 +126,10 @@ end
 -- than their encoding's, for tex4ht, which runs after these commands
 Make:add("htf", htf.write)
 Make:htf {}
--- a picture that holds another picture made one picture, for tex4ht. A
--- DVI copied back from TEX8WEB_LATEX_REUSE was saved before this step, and
--- is changed again.
+-- a picture that holds another picture made one picture, for tex4ht, and
+-- in every picture, a lock of the bounding box inside another lock
+-- dropped, for dvisvgm. A DVI copied back from TEX8WEB_LATEX_REUSE was
+-- saved before this step, and is changed again.
 Make:add("nested_pictures", dvi.nested_pictures)
 Make:nested_pictures {}
 -- (tex4ht's class files list \jobname.4idx among the page's files, for

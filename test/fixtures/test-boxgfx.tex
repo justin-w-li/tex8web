@@ -8,6 +8,7 @@
 % saved TikZ picture with a graphic placed twice. A TikZ picture without
 % a graphic follows the theme, and one with a turned label and a labeled
 % arrow that pgf leaves out of its bounding box is as wide as in the PDF.
+% A TikZ picture with a graphic in a figure, which opens the viewer.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}
@@ -119,4 +120,10 @@ Before turned label.
 \begin{tikzpicture}\node (a) {\rotatebox{90}{L}}; \draw[overlay,->] (a) -- ++(4,0) node[right] {R};\end{tikzpicture}
 
 After turned label.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}\node[draw] {\includegraphics[width=2cm]{test-bare.png}};\end{tikzpicture}
+\caption{A graphic in a TikZ picture, which opens the viewer.}
+\end{figure}
 \end{document}

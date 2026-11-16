@@ -102,8 +102,8 @@ const misaligned = `(() => {
 })()`;
 
 // Printing (css/tex8web.css) from a wide screen, with dark mode set by both
-// the system and the reader: light mode's colors and pictures, and no page
-// controls. Then at the width of Letter paper inside Chrome's margins:
+// the system and the reader: light mode's colors and pictures, with no
+// white behind a picture that holds a graphic, and no page controls. Then at the width of Letter paper inside Chrome's margins:
 // footnotes after their paragraph, and nothing cut off on the right.
 async function printed(chrome, file) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, colorScheme: 'dark' }, async page => {
@@ -119,6 +119,9 @@ async function printed(chrome, file) {
       if (shown.length) wrong.push(\`\${shown.length} of the controls, contents and # links shown\`);
       const inverted = [...document.images].filter(img => getComputedStyle(img).filter !== 'none');
       if (inverted.length) wrong.push(\`\${inverted.length} pictures inverted\`);
+      const backed = [...document.querySelectorAll('img.tex8web-graphic')]
+        .filter(img => getComputedStyle(img).backgroundColor !== 'rgba(0, 0, 0, 0)');
+      if (backed.length) wrong.push(\`\${backed.length} pictures with a graphic on white\`);
       return wrong;
     })()`);
     await page.resize(740, 900);
@@ -512,7 +515,19 @@ const hangs = { 'test-turned-over': [1, 1, 0.25, 0.75, 1, 1, 1, 1] };
 // are shown as they are, on white, and the other such pictures are
 // inverted: how many of each (test-boxgfx.tex). In light mode, the first
 // have no background, as a box behind them may have a color.
-const darkPictures = { 'test-boxgfx': [15, 2] };
+const darkPictures = { 'test-boxgfx': [16, 2] };
+// The graphics that are not clipped in the pictures that hold them, each
+// inside its picture, after any rotation or scale, with each SVG put in a
+// blank page: how many (test-boxgfx.tex)
+const graphicsInside = { 'test-boxgfx': 14 };
+const graphicOutside = svg => `(() => {
+  document.body.innerHTML = ${JSON.stringify(svg)};
+  const root = document.body.firstElementChild.getBoundingClientRect();
+  return [...document.querySelectorAll("svg[overflow='visible'] > image")].map(image => {
+    const box = image.getBoundingClientRect();
+    return box.left < root.left - 0.5 || box.top < root.top - 0.5 || box.right > root.right + 0.5 || box.bottom > root.bottom + 0.5;
+  });
+})()`;
 const darkSeen = `[...document.images].filter(img => /\\d+x\\.svg$/.test(img.getAttribute('src'))).map(img => {
   const style = getComputedStyle(img);
   return [img.classList.contains('tex8web-graphic'), style.filter, style.backgroundColor];
@@ -1619,6 +1634,20 @@ async function compare(chrome, doc, ok) {
       const plain = light.filter(([graphic, filter, background]) => graphic && filter === 'none' && background === 'rgba(0, 0, 0, 0)');
       if (plain.length !== graphics) problems.push(`${html}: in light mode, ${plain.length} pictures with a graphic shown without a background, not ${graphics}`);
     }
+    if (doc.name in graphicsInside) {
+      const srcs = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false },
+        page => page.evaluate(`[...new Set([...document.querySelectorAll('img.tex8web-graphic')].map(img => img.getAttribute('src')))]`));
+      let checked = 0;
+      await chrome.withPage('about:blank', { javascript: false }, async page => {
+        for (const src of srcs) {
+          const svg = readFileSync(join(pre, src), 'utf8').replace(/^<\?xml[^>]*>/, '');
+          const outside = await page.evaluate(graphicOutside(svg));
+          checked += outside.length;
+          if (outside.some(Boolean)) problems.push(`${src}: a graphic outside its picture`);
+        }
+      });
+      if (checked !== graphicsInside[doc.name]) problems.push(`${html}: ${checked} graphics not clipped in the pictures, not ${graphicsInside[doc.name]}`);
+    }
     for (const [width, [wide, claps]] of Object.entries(wideBlocks[doc.name] ?? {})) {
       const blocks = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: Number(width) },
         page => page.evaluate(scrollers));
@@ -1741,6 +1770,7 @@ const stray = strayKeys(tocFonts).map(name => `no document ${name} for its conte
 stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
 stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));
 stray.push(...strayKeys(darkPictures).map(name => `no document ${name} for its pictures in dark mode`));
+stray.push(...strayKeys(graphicsInside).map(name => `no document ${name} for its graphics in pictures`));
 stray.push(...strayKeys(wideBlocks).map(name => `no document ${name} for its wide blocks`));
 stray.push(...strayKeys(descLabels).map(name => `no document ${name} for its description labels`));
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);

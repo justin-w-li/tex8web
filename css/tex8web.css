@@ -1171,6 +1171,7 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
 @media print {
     :root { color-scheme: light !important; --tex8web-picture-filter: none !important;
         --tex8web-highlight: transparent; print-color-adjust: exact; }
+    img.tex8web-graphic { background-color: transparent !important; }
     .tex8web-controls, .tex8web-toc, .tex8web-preview, .tex8web-viewer, .tex8web-permalink {
         display: none !important; }
     html body { margin-block: 0; padding-inline: 0; --tex8web-column: min(var(--tex8web-textwidth), 100vw); }
