@@ -1,0 +1,25 @@
+% References to appendix chapters in scrreprt with cleveref and without
+% hyperref: to the chapters, to a section and an equation in one, and a
+% label after an unnumbered chapter in the appendix.
+\documentclass{scrreprt}
+\usepackage{cleveref}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sec:a}; (\ref{eq:a}); \ref{main}.
+
+Cref: \cref{app:a}; \Cref{app:b}.
+
+Starred: \ref{app:s}.
+\appendix
+\chapter{Extra}\label{app:a}
+Here \ref{app:a}.
+\section{More}\label{sec:a}
+\begin{equation}
+x = 1 \label{eq:a}
+\end{equation}
+\chapter{Second extra}\label{app:b}
+In B: \ref{app:b}.
+\section{Last}
+\chapter*{Starred}\label{app:s}
+Text of the unnumbered chapter.
+\end{document}

@@ -1,0 +1,14 @@
+% Checks cases that a fix of references to appendix chapters must not
+% break: the appendix package's appendices environment in a report.
+\documentclass{report}
+\usepackage[page]{appendix}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sec:a}; \ref{main}.
+\begin{appendices}
+\chapter{Extra}\label{app:a}
+\section{More}\label{sec:a}
+\chapter{Second extra}\label{app:b}
+Text of the second appendix.
+\end{appendices}
+\end{document}

@@ -1,0 +1,38 @@
+% References to appendix chapters in a report, without hyperref: to the
+% chapters, to a section and an equation in one, from before the appendix
+% and from inside it, in italics, sans-serif, typewriter, a footnote, a
+% theorem, and a heading; a chapter with a short title, and a label after
+% an unnumbered chapter in the appendix.
+\documentclass{report}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\tableofcontents
+\chapter{Main}\label{main}
+Before: \ref{app:a}; \ref{app:b}; \ref{app:c}; \ref{sec:a}; (\ref{eq:a}); \ref{main}.
+
+In italics, \emph{\ref{app:a}}; in sans-serif, \textsf{\ref{app:b}}; in typewriter, \texttt{\ref{app:c}}.
+
+In a note.\footnote{In a footnote, \ref{app:b}.}
+
+\begin{theorem}
+In a theorem, \ref{app:c}.
+\end{theorem}
+
+\section{About appendix \ref{app:a}}
+Text of the section.
+\appendix
+\chapter{Extra}\label{app:a}
+Here \ref{app:a}. Main is \ref{main}.
+\section{More}\label{sec:a}
+\begin{equation}
+x = 1 \label{eq:a}
+\end{equation}
+\chapter{Second extra}\label{app:b}
+In B: \ref{app:b}; \ref{sec:a}.
+\chapter[Short]{Long title}\label{app:c}
+\begin{equation}
+y = 2 \label{eq:c}
+\end{equation}
+\chapter*{Starred}\label{app:s}
+After: \ref{app:a}; \ref{app:b}; \ref{app:c}; (\ref{eq:c}); starred \ref{app:s}.
+\end{document}

@@ -1,0 +1,14 @@
+% References to appendix chapters in a report that numbers them in roman
+% numerals, with \thechapter redefined after \appendix.
+\documentclass{report}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sec:a}; \ref{main}.
+\appendix
+\renewcommand\thechapter{\Roman{chapter}}
+\chapter{Extra}\label{app:a}
+Here \ref{app:a}.
+\section{More}\label{sec:a}
+\chapter{Second extra}\label{app:b}
+In B: \ref{app:b}.
+\end{document}

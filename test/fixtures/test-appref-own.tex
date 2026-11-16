@@ -1,0 +1,17 @@
+% A report that defines a counter named appendix, with its own
+% \theappendix, for its own numbered notes, and references to them and
+% to the appendix chapters.
+\documentclass{report}
+\newcounter{appendix}
+\renewcommand\theappendix{N-\arabic{appendix}}
+\newcommand\note{\par\refstepcounter{appendix}Note \theappendix. }
+\begin{document}
+\chapter{Main}\label{main}
+\note\label{note:a}Text of the first note.
+
+Ref: \ref{note:a}; \ref{note:b}; \ref{app:a}; \ref{sec:a}; \ref{main}.
+\appendix
+\chapter{Extra}\label{app:a}
+\section{More}\label{sec:a}
+\note\label{note:b}Text of the second note.
+\end{document}

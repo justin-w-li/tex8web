@@ -2614,6 +2614,82 @@ function hypcapProblems(html, { captions, texts = [], refs }) {
   return problems;
 }
 
+// References to appendix chapters, and to sections and equations in them:
+// a paragraph's text as in the PDF, with the id of the heading that each
+// of its links goes to (null for a link not checked). A pattern is matched
+// against the page.
+const toc = (number, id, title) => `<span class='appendixToc'><span class='tocnumber'>${number}</span><a href='#${id}'[^>]*>${title}</a>`;
+const appendixRefs = {
+  'test-appref': [
+    ['Before: A; B; C; A.1; (A.1); 1.', ['extra', 'second-extra', 'short', 'more', null, 'main']],
+    ['In italics, A; in sans-serif, B; in typewriter, C.', ['extra', 'second-extra', 'short']],
+    ['In a footnote, B.', ['second-extra']], ['In a theorem, C.', ['short']],
+    ['Here A. Main is 1.', ['extra', 'main']], ['In B: B; A.1.', ['second-extra', 'more']],
+    // (a label after \chapter* takes the last number outside a group, as in
+    // the PDF)
+    ['After: A; B; C; (C.1); starred C.', ['extra', 'second-extra', 'short', null, null]],
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*About appendix <a href='#extra'>A(?:<!--(?:(?!-->)[^])*-->)?<\/a><\/h3>/,
+    // (the contents entries of appendix chapters, with a short title)
+    new RegExp(`${toc('A', 'extra', 'Extra')}[^]*${toc('B', 'second-extra', 'Second extra')}[^]*${toc('C', 'short', 'Short')}`),
+  ],
+  'test-appref-hyperref': [
+    ['Ref: A; B; A.1; (A.1); 1.', ['extra', 'second-extra', 'more', null, 'main']],
+    ['Autoref: Appendix A; Appendix B; Appendix A.1; Equation A.1; chapter 1.', ['extra', 'second-extra', 'more', null, 'main']],
+    ['Cref: chapter A; chapter B; section A.1; eq. (A.1); chapter 1.', ['extra', 'second-extra', 'more', null, 'main']],
+    ['Capital Cref: Chapter A; Chapter B; Section A.1; Equation (A.1).', ['extra', 'second-extra', 'more', null]],
+    ['Nameref: Extra; Second extra.', ['extra', 'second-extra']],
+    ['Here A.', ['extra']], ['In B: Appendix B.', ['second-extra']],
+  ],
+  ...Object.fromEntries(['book', 'memoir', 'scrbook'].map(name => [`test-appref-${name}`, [
+    ['Ref: A; B; A.1; (A.1); 1.', ['extra', 'second-extra', 'more', null, 'main']],
+    ['Autoref: Appendix A; Appendix B.', ['extra', 'second-extra']],
+    ['Here A.', ['extra']], ['In B: B.', ['second-extra']],
+  ]])),
+  'test-appref-scrreprt': [
+    ['Ref: A; B; A.1; (A.1); 1.', ['extra', 'second-extra', 'more', null, 'main']],
+    ['Cref: chapter A; Chapter B.', ['extra', 'second-extra']],
+    // (a label after \chapter* takes the last number, as in the PDF)
+    ['Starred: B.1.', [null]],
+    ['Here A.', ['extra']], ['In B: B.', ['second-extra']],
+  ],
+  'test-appref-roman': [
+    ['Ref: I; II; I.1; 1.', ['extra', 'second-extra', 'more', 'main']],
+    ['Here I.', ['extra']], ['In B: II.', ['second-extra']],
+  ],
+  // (the document's own \theappendix stays for its own counter)
+  'test-appref-own': [
+    ['Note N-1. Text of the first note.'], ['Note N-2. Text of the second note.'],
+    ['Ref: N-1; N-2; A; A.1; 1.', [null, null, 'extra', 'more', 'main']],
+  ],
+  'test-appref-article': [
+    ['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']],
+    ['Cref: section A; Section A.1.', ['extra', 'more']],
+  ],
+  'test-appref-appendices': [['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']]],
+};
+function appendixRefProblems(html, checks) {
+  const problems = [];
+  const paragraphs = [...html.matchAll(/<p[ >][^]*?<\/p>/g)].map(([inner]) => inner);
+  for (const check of checks) {
+    if (check instanceof RegExp) {
+      if (!check.test(html)) problems.push(`not in the page: ${check.source.slice(0, 80)}`);
+      continue;
+    }
+    const [sentence, targets] = check;
+    const inner = paragraphs.find(p => plain(p).includes(sentence));
+    if (inner === undefined) {
+      const near = paragraphs.map(plain).find(p => p.includes(sentence.match(/^[^:,]*/)[0]));
+      problems.push(`no paragraph reads '${sentence}'${near ? `: '${near}'` : ''}`);
+      continue;
+    }
+    if (!targets) continue;
+    const links = [...inner.matchAll(/<a [^>]*href='#([^']+)'/g)].map(([, id]) => id).filter(id => !id.startsWith('fn'));
+    const got = targets.map((id, i) => id === null ? null : links[i]);
+    if (got.join('|') !== targets.join('|')) problems.push(`the links of '${sentence}' go to '${links.join('|')}'`);
+  }
+  return problems;
+}
+
 // the problems in a built page's logs, the page, and the files beside it
 function check(doc, result, out, aux) {
   const problems = [];
@@ -2634,6 +2710,7 @@ function check(doc, result, out, aux) {
   const page = join(out, doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
   if (hypcap[doc.name]) problems.push(...hypcapProblems(html, hypcap[doc.name]));
+  if (appendixRefs[doc.name]) problems.push(...appendixRefProblems(html, appendixRefs[doc.name]));
   // memoir emulates moreverb without its tex4ht configuration hooks.
   if (/<head>(?:(?!<\/head>)[^])*<div class='listinginput'>/.test(html)) problems.push('listinginput in the head');
   if (doc.name.startsWith('test-verbatim-font-listings')) {

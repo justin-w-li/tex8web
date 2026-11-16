@@ -1,0 +1,16 @@
+% Checks cases that a fix of references to appendix chapters must not
+% break: an article's appendix sections, with hyperref and cleveref.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\begin{document}
+\section{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sub:a}; \ref{main}.
+
+Cref: \cref{app:a}; \Cref{sub:a}.
+\appendix
+\section{Extra}\label{app:a}
+\subsection{More}\label{sub:a}
+\section{Second extra}\label{app:b}
+Text of the second appendix.
+\end{document}

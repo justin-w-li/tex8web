@@ -1,0 +1,19 @@
+% References to appendix chapters in book with hyperref: to the chapters,
+% and to a section and an equation in one.
+\documentclass{book}
+\usepackage{hyperref}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sec:a}; (\ref{eq:a}); \ref{main}.
+
+Autoref: \autoref{app:a}; \autoref{app:b}.
+\appendix
+\chapter{Extra}\label{app:a}
+Here \ref{app:a}.
+\section{More}\label{sec:a}
+\begin{equation}
+x = 1 \label{eq:a}
+\end{equation}
+\chapter{Second extra}\label{app:b}
+In B: \ref{app:b}.
+\end{document}

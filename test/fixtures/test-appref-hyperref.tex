@@ -1,0 +1,28 @@
+% References to appendix chapters in a report with hyperref and
+% cleveref: \ref, \autoref, \cref, \Cref, and \nameref to the chapters,
+% and to a section and an equation in one.
+\documentclass{report}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\begin{document}
+\chapter{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sec:a}; \eqref{eq:a}; \ref{main}.
+
+Autoref: \autoref{app:a}; \autoref{app:b}; \autoref{sec:a}; \autoref{eq:a}; \autoref{main}.
+
+Cref: \cref{app:a}; \cref{app:b}; \cref{sec:a}; \cref{eq:a}; \cref{main}.
+
+Capital Cref: \Cref{app:a}; \Cref{app:b}; \Cref{sec:a}; \Cref{eq:a}.
+
+Nameref: \nameref{app:a}; \nameref{app:b}.
+\appendix
+\chapter{Extra}\label{app:a}
+Here \ref{app:a}.
+\section{More}\label{sec:a}
+\begin{equation}
+x = 1 \label{eq:a}
+\end{equation}
+\chapter{Second extra}\label{app:b}
+In B: \autoref{app:b}.
+\end{document}
