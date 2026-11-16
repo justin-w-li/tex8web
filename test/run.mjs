@@ -3011,12 +3011,12 @@ function check(doc, result, out, aux) {
       : [...['topenv', 'topfile', 'mbox_esc'].map(lines), ...['cellL', 'cellC', 'cellR', 'lrbox', 'fbox', 'mbox_esc'].map(lines),
         ...['cbox', 'fcbox', 'framecell'].map(lines), 'esc = α;', ...['makebox', 'minicell', 'pcol', 'parbox', 'multi', 'long',
         'label', 'thm', 'note', 'raise', 'sbox', 'savebox', 'boxpos', 'hbox', 'italic', 'sans', 'inbox', 'cellmid', 'item',
-        'twoA', 'twoB', 'cellfbox', 'resize', 'newenv', 'saved', 'hboxed', 'hboxnew', 'shape', 'rule', 'delims', ...(hyperref ? ['link', 'utf'] : [])].map(lines),
+        'twoA', 'twoB', 'cellfbox', 'resize', 'newenv', 'saved', 'hboxed', 'hboxnew', 'shape', 'shapelow', 'rule', 'delims', ...(hyperref ? ['link', 'utf'] : [])].map(lines),
         ...(hyperref ? ['int x;'] : [])];
     if (texts.join('|') !== expected.join('|')) problems.push(`the displayed listings read '${texts.join('|')}'`);
     const celled = caption ? ['cellenv();', 'cellL();', 'minienv();']
       : [...['cellL', 'cellC', 'cellR', 'cbox', 'framecell', 'minicell', 'pcol', 'multi', 'long', 'thm', 'boxpos', 'cellmid',
-        'cellfbox', 'newenv', 'shape', 'rule'].map(lines), 'esc = α;', ...(hyperref ? ['int x;'] : [])];
+        'cellfbox', 'newenv', 'shape', 'shapelow', 'rule'].map(lines), 'esc = α;', ...(hyperref ? ['int x;'] : [])];
     for (const text of celled) {
       const pre = pres[texts.indexOf(text)];
       const before = pre ? flat.slice(0, pre.index) : '';
@@ -3031,12 +3031,14 @@ function check(doc, result, out, aux) {
     }
     if (pres.some(([body]) => /<mjx-container|mathjax/.test(body))) problems.push('math in a displayed listing');
     // (each listing's frame=, as its <pre>'s border in the page's CSS:
-    // styles, widths, and padding, from top to left; no border for
-    // frameshape=; and the paragraph around a box saved in that paragraph)
-    const single = 'solid solid solid solid|0.4pt 0.4pt 0.4pt 0.4pt|3.0pt 3.0pt 3.0pt 3.0pt';
+    // styles, widths, and padding in ems of the 10pt body, from top to
+    // left; no border for frameshape=; and the paragraph around a box
+    // saved in that paragraph)
+    const single = 'solid solid solid solid|0.04em 0.04em 0.04em 0.04em|0.3em 0.3em 0.3em 0.3em';
     const frames = { 'fbox();': single, 'framecell();': single, 'hboxnew();': single,
-      'saved();': 'none none none solid|0.0pt 0.0pt 0.0pt 0.4pt|0.0pt 0.0pt 0.0pt 3.0pt',
-      'rule();': 'solid none double none|2.0pt 0.0pt 6.0pt 0.0pt|5.0pt 0.0pt 5.0pt 0.0pt', 'cellL();': undefined, 'shape();': undefined };
+      'saved();': 'none none none solid|0em 0em 0em 0.04em|0em 0em 0em 0.3em',
+      'rule();': 'solid none double none|0.2em 0em 0.6em 0em|0.5em 0em 0.5em 0em', 'cellL();': undefined, 'shape();': undefined,
+      'shapelow();': undefined };
     for (const [text, sides] of caption ? [] : Object.entries(frames)) {
       const id = pres[texts.indexOf(text)]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
       const rule = id && styles.match(new RegExp(`#${id}\\s*\\{\\s*border-style:\\s*([^;]*);\\s*border-width:\\s*([^;]*);\\s*padding:\\s*([^;}]*)`));
@@ -3050,7 +3052,12 @@ function check(doc, result, out, aux) {
       const start = flat.indexOf(words), end = pre ? flat.indexOf('then', pre.index) : -1;
       if (start < 0 || end < 0 || /<\/?p\b/.test(flat.slice(start, end))) problems.push(`the paragraph around the listing '${text}' is broken`);
     }
-    const formulas = [...flat.matchAll(/(\S*) (?:<\/span>)?(?:<span class='[^']*'>)?(?:<span class='tex8web-nowrap'>)?(?:<span class='mathjax-inline'[^>]*>)?<mjx-container aria-label='([^']*)'/g)]
+    // (math in a caption, typeset; the other formulas outside captions)
+    const captionMath = [...flat.matchAll(/<figcaption[^>]*>((?:(?!<\/figcaption>)[^])*)<\/figcaption>/g)]
+      .map(([, body]) => (body.match(/<mjx-container/g) ?? []).length).join('|');
+    if (caption && captionMath !== '0|1|1|0') problems.push(`the captions hold '${captionMath}' formulas, not '0|1|1|0'`);
+    const outside = flat.replace(/<figcaption[^>]*>(?:(?!<\/figcaption>)[^])*<\/figcaption>/g, '');
+    const formulas = [...outside.matchAll(/(\S*) (?:<\/span>)?(?:<span class='[^']*'>)?(?:<span class='tex8web-nowrap'>)?(?:<span class='mathjax-inline'[^>]*>)?<mjx-container aria-label='([^']*)'/g)]
       .map(([, before, label]) => `${before.replace(/^.*>/, '')} ${label}`);
     const wanted = caption ? [...'ABCD'].map(letter => `then script ${letter}`)
       : ['then x plus 1', ...[...'ABCDEFGHIJKLMNOPQRSTUVWXY'].map(letter => `then script ${letter}`),
@@ -3058,7 +3065,7 @@ function check(doc, result, out, aux) {
         'then script Z', ...(hyperref ? ['then 1 plus 2', 'then 2 plus 3', 'then 3 plus 4'] : [])];
     if (formulas.join('|') !== wanted.join('|')) problems.push(`the formulas after the displayed listings read '${formulas.join('|')}'`);
     if (!caption && !/then <span class='mathjax-block'[^>]*><mjx-container aria-label='z plus 1'/.test(flat)) problems.push('no display z+1 after the displayed listings');
-    const count = (flat.match(/<mjx-container/g) ?? []).length;
+    const count = (outside.match(/<mjx-container/g) ?? []).length;
     if (count !== wanted.length) problems.push(`${count} formulas, not ${wanted.length}`);
     // (each \ref reads its listing's number and links to an anchor after
     // the listing before it, and before the listing's own <pre>)
@@ -3073,8 +3080,9 @@ function check(doc, result, out, aux) {
         if (target < 0 || before === undefined || target > before || (after !== undefined && target < after)) problems.push(`the reference to listing ${number} does not land at the listing`);
       });
       const captions = [...flat.matchAll(/<figcaption class='caption'[^>]*>((?:(?!<\/figcaption>)[^])*)<\/figcaption>/g)]
-        .map(([, body]) => body.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim());
-      if (captions.join('|') !== 'Listing 1: Top env|Listing 2: Cell env|Listing 3: Cell file|Listing 4: Mini env') problems.push(`the captions read '${captions.join('|')}'`);
+        .map(([, body]) => body.replace(/<mjx-container(?:(?!<\/mjx-container>)[^])*<\/mjx-container>/g, '$')
+          .replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim());
+      if (captions.join('|') !== 'Listing 1: Top env|Listing 2: Cell env $|Listing 3: Cell file $|Listing 4: Mini env') problems.push(`the captions read '${captions.join('|')}'`);
     }
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {

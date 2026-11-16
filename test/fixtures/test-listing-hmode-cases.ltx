@@ -135,15 +135,15 @@ hboxed();
 then $k$.
 
 % (an environment of \lstnewenvironment in a saved box after text, with
-% a frame; a frame of frameshape=; a frame's framerule, framesep, and
-% rulecolor, and a double side)
+% a frame; a frame of frameshape=, in capitals and in small letters; a
+% frame's framerule, framesep, and rulecolor, and a double side)
 Consider the newenv
 \begin{hboxed}\begin{code}[frame=single]
 hboxnew();
 \end{code}\end{hboxed}
 then $l$.
 
-\begin{tabular}{l} \lstline[frameshape={RYR}{y}{y}{RYR}]{36} \end{tabular} then $m$.
+\begin{tabular}{l} \lstline[frameshape={RYR}{y}{y}{RYR}]{36} \\ \lstline[frameshape={ryr}{y}{y}{ryr}]{38} \end{tabular} then $m$.
 
 \begin{tabular}{l} \lstline[frame=tB,framerule=2pt,framesep=5pt,rulecolor=\color{red}]{37} \end{tabular} then $n$.
 

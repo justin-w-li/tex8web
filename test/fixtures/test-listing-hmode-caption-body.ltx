@@ -1,6 +1,7 @@
 % Captioned displayed listings in inner horizontal mode, each with a
-% \label that a \ref at the end points to. (The \label of a
-% \lstinputlisting has no target at the top level either.)
+% \label that a \ref at the end points to, and math in two captions.
+% (The \label of a \lstinputlisting has no target at the top level
+% either.)
 \begin{document}
 \section{Captioned listings in boxes}
 % (guard: at the top level, in vertical mode)
@@ -10,12 +11,12 @@ topenv();
 Then the boxes.
 
 \begin{tabular}{l}
-\begin{lstlisting}[caption={Cell env},label={lst:cellenv}]
+\begin{lstlisting}[caption={Cell env $\mathcal{O}(n)$},label={lst:cellenv}]
 cellenv();
 \end{lstlisting}
 \end{tabular} then $\mathcal{A}$.
 
-\begin{tabular}{l} \lstinputlisting[firstline=2,lastline=2,caption={Cell file}]{test-listing-hmode-code.txt} \end{tabular} then $\mathcal{B}$.
+\begin{tabular}{l} \lstinputlisting[firstline=2,lastline=2,caption={Cell file $n$}]{test-listing-hmode-code.txt} \end{tabular} then $\mathcal{B}$.
 
 \begin{tabular}{l} \begin{minipage}{12em}
 \begin{lstlisting}[caption={Mini env},label={lst:minienv}]

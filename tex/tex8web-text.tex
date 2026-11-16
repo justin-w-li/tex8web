@@ -86,16 +86,20 @@
 % top level (\HLet\lst@frameInit): lstmisc.sty defines \lst@frameInit
 % again when it loads the frame aspect, and the frame's \par in the box
 % closes the paragraph around the box. The sides of frame= are drawn as
-% the <pre>'s border instead, with its framerule, framesep, and rulesep,
-% after html4.4ht's Init hook has given the <pre> its id and the color of
-% rulecolor. A double side is a CSS double border. A frame of frameshape=
-% is not drawn. html4.4ht closes the paragraph before a displayed listing
-% (\EndP), when the environment or \lstinputlisting starts and again in
-% \a:listings, also from inside the <span> of an \fbox or \fcolorbox or an
-% \hbox that a document saves, so no paragraph is closed in inner
-% horizontal mode, and the box opens no paragraph. The hook of the
-% lstlisting environment runs outside the environment's group, so \EndP is
-% restored after its end.
+% the <pre>'s border instead, with its framerule, framesep, and rulesep
+% in ems of the body, after html4.4ht's Init hook has given the <pre> its
+% id and the color of rulecolor. A double side is a CSS double border.
+% A frame of frameshape= is not drawn: frameshape= puts its shapes'
+% letters (y, n, r, in either case) in \lst@frame, and frame= puts there
+% only t, r, b, l, each capital with its small letter. The listing's
+% caption is typeset with the document's \everymath, for its math.
+% html4.4ht closes the paragraph before a displayed listing (\EndP), when
+% the environment or \lstinputlisting starts and again in \a:listings,
+% also from inside the <span> of an \fbox or \fcolorbox or an \hbox that
+% a document saves, so no paragraph is closed in inner horizontal mode,
+% and the box opens no paragraph. The hook of the lstlisting environment
+% runs outside the environment's group, so \EndP is restored after its
+% end.
 % listings.4ht writes a caption without \@makecaption, so the mark of the
 % caption's skips is added to its text (\web@capskip, under figures).
 \@ifpackageloaded{listings}{%
@@ -104,12 +108,25 @@
          \expandafter\def\csname a:listings-init\endcsname{\ht:special{t4ht@(}}}
         {\HtmlParOn\HCode{</code>}}%
     \lst@AddToHook{TextStyle}{\let\lst@boxtrue\relax}%
-    \lst@AddToHook{BoxUnsafe}{\everymath{}\let\lst@frameInit\relax\let\lst@frameExit\relax
+    \newtoks\web@lsteverymath
+    \lst@AddToHook{BoxUnsafe}{\web@lsteverymath\everymath\everymath{}%
+        \let\web@lstMakeCaption\lst@MakeCaption
+        \def\lst@MakeCaption##1{\everymath\web@lsteverymath
+            \web@lstMakeCaption{##1}\everymath{}}%
+        \let\lst@frameInit\relax\let\lst@frameExit\relax
         \let\EndP\relax\HtmlParOff
         \ifcsname lst@frame\endcsname\ifx\lst@frame\@empty\else
-            \lst@IfSubstring Y\lst@frame{}{\lst@IfSubstring N\lst@frame{}%
-                {\let\lst@InitFinalize\web@lstframe}}%
+            \let\web@lstisframe\@firstoftwo
+            \expandafter\web@lstletter\lst@frame\relax
+            \web@lstpair tT\web@lstpair rR\web@lstpair bB\web@lstpair lL%
+            \web@lstisframe{\let\lst@InitFinalize\web@lstframe}{}%
         \fi\fi}%
+    \def\web@lstletters{tTrRbBlL}%
+    \def\web@lstletter#1{\ifx\relax#1\else
+        \lst@IfSubstring#1\web@lstletters{}{\let\web@lstisframe\@secondoftwo}%
+        \expandafter\web@lstletter\fi}%
+    \def\web@lstpair#1#2{\lst@IfSubstring#2\lst@frame
+        {\lst@IfSubstring#1\lst@frame{}{\let\web@lstisframe\@secondoftwo}}{}}%
     \def\web@lstframe{\let\web@lststyle\@empty\let\web@lstwidth\@empty\let\web@lstpad\@empty
         \web@lstside tT\web@lstside rR\web@lstside bB\web@lstside lL%
         \web@Css{\#listing-\listingN{border-style:\web@lststyle;
@@ -120,8 +137,8 @@
             {\lst@IfSubstring#1\lst@frame
                 {\web@lstadd{solid}\lst@framerulewidth\lst@frametextsep}{\web@lstadd{none}\z@\z@}}}%
     \def\web@lstadd#1#2#3{\edef\web@lststyle{\web@lststyle\space#1}%
-        \edef\web@lstwidth{\web@lstwidth\space\the\dimexpr#2\relax}%
-        \edef\web@lstpad{\web@lstpad\space\the\dimexpr#3\relax}}%
+        \edef\web@lstwidth{\web@lstwidth\space\web@bodyem{\dimexpr#2\relax}}%
+        \edef\web@lstpad{\web@lstpad\space\web@bodyem{\dimexpr#3\relax}}}%
     \let\web@lstinputlisting\lst@InputListing
     \def\lst@InputListing#1{\begingroup\ifinner\ifhmode\let\EndP\relax\fi\fi
         \web@lstinputlisting{#1}\endgroup}%
