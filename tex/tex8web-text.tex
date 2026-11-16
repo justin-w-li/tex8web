@@ -573,6 +573,41 @@
     class="longtable\web@place{\web@order\LTleft}{\web@order\LTright}"\Hnewline
     \GROUPS\Hnewline}<>\HAlign}
 
+% array.4ht's \@tabular opens a $ in every tabular, which its \endtabular
+% closes. In a picture, tex4ht calls the \endtabular saved by \HLet
+% (tex4ht.sty) instead, and array.sty's closes no $, so the build stops
+% with "Extra }, or forgotten $". The $ is added to the saved one.
+\ExplSyntaxOn
+\@ifpackageloaded { array }
+  {
+    \web@needs { o:endtabular: }
+    \tl_if_in:cnF { o:endtabular: } { $ }
+      { \tl_replace_once:cnn { o:endtabular: } { \endarray } { \endarray $ } }
+  }
+  { }
+% In a picture, the kernel's \ar@ialign runs colortbl's tbl/row/init hook,
+% \@rowc@lors, in a \noalign where \noalign does nothing (latex.ltx).
+% xcolor.4ht's \@rowc@lors calls the primitive (\o:noalign:) instead, so
+% the build stops with "Misplaced \noalign". In a picture, \noalign is
+% called instead, as colortbl.sty does.
+\@ifpackageloaded { colortbl }
+  {
+    \web@needs { @rowc@lors }
+    \cs_set_eq:NN \__web_rowcolors: \@rowc@lors
+    \cs_set:Npn \__web_rowcolors_picture:
+      { \noalign { \global \advance \rownum \c_one_int } \@rowcolors }
+    \cs_set:Npn \@rowc@lors
+      {
+        \ifx \EndPicture \:UnDef
+          \exp_after:wN \__web_rowcolors:
+        \else
+          \exp_after:wN \__web_rowcolors_picture:
+        \fi
+      }
+  }
+  { }
+\ExplSyntaxOff
+
 % the space that \\[len] adds below a row, in ems of the text, as the
 % height of the row that html4.4ht writes after it. latex.4ht keeps a
 % positive len in \HBorderspace and adds html4.4ht's row (\h:HBorder to
