@@ -2098,6 +2098,7 @@ const tables = {
     dcolumn('Stars', 'A', 'B'), dcolumn('Stars one', '0.123\u2217\u2217\u2217', '-0.5\u2217'),
     dcolumn('Stars error', '(0.045)', '(0.25)'), dcolumn('Stars sym', '1.25\u2217\u2217', '10.5'),
     dcolumn('Stars wide', '0.75'),
+    /123<sup>(?:<[^>]*>)*\u2217\u2217\u2217</, /25<sup>(?:<[^>]*>)*\u2217\u2217</,
     dcolumn('Dot one', '1.5', '2.25'), dcolumn('Dot two', '10.25', '3'), dcolumn('Dot last', '2.5', '30.5'),
     dcolumn('Multi one', '12.5'), dcolumn('Multi two', '1.5'), dcolumn('Multi last', '2.5'),
     dcolumn('Long one', '1.25'), dcolumn('Long two', '100.5'),
