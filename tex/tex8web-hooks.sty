@@ -464,6 +464,17 @@
     }
 \ExplSyntaxOff
 
+% \pdfoutput, which a document written for pdflatex sets to 1, often before
+% \documentclass. pdfTeX then writes a PDF and no DVI. Packages read the
+% register as they load: graphics.cfg, color.cfg, and pict2e.cfg choose
+% their pdftex driver from it, and iftex sets \ifpdf. So it is set back to
+% 0 before each file is read, at \begin{document} for the code that runs
+% there, and before each page is shipped out, where pdfTeX reads it to
+% choose the output.
+\AddToHook{file/before}{\global\pdfoutput\z@}
+\AddToHook{env/document/before}{\global\pdfoutput\z@}
+\AddToHook{shipout/before}{\global\pdfoutput\z@}
+
 % report, book, and memoir: \@makechapterhead as the preamble leaves it,
 % for tex8web-page.tex to read the chapter's spacing, and \part and \@part
 % for a part's. report.4ht and book.4ht empty \@makechapterhead and replace
