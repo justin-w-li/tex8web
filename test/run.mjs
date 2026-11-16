@@ -2668,7 +2668,8 @@ const appendixRefs = {
   ],
   'test-appref-appendices': [['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']]],
   'test-appref-amsbook': [
-    ['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']],
+    // (amsbook numbers sections without the chapter)
+    ['Ref: A; B; 1; 1.', ['extra', 'second-extra', 'more', 'main']],
     ['Here A.', ['extra']], ['In B: B.', ['second-extra']],
   ],
   // (labels inside chapter titles, and chapters with nothing numbered

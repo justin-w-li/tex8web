@@ -205,6 +205,18 @@
         \egroup
     }%
     \HLet\@@@setcref\web@setcref
+    % Without hyperref, cleveref's \appendix replaces cleveref.4ht's
+    % \refstepcounter@noarg with one that sets \cref@currentlabel locally.
+    % tex4ht steps a heading's counter in a group, so a label after the
+    % heading would keep the type and number before it. cleveref.4ht's
+    % version is kept. Its type is the counter's, as LaTeX's first aid for
+    % cleveref gives in the PDF ("chapter A").
+    \ifdefined\appendix
+        \let\web@crefappendix\appendix
+        \def\appendix{\let\web@crefstep\refstepcounter@noarg
+            \web@crefappendix
+            \global\let\refstepcounter@noarg\web@crefstep}%
+    \fi
 }{}
 
 % --- logos ------------------------------------------------------------------
@@ -253,6 +265,36 @@
     \else
         \web@seccntformat{#1}%
     \fi}
+
+% After \appendix, the tex4ht files of report, book, amsbook, scrreprt,
+% and scrbook draw a chapter as a unit named appendix, and step its
+% counter inside a group. \Get:SecAnchor (latex.4ht) sets a unit's label
+% from \p@<unit>\the<unit>, so a label after an appendix chapter keeps
+% the number stepped before it. The label of that unit is the chapter's,
+% as in the PDF, also when a document has a counter named appendix. A
+% unit that steps no chapter, such as scrreprt's \chapter*, keeps the
+% label before it, as in the PDF.
+% hyperref names a section after \appendix "appendix", as in "Appendix
+% A.1" from \autoref. tex4ht writes the name of a label for \autoref from
+% \NR:Type (nameref.4ht), the name of its unit.
+\catcode58 11
+\web@needs{Get:SecAnchor}
+\let\web@getsecanchor\Get:SecAnchor
+% (tex4ht.sty passes the unit's name from \string, as other characters)
+\edef\web@appendixunit{\detokenize{appendix}}
+\edef\web@sectionunit{\detokenize{section}}
+\def\web@appendixchapter{-1}
+\def\Get:SecAnchor#1{%
+    \edef\web@unit{\detokenize{#1}}%
+    \ifx\web@unit\web@appendixunit
+        \ifnum\c@chapter=\web@appendixchapter\else\def\web@unit{chapter}\fi
+        \xdef\web@appendixchapter{\the\c@chapter}%
+    \fi
+    \ifx\web@unit\web@sectionunit
+        \ifnum\web@appendixchapter<0 \else\gdef\NR:Type{appendix}\fi
+    \fi
+    \expandafter\web@getsecanchor\expandafter{\web@unit}}
+\catcode58 12
 
 % --- theorems ---------------------------------------------------------------
 
