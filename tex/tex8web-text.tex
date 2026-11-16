@@ -101,7 +101,10 @@
 % frame=shadowbox gets the lightness of a border in dark mode, as
 % assets.colors_in_dark_mode gives the frame's rulecolor. Its offsets are
 % also custom properties, which give a boxed listing room for the shadow
-% (css/tex8web.css).
+% (css/tex8web.css). A framed listing that scrolls sideways does not fade
+% at its edges (.tex8web-scrolls): the fade's mask would fade the frame's
+% side rules and hide the shadow, which is outside the border box, and
+% the frame shows where the text is cut.
 \@ifpackageloaded{listings}{%
     \Configure{lstinline}
         {\HCode{<code class="lstinline">}\HtmlParOff
@@ -139,7 +142,7 @@
             \let\web@lstshadow\@firstoftwo\fi\fi
         \web@lstside tT-y\web@lstside rR{}x\web@lstside bB{}y\web@lstside lL-x%
         \web@Css{\#listing-\listingN{border-style:\web@lststyle;
-            border-width:\web@lstwidth; padding:\web@lstpad}}%
+            border-width:\web@lstwidth; padding:\web@lstpad; mask-image:none}}%
         \web@lstshadow{\begingroup\lst@rulesepcolor\web@hex{.}\web@lstcolor
             \web@Css{\#listing-\listingN{box-shadow:\web@lstx\space\web@lsty\space 0 0
                 \ifx\web@lstcolor\web@lstblack currentColor\else light-dark(\#\web@lstcolor,

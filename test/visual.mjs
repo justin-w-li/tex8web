@@ -1551,6 +1551,15 @@ const boxedListingScroll = `(() => {
     if (!(x > 0 && y > 0)) problems.push(\`the listing shadowed(); has no shadow: \${getComputedStyle(shadowed).boxShadow}\`);
     else if (c.right + x > right + 0.1 || c.bottom + y > bottom + 0.1) problems.push(\`the shadow of shadowed(); reaches \${c.right + x - right}px right and \${c.bottom + y - bottom}px below the inside of its frame\`);
   }
+  // (a framed listing that scrolls, alone and in a frame: its rules and
+  // its shadow are not faded out with the text that scrolls)
+  for (const name of ['framedwide', 'boxedwide']) {
+    const listing = [...document.querySelectorAll('pre, .tex8web-boxed-listing > code')].find(el => el.textContent.trim().startsWith(name + '();'));
+    const style = listing && getComputedStyle(listing);
+    if (!listing) problems.push(\`no listing \${name}();\`);
+    else if (!(listing.scrollWidth > listing.clientWidth && parseFloat(style.borderRightWidth) > 0 && style.boxShadow !== 'none')) problems.push(\`the listing \${name}(); does not scroll in a frame with a shadow\`);
+    else if (style.maskImage !== 'none') problems.push(\`the frame and shadow of \${name}(); are under the fade of its scrolling: \${style.maskImage}\`);
+  }
   // (boxpos=t with a caption: the word at the caption's top, as the
   // caption is the first line of listings' vtop)
   const captioned = [...document.querySelectorAll('.tex8web-boxed-listing')].find(el => el.textContent.includes('capA();'));

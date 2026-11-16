@@ -142,6 +142,18 @@ shadowed();
 \end{lstlisting}\end{lrbox}
 Shadow \fbox{\usebox{\lstbox}} then $n$.
 
+% (a framed listing with a line wider than a phone's column, alone and
+% in a frame: it scrolls with its frame's rules and shadow in view. A
+% <pre> breaks its lines at spaces, so the line alone is one word)
+\begin{lstlisting}[frame=shadowbox,rulesepcolor=\color{gray}]
+framedwide();_a_line_wider_than_the_column_of_a_phone_screen_in_one_word
+\end{lstlisting}
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}[frame=shadowbox,rulesepcolor=\color{gray}]
+boxedwide(); /* a line wider than the column of a phone screen, in a frame */
+\end{lstlisting}\end{lrbox}
+Wideshadow \fbox{\usebox{\lstbox}} then $s$.
+
 % (in a list: centered on the line in the item's first line, and in a
 % later paragraph of the item, also at the top with boxpos=t; the label
 % on the line of the text, also when the item starts with the box)
