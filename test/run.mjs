@@ -1740,6 +1740,9 @@ const inEveryTablePage = ['plain', 'grid', 'star', 'nested', 'array', 'span', 'i
 // the cases whose tables have yellow cells or rows, which cover at least a
 // fifth of the image (in the PDF, about a third or a half)
 const yellowTables = ['colortbl', 'rowcolor', 'rowcolors'];
+// the cases whose tables have three rules across the table, as in the PDF:
+// \rowcolors' [\hline] runs above each of the two rows and below the last
+const ruledTables = ['rowcolors'];
 // the colors, as 0xRRGGBB, of a PNG with a palette, as dvipng writes,
 // pixel by pixel, or null for a PNG of another type (decode reads only RGB
 // and RGBA)
@@ -1762,7 +1765,9 @@ const paletteColors = png => {
     for (let x = 0; x < stride; x++) {
       const at = y * stride + x, left = x ? rows[at - 1] : 0, up = y ? rows[at - stride] : 0, upLeft = x && y ? rows[at - stride - 1] : 0;
       const p = left + up - upLeft, [a, b, c] = [left, up, upLeft].map(v => Math.abs(p - v));
-      rows[at] = raw[y * (stride + 1) + 1 + x] + [0, left, up, (left + up) >> 1, a <= b && a <= c ? left : b <= c ? up : upLeft][filter];
+      const predicted = [0, left, up, (left + up) >> 1, a <= b && a <= c ? left : b <= c ? up : upLeft][filter];
+      if (predicted === undefined) throw new Error(`bad PNG filter ${filter}`);
+      rows[at] = raw[y * (stride + 1) + 1 + x] + predicted;
     }
     for (let x = 0; x < width; x++) {
       const bit = x * depth, index = (rows[y * stride + (bit >> 3)] >> (8 - depth - bit % 8)) & ((1 << depth) - 1);
@@ -1772,7 +1777,7 @@ const paletteColors = png => {
   return colors;
 };
 const tablePictures = {
-  'test-pictab': Object.keys(tableWidths).filter(name => !['colortbl', 'rowcolor', 'rowcolors'].includes(name)),
+  'test-pictab': Object.keys(tableWidths).filter(name => !yellowTables.includes(name)),
   'test-pictab-hyperref': [...inEveryTablePage, 'column types', 'label'],
   'test-pictab-colortbl': [...inEveryTablePage, 'column types', 'booktabs', 'colortbl', 'rowcolor', 'rowcolors'],
   'test-pictab-booktabs': [...inEveryTablePage, 'booktabs'],
@@ -3264,6 +3269,19 @@ function check(doc, result, out, aux) {
       const colors = paletteColors(readFileSync(files[0])), yellow = colors?.filter(color => color === 0xffff00).length;
       if (!colors) problems.push(`the picture of "${name}" is not a PNG with a palette`);
       else if (!(yellow >= colors.length / 5)) problems.push(`the picture of "${name}" is ${yellow} of ${colors.length} pixels yellow, not a fifth`);
+    }
+    if (ruledTables.includes(name)) {
+      // (a rule is a line of pixels, nine tenths of them dark, in a run of
+      // such lines)
+      const colors = paletteColors(readFileSync(files[0])) ?? [];
+      const dark = color => [16, 8, 0].every(shift => (color >> shift & 0xff) < 0x80);
+      let rules = 0, before = false;
+      for (let y = 0; y * width < colors.length; y++) {
+        const line = colors.slice(y * width, (y + 1) * width), ruled = line.filter(dark).length >= 0.9 * width;
+        if (ruled && !before) rules++;
+        before = ruled;
+      }
+      if (rules !== 3) problems.push(`the picture of "${name}" has ${rules} rules across it, not 3`);
     }
   }
   if (tablePictures[doc.name]) {

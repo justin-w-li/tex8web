@@ -260,7 +260,8 @@
                 % PDF. \rowcolors' commands for each row, such as [\hline], are
                 % dropped, because they cannot run there. In a picture, which
                 % writes no <table>, the image holds the color, and no CSS is
-                % written.
+                % written. There the table is array's \halign, and the
+                % commands run, as in the PDF.
                 \cs_new_protected:Npn \__web_row_color:n #1
                     {
                         \if_meaning:w \EndPicture \:UnDef
@@ -269,7 +270,11 @@
                     }
                 \Configure { rowcolors } { \__web_row_color:n }
                 \cs_set_eq:NN \__web_rowcolors:w \rowc@l@rs
-                \cs_set:Npn \rowc@l@rs [ #1 ] { \__web_rowcolors:w [ ] }
+                \cs_set:Npn \rowc@l@rs [ #1 ]
+                    {
+                        \__web_rowcolors:w
+                            [ \if_meaning:w \EndPicture \:UnDef \else: #1 \fi: ]
+                    }
                 \cs_new_protected:Npn \__web_row_colors:
                     {
                         \group_begin:

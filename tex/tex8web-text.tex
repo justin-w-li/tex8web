@@ -600,7 +600,7 @@
 \@ifpackageloaded { colortbl }
   {
     \web@needs { @rowc@lors }
-    \cs_set_eq:NN \__web_rowcolors: \@rowc@lors
+    \cs_set_eq:NN \__web_saved_rowc@lors: \@rowc@lors
     \cs_set:Npn \@rowc@lors
       {
         \ifx \EndPicture \:UnDef \else
@@ -608,7 +608,7 @@
             \cs_set_eq:cN { o:noalign: } \noalign
           \fi
         \fi
-        \__web_rowcolors:
+        \__web_saved_rowc@lors:
       }
   }
   { }
