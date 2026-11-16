@@ -166,11 +166,24 @@ function M.label_space(document)
     for i, node in ipairs(siblings) do
       if node == mark then
         local after = siblings[i + 1]
-        if after and after:is_text() then strip(after, "^%s+", "^\u{A0}") end
+        -- (KOMA's \autodot after a letter, as in "A.", is outside the
+        -- number, before the space)
+        local first = after and after:is_text() and after:get_text() or ""
+        local dot = first:match("^%.%s") ~= nil or first:sub(1, 3) == ".\u{A0}"
+        if dot then
+          local text = after:get_text():sub(2)
+          local trimmed = trim(text, "^%s+", "^\u{A0}")
+          if trimmed ~= text then
+            spaced = true
+            dom.set_node_text(after, "." .. trimmed)
+          end
+        elseif after and after:is_text() then
+          strip(after, "^%s+", "^\u{A0}")
+        end
         if spaced then
           local space = mark:create_element("span", {class = "tex8web-labelsep"})
           space:add_child_node(space:create_text_node(" "))
-          table.insert(siblings, i + 1, space)
+          table.insert(siblings, dot and i + 2 or i + 1, space)
           dom.set_children(parent, siblings)
         end
         break
