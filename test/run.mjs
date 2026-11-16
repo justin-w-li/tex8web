@@ -1487,8 +1487,10 @@ const drivers = {
 // Warnings a document's TeX log must not hold. test-pdftex-class's class
 // leaves pdfTeX's driver option unused, and xcolor uses the fixture's other
 // class option, dvipsnames, so LaTeX warns of no unused global option.
+// test-boxmath sets a labelled equation twice, and writes its label once.
 const texWarnings = {
   'test-pdftex-class': [/Unused global option/],
+  'test-boxmath': [/multiply defined/],
 };
 
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
@@ -1591,16 +1593,28 @@ const nested = { 'test-nestpic': nestpicCases, 'test-nestpic-hyperref': nestpicC
 // Math in a box saved with \sbox, \savebox, or lrbox (test-boxmath.tex).
 // Placed in a TikZ node, the first picture between each case's "Before"
 // and "After" draws glyphs of two fonts or more: the text's and the
-// math's, as the box's text is in one font. The $$ display is as tall
-// as the \[ \] display of the same formula. The text after an equation
-// and an align* starts where the box's first line starts, with no space
-// before it. Placed outside any picture,
-// each copy's math is the page's formulas, as many as the box holds, and
-// the copy's text is only the box's text, with no glyphs of the math.
+// math's, as the box's text is in one font. A box with a display draws
+// more fonts than its text and inline math have, given below. The
+// quantity's digits and unit are in the text's font, so its picture
+// draws the box's glyphs, counted below, as does the tikzcd's, drawn once.
+// The $$ display is as tall as the \[ \] display of the same formula. The
+// text after an equation and an align* starts where the box's first line
+// starts, with no space before it. Placed outside any picture, each
+// copy's math is the page's formulas, as many as the box holds, its
+// pictures are as many as the box holds, and the copy's text is only the
+// box's text, with no glyphs of the math. The proof's QED is the tag of
+// its display, once, and the reference to the copy's equation is to its
+// number, given once in the aux file (texWarnings).
 const boxmathPictures = ['sbox', 'savebox', 'lrbox inline', 'lrbox display', 'lrbox dollars', 'lrbox equation',
-  'lrbox align', 'lrbox ampersand', 'lrbox list', 'direct'];
-const boxmathCopies = { 'text copy': [1, 'Kept Box end here.'], 'fbox copy': [1, 'Framed Saved here here.'],
-  'minipage copy': [4, 'Placed Copied and then and here.'] };
+  'lrbox align', 'lrbox flalign', 'lrbox ampersand', 'lrbox list', 'lrbox tikzcd', 'sbox quantity', 'direct'];
+const boxmathFonts = { 'lrbox display': 5, 'lrbox dollars': 5, 'lrbox ampersand': 3, 'sbox quantity': 1 };
+const boxmathGlyphs = { 'lrbox tikzcd': 9, 'sbox quantity': 11 };
+const boxmathCopies = {
+  'text copy': [1, 'Kept Box end here.'], 'fbox copy': [1, 'Framed Saved here here.'],
+  'minipage copy': [4, 'Placed Copied and then and here.'], 'tikzcd copy': [0, 'Placed arrows: here.', 1],
+  'qed copy': [1, 'Placed Proof. Then here.'], eqref: [0, 'See (3).'],
+};
+const boxmathQed = 'qed copy';
 const boxmathSame = ['lrbox dollars', 'lrbox display'];
 const boxmathAfter = ['lrbox equation', 'lrbox align'];
 const boxmath = { 'test-boxmath': boxmathPictures };
@@ -2789,13 +2803,17 @@ function check(doc, result, out, aux) {
     if (/\/(?:&gt;|>)/.test(shown)) problems.push("the tail of an <img> tag in the page's text");
   }
   if (boxmath[doc.name]) {
-    const part = name => flat.match(new RegExp(`Before ${name}\\.([^]*?)After ${name}\\.`))?.[1];
+    const words = name => name.replace(/ /g, '\\s+');
+    const part = name => flat.match(new RegExp(`Before ${words(name)}\\.([^]*?)After ${words(name)}\\.`))?.[1];
     const svgs = {};
     for (const name of boxmath[doc.name]) {
       const src = part(name)?.match(/<img [^>]*src='([^']+\.svg)'/)?.[1];
       const svg = svgs[name] = src && existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
       const fonts = new Set([...svg.matchAll(/<use [^>]*href='#g(\d+)-/g)].map(([, font]) => font)).size;
-      if (fonts < 2) problems.push(`the picture between "Before ${name}." and "After ${name}." draws glyphs of ${fonts} fonts, not the math's`);
+      const least = boxmathFonts[name] ?? 2;
+      if (fonts < least) problems.push(`the picture between "Before ${name}." and "After ${name}." draws glyphs of ${fonts} fonts, not ${least}`);
+      const glyphs = svg.match(/<use /g)?.length ?? 0;
+      if (boxmathGlyphs[name] !== undefined && glyphs !== boxmathGlyphs[name]) problems.push(`the picture between "Before ${name}." and "After ${name}." draws ${glyphs} glyphs, not ${boxmathGlyphs[name]}`);
     }
     const height = name => Number(svgs[name].match(/viewBox='\S+ \S+ \S+ ([\d.]+)'/)?.[1]);
     const [dollars, brackets] = boxmathSame;
@@ -2808,13 +2826,17 @@ function check(doc, result, out, aux) {
       const [first, last] = [start(Math.min(...ys)), start(Math.max(...ys))];
       if (!(Math.abs(first - last) < 0.01)) problems.push(`the text after the display in "${name}" starts at ${last}, not ${first} as the first line`);
     }
-    for (const [name, [count, text]] of Object.entries(boxmathCopies)) {
+    for (const [name, [count, text, images = 0]] of Object.entries(boxmathCopies)) {
       const copy = part(name) ?? '';
       const formulas = copy.match(/<mjx-container /g)?.length ?? 0;
+      const pictures = copy.match(/<img /g)?.length ?? 0;
+      if (pictures !== images) problems.push(`${pictures} pictures between "Before ${name}." and "After ${name}.", not ${images}`);
       const shown = copy.replace(/<mjx-container [^]*?<\/mjx-container>/g, '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
       if (formulas !== count) problems.push(`${formulas} formulas between "Before ${name}." and "After ${name}.", not ${count}`);
       if (shown !== text) problems.push(`"${shown}" between "Before ${name}." and "After ${name}.", not "${text}"`);
     }
+    const qeds = part(boxmathQed)?.match(/<mjx-mtd id='mjx-eqn_web-qed-/g)?.length ?? 0;
+    if (qeds !== 1) problems.push(`${qeds} QED tags in the display of "${boxmathQed}", not 1`);
   }
   if (copied[doc.name]) {
     const shown = {};

@@ -194,6 +194,17 @@
     \str_const:Ne \c__web_si_textmu_str { \tl_to_str:n { \text { \textmu } } }
     \str_const:Ne \c__web_si_mu_str { \tl_to_str:n { \text { μ } } }
     \str_const:Ne \c__web_si_thin_str { \tl_to_str:n { \, } }
+    % siunitx's own math, which tex4ht replaces with source for MathJax
+    % (html4.4ht), for the glyphs of a saved box below. As in siunitx,
+    % without its cases for \sfrac and for siunitx's own HTML
+    \web@needs{__siunitx_print_math_text_setup:}
+    \web@needs{__siunitx_print_math_auxiii:n}
+    \cs_new_protected:Npn \__web_saved_si_math:n #1 {
+        \group_begin:
+            \__siunitx_print_math_text_setup:
+            \__siunitx_print_math_auxiii:n {#1}
+        \group_end:
+    }
     \AddToHook { begindocument/end } {
         \cs_set_eq:NN \__web_si_auxii:n \__siunitx_print_math_auxii:n
         \cs_gset_protected:Npn \__siunitx_print_math_auxii:n #1 {
@@ -281,6 +292,7 @@
             { ! \str_if_eq_p:Vn \l_siunitx_unit_mode_str { math } }
         } { \__web_si_quantity:nn {#1} {#2} } {
             \__web_si_print:n { \__web_si_quantity:nn {#1} {#2} }
+            \__web_saved:n { \__web_si_quantity:nn {#1} {#2} }
             \a:MathjaxInline
             \use:e { \alteqtoks { \exp_not:N \( \exp_not:V \g__web_si_tl \exp_not:N \) } }
             \b:MathjaxInline
@@ -508,7 +520,7 @@
 \cs_set:Npn \AltlDisplayDollars #1 $$ {
     \__web_if_bare_picture:nTF {#1}
         { \__web_picture_bare:n {#1} $$ }
-        { \__web_AltlDisplayDollars:w #1 $$ }
+        { \__web_saved:n {#1} \__web_AltlDisplayDollars:w #1 $$ }
 }
 % (a tikzcd beside other math is set in the display's math)
 \cs_set:Npn \AltlDisplay #1 \] {
@@ -523,11 +535,12 @@
                         {
                             \str_if_in:nnTF {#1} {\qedhere}
                                 {
+                                    \__web_saved:n { \[#1\] }
                                     \tl_clear:N \l__web_alignment_tl
                                     \__web_rows:nn {equation*} {#1}
                                     \exp_after:wN \__web_AltlDisplay:w \l__web_body_tl \]
                                 }
-                                { \__web_AltlDisplay:w #1 \] }
+                                { \__web_saved:n { \[#1\] } \__web_AltlDisplay:w #1 \] }
                         }
                 }
         }
@@ -919,6 +932,11 @@
     \str_if_in:nnTF {#1} {eqnarray}
         { \__web_if_bare_picture:nTF {#2} {#3} {#4} } { \__web_if_picture:nTF {#2} {#3} {#4} }
 }
+% (amsmath's flalign, for the glyphs of a saved box: tex4ht's mathjax
+% option names it flalign[equation], so \RestoreMathJaxEnvironments
+% leaves tex8web's in place, mathjax-latex-4ht.4ht)
+\cs_set_eq:NN \__web_saved_flalign: \flalign
+\cs_set_eq:NN \__web_saved_endflalign: \endflalign
 \clist_map_inline:nn { equation, equation*, align, align*, gather, gather*, alignat, alignat*,
         flalign, flalign*, multline, multline*, eqnarray, eqnarray* } {
     \cs_if_exist:cT {#1} {
@@ -942,15 +960,26 @@
 % as in a picture. dvisvgm draws these glyphs in a picture. Elsewhere
 % tex4ht ignores them, as they lie between the specials t4ht@[ and t4ht@]
 % (info4ht.4ht). Their own specials are dropped, so tex4ht's math hooks
-% write no HTML, and so are their writes to the aux file, as the source
-% already wrote its labels. The equation counter is set back, so the
-% source numbers its rows as if the glyphs were not there. (\ht:special
-% and \m:op, tex4ht.sty; \nested:math, html4-math.4ht)
+% write no HTML. So are their labels, as the source writes them: tex4ht's
+% \label writes to the aux file only if \if@filesw (latex.4ht). The
+% equation counter is set back, so the source numbers its rows as if the
+% glyphs were not there, and so is amsthm's QED stack, which a \qedhere
+% changes globally. (\ht:special and \m:op, tex4ht.sty; \nested:math,
+% html4-math.4ht)
 \bool_new:N \l__web_saved_bool
 \int_new:N \l__web_saved_int
 \tl_new:N \l__web_saved_tl
+\tl_new:N \l__web_saved_qed_tl
+\regex_const:Nn \c__web_saved_amp_regex { \cL\& }
 \web@needs{n:sbox:}
 \web@needs{o:sbox:}
+\web@needs{a:MathjaxBlock}
+\web@needs{b:MathjaxBlock}
+\web@needs{:HandleMathjaxCatcodes}
+\web@needs{c:display}
+\web@needs{ht:special}
+\web@needs{nested:math}
+\web@needs{RestoreMathJaxEnvironments}
 % tex4ht's \everydisplay ends a $$ display at once and starts another
 % (\NewConfigure{$$}, tex4ht.sty), so a saved box would hold an empty
 % display above the glyphs' display, which the PDF does not have. In a
@@ -959,6 +988,7 @@
     \bool_set_true:N \l__web_saved_bool
     \tex_everydisplay:D { \if_meaning:w \EndPicture \:UnDef \__web_saved_display: \fi: }
 }
+\cs_new:Npn \__web_saved_display_end: { }
 \cs_new_protected:Npn \__web_saved_display: {
     \use:c {a:MathjaxBlock} \use:c {:HandleMathjaxCatcodes}
     \tex_everymath:D {} \tex_everydisplay:D {}
@@ -976,39 +1006,46 @@
 \cs_new_protected:Npn \__web_saved:n #1 {
     \bool_if:NT \l__web_saved_bool {
         \int_set:Nn \l__web_saved_int { \value{equation} }
+        \cs_if_exist:NT \QED@stack { \tl_set_eq:NN \l__web_saved_qed_tl \QED@stack }
         \use:c {ht:special} {t4ht@[}
         \group_begin:
             \cs_set_eq:cN {ht:special} \use_none:n
             \@fileswfalse
+            \bool_set_false:N \l__web_saved_bool
             \cs_set:cpn {EndPicture} {}
             \use:c {nested:math}
             \RestoreMathJaxEnvironments
+            \cs_set_eq:NN \flalign \__web_saved_flalign:
+            \cs_set_eq:NN \endflalign \__web_saved_endflalign:
+            % (siunitx's math, which tex4ht and tex8web pass to MathJax,
+            % set by siunitx: see \__web_saved_si_math:n)
+            \cs_if_exist:NT \__web_saved_si_math:n
+                { \cs_set_eq:NN \__siunitx_print_math_auxii:n \__web_saved_si_math:n }
             \tl_set:Nn \l__web_saved_tl {#1}
-            \regex_replace_all:nnN { \cL\& } { \cT\& } \l__web_saved_tl
+            \regex_replace_all:NnN \c__web_saved_amp_regex { \cT\& } \l__web_saved_tl
             \l__web_saved_tl
         \group_end:
         \use:c {ht:special} {t4ht@]}
         \int_gset_eq:NN \c@equation \l__web_saved_int
+        \cs_if_exist:NT \QED@stack { \tl_gset_eq:NN \QED@stack \l__web_saved_qed_tl }
     }
 }
 % An environment's glyphs: its \end sets \@ignoretrue, as amsmath's and
 % LaTeX's displays do, and the source's \end then skips the space after
 % it, as in the PDF. Otherwise the glyphs' own \end would use the flag
-% up inside the group (\end, ltmiscen.dtx). LaTeX writes it with \global.
+% up inside the group (\end, ltmiscen.dtx). LaTeX writes \global before
+% it, so it stays an assignment, one that changes nothing.
 \cs_new_protected:Npn \__web_saved_env:nn #1#2 {
     \__web_saved:n { \cs_set:Npn \@ignorefalse { \tex_let:D \if@ignore \if@ignore } \begin{#1} #2 \end{#1} }
 }
 \web@needs{AltMathOne}
 \web@needs{AltlMath}
-\cs_set_eq:NN \__web_AltMathOne:w \AltMathOne
-\cs_set_eq:NN \__web_AltlMath:w \AltlMath
-\cs_set_eq:NN \__web_saved_AltlDisplay:w \AltlDisplay
-\cs_set_eq:NN \__web_saved_AltlDisplayDollars:w \AltlDisplayDollars
-% (in math already, after $ and $$)
-\cs_set:Npn \AltMathOne #1 $ { \__web_saved:n {#1} \__web_AltMathOne:w #1 $ }
-\cs_set:Npn \AltlMath #1 \) { \__web_saved:n { \(#1\) } \__web_AltlMath:w #1 \) }
-\cs_set:Npn \AltlDisplay #1 \] { \__web_saved:n { \[#1\] } \__web_saved_AltlDisplay:w #1 \] }
-\cs_set:Npn \AltlDisplayDollars #1 $$ { \__web_saved:n {#1} \__web_saved_AltlDisplayDollars:w #1 $$ }
+\cs_set_eq:NN \__web_saved_AltMathOne:w \AltMathOne
+\cs_set_eq:NN \__web_saved_AltlMath:w \AltlMath
+% (in math already, after $. \[ \] and $$ call \__web_saved:n above,
+% where they are not pictures)
+\cs_set:Npn \AltMathOne #1 $ { \__web_saved:n {#1} \__web_saved_AltMathOne:w #1 $ }
+\cs_set:Npn \AltlMath #1 \) { \__web_saved:n { \(#1\) } \__web_saved_AltlMath:w #1 \) }
 \ExplSyntaxOff
 
 \makeatother

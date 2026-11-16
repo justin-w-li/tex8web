@@ -7,19 +7,28 @@
 % - an environment that saves a minipage with lrbox and draws it in a
 %   node, holding inline math with $ and \(, a \[ \] display, a $$
 %   display with the same formula, an equation and an align* with text
-%   after them, a display with an alignment and inline math with a
-%   matrix, both with &, and an enumerate;
+%   after them, a flalign, a display with an alignment and inline math
+%   with a matrix, both with &, and an enumerate;
+% - a saved minipage holding a tikzcd display, drawn once;
+% - \sbox holding a siunitx quantity;
 % - math typed directly in a node.
 %
 % Copies of saved boxes outside any picture, whose math is the page's
-% formulas: in text, in \fbox, and a minipage with \[ \], $$, and
-% equation displays in text.
+% formulas: in text, in \fbox, a minipage with \[ \], $$, and a labelled
+% equation, which a \eqref outside the box cites, a minipage with the
+% tikzcd display, and a proof ending in a display with \qedhere.
 \documentclass{article}
 \usepackage{amsmath}
+\usepackage{amsthm}
 \usepackage{tikz}
+\usepackage{tikz-cd}
+\usepackage{siunitx}
 \newsavebox{\bxa}
 \newsavebox{\bxb}
 \newsavebox{\bxc}
+\newsavebox{\bxd}
+\newsavebox{\bxe}
+\newsavebox{\bxf}
 \newsavebox{\mathbx}
 \newenvironment{mathbox}{\begin{lrbox}{\mathbx}\begin{minipage}{0.8\textwidth}}{%
   \end{minipage}\end{lrbox}\begin{center}\begin{tikzpicture}\node[draw, inner sep=10pt]{\usebox{\mathbx}};\end{tikzpicture}\end{center}}
@@ -73,6 +82,13 @@ which hold together.
 \end{mathbox}
 After lrbox align.
 
+Before lrbox flalign.
+\begin{mathbox}
+Flush rows:
+\begin{flalign} a &= b && \end{flalign}
+\end{mathbox}
+After lrbox flalign.
+
 Before lrbox ampersand.
 \begin{mathbox}
 A matrix $\left(\begin{smallmatrix} u & v \\ w & t \end{smallmatrix}\right)$ and
@@ -89,6 +105,14 @@ Before lrbox list.
 \end{mathbox}
 After lrbox list.
 
+\begin{lrbox}{\bxd}\begin{minipage}{0.5\textwidth}
+arrows:
+\[ \begin{tikzcd} A \arrow[r] & B \end{tikzcd} \]
+\end{minipage}\end{lrbox}
+Before lrbox tikzcd. \tikz\node[draw]{\usebox{\bxd}}; After lrbox tikzcd.
+
+Before sbox quantity. \sbox{\bxf}{Length \qty{3}{\metre} end}\tikz\node[draw]{\usebox{\bxf}}; After sbox quantity.
+
 Before direct. \tikz\node[draw]{Node $y^2$ end}; After direct.
 
 Before text copy. Kept \usebox{\bxa} here. After text copy.
@@ -101,8 +125,20 @@ Copied $v$ and
 then
 $$ u = 3v, $$
 and
-\begin{equation} t = 4v. \end{equation}
+\begin{equation}\label{eq:boxed} t = 4v. \end{equation}
 \end{minipage}\end{lrbox}
 Before minipage copy. Placed \usebox{\bxc} here. After minipage copy.
+
+Before tikzcd copy. Placed \usebox{\bxd} here. After tikzcd copy.
+
+\begin{lrbox}{\bxe}\begin{minipage}{0.5\textwidth}
+\begin{proof}
+Then
+\[ x = y. \qedhere \]
+\end{proof}
+\end{minipage}\end{lrbox}
+Before qed copy. Placed \usebox{\bxe} here. After qed copy.
+
+Before eqref. See \eqref{eq:boxed}. After eqref.
 
 \end{document}
