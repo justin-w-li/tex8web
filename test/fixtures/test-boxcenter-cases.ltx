@@ -22,7 +22,9 @@
 % - \center used in an environment of the document's own, and in one \let
 %   to it in the box, without \begin{center};
 % - a center in a minipage with a nonzero \parskip;
-% - an \fbox followed by a comma.
+% - an \fbox followed by a comma;
+% - a center that the document renews after \begin{document}, through a
+%   copy of the one before.
 %
 % The boxes saved with \sbox and \savebox are saved between paragraphs.
 % Each box but one starts with a line of text at its left edge, which
@@ -276,6 +278,19 @@ Before text fbox comma.
 \usebox{\keep}
 
 After text fbox comma.
+
+\begingroup
+\let\latecenter\center \let\endlatecenter\endcenter
+\renewenvironment{center}{\latecenter L\ }{\endlatecenter}
+Before late center.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+A
+\begin{center}B\end{center}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After late center.
+\endgroup
 
 Before plain center.
 \begin{center}Plain \fbox{Boxed}\end{center}

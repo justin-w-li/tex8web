@@ -999,35 +999,73 @@
 % sets others (\SaveEverypar and \RecallEverypar, tex4ht.sty). With a
 % \linepenalty of zero, a box after the center's empty label starts a
 % line of its own.
+% (In a box saved in another, these are in place already.)
+\bool_new:N \l__web_saved_center_bool
 \cs_new_protected:Npn \__web_saved_start: {
+    \bool_if:NF \l__web_saved_bool {
+        \tl_put_right:Nn \centering {
+            \leftskip \@flushglue \parfillskip \c_zero_skip
+            \cs_set_eq:cN {html:rightskip} \prg_do_nothing:
+            \bool_set_true:N \l__web_saved_center_bool
+        }
+        \tl_put_right:Nn \HtmlEnv
+            { \bool_if:NT \l__web_saved_center_bool { \tex_linepenalty:D 10 \scan_stop: } }
+    }
     \bool_set_true:N \l__web_saved_bool
     \tex_everydisplay:D { \if_meaning:w \EndPicture \:UnDef \__web_saved_display: \fi: }
-    \tl_put_right:Nn \centering {
-        \leftskip \@flushglue \parfillskip \c_zero_skip
-        \cs_set_eq:cN {html:rightskip} \prg_do_nothing:
-        \tl_put_right:Nn \HtmlEnv { \tex_linepenalty:D 10 \scan_stop: }
-    }
     \cs_set_eq:cN {gobble:fbox} \__web_saved_fbox:nn
     \cs_set_eq:cN {gobble:frame} \__web_saved_framebox:w
     \cs_set_eq:NN \@frameb@x \__web_saved_frame:n
-    \cs_set_eq:NN \center \__web_saved_center:
+    \cs_if_eq:NNF \center \__web_saved_center: {
+        \cs_if_eq:NNF \center \__web_saved_center_from: { \__web_saved_patch: }
+        \cs_set_eq:NN \center \__web_saved_center:
+    }
 }
-% \center in a saved box, patched once, after the packages' and tex4ht's
-% definitions: html4.4ht's \par after \item is dropped, and
-% \__web_saved_depth: keeps the depth of the line above and makes the
-% list's first \:DT \__web_saved_item:w (\@item, latex.4ht). Where \center
-% has another form, it is left as it is, and tex8web warns.
+% \center in a saved box, patched after the packages' and tex4ht's
+% definitions, and again where the document changes it: html4.4ht's \par
+% after \item is dropped, and \__web_saved_depth: keeps the depth of the
+% line above and makes the list's first \:DT \__web_saved_item:w (\@item,
+% latex.4ht). A center that the document renews through a copy of the one
+% before, as in \renewenvironment{center}{\oldcenter\small}{\endoldcenter},
+% is patched in that copy's text. A center of another form is left as it
+% is, and tex8web warns only where the form is still LaTeX's, which starts
+% with \trivlist.
 \cs_new_eq:NN \__web_saved_center: \center
-\AddToHook { begindocument/end } {
+\cs_new_eq:NN \__web_saved_center_from: \center
+\cs_new_protected:Npn \__web_saved_patch: {
+    \cs_gset_eq:NN \__web_saved_center_from: \center
     \tl_set_eq:NN \l__web_saved_tl \center
-    \regex_replace_once:nnNTF { \c{item} (.*) \c{par} \Z }
+    \__web_saved_copy:n { 3 }
+    \regex_replace_once:nnNTF { \c{item} (.*?) \c{par} }
         { \c{__web_saved_depth:} \c{item} \1 } \l__web_saved_tl
         { \cs_gset_eq:NN \__web_saved_center: \l__web_saved_tl }
         {
             \cs_gset_eq:NN \__web_saved_center: \center
-            \web@outdated { \token_to_str:N \center }
+            \tl_set_eq:NN \l__web_saved_tl \center
+            \exp_args:No \tl_if_head_eq_meaning:nNT { \l__web_saved_tl } \trivlist
+                { \web@outdated { \token_to_str:N \center } }
         }
 }
+% (Where the patched text holds no \item and starts with a macro with no
+% parameters, that macro's text replaces it, for at most #1 copies.)
+\cs_new_protected:Npn \__web_saved_copy:n #1 {
+    \int_compare:nNnT {#1} > 0 {
+        \regex_if_match:nVF { \c{item} } \l__web_saved_tl {
+            \exp_args:No \tl_if_head_is_N_type:nT { \l__web_saved_tl }
+                { \exp_args:Ne \__web_saved_copy:Nn { \tl_head:N \l__web_saved_tl } {#1} }
+        }
+    }
+}
+\cs_new_protected:Npn \__web_saved_copy:Nn #1#2 {
+    \bool_lazy_and:nnT { \token_if_macro_p:N #1 }
+        { \tl_if_empty_p:e { \cs_parameter_spec:N #1 } }
+        {
+            \tl_set:Ne \l__web_saved_tl
+                { \exp_after:wN \exp_not:o \exp_after:wN { \l__web_saved_tl } }
+            \exp_args:Ne \__web_saved_copy:n { \int_eval:n { #2 - 1 } }
+        }
+}
+\AddToHook { begindocument/end } { \__web_saved_patch: }
 \cs_new:Npn \__web_saved_display_end: { }
 \cs_new_protected:Npn \__web_saved_display: {
     \use:c {a:MathjaxBlock} \use:c {:HandleMathjaxCatcodes}

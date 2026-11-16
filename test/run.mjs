@@ -1708,6 +1708,7 @@ const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // not checked), with no other rules drawn; and the graphic's x offset, within
 // 1. A theorem adds space of its own, and an itemize's label starts a line
 // of its own, so these are measured less. "ragged centering" is a guard.
+// test-boxcenter-renewed renews center in its preamble.
 // In the running text, a saved box's center holds its text and \fbox with
 // no empty <p> above them, and a center outside any saved box keeps the
 // empty <p> that html4.4ht writes.
@@ -1738,11 +1739,12 @@ const boxcenterCases = {
   'let center': ['A', { B: [81.511, 19.925] }, 26.83331 + 6.6666],
   parskip: ['A', { B: [81.511, 27.895], D: [0, 55.79] }, 62.83331 + 6.6666],
   'fbox comma': ['A', { y: [14.177, 0], ',': [22.826, 0], z: [28.911, 0] }, 13.04998 + 6.6666, { y: 12.034 }],
+  'late center': ['A', { L: [76.737, 19.925], B: [86.297, 19.925] }, 26.83331 + 6.6666],
 };
 const boxcenterKept = { 'text copy': ['Centered', 'Framed', ''], 'sbox text copy': ['Centered', 'Framed', ''], 'plain center': ['Plain', 'Boxed', "<p class='noindent'>\\s*</p>"] };
 // A saved box's \fbox in the running text, with no space after its frame.
 const boxcenterComma = ['text fbox comma', "A <span class='fbox'[^>]*>y</span>, z"];
-const boxcenter = { 'test-boxcenter': boxcenterCases, 'test-boxcenter-hyperref': boxcenterCases };
+const boxcenter = { 'test-boxcenter': boxcenterCases, 'test-boxcenter-hyperref': boxcenterCases, 'test-boxcenter-renewed': boxcenterCases };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width

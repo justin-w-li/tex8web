@@ -1,0 +1,6 @@
+\documentclass{article}
+% The cases of test-boxcenter, with center renewed in the preamble through
+% a copy of LaTeX's, as documents do to change its font.
+\let\oldcenter\center \let\endoldcenter\endcenter
+\renewenvironment{center}{\oldcenter}{\endoldcenter}
+\input{test-boxcenter-cases.ltx}
