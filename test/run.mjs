@@ -1699,23 +1699,18 @@ const boxgfxCopy = ['text copy', 'test-bare.png', 'Kept text.'];
 const boxgfxWidths = { 'turned label': 13.49927 };
 const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // A center, \centering, or ragged2e's \Centering in a minipage saved with
-// lrbox, \sbox, or \savebox, placed in a TikZ node, and frames in such a
-// box (test-boxcenter-cases.ltx). The picture between each case's "Before"
-// and "After" draws the glyphs given below at their place in the PDF,
-// measured in bp from the first glyph named: x within 1bp and y within
-// 3bp. The node's frame is as high as in the PDF, the box's height and
-// depth (from \ht and \dp) with the node's inner sep on each side, in pt,
-// within 3pt. In a theorem, which adds space of its own in such a box,
-// only the center's x is checked. After an itemize, whose label starts a
-// line of its own, C is measured from the item's text, and the frame is
-// not checked. The graphic of "lrbox png" starts at its place in the PDF,
-// within 1bp. Each glyph in an \fbox or \framebox has
-// one frame around it, as wide as in the PDF within 1bp (null: not
-// measured), and the picture draws no other rules. "ragged centering" is a
-// guard: tex8web's ragged2e handling already centers K. Placed in the
-// running text, the box keeps its center and its \fbox, with no empty
-// paragraph above them, and a center outside any saved box keeps the empty
-// paragraph that html4.4ht's \par after \item writes. Neither has a height.
+// lrbox, \sbox, or \savebox and placed in a TikZ node, and frames in such
+// a box (test-boxcenter-cases.ltx). Each case: the glyph measured from;
+// other glyphs at their offset in the PDF, in bp, x within 1 and y within
+// 3 (null: not checked); the node's frame's height in the PDF (the box's
+// \ht and \dp and the inner sep), in pt, within 3 (null: not checked); the
+// width in bp of the frame around each glyph in an \fbox, within 1 (null:
+// not checked), with no other rules drawn; and the graphic's x offset, within
+// 1. A theorem adds space of its own, and an itemize's label starts a line
+// of its own, so these are measured less. "ragged centering" is a guard.
+// In the running text, a saved box's center holds its text and \fbox with
+// no empty <p> above them, and a center outside any saved box keeps the
+// empty <p> that html4.4ht writes.
 const boxcenterRepro = ['A', { B: [72.866, 19.925], C: [86.627, 19.925], D: [0, 39.85] }, 46.83331 + 6.6666, { C: 13.970 }];
 const boxcenterCases = {
   nested: ['Y', { X: [81.303, 20.84] }, 27.74997 + 6.6666],
@@ -1739,8 +1734,14 @@ const boxcenterCases = {
   'center after list': ['B', { C: [56.534, 21.918] }, null],
   'direct minipage': boxcenterRepro,
   figure: boxcenterRepro,
+  'own center': ['A', { B: [80.964, 19.925] }, 26.83331 + 6.6666],
+  'let center': ['A', { B: [81.511, 19.925] }, 26.83331 + 6.6666],
+  parskip: ['A', { B: [81.511, 27.895], D: [0, 55.79] }, 62.83331 + 6.6666],
+  'fbox comma': ['A', { y: [14.177, 0], ',': [22.826, 0], z: [28.911, 0] }, 13.04998 + 6.6666, { y: 12.034 }],
 };
 const boxcenterKept = { 'text copy': ['Centered', 'Framed', ''], 'sbox text copy': ['Centered', 'Framed', ''], 'plain center': ['Plain', 'Boxed', "<p class='noindent'>\\s*</p>"] };
+// A saved box's \fbox in the running text, with no space after its frame.
+const boxcenterComma = ['text fbox comma', "A <span class='fbox'[^>]*>y</span>, z"];
 const boxcenter = { 'test-boxcenter': boxcenterCases, 'test-boxcenter-hyperref': boxcenterCases };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
@@ -3270,6 +3271,8 @@ function check(doc, result, out, aux) {
       const copy = part(name);
       if (!new RegExp(`<div class='center'>\\s*${empty}<p class='noindent'>${centered} <span class='fbox'[^>]*>${framed}</span></p>\\s*</div>`).test(copy)) problems.push(`no center that holds ${empty ? 'an empty paragraph, then ' : ''}"${centered}" and an \\fbox of "${framed}" between "Before ${name}." and "After ${name}."`);
     }
+    const [commaName, comma] = boxcenterComma;
+    if (!new RegExp(comma).test(part(commaName))) problems.push(`no "${comma}" between "Before ${commaName}." and "After ${commaName}."`);
   }
   if (copied[doc.name]) {
     const shown = {};

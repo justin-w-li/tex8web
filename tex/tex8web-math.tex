@@ -1085,20 +1085,26 @@
 % latex.4ht's \item, at \:DT, writes \hfill\break. These leave two empty
 % lines above the text, which the PDF does not have. In a saved box the
 % first, which holds the center's <div>, is kept with no height, and the
-% text starts the second, as far below the line above as in the PDF.
-% (\:DLL and \:DT, latex.4ht)
+% text starts the second, as far below the line above as in the PDF: the
+% second's \parskip is taken back, as LaTeX's \item takes back the
+% first's. Without the list hook, as for a \center outside \begin{center},
+% \:DT comes in the paragraph that \item starts, and the text stays on its
+% line, as in the PDF. (\:DLL and \:DT, latex.4ht)
 \dim_new:N \l__web_saved_depth_dim
 \cs_new_protected:Npn \__web_saved_depth: {
-    \dim_set:Nn \l__web_saved_depth_dim { \tex_prevdepth:D }
+    \dim_set:Nn \l__web_saved_depth_dim { \mode_if_vertical:TF { \tex_prevdepth:D } { -1000pt } }
     \tl_put_right:Nn \this:listConfigure { \cs_gset_eq:NN \:DT \__web_saved_item:w }
 }
 \cs_new_protected:Npn \__web_saved_item:w #1#2 {
-    \tex_setbox:D 0 \tex_lastbox:D
-    \dim_compare:nNnF \l__web_saved_depth_dim < { -999pt } { \tex_unskip:D }
-    \tex_prevdepth:D -1000pt
-    \tex_box:D 0
-    \tex_prevdepth:D \l__web_saved_depth_dim
-    \mode_leave_vertical:
+    \mode_if_vertical:T {
+        \tex_setbox:D 0 \tex_lastbox:D
+        \dim_compare:nNnF \l__web_saved_depth_dim < { -999pt } { \tex_unskip:D }
+        \tex_prevdepth:D -1000pt
+        \tex_box:D 0
+        \tex_prevdepth:D \l__web_saved_depth_dim
+        \tex_vskip:D - \tex_parskip:D
+        \mode_leave_vertical:
+    }
 }
 % The end of the paragraph before a box saved with \sbox or \savebox is
 % kept out of the box, as html4.4ht keeps it out of an lrbox.

@@ -18,7 +18,11 @@
 %   center after an itemize;
 % - a minipage typed in the node, and a tikzpicture in a centered figure;
 % - a box with a center saved in the center of another, first, so that the
-%   cases after it show a fault that the nested box leaves.
+%   cases after it show a fault that the nested box leaves;
+% - \center used in an environment of the document's own, and in one \let
+%   to it in the box, without \begin{center};
+% - a center in a minipage with a nonzero \parskip;
+% - an \fbox followed by a comma.
 %
 % The boxes saved with \sbox and \savebox are saved between paragraphs.
 % Each box but one starts with a line of text at its left edge, which
@@ -28,13 +32,15 @@
 % Cases the fix must not break: the same box placed with \usebox in the
 % running text keeps its center and its \fbox, for a box saved with lrbox
 % and one saved with \sbox, and a center outside any saved box. The case
-% with ragged2e's \Centering is a guard too.
+% with ragged2e's \Centering is a guard too, and so is the \fbox followed
+% by a comma, in a node and in the running text.
 \usepackage{graphicx}
 \usepackage{ragged2e}
 \usepackage{tikz}
 \newtheorem{theorem}{Theorem}
 \newsavebox{\keep}
 \newsavebox{\inner}
+\newenvironment{owncenter}{\center\bfseries}{\endcenter}
 \begin{document}
 Before nested.
 \begin{lrbox}{\keep}\begin{minipage}{6cm}
@@ -229,6 +235,47 @@ Before sbox text copy.
 \usebox{\keep}
 
 After sbox text copy.
+
+Before own center.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+A
+\begin{owncenter}B\end{owncenter}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After own center.
+
+Before let center.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}\let\letcenter\center \let\endletcenter\endcenter
+A
+\begin{letcenter}B\end{letcenter}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After let center.
+
+Before parskip.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}\setlength{\parskip}{8pt}
+A
+\begin{center}B\end{center}
+D
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After parskip.
+
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+A \fbox{y}, z
+\end{minipage}\end{lrbox}
+Before fbox comma.
+\tikz\node[draw]{\usebox{\keep}};
+
+After fbox comma.
+
+Before text fbox comma.
+\usebox{\keep}
+
+After text fbox comma.
 
 Before plain center.
 \begin{center}Plain \fbox{Boxed}\end{center}
