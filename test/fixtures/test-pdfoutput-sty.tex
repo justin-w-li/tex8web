@@ -1,7 +1,9 @@
 % \pdfoutput set to 1 by the class, test-pdfoutput-class.cls, which then
 % loads graphicx, and again by the document's last package,
 % test-pdfoutput-sty.sty. xcolor and hyperref load between them without a
-% driver option. The page is the same as without \pdfoutput.
+% driver option. The page is the same as without \pdfoutput, and the
+% kernel's backend, which LaTeX chooses from \pdfoutput at \begin{document},
+% is dvips.
 \documentclass{test-pdfoutput-class}
 \usepackage[dvipsnames]{xcolor}
 \usepackage[colorlinks]{hyperref}
@@ -14,4 +16,6 @@ A link to section~\ref{colors}, and to \href{https://example.com/}{a site}.
 
 Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
 After the picture.
+
+\ExplSyntaxOn Backend:~\c_sys_backend_str. \ExplSyntaxOff
 \end{document}

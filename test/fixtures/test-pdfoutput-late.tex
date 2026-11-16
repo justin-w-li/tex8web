@@ -2,7 +2,8 @@
 % \ifdefined\pdfoutput\pdfoutput1\fi, before pict2e, which reads the
 % register when it loads, and iftex, color, graphicx, and hyperref, which
 % load without a driver option. iftex's \ifpdf takes the DVI branch, as on
-% any page. The page is the same as without \pdfoutput.
+% any page. It is set to 1 again in the body, before the first page is
+% shipped out. The page is the same as without \pdfoutput.
 \documentclass{article}
 \ifdefined\pdfoutput\pdfoutput1\fi
 \usepackage{pict2e}
@@ -11,6 +12,7 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \begin{document}
+\pdfoutput=1
 \section{Colors}\label{colors}
 
 Text in \textcolor{red}{red}.

@@ -1488,9 +1488,9 @@ const drivers = {
   ],
   // \pdfoutput=1, which makes tex4ht's latex write a PDF and no DVI: each
   // package's output as without it. test-pdfoutput sets it before the
-  // class, test-pdfoutput-late after it, test-pdfoutput-sty in the class
-  // and in the last package, and test-pdfoutput-body in the body. \ifpdf
-  // takes the DVI branch.
+  // class, test-pdfoutput-late after it and in the body, and
+  // test-pdfoutput-sty in the class and in the last package. \ifpdf takes
+  // the DVI branch.
   'test-pdfoutput': [
     new RegExp(`Colors in <span style='color:${lightDark('#0000FF', 'color')};'>blue</span></h3>`),
     pdftexText('#FF0000', 'red'),
@@ -1524,10 +1524,8 @@ const drivers = {
     pdftexText('#FF0000', 'red'), pdftexText('#00E000', 'forest'),
     ...pdftexLinks('colors'),
     /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
-  ],
-  'test-pdfoutput-body': [
-    pdftexText('#FF0000', 'red'),
-    /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
+    // (the kernel's backend, which \begin{document} loads)
+    /Backend: dvips\./,
   ],
 };
 
