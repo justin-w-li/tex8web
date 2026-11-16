@@ -214,15 +214,32 @@ function M.sized_math_spaces(document)
   end
 end
 
--- tex4ht writes a space where it sees a gap in a D cell of dcolumn
--- (tex8web-text.tex): after a math minus, and at the glue that sets a
--- part's width. A space between the minus and the digits would show, and
--- the number is math, which has no spaces, so the spaces are dropped.
+-- tex4ht writes a space in a D cell of dcolumn (tex8web-text.tex) at the
+-- glue that sets a part's width, and after a math minus, where TeX sets
+-- none. Those spaces are dropped. A space inside the number, such as
+-- between the words of an \mbox, stays.
 function M.dcolumn_spaces(document)
-  for _, el in ipairs(document:query_selector(".tex8web-dc")) do
-    el:traverse(function(node)
-      if node:is_text() then dom.set_node_text(node, (node:get_text():gsub("%s+", ""))) end
+  for _, part in ipairs(document:query_selector(".tex8web-dc > span")) do
+    local texts = {}
+    part:traverse(function(node)
+      if node:is_text() then texts[#texts + 1] = node end
     end)
+    for i, node in ipairs(texts) do
+      local text = node:get_text():gsub("\u{2212}%s+", "\u{2212}")
+      local previous = texts[i - 1] and texts[i - 1]:get_text()
+      if previous and previous:find("\u{2212}$") then text = text:gsub("^%s+", "") end
+      dom.set_node_text(node, text)
+    end
+    for _, node in ipairs(texts) do
+      local text = node:get_text():gsub("^%s+", "")
+      dom.set_node_text(node, text)
+      if text ~= "" then break end
+    end
+    for i = #texts, 1, -1 do
+      local text = texts[i]:get_text():gsub("%s+$", "")
+      dom.set_node_text(texts[i], text)
+      if text ~= "" then break end
+    end
   end
 end
 

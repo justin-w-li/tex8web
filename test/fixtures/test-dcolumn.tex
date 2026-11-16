@@ -97,5 +97,20 @@
     Sans two & 70.5 \\
 \end{tabular}\par}
 
+% a number wider than its two-sided format's box: its part before the
+% separator hangs out to the left of the box, as in the PDF
+\begin{tabular}{l D{.}{.}{2.2}}
+    Over one & 12.5 \\
+    Over minus & -12.25 \\
+\end{tabular}
+
+% the spaces TeX sets in a cell's math: a thin space, the space after a
+% math comma, and the space between words in a box
+\begin{tabular}{l D{.}{.}{-1}}
+    Gap thin & 1\,234.5 \\
+    Gap comma & 12,345 \\
+    Gap text & \mbox{not sig} \\
+\end{tabular}
+
 Math after the tables: $x = 1$.
 \end{document}

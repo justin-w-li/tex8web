@@ -493,7 +493,9 @@ const laps = { 'test-lefteqn': 18 };
 // dcolumn's D columns: in each column of a table, the numbers line up on
 // their separators as in the PDF, and an integer ends where the
 // separators start. A cell is a number if its text is digits with at most
-// a minus, parentheses, one separator, and stars after it. Characters set
+// a minus, parentheses, one separator, and stars after it. The separator
+// is the first one after dcolumn's part before it (tex8web-dc-int), and no
+// character of that part ends to the right of the separator. Characters set
 // by MathJax are measured by their mjx-c boxes, without the hidden MathML
 // copy. Each digit is upright, in the body's serif face, and at the size
 // of the row's first cell, as math digits are in the PDF. Columns count
@@ -530,7 +532,10 @@ const separated = `(() => {
         column += cell.colSpan;
         const found = chars(cell), text = found.map(([c]) => c).join('');
         if (!/^\\(?[−-]?\\d*(?:[.,⋅·]\\d*)?\\)?[∗*]*$/.test(text) || !/\\d/.test(text)) continue;
-        const sep = found.find(([c]) => /[.,⋅·]/.test(c)), digits = found.filter(([c]) => /\\d/.test(c));
+        const sep = found.find(([c, , el]) => /[.,⋅·]/.test(c) && !el.closest('.tex8web-dc-int')),
+          digits = found.filter(([c]) => /\\d/.test(c));
+        const over = sep && found.find(([, box, el]) => el.closest('.tex8web-dc-int') && box().right > sep[1]().left + 0.5);
+        if (over) faults.push([name, \`\${text}'s \${over[0]} ends \${(over[1]().right - sep[1]().left).toFixed(1)}px right of its separator\`]);
         columns.set(at, [...columns.get(at) || [], [text, sep ? sep[1]().left : digits[digits.length - 1][1]().right]]);
         for (const [c, , el] of digits) {
           const style = getComputedStyle(el);
@@ -550,7 +555,7 @@ const separated = `(() => {
   });
   return { checked, wrong };
 })()`;
-const decimals = { 'test-dcolumn': 16, 'test-dcolumn-hyperref': 1 };
+const decimals = { 'test-dcolumn': 18, 'test-dcolumn-hyperref': 1 };
 
 // Each picture lowered below the baseline (text.lua) with the share of its
 // height below the baseline that it has in the PDF, also where the picture

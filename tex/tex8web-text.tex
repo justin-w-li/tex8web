@@ -605,7 +605,8 @@
 % to a $ (\AltMathOne). TeX sets that math here, as under mathml.4ht. The
 % number is written as dcolumn's two boxes, the part before the separator
 % and the part from it, so the separators of a column line up as in the
-% PDF. A box that dcolumn makes a fixed width gets its width in ems. A
+% PDF. A box that dcolumn makes a fixed width gets its width in ems, and
+% a wider part before the separator sticks out to the left, as in TeX. A
 % one-sided format (D{.}{.}{2}) sets its cell flush right, after an
 % \hfill. The end macros have newer names since dcolumn of 2026-06-04
 % (tex8web-hooks.sty). In a \multicolumn, the cell's <div> would open in
@@ -619,7 +620,7 @@
         \ifx\relax#2\relax\else\HCode{ style="--tex8web-dc-width: #2"}\fi\HCode{>}}
     \def\web@dc#1#2#3{%
         \HCode{<span class="tex8web-dc#1">}%
-        \web@dc@part{int}{#2}\box\z@\HCode{</span>}%
+        \web@dc@part{int}{#2}\HCode{<span>}\box\z@\HCode{</span></span>}%
         \web@dc@part{frac}{#3}\box\tw@\HCode{</span></span>}}
     \def\DC@endcentre{$\egroup
         \ifdim\wd\z@>\wd\tw@ \dimen@\wd\z@ \else \dimen@\wd\tw@ \fi

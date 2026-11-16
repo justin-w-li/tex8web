@@ -615,7 +615,9 @@ td.td01 { padding-right: var(--tex8web-tabcolsep); }
 .tex8web-dc { display: block; white-space: nowrap; }
 .tex8web-dc-right { text-align: right; }
 .tex8web-dc > span { display: inline-block; width: var(--tex8web-dc-width); }
-.tex8web-dc-int { text-align: right; }
+/* a part wider than its box sticks out to the left, as in TeX: its
+   content is one flex item, which keeps a <sup> raised */
+.tex8web-dc > .tex8web-dc-int { display: inline-flex; justify-content: flex-end; }
 .tex8web-dc-frac { text-align: left; }
 /* framed, as far from the text as in the PDF (tex8web-text.tex). Under a
    titlesec heading, the sum of this space and the heading's space below,

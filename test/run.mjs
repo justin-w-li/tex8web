@@ -2107,6 +2107,8 @@ const tables = {
     dcolumn('Note one', '5.5'), dcolumn('Note two', '50.25'),
     dcolumn('Theorem one', '6.25'), dcolumn('Theorem two', '60.5'),
     dcolumn('Sans one', '7.25'), dcolumn('Sans two', '70.5'),
+    dcolumn('Over one', '12.5'), dcolumn('Over minus', '-12.25'),
+    dcolumn('Gap comma', '12,345'), dcolumn('Gap text', 'not sig'),
     /Math after the tables: (?:<[^>]*>)*<mjx-container/,
   ],
   'test-dcolumn-hyperref': [
