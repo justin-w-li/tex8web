@@ -2041,7 +2041,7 @@ const breaks = {
 // A table's row, from the text of its cells (tags left out of it)
 const cellGap = '(?:\\s|<(?!/?t[dr]\\b)[^>]*>)*', cellTag = '(?:<(?!/?t[dr]\\b)[^>]*>)*';
 const cellText = text => text === null ? '(?:(?!</td>)[^])*'
-  : cellGap + [...text].map(c => ({ ' ': '\\s+', '-': '\u2212', '*': '[\u22c5\u00b7]', '.': '\\.', '(': '\\(', ')': '\\)' })[c] || c).join(cellTag) + cellGap;
+  : cellGap + [...text].map(c => ({ ' ': '\\s+', '_': '(?:\u202f|&#x202F;)', '-': '\u2212', '*': '[\u22c5\u00b7]', '.': '\\.', '(': '\\(', ')': '\\)' })[c] || c).join(cellTag) + cellGap;
 const dcolumn = (...cells) => new RegExp(cells.map(text => `<td[^>]*>${cellText(text)}</td>`).join('\\s*'));
 
 // Where each table sits, from its class: at the indent of a paragraph it
@@ -2086,8 +2086,9 @@ const tables = {
     /^(?![^]*font-size:\d)/,
   ],
   // dcolumn's D columns: a row's label, then each cell's text as in the
-  // PDF, with no space inside it, a math minus, and \cdot as a dot. null
-  // is any cell, '' an empty one.
+  // PDF, with a math minus. In a pattern, '-' is that minus, '*' the dot
+  // of \cdot, '_' a narrow no-break space (a thin space in TeX), and ' '
+  // any space. null is any cell, '' an empty one.
   'test-dcolumn': [
     dcolumn('Plain one', '1.25'), dcolumn('Plain two', '10.5'), dcolumn('Plain minus', '-12.75'),
     dcolumn('Plain empty', ''), dcolumn('Plain integer', '3'), dcolumn('Plain point', '.5'),
@@ -2108,12 +2109,12 @@ const tables = {
     dcolumn('Theorem one', '6.25'), dcolumn('Theorem two', '60.5'),
     dcolumn('Sans one', '7.25'), dcolumn('Sans two', '70.5'),
     dcolumn('Over one', '12.5'), dcolumn('Over minus', '-12.25'),
-    dcolumn('Gap comma', '12,345'), dcolumn('Gap text', 'not sig'),
+    dcolumn('Gap thin', '1_234.5'), dcolumn('Gap comma', '12,_345'), dcolumn('Gap text', 'not sig'),
     /Math after the tables: (?:<[^>]*>)*<mjx-container/,
   ],
   'test-dcolumn-hyperref': [
     dcolumn('Label', 'Value'), dcolumn('Linked one', '1.25'), dcolumn('Linked minus', '-12.75'),
-    dcolumn('Linked integer', '3'),
+    dcolumn('Linked integer', '3'), dcolumn('Linked thin', '1_234.5'), dcolumn('Linked comma', '12,_345'),
     /See table<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>1(?:<!--[^]*?-->)?<\/a>[^]*?<div class='table'>\s*<p[^>]*\bid='\1'/,
     /Math after the table: (?:<[^>]*>)*<mjx-container/,
   ],

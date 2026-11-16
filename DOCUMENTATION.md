@@ -237,6 +237,8 @@ After `\hfill` in a paragraph, a heading, or a caption, the rest of the line is 
 
 Each cell has `\tabcolsep` at its sides, as in the PDF, unless `@{}` removes it.
 
+A `D` column of dcolumn sets each number as in the PDF, with its output separator, and the separators of a column line up.
+
 In a paragraph column, such as `p{3cm}`, `\centering` or `\raggedleft`, or ragged2e's `\Centering` or `\RaggedLeft`, centers a cell's lines or sets them flush right, as in the PDF. Put it at the start of the cell, or in the column's `>{}`.
 
 A table sits where it sits in the PDF. A tabular is at the left, at the paragraph's indent, unless `center`, `flushright`, `\centering`, or `\raggedleft` puts it elsewhere. A tabular in a table cell is placed by the cell's alignment. A longtable is centered, or placed by its `[l]` or `[r]` option, or by `\LTleft` and `\LTright` set to `\fill` or `0pt`. A tabularx is centered.
@@ -385,6 +387,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 - **Paragraph cells.** All of a cell's paragraphs are aligned as its last one, for example all centered after a `\centering` between them.
 - **Tables in a line.** A paragraph with a tabular inside its text is broken around the tabular.
 - **Negative row space.** `\\[len]` with a negative length, such as `\\[-4pt]`, has no effect. In the PDF, the next row is set higher.
+- **dcolumn.** A `D` column in a math `array` is shown as MathJax's error "Illegal pream-token (D)". Stars from a command defined in the preamble, such as esttab's `\sym` with its `fragment` option, are on the baseline in a `D` cell, where the PDF raises them. Define the command after `\begin{document}`, or write the stars as `^{**}`.
 - **Table widths.** A tabularx is as wide as its contents, where in the PDF it fills its width. A longtable with a fixed `\LTleft`, such as `\parindent`, is at the left margin.
 - **Minipages.** A paragraph with a minipage inside its text is broken around the minipage. `\centering` in a minipage applies only in a figure. Two minipages, each inside an `\fbox`, are one above the other instead of side by side.
 - **A list item that starts with a box.** Beside a minipage or tabular aligned at its center or bottom, the item's label is at the box's first line. In the PDF, the label is at the middle of the box, or at its last line.

@@ -612,8 +612,31 @@
 % (tex8web-hooks.sty). In a \multicolumn, the cell's <div> would open in
 % the first box and close in the second (\c:multicolumn and
 % \d:multicolumn, latex.4ht), so it is left out.
+% tex4ht.c writes a thin space in math as nothing, so \, (latex.4ht's
+% \a:, and amsmath.4ht's \a:tmspace) and the space TeX sets after a math
+% comma are written as U+202F, the narrow no-break space, beside the glue.
+% TeX sets that space when a digit or a letter comes next, not before the
+% } of a {,}. A comma that is a column's separator is dcolumn's, defined
+% after this.
 \@ifpackageloaded{dcolumn}{%
-    \Configure{dcolumn}{\Configure{$}{}{}{}%
+    \def\web@dc@narrow{\HCode{&\#x202F;}}%
+    \def\web@dc@spaces{%
+        \expandafter\def\csname a:,\endcsname{\web@dc@narrow\mskip\thinmuskip}%
+        \expandafter\def\csname a:tmspace\endcsname{\ifdim\textspace>\z@
+            \ifdim\textspace<.2em \web@dc@narrow\fi\fi\mskip\mathglue}%
+        \ifnum\mathcode`\,<32768
+            \mathchardef\web@dc@comma\mathcode`\,
+            \mathcode`\,=32768
+            \begingroup\lccode`\~=`\,%
+            \lowercase{\endgroup\def~}{\web@dc@comma\web@dc@after}%
+        \fi}%
+    \def\web@dc@after{\futurelet\web@next\web@dc@after@}%
+    \def\web@dc@after@{\ifx\web@next\@sptoken
+            \expandafter\web@dc@skip
+        \else\ifcat\noexpand\web@next0\web@dc@narrow
+        \else\ifcat\noexpand\web@next a\web@dc@narrow\fi\fi\fi}%
+    \expandafter\def\expandafter\web@dc@skip\space{\web@dc@after}%
+    \Configure{dcolumn}{\Configure{$}{}{}{}\web@dc@spaces
         \expandafter\let\csname c:multicolumn\endcsname\empty
         \expandafter\let\csname d:multicolumn\endcsname\empty}{}%
     \def\web@dc@part#1#2{\HCode{<span class="tex8web-dc-#1"}%
