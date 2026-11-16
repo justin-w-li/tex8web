@@ -2643,7 +2643,7 @@ const appendixRefs = {
   ],
   ...Object.fromEntries(['book', 'memoir', 'scrbook'].map(name => [`test-appref-${name}`, [
     ['Ref: A; B; A.1; (A.1); 1.', ['extra', 'second-extra', 'more', null, 'main']],
-    ['Autoref: Appendix A; Appendix B.', ['extra', 'second-extra']],
+    ['Autoref: Appendix A; Appendix B; Appendix A.1.', ['extra', 'second-extra', 'more']],
     ['Here A.', ['extra']], ['In B: B.', ['second-extra']],
   ]])),
   'test-appref-scrreprt': [
@@ -2665,6 +2665,11 @@ const appendixRefs = {
   'test-appref-article': [
     ['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']],
     ['Cref: section A; Section A.1.', ['extra', 'more']],
+  ],
+  'test-appref-article-cref': [
+    ['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']],
+    ['Cref: section A; Section B; section A.1; section 1.', ['extra', 'second-extra', 'more', 'main']],
+    ['Here section A.', ['extra']], ['In B: B.', ['second-extra']],
   ],
   'test-appref-appendices': [['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']]],
   'test-appref-amsbook': [
@@ -2698,7 +2703,7 @@ function appendixRefProblems(html, checks) {
     }
     if (!targets) continue;
     const links = [...inner.matchAll(/<a ((?:(?!class='tex8web-permalink')[^>])*)href='#([^']+)'/g)]
-      .filter(([, attrs]) => !attrs.includes('tex8web-permalink')).map(([, , id]) => id).filter(id => !id.startsWith('fn'));
+      .map(([, , id]) => id).filter(id => !id.startsWith('fn'));
     const got = targets.map((id, i) => id === null ? null : links[i]);
     if (got.join('|') !== targets.join('|')) problems.push(`the links of '${sentence}' go to '${links.join('|')}'`);
   }

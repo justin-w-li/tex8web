@@ -1,0 +1,16 @@
+% References to an article's appendix sections with cleveref and without
+% hyperref.
+\documentclass{article}
+\usepackage{cleveref}
+\begin{document}
+\section{Main}\label{main}
+Ref: \ref{app:a}; \ref{app:b}; \ref{sub:a}; \ref{main}.
+
+Cref: \cref{app:a}; \Cref{app:b}; \cref{sub:a}; \cref{main}.
+\appendix
+\section{Extra}\label{app:a}
+Here \cref{app:a}.
+\subsection{More}\label{sub:a}
+\section{Second extra}\label{app:b}
+In B: \ref{app:b}.
+\end{document}
