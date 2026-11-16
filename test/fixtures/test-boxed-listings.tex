@@ -90,6 +90,37 @@ bottomC();
 \end{lstlisting}\end{lrbox}
 Bottom \fbox{\usebox{\lstbox}} then $m$.
 
+% (boxpos=t with a caption and a label, whose anchors come between the
+% box and the listing, and with a label alone; any other value centers
+% the listing, as boxpos=m and boxpos=center)
+\begin{lrbox}{\lstbox}\begin{lstlisting}[caption={Captioned top},label=lst:captop,boxpos=t]
+capA();
+capB();
+capC();
+\end{lstlisting}\end{lrbox}
+Captop \fbox{\usebox{\lstbox}} done.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}[label=lst:labtop,boxpos=t]
+labA();
+labB();
+labC();
+\end{lstlisting}\end{lrbox}
+Labtop \fbox{\usebox{\lstbox}} done.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}[boxpos=m]
+midA();
+midB();
+midC();
+\end{lstlisting}\end{lrbox}
+Mid \fbox{\usebox{\lstbox}} done.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}[boxpos=center]
+namedA();
+namedB();
+namedC();
+\end{lstlisting}\end{lrbox}
+Named \fbox{\usebox{\lstbox}} done, after \ref{lst:captop}.
+
 % (a bottom caption in a table cell, with no mark left in the page)
 \begin{tabular}{l}\begin{lstlisting}[caption={Cell below},captionpos=b]
 cell();

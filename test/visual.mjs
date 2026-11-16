@@ -1507,7 +1507,7 @@ const boxedListingScroll = `(() => {
   // (centered on the line, at its top with boxpos=t, and with its last
   // line on the baseline with boxpos=b: the word before the box is in the
   // middle, at the top, or at the bottom of the listing)
-  for (const name of ['center', 'top', 'bottom']) {
+  for (const name of ['center', 'top', 'bottom', 'lab', 'mid', 'named']) {
     const code = [...document.querySelectorAll('.tex8web-boxed-listing > code')].find(el => el.textContent.includes(name + 'A();'));
     const word = code?.closest('p').firstChild;
     if (!code || word?.nodeType !== 3) { problems.push(\`no listing \${name}A();, or no word before it\`); continue; }
@@ -1515,7 +1515,17 @@ const boxedListingScroll = `(() => {
     const w = range.getBoundingClientRect(), box = code.getBoundingClientRect(), size = parseFloat(getComputedStyle(code).fontSize);
     const where = Math.abs((box.top + box.bottom) / 2 - (w.top + w.bottom) / 2) < 0.5 * size ? 'middle'
       : Math.abs(box.top - w.top) < size ? 'top' : Math.abs(box.bottom - w.bottom) < size ? 'bottom' : 'nowhere';
-    if (where !== { center: 'middle', top: 'top', bottom: 'bottom' }[name]) problems.push(\`the word before \${name}A(); is at the \${where} of it\`);
+    if (where !== { center: 'middle', top: 'top', bottom: 'bottom', lab: 'top', mid: 'middle', named: 'middle' }[name]) problems.push(\`the word before \${name}A(); is at the \${where} of it\`);
+  }
+  // (boxpos=t with a caption: the word at the caption's top, as the
+  // caption is the first line of listings' vtop)
+  const captioned = [...document.querySelectorAll('.tex8web-boxed-listing')].find(el => el.textContent.includes('capA();'));
+  const capWord = captioned?.closest('p').firstChild;
+  if (!captioned || capWord?.nodeType !== 3) problems.push('no listing capA();, or no word before it');
+  else {
+    const range = document.createRange(); range.selectNodeContents(capWord);
+    const w = range.getBoundingClientRect(), caption = captioned.querySelector('.caption')?.getBoundingClientRect();
+    if (!caption || Math.abs(caption.top - w.top) >= parseFloat(getComputedStyle(captioned).fontSize)) problems.push('the word before capA(); is not at the top of its caption');
   }
   return problems;
 })()`;

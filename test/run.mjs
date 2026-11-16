@@ -3122,8 +3122,13 @@ function check(doc, result, out, aux) {
       'twoA();', 'twoB(); above Above second', 'pairA(); below Below first', 'pairB(); above Above next',
       'titleA();', 'titleB(); above Titled next',
       ...['A', 'B', 'C', 'D'].map(name => `wide${name}(); /* a line wider than the column of a phone screen */`),
-      'a b c x; abcde y;', ...['center', 'top', 'bottom'].map(name => `${name}A(); ${name}B(); ${name}C();`)];
+      'a b c x; abcde y;', ...['center', 'top', 'bottom'].map(name => `${name}A(); ${name}B(); ${name}C();`),
+      'capA(); capB(); capC(); above Captioned top', ...['lab', 'mid', 'named'].map(name => `${name}A(); ${name}B(); ${name}C();`)];
     if (boxes.join('|') !== want.join('|')) problems.push(`the boxed listings read '${boxes.join('|')}'`);
+    // (boxpos=center leaves no letters in the page, and a \ref to a boxed
+    // listing's label reads its number)
+    if (/\benter\b/.test(flat.replace(/<[^>]*>/g, ' '))) problems.push('the letters of boxpos=center are in the page');
+    if (!/done, after <a href='#[\w-]+'>5<\/a>\./.test(flat)) problems.push('the \\ref to lst:captop does not read 5');
     const black = flat.match(/<pre class='lstlisting' id='([\w-]+)'>(?:(?!<\/pre>)[^])*blackshadow/)?.[1];
     if (!(black && new RegExp(`#${black}\\s*\\{\\s*box-shadow:[^;}]*\\scurrentColor\\s*[;}]`).test(styles))) problems.push('the listing \'blackshadow();\' has no shadow in the text\'s color');
     const formulas = [...flat.matchAll(/then (?:<span class='tex8web-nowrap'>)?<mjx-container aria-label='([^']*)'/g)].map(([, label]) => label);

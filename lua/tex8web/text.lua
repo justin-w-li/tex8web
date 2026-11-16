@@ -563,13 +563,16 @@ function M.boxed_listings(document)
       end
       local text = listing:get_children()[1]
       if text and text:is_text() then dom.set_node_text(text, (text:get_text():gsub("^\n", "", 1))) end
-      -- (tex8web-text.tex's mark of boxpos=t or b, before the listing and its caption)
+      -- (tex8web-text.tex's mark of boxpos=t or b, before the listing and its
+      -- caption, and before the empty anchors of the caption's counter and label)
       local class = "tex8web-boxed-listing"
       for i = first - 1, 1, -1 do
         local node = nodes[i]
         local pos = (dom.comment_text(node) or ""):match("tex8web:boxpos (%a)")
-        if pos then class = class .. ({t = " tex8web-boxed-top", b = " tex8web-boxed-bottom"})[pos] or "" break end
-        if node:is_element() or node:is_text() and node:get_text():find("%S") then break end
+        if pos then class = class .. (({t = " tex8web-boxed-top", b = " tex8web-boxed-bottom"})[pos] or "") break end
+        local anchor = node:is_element() and node:get_element_name() == "a" and node:get_attribute("id")
+          and #node:get_children() == 0
+        if not anchor and (node:is_element() or node:is_text() and node:get_text():find("%S")) then break end
       end
       local box = parent:create_element("span", {class = class})
       local inside, around = {}, {}
