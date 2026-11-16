@@ -535,7 +535,7 @@
                         {
                             \str_if_in:nnTF {#1} {\qedhere}
                                 {
-                                    \__web_saved:n { \[#1\] }
+                                    \__web_saved_qed:n {#1}
                                     \tl_clear:N \l__web_alignment_tl
                                     \__web_rows:nn {equation*} {#1}
                                     \exp_after:wN \__web_AltlDisplay:w \l__web_body_tl \]
@@ -1033,10 +1033,21 @@
 % An environment's glyphs: its \end sets \@ignoretrue, as amsmath's and
 % LaTeX's displays do, and the source's \end then skips the space after
 % it, as in the PDF. Otherwise the glyphs' own \end would use the flag
-% up inside the group (\end, ltmiscen.dtx). LaTeX writes \global before
-% it, so it stays an assignment, one that changes nothing.
+% up inside the group (\end, ltmiscen.dtx). tex4ht's \end writes \global
+% before it (latex.4ht), so it stays an assignment, one that changes
+% nothing.
 \cs_new_protected:Npn \__web_saved_env:nn #1#2 {
     \__web_saved:n { \cs_set:Npn \@ignorefalse { \tex_let:D \if@ignore \if@ignore } \begin{#1} #2 \end{#1} }
+}
+% A \[ \] with a \qedhere: \nested:math's \[ is a bare $$, in which
+% amsthm warns that \qedhere may not work and sets the box a \quad after
+% the formula (\qedhere, amsthm.sty). amsmath's \[ is equation*, which
+% puts the box at the right margin, as in the PDF. Its \end clears the
+% flag it sets, as the source's \] is no environment
+\cs_new_protected:Npn \__web_saved_qed:n #1 {
+    \cs_if_exist:cTF {equation*}
+        { \__web_saved:n { \begin{equation*} #1 \end{equation*} } }
+        { \__web_saved:n { \[#1\] } }
 }
 \web@needs{AltMathOne}
 \web@needs{AltlMath}

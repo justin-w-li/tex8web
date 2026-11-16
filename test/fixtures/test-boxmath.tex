@@ -11,6 +11,8 @@
 %   with a matrix, both with &, and an enumerate;
 % - a saved minipage holding a tikzcd display, drawn once;
 % - \sbox holding a siunitx quantity;
+% - a saved proof ending in a display with \qedhere, whose QED is at the
+%   right margin;
 % - math typed directly in a node.
 %
 % Copies of saved boxes outside any picture, whose math is the page's
@@ -138,6 +140,8 @@ Then
 \end{proof}
 \end{minipage}\end{lrbox}
 Before qed copy. Placed \usebox{\bxe} here. After qed copy.
+
+Before lrbox qed. \tikz\node[draw]{\usebox{\bxe}}; After lrbox qed.
 
 Before eqref. See \eqref{eq:boxed}. After eqref.
 

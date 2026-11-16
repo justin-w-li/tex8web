@@ -1487,10 +1487,11 @@ const drivers = {
 // Warnings a document's TeX log must not hold. test-pdftex-class's class
 // leaves pdfTeX's driver option unused, and xcolor uses the fixture's other
 // class option, dvipsnames, so LaTeX warns of no unused global option.
-// test-boxmath sets a labelled equation twice, and writes its label once.
+// test-boxmath sets a labelled equation twice, and writes its label once,
+// and sets a \qedhere twice, where amsthm can.
 const texWarnings = {
   'test-pdftex-class': [/Unused global option/],
-  'test-boxmath': [/multiply defined/],
+  'test-boxmath': [/multiply defined/, /qedhere command may not work/],
 };
 
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
@@ -1604,9 +1605,13 @@ const nested = { 'test-nestpic': nestpicCases, 'test-nestpic-hyperref': nestpicC
 // pictures are as many as the box holds, and the copy's text is only the
 // box's text, with no glyphs of the math. The proof's QED is the tag of
 // its display, once, and the reference to the copy's equation is to its
-// number, given once in the aux file (texWarnings).
+// number, given once in the aux file (texWarnings). Drawn in a node, the
+// proof's QED, which amsthm draws with rules, ends at the right margin of
+// the box, which starts at its first glyph and is 0.5\textwidth wide, in
+// the SVG's bp: within 1bp, as the box has a side bearing.
 const boxmathPictures = ['sbox', 'savebox', 'lrbox inline', 'lrbox display', 'lrbox dollars', 'lrbox equation',
-  'lrbox align', 'lrbox flalign', 'lrbox ampersand', 'lrbox list', 'lrbox tikzcd', 'sbox quantity', 'direct'];
+  'lrbox align', 'lrbox flalign', 'lrbox ampersand', 'lrbox list', 'lrbox tikzcd', 'sbox quantity', 'lrbox qed',
+  'direct'];
 const boxmathFonts = { 'lrbox display': 5, 'lrbox dollars': 5, 'lrbox ampersand': 3, 'sbox quantity': 1 };
 const boxmathGlyphs = { 'lrbox tikzcd': 9, 'sbox quantity': 11 };
 const boxmathCopies = {
@@ -1615,6 +1620,7 @@ const boxmathCopies = {
   'qed copy': [1, 'Placed Proof. Then here.'], eqref: [0, 'See (3).'],
 };
 const boxmathQed = 'qed copy';
+const boxmathQedRight = ['lrbox qed', 345 / 2 * 72 / 72.27];
 const boxmathSame = ['lrbox dollars', 'lrbox display'];
 const boxmathAfter = ['lrbox equation', 'lrbox align'];
 const boxmath = { 'test-boxmath': boxmathPictures };
@@ -2818,6 +2824,10 @@ function check(doc, result, out, aux) {
     const height = name => Number(svgs[name].match(/viewBox='\S+ \S+ \S+ ([\d.]+)'/)?.[1]);
     const [dollars, brackets] = boxmathSame;
     if (!(Math.abs(height(dollars) - height(brackets)) < 0.01)) problems.push(`the picture of "${dollars}" is ${height(dollars)}pt high, not ${height(brackets)}pt as "${brackets}"`);
+    const [qedName, qedWidth] = boxmathQedRight;
+    const qedLeft = Number(svgs[qedName].match(/<use x='([\d.-]+)'/)?.[1]);
+    const qedRight = Math.max(...[...svgs[qedName].matchAll(/<rect x='([\d.-]+)' [^>]*width='([\d.]+)'/g)].map(([, x, w]) => Number(x) + Number(w)));
+    if (!(Math.abs(qedRight - qedLeft - qedWidth) < 1)) problems.push(`the QED in "${qedName}" ends ${(qedRight - qedLeft).toFixed(2)}bp from the box's left edge, not ${qedWidth.toFixed(2)}bp`);
     for (const name of boxmathAfter) {
       // (each glyph's origin, by line: the first line and the last)
       const glyphs = [...svgs[name].matchAll(/<use x='([\d.-]+)' y='([\d.-]+)'/g)].map(([, x, y]) => [Number(x), Number(y)]);
