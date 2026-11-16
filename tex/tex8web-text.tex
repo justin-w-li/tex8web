@@ -79,12 +79,30 @@
 % (mathjax-latex-4ht.4ht) then reads the source up to the next $. An
 % inline listing has no \par, so it is set without the box, in listings'
 % TextStyle hook, where a document's own \Configure{lstinline} leaves it.
+% A displayed listing keeps the box, with an empty \everymath from its
+% BoxUnsafe hook, just before the $. Math escaped in the listing is then
+% typeset by TeX too, as tex4ht's markup of math cannot be in a <pre>.
+% The hook also drops the frame, as listings.4ht means to: lstmisc.sty
+% defines \lst@frameInit again when it loads the frame aspect, and the
+% frame's \par in the box closes the paragraph around the box. html4.4ht
+% closes the paragraph before an \lstinputlisting (\EndP), also from inside
+% the <span> of an \fbox or \colorbox, so no paragraph is closed there.
+% listings.4ht writes a caption without \@makecaption, so the mark of the
+% caption's skips is added to its text (\web@capskip, under figures).
 \@ifpackageloaded{listings}{%
     \Configure{lstinline}
         {\HCode{<code class="lstinline">}\HtmlParOff
          \expandafter\def\csname a:listings-init\endcsname{\ht:special{t4ht@(}}}
         {\HtmlParOn\HCode{</code>}}%
-    \lst@AddToHook{TextStyle}{\let\lst@boxtrue\relax}}{}
+    \lst@AddToHook{TextStyle}{\let\lst@boxtrue\relax}%
+    \lst@AddToHook{BoxUnsafe}{\everymath{}\let\lst@frameInit\relax\let\lst@frameExit\relax}%
+    \let\web@lstinputlisting\lst@InputListing
+    \def\lst@InputListing#1{\begingroup\ifinner\ifhmode\let\EndP\relax\fi\fi
+        \web@lstinputlisting{#1}\endgroup}%
+    \def\web@lstmakecaption#1#2{\cptA: #1\if :#1:\else\cptB:\fi \cptC: #2\cptD:}%
+    \ifx\web@lstmakecaption\lst@makecaption
+        \def\lst@makecaption#1#2{\web@lstmakecaption{#1}{\web@capskip#2}}%
+    \fi}{}
 \catcode58 12
 
 % The virtual Courier fonts map character 32 to an ordinary space.
