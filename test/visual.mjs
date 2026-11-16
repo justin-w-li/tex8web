@@ -508,10 +508,11 @@ const hung = `(shares => {
   return { checked: pictures.length, wrong };
 })`;
 const hangs = { 'test-turned-over': [1, 1, 0.25, 0.75, 1, 1, 1, 1] };
-// In dark mode, the TikZ pictures that hold an \includegraphics are shown
-// as they are, on white, and the other TikZ pictures are inverted: how
-// many of each (test-boxgfx.tex)
-const darkPictures = { 'test-boxgfx': [12, 1] };
+// In dark mode, the pictures drawn as SVG that hold an \includegraphics
+// are shown as they are, on white, and the other such pictures are
+// inverted: how many of each (test-boxgfx.tex). In light mode, the first
+// have no background, as a box behind them may have a color.
+const darkPictures = { 'test-boxgfx': [15, 2] };
 const darkSeen = `[...document.images].filter(img => /\\d+x\\.svg$/.test(img.getAttribute('src'))).map(img => {
   const style = getComputedStyle(img);
   return [img.classList.contains('tex8web-graphic'), style.filter, style.backgroundColor];
@@ -1613,6 +1614,10 @@ async function compare(chrome, doc, ok) {
       if (shown.length !== graphics || inverted.length !== others) {
         problems.push(`${html}: in dark mode, ${shown.length} pictures with a graphic shown on white and ${inverted.length} others inverted, not ${graphics} and ${others}`);
       }
+      const light = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, colorScheme: 'light' },
+        page => page.evaluate(darkSeen));
+      const plain = light.filter(([graphic, filter, background]) => graphic && filter === 'none' && background === 'rgba(0, 0, 0, 0)');
+      if (plain.length !== graphics) problems.push(`${html}: in light mode, ${plain.length} pictures with a graphic shown without a background, not ${graphics}`);
     }
     for (const [width, [wide, claps]] of Object.entries(wideBlocks[doc.name] ?? {})) {
       const blocks = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: Number(width) },

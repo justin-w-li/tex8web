@@ -3,15 +3,20 @@
 % then in the text keeps its picture as an image of the page there.
 % Graphics typed inside a picture: a TikZ node, a LaTeX picture, an
 % overpic, a node in a \resizebox that changes its aspect, a trimmed and
-% clipped PNG, a PNG turned by angle, and a PNG in a \scalebox. A TikZ
-% picture without a graphic follows the theme.
+% clipped PNG, a PNG turned by angle, a PNG in a \scalebox, and a PNG
+% turned in a LaTeX picture, where it is outside the picture's frame. A
+% saved TikZ picture with a graphic placed twice. A TikZ picture without
+% a graphic follows the theme, and one with a turned label and a labeled
+% arrow that pgf leaves out of its bounding box is as wide as in the PDF.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}
 \usepackage{pict2e}
 \usepackage{tikz}
 \newsavebox{\keep}
+\newsavebox{\twice}
 \begin{document}
+\sbox{\twice}{\begin{tikzpicture}\node[draw] {\includegraphics[width=1cm]{test-bare.png}};\end{tikzpicture}}
 Before lrbox png.
 \begin{lrbox}{\keep}\begin{minipage}{0.8\linewidth}
 Some text.
@@ -95,8 +100,23 @@ Before scaled png.
 
 After scaled png.
 
+Before turned in picture.
+\begin{picture}(40,60)\put(40,0){\rotatebox{90}{\includegraphics[width=60pt]{test-bare.png}}}\end{picture}
+
+After turned in picture.
+
+Before twice.
+\usebox{\twice} \usebox{\twice}
+
+After twice.
+
 Before plain node.
 \begin{tikzpicture}\node[draw] {Plain};\end{tikzpicture}
 
 After plain node.
+
+Before turned label.
+\begin{tikzpicture}\node (a) {\rotatebox{90}{L}}; \draw[overlay,->] (a) -- ++(4,0) node[right] {R};\end{tikzpicture}
+
+After turned label.
 \end{document}

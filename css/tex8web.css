@@ -56,12 +56,14 @@ a.url, a[href*="://"]:not(.tex8web-control), a[href^="mailto:"] { color: var(--t
 a.url, .path, .tex8web-nolinkurl { hyphens: manual; }
 /* pictures tex4ht generates (TikZ) are black line art, inverted in dark
    mode (tex8web-page.tex selects them by the document's name) */
+/* A picture that holds an \includegraphics (text.pictures) is shown as it
+   is, and on white in dark mode, as a PDF picture is on the PDF's page. */
 @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --tex8web-picture-filter: invert(1); } }
+    :root:not([data-theme="light"]) { --tex8web-picture-filter: invert(1); }
+    :root:not([data-theme="light"]) img.tex8web-graphic { background-color: white; } }
 :root[data-theme="dark"] { --tex8web-picture-filter: invert(1); }
-/* a picture that holds an \includegraphics (text.pictures) is shown as it
-   is, on white, as a PDF picture is on the PDF's page */
-img.tex8web-graphic { --tex8web-picture-filter: none; background-color: white; }
+:root[data-theme="dark"] img.tex8web-graphic { background-color: white; }
+img.tex8web-graphic { --tex8web-picture-filter: none; }
 
 /* --- fonts ------------------------------------------------------------- */
 

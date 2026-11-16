@@ -44,11 +44,12 @@ end
 
 -- a make4ht command: a picture that holds another picture made one
 -- picture, as tex4ht does not nest pictures ("How it works" in
--- CONTRIBUTING.md). Of the inner pictures, a lock of the bounding box
--- made while one is on is overwritten, and so is its unlock: dvisvgm
--- does not nest locks, and an inner unlock would let what follows widen
--- the outer picture. Their baseline marks are overwritten too, as
--- text.pictures reads the first mark in the SVG.
+-- CONTRIBUTING.md). In any picture, a lock of the bounding box made
+-- while one is on is overwritten, and so is its unlock: dvisvgm does not
+-- nest locks, and an inner unlock would let what follows widen the outer
+-- picture. Such a lock is an inner picture's, or a \rotatebox's in a
+-- TikZ picture (tex8web-text.tex). The inner pictures' baseline marks are
+-- overwritten too, as text.pictures reads the first mark in the SVG.
 function M.nested_pictures(par)
   local path = (par.builddir ~= "" and par.builddir .. "/" or "") .. par.input .. "." .. par.dvi
   local dvi = assert(files.read(path))
@@ -62,7 +63,7 @@ function M.nested_pictures(par)
       if depth == 1 then start, nested = i, false else nested = true end
     elseif rest == "+" then
       depth = depth - 1
-      if depth == 0 and nested then
+      if depth == 0 then
         -- (for each lock not yet unlocked, whether it is kept)
         local locked, kept = false, {}
         for j = start + 1, i - 1 do
@@ -75,7 +76,7 @@ function M.nested_pictures(par)
             drop = not table.remove(kept)
             if not drop then locked = false end
           else
-            drop = tex4ht(text) or depths[j] > 1 and text:find("^dvisvgm:raw <g class='tex8web%-baseline'")
+            drop = nested and (tex4ht(text) or depths[j] > 1 and text:find("^dvisvgm:raw <g class='tex8web%-baseline'"))
           end
           if drop then blank[#blank + 1] = list[j] end
         end

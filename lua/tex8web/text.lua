@@ -703,12 +703,15 @@ function M.pictures(document, context)
         function(file, page) return "xlink:href='" .. assets.data_uri(file, page, context) .. "'" end)
       if images > 0 then
         svg = filled
-        -- (css/tex8web.css: shown as it is in dark mode, on white)
-        local class = el:get_attribute("class")
-        el:set_attribute("class", (class and class .. " " or "") .. "tex8web-graphic")
         local f = io.open(context.dir .. "/" .. src, "w")
         f:write(svg)
         f:close()
+      end
+      -- (css/tex8web.css: shown as it is in dark mode, on white. The
+      -- picture of a saved box placed twice is filled for the first <img>)
+      if svg:find("<image ") then
+        local class = el:get_attribute("class")
+        el:set_attribute("class", (class and class .. " " or "") .. "tex8web-graphic")
       end
       local _, top, width, height = (svg:match("<svg[^>]- viewBox='([^']+)'") or ""):match("^(%S+) (%S+) (%S+) (%S+)$")
       if not width then error("no viewBox in " .. src) end

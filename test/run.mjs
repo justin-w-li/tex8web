@@ -629,12 +629,12 @@ const pictures = {
   // any context, halved too; turned over, 75pt high, 37.5pt when halved,
   // or 48bp without a size, so hanging below the baseline; two
   // \reflectbox mirror nothing, and a picture that dvisvgm draws is
-  // mirrored in its SVG, not again by its <img>; a picture at its natural size is not
-  // scaled; a mirror around a rotation is before it, on its span, and one
-  // inside a rotation on the picture; a picture with a height that does
-  // not keep its aspect is shown, and lowered, 75pt high, as is one
-  // halved only in height; a picture without its .xbb file turned over
-  // but not lowered, its height unknown)
+  // mirrored in its SVG, not again by its <img>; a picture at its
+  // natural size is not scaled; a mirror around a rotation is before it,
+  // on its span, and one inside a rotation on the picture; a picture
+  // with a height that does not keep its aspect is shown, and lowered,
+  // 75pt high, as is one halved only in height; a picture without its
+  // .xbb file turned over but not lowered, its height unknown)
   'test-reflectbox': [
     ...['bare', 'width', 'half', 'half bare', 'nested', 'left', 'right', 'link', 'footnote', 'cell', 'minipage',
       'theorem', 'italic', 'figure'].map(alt => flipped(alt, -1, 1)),
@@ -1630,22 +1630,28 @@ const boxmath = { 'test-boxmath': boxmathPictures };
 // "After" holds one <image> with its data embedded, as the SVG is shown
 // through an <img>, in an <svg> as large as the graphic in the PDF before
 // any rotation or scale, in pt, within 0.05bp. The picture is at least as
-// large as that <svg>, so the frame around it is as large too, unless a
-// rotation or scale follows. These are given with a pattern of the SVG. A
+// large as that <svg>, so the frame around it is as large too. A turned or
+// scaled graphic is given with a pattern of the SVG and its size after
+// the turn or scale, which the picture is at least as large as. A
 // trimmed graphic shows the part kept, clipped. A picture in a \resizebox
 // that changes its aspect is stretched. The box drawn in "node copy",
 // placed outside any picture, holds the graphic's <img>, no picture, and
-// only the box's text.
+// only the box's text. A picture without a graphic is as wide as in the
+// PDF, in pt, within 0.05bp.
 const boxgfxSizes = {
   'lrbox png': [138, 103.5], 'lrbox pdf': [138, 103.5], 'sbox jpg': [40, 30], 'savebox eps': [72, 36],
   'node copy': [138, 103.5], 'node png': [80, 60], 'picture pdf': [80, 60], 'overpic png': [80, 60],
   'resized node': [28.4528, 21.3396], 'trimmed png': [56.9055, 85.3583], 'turned png': [64.24, 48.18],
-  'scaled png': [28.4528, 21.3396],
+  'scaled png': [28.4528, 21.3396], 'turned in picture': [60, 45], twice: [28.4528, 21.3396],
 };
-const boxgfxTransforms = { 'turned png': /rotate\(90\)/, 'scaled png': /scale\(2,2\)/ };
+const boxgfxTransforms = {
+  'turned png': [/rotate\(90\)/, 56.9055, 75.873], 'scaled png': [/scale\(2,2\)/, 56.9055, 42.679],
+  'turned in picture': [/rotate\(90\)/, 45, 60],
+};
 const boxgfxTrimmed = ['trimmed png', "viewBox='0 0 32 48'", "overflow='hidden'"];
 const boxgfxStretched = 'resized node';
 const boxgfxCopy = ['text copy', 'test-bare.png', 'Kept text.'];
+const boxgfxWidths = { 'turned label': 13.49927 };
 const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
@@ -2878,6 +2884,12 @@ function check(doc, result, out, aux) {
     const words = name => name.replace(/ /g, '\\s+');
     const part = name => flat.match(new RegExp(`Before ${words(name)}\\.([^]*?)After ${words(name)}\\.`))?.[1] ?? '';
     const svgs = {};
+    // (a picture's width and height in bp: its viewBox is in the units of
+    // the page's group, scaled 1.4)
+    const viewSize = svg => {
+      const scale = Number(svg.match(/<g id='page1' transform='matrix\(([\d.]+) 0 0 /)?.[1] ?? 1);
+      return svg.match(/viewBox='([^']+)'/)?.[1].split(' ').slice(2).map(v => Number(v) / scale) ?? [];
+    };
     for (const [name, [width, height]] of Object.entries(boxgfx[doc.name])) {
       const src = part(name).match(/<img [^>]*src='([^']+\.svg)'/)?.[1];
       const svg = svgs[name] = src && existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
@@ -2890,19 +2902,21 @@ function check(doc, result, out, aux) {
       const [w, h] = ['width', 'height'].map(key => Number(attribute(images[0][1], key)));
       const bp = pt => pt * 72 / 72.27;
       if (!(Math.abs(w - bp(width)) < 0.05 && Math.abs(h - bp(height)) < 0.05)) problems.push(`the image in "${name}" is ${w} by ${h}bp, not ${bp(width)} by ${bp(height)}bp`);
-      if (boxgfxTransforms[name]) {
-        if (!boxgfxTransforms[name].test(svg)) problems.push(`no ${boxgfxTransforms[name].source} in the picture of "${name}"`);
-        continue;
-      }
-      // (the viewBox is in the units of the page's group, scaled 1.4)
-      const scale = Number(svg.match(/<g id='page1' transform='matrix\(([\d.]+) 0 0 /)?.[1] ?? 1);
-      const [, , wide, high] = svg.match(/viewBox='([^']+)'/)[1].split(' ').map(Number).map(v => v / scale);
-      if (!(wide > w - 0.01 && high > h - 0.01)) problems.push(`the picture of "${name}" is ${wide} by ${high}bp, smaller than its image`);
+      const [pattern, ...turned] = boxgfxTransforms[name] ?? [];
+      if (pattern && !pattern.test(svg)) problems.push(`no ${pattern.source} in the picture of "${name}"`);
+      const [least, lowest] = pattern ? turned.map(bp) : [w, h];
+      const [wide, high] = viewSize(svg);
+      if (!(wide > least - 0.01 && high > lowest - 0.01)) problems.push(`the picture of "${name}" is ${wide} by ${high}bp, smaller than its graphic, ${least} by ${lowest}bp`);
+    }
+    for (const [name, width] of Object.entries(boxgfxWidths)) {
+      const src = part(name).match(/<img [^>]*src='([^']+\.svg)'/)?.[1];
+      const [wide] = src && existsSync(join(out, src)) ? viewSize(readFileSync(join(out, src), 'utf8')) : [];
+      if (!(Math.abs(wide - width * 72 / 72.27) < 0.05)) problems.push(`the picture of "${name}" is ${wide}bp wide, not ${width * 72 / 72.27}bp as in the PDF`);
     }
     const [trimmed, ...kept] = boxgfxTrimmed;
     const inner = svgs[trimmed].match(/<svg ([^>]*)>\s*<image /)?.[1] ?? '';
     for (const attribute of kept) if (!inner.includes(attribute)) problems.push(`no ${attribute} on the graphic's <svg> in "${trimmed}"`);
-    if (!/<svg [^>]*>/.exec(svgs[boxgfxStretched])[0].includes("preserveAspectRatio='none'")) problems.push(`the picture of "${boxgfxStretched}" keeps its aspect`);
+    if (!/<svg [^>]*>/.exec(svgs[boxgfxStretched])?.[0].includes("preserveAspectRatio='none'")) problems.push(`the picture of "${boxgfxStretched}" keeps its aspect`);
     const [name, file, text] = boxgfxCopy;
     const copy = part(name);
     const imgs = [...copy.matchAll(/<img [^>]*src='([^']*)'/g)].map(([, src]) => src);
@@ -2968,6 +2982,10 @@ function check(doc, result, out, aux) {
     }
     for (const after of coveredPictures[doc.name] ?? []) {
       const file = flat.match(new RegExp(`src='(${doc.name}\\d+x\\.png)'[^>]*\\/>(?:(?!<img|After )[^])*After ${after}\\.`))?.[1];
+      if (!file || !existsSync(join(out, file))) {
+        problems.push(`no picture before "After ${after}."`);
+        continue;
+      }
       const { width, height, channels, rows } = decode(readFileSync(join(out, file)));
       let opaque = 0;
       for (let at = channels - 1; at < rows.length; at += channels) if (rows[at] > 128) opaque++;
