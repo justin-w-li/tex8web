@@ -335,8 +335,10 @@ const labeled = `(() => {
     const label = item.firstElementChild, text = item.lastElementChild;
     if (!item.checkVisibility() || !label.getBoundingClientRect().height) continue;
     let line = text, next;
-    // (and into an inline that starts with a block, as MathJax's display)
-    while ((next = first(line)) && (block(next) || next.nodeType === Node.ELEMENT_NODE && block(first(next)))) line = next;
+    // (and into an inline that starts with a block, as MathJax's display,
+    // but not into an inline block, whose lines are not the text's)
+    while ((next = first(line)) && (block(next) || next.nodeType === Node.ELEMENT_NODE
+      && getComputedStyle(next).display === 'inline' && block(first(next)))) line = next;
     checked++;
     const name = text.textContent.trim().replace(/\\s+/g, ' ').slice(0, 30);
     if (line.closest('mjx-container[display]')) {
@@ -1516,6 +1518,38 @@ const boxedListingScroll = `(() => {
     const where = Math.abs((box.top + box.bottom) / 2 - (w.top + w.bottom) / 2) < 0.5 * size ? 'middle'
       : Math.abs(box.top - w.top) < size ? 'top' : Math.abs(box.bottom - w.bottom) < size ? 'bottom' : 'nowhere';
     if (where !== { center: 'middle', top: 'top', bottom: 'bottom', lab: 'top', mid: 'middle', named: 'middle' }[name]) problems.push(\`the word before \${name}A(); is at the \${where} of it\`);
+  }
+  // (in a list as outside one, also in a later paragraph of an item and
+  // with boxpos=t; the item's label on the line of the text, also when
+  // the item starts with the box)
+  const listed = name => [...document.querySelectorAll('.tex8web-boxed-listing > code')].find(el => el.textContent.includes(name + 'A();'));
+  for (const [name, want] of [['itemfirst', 'middle'], ['itemlater', 'middle'], ['itemtop', 'top']]) {
+    const code = listed(name), word = code?.closest('p').firstChild;
+    if (!code || word?.nodeType !== 3) { problems.push(\`no listing \${name}A();, or no word before it\`); continue; }
+    const range = document.createRange(); range.selectNodeContents(word);
+    const w = range.getBoundingClientRect(), box = code.getBoundingClientRect(), size = parseFloat(getComputedStyle(code).fontSize);
+    const where = Math.abs((box.top + box.bottom) / 2 - (w.top + w.bottom) / 2) < 0.5 * size ? 'middle'
+      : Math.abs(box.top - w.top) < size ? 'top' : Math.abs(box.bottom - w.bottom) < size ? 'bottom' : 'nowhere';
+    if (where !== want) problems.push(\`the word before \${name}A(); is at the \${where} of it\`);
+  }
+  for (const name of ['itemfirst', 'itemstart']) {
+    const code = listed(name), label = code?.closest('li')?.querySelector('.tex8web-label');
+    const text = code && [...code.closest('p').childNodes].find(node => node.nodeType === 3 && /\\w/.test(node.data));
+    if (!label || !text) { problems.push(\`no label or no text in the item of \${name}A();\`); continue; }
+    const range = document.createRange(); range.selectNodeContents(text);
+    const gap = label.getBoundingClientRect().bottom - range.getBoundingClientRect().bottom;
+    if (!(Math.abs(gap) < 1)) problems.push(\`the label of the item of \${name}A(); is \${gap}px below its text\`);
+  }
+  // (frame=shadowbox in an \\fbox: the shadow inside the frame's rules)
+  const shadowed = [...document.querySelectorAll('.tex8web-boxed-listing > code')].find(el => el.textContent.includes('shadowed();'));
+  const frame = shadowed?.closest('span.fbox');
+  if (!frame) problems.push('no listing shadowed(); in a frame');
+  else {
+    const [x, y] = getComputedStyle(shadowed).boxShadow.replace(/^\\S*\\([^)]*\\)\\s*|^\\w+\\s*/, '').split(/\\s+/).map(parseFloat);
+    const c = shadowed.getBoundingClientRect(), f = frame.getBoundingClientRect(), style = getComputedStyle(frame);
+    const right = f.right - parseFloat(style.borderRightWidth), bottom = f.bottom - parseFloat(style.borderBottomWidth);
+    if (!(x > 0 && y > 0)) problems.push(\`the listing shadowed(); has no shadow: \${getComputedStyle(shadowed).boxShadow}\`);
+    else if (c.right + x > right + 0.1 || c.bottom + y > bottom + 0.1) problems.push(\`the shadow of shadowed(); reaches \${c.right + x - right}px right and \${c.bottom + y - bottom}px below the inside of its frame\`);
   }
   // (boxpos=t with a caption: the word at the caption's top, as the
   // caption is the first line of listings' vtop)

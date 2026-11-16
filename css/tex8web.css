@@ -132,10 +132,6 @@ div.listing, div.verbatimtabinput { white-space: pre; }
     vertical-align: middle; }
 .tex8web-boxed-listing.tex8web-boxed-top { vertical-align: top; }
 .tex8web-boxed-listing.tex8web-boxed-bottom { vertical-align: baseline; }
-/* (in a list, on the baseline: Chrome takes the baseline of a grid item
-   from an inline block in its first line, so the label would be out of
-   line with the text) */
-.tex8web-list .tex8web-boxed-listing { vertical-align: baseline; }
 /* (a line wider than the column scrolls, as a <pre> does, inside the
    frame. The <code> scrolls, so that the inline block keeps the baseline
    of its last line. Every frame around the listing, also a frame around
@@ -147,6 +143,12 @@ div.listing, div.verbatimtabinput { white-space: pre; }
    wide as a typewriter letter) */
 .tex8web-boxed-listing > code { display: block; overflow: auto clip; white-space: pre; font: inherit;
     font-family: var(--tex8web-mono); }
+/* (room for the shadow of frame=shadowbox, on the sides it is drawn on, as
+   the PDF counts the shadow in the listing's frame, and a box around the
+   listing holds it; tex8web-text.tex writes its offsets) */
+.tex8web-boxed-listing > code {
+    margin: max(0em, -1 * var(--tex8web-shadow-y, 0em)) max(0em, var(--tex8web-shadow-x, 0em))
+        max(0em, var(--tex8web-shadow-y, 0em)) max(0em, -1 * var(--tex8web-shadow-x, 0em)); }
 :is(span.fbox, span.colorbox, .framebox-c, .framebox-l, .framebox-r):has(.tex8web-boxed-listing) {
     max-width: 100%; box-sizing: border-box; }
 /* (the caption skips, as for a caption outside a box) */

@@ -1,6 +1,9 @@
 \documentclass{article}
 \usepackage{listings,xcolor}
 \newsavebox\lstbox
+\newsavebox\lstboxb
+\newsavebox\lstboxc
+\newsavebox\lstboxd
 % Displayed listings in boxes in a paragraph (text.boxed_listings): a
 % line wider than a phone's column, also in nested frames, captions at
 % the bottom, and two listings in one box.
@@ -131,5 +134,44 @@ cell();
 \begin{lstlisting}[frame=shadowbox,rulesepcolor=\color{black}]
 blackshadow();
 \end{lstlisting}
+
+% (frame=shadowbox in a frame: the frame holds the shadow, as the
+% shadow is part of the listing's frame in the PDF)
+\begin{lrbox}{\lstbox}\begin{lstlisting}[frame=shadowbox,rulesepcolor=\color{blue}]
+shadowed();
+\end{lstlisting}\end{lrbox}
+Shadow \fbox{\usebox{\lstbox}} then $n$.
+
+% (in a list: centered on the line in the item's first line, and in a
+% later paragraph of the item, also at the top with boxpos=t; the label
+% on the line of the text, also when the item starts with the box)
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+itemfirstA();
+itemfirstB();
+itemfirstC();
+\end{lstlisting}\end{lrbox}
+\begin{lrbox}{\lstboxb}\begin{lstlisting}
+itemlaterA();
+itemlaterB();
+itemlaterC();
+\end{lstlisting}\end{lrbox}
+\begin{lrbox}{\lstboxd}\begin{lstlisting}
+itemstartA();
+itemstartB();
+itemstartC();
+\end{lstlisting}\end{lrbox}
+\begin{lrbox}{\lstboxc}\begin{lstlisting}[boxpos=t]
+itemtopA();
+itemtopB();
+itemtopC();
+\end{lstlisting}\end{lrbox}
+\begin{itemize}
+\item Itemfirst \fbox{\usebox{\lstbox}} then $o$.
+
+Itemlater \fbox{\usebox{\lstboxb}} then $p$.
+
+Itemtop \fbox{\usebox{\lstboxc}} then $q$.
+\item \fbox{\usebox{\lstboxd}} then $r$.
+\end{itemize}
 
 \end{document}

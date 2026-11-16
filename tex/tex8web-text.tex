@@ -99,7 +99,9 @@
 % top caption would come there too. boxpos= is marked when its first
 % letter is t or b, which listings' \if t and \if b read. The shadow of
 % frame=shadowbox gets the lightness of a border in dark mode, as
-% assets.colors_in_dark_mode gives the frame's rulecolor.
+% assets.colors_in_dark_mode gives the frame's rulecolor. Its offsets are
+% also custom properties, which give a boxed listing room for the shadow
+% (css/tex8web.css).
 \@ifpackageloaded{listings}{%
     \Configure{lstinline}
         {\HCode{<code class="lstinline">}\HtmlParOff
@@ -141,7 +143,8 @@
         \web@lstshadow{\begingroup\lst@rulesepcolor\web@hex{.}\web@lstcolor
             \web@Css{\#listing-\listingN{box-shadow:\web@lstx\space\web@lsty\space 0 0
                 \ifx\web@lstcolor\web@lstblack currentColor\else light-dark(\#\web@lstcolor,
-                oklch(from \#\web@lstcolor\space var(--tex8web-dark-border) c h))\fi}}%
+                oklch(from \#\web@lstcolor\space var(--tex8web-dark-border) c h))\fi;
+                --tex8web-shadow-x:\web@lstx; --tex8web-shadow-y:\web@lsty}}%
             \endgroup}{}}%
     \def\web@lstblack{000000}%
     \def\web@lstside#1#2#3#4{%
