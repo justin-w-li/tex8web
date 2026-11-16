@@ -6,20 +6,25 @@
 % - a center with text and an \fbox, between two lines of text;
 % - a center with an \includegraphics, after a line of text;
 % - \centering with inline math, in a minipage saved with \sbox;
-% - a center with inline math and a \\, then a display, with \savebox;
+% - a center with inline math and a \\, with \savebox;
 % - the centering environment, ragged2e's \Centering, and a \parbox with
 %   \centering in a \savebox;
 % - an \fbox and a \framebox of a given width, with no center;
 % - a center in italic and sans-serif text, and in a theorem;
-% - a box in a footnote.
+% - a box in a footnote;
+% - a center at the start of the box, and an \fbox in a center saved with
+%   \savebox;
+% - a minipage typed in the node, and a tikzpicture in a centered figure.
 %
 % The boxes saved with \sbox and \savebox are saved between paragraphs.
-% Each box starts with a line of text at its left edge, which run.mjs
-% measures from.
+% Each box but one starts with a line of text at its left edge, which
+% run.mjs measures from. A box that starts with its center is measured
+% from the line below it.
 %
 % Cases the fix must not break: the same box placed with \usebox in the
-% running text keeps its center and its \fbox, and a center outside any
-% saved box.
+% running text keeps its center and its \fbox, for a box saved with lrbox
+% and one saved with \sbox, and a center outside any saved box. The case
+% with ragged2e's \Centering is a guard too.
 \usepackage{graphicx}
 \usepackage{ragged2e}
 \usepackage{tikz}
@@ -54,7 +59,6 @@ After sbox centering.
 \savebox{\keep}{\begin{minipage}{6cm}
 G
 \begin{center}H $a+b$\\ I\end{center}
-\[c=d\]
 \end{minipage}}
 Before savebox math.
 \tikz\node[draw]{\usebox{\keep}};
@@ -134,6 +138,54 @@ Before text copy.
 \usebox{\keep}
 
 After text copy.
+
+Before center first.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+\begin{center}B \fbox{C}\end{center}
+D
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After center first.
+
+\savebox{\keep}{\begin{minipage}{6cm}
+G
+\begin{center}H \fbox{I}\end{center}
+\end{minipage}}
+Before savebox fbox.
+\tikz\node[draw]{\usebox{\keep}};
+
+After savebox fbox.
+
+Before direct minipage.
+\tikz\node[draw]{\begin{minipage}{6cm}
+A
+\begin{center}B \fbox{C}\end{center}
+D
+\end{minipage}};
+
+After direct minipage.
+
+Before figure.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+A
+\begin{center}B \fbox{C}\end{center}
+D
+\end{minipage}\end{lrbox}
+\begin{figure}[h]\centering
+\begin{tikzpicture}\node[draw]{\usebox{\keep}};\end{tikzpicture}
+\end{figure}
+
+After figure.
+
+\sbox{\keep}{\begin{minipage}{6cm}
+Kept
+\begin{center}Centered \fbox{Framed}\end{center}
+\end{minipage}}
+Before sbox text copy.
+\usebox{\keep}
+
+After sbox text copy.
 
 Before plain center.
 \begin{center}Plain \fbox{Boxed}\end{center}

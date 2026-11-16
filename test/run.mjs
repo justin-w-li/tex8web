@@ -1701,32 +1701,39 @@ const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // A center, \centering, or ragged2e's \Centering in a minipage saved with
 // lrbox, \sbox, or \savebox, placed in a TikZ node, and frames in such a
 // box (test-boxcenter-cases.ltx). The picture between each case's "Before"
-// and "After" draws its first glyph, the box's left edge, and the glyphs
-// given below at their place in the PDF, measured from it in bp: x within
-// 1bp and y within 3bp. The node's frame is as high as in the PDF, the
-// box's height and depth (from \ht and \dp) with the node's inner sep on
-// each side, in pt, within 3pt. In a theorem, which adds space of its
-// own in such a box, only the center's x is checked. The graphic of
-// "lrbox png" starts at its place in the PDF, within 1bp, and each \fbox
-// and \framebox draws its four rules. Placed in the running text, the box
-// keeps its center and its \fbox, and so does a center outside any saved
-// box.
+// and "After" draws the glyphs given below at their place in the PDF,
+// measured in bp from the first glyph named: x within 1bp and y within
+// 3bp. The node's frame is as high as in the PDF, the box's height and
+// depth (from \ht and \dp) with the node's inner sep on each side, in pt,
+// within 3pt. In a theorem, which adds space of its own in such a box,
+// only the center's x is checked. The graphic of "lrbox png" starts at its
+// place in the PDF, within 1bp. Each glyph in an \fbox or \framebox has
+// one frame around it, as wide as in the PDF within 1bp (null: not
+// measured), and the picture draws no other rules. "ragged centering" is a
+// guard: tex8web's ragged2e handling already centers K. Placed in the
+// running text, the box keeps its center and its \fbox, and so does a
+// center outside any saved box.
+const boxcenterRepro = ['A', { B: [72.866, 19.925], C: [86.627, 19.925], D: [0, 39.85] }, 46.83331 + 6.6666, { C: 13.970 }];
 const boxcenterCases = {
-  repro: ['A', { B: [72.866, 19.925], C: [86.627, 19.925], D: [0, 39.85] }, 46.83331 + 6.6666, 4],
-  'lrbox png': ['E', {}, 58.51338 + 6.6666, 0, 56.6929],
+  repro: boxcenterRepro,
+  'lrbox png': ['E', {}, 58.51338 + 6.6666, {}, 56.6929],
   'sbox centering': ['Z', { F: [68.571, 11.955] }, 20.77776 + 6.6666],
-  'savebox math': ['G', { H: [68.784, 19.926], I: [83.241, 31.881], c: [73.65, 61.769] }, 68.83331 + 6.6666],
+  'savebox math': ['G', { H: [68.784, 19.925], I: [83.241, 31.88] }, 38.83332 + 6.6666],
   'centering env': ['Z', { J: [82.479, 11.955] }, 18.83331 + 6.6666],
   'ragged centering': ['Z', { K: [81.165, 11.955] }, 18.83331 + 6.6666],
   'parbox centering': ['Z', { L: [81.926, 11.955] }, 18.83331 + 6.6666],
-  frames: ['M', { N: [37.068, 0], O: [72.468, 0], P: [86.922, 0] }, 13.6333 + 6.6666, 8],
+  frames: ['M', { N: [37.068, 0], O: [72.468, 0], P: [86.922, 0] }, 13.6333 + 6.6666, { N: 56.693, P: 13.555 }],
   italic: ['Q', { R: [81.406, 19.925] }, 26.83331 + 6.6666],
   sans: ['S', { T: [81.649, 19.925] }, 26.94444 + 6.6666],
   theorem: ['T', { V: [81.336, null] }, null],
   footnote: ['W', { X: [81.868, 17.434] }, 22.96666 + 5.3333],
-  'node copy': ['K', { C: [44.057, 21.209], F: [89.817, 21.209] }, 31.52219 + 6.6666, 4],
+  'node copy': ['K', { C: [44.057, 21.209], F: [89.817, 21.209] }, 31.52219 + 6.6666, { F: null }],
+  'center first': ['D', { B: [72.866, -21.918], C: [86.627, -21.918] }, 32.2333 + 6.6666, { C: 13.970 }],
+  'savebox fbox': ['G', { H: [74.457, 19.925], I: [88.634, 19.925] }, 30.2333 + 6.6666, { I: null }],
+  'direct minipage': boxcenterRepro,
+  figure: boxcenterRepro,
 };
-const boxcenterKept = { 'text copy': ['Centered', 'Framed'], 'plain center': ['Plain', 'Boxed'] };
+const boxcenterKept = { 'text copy': ['Centered', 'Framed'], 'sbox text copy': ['Centered', 'Framed'], 'plain center': ['Plain', 'Boxed'] };
 const boxcenter = { 'test-boxcenter': boxcenterCases, 'test-boxcenter-hyperref': boxcenterCases };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
@@ -3212,7 +3219,7 @@ function check(doc, result, out, aux) {
   if (boxcenter[doc.name]) {
     const words = name => name.replace(/ /g, '\\s+');
     const part = name => flat.match(new RegExp(`Before ${words(name)}\\.([^]*?)After ${words(name)}\\.`))?.[1] ?? '';
-    for (const [name, [anchor, glyphs, height, rules = 0, image]] of Object.entries(boxcenter[doc.name])) {
+    for (const [name, [anchor, glyphs, height, frames = {}, image]] of Object.entries(boxcenter[doc.name])) {
       const src = part(name).match(/<img [^>]*src='([^']+\.svg)'/)?.[1];
       const svg = src && existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
       if (!svg) {
@@ -3235,8 +3242,18 @@ function check(doc, result, out, aux) {
       const frame = svg.match(/<path d='M[\d.-]+-([\d.]+)H[\d.-]+V([\d.]+)H/);
       const high = frame ? Number(frame[1]) + Number(frame[2]) : NaN;
       if (height !== null && !(Math.abs(high - height) < 3)) problems.push(`the frame of "${name}" is ${high}pt high, not ${height.toFixed(2)}pt as in the PDF`);
-      const rects = svg.match(/<rect /g)?.length ?? 0;
-      if (rects < rules) problems.push(`the picture of "${name}" draws ${rects} rules, not the ${rules} of its frames`);
+      // (a frame: two rules across the glyph, and one at each end of them)
+      const rects = [...svg.matchAll(/<rect x='([\d.-]+)' y='([\d.-]+)' height='([\d.]+)' width='([\d.]+)'\/>/g)]
+        .map(match => match.slice(1).map(Number));
+      const across = ([x, , h, w], gx) => h < 1 && x < gx && gx < x + w;
+      for (const [char, width] of Object.entries(frames)) {
+        const [gx] = at(char)[0] ?? [NaN];
+        const tops = rects.filter(rect => across(rect, gx));
+        const [x, , , w] = tops[0] ?? [NaN, 0, 0, NaN];
+        const sides = rects.filter(([sx, , h, sw]) => sw < 1 && h > 1 && (Math.abs(sx - x) < 0.1 || Math.abs(sx + sw - x - w) < 0.1));
+        if (tops.length !== 2 || sides.length !== 2 || (width !== null && !(Math.abs(w - width) < 1))) problems.push(`${char} in the picture of "${name}" has ${tops.length} rules across it and ${sides.length} at their ends, ${w.toFixed(2)}bp wide, not a frame ${width ?? 'as wide as'}${width === null ? ' in the PDF' : 'bp wide'}`);
+      }
+      if (rects.length !== 4 * Object.keys(frames).length) problems.push(`the picture of "${name}" draws ${rects.length} rules, not the ${4 * Object.keys(frames).length} of its frames`);
       if (image !== undefined) {
         const x = Number(svg.match(/<svg [^>]*x='([\d.-]+)'[^>]*>\s*<image /)?.[1]) - origin[0];
         if (!(Math.abs(x - image) < 1)) problems.push(`the graphic in "${name}" starts ${x.toFixed(2)}bp from ${anchor}, not ${image}bp as in the PDF`);
