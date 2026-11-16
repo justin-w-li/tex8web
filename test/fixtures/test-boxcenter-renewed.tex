@@ -1,7 +1,8 @@
 \documentclass{article}
 % The cases of test-boxcenter, with center renewed in the preamble through
 % a copy of LaTeX's, as documents do to change its font. The copy comes
-% after a robust command and in a group, which change nothing in the PDF.
+% after a robust command and inside the braces of \@firstofone's argument,
+% which change nothing in the PDF.
 \let\oldcenter\center \let\endoldcenter\endcenter
 \makeatletter
 \renewenvironment{center}{\setlength{\topsep}{\topsep}\@firstofone{\oldcenter}}{\endoldcenter}

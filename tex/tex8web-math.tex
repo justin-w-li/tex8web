@@ -1046,11 +1046,12 @@
                 { \web@outdated { \token_to_str:N \center } }
         }
 }
-% (Where the patched text holds no \item, the first macro in it, at any
-% depth, that has no parameters and whose text holds \item, directly or in
-% such a macro within #1 levels, is replaced by its text, for at most #1
-% copies. So a copy is found after a robust command or in a group, as in
-% {\small\oldcenter}.)
+% (Where the patched text holds no \item, the first macro in it, also
+% inside an argument's braces, that has no parameters and whose text holds
+% \item, directly or in a chain of such macros at most #1 long, is replaced
+% by its text, for at most #1 copies. So a copy is found after other
+% commands, as in \setlength{\topsep}{0pt}\oldcenter, and in an argument,
+% as in \@firstofone{\oldcenter}.)
 \seq_new:N \l__web_saved_seq
 \tl_new:N \l__web_saved_cs_tl
 \tl_new:N \l__web_saved_text_tl
