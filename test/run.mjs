@@ -3011,12 +3011,12 @@ function check(doc, result, out, aux) {
       : [...['topenv', 'topfile', 'mbox_esc'].map(lines), ...['cellL', 'cellC', 'cellR', 'lrbox', 'fbox', 'mbox_esc'].map(lines),
         ...['cbox', 'fcbox', 'framecell'].map(lines), 'esc = α;', ...['makebox', 'minicell', 'pcol', 'parbox', 'multi', 'long',
         'label', 'thm', 'note', 'raise', 'sbox', 'savebox', 'boxpos', 'hbox', 'italic', 'sans', 'inbox', 'cellmid', 'item',
-        'twoA', 'twoB', 'cellfbox', 'resize', 'newenv', 'saved', 'hboxed', 'hboxnew', 'shape', 'shapelow', 'rule', 'delims', ...(hyperref ? ['link', 'utf'] : [])].map(lines),
+        'twoA', 'twoB', 'cellfbox', 'resize', 'newenv', 'saved', 'hboxed', 'hboxnew', 'shape', 'shapelow', 'rule', 'topframe', 'shadowbox', 'delims', ...(hyperref ? ['link', 'utf'] : [])].map(lines),
         ...(hyperref ? ['int x;'] : [])];
     if (texts.join('|') !== expected.join('|')) problems.push(`the displayed listings read '${texts.join('|')}'`);
     const celled = caption ? ['cellenv();', 'cellL();', 'minienv();']
       : [...['cellL', 'cellC', 'cellR', 'cbox', 'framecell', 'minicell', 'pcol', 'multi', 'long', 'thm', 'boxpos', 'cellmid',
-        'cellfbox', 'newenv', 'shape', 'shapelow', 'rule'].map(lines), 'esc = α;', ...(hyperref ? ['int x;'] : [])];
+        'cellfbox', 'newenv', 'shape', 'shapelow', 'rule', 'shadowbox'].map(lines), 'esc = α;', ...(hyperref ? ['int x;'] : [])];
     for (const text of celled) {
       const pre = pres[texts.indexOf(text)];
       const before = pre ? flat.slice(0, pre.index) : '';
@@ -3038,6 +3038,7 @@ function check(doc, result, out, aux) {
     const frames = { 'fbox();': single, 'framecell();': single, 'hboxnew();': single,
       'saved();': 'none none none solid|0em 0em 0em 0.04em|0em 0em 0em 0.3em',
       'rule();': 'solid none double none|0.2em 0em 0.6em 0em|0.5em 0em 0.5em 0em', 'cellL();': undefined, 'shape();': undefined,
+      'topframe();': single, 'shadowbox();': 'solid solid solid solid|0.04em 0.04em 0.04em 0.04em|0.3em 0.3em 0.3em 0.3em',
       'shapelow();': undefined };
     for (const [text, sides] of caption ? [] : Object.entries(frames)) {
       const id = pres[texts.indexOf(text)]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
@@ -3047,6 +3048,15 @@ function check(doc, result, out, aux) {
     }
     const red = pres[texts.indexOf('rule();')]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
     if (!caption && !(red && new RegExp(`#${red}\\s*\\{\\s*border:[^;}]*#FF0000`, 'i').test(styles))) problems.push('the listing \'rule();\' has no red frame');
+    // (frame=shadowbox: a shadow in rulesepcolor, rulesep (framesep) and
+    // framerule wide, to the right and down; no shadow without it)
+    const shadows = Object.fromEntries(['shadowbox();', 'rule();', 'fbox();'].map(text => {
+      const id = pres[texts.indexOf(text)]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
+      return [text, id && styles.match(new RegExp(`#${id}\\s*\\{\\s*box-shadow:\\s*([^;}]*)`))?.[1].trim().replace(/\s+/g, ' ')];
+    }));
+    if (!caption && (shadows['shadowbox();']?.toUpperCase() !== '0.34EM 0.34EM 0 0 #0000FF' || shadows['rule();'] || shadows['fbox();'])) {
+      problems.push(`the listings' shadows are '${Object.values(shadows).join('|')}'`);
+    }
     for (const [words, text] of caption ? [] : [['Consider the code', 'saved();'], ['Consider the box', 'hboxed();'], ['Consider the newenv', 'hboxnew();']]) {
       const pre = pres[texts.indexOf(text)];
       const start = flat.indexOf(words), end = pre ? flat.indexOf('then', pre.index) : -1;
@@ -3061,7 +3071,7 @@ function check(doc, result, out, aux) {
       .map(([, before, label]) => `${before.replace(/^.*>/, '')} ${label}`);
     const wanted = caption ? [...'ABCD'].map(letter => `then script ${letter}`)
       : ['then x plus 1', ...[...'ABCDEFGHIJKLMNOPQRSTUVWXY'].map(letter => `then script ${letter}`),
-        ...[...'abcdefghijklmn'].map(letter => `then ${letter}`), 'then y plus 1', 'then z plus 1',
+        ...[...'abcdefghijklmnop'].map(letter => `then ${letter}`), 'then y plus 1', 'then z plus 1',
         'then script Z', ...(hyperref ? ['then 1 plus 2', 'then 2 plus 3', 'then 3 plus 4'] : [])];
     if (formulas.join('|') !== wanted.join('|')) problems.push(`the formulas after the displayed listings read '${formulas.join('|')}'`);
     if (!caption && !/then <span class='mathjax-block'[^>]*><mjx-container aria-label='z plus 1'/.test(flat)) problems.push('no display z+1 after the displayed listings');

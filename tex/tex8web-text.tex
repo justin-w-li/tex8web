@@ -85,10 +85,18 @@
 % The hook also drops the frame's rules, as listings.4ht does at the
 % top level (\HLet\lst@frameInit): lstmisc.sty defines \lst@frameInit
 % again when it loads the frame aspect, and the frame's \par in the box
-% closes the paragraph around the box. The sides of frame= are drawn as
-% the <pre>'s border instead, with its framerule, framesep, and rulesep
-% in ems of the body, after html4.4ht's Init hook has given the <pre> its
-% id and the color of rulecolor. A double side is a CSS double border.
+% closes the paragraph around the box. lstmisc.sty's fancyvrb aspect
+% runs the BoxUnsafe hook for each Verbatim too, outside a box, so the
+% hook acts only when \lst@Init has set the box (\lst@ifbox).
+% The sides of frame= are drawn as each displayed listing's <pre>'s
+% border, from its PreInit hook, with its framerule, framesep, and
+% rulesep in ems of the body, after html4.4ht's Init hook has given the
+% <pre> its id and the color of rulecolor. A double side (a capital
+% letter) is a CSS double border, without the color of rulesepcolor
+% between its rules. frame=shadowbox colors that space and the outer rule
+% with rulesepcolor, offset to the right and down: with a rulesepcolor,
+% its capital sides are single rules, and a box-shadow in that color
+% draws the rest.
 % A frame of frameshape= is not drawn: frameshape= puts its shapes'
 % letters (y, n, r, in either case) in \lst@frame, and frame= puts there
 % only t, r, b, l, each capital with its small letter. The listing's
@@ -109,12 +117,13 @@
         {\HtmlParOn\HCode{</code>}}%
     \lst@AddToHook{TextStyle}{\let\lst@boxtrue\relax}%
     \newtoks\web@lsteverymath
-    \lst@AddToHook{BoxUnsafe}{\web@lsteverymath\everymath\everymath{}%
+    \lst@AddToHook{BoxUnsafe}{\lst@ifbox\web@lsteverymath\everymath\everymath{}%
         \let\web@lstMakeCaption\lst@MakeCaption
         \def\lst@MakeCaption##1{\everymath\web@lsteverymath
             \web@lstMakeCaption{##1}\everymath{}}%
         \let\lst@frameInit\relax\let\lst@frameExit\relax
-        \let\EndP\relax\HtmlParOff
+        \let\EndP\relax\HtmlParOff\fi}%
+    \lst@AddToHook{PreInit}{%
         \ifcsname lst@frame\endcsname\ifx\lst@frame\@empty\else
             \let\web@lstisframe\@firstoftwo
             \expandafter\web@lstletter\lst@frame\relax
@@ -128,12 +137,22 @@
     \def\web@lstpair#1#2{\lst@IfSubstring#2\lst@frame
         {\lst@IfSubstring#1\lst@frame{}{\let\web@lstisframe\@secondoftwo}}{}}%
     \def\web@lstframe{\let\web@lststyle\@empty\let\web@lstwidth\@empty\let\web@lstpad\@empty
-        \web@lstside tT\web@lstside rR\web@lstside bB\web@lstside lL%
+        \def\web@lstx{0em}\def\web@lsty{0em}\let\web@lstshadow\@secondoftwo
+        \ifx\lst@xrulecolor\@empty\else\ifx\lst@rulesepcolor\@empty\else
+            \let\web@lstshadow\@firstoftwo\fi\fi
+        \web@lstside tT-y\web@lstside rR{}x\web@lstside bB{}y\web@lstside lL-x%
         \web@Css{\#listing-\listingN{border-style:\web@lststyle;
-            border-width:\web@lstwidth; padding:\web@lstpad}}}%
-    \def\web@lstside#1#2{%
+            border-width:\web@lstwidth; padding:\web@lstpad}}%
+        \web@lstshadow{\begingroup\lst@rulesepcolor\extractcolorspec{.}\web@lstcolor
+            \expandafter\convertcolorspec\web@lstcolor{HTML}\web@lstcolor
+            \web@Css{\#listing-\listingN{box-shadow:\web@lstx\space\web@lsty\space 0 0 \#\web@lstcolor}}%
+            \endgroup}{}}%
+    \def\web@lstside#1#2#3#4{%
         \lst@IfSubstring#2\lst@frame
-            {\web@lstadd{double}{2\dimexpr\lst@framerulewidth\relax+\lst@rulesep}\lst@frametextsep}%
+            {\web@lstshadow{\web@lstadd{solid}\lst@framerulewidth\lst@frametextsep
+                \expandafter\edef\csname web@lst#4\endcsname
+                    {#3\web@bodyem{\dimexpr\lst@rulesep+\lst@framerulewidth\relax}}}%
+                {\web@lstadd{double}{2\dimexpr\lst@framerulewidth\relax+\lst@rulesep}\lst@frametextsep}}%
             {\lst@IfSubstring#1\lst@frame
                 {\web@lstadd{solid}\lst@framerulewidth\lst@frametextsep}{\web@lstadd{none}\z@\z@}}}%
     \def\web@lstadd#1#2#3{\edef\web@lststyle{\web@lststyle\space#1}%

@@ -36,3 +36,5 @@ int x;
 shape();
 rule();
 shapelow();
+topframe();
+shadowbox();
