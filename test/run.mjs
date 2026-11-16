@@ -2041,7 +2041,7 @@ const breaks = {
 // A table's row, from the text of its cells (tags left out of it)
 const cellGap = '(?:\\s|<(?!/?t[dr]\\b)[^>]*>)*', cellTag = '(?:<(?!/?t[dr]\\b)[^>]*>)*';
 const cellText = text => text === null ? '(?:(?!</td>)[^])*'
-  : cellGap + [...text].map(c => ({ ' ': '\\s+', '-': '\u2212', '*': '[\u22c5\u00b7]', '.': '\\.' })[c] || c).join(cellTag) + cellGap;
+  : cellGap + [...text].map(c => ({ ' ': '\\s+', '-': '\u2212', '*': '[\u22c5\u00b7]', '.': '\\.', '(': '\\(', ')': '\\)' })[c] || c).join(cellTag) + cellGap;
 const dcolumn = (...cells) => new RegExp(cells.map(text => `<td[^>]*>${cellText(text)}</td>`).join('\\s*'));
 
 // Where each table sits, from its class: at the indent of a paragraph it
@@ -2094,7 +2094,12 @@ const tables = {
     dcolumn('Label', 'Value', 'Other'),
     dcolumn('Sided one', '123.45', '0.125'), dcolumn('Sided two', '1.5', '42'),
     dcolumn('Sided minus', '-0.25', '-7.5'), dcolumn('Sided dash', null, '9.75'),
-    dcolumn('Comma one', '3*14', '1,5'), dcolumn('Comma two', '2*718', '20,25'),
+    dcolumn('Comma one', '3*14', '1,5'), dcolumn('Comma two', '2*718', '200,25'),
+    dcolumn('Stars', 'A', 'B'), dcolumn('Stars one', '0.123\u2217\u2217\u2217', '-0.5\u2217'),
+    dcolumn('Stars error', '(0.045)', '(0.25)'), dcolumn('Stars sym', '1.25\u2217\u2217', '10.5'),
+    dcolumn('Stars wide', '0.75'),
+    dcolumn('Dot one', '1.5', '2.25'), dcolumn('Dot two', '10.25', '3'), dcolumn('Dot last', '2.5', '30.5'),
+    dcolumn('Multi one', '12.5'), dcolumn('Multi two', '1.5'), dcolumn('Multi last', '2.5'),
     dcolumn('Long one', '1.25'), dcolumn('Long two', '100.5'),
     dcolumn('Star one', '2.25'), dcolumn('Star two', '30.5'),
     dcolumn('X one', '4.25'), dcolumn('X two', '40.5'),
@@ -2106,7 +2111,7 @@ const tables = {
   'test-dcolumn-hyperref': [
     dcolumn('Label', 'Value'), dcolumn('Linked one', '1.25'), dcolumn('Linked minus', '-12.75'),
     dcolumn('Linked integer', '3'),
-    /See table<span class='tex8web-nbsp'> <\/span><a href='#[^']+'>1(?:<!--[^]*?-->)?<\/a>/,
+    /See table<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>1(?:<!--[^]*?-->)?<\/a>[^]*?<div class='table'>\s*<p[^>]*\bid='\1'/,
     /Math after the table: (?:<[^>]*>)*<mjx-container/,
   ],
 };

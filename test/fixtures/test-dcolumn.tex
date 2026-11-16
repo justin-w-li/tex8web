@@ -9,6 +9,9 @@
 \usepackage{dcolumn,booktabs,longtable,tabularx,amsthm}
 \newcolumntype{d}[1]{D{.}{.}{#1}}
 \newcolumntype{E}{D{,}{\cdot}{-1}}
+\newcolumntype{.}{D{.}{.}{-1}}
+% esttab's star command
+\newcommand\sym[1]{\ifmmode^{#1}\else\(^{#1}\)\fi}
 \newtheorem{theorem}{Theorem}
 \begin{document}
 \begin{tabular}{l D{.}{.}{2}}
@@ -33,7 +36,31 @@
 
 \begin{tabular}{l E D{.}{,}{2}}
     Comma one & 3,14 & 1.5 \\
-    Comma two & 2,718 & 20.25 \\
+    Comma two & 2,718 & 200.25 \\
+\end{tabular}
+
+\begin{tabular}{l D{.}{.}{-3} D{.}{.}{-3}}
+    \toprule
+    & \multicolumn{2}{c}{Model} \\ \cmidrule(lr){2-3}
+    Stars & \multicolumn{1}{c}{A} & \multicolumn{1}{c}{B} \\
+    \midrule
+    Stars one & 0.123^{***} & -0.5^{*} \\
+    Stars error & (0.045) & (0.25) \\
+    Stars sym & 1.25\sym{**} & 10.5 \\
+    \multicolumn{2}{l}{Stars wide} & 0.75 \\
+    \bottomrule
+\end{tabular}
+
+\begin{tabular}{l . .}
+    Dot one & 1.5 & 2.25 \\[3pt]
+    Dot two & 10.25 & 3 \\
+    Dot last & 2.5 & 30.5
+\end{tabular}
+
+\begin{tabular}{l D{.}{.}{2}}
+    Multi one & 12.5 \\
+    Multi two & \multicolumn{1}{D{.}{.}{2}}{1.5} \\
+    Multi last & 2.5
 \end{tabular}
 
 \begin{longtable}{l D{.}{.}{2}}

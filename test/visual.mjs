@@ -493,36 +493,64 @@ const laps = { 'test-lefteqn': 18 };
 // dcolumn's D columns: in each column of a table, the numbers line up on
 // their separators as in the PDF, and an integer ends where the
 // separators start. A cell is a number if its text is digits with at most
-// a minus and one separator. Checked with JavaScript off. decimals has
-// the number of columns with two or more numbers. Failures: [the first
-// row's text, what is wrong]
+// a minus, parentheses, one separator, and stars after it. Characters set
+// by MathJax are measured by their mjx-c boxes, without the hidden MathML
+// copy. Each digit is upright, in the body's serif face, and at the size
+// of the row's first cell, as math digits are in the PDF. Columns count
+// the cells that a \multicolumn spans. Checked with JavaScript off.
+// decimals has the number of columns with two or more numbers. Failures:
+// [the first row's text, what is wrong]
 const separated = `(() => {
-  const at = cell => {
-    const chars = [], text = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
-    while (text.nextNode()) for (let i = 0; i < text.currentNode.length; i++) chars.push([text.currentNode, i]);
-    const box = ([node, i]) => { const range = document.createRange(); range.setStart(node, i); range.setEnd(node, i + 1); return range.getBoundingClientRect(); };
-    const sep = chars.find(([node, i]) => /[.,⋅·]/.test(node.data[i]));
-    if (sep) return box(sep).left;
-    const digits = chars.filter(([node, i]) => /\\d/.test(node.data[i]));
-    return box(digits[digits.length - 1]).right;
+  const chars = cell => {
+    const found = [], walk = document.createTreeWalker(cell, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+    while (walk.nextNode()) {
+      const node = walk.currentNode;
+      if ((node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement).closest('mjx-assistive-mml')) continue;
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const code = node.nodeName === 'MJX-C' && [...node.classList].find(c => /^mjx-c[0-9A-F]+$/.test(c));
+        if (code) found.push([String.fromCodePoint(parseInt(code.slice(5), 16)), () => node.getBoundingClientRect(), node]);
+      } else if (!node.parentElement.closest('mjx-container')) {
+        for (let i = 0; i < node.length; i++) if (/\\S/.test(node.data[i])) {
+          const range = document.createRange(); range.setStart(node, i); range.setEnd(node, i + 1);
+          found.push([node.data[i], () => range.getBoundingClientRect(), node.parentElement]);
+        }
+      }
+    }
+    return found;
   };
+  const body = getComputedStyle(document.body).fontFamily;
   let checked = 0;
   const wrong = [...document.querySelectorAll('table')].flatMap(table => {
-    const columns = new Map();
-    for (const row of table.rows) [...row.cells].forEach((cell, i) => {
-      if (!/^[−-]?\\d*(?:[.,⋅·]\\d*)?$/.test(cell.textContent.replace(/\\s/g, '')) || !/\\d/.test(cell.textContent)) return;
-      columns.set(i, [...columns.get(i) || [], [cell.textContent.replace(/\\s/g, ''), at(cell)]]);
-    });
-    return [...columns.values()].filter(cells => cells.length > 1).flatMap(cells => {
+    const name = table.rows[0].textContent.trim().slice(0, 20), columns = new Map(), faults = [];
+    for (const row of table.rows) {
+      let column = 0;
+      const size = getComputedStyle(chars(row.cells[0])[0]?.[2] || row.cells[0]).fontSize;
+      for (const cell of row.cells) {
+        const at = column;
+        column += cell.colSpan;
+        const found = chars(cell), text = found.map(([c]) => c).join('');
+        if (!/^\\(?[−-]?\\d*(?:[.,⋅·]\\d*)?\\)?[∗*]*$/.test(text) || !/\\d/.test(text)) continue;
+        const sep = found.find(([c]) => /[.,⋅·]/.test(c)), digits = found.filter(([c]) => /\\d/.test(c));
+        columns.set(at, [...columns.get(at) || [], [text, sep ? sep[1]().left : digits[digits.length - 1][1]().right]]);
+        for (const [c, , el] of digits) {
+          const style = getComputedStyle(el);
+          if (style.fontSize !== size || style.fontStyle !== 'normal' || style.fontFamily !== body) {
+            faults.push([name, \`\${text}'s \${c} is \${style.fontStyle} \${style.fontSize} \${style.fontFamily}, not normal \${size} \${body}\`]);
+            break;
+          }
+        }
+      }
+    }
+    return [...faults, ...[...columns.values()].filter(cells => cells.length > 1).flatMap(cells => {
       checked++;
       const [first, x] = cells[0];
       return cells.filter(([, y]) => Math.abs(y - x) > 0.5)
-        .map(([text, y]) => [table.rows[0].textContent.trim().slice(0, 20), \`\${text}'s separator \${(y - x).toFixed(1)}px from \${first}'s\`]);
-    });
+        .map(([text, y]) => [name, \`\${text}'s separator \${(y - x).toFixed(1)}px from \${first}'s\`]);
+    })];
   });
   return { checked, wrong };
 })()`;
-const decimals = { 'test-dcolumn': 11, 'test-dcolumn-hyperref': 1 };
+const decimals = { 'test-dcolumn': 16, 'test-dcolumn-hyperref': 1 };
 
 // Each picture lowered below the baseline (text.lua) with the share of its
 // height below the baseline that it has in the PDF, also where the picture
@@ -1654,6 +1682,12 @@ async function compare(chrome, doc, ok) {
         if (boxes.checked !== laps[doc.name]) problems.push(`${relative(join(root, 'build'), file)}: at 390px, ${boxes.checked} boxes of \\lefteqn, not ${laps[doc.name]}`);
         for (const [text, what] of boxes.wrong) problems.push(`${relative(join(root, 'build'), file)}: at 390px, the \\lefteqn "${text}": ${what}`);
       }
+    }
+    if (doc.name in decimals) {
+      const columns = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: 390, height: 844 },
+        page => page.evaluate(separated));
+      if (columns.checked !== decimals[doc.name]) problems.push(`${html}: at 390px, ${columns.checked} columns of numbers, not ${decimals[doc.name]}`);
+      for (const [name, what] of columns.wrong) problems.push(`${html}: at 390px, the table "${name}": ${what}`);
     }
     if (doc.name in hangs) {
       problems.push(...await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: 390, height: 844 },
