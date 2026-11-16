@@ -994,15 +994,18 @@
 % a picture. There latex.4ht's \centering sets \leftskip to zero, and its
 % \fbox and \framebox drop their frames. In a saved box they are set as in
 % LaTeX, and so are the frame's rules, by \__web_saved_frame:n below. A
-% centered block there also keeps its \rightskip at the end of an
-% environment in it, where tex4ht's \HtmlEnv sets another (\RecallEverypar,
-% tex4ht.sty).
+% centered block there also keeps its \rightskip and LaTeX's \linepenalty
+% at the start and end of an environment in it, where tex4ht's \HtmlEnv
+% sets others (\SaveEverypar and \RecallEverypar, tex4ht.sty). With a
+% \linepenalty of zero, a box after the center's empty label starts a
+% line of its own.
 \cs_new_protected:Npn \__web_saved_start: {
     \bool_set_true:N \l__web_saved_bool
     \tex_everydisplay:D { \if_meaning:w \EndPicture \:UnDef \__web_saved_display: \fi: }
     \tl_put_right:Nn \centering {
         \leftskip \@flushglue \parfillskip \c_zero_skip
         \cs_set_eq:cN {html:rightskip} \prg_do_nothing:
+        \tl_put_right:Nn \HtmlEnv { \tex_linepenalty:D 10 \scan_stop: }
     }
     \cs_set_eq:cN {gobble:fbox} \__web_saved_fbox:nn
     \cs_set_eq:cN {gobble:frame} \__web_saved_framebox:w
@@ -1020,7 +1023,10 @@
     \regex_replace_once:nnNTF { \c{item} (.*) \c{par} \Z }
         { \c{__web_saved_depth:} \c{item} \1 } \l__web_saved_tl
         { \cs_gset_eq:NN \__web_saved_center: \l__web_saved_tl }
-        { \web@outdated { \token_to_str:N \center } }
+        {
+            \cs_gset_eq:NN \__web_saved_center: \center
+            \web@outdated { \token_to_str:N \center }
+        }
 }
 \cs_new:Npn \__web_saved_display_end: { }
 \cs_new_protected:Npn \__web_saved_display: {

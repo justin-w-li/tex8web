@@ -14,6 +14,8 @@
 % - a box in a footnote;
 % - a center at the start of the box, and an \fbox in a center saved with
 %   \savebox;
+% - a minipage with a center in a center, two centers in a row, and a
+%   center after an itemize;
 % - a minipage typed in the node, and a tikzpicture in a centered figure;
 % - a box with a center saved in the center of another, first, so that the
 %   cases after it show a fault that the nested box leaves.
@@ -168,6 +170,35 @@ Before savebox fbox.
 \tikz\node[draw]{\usebox{\keep}};
 
 After savebox fbox.
+
+Before minipage in center.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+Y
+\begin{center}\begin{minipage}{3cm}\begin{center}X\end{center}\end{minipage}\end{center}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After minipage in center.
+
+Before two centers.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+A
+\begin{center}B\end{center}
+\begin{center}C\end{center}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After two centers.
+
+Before center after list.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+A
+\begin{itemize}\item B\end{itemize}
+\begin{center}C\end{center}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After center after list.
 
 Before direct minipage.
 \tikz\node[draw]{\begin{minipage}{6cm}

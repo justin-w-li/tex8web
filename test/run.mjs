@@ -1706,9 +1706,10 @@ const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // 3bp. The node's frame is as high as in the PDF, the box's height and
 // depth (from \ht and \dp) with the node's inner sep on each side, in pt,
 // within 3pt. In a theorem, which adds space of its own in such a box,
-// only the center's x is checked, and so in "nested", where a box saved
-// in a center sits one line lower than in the PDF. The graphic of "lrbox png" starts at its
-// place in the PDF, within 1bp. Each glyph in an \fbox or \framebox has
+// only the center's x is checked. After an itemize, whose label starts a
+// line of its own, C is measured from the item's text, and the frame is
+// not checked. The graphic of "lrbox png" starts at its place in the PDF,
+// within 1bp. Each glyph in an \fbox or \framebox has
 // one frame around it, as wide as in the PDF within 1bp (null: not
 // measured), and the picture draws no other rules. "ragged centering" is a
 // guard: tex8web's ragged2e handling already centers K. Placed in the
@@ -1717,7 +1718,7 @@ const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // paragraph that html4.4ht's \par after \item writes. Neither has a height.
 const boxcenterRepro = ['A', { B: [72.866, 19.925], C: [86.627, 19.925], D: [0, 39.85] }, 46.83331 + 6.6666, { C: 13.970 }];
 const boxcenterCases = {
-  nested: ['Y', { X: [81.303, null] }, null],
+  nested: ['Y', { X: [81.303, 20.84] }, 27.74997 + 6.6666],
   repro: boxcenterRepro,
   'lrbox png': ['E', {}, 58.51338 + 6.6666, {}, 56.6929],
   'sbox centering': ['Z', { F: [68.571, 11.955] }, 20.77776 + 6.6666],
@@ -1733,6 +1734,9 @@ const boxcenterCases = {
   'node copy': ['K', { C: [44.057, 21.209], F: [89.817, 21.209] }, 31.52219 + 6.6666, { F: null }],
   'center first': ['D', { B: [72.866, -21.918], C: [86.627, -21.918] }, 32.2333 + 6.6666, { C: 13.970 }],
   'savebox fbox': ['G', { H: [74.457, 19.925], I: [88.634, 19.925] }, 30.2333 + 6.6666, { I: null }],
+  'minipage in center': ['Y', { X: [81.303, 20.84] }, 27.74997 + 6.6666],
+  'two centers': ['A', { B: [81.511, 19.925], C: [81.442, 41.843] }, 48.83331 + 6.6666],
+  'center after list': ['B', { C: [56.534, 21.918] }, null],
   'direct minipage': boxcenterRepro,
   figure: boxcenterRepro,
 };
