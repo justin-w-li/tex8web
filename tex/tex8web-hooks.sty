@@ -468,10 +468,12 @@
 % \documentclass. pdfTeX then writes a PDF and no DVI. Packages read the
 % register as they load: graphics.cfg, color.cfg, and pict2e.cfg choose
 % their pdftex driver from it, and iftex sets \ifpdf. So it is set back to
-% 0 before each file is read, and before each page is shipped out, where
-% pdfTeX reads it to choose the output. tex4ht's \begin{document} reads
-% its config file first, so the code that runs there, such as the kernel's
-% choice of backend, sees 0.
+% 0 before each file that LaTeX reads with its file hooks, and before each
+% page is shipped out, where pdfTeX reads it to choose the output. A
+% primitive \input runs no hook. At \begin{document}, tex4ht's \Preamble
+% reads the .4ht files with LaTeX's file hooks, through \InputIfFileExists
+% and a braced \input (html4.4ht), before the kernel chooses its backend.
+% So the register is 0 when the kernel chooses.
 \AddToHook{file/before}{\global\pdfoutput\z@}
 \AddToHook{shipout/before}{\global\pdfoutput\z@}
 
