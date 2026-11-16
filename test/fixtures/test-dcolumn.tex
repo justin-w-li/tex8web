@@ -37,6 +37,12 @@
     Comma two & 2,718 & 200.25 \\
 \end{tabular}
 
+% a decimal comma in and out
+\begin{tabular}{l D{,}{,}{2}}
+    Euro one & 3,14 \\
+    Euro two & 12,5 \\
+\end{tabular}
+
 % esttab's star command, defined in the body as esttab writes it
 {\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
 \begin{tabular}{l D{.}{.}{-3} D{.}{.}{-3}}

@@ -2096,6 +2096,7 @@ const tables = {
     dcolumn('Sided one', '123.45', '0.125'), dcolumn('Sided two', '1.5', '42'),
     dcolumn('Sided minus', '-0.25', '-7.5'), dcolumn('Sided dash', null, '9.75'),
     dcolumn('Comma one', '3*14', '1,5'), dcolumn('Comma two', '2*718', '200,25'),
+    dcolumn('Euro one', '3,14'), dcolumn('Euro two', '12,5'),
     dcolumn('Stars', 'A', 'B'), dcolumn('Stars one', '0.123\u2217\u2217\u2217', '-0.5\u2217'),
     dcolumn('Stars error', '(0.045)', '(0.25)'), dcolumn('Stars sym', '1.25\u2217\u2217', '10.5'),
     dcolumn('Stars wide', '0.75'),
@@ -2115,6 +2116,10 @@ const tables = {
   'test-dcolumn-hyperref': [
     dcolumn('Label', 'Value'), dcolumn('Linked one', '1.25'), dcolumn('Linked minus', '-12.75'),
     dcolumn('Linked integer', '3'), dcolumn('Linked thin', '1_234.5'), dcolumn('Linked comma', '12,_345'),
+    // amsmath's \; and \: as a word space, or as html4-math.4ht's span of
+    // their width, never as nothing
+    /Linked thick(?:(?!<\/tr>)[^])*>1(?:<[^>]*>)*(?: |<span[^>]*class=.tmspace.><\/span>)(?:<[^>]*>)*234/,
+    /Linked medium(?:(?!<\/tr>)[^])*>1(?:<[^>]*>)*(?: |<span[^>]*class=.tmspace.><\/span>)(?:<[^>]*>)*234/,
     /See table<span class='tex8web-nbsp'> <\/span><a href='#([^']+)'>1(?:<!--[^]*?-->)?<\/a>[^]*?<div class='table'>\s*<p[^>]*\bid='\1'/,
     /Math after the table: (?:<[^>]*>)*<mjx-container/,
   ],

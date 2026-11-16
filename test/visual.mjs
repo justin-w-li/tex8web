@@ -555,7 +555,7 @@ const separated = `(() => {
   });
   return { checked, wrong };
 })()`;
-const decimals = { 'test-dcolumn': 18, 'test-dcolumn-hyperref': 1 };
+const decimals = { 'test-dcolumn': 19, 'test-dcolumn-hyperref': 1 };
 
 // Each picture lowered below the baseline (text.lua) with the share of its
 // height below the baseline that it has in the PDF, also where the picture

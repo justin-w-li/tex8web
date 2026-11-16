@@ -615,21 +615,27 @@
 % tex4ht.c writes a thin space in math as nothing, so \, (latex.4ht's
 % \a:, and amsmath.4ht's \a:tmspace) and the space TeX sets after a math
 % comma are written as U+202F, the narrow no-break space, beside the glue.
-% TeX sets that space when a digit or a letter comes next, not before the
-% } of a {,}. A comma that is a column's separator is dcolumn's, defined
-% after this.
+% A wider space of amsmath's is left to the \a:tmspace set before the
+% cell. TeX sets the space after a comma when a digit or a letter comes
+% next, not before the } of a {,}. A comma that is the column's input separator
+% (\DC@ has set \uccode`\~ to it) is left to dcolumn, which makes it
+% active only in the part before the separator: an active comma in the
+% {,} that dcolumn sets as the output separator would set the separator
+% again, without end.
 \@ifpackageloaded{dcolumn}{%
     \def\web@dc@narrow{\HCode{&\#x202F;}}%
     \def\web@dc@spaces{%
         \expandafter\def\csname a:,\endcsname{\web@dc@narrow\mskip\thinmuskip}%
-        \expandafter\def\csname a:tmspace\endcsname{\ifdim\textspace>\z@
-            \ifdim\textspace<.2em \web@dc@narrow\fi\fi\mskip\mathglue}%
-        \ifnum\mathcode`\,<32768
+        \expandafter\let\expandafter\web@dc@tmspace\csname a:tmspace\endcsname
+        \expandafter\def\csname a:tmspace\endcsname{\ifdim\textspace<.2em
+            \ifdim\textspace>\z@\web@dc@narrow\fi\mskip\mathglue
+            \else\web@dc@tmspace\fi}%
+        \ifnum\uccode`\~=`\, \else\ifnum\mathcode`\,<32768
             \mathchardef\web@dc@comma\mathcode`\,
             \mathcode`\,=32768
             \begingroup\lccode`\~=`\,%
             \lowercase{\endgroup\def~}{\web@dc@comma\web@dc@after}%
-        \fi}%
+        \fi\fi}%
     \def\web@dc@after{\futurelet\web@next\web@dc@after@}%
     \def\web@dc@after@{\ifx\web@next\@sptoken
             \expandafter\web@dc@skip

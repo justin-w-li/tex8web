@@ -1,6 +1,7 @@
 % dcolumn's D columns with hyperref and amsmath: each cell's number as in
-% the PDF, in a table float that a \ref leads to, with amsmath's thin
-% space, and the separators of a column line up as in the PDF.
+% the PDF, in a table float that a \ref leads to, with amsmath's thin,
+% medium, and thick spaces, and the separators of a column line up as in
+% the PDF.
 \documentclass{article}
 \usepackage{amsmath,dcolumn,booktabs,hyperref}
 \begin{document}
@@ -17,6 +18,8 @@ See table~\ref{tab:numbers}.
     Linked integer & 3 \\
     Linked thin & 1\,234.5 \\
     Linked comma & 12,345 \\
+    Linked thick & 1\;234.5 \\
+    Linked medium & 1\:234.5 \\
     \bottomrule
 \end{tabular}
 \caption{Numbers}\label{tab:numbers}
