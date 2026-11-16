@@ -5,6 +5,7 @@
 \newcommand\lstline[2][]{\lstinputlisting[firstline=#2,lastline=#2,#1]{test-listing-hmode-code.txt}}
 \newtheorem{theorem}{Theorem}
 \newsavebox\lstsaved
+\lstnewenvironment{code}{}{}
 \begin{document}
 \section{Displayed listings in boxes}
 % (guards: at the top level, in vertical mode)
@@ -15,7 +16,7 @@ Top then $x+1$.
 
 \lstline{1}
 
-\lstline[mathescape]{4}
+\lstline[mathescape]{29}
 
 \begin{tabular}{l} \lstline{2} \end{tabular} then $\mathcal{A}$.
 
@@ -36,7 +37,7 @@ Framed \fbox{\usebox{\lstsaved}} then $\mathcal{C}$.
 
 In \fbox{\lstline[frame=single]{5}} then $\mathcal{D}$.
 
-E: \mbox{\lstline[mathescape]{4}} then $\mathcal{E}$.
+E: \mbox{\lstline[mathescape]{29}} then $\mathcal{E}$.
 
 In \colorbox{yellow}{\lstline{6}} then $\mathcal{F}$.
 
@@ -86,6 +87,30 @@ In \hbox{\lstline{22}} then $\mathcal{W}$.
 \emph{Italic \mbox{\lstline{23}}} then $\mathcal{X}$.
 
 \textsf{Sans \fbox{\lstline{24}}} then $\mathcal{Y}$.
+
+% (a formula before and after a listing in the same box or cell)
+In \mbox{then $a$ \lstline{28} then $b$}.
+
+\begin{tabular}{l} then $c$ \lstline{30} then $d$ \end{tabular}
+
+% (in an item's text, while its label is still to come)
+\begin{itemize}
+\item \mbox{\lstline{31}} then $e$.
+\end{itemize}
+
+% (two listings in one box, and a box in a cell)
+In \fbox{\lstline{32}\lstline{33}} then $f$.
+
+\begin{tabular}{l} \fbox{\lstline{34}} \end{tabular} then $g$.
+
+In \resizebox{.5\linewidth}{!}{\lstline{35}} then $h$.
+
+% (an environment of \lstnewenvironment)
+\begin{tabular}{l}
+\begin{code}
+newenv();
+\end{code}
+\end{tabular} then $i$.
 
 % (other math delimiters after a boxed listing)
 In \mbox{\lstline{25}} then \(y+1\), and then

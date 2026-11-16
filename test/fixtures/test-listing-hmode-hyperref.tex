@@ -1,10 +1,12 @@
 \documentclass{article}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern,listingsutf8,xcolor,longtable,hyperref}
-\lstset{basicstyle=\ttfamily,language=C}
+\usepackage{lmodern,listingsutf8,xcolor,longtable,graphicx,hyperref}
+\lstset{basicstyle=\ttfamily,language=C,breaklines=true,showstringspaces=false}
 \input{test-listing-hmode-cases.ltx}
 
 A link \href{https://example.org}{\mbox{\lstline{26}}} then $1+2$.
 
 In \makebox[12em][l]{\lstline[inputencoding=utf8]{27}} then $2+3$.
+
+\begin{tabular}{l} \lstline{36} \end{tabular} then $3+4$.
 \end{document}
