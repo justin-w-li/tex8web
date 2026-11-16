@@ -3141,7 +3141,11 @@ function check(doc, result, out, aux) {
     const formulas = [...flat.matchAll(/then (?:<span class='tex8web-nowrap'>)?<mjx-container aria-label='([^']*)'/g)].map(([, label]) => label);
     // (tex8web-text.tex's marks for text.boxed_listings, also of a caption in a cell)
     if (html.includes('tex8web:')) problems.push('a mark of tex8web-text.tex is left in the page');
-    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i|j|k|l|m|n|s|t|o|p|q|r') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
+    // (a listing in a minipage in a frame in a paragraph: a <pre>, in
+    // vertical mode)
+    const pres = [...flat.matchAll(/<pre class='lstlisting'[^>]*>((?:(?!<\/pre>)[^])*)<\/pre>/g)].map(([, body]) => body.replace(/<[^>]*>/g, '').trim());
+    if (!pres.includes('minipage();')) problems.push('the listing \'minipage();\' is not a <pre>');
+    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i|j|k|l|m|n|s|t|u|o|p|q|r') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
     const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];

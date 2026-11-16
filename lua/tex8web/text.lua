@@ -529,7 +529,9 @@ end
 -- a \vcenter, the listing as a <code> and the caption as a <span>. A <pre>
 -- drops a newline at its start, and the <code> drops it here.
 function M.boxed_listings(document)
-  local function is_p(el) return el:get_element_name() == "p" end
+  -- (the nearest <p> or <div>: a listing in a minipage in a frame in a
+  -- paragraph is set in vertical mode, as a <pre> in the minipage's <div>)
+  local function is_block(el) return el:get_element_name() == "p" or el:get_element_name() == "div" end
   -- the index of the caption next to nodes[i] in direction step, or nil.
   -- A caption after the listing is taken only after tex8web-text.tex's
   -- mark of a bottom caption: otherwise it is the next listing's.
@@ -537,7 +539,7 @@ function M.boxed_listings(document)
     local marked = step < 0
     repeat i = i + step
       local node = nodes[i]
-      if node and node._type == "COMMENT" and (node._text or ""):find("tex8web:bottom caption", 1, true) then
+      if node and (dom.comment_text(node) or ""):find("tex8web:bottom caption", 1, true) then
         marked = true
       end
     until not nodes[i] or nodes[i]:is_element() or nodes[i]:is_text() and nodes[i]:get_text():find("%S")
@@ -545,7 +547,8 @@ function M.boxed_listings(document)
   end
   for _, listing in ipairs(document:query_selector("pre.lstlisting, pre.lstinputlisting, pre.listings")) do
     local parent = listing:get_parent()
-    if dom.closest(parent, is_p) then
+    local block = dom.closest(parent, is_block)
+    if block and block:get_element_name() == "p" then
       local nodes, at = parent:get_children(), nil
       for i, node in ipairs(nodes) do
         if node == listing then at = i end

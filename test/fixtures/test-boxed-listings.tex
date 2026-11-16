@@ -161,6 +161,13 @@ printwide(); /* a line of about a hundred characters, wider than the column of a
 \end{lstlisting}\end{lrbox}
 Print \fbox{\fbox{\usebox{\lstbox}}} then $t$.
 
+% (a listing in a minipage in a frame is in vertical mode, as at the top
+% level: a <pre> as wide as the minipage, in the paragraph's <p>)
+\begin{lrbox}{\lstbox}\begin{minipage}[t]{.6\linewidth}\begin{lstlisting}[frame=single]
+minipage();
+\end{lstlisting}\end{minipage}\end{lrbox}
+Mini \fbox{\usebox{\lstbox}} then $u$.
+
 % (in a list: centered on the line in the item's first line, and in a
 % later paragraph of the item, also at the top with boxpos=t; the label
 % on the line of the text, also when the item starts with the box)
