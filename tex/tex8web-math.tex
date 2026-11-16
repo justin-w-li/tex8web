@@ -973,6 +973,11 @@
 \regex_const:Nn \c__web_saved_amp_regex { \cL\& }
 \web@needs{n:sbox:}
 \web@needs{o:sbox:}
+\web@needs{gobble:fbox}
+\web@needs{gobble:frame}
+\web@needs{oncenter:list}
+\web@needs{this:listConfigure}
+\web@needs{SaveEndP}
 \web@needs{a:MathjaxBlock}
 \web@needs{b:MathjaxBlock}
 \web@needs{:HandleMathjaxCatcodes}
@@ -984,9 +989,29 @@
 % (\NewConfigure{$$}, tex4ht.sty), so a saved box would hold an empty
 % display above the glyphs' display, which the PDF does not have. In a
 % saved box, the glyphs and the source are set in the first display.
+%
+% A TikZ node draws a saved box as TeX set it, but the box is set outside
+% a picture. There latex.4ht's \centering sets \leftskip to zero, and its
+% \fbox and \framebox drop their frames. In a saved box they are set as in
+% LaTeX, and so are the frame's rules, by \__web_saved_frame:n below.
 \cs_new_protected:Npn \__web_saved_start: {
     \bool_set_true:N \l__web_saved_bool
     \tex_everydisplay:D { \if_meaning:w \EndPicture \:UnDef \__web_saved_display: \fi: }
+    \tl_put_right:Nn \centering { \leftskip \@flushglue \parfillskip \c_zero_skip }
+    \cs_set_eq:cN {gobble:fbox} \__web_saved_fbox:nn
+    \cs_set_eq:cN {gobble:frame} \__web_saved_framebox:w
+    \cs_set_eq:NN \@frameb@x \__web_saved_frame:n
+    \regex_replace_once:nnN { \c{item} (.*) \c{par} \Z }
+        { \c{__web_saved_depth:} \c{item} \1 } \center
+    % (once, in a box saved in another)
+    \cs_if_eq:cNF {oncenter:list} \__web_saved_center: {
+        \cs_set_eq:Nc \__web_saved_center_list: {oncenter:list}
+        \cs_set_eq:cN {oncenter:list} \__web_saved_center:
+    }
+}
+\cs_new_protected:Npn \__web_saved_center: {
+    \__web_saved_center_list:
+    \tl_put_right:Nn \this:listConfigure { \cs_gset_eq:NN \:DT \__web_saved_item:w }
 }
 \cs_new:Npn \__web_saved_display_end: { }
 \cs_new_protected:Npn \__web_saved_display: {
@@ -999,7 +1024,67 @@
     \group_insert_after:N \__web_saved_display_end:
     \use:c {c:display}
 }
-\cs_set_protected:cpn {n:sbox:} #1#2 { \use:c {o:sbox:} {#1} { { \__web_saved_start: #2 } } }
+% LaTeX's \fbox and \framebox, where tex4ht writes no space for the
+% frame's sides and \fboxsep: only the text is set outside t4ht@( and
+% t4ht@), and t4ht@[ and t4ht@] (info4ht.4ht). The \hbox that latex.4ht
+% sets around the text of an \fbox is dropped, as tex4ht writes a space
+% at the move past its end. #1: LaTeX's command.
+\cs_new_protected:Npn \__web_saved_fbox:nn #1#2 {
+    \use:c {ht:special} {t4ht@(}
+    #1 { \use:c {ht:special} {t4ht@)} \use_ii:nn #2 \use:c {ht:special} {t4ht@[} }
+    \use:c {ht:special} {t4ht@]}
+}
+\cs_new_protected:Npn \__web_saved_framebox:w #1 [#2] [#3] #4 {
+    \use:c {ht:special} {t4ht@(}
+    #1 [#2] [#3] { \use:c {ht:special} {t4ht@)} #4 \use:c {ht:special} {t4ht@[} }
+    \use:c {ht:special} {t4ht@]}
+}
+% LaTeX's \@frameb@x, with the frame's rules first and between t4ht@[ and
+% t4ht@], where tex4ht writes no rule (info4ht.4ht). The text stays on
+% the line's baseline, as tex4ht starts a new line where a glyph sits
+% lower than the one before. #1: a kern inside each side.
+\cs_new_protected:Npn \__web_saved_frame:n #1 {
+    \hbox_set:Nn \@tempboxa { \tex_kern:D \fboxrule #1 \box_use_drop:N \@tempboxa #1 \tex_kern:D \fboxrule }
+    \dim_set:Nn \@tempdima { \box_ht:N \@tempboxa + \fboxsep + \fboxrule }
+    \dim_set:Nn \@tempdimb { \box_dp:N \@tempboxa + \fboxsep + \fboxrule }
+    \box_set_ht:Nn \@tempboxa { \@tempdima }
+    \box_set_dp:Nn \@tempboxa { \@tempdimb }
+    \hbox:n {
+        \use:c {ht:special} {t4ht@[}
+        \tex_vrule:D width \box_wd:N \@tempboxa height \@tempdima
+            depth \dim_eval:n { \fboxrule - \@tempdima }
+        \tex_kern:D - \box_wd:N \@tempboxa
+        \tex_vrule:D width \box_wd:N \@tempboxa height \dim_eval:n { \fboxrule - \@tempdimb }
+            depth \@tempdimb
+        \tex_kern:D - \box_wd:N \@tempboxa
+        \tex_vrule:D width \fboxrule height \@tempdima depth \@tempdimb
+        \tex_kern:D \dim_eval:n { \box_wd:N \@tempboxa - 2 \fboxrule }
+        \tex_vrule:D width \fboxrule height \@tempdima depth \@tempdimb
+        \tex_kern:D - \box_wd:N \@tempboxa
+        \use:c {ht:special} {t4ht@]}
+        \box_use_drop:N \@tempboxa
+    }
+}
+% A center's first line in a saved box. html4.4ht's \center ends the
+% paragraph that \item starts, and its list hook ends the next one. Then
+% latex.4ht's \item, at \:DT, writes \hfill\break. These leave two empty
+% lines above the text, which the PDF does not have. In a saved box the
+% first, which holds the center's <div>, is kept with no height, and the
+% text starts the second, as far below the line above as in the PDF.
+% (\:DLL and \:DT, latex.4ht)
+\dim_new:N \l__web_saved_depth_dim
+\cs_new_protected:Npn \__web_saved_depth: { \dim_set:Nn \l__web_saved_depth_dim { \tex_prevdepth:D } }
+\cs_new_protected:Npn \__web_saved_item:w #1#2 {
+    \tex_setbox:D 0 \tex_lastbox:D
+    \dim_compare:nNnF \l__web_saved_depth_dim < { -999pt } { \tex_unskip:D }
+    \tex_prevdepth:D -1000pt
+    \tex_box:D 0
+    \tex_prevdepth:D \l__web_saved_depth_dim
+    \mode_leave_vertical:
+}
+% The end of the paragraph before a box saved with \sbox or \savebox is
+% kept out of the box, as html4.4ht keeps it out of an lrbox.
+\cs_set_protected:cpn {n:sbox:} #1#2 { \use:c {o:sbox:} {#1} { { \SaveEndP \__web_saved_start: #2 \RecallEndP } } }
 \Configure{lrbox}{\__web_saved_start:}
 % #1: the formula as LaTeX source. tex4ht reads & in \(, \[, and $ as a
 % letter (\:HandleMathjaxCatcodes, html4-math.4ht)
