@@ -1698,6 +1698,36 @@ const boxgfxStretched = 'resized node';
 const boxgfxCopy = ['text copy', 'test-bare.png', 'Kept text.'];
 const boxgfxWidths = { 'turned label': 13.49927 };
 const boxgfx = { 'test-boxgfx': boxgfxSizes };
+// A center, \centering, or ragged2e's \Centering in a minipage saved with
+// lrbox, \sbox, or \savebox, placed in a TikZ node, and frames in such a
+// box (test-boxcenter-cases.ltx). The picture between each case's "Before"
+// and "After" draws its first glyph, the box's left edge, and the glyphs
+// given below at their place in the PDF, measured from it in bp: x within
+// 1bp and y within 3bp. The node's frame is as high as in the PDF, the
+// box's height and depth (from \ht and \dp) with the node's inner sep on
+// each side, in pt, within 3pt. In a theorem, which adds space of its
+// own in such a box, only the center's x is checked. The graphic of
+// "lrbox png" starts at its place in the PDF, within 1bp, and each \fbox
+// and \framebox draws its four rules. Placed in the running text, the box
+// keeps its center and its \fbox, and so does a center outside any saved
+// box.
+const boxcenterCases = {
+  repro: ['A', { B: [72.866, 19.925], C: [86.627, 19.925], D: [0, 39.85] }, 46.83331 + 6.6666, 4],
+  'lrbox png': ['E', {}, 58.51338 + 6.6666, 0, 56.6929],
+  'sbox centering': ['Z', { F: [68.571, 11.955] }, 20.77776 + 6.6666],
+  'savebox math': ['G', { H: [68.784, 19.926], I: [83.241, 31.881], c: [73.65, 61.769] }, 68.83331 + 6.6666],
+  'centering env': ['Z', { J: [82.479, 11.955] }, 18.83331 + 6.6666],
+  'ragged centering': ['Z', { K: [81.165, 11.955] }, 18.83331 + 6.6666],
+  'parbox centering': ['Z', { L: [81.926, 11.955] }, 18.83331 + 6.6666],
+  frames: ['M', { N: [37.068, 0], O: [72.468, 0], P: [86.922, 0] }, 13.6333 + 6.6666, 8],
+  italic: ['Q', { R: [81.406, 19.925] }, 26.83331 + 6.6666],
+  sans: ['S', { T: [81.649, 19.925] }, 26.94444 + 6.6666],
+  theorem: ['T', { V: [81.336, null] }, null],
+  footnote: ['W', { X: [81.868, 17.434] }, 22.96666 + 5.3333],
+  'node copy': ['K', { C: [44.057, 21.209], F: [89.817, 21.209] }, 31.52219 + 6.6666, 4],
+};
+const boxcenterKept = { 'text copy': ['Centered', 'Framed'], 'plain center': ['Plain', 'Boxed'] };
+const boxcenter = { 'test-boxcenter': boxcenterCases, 'test-boxcenter-hyperref': boxcenterCases };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width
@@ -3179,6 +3209,44 @@ function check(doc, result, out, aux) {
     if (imgs.join() !== file) problems.push(`the pictures between "Before ${name}." and "After ${name}." are "${imgs.join()}", not "${file}"`);
     if (shown !== text) problems.push(`"${shown}" between "Before ${name}." and "After ${name}.", not "${text}"`);
   }
+  if (boxcenter[doc.name]) {
+    const words = name => name.replace(/ /g, '\\s+');
+    const part = name => flat.match(new RegExp(`Before ${words(name)}\\.([^]*?)After ${words(name)}\\.`))?.[1] ?? '';
+    for (const [name, [anchor, glyphs, height, rules = 0, image]] of Object.entries(boxcenter[doc.name])) {
+      const src = part(name).match(/<img [^>]*src='([^']+\.svg)'/)?.[1];
+      const svg = src && existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
+      if (!svg) {
+        problems.push(`no picture between "Before ${name}." and "After ${name}."`);
+        continue;
+      }
+      // (a glyph's origin, by its character's code, which is its ASCII
+      // code in the fonts used)
+      const at = char => [...svg.matchAll(new RegExp(`<use x='([\\d.-]+)' y='([\\d.-]+)' xlink:href='#g\\d+-${char.charCodeAt(0)}'`, 'g'))]
+        .map(([, x, y]) => [Number(x), Number(y)]);
+      const [origin] = at(anchor);
+      if (!origin) {
+        problems.push(`no ${anchor} in the picture of "${name}"`);
+        continue;
+      }
+      for (const [char, [dx, dy]] of Object.entries(glyphs)) {
+        const [x, y] = (at(char)[0] ?? [NaN, NaN]).map((v, i) => v - origin[i]);
+        if (!(Math.abs(x - dx) < 1 && (dy === null || Math.abs(y - dy) < 3))) problems.push(`${char} in the picture of "${name}" is at (${x.toFixed(2)}, ${y.toFixed(2)})bp from ${anchor}, not (${dx}, ${dy}) as in the PDF`);
+      }
+      const frame = svg.match(/<path d='M[\d.-]+-([\d.]+)H[\d.-]+V([\d.]+)H/);
+      const high = frame ? Number(frame[1]) + Number(frame[2]) : NaN;
+      if (height !== null && !(Math.abs(high - height) < 3)) problems.push(`the frame of "${name}" is ${high}pt high, not ${height.toFixed(2)}pt as in the PDF`);
+      const rects = svg.match(/<rect /g)?.length ?? 0;
+      if (rects < rules) problems.push(`the picture of "${name}" draws ${rects} rules, not the ${rules} of its frames`);
+      if (image !== undefined) {
+        const x = Number(svg.match(/<svg [^>]*x='([\d.-]+)'[^>]*>\s*<image /)?.[1]) - origin[0];
+        if (!(Math.abs(x - image) < 1)) problems.push(`the graphic in "${name}" starts ${x.toFixed(2)}bp from ${anchor}, not ${image}bp as in the PDF`);
+      }
+    }
+    for (const [name, [centered, framed]] of Object.entries(boxcenterKept)) {
+      const copy = part(name);
+      if (!new RegExp(`<div class='center'>[^]*?${centered} <span class='fbox'[^>]*>${framed}</span>`).test(copy)) problems.push(`no center that holds "${centered}" and an \\fbox of "${framed}" between "Before ${name}." and "After ${name}."`);
+    }
+  }
   if (copied[doc.name]) {
     const shown = {};
     for (const [tag] of flat.matchAll(/<img [^>]*>/g)) {
@@ -3327,7 +3395,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, coveredPictures, tablePictures, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, boxcenter, coveredPictures, tablePictures, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

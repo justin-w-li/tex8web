@@ -1,0 +1,142 @@
+% The cases of test-boxcenter and test-boxcenter-hyperref. Each case's
+% text is "Before <case>." and "After <case>.", which run.mjs reads.
+%
+% A centered block in a minipage saved with lrbox, \sbox, or \savebox and
+% placed in a TikZ node, which is drawn as one picture:
+% - a center with text and an \fbox, between two lines of text;
+% - a center with an \includegraphics, after a line of text;
+% - \centering with inline math, in a minipage saved with \sbox;
+% - a center with inline math and a \\, then a display, with \savebox;
+% - the centering environment, ragged2e's \Centering, and a \parbox with
+%   \centering in a \savebox;
+% - an \fbox and a \framebox of a given width, with no center;
+% - a center in italic and sans-serif text, and in a theorem;
+% - a box in a footnote.
+%
+% The boxes saved with \sbox and \savebox are saved between paragraphs.
+% Each box starts with a line of text at its left edge, which run.mjs
+% measures from.
+%
+% Cases the fix must not break: the same box placed with \usebox in the
+% running text keeps its center and its \fbox, and a center outside any
+% saved box.
+\usepackage{graphicx}
+\usepackage{ragged2e}
+\usepackage{tikz}
+\newtheorem{theorem}{Theorem}
+\newsavebox{\keep}
+\begin{document}
+Before repro.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+A
+\begin{center}B \fbox{C}\end{center}
+D
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After repro.
+
+Before lrbox png.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+E
+\begin{center}\includegraphics[width=2cm]{test-bare.png}\end{center}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After lrbox png.
+
+\sbox{\keep}{\begin{minipage}{6cm}Z\par\centering F $x+y$\end{minipage}}
+Before sbox centering.
+\tikz\node[draw]{\usebox{\keep}};
+
+After sbox centering.
+
+\savebox{\keep}{\begin{minipage}{6cm}
+G
+\begin{center}H $a+b$\\ I\end{center}
+\[c=d\]
+\end{minipage}}
+Before savebox math.
+\tikz\node[draw]{\usebox{\keep}};
+
+After savebox math.
+
+Before centering env.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}Z\par\begin{centering}J\par\end{centering}\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After centering env.
+
+Before ragged centering.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}Z\par\Centering K\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After ragged centering.
+
+\savebox{\keep}{\parbox{6cm}{Z\par\centering L}}
+Before parbox centering.
+\tikz\node[draw]{\usebox{\keep}};
+
+After parbox centering.
+
+Before frames.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+M \framebox[2cm]{N} O \fbox{P}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After frames.
+
+Before italic.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}\itshape
+Q
+\begin{center}R\end{center}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After italic.
+
+Before sans.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}\sffamily
+S
+\begin{center}T\end{center}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After sans.
+
+Before theorem.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+\begin{theorem}U
+\begin{center}V\end{center}
+\end{theorem}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After theorem.
+
+Before footnote.\footnote{\begin{lrbox}{\keep}\begin{minipage}{6cm}W
+\begin{center}X\end{center}
+\end{minipage}\end{lrbox}\tikz\node[draw]{\usebox{\keep}};}
+
+After footnote.
+
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+Kept
+\begin{center}Centered \fbox{Framed}\end{center}
+\end{minipage}\end{lrbox}
+Before node copy.
+\tikz\node[draw]{\usebox{\keep}};
+
+After node copy.
+
+Before text copy.
+\usebox{\keep}
+
+After text copy.
+
+Before plain center.
+\begin{center}Plain \fbox{Boxed}\end{center}
+
+After plain center.
+\end{document}
