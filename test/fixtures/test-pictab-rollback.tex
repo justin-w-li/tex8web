@@ -1,0 +1,9 @@
+% Tables in pictures with the release of array that
+% \usepackage{array}[=v2.6] loads, older than 2026/02/24, where colortbl
+% runs \@rowc@lors after each \cr instead of in array's row hook.
+\documentclass{article}
+\usepackage{array}[=v2.6]
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage[table]{xcolor}
+\input{test-pictab-cases.ltx}

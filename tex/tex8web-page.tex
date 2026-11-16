@@ -258,9 +258,15 @@
                 % \Configure{rowcolors} never draws it. The color goes on the
                 % row, under a \rowcolor or \cellcolor on its cells, as in the
                 % PDF. \rowcolors' commands for each row, such as [\hline], are
-                % dropped, because they cannot run there.
+                % dropped, because they cannot run there. In a picture, which
+                % writes no <table>, the image holds the color, and no CSS is
+                % written.
                 \cs_new_protected:Npn \__web_row_color:n #1
-                    { \add:color { background-color } {#1} { \HRow - } }
+                    {
+                        \if_meaning:w \EndPicture \:UnDef
+                            \add:color { background-color } {#1} { \HRow - }
+                        \fi:
+                    }
                 \Configure { rowcolors } { \__web_row_color:n }
                 \cs_set_eq:NN \__web_rowcolors:w \rowc@l@rs
                 \cs_set:Npn \rowc@l@rs [ #1 ] { \__web_rowcolors:w [ ] }

@@ -1539,7 +1539,7 @@ const texWarnings = {
   'test-pdftex-class': [/Unused global option/],
   'test-boxmath': [/multiply defined/, /qedhere command may not work/],
   ...Object.fromEntries(['test-pictab', 'test-pictab-hyperref', 'test-pictab-colortbl', 'test-pictab-booktabs',
-    'test-pictab-book', 'test-pictab-plain', 'test-pictab-tikz'].map(name => [name, [/Extra \}, or forgotten \$/, /Misplaced \\noalign/]])),
+    'test-pictab-book', 'test-pictab-plain', 'test-pictab-tikz', 'test-pictab-rollback'].map(name => [name, [/Extra \}, or forgotten \$/, /Misplaced \\noalign/]])),
 };
 
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
@@ -1744,6 +1744,7 @@ const tablePictures = {
   'test-pictab-hyperref': [...inEveryTablePage, 'column types', 'label'],
   'test-pictab-colortbl': [...inEveryTablePage, 'column types', 'booktabs', 'colortbl', 'rowcolor', 'rowcolors'],
   'test-pictab-booktabs': [...inEveryTablePage, 'booktabs'],
+  'test-pictab-rollback': [...inEveryTablePage, 'column types', 'booktabs', 'colortbl', 'rowcolor', 'rowcolors'],
   'test-pictab-book': ['label'],
   'test-pictab-plain': inEveryTablePage,
   'test-pictab-tikz': ['tikz'],

@@ -588,13 +588,15 @@
       { \tl_replace_once:cnn { o:endtabular: } { \endarray } { \endarray $ } }
   }
   { }
-% In a picture, array.sty's \ar@ialign runs colortbl's tbl/row/init hook,
-% \@rowc@lors, in a \noalign where \noalign does nothing. xcolor.4ht's
-% \@rowc@lors, and the \@rowcolors of its \rowcolors, call the primitive
-% (\o:noalign:) instead, so the build stops with "Misplaced \noalign". In
-% a picture, \o:noalign: is \noalign there, and \a:rowcolors, whose CSS
-% names a row of a <table> that a picture does not write, does nothing.
-% The group of that \noalign keeps both local.
+% From array 2026/02/24 on, array.sty's \ar@ialign runs colortbl's
+% tbl/row/init hook, \@rowc@lors, in a \noalign where \noalign does
+% nothing. xcolor.4ht's \@rowc@lors, and the \@rowcolors of its
+% \rowcolors, call the primitive (\o:noalign:) instead, so in a picture the
+% build stops with "Misplaced \noalign". There, \o:noalign: is \noalign,
+% and the group of that \noalign keeps it local. With an older array,
+% colortbl runs \@rowc@lors after each \cr, outside a \noalign, where an
+% assignment would start a new row; there \noalign is the primitive and
+% nothing changes.
 \@ifpackageloaded { colortbl }
   {
     \web@needs { @rowc@lors }
@@ -602,8 +604,9 @@
     \cs_set:Npn \@rowc@lors
       {
         \ifx \EndPicture \:UnDef \else
-          \cs_set_eq:cN { o:noalign: } \noalign
-          \cs_set_eq:cN { a:rowcolors } \use_none:n
+          \ifx \noalign \prg_do_nothing:
+            \cs_set_eq:cN { o:noalign: } \noalign
+          \fi
         \fi
         \__web_rowcolors:
       }
