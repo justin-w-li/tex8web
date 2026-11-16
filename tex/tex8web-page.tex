@@ -275,6 +275,27 @@
                         \__web_rowcolors:w
                             [ \if_meaning:w \EndPicture \:UnDef \else: #1 \fi: ]
                     }
+                % From array 2026/02/24 on, array.sty's \ar@ialign runs
+                % colortbl's tbl/row/init hook, \@rowc@lors, in a \noalign
+                % where \noalign does nothing. xcolor.4ht's \@rowc@lors, and
+                % the \@rowcolors of its \rowcolors, call the primitive
+                % (\o:noalign:) instead, so in a picture the build stops with
+                % "Misplaced \noalign". There, \o:noalign: is \noalign, and
+                % the group of that \noalign keeps it local. With an older
+                % array, colortbl runs \@rowc@lors after each \cr, outside a
+                % \noalign, where an assignment would start a new row. There
+                % \noalign is the primitive, and nothing changes.
+                \cs_set_eq:NN \__web_rowc@lors: \@rowc@lors
+                \cs_set:Npn \@rowc@lors
+                    {
+                        \if_meaning:w \EndPicture \:UnDef
+                        \else:
+                            \if_meaning:w \noalign \prg_do_nothing:
+                                \cs_set_eq:cN { o:noalign: } \noalign
+                            \fi:
+                        \fi:
+                        \__web_rowc@lors:
+                    }
                 \cs_new_protected:Npn \__web_row_colors:
                     {
                         \group_begin:

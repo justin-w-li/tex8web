@@ -6,4 +6,7 @@
 \usepackage{graphicx}
 \usepackage{overpic}
 \usepackage{import}
+% A \mathsurround that tex8web's $ around a table in a picture must not
+% add beside the table: the labels of the Inkscape cases would move.
+\setlength{\mathsurround}{5pt}
 \input{test-pictab-cases.ltx}

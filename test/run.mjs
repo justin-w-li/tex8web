@@ -1784,7 +1784,7 @@ const tablePictures = {
   'test-pictab-rollback': [...inEveryTablePage, 'column types', 'booktabs', 'colortbl', 'rowcolor', 'rowcolors'],
   'test-pictab-book': ['label'],
   'test-pictab-plain': inEveryTablePage,
-  'test-pictab-tikz': ['tikz'],
+  'test-pictab-tikz': ['tikz', 'label'],
 };
 // words of the tables in the pictures, which are not the page's text
 const tablePictureWords = new RegExp(String.raw`\b(?:` + ['AlphaOne', 'Gamma', 'DeltaBold', 'Left', 'Right', 'Xone', 'InnerA', 'SpanTop',
@@ -3265,15 +3265,19 @@ function check(doc, result, out, aux) {
     if (!natural && !(Math.abs(width - want) <= 0.1 * want)) {
       problems.push(`the picture of "${name}" is ${width} pixels wide, not ${want}`);
     }
+    if (!yellowTables.includes(name) && !ruledTables.includes(name)) continue;
+    const colors = paletteColors(readFileSync(files[0]));
+    if (!colors) {
+      problems.push(`the picture of "${name}" is not a PNG with a palette`);
+      continue;
+    }
     if (yellowTables.includes(name)) {
-      const colors = paletteColors(readFileSync(files[0])), yellow = colors?.filter(color => color === 0xffff00).length;
-      if (!colors) problems.push(`the picture of "${name}" is not a PNG with a palette`);
-      else if (!(yellow >= colors.length / 5)) problems.push(`the picture of "${name}" is ${yellow} of ${colors.length} pixels yellow, not a fifth`);
+      const yellow = colors.filter(color => color === 0xffff00).length;
+      if (!(yellow >= colors.length / 5)) problems.push(`the picture of "${name}" is ${yellow} of ${colors.length} pixels yellow, not a fifth`);
     }
     if (ruledTables.includes(name)) {
       // (a rule is a line of pixels, nine tenths of them dark, in a run of
       // such lines)
-      const colors = paletteColors(readFileSync(files[0])) ?? [];
       const dark = color => [16, 8, 0].every(shift => (color >> shift & 0xff) < 0x80);
       let rules = 0, before = false;
       for (let y = 0; y * width < colors.length; y++) {

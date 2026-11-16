@@ -1,8 +1,11 @@
 % A tabular in a TikZ node with the array package, which tex4ht sets as a
-% picture, as it sets a \put's tabular.
+% picture, as it sets a \put's tabular, and an Inkscape label in a
+% document that loads TikZ, where every LaTeX picture is an SVG image.
 \documentclass{article}
 \usepackage{array}
 \usepackage{tikz}
+\usepackage{color}
+\usepackage{graphicx}
 \begin{document}
 \begin{tabular}{|l|l|}
 \hline
@@ -13,6 +16,11 @@ First & Guard\\
 Before tikz.
 \begin{tikzpicture}\node[draw]{\begin{tabular}{l}TikzCell\\TikzRow\end{tabular}};\end{tikzpicture}
 After tikz.
+
+Before label.
+\def\svgwidth{100pt}
+\input{test-pictab-label.pdf_tex}
+After label.
 
 \begin{tabular}{|l|l|}
 \hline
