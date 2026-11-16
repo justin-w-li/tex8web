@@ -214,6 +214,18 @@ function M.sized_math_spaces(document)
   end
 end
 
+-- tex4ht writes a space where it sees a gap in a D cell of dcolumn
+-- (tex8web-text.tex): after a math minus, and at the glue that sets a
+-- part's width. A space between the minus and the digits would show, and
+-- the number is math, which has no spaces, so the spaces are dropped.
+function M.dcolumn_spaces(document)
+  for _, el in ipairs(document:query_selector(".tex8web-dc")) do
+    el:traverse(function(node)
+      if node:is_text() then dom.set_node_text(node, (node:get_text():gsub("%s+", ""))) end
+    end)
+  end
+end
+
 local narrow = "\u{202F}"
 
 -- where the next no-break space (~) or narrow no-break space (\, in text)

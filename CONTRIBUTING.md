@@ -338,7 +338,7 @@ Open an issue with the bug report template in [`.github/ISSUE_TEMPLATE`](.github
 | `tex8web.mk4` | the build file: search paths, build steps, HTML passes, and prerendering |
 | `tex/tex8web-core.tex` | the entry point, with the four modules below |
 | `tex/tex8web-math.tex` | the MathJax configuration, `\WebMathMacros`, the escaping of formula source, siunitx, equation numbers, `\intertext`, TikZ in display math, and the space around display math |
-| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, `\rule` in text, the space in table cells and the alignment of paragraph cells, the table of contents, lists, `\fbox` and `\colorbox`, bibliographies, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, the pages of pdfpages, `\WebTerm`, and TS1 symbols |
+| `tex/tex8web-text.tex` | links, cross-references, theorems, `\hfill` and line breaks, `\rule` in text, the space in table cells, the alignment of paragraph cells, dcolumn's D cells, the table of contents, lists, `\fbox` and `\colorbox`, bibliographies, boxes of framed and mdframed, algorithms (the ruled style of float, algorithmicx, algorithm2e), figures, the pages of pdfpages, `\WebTerm`, and TS1 symbols |
 | `tex/tex8web-page.tex` | `<head>`, `\WebPDF`, `\WebUp`, `\WebColor`, `\color` as a declaration, and the measurements and heading fonts of the document |
 | `tex/tex8web-boxes.tex` | tcolorbox boxes |
 | `tex/revtex4-2.4ht`, `revtex4-1.4ht` | the classes revtex4-2 and revtex4-1, for which tex4ht has no `.4ht` file: tex4ht's `revtex4.4ht`, with the changes these classes need |

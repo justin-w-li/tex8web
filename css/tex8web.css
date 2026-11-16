@@ -609,6 +609,14 @@ span.tcolorbox > .tcolorbox-title { display: block; }
 td.td11 { padding-inline: var(--tex8web-tabcolsep); }
 td.td10 { padding-left: var(--tex8web-tabcolsep); }
 td.td01 { padding-right: var(--tex8web-tabcolsep); }
+/* a dcolumn cell (tex8web-text.tex): the number's part before the
+   separator ends where the part from the separator starts. A part without
+   a width from TeX keeps its natural width. */
+.tex8web-dc { display: block; white-space: nowrap; }
+.tex8web-dc-right { text-align: right; }
+.tex8web-dc > span { display: inline-block; width: var(--tex8web-dc-width); }
+.tex8web-dc-int { text-align: right; }
+.tex8web-dc-frac { text-align: left; }
 /* framed, as far from the text as in the PDF (tex8web-text.tex). Under a
    titlesec heading, the sum of this space and the heading's space below,
    not the larger: titlesec adds its space with \vspace, which ends in

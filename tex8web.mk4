@@ -167,6 +167,7 @@ local passes = {
   text.pictures,
   source.spaces,
   text.sized_math_spaces,
+  text.dcolumn_spaces,
   text.block_spacing,
   text.box_theorems,
   text.heading_lists,
