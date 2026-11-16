@@ -2996,6 +2996,58 @@ function check(doc, result, out, aux) {
     if (count !== wanted.length + 1) problems.push(`${count} formulas, not ${wanted.length + 1}`);
     if (html.includes('tex8web-long-literal')) problems.push('a short inline listing in a long-literal box');
   }
+  // (each displayed listing in a box: its text in a <pre>, in its table
+  // cell where it has one, and each formula after one typeset, with
+  // "then" before it)
+  if (doc.name.startsWith('test-listing-hmode')) {
+    const flat = html.replace(/\s+/g, ' ');
+    const pres = [...flat.matchAll(/<pre class='lst(?:input)?listing'[^>]*>((?:(?!<\/pre>)[^])*)<\/pre>/g)];
+    const texts = pres.map(([, body]) => body.replace(/<span class='label'>(?:(?!<\/span>)[^])*<\/span>/g, '')
+      .replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim());
+    const lines = name => `${name}();`;
+    const caption = doc.name.endsWith('-caption');
+    const hyperref = doc.name.endsWith('-hyperref');
+    const expected = caption ? ['topenv', 'cellenv', 'cellL', 'minienv'].map(lines)
+      : [...['topenv', 'topfile', 'mbox_esc', 'cellL', 'cellC', 'cellR', 'lrbox', 'fbox', 'mbox_esc', 'cbox', 'fcbox',
+        'framecell'].map(lines), 'esc = α;', ...['makebox', 'minicell', 'pcol', 'parbox', 'multi', 'long', 'label',
+        'thm', 'note', 'raise', 'sbox', 'savebox', 'boxpos', 'hbox', 'italic', 'sans', 'delims',
+        ...(hyperref ? ['link', 'utf'] : [])].map(lines)];
+    if (texts.join('|') !== expected.join('|')) problems.push(`the displayed listings read '${texts.join('|')}'`);
+    const celled = caption ? ['cellenv();', 'cellL();', 'minienv();']
+      : ['cellL', 'cellC', 'cellR', 'framecell', 'minicell', 'pcol', 'multi', 'long', 'thm', 'boxpos'].map(lines).concat('esc = α;');
+    for (const text of celled) {
+      const at = pres[texts.indexOf(text)]?.index;
+      const before = at === undefined ? '' : flat.slice(0, at);
+      if (at === undefined || before.lastIndexOf('<td') < before.lastIndexOf('</td>')) problems.push(`the listing '${text}' is not in its table cell`);
+    }
+    if (pres.some(([body]) => /<mjx-container|mathjax/.test(body))) problems.push('math in a displayed listing');
+    const formulas = [...flat.matchAll(/(\S*) (?:<\/span>)?(?:<span class='[^']*'>)?(?:<span class='tex8web-nowrap'>)?(?:<span class='mathjax-inline'[^>]*>)?<mjx-container aria-label='([^']*)'/g)]
+      .map(([, before, label]) => `${before.replace(/^.*>/, '')} ${label}`);
+    const wanted = caption ? [...'ABCD'].map(letter => `then script ${letter}`)
+      : ['then x plus 1', ...[...'ABCDEFGHIJKLMNOPQRSTUVWXY'].map(letter => `then script ${letter}`), 'then y plus 1',
+        'then script Z', ...(hyperref ? ['then 1 plus 2', 'then 2 plus 3'] : [])];
+    if (formulas.join('|') !== wanted.join('|')) problems.push(`the formulas after the displayed listings read '${formulas.join('|')}'`);
+    if (!caption && !/then <span class='mathjax-block'[^>]*><mjx-container aria-label='z plus 1'/.test(flat)) problems.push('no display z+1 after the displayed listings');
+    const count = (flat.match(/<mjx-container/g) ?? []).length;
+    if (count !== wanted.length + (caption ? 0 : 1)) problems.push(`${count} formulas, not ${wanted.length + (caption ? 0 : 1)}`);
+    // (each \ref reads its listing's number and links to an anchor after
+    // the listing before it, and before the listing's own <pre>)
+    if (caption) {
+      const refs = [...flat.matchAll(/<a href='#([^']+)'>(\d+)<!-- tex4ht:ref: lst:(\w+) -->/g)];
+      const names = ['topenv', 'cellenv', 'cellfile', 'minienv'];
+      if (refs.map(([, , number, name]) => `${name} ${number}`).join('|') !== names.map((name, i) => `${name} ${i + 1}`).join('|')) {
+        problems.push(`the references read '${refs.map(([, , number, name]) => `${name} ${number}`).join('|')}'`);
+      }
+      refs.forEach(([, id, number]) => {
+        const target = flat.indexOf(` id='${id}'`), i = number - 1;
+        const [after, before] = [pres[i - 1], pres[i]].map(pre => pre?.index);
+        if (target < 0 || before === undefined || target > before || (after !== undefined && target < after)) problems.push(`the reference to listing ${number} does not land at the listing`);
+      });
+      const captions = [...flat.matchAll(/<figcaption class='caption'[^>]*>((?:(?!<\/figcaption>)[^])*)<\/figcaption>/g)]
+        .map(([, body]) => body.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim());
+      if (captions.join('|') !== 'Listing 1: Top env|Listing 2: Cell env|Listing 3: Cell file|Listing 4: Mini env') problems.push(`the captions read '${captions.join('|')}'`);
+    }
+  }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
     const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];
     if (codes.length !== 11) problems.push('expected eleven review literals');

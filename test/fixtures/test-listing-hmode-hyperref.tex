@@ -1,0 +1,10 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,listingsutf8,xcolor,longtable,hyperref}
+\lstset{basicstyle=\ttfamily,language=C}
+\input{test-listing-hmode-cases.ltx}
+
+A link \href{https://example.org}{\mbox{\lstline{26}}} then $1+2$.
+
+In \makebox[12em][l]{\lstline[inputencoding=utf8]{27}} then $2+3$.
+\end{document}

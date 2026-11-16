@@ -1,0 +1,94 @@
+% Displayed listings in inner horizontal mode: listings sets such a
+% listing in a box between two $ (\lst@Init), for its \par. Each listing
+% shows one line of test-listing-hmode-code.txt, or a line of its own, and
+% is followed by a formula, preceded by "then", which must be typeset.
+\newcommand\lstline[2][]{\lstinputlisting[firstline=#2,lastline=#2,#1]{test-listing-hmode-code.txt}}
+\newtheorem{theorem}{Theorem}
+\newsavebox\lstsaved
+\begin{document}
+\section{Displayed listings in boxes}
+% (guards: at the top level, in vertical mode)
+\begin{lstlisting}
+topenv();
+\end{lstlisting}
+Top then $x+1$.
+
+\lstline{1}
+
+\lstline[mathescape]{4}
+
+\begin{tabular}{l} \lstline{2} \end{tabular} then $\mathcal{A}$.
+
+\begin{tabular}{|c|r|} \hline
+\lstline{3} &
+\begin{lstlisting}[numbers=left]
+cellR();
+\end{lstlisting}
+\\ \hline
+\end{tabular} then $\mathcal{B}$.
+
+\begin{lrbox}{\lstsaved}
+\begin{lstlisting}
+lrbox();
+\end{lstlisting}
+\end{lrbox}
+Framed \fbox{\usebox{\lstsaved}} then $\mathcal{C}$.
+
+In \fbox{\lstline[frame=single]{5}} then $\mathcal{D}$.
+
+E: \mbox{\lstline[mathescape]{4}} then $\mathcal{E}$.
+
+In \colorbox{yellow}{\lstline{6}} then $\mathcal{F}$.
+
+In \fcolorbox{black}{yellow}{\lstline{7}} then $\mathcal{G}$.
+
+\begin{tabular}{l} \lstline[numbers=left,frame=single]{8} \end{tabular} then $\mathcal{H}$.
+
+\begin{tabular}{l}
+\begin{lstlisting}[escapeinside={(*}{*)}]
+esc = (*$\alpha$*);
+\end{lstlisting}
+\end{tabular} then $\mathcal{I}$.
+
+In \makebox[12em][l]{\lstline{9}} then $\mathcal{J}$.
+
+\begin{tabular}{l} \begin{minipage}{12em} \lstline{10} \end{minipage} \end{tabular} then $\mathcal{K}$.
+
+\begin{tabular}{p{12em}} \lstline{11} \end{tabular} then $\mathcal{L}$.
+
+\parbox{12em}{\lstline{12}} then $\mathcal{M}$.
+
+\begin{tabular}{ll} \multicolumn{2}{l}{\lstline{13}} \end{tabular} then $\mathcal{N}$.
+
+\begin{longtable}{l} \lstline{14} \end{longtable}
+After it, then $\mathcal{O}$.
+
+\begin{description}
+\item[\lstline{15}] A label, then $\mathcal{P}$.
+\end{description}
+
+\begin{theorem}
+\begin{tabular}{l} \lstline{16} \end{tabular} then $\mathcal{Q}$.
+\end{theorem}
+
+Footnote\footnote{In \mbox{\lstline{17}} then $\mathcal{R}$.} ends.
+
+In \raisebox{1pt}{\lstline{18}} then $\mathcal{S}$.
+
+\sbox0{\lstline{19}}In \usebox{0} then $\mathcal{T}$.
+
+\savebox\lstsaved{\lstline{20}}In \usebox{\lstsaved} then $\mathcal{U}$.
+
+\begin{tabular}{l} \lstline[boxpos=b]{21} \end{tabular} then $\mathcal{V}$.
+
+In \hbox{\lstline{22}} then $\mathcal{W}$.
+
+\emph{Italic \mbox{\lstline{23}}} then $\mathcal{X}$.
+
+\textsf{Sans \fbox{\lstline{24}}} then $\mathcal{Y}$.
+
+% (other math delimiters after a boxed listing)
+In \mbox{\lstline{25}} then \(y+1\), and then
+\[z+1\]
+
+Last then $\mathcal{Z}$.
