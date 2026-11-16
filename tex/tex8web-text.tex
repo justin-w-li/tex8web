@@ -576,7 +576,10 @@
 % array.4ht's \@tabular opens a $ in every tabular, which its \endtabular
 % closes. In a picture, tex4ht calls the \endtabular saved by \HLet
 % (tex4ht.sty) instead, and array.sty's closes no $, so the build stops
-% with "Extra }, or forgotten $". The $ is added to the saved one.
+% with "Extra }, or forgotten $". The $ is added to the saved one. The
+% releases of array up to v2.6, which \usepackage{array}[=v2.6] loads,
+% close the $ themselves (array-2024-06-01.sty's \endtabular), so theirs
+% is left as it is.
 \ExplSyntaxOn
 \@ifpackageloaded { array }
   {
@@ -585,24 +588,24 @@
       { \tl_replace_once:cnn { o:endtabular: } { \endarray } { \endarray $ } }
   }
   { }
-% In a picture, the kernel's \ar@ialign runs colortbl's tbl/row/init hook,
-% \@rowc@lors, in a \noalign where \noalign does nothing (latex.ltx).
-% xcolor.4ht's \@rowc@lors calls the primitive (\o:noalign:) instead, so
-% the build stops with "Misplaced \noalign". In a picture, \noalign is
-% called instead, as colortbl.sty does.
+% In a picture, array.sty's \ar@ialign runs colortbl's tbl/row/init hook,
+% \@rowc@lors, in a \noalign where \noalign does nothing. xcolor.4ht's
+% \@rowc@lors, and the \@rowcolors of its \rowcolors, call the primitive
+% (\o:noalign:) instead, so the build stops with "Misplaced \noalign". In
+% a picture, \o:noalign: is \noalign there, and \a:rowcolors, whose CSS
+% names a row of a <table> that a picture does not write, does nothing.
+% The group of that \noalign keeps both local.
 \@ifpackageloaded { colortbl }
   {
     \web@needs { @rowc@lors }
     \cs_set_eq:NN \__web_rowcolors: \@rowc@lors
-    \cs_set:Npn \__web_rowcolors_picture:
-      { \noalign { \global \advance \rownum \c_one_int } \@rowcolors }
     \cs_set:Npn \@rowc@lors
       {
-        \ifx \EndPicture \:UnDef
-          \exp_after:wN \__web_rowcolors:
-        \else
-          \exp_after:wN \__web_rowcolors_picture:
+        \ifx \EndPicture \:UnDef \else
+          \cs_set_eq:cN { o:noalign: } \noalign
+          \cs_set_eq:cN { a:rowcolors } \use_none:n
         \fi
+        \__web_rowcolors:
       }
   }
   { }

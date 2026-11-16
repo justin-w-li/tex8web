@@ -9,7 +9,7 @@
 % - array's column types (>{\bfseries}l and p{2cm}), tabular*, tabularx,
 %   a tabular nested in a tabular, and an array in math;
 % - booktabs' rules, alone and with colortbl's \columncolor, and
-%   colortbl's \rowcolor;
+%   colortbl's \rowcolor, and xcolor's \rowcolors;
 % - a picture with a tabular in a cell of a tabular;
 % - in a figure with a caption, in a theorem, in italic, sans-serif, and
 %   typewriter text, and in \small;
@@ -84,6 +84,13 @@ After colortbl.
 Before rowcolor.
 \begin{picture}(120,40)\put(0,0){\begin{tabular}{lr}\rowcolor{yellow}Tint & Num\\Row & 1\end{tabular}}\end{picture}
 After rowcolor.
+\fi
+
+\ifdefined\rowcolors
+{\rowcolors{1}{yellow}{white}%
+Before rowcolors.
+\begin{picture}(120,40)\put(0,0){\begin{tabular}{l}Striped\\Rows\end{tabular}}\end{picture}
+After rowcolors.}
 \fi
 
 Before figure.

@@ -1,0 +1,22 @@
+% A tabular in a TikZ node with the array package, which tex4ht sets as a
+% picture, as it sets a \put's tabular.
+\documentclass{article}
+\usepackage{array}
+\usepackage{tikz}
+\begin{document}
+\begin{tabular}{|l|l|}
+\hline
+First & Guard\\
+\hline
+\end{tabular}
+
+Before tikz.
+\begin{tikzpicture}\node[draw]{\begin{tabular}{l}TikzCell\\TikzRow\end{tabular}};\end{tikzpicture}
+After tikz.
+
+\begin{tabular}{|l|l|}
+\hline
+Guard & Table\\
+\hline
+\end{tabular}
+\end{document}
