@@ -3124,7 +3124,8 @@ function check(doc, result, out, aux) {
       ...['A', 'B', 'C', 'D'].map(name => `wide${name}(); /* a line wider than the column of a phone screen */`),
       'a b c x; abcde y;', ...['center', 'top', 'bottom'].map(name => `${name}A(); ${name}B(); ${name}C();`),
       'capA(); capB(); capC(); above Captioned top', ...['lab', 'mid', 'named'].map(name => `${name}A(); ${name}B(); ${name}C();`),
-      'shadowed();', ...['itemfirst', 'itemlater', 'itemtop', 'itemstart'].map(name => `${name}A(); ${name}B(); ${name}C();`)];
+      'shadowed();', 'boxedwide(); /* a line wider than the column of a phone screen, in a frame */',
+      ...['itemfirst', 'itemlater', 'itemtop', 'itemstart'].map(name => `${name}A(); ${name}B(); ${name}C();`)];
     if (boxes.join('|') !== want.join('|')) problems.push(`the boxed listings read '${boxes.join('|')}'`);
     // (boxpos=center leaves no letters in the page, and a \ref to a boxed
     // listing's label reads its number)
@@ -3135,7 +3136,7 @@ function check(doc, result, out, aux) {
     const formulas = [...flat.matchAll(/then (?:<span class='tex8web-nowrap'>)?<mjx-container aria-label='([^']*)'/g)].map(([, label]) => label);
     // (tex8web-text.tex's marks for text.boxed_listings, also of a caption in a cell)
     if (html.includes('tex8web:')) problems.push('a mark of tex8web-text.tex is left in the page');
-    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
+    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i|j|k|l|m|n|s|o|p|q|r') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
     const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];
