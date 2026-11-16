@@ -105,8 +105,12 @@ export async function launch({ fontSize, offline, netLog } = {}) {
   // (Chrome refuses to run as root with its sandbox, as in a container.
   // One raster thread: with several, a picture shown at a few sizes can
   // have its small copies scaled differently in two loads of a page, by up
-  // to 22 levels, in Chrome 157)
+  // to 22 levels, in Chrome 157. No partial raster: with it, a tile
+  // redrawn after a change keeps its old pixels outside the change, so the
+  // edges of two touching glyphs in an SVG picture can come out one of two
+  // ways, in Chrome 157)
   const proc = spawn(binary, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--num-raster-threads=1',
+    '--disable-partial-raster',
     ...process.getuid?.() === 0 ? ['--no-sandbox'] : [],
     // (offline: every host name fails to resolve, with no DNS lookup. The
     // rules map IP addresses too, loopback included, in Chrome 157)
