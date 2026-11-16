@@ -1467,18 +1467,28 @@ const paragraphListings = {
 };
 
 // A boxed listing with a line wider than a phone's column scrolls inside
-// its frame, which stays in the column, and the page is no wider than
-// the screen (test-boxed-listings).
+// its frames, which stay in the column, also a frame around a frame, and
+// the page is no wider than the screen. A boxed bottom caption is as far
+// from its listing as in the PDF (test-boxed-listings).
 const boxedListingScroll = `(() => {
   const problems = [];
-  const code = [...document.querySelectorAll('.tex8web-boxed-listing > code')].find(el => el.textContent.includes('wide();'));
-  if (!code) return ['no boxed listing wide();'];
-  const frame = code.closest('span.fbox'), column = code.closest('p').getBoundingClientRect();
-  if (!(code.scrollWidth > code.clientWidth && getComputedStyle(code).overflowX === 'auto')) problems.push('the listing wide(); does not scroll');
-  if (!frame || frame.getBoundingClientRect().right > column.right + 0.5) problems.push('the frame of wide(); is wider than its column');
+  const codes = [...document.querySelectorAll('.tex8web-boxed-listing > code')].filter(el => /^wide\\w*\\(\\);/.test(el.textContent.trim()));
+  if (codes.length !== 5) return [\`expected five boxed listings wide...();, found \${codes.length}\`];
+  for (const code of codes) {
+    const name = code.textContent.trim().split(' ')[0], column = code.closest('p').getBoundingClientRect();
+    if (!(code.scrollWidth > code.clientWidth && getComputedStyle(code).overflowX === 'auto')) problems.push(\`the listing \${name} does not scroll\`);
+    for (let frame = code.parentElement; frame && frame.tagName !== 'P'; frame = frame.parentElement) {
+      if (frame.getBoundingClientRect().right > column.right + 0.5) problems.push(\`a box of \${name} (\${frame.className}) is wider than its column\`);
+    }
+  }
   if (document.documentElement.scrollWidth > document.documentElement.clientWidth) {
     problems.push(\`the page is \${document.documentElement.scrollWidth - document.documentElement.clientWidth}px wider than the screen\`);
   }
+  const bottom = [...document.querySelectorAll('.tex8web-boxed-listing > code')].find(el => el.textContent.includes('bottomenv();'));
+  const caption = bottom?.parentElement.querySelector('.caption');
+  const gap = caption && caption.getBoundingClientRect().top - bottom.getBoundingClientRect().bottom;
+  const em = caption && parseFloat(getComputedStyle(caption).fontSize);
+  if (!(Math.abs(gap - 0.3 * em) < 1)) problems.push(\`the caption below bottomenv(); is \${gap}px from it, not 0.3em\`);
   return problems;
 })()`;
 

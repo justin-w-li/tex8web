@@ -128,15 +128,19 @@ div.listing, div.verbatimtabinput { white-space: pre; }
    (text.boxed_listings), on the baseline of the line. listings centers it
    on the line (\vcenter), but Chrome then aligns a list's label with the
    inline block in place of the line. */
-.tex8web-boxed-listing { display: inline-block; text-align: left; text-indent: 0; }
+.tex8web-boxed-listing { display: inline-block; max-width: 100%; text-align: left; text-indent: 0; }
 /* (a line wider than the column scrolls, as a <pre> does, inside the
-   frame, which is no wider than the column. The <code> scrolls, so that
-   the inline block keeps the baseline of its last line) */
-.tex8web-boxed-listing { max-width: 100%; }
-.tex8web-boxed-listing > code { overflow: auto clip; }
-:is(span.fbox, span.colorbox):has(> .tex8web-boxed-listing) { max-width: 100%; box-sizing: border-box; }
-.tex8web-boxed-listing > code { display: block; white-space: pre; font: inherit; }
-.tex8web-boxed-listing .caption { display: block; white-space: normal; }
+   frame. The <code> scrolls, so that the inline block keeps the baseline
+   of its last line. Every frame around the listing, also a frame around
+   another frame, is no wider than the column: a frame's width comes from
+   its content's, and a limit in percent on a frame inside it does not
+   count there) */
+.tex8web-boxed-listing > code { display: block; overflow: auto clip; white-space: pre; font: inherit; }
+:is(span.fbox, span.colorbox, .framebox-c, .framebox-l, .framebox-r):has(.tex8web-boxed-listing) {
+    max-width: 100%; box-sizing: border-box; }
+/* (the caption skips, as for a caption outside a box) */
+.tex8web-boxed-listing .caption { display: block; white-space: normal;
+    margin-block: var(--tex8web-caption-before) var(--tex8web-caption-after); }
 /* moreverb's line numbers, in roman as in the PDF, and labels that the
    document defines (tex8web-text.tex). A label's text in the document's
    base font has no font span, and is in the text's font (assets.lua for

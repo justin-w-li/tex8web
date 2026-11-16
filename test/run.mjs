@@ -3038,7 +3038,7 @@ function check(doc, result, out, aux) {
     const frames = { 'fbox();': single, 'framecell();': single, 'hboxnew();': single,
       'saved();': 'none none none solid|0em 0em 0em 0.04em|0em 0em 0em 0.3em',
       'rule();': 'solid none double none|0.2em 0em 0.6em 0em|0.5em 0em 0.5em 0em', 'cellL();': undefined, 'shape();': undefined,
-      'topframe();': single, 'shadowbox();': 'solid solid solid solid|0.04em 0.04em 0.04em 0.04em|0.3em 0.3em 0.3em 0.3em',
+      'topframe();': single, 'shadowbox();': single,
       'shapelow();': undefined };
     for (const [text, sides] of caption ? [] : Object.entries(frames)) {
       const id = pres[texts.indexOf(text)]?.[0].match(/^<(?:pre|code)[^>]* id='([\w-]+)'/)?.[1];
@@ -3120,12 +3120,13 @@ function check(doc, result, out, aux) {
     });
     const want = ['wide(); /* a line wider than the column of a phone screen */', 'bottomenv(); below Below env',
       'twoA();', 'twoB(); above Above second', 'pairA(); below Below first', 'pairB(); above Above next',
-      'titleA();', 'titleB(); above Titled next'];
+      'titleA();', 'titleB(); above Titled next',
+      ...['A', 'B', 'C', 'D'].map(name => `wide${name}(); /* a line wider than the column of a phone screen */`)];
     if (boxes.join('|') !== want.join('|')) problems.push(`the boxed listings read '${boxes.join('|')}'`);
     const black = flat.match(/<pre class='lstlisting' id='([\w-]+)'>(?:(?!<\/pre>)[^])*blackshadow/)?.[1];
     if (!(black && new RegExp(`#${black}\\s*\\{\\s*box-shadow:[^;}]*\\scurrentColor\\s*[;}]`).test(styles))) problems.push('the listing \'blackshadow();\' has no shadow in the text\'s color');
     const formulas = [...flat.matchAll(/then (?:<span class='tex8web-nowrap'>)?<mjx-container aria-label='([^']*)'/g)].map(([, label]) => label);
-    if (formulas.join('|') !== 'a|b|c|d|e') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
+    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
     const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];

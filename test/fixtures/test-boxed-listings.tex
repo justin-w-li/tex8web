@@ -2,8 +2,8 @@
 \usepackage{listings,xcolor}
 \newsavebox\lstbox
 % Displayed listings in boxes in a paragraph (text.boxed_listings): a
-% line wider than a phone's column, captions at the bottom, and two
-% listings in one box.
+% line wider than a phone's column, also in nested frames, captions at
+% the bottom, and two listings in one box.
 \begin{document}
 \section{Boxed listings}
 \begin{lrbox}{\lstbox}\begin{lstlisting}
@@ -37,6 +37,28 @@ titleA();
 titleB();
 \end{lstlisting}\end{lrbox}
 Titled \fbox{\usebox{\lstbox}} then $e$.
+
+% (the line wider than the column in a frame inside a frame, and in a
+% raised box inside a frame)
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+wideA(); /* a line wider than the column of a phone screen */
+\end{lstlisting}\end{lrbox}
+Nested \fbox{\fbox{\usebox{\lstbox}}} then $f$.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+wideB(); /* a line wider than the column of a phone screen */
+\end{lstlisting}\end{lrbox}
+Color \fbox{\colorbox{yellow}{\usebox{\lstbox}}} then $g$.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+wideC(); /* a line wider than the column of a phone screen */
+\end{lstlisting}\end{lrbox}
+Framed \colorbox{yellow}{\fcolorbox{red}{white}{\usebox{\lstbox}}} then $h$.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+wideD(); /* a line wider than the column of a phone screen */
+\end{lstlisting}\end{lrbox}
+Raised \fbox{\raisebox{1pt}{\usebox{\lstbox}}} then $i$.
 
 % (frame=shadowbox with a black rulesepcolor: a shadow in the text's
 % color, also in dark mode)

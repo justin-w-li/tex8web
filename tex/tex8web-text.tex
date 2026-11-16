@@ -85,9 +85,10 @@
 % frame aspect, after listings.4ht's \HLet, and the frame's \par in the
 % box would close the paragraph around the box. lstmisc.sty's fancyvrb
 % aspect runs the BoxUnsafe hook outside a box too, hence \lst@ifbox.
-% frame= is drawn as the listing's border from its PreInit hook, after
-% html4.4ht's Init hook gives the <pre> its id. frameshape= puts letters
-% other than t, r, b, and l in \lst@frame, and is not drawn.
+% frame= is drawn as the listing's border. The PreInit hook reads it, and
+% the border is written at \lst@InitFinalize, after html4.4ht's Init hook
+% advances \listingN for the <pre>'s id. frameshape= puts letters other
+% than t, r, b, and l in \lst@frame, and is not drawn.
 % html4.4ht closes the paragraph before a displayed listing (\EndP), also
 % from inside the <span> of a box, so \EndP is off in inner horizontal
 % mode, and text.boxed_listings sets such a listing inline. The hook of
