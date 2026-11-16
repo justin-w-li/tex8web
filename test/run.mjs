@@ -3001,13 +3001,13 @@ function check(doc, result, out, aux) {
   // "then" before it)
   if (doc.name.startsWith('test-listing-hmode')) {
     const flat = html.replace(/\s+/g, ' ');
-    const pres = [...flat.matchAll(/<pre class='(?:lst(?:input)?listing|listings)'[^>]*>((?:(?!<\/pre>)[^])*)<\/pre>/g)];
-    const texts = pres.map(([, body]) => body.replace(/<span class='label'>(?:(?!<\/span>)[^])*<\/span>/g, '')
+    const pres = [...flat.matchAll(/<(pre|code) class='(?:lst(?:input)?listing|listings)'[^>]*>((?:(?!<\/\1>)[^])*)<\/\1>/g)];
+    const texts = pres.map(([, , body]) => body.replace(/<(figcaption|span) class='caption'(?:(?!<!-- tex4ht:label)[^])*<!-- tex4ht:label[^>]*>/g, '').replace(/<span class='label'>(?:(?!<\/span>)[^])*<\/span>/g, '')
       .replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim());
     const lines = name => `${name}();`;
     const caption = doc.name.includes('-caption');
     const hyperref = doc.name.endsWith('-hyperref');
-    const expected = caption ? ['topenv', 'cellenv', 'cellL', 'minienv'].map(lines)
+    const expected = caption ? ['topenv', 'cellenv', 'cellL', 'minienv', 'boxenv', 'fbox'].map(lines)
       : [...['topenv', 'topfile', 'mbox_esc'].map(lines), ...['cellL', 'cellC', 'cellR', 'lrbox', 'fbox', 'mbox_esc'].map(lines),
         ...['cbox', 'fcbox', 'framecell'].map(lines), 'esc = α;', ...['makebox', 'minicell', 'pcol', 'parbox', 'multi', 'long',
         'label', 'thm', 'note', 'raise', 'sbox', 'savebox', 'boxpos', 'hbox', 'italic', 'sans', 'inbox', 'cellmid', 'item',
@@ -3026,7 +3026,7 @@ function check(doc, result, out, aux) {
     }
     // (the line numbers of numbers=left)
     for (const text of caption ? [] : ['cellR();', 'framecell();']) {
-      const label = pres[texts.indexOf(text)]?.[1].match(/<span class='label'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1];
+      const label = pres[texts.indexOf(text)]?.[2].match(/<span class='label'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1];
       if (label?.replace(/<[^>]*>/g, '').trim() !== '1') problems.push(`the listing '${text}' has no line number 1`);
     }
     if (pres.some(([body]) => /<mjx-container|mathjax/.test(body))) problems.push('math in a displayed listing');
@@ -3041,17 +3041,17 @@ function check(doc, result, out, aux) {
       'topframe();': single, 'shadowbox();': 'solid solid solid solid|0.04em 0.04em 0.04em 0.04em|0.3em 0.3em 0.3em 0.3em',
       'shapelow();': undefined };
     for (const [text, sides] of caption ? [] : Object.entries(frames)) {
-      const id = pres[texts.indexOf(text)]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
+      const id = pres[texts.indexOf(text)]?.[0].match(/^<(?:pre|code)[^>]* id='([\w-]+)'/)?.[1];
       const rule = id && styles.match(new RegExp(`#${id}\\s*\\{\\s*border-style:\\s*([^;]*);\\s*border-width:\\s*([^;]*);\\s*padding:\\s*([^;}]*)`));
       const found = rule ? rule.slice(1).map(value => value.trim().replace(/\s+/g, ' ')).join('|') : undefined;
       if (!id || found !== sides) problems.push(`the listing '${text}' has the frame '${found}', not '${sides}'`);
     }
-    const red = pres[texts.indexOf('rule();')]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
+    const red = pres[texts.indexOf('rule();')]?.[0].match(/^<(?:pre|code)[^>]* id='([\w-]+)'/)?.[1];
     if (!caption && !(red && new RegExp(`#${red}\\s*\\{\\s*border:[^;}]*#FF0000`, 'i').test(styles))) problems.push('the listing \'rule();\' has no red frame');
     // (frame=shadowbox: a shadow in rulesepcolor, rulesep (framesep) and
     // framerule wide, to the right and down; no shadow without it)
     const shadows = Object.fromEntries(['shadowbox();', 'rule();', 'fbox();'].map(text => {
-      const id = pres[texts.indexOf(text)]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
+      const id = pres[texts.indexOf(text)]?.[0].match(/^<(?:pre|code)[^>]* id='([\w-]+)'/)?.[1];
       return [text, id && styles.match(new RegExp(`#${id}\\s*\\{\\s*box-shadow:\\s*([^;}]*)`))?.[1].trim().replace(/\s+/g, ' ')];
     }));
     if (!caption && (shadows['shadowbox();']?.toUpperCase() !== '0.34EM 0.34EM 0 0 #0000FF' || shadows['rule();'] || shadows['fbox();'])) {
@@ -3063,13 +3063,15 @@ function check(doc, result, out, aux) {
       if (start < 0 || end < 0 || /<\/?p\b/.test(flat.slice(start, end))) problems.push(`the paragraph around the listing '${text}' is broken`);
     }
     // (math in a caption, typeset; the other formulas outside captions)
-    const captionMath = [...flat.matchAll(/<figcaption[^>]*>((?:(?!<\/figcaption>)[^])*)<\/figcaption>/g)]
-      .map(([, body]) => (body.match(/<mjx-container/g) ?? []).length).join('|');
-    if (caption && captionMath !== '0|1|1|0') problems.push(`the captions hold '${captionMath}' formulas, not '0|1|1|0'`);
-    const outside = flat.replace(/<figcaption[^>]*>(?:(?!<\/figcaption>)[^])*<\/figcaption>/g, '');
+    // (a caption is a <figcaption>, or a <span> in a box in a paragraph)
+    const captionTags = /<(figcaption|span) class='caption'([^>]*)>((?:(?!<!-- tex4ht:label)[^])*)<\/\1><!-- tex4ht:label/g;
+    const captionMath = [...flat.matchAll(captionTags)]
+      .map(([, , , body]) => (body.match(/<mjx-container/g) ?? []).length).join('|');
+    if (caption && captionMath !== '0|1|1|0|0|0') problems.push(`the captions hold '${captionMath}' formulas, not '0|1|1|0|0|0'`);
+    const outside = flat.replace(captionTags, '');
     const formulas = [...outside.matchAll(/(\S*) (?:<\/span>)?(?:<span class='[^']*'>)?(?:<span class='tex8web-nowrap'>)?(?:<span class='mathjax-inline'[^>]*>)?<mjx-container aria-label='([^']*)'/g)]
       .map(([, before, label]) => `${before.replace(/^.*>/, '')} ${label}`);
-    const wanted = caption ? [...'ABCD'].map(letter => `then script ${letter}`)
+    const wanted = caption ? [...'ABCDEF'].map(letter => `then script ${letter}`)
       : ['then x plus 1', ...[...'ABCDEFGHIJKLMNOPQRSTUVWXY'].map(letter => `then script ${letter}`),
         ...[...'abcdefghijklmnop'].map(letter => `then ${letter}`), 'then y plus 1', 'then z plus 1',
         'then script Z', ...(hyperref ? ['then 1 plus 2', 'then 2 plus 3', 'then 3 plus 4'] : [])];
@@ -3081,7 +3083,7 @@ function check(doc, result, out, aux) {
     // the listing before it, and before the listing's own <pre>)
     if (caption) {
       const refs = [...flat.matchAll(/<a href='#([^']+)'>(\d+)<!-- tex4ht:ref: lst:(\w+) -->/g)];
-      if (refs.map(([, , number, name]) => `${name} ${number}`).join('|') !== 'topenv 1|cellenv 2|minienv 4') {
+      if (refs.map(([, , number, name]) => `${name} ${number}`).join('|') !== 'topenv 1|cellenv 2|minienv 4|boxenv 5') {
         problems.push(`the references read '${refs.map(([, , number, name]) => `${name} ${number}`).join('|')}'`);
       }
       refs.forEach(([, id, number]) => {
@@ -3089,10 +3091,15 @@ function check(doc, result, out, aux) {
         const after = pres[i - 1] && pres[i - 1].index + pres[i - 1][0].length, before = pres[i]?.index;
         if (target < 0 || before === undefined || target > before || (after !== undefined && target < after)) problems.push(`the reference to listing ${number} does not land at the listing`);
       });
-      const captions = [...flat.matchAll(/<figcaption class='caption'[^>]*>((?:(?!<\/figcaption>)[^])*)<\/figcaption>/g)]
-        .map(([, body]) => body.replace(/<mjx-container(?:(?!<\/mjx-container>)[^])*<\/mjx-container>/g, '$')
+      const captions = [...flat.matchAll(captionTags)]
+        .map(([, , , body]) => body.replace(/<mjx-container(?:(?!<\/mjx-container>)[^])*<\/mjx-container>/g, '$')
           .replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim());
-      if (captions.join('|') !== 'Listing 1: Top env|Listing 2: Cell env $|Listing 3: Cell file $|Listing 4: Mini env') problems.push(`the captions read '${captions.join('|')}'`);
+      if (captions.join('|') !== 'Listing 1: Top env|Listing 2: Cell env $|Listing 3: Cell file $|Listing 4: Mini env|Listing 5: Boxed env|Listing 6: Boxed file') problems.push(`the captions read '${captions.join('|')}'`);
+      // (the mark of each caption's skips, from listings' \lst@makecaption)
+      const skips = [...flat.matchAll(captionTags)].filter(([, , attributes]) => attributes.includes('--tex8web-caption-before')).length;
+      if (skips !== 6) problems.push(`${skips} listing captions have their skips, not 6`);
+      // (a boxed listing and its caption in a box in their paragraph)
+      if (!/Consider the box <span class='fbox'[^>]*> (?:<a id='[^']*'><\/a> )?<span class='tex8web-boxed-listing'[^>]*><span class='caption'/.test(flat)) problems.push('the boxed listing \'boxenv();\' is not in its box');
     }
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {

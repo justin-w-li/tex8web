@@ -179,6 +179,7 @@ local passes = {
   text.long_literals,
   text.literal_blocks,
   text.literal_sizes,
+  text.boxed_listings,
   text.url_breaks,
   text.minipages,
   text.sidenotes,

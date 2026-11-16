@@ -521,6 +521,58 @@ function M.literal_blocks(document)
   end
 end
 
+-- A displayed listing that a box holds in a paragraph, as in
+-- \fbox{\lstinputlisting{f}}. An HTML parser closes the <p> at a <pre> or
+-- <figcaption> start tag (the HTML spec, "in body" insertion mode), which
+-- leaves the box empty and the listing after it. Such a listing and its
+-- caption are set in an inline block, as listings sets them in a \vtop or
+-- a \vcenter, the listing as a <code> and the caption as a <span>. A <pre>
+-- drops a newline at its start, and the <code> drops it here.
+function M.boxed_listings(document)
+  local function is_p(el) return el:get_element_name() == "p" end
+  -- the index of the caption next to nodes[i] in direction step, or nil
+  local function caption(nodes, i, step)
+    repeat i = i + step
+    until not nodes[i] or nodes[i]:is_element() or nodes[i]:is_text() and nodes[i]:get_text():find("%S")
+    if nodes[i] and nodes[i]:is_element() and nodes[i]:get_element_name() == "figcaption" then return i end
+  end
+  for _, listing in ipairs(document:query_selector("pre.lstlisting, pre.lstinputlisting, pre.listings")) do
+    local parent = listing:get_parent()
+    if dom.closest(parent, is_p) then
+      local nodes, at = parent:get_children(), nil
+      for i, node in ipairs(nodes) do
+        if node == listing then at = i end
+      end
+      local first, last = caption(nodes, at, -1) or at, caption(nodes, at, 1) or at
+      listing._name = "code"
+      -- (a caption at the bottom is inside the <pre>, before html4.4ht's </pre>)
+      for _, inner in ipairs(listing:query_selector("figcaption")) do inner._name = "span" end
+      -- (in a link, as \href{u}{\mbox{...}}, an <a> of a line's anchor would
+      -- end the link, and a <span> keeps its id)
+      if dom.closest(parent, function(el) return el:get_element_name() == "a" end) then
+        for _, anchor in ipairs(listing:query_selector("a")) do
+          if not anchor:get_attribute("href") then anchor._name = "span" end
+        end
+      end
+      local text = listing:get_children()[1]
+      if text and text:is_text() then dom.set_node_text(text, (text:get_text():gsub("^\n", "", 1))) end
+      local box = parent:create_element("span", {class = "tex8web-boxed-listing"})
+      local inside, around = {}, {}
+      for i, node in ipairs(nodes) do
+        if i == first then around[#around + 1] = box end
+        if i >= first and i <= last then
+          if node:is_element() and node:get_element_name() == "figcaption" then node._name = "span" end
+          inside[#inside + 1] = node
+        else
+          around[#around + 1] = node
+        end
+      end
+      dom.set_children(box, inside)
+      dom.set_children(parent, around)
+    end
+  end
+end
+
 -- A literal block whose font spans share one size, as after \small or
 -- with \verbatim@font set to it, holds its text in a box of that size,
 -- from tex4ht's rules for the spans' classes (the page's stylesheet, or

@@ -24,4 +24,15 @@ minienv();
 \end{lstlisting}
 \end{minipage} \end{tabular} then $\mathcal{C}$.
 
-See listings~\ref{lst:topenv}, \ref{lst:cellenv}, and~\ref{lst:minienv}, then $\mathcal{D}$.
+% (in a box in a paragraph: a saved environment, and a file with its
+% caption at the bottom)
+\newsavebox\lstsaved
+Consider the box
+\begin{lrbox}{\lstsaved}\begin{lstlisting}[caption={Boxed env},label={lst:boxenv}]
+boxenv();
+\end{lstlisting}\end{lrbox}
+\fbox{\usebox{\lstsaved}} then $\mathcal{D}$.
+
+In \fbox{\lstinputlisting[firstline=5,lastline=5,caption={Boxed file},captionpos=b]{test-listing-hmode-code.txt}} then $\mathcal{E}$.
+
+See listings~\ref{lst:topenv}, \ref{lst:cellenv}, \ref{lst:minienv}, and~\ref{lst:boxenv}, then $\mathcal{F}$.

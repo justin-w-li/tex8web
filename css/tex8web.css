@@ -124,6 +124,13 @@ code.verb, code.lstinline { white-space: nowrap; }
    its spaces; text.literal_blocks removes tex4ht's padding spaces, so that
    short blocks do not scroll. */
 div.listing, div.verbatimtabinput { white-space: pre; }
+/* a displayed listing in a box in a paragraph, and its caption
+   (text.boxed_listings), on the baseline of the line. listings centers it
+   on the line (\vcenter), but Chrome then aligns a list's label with the
+   inline block in place of the line. */
+.tex8web-boxed-listing { display: inline-block; text-align: left; text-indent: 0; }
+.tex8web-boxed-listing > code { display: block; white-space: pre; font: inherit; }
+.tex8web-boxed-listing .caption { display: block; white-space: normal; }
 /* moreverb's line numbers, in roman as in the PDF, and labels that the
    document defines (tex8web-text.tex). A label's text in the document's
    base font has no font span, and is in the text's font (assets.lua for

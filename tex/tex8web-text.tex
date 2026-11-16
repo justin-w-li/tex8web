@@ -80,36 +80,19 @@
 % inline listing has no \par, so it is set without the box, in listings'
 % TextStyle hook, where a document's own \Configure{lstinline} leaves it.
 % A displayed listing keeps the box, with an empty \everymath from its
-% BoxUnsafe hook, just before the $. Math escaped in the listing is then
-% typeset by TeX too, as tex4ht's markup of math cannot be in a <pre>.
-% The hook also drops the frame's rules, as listings.4ht does at the
-% top level (\HLet\lst@frameInit): lstmisc.sty defines \lst@frameInit
-% again when it loads the frame aspect, and the frame's \par in the box
-% closes the paragraph around the box. lstmisc.sty's fancyvrb aspect
-% runs the BoxUnsafe hook for each Verbatim too, outside a box, so the
-% hook acts only when \lst@Init has set the box (\lst@ifbox).
-% The sides of frame= are drawn as each displayed listing's <pre>'s
-% border, from its PreInit hook, with its framerule, framesep, and
-% rulesep in ems of the body, after html4.4ht's Init hook has given the
-% <pre> its id and the color of rulecolor. A double side (a capital
-% letter) is a CSS double border, without the color of rulesepcolor
-% between its rules. frame=shadowbox colors that space and the outer rule
-% with rulesepcolor, offset to the right and down: with a rulesepcolor,
-% its capital sides are single rules, and a box-shadow in that color
-% draws the rest.
-% A frame of frameshape= is not drawn: frameshape= puts its shapes'
-% letters (y, n, r, in either case) in \lst@frame, and frame= puts there
-% only t, r, b, l, each capital with its small letter. The listing's
-% caption is typeset with the document's \everymath, for its math.
-% html4.4ht closes the paragraph before a displayed listing (\EndP), when
-% the environment or \lstinputlisting starts and again in \a:listings,
-% also from inside the <span> of an \fbox or \fcolorbox or an \hbox that
-% a document saves, so no paragraph is closed in inner horizontal mode,
-% and the box opens no paragraph. The hook of the lstlisting environment
-% runs outside the environment's group, so \EndP is restored after its
-% end.
-% listings.4ht writes a caption without \@makecaption, so the mark of the
-% caption's skips is added to its text (\web@capskip, under figures).
+% BoxUnsafe hook, just before the $; its caption keeps the document's
+% \everymath. lstmisc.sty defines \lst@frameInit again when it loads the
+% frame aspect, after listings.4ht's \HLet, and the frame's \par in the
+% box would close the paragraph around the box. lstmisc.sty's fancyvrb
+% aspect runs the BoxUnsafe hook outside a box too, hence \lst@ifbox.
+% frame= is drawn as the listing's border from its PreInit hook, after
+% html4.4ht's Init hook gives the <pre> its id. frameshape= puts letters
+% other than t, r, b, and l in \lst@frame, and is not drawn.
+% html4.4ht closes the paragraph before a displayed listing (\EndP), also
+% from inside the <span> of a box, so \EndP is off in inner horizontal
+% mode, and text.boxed_listings sets such a listing inline. The hook of
+% the lstlisting environment runs outside the environment's group.
+% listings.4ht writes a caption without \@makecaption (\web@capskip).
 \@ifpackageloaded{listings}{%
     \Configure{lstinline}
         {\HCode{<code class="lstinline">}\HtmlParOff

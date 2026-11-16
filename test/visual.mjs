@@ -1445,6 +1445,27 @@ async function listingFonts(chrome, file, family) {
     })()`));
 }
 
+// Displayed listings in boxes, as the browser parses the page: each frame
+// (\fbox, \fcolorbox) holds a listing, and the listings set in a box in a
+// paragraph are in that paragraph, counted by their text. An HTML parser
+// closes a <p> at a <pre> start tag.
+const boxedListings = `(() => {
+  const listings = [...document.querySelectorAll(':is(pre, code):is(.lstlisting, .lstinputlisting, .listings)')];
+  const empty = [...document.querySelectorAll('span.fbox')].filter(box => !listings.some(listing => box.contains(listing)));
+  const inParagraph = listings.filter(listing => listing.closest('p'))
+    .map(listing => [...listing.childNodes].filter(node => node.nodeType !== 8 && !node.classList?.contains('caption'))
+      .map(node => node.textContent).join('').trim());
+  return { empty: empty.length, inParagraph };
+})()`;
+const paragraphListings = {
+  'test-listing-hmode': ['lrbox', 'fbox', 'mbox_esc', 'fcbox', 'makebox', 'note', 'raise', 'sbox', 'savebox', 'hbox',
+    'italic', 'sans', 'inbox', 'item', 'twoA', 'twoB', 'resize', 'saved', 'hboxed', 'hboxnew', 'delims'].map(name => `${name}();`),
+  'test-listing-hmode-hyperref': ['lrbox', 'fbox', 'mbox_esc', 'fcbox', 'makebox', 'note', 'raise', 'sbox', 'savebox', 'hbox',
+    'italic', 'sans', 'inbox', 'item', 'twoA', 'twoB', 'resize', 'saved', 'hboxed', 'hboxnew', 'delims', 'link', 'utf']
+    .map(name => `${name}();`),
+  'test-listing-hmode-caption': ['boxenv();', 'fbox();'],
+};
+
 // Long boxed literals must stay inside their frame in print. On a screen,
 // the literal scrolls inside the frame.
 async function boxedLiterals(chrome, file) {
@@ -1792,6 +1813,13 @@ async function compare(chrome, doc, ok) {
     if (doc.name.startsWith('test-verbatim-font-listings')) {
       const family = doc.name.endsWith('-courier') ? 'TeX Gyre Cursor' : 'Latin Modern Mono';
       problems.push(...(await listingFonts(chrome, join(pre, html), family)).map(p => `${html}: ${p}`));
+    }
+    if (doc.name.startsWith('test-listing-hmode')) {
+      const boxed = await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 1600, javascript: false },
+        page => page.evaluate(boxedListings));
+      const want = paragraphListings[doc.name.replace(/-caption-hyperref$/, '-caption')];
+      if (boxed.empty) problems.push(`${html}: ${boxed.empty} frames without their listing`);
+      if (boxed.inParagraph.join('|') !== want.join('|')) problems.push(`${html}: the listings in paragraphs read '${boxed.inParagraph.join('|')}'`);
     }
     if (verbatimFamilies[doc.name] && !verbatimExtraCases[doc.name]) {
       problems.push(...(await literalOpeners(chrome, join(pre, html))).map(p => `${html}: ${p}`));
