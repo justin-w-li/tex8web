@@ -3011,12 +3011,12 @@ function check(doc, result, out, aux) {
       : [...['topenv', 'topfile', 'mbox_esc'].map(lines), ...['cellL', 'cellC', 'cellR', 'lrbox', 'fbox', 'mbox_esc'].map(lines),
         ...['cbox', 'fcbox', 'framecell'].map(lines), 'esc = α;', ...['makebox', 'minicell', 'pcol', 'parbox', 'multi', 'long',
         'label', 'thm', 'note', 'raise', 'sbox', 'savebox', 'boxpos', 'hbox', 'italic', 'sans', 'inbox', 'cellmid', 'item',
-        'twoA', 'twoB', 'cellfbox', 'resize', 'newenv', 'saved', 'hboxed', 'delims', ...(hyperref ? ['link', 'utf'] : [])].map(lines),
+        'twoA', 'twoB', 'cellfbox', 'resize', 'newenv', 'saved', 'hboxed', 'hboxnew', 'shape', 'rule', 'delims', ...(hyperref ? ['link', 'utf'] : [])].map(lines),
         ...(hyperref ? ['int x;'] : [])];
     if (texts.join('|') !== expected.join('|')) problems.push(`the displayed listings read '${texts.join('|')}'`);
     const celled = caption ? ['cellenv();', 'cellL();', 'minienv();']
       : [...['cellL', 'cellC', 'cellR', 'cbox', 'framecell', 'minicell', 'pcol', 'multi', 'long', 'thm', 'boxpos', 'cellmid',
-        'cellfbox', 'newenv'].map(lines), 'esc = α;', ...(hyperref ? ['int x;'] : [])];
+        'cellfbox', 'newenv', 'shape', 'rule'].map(lines), 'esc = α;', ...(hyperref ? ['int x;'] : [])];
     for (const text of celled) {
       const pre = pres[texts.indexOf(text)];
       const before = pre ? flat.slice(0, pre.index) : '';
@@ -3030,14 +3030,22 @@ function check(doc, result, out, aux) {
       if (label?.replace(/<[^>]*>/g, '').trim() !== '1') problems.push(`the listing '${text}' has no line number 1`);
     }
     if (pres.some(([body]) => /<mjx-container|mathjax/.test(body))) problems.push('math in a displayed listing');
-    // (the sides of each listing's frame=, and the paragraph around a box
-    // saved in that paragraph)
-    const frames = { 'fbox();': 'trbl', 'framecell();': 'trbl', 'saved();': 'l', 'cellL();': undefined };
+    // (each listing's frame=, as its <pre>'s border in the page's CSS:
+    // styles, widths, and padding, from top to left; no border for
+    // frameshape=; and the paragraph around a box saved in that paragraph)
+    const single = 'solid solid solid solid|0.4pt 0.4pt 0.4pt 0.4pt|3.0pt 3.0pt 3.0pt 3.0pt';
+    const frames = { 'fbox();': single, 'framecell();': single, 'hboxnew();': single,
+      'saved();': 'none none none solid|0.0pt 0.0pt 0.0pt 0.4pt|0.0pt 0.0pt 0.0pt 3.0pt',
+      'rule();': 'solid none double none|2.0pt 0.0pt 6.0pt 0.0pt|5.0pt 0.0pt 5.0pt 0.0pt', 'cellL();': undefined, 'shape();': undefined };
     for (const [text, sides] of caption ? [] : Object.entries(frames)) {
-      const found = pres[texts.indexOf(text)]?.[0].match(/<pre[^>]*>\s*<span class='tex8web-lstframe' data-sides='(\w*)'/)?.[1];
-      if (found !== sides) problems.push(`the listing '${text}' has the frame '${found}', not '${sides}'`);
+      const id = pres[texts.indexOf(text)]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
+      const rule = id && styles.match(new RegExp(`#${id}\\s*\\{\\s*border-style:\\s*([^;]*);\\s*border-width:\\s*([^;]*);\\s*padding:\\s*([^;}]*)`));
+      const found = rule ? rule.slice(1).map(value => value.trim().replace(/\s+/g, ' ')).join('|') : undefined;
+      if (!id || found !== sides) problems.push(`the listing '${text}' has the frame '${found}', not '${sides}'`);
     }
-    for (const [words, text] of caption ? [] : [['Consider the code', 'saved();'], ['Consider the box', 'hboxed();']]) {
+    const red = pres[texts.indexOf('rule();')]?.[0].match(/^<pre[^>]* id='([\w-]+)'/)?.[1];
+    if (!caption && !(red && new RegExp(`#${red}\\s*\\{\\s*border:[^;}]*#FF0000`, 'i').test(styles))) problems.push('the listing \'rule();\' has no red frame');
+    for (const [words, text] of caption ? [] : [['Consider the code', 'saved();'], ['Consider the box', 'hboxed();'], ['Consider the newenv', 'hboxnew();']]) {
       const pre = pres[texts.indexOf(text)];
       const start = flat.indexOf(words), end = pre ? flat.indexOf('then', pre.index) : -1;
       if (start < 0 || end < 0 || /<\/?p\b/.test(flat.slice(start, end))) problems.push(`the paragraph around the listing '${text}' is broken`);
@@ -3046,7 +3054,7 @@ function check(doc, result, out, aux) {
       .map(([, before, label]) => `${before.replace(/^.*>/, '')} ${label}`);
     const wanted = caption ? [...'ABCD'].map(letter => `then script ${letter}`)
       : ['then x plus 1', ...[...'ABCDEFGHIJKLMNOPQRSTUVWXY'].map(letter => `then script ${letter}`),
-        ...[...'abcdefghijk'].map(letter => `then ${letter}`), 'then y plus 1', 'then z plus 1',
+        ...[...'abcdefghijklmn'].map(letter => `then ${letter}`), 'then y plus 1', 'then z plus 1',
         'then script Z', ...(hyperref ? ['then 1 plus 2', 'then 2 plus 3', 'then 3 plus 4'] : [])];
     if (formulas.join('|') !== wanted.join('|')) problems.push(`the formulas after the displayed listings read '${formulas.join('|')}'`);
     if (!caption && !/then <span class='mathjax-block'[^>]*><mjx-container aria-label='z plus 1'/.test(flat)) problems.push('no display z+1 after the displayed listings');

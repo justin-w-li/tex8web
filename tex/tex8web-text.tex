@@ -82,16 +82,20 @@
 % A displayed listing keeps the box, with an empty \everymath from its
 % BoxUnsafe hook, just before the $. Math escaped in the listing is then
 % typeset by TeX too, as tex4ht's markup of math cannot be in a <pre>.
-% The hook also drops the frame's rules, as listings.4ht means to:
-% lstmisc.sty defines \lst@frameInit again when it loads the frame
-% aspect, and the frame's \par in the box closes the paragraph around the
-% box. The sides of the frame go in a mark at the start of the <pre>,
-% which css/tex8web.css draws as its border. html4.4ht closes the
-% paragraph before a displayed listing (\EndP), also from inside the
-% <span> of an \fbox or \fcolorbox or an \hbox that a document saves, so
-% no paragraph is closed in inner horizontal mode. The hook of the lstlisting environment
-% runs outside the environment's group, so \EndP is restored after its
-% end.
+% The hook also drops the frame's rules, as listings.4ht does at the
+% top level (\HLet\lst@frameInit): lstmisc.sty defines \lst@frameInit
+% again when it loads the frame aspect, and the frame's \par in the box
+% closes the paragraph around the box. The sides of frame= are drawn as
+% the <pre>'s border instead, with its framerule, framesep, and rulesep,
+% after html4.4ht's Init hook has given the <pre> its id and the color of
+% rulecolor. A double side is a CSS double border. A frame of frameshape=
+% is not drawn. html4.4ht closes the paragraph before a displayed listing
+% (\EndP), when the environment or \lstinputlisting starts and again in
+% \a:listings, also from inside the <span> of an \fbox or \fcolorbox or an
+% \hbox that a document saves, so no paragraph is closed in inner
+% horizontal mode, and the box opens no paragraph. The hook of the
+% lstlisting environment runs outside the environment's group, so \EndP is
+% restored after its end.
 % listings.4ht writes a caption without \@makecaption, so the mark of the
 % caption's skips is added to its text (\web@capskip, under figures).
 \@ifpackageloaded{listings}{%
@@ -101,11 +105,23 @@
         {\HtmlParOn\HCode{</code>}}%
     \lst@AddToHook{TextStyle}{\let\lst@boxtrue\relax}%
     \lst@AddToHook{BoxUnsafe}{\everymath{}\let\lst@frameInit\relax\let\lst@frameExit\relax
+        \let\EndP\relax\HtmlParOff
         \ifcsname lst@frame\endcsname\ifx\lst@frame\@empty\else
-            \let\web@startLstLn\start:LstLn
-            \gdef\start:LstLn{\web@startLstLn
-                \HCode{<span class="tex8web-lstframe" data-sides="\lst@frame"></span>}}%
+            \lst@IfSubstring Y\lst@frame{}{\lst@IfSubstring N\lst@frame{}%
+                {\let\lst@InitFinalize\web@lstframe}}%
         \fi\fi}%
+    \def\web@lstframe{\let\web@lststyle\@empty\let\web@lstwidth\@empty\let\web@lstpad\@empty
+        \web@lstside tT\web@lstside rR\web@lstside bB\web@lstside lL%
+        \web@Css{\#listing-\listingN{border-style:\web@lststyle;
+            border-width:\web@lstwidth; padding:\web@lstpad}}}%
+    \def\web@lstside#1#2{%
+        \lst@IfSubstring#2\lst@frame
+            {\web@lstadd{double}{2\dimexpr\lst@framerulewidth\relax+\lst@rulesep}\lst@frametextsep}%
+            {\lst@IfSubstring#1\lst@frame
+                {\web@lstadd{solid}\lst@framerulewidth\lst@frametextsep}{\web@lstadd{none}\z@\z@}}}%
+    \def\web@lstadd#1#2#3{\edef\web@lststyle{\web@lststyle\space#1}%
+        \edef\web@lstwidth{\web@lstwidth\space\the\dimexpr#2\relax}%
+        \edef\web@lstpad{\web@lstpad\space\the\dimexpr#3\relax}}%
     \let\web@lstinputlisting\lst@InputListing
     \def\lst@InputListing#1{\begingroup\ifinner\ifhmode\let\EndP\relax\fi\fi
         \web@lstinputlisting{#1}\endgroup}%

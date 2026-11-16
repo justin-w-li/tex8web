@@ -5,7 +5,7 @@
 \newcommand\lstline[2][]{\lstinputlisting[firstline=#2,lastline=#2,#1]{test-listing-hmode-code.txt}}
 \newtheorem{theorem}{Theorem}
 \newsavebox\lstsaved
-\lstnewenvironment{code}{}{}
+\lstnewenvironment{code}[1][]{\lstset{#1}}{}
 \newenvironment{hboxed}{\setbox0\hbox\bgroup}{\egroup\fbox{\box0}}
 \begin{document}
 \section{Displayed listings in boxes}
@@ -133,6 +133,19 @@ Consider the box
 hboxed();
 \end{lstlisting}\end{hboxed}
 then $k$.
+
+% (an environment of \lstnewenvironment in a saved box after text, with
+% a frame; a frame of frameshape=; a frame's framerule, framesep, and
+% rulecolor, and a double side)
+Consider the newenv
+\begin{hboxed}\begin{code}[frame=single]
+hboxnew();
+\end{code}\end{hboxed}
+then $l$.
+
+\begin{tabular}{l} \lstline[frameshape={RYR}{y}{y}{RYR}]{36} \end{tabular} then $m$.
+
+\begin{tabular}{l} \lstline[frame=tB,framerule=2pt,framesep=5pt,rulecolor=\color{red}]{37} \end{tabular} then $n$.
 
 % (other math delimiters after a boxed listing)
 In \mbox{\lstline{25}} then \(y+1\), and then

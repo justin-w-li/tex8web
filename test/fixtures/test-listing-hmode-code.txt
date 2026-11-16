@@ -33,3 +33,5 @@ twoB();
 cellfbox();
 resize();
 int x;
+shape();
+rule();
