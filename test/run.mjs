@@ -1710,8 +1710,8 @@ const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // of its own, so these are measured less. "ragged centering" is a guard.
 // test-boxcenter-renewed renews center in its preamble.
 // In the running text, a saved box's center holds its text and \fbox with
-// no empty <p> above them, and a center outside any saved box keeps the
-// empty <p> that html4.4ht writes.
+// no empty <p> above them (a change the user accepted), and a center
+// outside any saved box keeps the empty <p> that html4.4ht writes.
 const boxcenterRepro = ['A', { B: [72.866, 19.925], C: [86.627, 19.925], D: [0, 39.85] }, 46.83331 + 6.6666, { C: 13.970 }];
 const boxcenterCases = {
   nested: ['Y', { X: [81.303, 20.84] }, 27.74997 + 6.6666],
@@ -1742,8 +1742,12 @@ const boxcenterCases = {
   'late center': ['A', { L: [76.737, 19.925], B: [86.297, 19.925] }, 26.83331 + 6.6666],
 };
 const boxcenterKept = { 'text copy': ['Centered', 'Framed', ''], 'sbox text copy': ['Centered', 'Framed', ''], 'plain center': ['Plain', 'Boxed', "<p class='noindent'>\\s*</p>"] };
-// A saved box's \fbox in the running text, with no space after its frame.
-const boxcenterComma = ['text fbox comma', "A <span class='fbox'[^>]*>y</span>, z"];
+// A saved box's \fbox and \framebox in the running text, with no space
+// after a frame, and the \framebox 2cm wide.
+const boxcenterText = {
+  'text fbox comma': "A <span class='fbox'[^>]*>y</span>, z",
+  'text frames': "M <span class='framebox-c' style='width: 5\\.69\\d*em;[^>]*>N</span> O <span class='fbox'[^>]*>P</span>\\s*</p>",
+};
 const boxcenter = { 'test-boxcenter': boxcenterCases, 'test-boxcenter-hyperref': boxcenterCases, 'test-boxcenter-renewed': boxcenterCases };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
@@ -3273,8 +3277,9 @@ function check(doc, result, out, aux) {
       const copy = part(name);
       if (!new RegExp(`<div class='center'>\\s*${empty}<p class='noindent'>${centered} <span class='fbox'[^>]*>${framed}</span></p>\\s*</div>`).test(copy)) problems.push(`no center that holds ${empty ? 'an empty paragraph, then ' : ''}"${centered}" and an \\fbox of "${framed}" between "Before ${name}." and "After ${name}."`);
     }
-    const [commaName, comma] = boxcenterComma;
-    if (!new RegExp(comma).test(part(commaName))) problems.push(`no "${comma}" between "Before ${commaName}." and "After ${commaName}."`);
+    for (const [name, text] of Object.entries(boxcenterText)) {
+      if (!new RegExp(text).test(part(name))) problems.push(`no "${text}" between "Before ${name}." and "After ${name}."`);
+    }
   }
   if (copied[doc.name]) {
     const shown = {};

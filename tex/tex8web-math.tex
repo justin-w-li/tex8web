@@ -1046,23 +1046,51 @@
                 { \web@outdated { \token_to_str:N \center } }
         }
 }
-% (Where the patched text holds no \item and starts with a macro with no
-% parameters, that macro's text replaces it, for at most #1 copies.)
+% (Where the patched text holds no \item, the first macro in it, at any
+% depth, that has no parameters and whose text holds \item, directly or in
+% such a macro within #1 levels, is replaced by its text, for at most #1
+% copies. So a copy is found after a robust command or in a group, as in
+% {\small\oldcenter}.)
+\seq_new:N \l__web_saved_seq
+\tl_new:N \l__web_saved_cs_tl
+\tl_new:N \l__web_saved_text_tl
+\bool_new:N \g__web_saved_item_bool
 \cs_new_protected:Npn \__web_saved_copy:n #1 {
     \int_compare:nNnT {#1} > 0 {
         \regex_if_match:nVF { \c{item} } \l__web_saved_tl {
-            \exp_args:No \tl_if_head_is_N_type:nT { \l__web_saved_tl }
-                { \exp_args:Ne \__web_saved_copy:Nn { \tl_head:N \l__web_saved_tl } {#1} }
+            \exp_args:NnV \regex_extract_all:nnN { \c{.*} } \l__web_saved_tl \l__web_saved_seq
+            \seq_map_inline:Nn \l__web_saved_seq {
+                \bool_gset_false:N \g__web_saved_item_bool
+                \__web_saved_item_in:Nn ##1 {#1}
+                \bool_if:NT \g__web_saved_item_bool {
+                    \tl_set:Nn \l__web_saved_cs_tl {##1}
+                    \tl_set:No \l__web_saved_text_tl {##1}
+                    \regex_replace_once:nnN { \u{l__web_saved_cs_tl} } { \u{l__web_saved_text_tl} } \l__web_saved_tl
+                    \seq_map_break:n { \__web_saved_copy:n { #1 - 1 } }
+                }
+            }
         }
     }
 }
-\cs_new_protected:Npn \__web_saved_copy:Nn #1#2 {
+% (sets \g__web_saved_item_bool where #1 is such a macro, within #2 levels)
+\cs_new_protected:Npn \__web_saved_item_in:Nn #1#2 {
     \bool_lazy_and:nnT { \token_if_macro_p:N #1 }
         { \tl_if_empty_p:e { \cs_parameter_spec:N #1 } }
         {
-            \tl_set:Ne \l__web_saved_tl
-                { \exp_after:wN \exp_not:o \exp_after:wN { \l__web_saved_tl } }
-            \exp_args:Ne \__web_saved_copy:n { \int_eval:n { #2 - 1 } }
+            \group_begin:
+            \tl_set:No \l__web_saved_tl {#1}
+            \regex_if_match:nVTF { \c{item} } \l__web_saved_tl
+                { \bool_gset_true:N \g__web_saved_item_bool }
+                {
+                    \int_compare:nNnT {#2} > 1 {
+                        \exp_args:NnV \regex_extract_all:nnN { \c{.*} } \l__web_saved_tl \l__web_saved_seq
+                        \seq_map_inline:Nn \l__web_saved_seq {
+                            \__web_saved_item_in:Nn ##1 { #2 - 1 }
+                            \bool_if:NT \g__web_saved_item_bool { \seq_map_break: }
+                        }
+                    }
+                }
+            \group_end:
         }
 }
 \AddToHook { begindocument/end } { \__web_saved_patch: }
