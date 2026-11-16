@@ -1706,15 +1706,18 @@ const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // 3bp. The node's frame is as high as in the PDF, the box's height and
 // depth (from \ht and \dp) with the node's inner sep on each side, in pt,
 // within 3pt. In a theorem, which adds space of its own in such a box,
-// only the center's x is checked. The graphic of "lrbox png" starts at its
+// only the center's x is checked, and so in "nested", where a box saved
+// in a center sits one line lower than in the PDF. The graphic of "lrbox png" starts at its
 // place in the PDF, within 1bp. Each glyph in an \fbox or \framebox has
 // one frame around it, as wide as in the PDF within 1bp (null: not
 // measured), and the picture draws no other rules. "ragged centering" is a
 // guard: tex8web's ragged2e handling already centers K. Placed in the
-// running text, the box keeps its center and its \fbox, and so does a
-// center outside any saved box.
+// running text, the box keeps its center and its \fbox, with no empty
+// paragraph above them, and a center outside any saved box keeps the empty
+// paragraph that html4.4ht's \par after \item writes. Neither has a height.
 const boxcenterRepro = ['A', { B: [72.866, 19.925], C: [86.627, 19.925], D: [0, 39.85] }, 46.83331 + 6.6666, { C: 13.970 }];
 const boxcenterCases = {
+  nested: ['Y', { X: [81.303, null] }, null],
   repro: boxcenterRepro,
   'lrbox png': ['E', {}, 58.51338 + 6.6666, {}, 56.6929],
   'sbox centering': ['Z', { F: [68.571, 11.955] }, 20.77776 + 6.6666],
@@ -1733,7 +1736,7 @@ const boxcenterCases = {
   'direct minipage': boxcenterRepro,
   figure: boxcenterRepro,
 };
-const boxcenterKept = { 'text copy': ['Centered', 'Framed'], 'sbox text copy': ['Centered', 'Framed'], 'plain center': ['Plain', 'Boxed'] };
+const boxcenterKept = { 'text copy': ['Centered', 'Framed', ''], 'sbox text copy': ['Centered', 'Framed', ''], 'plain center': ['Plain', 'Boxed', "<p class='noindent'>\\s*</p>"] };
 const boxcenter = { 'test-boxcenter': boxcenterCases, 'test-boxcenter-hyperref': boxcenterCases };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
@@ -3259,9 +3262,9 @@ function check(doc, result, out, aux) {
         if (!(Math.abs(x - image) < 1)) problems.push(`the graphic in "${name}" starts ${x.toFixed(2)}bp from ${anchor}, not ${image}bp as in the PDF`);
       }
     }
-    for (const [name, [centered, framed]] of Object.entries(boxcenterKept)) {
+    for (const [name, [centered, framed, empty]] of Object.entries(boxcenterKept)) {
       const copy = part(name);
-      if (!new RegExp(`<div class='center'>[^]*?${centered} <span class='fbox'[^>]*>${framed}</span>`).test(copy)) problems.push(`no center that holds "${centered}" and an \\fbox of "${framed}" between "Before ${name}." and "After ${name}."`);
+      if (!new RegExp(`<div class='center'>\\s*${empty}<p class='noindent'>${centered} <span class='fbox'[^>]*>${framed}</span></p>\\s*</div>`).test(copy)) problems.push(`no center that holds ${empty ? 'an empty paragraph, then ' : ''}"${centered}" and an \\fbox of "${framed}" between "Before ${name}." and "After ${name}."`);
     }
   }
   if (copied[doc.name]) {

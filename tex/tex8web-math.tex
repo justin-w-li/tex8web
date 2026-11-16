@@ -976,6 +976,7 @@
 \web@needs{gobble:fbox}
 \web@needs{gobble:frame}
 \web@needs{this:listConfigure}
+\web@needs{html:rightskip}
 \web@needs{SaveEndP}
 \web@needs{a:MathjaxBlock}
 \web@needs{b:MathjaxBlock}
@@ -992,37 +993,34 @@
 % A TikZ node draws a saved box as TeX set it, but the box is set outside
 % a picture. There latex.4ht's \centering sets \leftskip to zero, and its
 % \fbox and \framebox drop their frames. In a saved box they are set as in
-% LaTeX, and so are the frame's rules, by \__web_saved_frame:n below.
+% LaTeX, and so are the frame's rules, by \__web_saved_frame:n below. A
+% centered block there also keeps its \rightskip at the end of an
+% environment in it, where tex4ht's \HtmlEnv sets another (\RecallEverypar,
+% tex4ht.sty).
 \cs_new_protected:Npn \__web_saved_start: {
     \bool_set_true:N \l__web_saved_bool
     \tex_everydisplay:D { \if_meaning:w \EndPicture \:UnDef \__web_saved_display: \fi: }
-    \tl_put_right:Nn \centering { \leftskip \@flushglue \parfillskip \c_zero_skip }
+    \tl_put_right:Nn \centering {
+        \leftskip \@flushglue \parfillskip \c_zero_skip
+        \cs_set_eq:cN {html:rightskip} \prg_do_nothing:
+    }
     \cs_set_eq:cN {gobble:fbox} \__web_saved_fbox:nn
     \cs_set_eq:cN {gobble:frame} \__web_saved_framebox:w
     \cs_set_eq:NN \@frameb@x \__web_saved_frame:n
-    % (once, in a box saved in another)
-    \cs_if_eq:NNF \center \__web_saved_center_patch: {
-        \cs_set_eq:NN \__web_saved_center_kept: \center
-        \cs_set_eq:NN \center \__web_saved_center_patch:
-    }
+    \cs_set_eq:NN \center \__web_saved_center:
 }
-% \center, patched in the environment's group when a saved box uses it:
-% html4.4ht's \par after \item is dropped, the depth of the line above
-% is kept, and the list's first \:DT is \__web_saved_item:w (\@item,
-% latex.4ht). Where \center has another form, it is left as it is, and
-% tex8web warns once.
-\regex_const:Nn \c__web_saved_center_regex { \c{item} (.*) \c{par} \Z }
-\cs_new_protected:Npn \__web_saved_center_patch: {
-    \cs_set_eq:NN \center \__web_saved_center_kept:
-    \regex_replace_once:NnNTF \c__web_saved_center_regex
-        { \c{__web_saved_depth:} \c{item} \1 } \center
-        { \tl_put_right:Nn \this:listConfigure { \cs_gset_eq:NN \:DT \__web_saved_item:w } }
-        {
-            \web@outdated { \token_to_str:N \center }
-            \cs_gset_protected:Npn \__web_saved_center_patch:
-                { \cs_set_eq:NN \center \__web_saved_center_kept: \center }
-        }
-    \center
+% \center in a saved box, patched once, after the packages' and tex4ht's
+% definitions: html4.4ht's \par after \item is dropped, and
+% \__web_saved_depth: keeps the depth of the line above and makes the
+% list's first \:DT \__web_saved_item:w (\@item, latex.4ht). Where \center
+% has another form, it is left as it is, and tex8web warns.
+\cs_new_eq:NN \__web_saved_center: \center
+\AddToHook { begindocument/end } {
+    \tl_set_eq:NN \l__web_saved_tl \center
+    \regex_replace_once:nnNTF { \c{item} (.*) \c{par} \Z }
+        { \c{__web_saved_depth:} \c{item} \1 } \l__web_saved_tl
+        { \cs_gset_eq:NN \__web_saved_center: \l__web_saved_tl }
+        { \web@outdated { \token_to_str:N \center } }
 }
 \cs_new:Npn \__web_saved_display_end: { }
 \cs_new_protected:Npn \__web_saved_display: {
@@ -1084,7 +1082,10 @@
 % text starts the second, as far below the line above as in the PDF.
 % (\:DLL and \:DT, latex.4ht)
 \dim_new:N \l__web_saved_depth_dim
-\cs_new_protected:Npn \__web_saved_depth: { \dim_set:Nn \l__web_saved_depth_dim { \tex_prevdepth:D } }
+\cs_new_protected:Npn \__web_saved_depth: {
+    \dim_set:Nn \l__web_saved_depth_dim { \tex_prevdepth:D }
+    \tl_put_right:Nn \this:listConfigure { \cs_gset_eq:NN \:DT \__web_saved_item:w }
+}
 \cs_new_protected:Npn \__web_saved_item:w #1#2 {
     \tex_setbox:D 0 \tex_lastbox:D
     \dim_compare:nNnF \l__web_saved_depth_dim < { -999pt } { \tex_unskip:D }

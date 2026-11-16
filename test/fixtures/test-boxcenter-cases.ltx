@@ -14,7 +14,9 @@
 % - a box in a footnote;
 % - a center at the start of the box, and an \fbox in a center saved with
 %   \savebox;
-% - a minipage typed in the node, and a tikzpicture in a centered figure.
+% - a minipage typed in the node, and a tikzpicture in a centered figure;
+% - a box with a center saved in the center of another, first, so that the
+%   cases after it show a fault that the nested box leaves.
 %
 % The boxes saved with \sbox and \savebox are saved between paragraphs.
 % Each box but one starts with a line of text at its left edge, which
@@ -30,7 +32,17 @@
 \usepackage{tikz}
 \newtheorem{theorem}{Theorem}
 \newsavebox{\keep}
+\newsavebox{\inner}
 \begin{document}
+Before nested.
+\begin{lrbox}{\keep}\begin{minipage}{6cm}
+Y
+\begin{center}\begin{lrbox}{\inner}\begin{minipage}{3cm}\begin{center}X\end{center}\end{minipage}\end{lrbox}\usebox{\inner}\end{center}
+\end{minipage}\end{lrbox}
+\tikz\node[draw]{\usebox{\keep}};
+
+After nested.
+
 Before repro.
 \begin{lrbox}{\keep}\begin{minipage}{6cm}
 A
