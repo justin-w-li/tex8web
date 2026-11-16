@@ -1,7 +1,10 @@
 % Graphics in boxes saved with lrbox, \sbox, and \savebox, placed in a
-% TikZ node: a PNG, a PDF, a JPEG, and an EPS. The same kind of box placed
-% in the text keeps its picture as an image of the page. Graphics typed
-% inside a picture: a TikZ node, a LaTeX picture, and an overpic.
+% TikZ node: a PNG, a PDF, a JPEG, and an EPS. A box placed in a node and
+% then in the text keeps its picture as an image of the page there.
+% Graphics typed inside a picture: a TikZ node, a LaTeX picture, an
+% overpic, a node in a \resizebox that changes its aspect, a trimmed and
+% clipped PNG, a PNG turned by angle, and a PNG in a \scalebox. A TikZ
+% picture without a graphic follows the theme.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}
@@ -39,11 +42,16 @@ Before savebox eps.
 
 After savebox eps.
 
-Before text copy.
 \begin{lrbox}{\keep}\begin{minipage}{0.8\linewidth}
 Kept text.
 \begin{center}\includegraphics[width=0.5\linewidth]{test-bare.png}\end{center}
 \end{minipage}\end{lrbox}
+Before node copy.
+\begin{tikzpicture}\node[draw] {\usebox{\keep}};\end{tikzpicture}
+
+After node copy.
+
+Before text copy.
 \usebox{\keep}
 
 After text copy.
@@ -66,4 +74,29 @@ Before overpic png.
 \begin{overpic}[width=80pt]{test-bare.png}\put(10,10){A}\end{overpic}
 
 After overpic png.
+
+Before resized node.
+\resizebox{3cm}{1cm}{\begin{tikzpicture}\node{\includegraphics[width=1cm]{test-bare.png}};\end{tikzpicture}}
+
+After resized node.
+
+Before trimmed png.
+\begin{tikzpicture}\node[draw] {\includegraphics[trim=0 0 32 0,clip,width=2cm]{test-bare.png}};\end{tikzpicture}
+
+After trimmed png.
+
+Before turned png.
+\begin{tikzpicture}\node[draw] {\includegraphics[angle=90,width=2cm]{test-bare.png}};\end{tikzpicture}
+
+After turned png.
+
+Before scaled png.
+\begin{tikzpicture}\node[draw] {\scalebox{2}{\includegraphics[width=1cm]{test-bare.png}}};\end{tikzpicture}
+
+After scaled png.
+
+Before plain node.
+\begin{tikzpicture}\node[draw] {Plain};\end{tikzpicture}
+
+After plain node.
 \end{document}

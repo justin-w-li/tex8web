@@ -486,7 +486,7 @@ end
 -- page page of the picture src as a data: URI, for an SVG that dvisvgm
 -- draws, which is shown through an <img> and so loads no other file. A
 -- PDF or EPS picture is converted as in M.convert.
-local types = {png = "image/png", jpg = "image/jpeg", jpeg = "image/jpeg"}
+local types = {png = "image/png", jpg = "image/jpeg", jpeg = "image/jpeg", gif = "image/gif", svg = "image/svg+xml"}
 function M.data_uri(src, page, context)
   local file = exists(src) and src or kpse.find_file(src, "graphic/figure") or src
   local ext = (file:match("%.([^./]+)$") or ""):lower()
@@ -495,7 +495,9 @@ function M.data_uri(src, page, context)
     if not M.convert_file(file, page, context.dir .. "/" .. png, png) then return "" end
     file, ext = context.dir .. "/" .. png, "png"
   end
-  local data = files.read(file)
+  local f = io.open(file, "rb")
+  local data = f and f:read("*a")
+  if f then f:close() end
   if not data then
     log:error(src .. " is missing: its picture is empty")
     return ""

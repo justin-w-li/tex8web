@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, uti
 import { basename, join, relative } from 'node:path';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
+import { decode } from './lib/png.mjs';
 
 const only = process.argv.slice(2);
 const docs = select(only);
@@ -627,8 +628,8 @@ const pictures = {
   // (\includegraphics pictures mirrored as in the PDF, at any size and in
   // any context, halved too; turned over, 75pt high, 37.5pt when halved,
   // or 48bp without a size, so hanging below the baseline; two
-  // \reflectbox mirror nothing, and a picture that dvisvgm draws is not
-  // mirrored again by its <img>; a picture at its natural size is not
+  // \reflectbox mirror nothing, and a picture that dvisvgm draws is
+  // mirrored in its SVG, not again by its <img>; a picture at its natural size is not
   // scaled; a mirror around a rotation is before it, on its span, and one
   // inside a rotation on the picture; a picture with a height that does
   // not keep its aspect is shown, and lowered, 75pt high, as is one
@@ -639,7 +640,7 @@ const pictures = {
       'theorem', 'italic', 'figure'].map(alt => flipped(alt, -1, 1)),
     wide('half', '0.1449'), wide('nested', '0.1449'), wide('half over', '0.1449'),
     flipped('half over', -1, -1, lowered('var(--tex8web-textwidth) * 0.1449', '0.7499')),
-    /<img alt='' src='test-reflectbox0x\.svg' (?![^>]*transform)[^>]*\/>/,
+    /<img alt='' class='tex8web-graphic' src='test-reflectbox0x\.svg' (?![^>]*transform)[^>]*\/>/,
     flipped('over', 1, -1, lowered('var(--tex8web-textwidth) * 0.2899', '0.7499')),
     flipped('round', -1, -1, lowered('var(--tex8web-textwidth) * 0.2899', '0.7499')),
     flipped('over bare', 1, -1, lowered('64px', '0.7500')),
@@ -1627,14 +1628,23 @@ const boxmath = { 'test-boxmath': boxmathPictures };
 // Graphics in saved boxes placed in a TikZ node, and graphics typed in a
 // picture (test-boxgfx.tex). The picture between each case's "Before" and
 // "After" holds one <image> with its data embedded, as the SVG is shown
-// through an <img>. The image is as large as the graphic in the PDF, in
-// pt, within 0.05bp, and the picture is at least as large as the image,
-// so the frame around it is as large too. Placed outside any picture, the copy holds the
-// graphic's <img>, no picture, and only the box's text.
+// through an <img>, in an <svg> as large as the graphic in the PDF before
+// any rotation or scale, in pt, within 0.05bp. The picture is at least as
+// large as that <svg>, so the frame around it is as large too, unless a
+// rotation or scale follows. These are given with a pattern of the SVG. A
+// trimmed graphic shows the part kept, clipped. A picture in a \resizebox
+// that changes its aspect is stretched. The box drawn in "node copy",
+// placed outside any picture, holds the graphic's <img>, no picture, and
+// only the box's text.
 const boxgfxSizes = {
   'lrbox png': [138, 103.5], 'lrbox pdf': [138, 103.5], 'sbox jpg': [40, 30], 'savebox eps': [72, 36],
-  'node png': [80, 60], 'picture pdf': [80, 60], 'overpic png': [80, 60],
+  'node copy': [138, 103.5], 'node png': [80, 60], 'picture pdf': [80, 60], 'overpic png': [80, 60],
+  'resized node': [28.4528, 21.3396], 'trimmed png': [56.9055, 85.3583], 'turned png': [64.24, 48.18],
+  'scaled png': [28.4528, 21.3396],
 };
+const boxgfxTransforms = { 'turned png': /rotate\(90\)/, 'scaled png': /scale\(2,2\)/ };
+const boxgfxTrimmed = ['trimmed png', "viewBox='0 0 32 48'", "overflow='hidden'"];
+const boxgfxStretched = 'resized node';
 const boxgfxCopy = ['text copy', 'test-bare.png', 'Kept text.'];
 const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
@@ -1653,10 +1663,13 @@ const pictureSizes = {
     permil: [80, 60], set: [64.24, 48.18], picture: [80.8, 60.8], figure: [60, 80], 'bare name': [80, 60],
     italic: [80, 60], minipage: [138, 103.5], cell: [80, 60], photo: [80, 60], moved: [120.45, 30.11],
     cropped: [120.45, 30.11], 'second page': [80, 20], dense: [64.24, 48.18], folder: [80, 60],
-    'natural picture': [65.04, 48.98], subfigure: [155.25, 116.44],
+    'natural picture': [65.04, 48.98], subfigure: [155.25, 116.44], eps: [72, 25.36],
   }],
   'test-overpic-drawn': ['svg', { found: [80, 60], overpic: [172.5, 129.39], picture: [80.8, 60.8], node: [80, 60] }],
 };
+// pictures that dvipng draws with their graphic, which covers more than
+// half of the image, where the edges and label alone leave it transparent
+const coveredPictures = { 'test-overpic': ['eps'] };
 
 // Terms (\WebTerm), with ids for the table of contents filter; in a heading,
 // only the term's text in the heading's id and table of contents entry
@@ -2864,23 +2877,32 @@ function check(doc, result, out, aux) {
   if (boxgfx[doc.name]) {
     const words = name => name.replace(/ /g, '\\s+');
     const part = name => flat.match(new RegExp(`Before ${words(name)}\\.([^]*?)After ${words(name)}\\.`))?.[1] ?? '';
+    const svgs = {};
     for (const [name, [width, height]] of Object.entries(boxgfx[doc.name])) {
       const src = part(name).match(/<img [^>]*src='([^']+\.svg)'/)?.[1];
-      const svg = src && existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
-      const images = [...svg.matchAll(/<image ([^>]*)\/>/g)].map(([, attributes]) => attributes);
-      const attribute = (image, key) => image.match(new RegExp(`(?:^| )${key}='([^']*)'`))?.[1];
-      if (images.length !== 1 || !/^data:image\/(?:png|jpeg);base64,./.test(attribute(images[0], 'xlink:href'))) {
+      const svg = svgs[name] = src && existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
+      const images = [...svg.matchAll(/<svg ([^>]*)>\s*<image ([^>]*)\/>/g)];
+      const attribute = (tag, key) => tag.match(new RegExp(`(?:^| )${key}='([^']*)'`))?.[1];
+      if (images.length !== 1 || !/^data:image\/(?:png|jpeg);base64,./.test(attribute(images[0][2], 'xlink:href'))) {
         problems.push(`the picture between "Before ${name}." and "After ${name}." holds ${images.length} images, not one with its data`);
         continue;
       }
-      const [w, h] = ['width', 'height'].map(key => Number(attribute(images[0], key)));
+      const [w, h] = ['width', 'height'].map(key => Number(attribute(images[0][1], key)));
       const bp = pt => pt * 72 / 72.27;
       if (!(Math.abs(w - bp(width)) < 0.05 && Math.abs(h - bp(height)) < 0.05)) problems.push(`the image in "${name}" is ${w} by ${h}bp, not ${bp(width)} by ${bp(height)}bp`);
+      if (boxgfxTransforms[name]) {
+        if (!boxgfxTransforms[name].test(svg)) problems.push(`no ${boxgfxTransforms[name].source} in the picture of "${name}"`);
+        continue;
+      }
       // (the viewBox is in the units of the page's group, scaled 1.4)
       const scale = Number(svg.match(/<g id='page1' transform='matrix\(([\d.]+) 0 0 /)?.[1] ?? 1);
       const [, , wide, high] = svg.match(/viewBox='([^']+)'/)[1].split(' ').map(Number).map(v => v / scale);
       if (!(wide > w - 0.01 && high > h - 0.01)) problems.push(`the picture of "${name}" is ${wide} by ${high}bp, smaller than its image`);
     }
+    const [trimmed, ...kept] = boxgfxTrimmed;
+    const inner = svgs[trimmed].match(/<svg ([^>]*)>\s*<image /)?.[1] ?? '';
+    for (const attribute of kept) if (!inner.includes(attribute)) problems.push(`no ${attribute} on the graphic's <svg> in "${trimmed}"`);
+    if (!/<svg [^>]*>/.exec(svgs[boxgfxStretched])[0].includes("preserveAspectRatio='none'")) problems.push(`the picture of "${boxgfxStretched}" keeps its aspect`);
     const [name, file, text] = boxgfxCopy;
     const copy = part(name);
     const imgs = [...copy.matchAll(/<img [^>]*src='([^']*)'/g)].map(([, src]) => src);
@@ -2944,6 +2966,13 @@ function check(doc, result, out, aux) {
         problems.push(`the picture before "After ${after}." is ${got.join(' by ')}, not ${size.join(' by ')}pt at ${scale} a pt`);
       }
     }
+    for (const after of coveredPictures[doc.name] ?? []) {
+      const file = flat.match(new RegExp(`src='(${doc.name}\\d+x\\.png)'[^>]*\\/>(?:(?!<img|After )[^])*After ${after}\\.`))?.[1];
+      const { width, height, channels, rows } = decode(readFileSync(join(out, file)));
+      let opaque = 0;
+      for (let at = channels - 1; at < rows.length; at += channels) if (rows[at] > 128) opaque++;
+      if (!(opaque > width * height / 2)) problems.push(`the picture before "After ${after}." covers ${opaque} of ${width * height} pixels, not its graphic`);
+    }
     // (extractbb writes no .xbb file beside a picture)
     const tracked = ['test-picture.xbb', 'test-wide.xbb', 'test-pdfpic/inside.xbb', 'test-pdfpic/own-1.xbb'];
     for (const file of readdirSync(join(root, 'test/fixtures'), { recursive: true })) {
@@ -2982,7 +3011,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, coveredPictures, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

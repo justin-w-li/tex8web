@@ -703,6 +703,9 @@ function M.pictures(document, context)
         function(file, page) return "xlink:href='" .. assets.data_uri(file, page, context) .. "'" end)
       if images > 0 then
         svg = filled
+        -- (css/tex8web.css: shown as it is in dark mode, on white)
+        local class = el:get_attribute("class")
+        el:set_attribute("class", (class and class .. " " or "") .. "tex8web-graphic")
         local f = io.open(context.dir .. "/" .. src, "w")
         f:write(svg)
         f:close()
@@ -722,7 +725,8 @@ function M.pictures(document, context)
         dom.add_style(el, lowered(string.format("var(--tex8web-textwidth) * %.4f", wide), -share * y * below / wide))
       end
       if y ~= x then
-        if not svg:find("preserveAspectRatio") then
+        -- (on the root <svg>, as the <svg> of an \includegraphics has one too)
+        if not svg:match("<svg[^>]*>"):find("preserveAspectRatio") then
           local f = io.open(context.dir .. "/" .. src, "w")
           f:write((svg:gsub("<svg ", "<svg preserveAspectRatio='none' ", 1)))
           f:close()

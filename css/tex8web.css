@@ -59,6 +59,9 @@ a.url, .path, .tex8web-nolinkurl { hyphens: manual; }
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) { --tex8web-picture-filter: invert(1); } }
 :root[data-theme="dark"] { --tex8web-picture-filter: invert(1); }
+/* a picture that holds an \includegraphics (text.pictures) is shown as it
+   is, on white, as a PDF picture is on the PDF's page */
+img.tex8web-graphic { --tex8web-picture-filter: none; background-color: white; }
 
 /* --- fonts ------------------------------------------------------------- */
 

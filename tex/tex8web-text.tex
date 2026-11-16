@@ -1173,19 +1173,59 @@
             \Picture[\a:GraphicsAlt]{{\Gin@base.png} \csname a:Gin-dim\endcsname}}%
           {\web@converted}}
     % an \includegraphics in a picture that dvisvgm draws: an empty <image>
-    % at the box's size, which text.pictures fills with the picture's data.
-    % dvips.def, tex4ht's driver, writes em: graph and PSfile= specials,
-    % which dvisvgm cannot draw. dvisvgm:img looks for its file only in the
-    % current directory, the build directory, and embeds no PDF or EPS.
+    % at the file's size, which text.pictures fills with the picture's data,
+    % in an <svg> that shows the part kept by trim or viewport at the box's
+    % size, as in dvisvgm.def's \Ginclude@bitmap. dvips.def, tex4ht's
+    % driver, writes em: graph and PSfile= specials, which dvisvgm cannot
+    % draw, and dvipng draws PSfile= in a PNG picture (\PictExt,
+    % tex4ht.sty). dvisvgm:img looks for its file only in the current
+    % directory, the build directory, and embeds no PDF or EPS. (\ifGin@clip
+    % and \iftrue by name: TeX skips this block without graphics.sty, where
+    % \ifGin@clip is undefined and so its \fi would end the block)
+    \def\web@svgext{.svg}
+    \def\web@Gin@diff#1#2#3{\dimen@#2pt\advance\dimen@-#3pt\edef#1{\strip@pt\dimen@}}
     \def\web@Ginclude#1{%
         \dimen@.99626\Gin@req@width \edef\web@width{\strip@pt\dimen@}%
         \dimen@.99626\Gin@req@height \edef\web@height{\strip@pt\dimen@}%
+        % (graphics.sty keeps the file's bounding box in \Gin@ollx and so
+        % on only for trim and viewport)
+        \ifx\Gin@viewport@code\relax
+            \let\Gin@ollx\Gin@llx \let\Gin@olly\Gin@lly
+            \let\Gin@ourx\Gin@urx \let\Gin@oury\Gin@ury
+        \fi
+        \web@Gin@diff\web@left\Gin@llx\Gin@ollx \web@Gin@diff\web@top\Gin@oury\Gin@ury
+        \web@Gin@diff\web@wide\Gin@urx\Gin@llx \web@Gin@diff\web@high\Gin@ury\Gin@lly
+        \web@Gin@diff\web@filewidth\Gin@ourx\Gin@ollx \web@Gin@diff\web@fileheight\Gin@oury\Gin@olly
         \special{dvisvgm:bbox \strip@pt\Gin@req@width pt \strip@pt\Gin@req@height pt transform}%
-        \special{dvisvgm:raw <image x='{?x}' y='{?(y-\web@height)}' width='\web@width'
-            height='\web@height' preserveAspectRatio='none' data-tex8web-file='#1'
-            data-tex8web-page='\ifx\Gin@page\@empty 1\else\Gin@page\fi'/>}}
-    \let\Ginclude@bmp\web@Ginclude
-    \let\Ginclude@eps\web@Ginclude
+        \special{dvisvgm:raw <svg x='{?x}' y='{?(y-\web@height)}' width='\web@width'
+            height='\web@height' viewBox='\web@left\space\web@top\space\web@wide\space\web@high'
+            preserveAspectRatio='none' overflow='\expandafter\ifx\csname ifGin@clip\expandafter\endcsname\csname iftrue\endcsname hidden\else visible\fi'><image
+            width='\web@filewidth' height='\web@fileheight' preserveAspectRatio='none'
+            data-tex8web-file='#1'
+            data-tex8web-page='\ifx\Gin@page\@empty 1\else\Gin@page\fi'/></svg>}}
+    \let\web@Ginclude@bmp\Ginclude@bmp
+    \let\web@Ginclude@eps\Ginclude@eps
+    \def\Ginclude@bmp{\ifx\PictExt\web@svgext
+        \expandafter\web@Ginclude\else\expandafter\web@Ginclude@bmp\fi}
+    \def\Ginclude@eps{\ifx\PictExt\web@svgext
+        \expandafter\web@Ginclude\else\expandafter\web@Ginclude@eps\fi}
+    % \rotatebox and \scalebox in such a picture: dvisvgm.def's <g transform>.
+    % dvips.def's are ps: specials, which dvisvgm draws only with
+    % Ghostscript's library, and not on macOS.
+    \begingroup
+        \@@input dvisvgm.def
+        \global\let\web@svg@Grot@start\Grot@start
+        \global\let\web@svg@Grot@end\Grot@end
+        \global\let\web@svg@Gscale@start\Gscale@start
+        \global\let\web@svg@Gscale@end\Gscale@end
+    \endgroup
+    \def\web@Gpicture#1{%
+        \expandafter\let\csname web@dvips@#1\expandafter\endcsname\csname #1\endcsname
+        \expandafter\edef\csname #1\endcsname{\noexpand\ifx\noexpand\PictExt\noexpand\web@svgext
+            \expandafter\noexpand\csname web@svg@#1\endcsname
+            \noexpand\else\expandafter\noexpand\csname web@dvips@#1\endcsname\noexpand\fi}}
+    \web@Gpicture{Grot@start}\web@Gpicture{Grot@end}
+    \web@Gpicture{Gscale@start}\web@Gpicture{Gscale@end}
 \fi
 % overpic's overpic and Overpic environments, whose picture is a box made
 % before the picture starts. tex4ht's \includegraphics there gives a box of

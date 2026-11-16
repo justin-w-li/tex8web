@@ -8,7 +8,8 @@
 // captions, list labels on their text's baseline, ties as wide as a
 // space and with no line break after them, the fonts of the table of
 // contents, blocks wider than the column scrolling inside it, printing,
-// and a width that fits a phone.
+// a width that fits a phone, and TikZ pictures that hold a graphic,
+// which dark mode leaves as they are.
 // Needs Chrome and the network. Differing screens are saved in
 // build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
@@ -507,6 +508,14 @@ const hung = `(shares => {
   return { checked: pictures.length, wrong };
 })`;
 const hangs = { 'test-turned-over': [1, 1, 0.25, 0.75, 1, 1, 1, 1] };
+// In dark mode, the TikZ pictures that hold an \includegraphics are shown
+// as they are, on white, and the other TikZ pictures are inverted: how
+// many of each (test-boxgfx.tex)
+const darkPictures = { 'test-boxgfx': [12, 1] };
+const darkSeen = `[...document.images].filter(img => /\\d+x\\.svg$/.test(img.getAttribute('src'))).map(img => {
+  const style = getComputedStyle(img);
+  return [img.classList.contains('tex8web-graphic'), style.filter, style.backgroundColor];
+})`;
 async function hanging(page, doc, where) {
   const shares = hangs[doc.name];
   const { checked, wrong } = await page.evaluate(`${hung}(${JSON.stringify(shares)})`);
@@ -1595,6 +1604,16 @@ async function compare(chrome, doc, ok) {
       problems.push(...await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: 390, height: 844 },
         page => hanging(page, doc, `${html}: at 390px`)));
     }
+    if (doc.name in darkPictures) {
+      const seen = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, colorScheme: 'dark' },
+        page => page.evaluate(darkSeen));
+      const shown = seen.filter(([graphic, filter, background]) => graphic && filter === 'none' && background === 'rgb(255, 255, 255)');
+      const inverted = seen.filter(([graphic, filter]) => !graphic && filter === 'invert(1)');
+      const [graphics, others] = darkPictures[doc.name];
+      if (shown.length !== graphics || inverted.length !== others) {
+        problems.push(`${html}: in dark mode, ${shown.length} pictures with a graphic shown on white and ${inverted.length} others inverted, not ${graphics} and ${others}`);
+      }
+    }
     for (const [width, [wide, claps]] of Object.entries(wideBlocks[doc.name] ?? {})) {
       const blocks = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width: Number(width) },
         page => page.evaluate(scrollers));
@@ -1716,6 +1735,7 @@ const never = only.length ? [] : Object.entries(ran).filter(([, count]) => !coun
 const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
 stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
 stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));
+stray.push(...strayKeys(darkPictures).map(name => `no document ${name} for its pictures in dark mode`));
 stray.push(...strayKeys(wideBlocks).map(name => `no document ${name} for its wide blocks`));
 stray.push(...strayKeys(descLabels).map(name => `no document ${name} for its description labels`));
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);

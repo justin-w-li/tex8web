@@ -1,5 +1,5 @@
 % overpic pictures, and LaTeX pictures that hold an \includegraphics, over
-% PDF, PNG, and JPEG pictures with no .xbb file beside them. Each one
+% PDF, PNG, JPEG, and EPS pictures with no .xbb file beside them. Each one
 % builds at its size in the PDF, which the edges drawn along its bottom and
 % left side, or a frame, show in its image. Cases: a share of the text
 % width, no size, trim and clip, scale with a grid and tics, abs and unit
@@ -8,10 +8,11 @@
 % extension, italic and math labels, a minipage, a table cell, a JPEG, a
 % PDF with its MediaBox away from 0 0, a PDF with a CropBox, the second
 % page of a PDF, a PNG at 144 dpi, a folder in the name, a LaTeX picture
-% at natural size, and a subfigure. Plain \includegraphics of a PNG
-% without its .xbb file, outside any picture, sized with width, scale, or
-% height after an overpic of the same PNG, keep their sizes. The last
-% overpic has its .xbb file, and is sized from it.
+% at natural size, a subfigure, and an EPS from TeX Live, which dvipng
+% draws. Plain \includegraphics of a PNG without its .xbb file, outside
+% any picture, sized with width, scale, or height after an overpic of the
+% same PNG, keep their sizes. The last overpic has its .xbb file, and is
+% sized from it.
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{overpic}
@@ -168,6 +169,12 @@ After natural picture.
 \end{subfigure}
 \end{figure}
 After subfigure.
+
+\begin{overpic}[width=72pt]{doclicense-CC-by-sa-88x31.eps}
+\edges
+\put(10,10){E}
+\end{overpic}
+After eps.
 
 \includegraphics[width=80pt]{test-overpic-hidpi.png}
 After plain.
