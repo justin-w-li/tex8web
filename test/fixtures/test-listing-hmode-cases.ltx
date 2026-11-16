@@ -16,7 +16,7 @@ Top then $x+1$.
 
 \lstline{1}
 
-\lstline[mathescape]{29}
+\lstline[mathescape]{4}
 
 \begin{tabular}{l} \lstline{2} \end{tabular} then $\mathcal{A}$.
 
@@ -37,11 +37,13 @@ Framed \fbox{\usebox{\lstsaved}} then $\mathcal{C}$.
 
 In \fbox{\lstline[frame=single]{5}} then $\mathcal{D}$.
 
-E: \mbox{\lstline[mathescape]{29}} then $\mathcal{E}$.
+E: \mbox{\lstline[mathescape]{4}} then $\mathcal{E}$.
 
-In \colorbox{yellow}{\lstline{6}} then $\mathcal{F}$.
+% (color.4ht sets the text of \colorbox and \fcolorbox in the paragraph,
+% not in a box, so a listing there is not in inner horizontal mode)
+In \mbox{\lstline{6}} then $\mathcal{F}$.
 
-In \fcolorbox{black}{yellow}{\lstline{7}} then $\mathcal{G}$.
+In \mbox{\lstline{7}} then $\mathcal{G}$.
 
 \begin{tabular}{l} \lstline[numbers=left,frame=single]{8} \end{tabular} then $\mathcal{H}$.
 
@@ -91,19 +93,19 @@ In \hbox{\lstline{22}} then $\mathcal{W}$.
 % (a formula before and after a listing in the same box or cell)
 In \mbox{then $a$ \lstline{28} then $b$}.
 
-\begin{tabular}{l} then $c$ \lstline{30} then $d$ \end{tabular}
+\begin{tabular}{l} then $c$ \lstline{29} then $d$ \end{tabular}
 
 % (in an item's text, while its label is still to come)
 \begin{itemize}
-\item \mbox{\lstline{31}} then $e$.
+\item \mbox{\lstline{30}} then $e$.
 \end{itemize}
 
 % (two listings in one box, and a box in a cell)
-In \fbox{\lstline{32}\lstline{33}} then $f$.
+In \fbox{\lstline{31}\lstline{32}} then $f$.
 
-\begin{tabular}{l} \fbox{\lstline{34}} \end{tabular} then $g$.
+\begin{tabular}{l} \fbox{\lstline{33}} \end{tabular} then $g$.
 
-In \resizebox{.5\linewidth}{!}{\lstline{35}} then $h$.
+In \resizebox{.5\linewidth}{!}{\lstline{34}} then $h$.
 
 % (an environment of \lstnewenvironment)
 \begin{tabular}{l}

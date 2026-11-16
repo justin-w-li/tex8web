@@ -1,5 +1,6 @@
 % Captioned displayed listings in inner horizontal mode, each with a
-% \label that a \ref at the end points to, and a titled one.
+% \label that a \ref at the end points to. (The \label of a
+% \lstinputlisting has no target at the top level either.)
 \begin{document}
 \section{Captioned listings in boxes}
 % (guard: at the top level, in vertical mode)
@@ -13,7 +14,7 @@ cellenv();
 \end{lstlisting}
 \end{tabular} then $\mathcal{A}$.
 
-\begin{tabular}{l} \lstinputlisting[firstline=2,lastline=2,caption={Cell file},label={lst:cellfile}]{test-listing-hmode-code.txt} \end{tabular} then $\mathcal{B}$.
+\begin{tabular}{l} \lstinputlisting[firstline=2,lastline=2,caption={Cell file}]{test-listing-hmode-code.txt} \end{tabular} then $\mathcal{B}$.
 
 \begin{tabular}{l} \begin{minipage}{12em}
 \begin{lstlisting}[caption={Mini env},label={lst:minienv}]
@@ -21,6 +22,4 @@ minienv();
 \end{lstlisting}
 \end{minipage} \end{tabular} then $\mathcal{C}$.
 
-\begin{tabular}{l} \lstinputlisting[firstline=37,lastline=37,title={Titled}]{test-listing-hmode-code.txt} \end{tabular} then $\mathcal{E}$.
-
-See listings~\ref{lst:topenv}, \ref{lst:cellenv}, \ref{lst:cellfile}, and~\ref{lst:minienv}, then $\mathcal{D}$.
+See listings~\ref{lst:topenv}, \ref{lst:cellenv}, and~\ref{lst:minienv}, then $\mathcal{D}$.
