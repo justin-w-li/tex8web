@@ -4,6 +4,7 @@
 -- with tex4ht's output files, so make4ht -d copies it too.
 local dom = require "tex8web.dom"
 local files = require "tex8web.files"
+local mime = require "mime"
 local prerender = require "tex8web.prerender"
 
 local log = logging.new("tex8web")
@@ -466,7 +467,11 @@ function M.convert(src, page, img, context, converted)
   img:set_attribute("src", png)
   local size = img:get_attribute("data-tex8web-size")
   img:set_attribute("data-tex8web-size", nil)
-  if converted[path] == nil then converted[path] = M.convert_file(file, page, path, png) end
+  if converted[path] == nil then
+    converted[path] = M.convert_file(file, page, path, png)
+    -- (after the conversion: Make:add_file copies the file at once)
+    if converted[path] then Make:add_file(path) end
+  end
   if converted[path] and size then M.size(img, path, size, context) end
   -- (a picture that loads only near the screen, such as a later page of
   -- pdfpages: its height before it loads, from the PNG's aspect, so that
@@ -478,9 +483,28 @@ function M.convert(src, page, img, context, converted)
   end
 end
 
+-- page page of the picture src as a data: URI, for an SVG that dvisvgm
+-- draws, which is shown through an <img> and so loads no other file. A
+-- PDF or EPS picture is converted as in M.convert.
+local types = {png = "image/png", jpg = "image/jpeg", jpeg = "image/jpeg"}
+function M.data_uri(src, page, context)
+  local file = exists(src) and src or kpse.find_file(src, "graphic/figure") or src
+  local ext = (file:match("%.([^./]+)$") or ""):lower()
+  if not types[ext] then
+    local png = M.inside(file) .. "-" .. page .. ".png"
+    if not M.convert_file(file, page, context.dir .. "/" .. png, png) then return "" end
+    file, ext = context.dir .. "/" .. png, "png"
+  end
+  local data = files.read(file)
+  if not data then
+    log:error(src .. " is missing: its picture is empty")
+    return ""
+  end
+  return "data:" .. types[ext] .. ";base64," .. mime.b64(data)
+end
+
 -- runs Ghostscript on page page of file into path, unless the PNG there is
--- newer than the picture, and adds the PNG to the page's files; false when
--- the conversion failed
+-- newer than the picture; false when the conversion failed
 function M.convert_file(file, page, path, png)
   local made, source = lfs.attributes(path), lfs.attributes(file)
   if not (made and made.size > 0 and source and made.modification >= source.modification) then
@@ -497,8 +521,6 @@ function M.convert_file(file, page, path, png)
       return false
     end
   end
-  -- (after the conversion: Make:add_file copies the file at once)
-  Make:add_file(path)
   return true
 end
 

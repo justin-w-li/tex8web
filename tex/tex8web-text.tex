@@ -1172,6 +1172,20 @@
             {\Configure{Needs}{File: \Gin@base.png}\Needs{}}%
             \Picture[\a:GraphicsAlt]{{\Gin@base.png} \csname a:Gin-dim\endcsname}}%
           {\web@converted}}
+    % an \includegraphics in a picture that dvisvgm draws: an empty <image>
+    % at the box's size, which text.pictures fills with the picture's data.
+    % dvips.def, tex4ht's driver, writes em: graph and PSfile= specials,
+    % which dvisvgm cannot draw. dvisvgm:img looks for its file only in the
+    % current directory, the build directory, and embeds no PDF or EPS.
+    \def\web@Ginclude#1{%
+        \dimen@.99626\Gin@req@width \edef\web@width{\strip@pt\dimen@}%
+        \dimen@.99626\Gin@req@height \edef\web@height{\strip@pt\dimen@}%
+        \special{dvisvgm:bbox \strip@pt\Gin@req@width pt \strip@pt\Gin@req@height pt transform}%
+        \special{dvisvgm:raw <image x='{?x}' y='{?(y-\web@height)}' width='\web@width'
+            height='\web@height' preserveAspectRatio='none' data-tex8web-file='#1'
+            data-tex8web-page='\ifx\Gin@page\@empty 1\else\Gin@page\fi'/>}}
+    \let\Ginclude@bmp\web@Ginclude
+    \let\Ginclude@eps\web@Ginclude
 \fi
 % overpic's overpic and Overpic environments, whose picture is a box made
 % before the picture starts. tex4ht's \includegraphics there gives a box of
@@ -1368,6 +1382,22 @@
     % a requested width or height as a share of the text width, or - for none
     \cs_new:Npn \__web_gin_share:N #1
       { \cs_if_eq:NNTF #1 \Gin@exclamation { - } { \fp_eval:n { round(\dim_to_fp:n {#1} / \web@textwidth, 4) } } }
+    % In a saved box, tex4ht writes only the <img>, which tex4ht drops in a
+    % picture. So the box also holds the picture as a picture would, between
+    % t4ht@[ and t4ht@], which tex4ht skips in the text, as for math in such
+    % a box (tex8web-math.tex). (\Gin@setfile chooses tex4ht's version or
+    % graphics.sty's by \EndPicture: \HLet, tex4ht.sty)
+    \cs_set_eq:NN \__web_gin_setfile:nnn \Gin@setfile
+    \cs_set:Npn \Gin@setfile #1#2#3
+      {
+        \__web_gin_setfile:nnn {#1} {#2} {#3}
+        \bool_if:nT { \l__web_saved_bool && \cs_if_eq_p:NN \EndPicture \:UnDef }
+          {
+            \use:c { ht:special } { t4ht@[ }
+            \use:c { o:Gin@setfile: } {#1} {#2} {#3}
+            \use:c { ht:special } { t4ht@] }
+          }
+      }
   }
 
 % \scalebox, \resizebox, and \reflectbox: dvisvgm draws a picture in such a

@@ -1624,6 +1624,19 @@ const boxmathQedRight = ['lrbox qed', 345 / 2 * 72 / 72.27];
 const boxmathSame = ['lrbox dollars', 'lrbox display'];
 const boxmathAfter = ['lrbox equation', 'lrbox align'];
 const boxmath = { 'test-boxmath': boxmathPictures };
+// Graphics in saved boxes placed in a TikZ node, and graphics typed in a
+// picture (test-boxgfx.tex). The picture between each case's "Before" and
+// "After" holds one <image> with its data embedded, as the SVG is shown
+// through an <img>. The image is as large as the graphic in the PDF, in
+// pt, within 0.05bp, and the picture is at least as large as the image,
+// so the frame around it is as large too. Placed outside any picture, the copy holds the
+// graphic's <img>, no picture, and only the box's text.
+const boxgfxSizes = {
+  'lrbox png': [138, 103.5], 'lrbox pdf': [138, 103.5], 'sbox jpg': [40, 30], 'savebox eps': [72, 36],
+  'node png': [80, 60], 'picture pdf': [80, 60], 'overpic png': [80, 60],
+};
+const boxgfxCopy = ['text copy', 'test-bare.png', 'Kept text.'];
+const boxgfx = { 'test-boxgfx': boxgfxSizes };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width
@@ -2848,6 +2861,33 @@ function check(doc, result, out, aux) {
     const qeds = part(boxmathQed)?.match(/<mjx-mtd id='mjx-eqn_web-qed-/g)?.length ?? 0;
     if (qeds !== 1) problems.push(`${qeds} QED tags in the display of "${boxmathQed}", not 1`);
   }
+  if (boxgfx[doc.name]) {
+    const words = name => name.replace(/ /g, '\\s+');
+    const part = name => flat.match(new RegExp(`Before ${words(name)}\\.([^]*?)After ${words(name)}\\.`))?.[1] ?? '';
+    for (const [name, [width, height]] of Object.entries(boxgfx[doc.name])) {
+      const src = part(name).match(/<img [^>]*src='([^']+\.svg)'/)?.[1];
+      const svg = src && existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
+      const images = [...svg.matchAll(/<image ([^>]*)\/>/g)].map(([, attributes]) => attributes);
+      const attribute = (image, key) => image.match(new RegExp(`(?:^| )${key}='([^']*)'`))?.[1];
+      if (images.length !== 1 || !/^data:image\/(?:png|jpeg);base64,./.test(attribute(images[0], 'xlink:href'))) {
+        problems.push(`the picture between "Before ${name}." and "After ${name}." holds ${images.length} images, not one with its data`);
+        continue;
+      }
+      const [w, h] = ['width', 'height'].map(key => Number(attribute(images[0], key)));
+      const bp = pt => pt * 72 / 72.27;
+      if (!(Math.abs(w - bp(width)) < 0.05 && Math.abs(h - bp(height)) < 0.05)) problems.push(`the image in "${name}" is ${w} by ${h}bp, not ${bp(width)} by ${bp(height)}bp`);
+      // (the viewBox is in the units of the page's group, scaled 1.4)
+      const scale = Number(svg.match(/<g id='page1' transform='matrix\(([\d.]+) 0 0 /)?.[1] ?? 1);
+      const [, , wide, high] = svg.match(/viewBox='([^']+)'/)[1].split(' ').map(Number).map(v => v / scale);
+      if (!(wide > w - 0.01 && high > h - 0.01)) problems.push(`the picture of "${name}" is ${wide} by ${high}bp, smaller than its image`);
+    }
+    const [name, file, text] = boxgfxCopy;
+    const copy = part(name);
+    const imgs = [...copy.matchAll(/<img [^>]*src='([^']*)'/g)].map(([, src]) => src);
+    const shown = copy.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    if (imgs.join() !== file) problems.push(`the pictures between "Before ${name}." and "After ${name}." are "${imgs.join()}", not "${file}"`);
+    if (shown !== text) problems.push(`"${shown}" between "Before ${name}." and "After ${name}.", not "${text}"`);
+  }
   if (copied[doc.name]) {
     const shown = {};
     for (const [tag] of flat.matchAll(/<img [^>]*>/g)) {
@@ -2942,7 +2982,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

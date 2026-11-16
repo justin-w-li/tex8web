@@ -1,0 +1,69 @@
+% Graphics in boxes saved with lrbox, \sbox, and \savebox, placed in a
+% TikZ node: a PNG, a PDF, a JPEG, and an EPS. The same kind of box placed
+% in the text keeps its picture as an image of the page. Graphics typed
+% inside a picture: a TikZ node, a LaTeX picture, and an overpic.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{overpic}
+\usepackage{pict2e}
+\usepackage{tikz}
+\newsavebox{\keep}
+\begin{document}
+Before lrbox png.
+\begin{lrbox}{\keep}\begin{minipage}{0.8\linewidth}
+Some text.
+\begin{center}\includegraphics[width=0.5\linewidth]{test-bare.png}\end{center}
+\end{minipage}\end{lrbox}
+\begin{tikzpicture}\node[draw,rounded corners] {\usebox{\keep}};\end{tikzpicture}
+
+After lrbox png.
+
+Before lrbox pdf.
+\begin{lrbox}{\keep}\begin{minipage}{0.8\linewidth}
+More text.
+\begin{center}\includegraphics[width=0.5\linewidth]{test-overpic-box.pdf}\end{center}
+\end{minipage}\end{lrbox}
+\begin{tikzpicture}\node[draw,rounded corners] {\usebox{\keep}};\end{tikzpicture}
+
+After lrbox pdf.
+
+Before sbox jpg.
+\sbox{\keep}{\includegraphics[height=30pt]{test-overpic-photo.jpg}}
+\begin{tikzpicture}\node[draw] {\usebox{\keep}};\end{tikzpicture}
+
+After sbox jpg.
+
+Before savebox eps.
+\savebox{\keep}{\includegraphics[width=72pt]{test-inputname-epsf.eps}}
+\begin{tikzpicture}\node[draw] {\usebox{\keep}};\end{tikzpicture}
+
+After savebox eps.
+
+Before text copy.
+\begin{lrbox}{\keep}\begin{minipage}{0.8\linewidth}
+Kept text.
+\begin{center}\includegraphics[width=0.5\linewidth]{test-bare.png}\end{center}
+\end{minipage}\end{lrbox}
+\usebox{\keep}
+
+After text copy.
+
+Before node png.
+\begin{tikzpicture}\node[draw] {\includegraphics[width=80pt]{test-bare.png}};\end{tikzpicture}
+
+After node png.
+
+Before picture pdf.
+\setlength{\unitlength}{1pt}
+\begin{picture}(80,60)
+\put(0,0){\includegraphics[width=80pt]{test-overpic-box.pdf}}
+\put(10,10){R}
+\end{picture}
+
+After picture pdf.
+
+Before overpic png.
+\begin{overpic}[width=80pt]{test-bare.png}\put(10,10){A}\end{overpic}
+
+After overpic png.
+\end{document}

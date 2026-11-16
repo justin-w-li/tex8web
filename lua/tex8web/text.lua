@@ -1,4 +1,5 @@
 -- The text around the math.
+local assets = require "tex8web.assets"
 local dom = require "tex8web.dom"
 local files = require "tex8web.files"
 
@@ -697,6 +698,15 @@ function M.pictures(document, context)
     if src:sub(1, #context.input) == context.input and src:sub(#context.input + 1):match("^%d+x%.svg$") then
       local svg = files.read(context.dir .. "/" .. src)
       if not svg then error(src .. " is missing: dvisvgm did not write it") end
+      -- (an \includegraphics: tex8web-text.tex)
+      local filled, images = svg:gsub("data%-tex8web%-file='([^']*)' data%-tex8web%-page='(%d+)'",
+        function(file, page) return "xlink:href='" .. assets.data_uri(file, page, context) .. "'" end)
+      if images > 0 then
+        svg = filled
+        local f = io.open(context.dir .. "/" .. src, "w")
+        f:write(svg)
+        f:close()
+      end
       local _, top, width, height = (svg:match("<svg[^>]- viewBox='([^']+)'") or ""):match("^(%S+) (%S+) (%S+) (%S+)$")
       if not width then error("no viewBox in " .. src) end
       local scale = tonumber(svg:match("<g id='page1' transform='matrix%(([%d.]+) 0 0 ")) or 1
