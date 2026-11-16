@@ -1588,6 +1588,22 @@ const nestpicPaths = { lrbox: 2, sbox: 2, pgf: 2, 'two boxes': 2, 'three level':
 // inside is as wide as one without.
 const nestpicLowered = { key: false, 'picture baseline': false, 'picture overlay': false, 'own baseline': true };
 const nested = { 'test-nestpic': nestpicCases, 'test-nestpic-hyperref': nestpicCases };
+// Math in a box saved with \sbox, \savebox, or lrbox (test-boxmath.tex).
+// Placed in a TikZ node, the first picture between each case's "Before"
+// and "After" draws glyphs of two fonts or more: the text's and the
+// math's, as the box's text is in one font. The $$ display is as tall
+// as the \[ \] display of the same formula. The text after an equation
+// and an align* starts where the box's first line starts, with no space
+// before it. Placed outside any picture,
+// each copy's math is the page's formulas, as many as the box holds, and
+// the copy's text is only the box's text, with no glyphs of the math.
+const boxmathPictures = ['sbox', 'savebox', 'lrbox inline', 'lrbox display', 'lrbox dollars', 'lrbox equation',
+  'lrbox align', 'lrbox ampersand', 'lrbox list', 'direct'];
+const boxmathCopies = { 'text copy': [1, 'Kept Box end here.'], 'fbox copy': [1, 'Framed Saved here here.'],
+  'minipage copy': [4, 'Placed Copied and then and here.'] };
+const boxmathSame = ['lrbox dollars', 'lrbox display'];
+const boxmathAfter = ['lrbox equation', 'lrbox align'];
+const boxmath = { 'test-boxmath': boxmathPictures };
 // A \tikz picture as wide as what it draws: a circle at the origin, on which
 // tex4ht's SVG (from dvisvgm, scaled 1.4) is centered. On the page it is as
 // wide as in the PDF, 1cm of a 345pt text width
@@ -2772,6 +2788,34 @@ function check(doc, result, out, aux) {
     for (const text of nestpicTexts) if (shown.includes(text)) problems.push(`"${text}" in the page's text, not in its picture`);
     if (/\/(?:&gt;|>)/.test(shown)) problems.push("the tail of an <img> tag in the page's text");
   }
+  if (boxmath[doc.name]) {
+    const part = name => flat.match(new RegExp(`Before ${name}\\.([^]*?)After ${name}\\.`))?.[1];
+    const svgs = {};
+    for (const name of boxmath[doc.name]) {
+      const src = part(name)?.match(/<img [^>]*src='([^']+\.svg)'/)?.[1];
+      const svg = svgs[name] = src && existsSync(join(out, src)) ? readFileSync(join(out, src), 'utf8') : '';
+      const fonts = new Set([...svg.matchAll(/<use [^>]*href='#g(\d+)-/g)].map(([, font]) => font)).size;
+      if (fonts < 2) problems.push(`the picture between "Before ${name}." and "After ${name}." draws glyphs of ${fonts} fonts, not the math's`);
+    }
+    const height = name => Number(svgs[name].match(/viewBox='\S+ \S+ \S+ ([\d.]+)'/)?.[1]);
+    const [dollars, brackets] = boxmathSame;
+    if (!(Math.abs(height(dollars) - height(brackets)) < 0.01)) problems.push(`the picture of "${dollars}" is ${height(dollars)}pt high, not ${height(brackets)}pt as "${brackets}"`);
+    for (const name of boxmathAfter) {
+      // (each glyph's origin, by line: the first line and the last)
+      const glyphs = [...svgs[name].matchAll(/<use x='([\d.-]+)' y='([\d.-]+)'/g)].map(([, x, y]) => [Number(x), Number(y)]);
+      const ys = glyphs.map(([, y]) => y);
+      const start = line => Math.min(...glyphs.filter(([, y]) => y === line).map(([x]) => x));
+      const [first, last] = [start(Math.min(...ys)), start(Math.max(...ys))];
+      if (!(Math.abs(first - last) < 0.01)) problems.push(`the text after the display in "${name}" starts at ${last}, not ${first} as the first line`);
+    }
+    for (const [name, [count, text]] of Object.entries(boxmathCopies)) {
+      const copy = part(name) ?? '';
+      const formulas = copy.match(/<mjx-container /g)?.length ?? 0;
+      const shown = copy.replace(/<mjx-container [^]*?<\/mjx-container>/g, '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+      if (formulas !== count) problems.push(`${formulas} formulas between "Before ${name}." and "After ${name}.", not ${count}`);
+      if (shown !== text) problems.push(`"${shown}" between "Before ${name}." and "After ${name}.", not "${text}"`);
+    }
+  }
   if (copied[doc.name]) {
     const shown = {};
     for (const [tag] of flat.matchAll(/<img [^>]*>/g)) {
@@ -2866,7 +2910,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, nested, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 

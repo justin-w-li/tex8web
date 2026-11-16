@@ -1,0 +1,108 @@
+% Math in a box saved with \sbox, \savebox, or lrbox, and placed in a TikZ
+% node. Each case's text is "Before <case>." and "After <case>.", which
+% run.mjs reads.
+%
+% Pictures whose math is drawn in the picture, as in the PDF:
+% - \sbox and \savebox holding inline math;
+% - an environment that saves a minipage with lrbox and draws it in a
+%   node, holding inline math with $ and \(, a \[ \] display, a $$
+%   display with the same formula, an equation and an align* with text
+%   after them, a display with an alignment and inline math with a
+%   matrix, both with &, and an enumerate;
+% - math typed directly in a node.
+%
+% Copies of saved boxes outside any picture, whose math is the page's
+% formulas: in text, in \fbox, and a minipage with \[ \], $$, and
+% equation displays in text.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{tikz}
+\newsavebox{\bxa}
+\newsavebox{\bxb}
+\newsavebox{\bxc}
+\newsavebox{\mathbx}
+\newenvironment{mathbox}{\begin{lrbox}{\mathbx}\begin{minipage}{0.8\textwidth}}{%
+  \end{minipage}\end{lrbox}\begin{center}\begin{tikzpicture}\node[draw, inner sep=10pt]{\usebox{\mathbx}};\end{tikzpicture}\end{center}}
+\begin{document}
+
+Before sbox. \sbox{\bxa}{Box $x^2$ end}\tikz\node[draw]{\usebox{\bxa}}; After sbox.
+
+Before savebox. \savebox{\bxb}[4cm][l]{Saved \(y_1 + z\) here}\tikz\node[draw]{\usebox{\bxb}}; After savebox.
+
+Before lrbox inline.
+\begin{mathbox}
+Let $p$ be a prime and \(q = p^2\) its square, so that every line of this
+paragraph breaks where the formulas' widths put it.
+\end{mathbox}
+After lrbox inline.
+
+Before lrbox display.
+\begin{mathbox}
+The sum is
+\[ \sum_{k=1}^{n} k = \frac{n(n+1)}{2}, \]
+for every whole number $n$.
+\end{mathbox}
+After lrbox display.
+
+Before lrbox dollars.
+\begin{mathbox}
+The sum is
+$$ \sum_{k=1}^{n} k = \frac{n(n+1)}{2}, $$
+for every whole number $n$.
+\end{mathbox}
+After lrbox dollars.
+
+Before lrbox equation.
+\begin{mathbox}
+A numbered formula:
+\begin{equation}
+  e^{i\pi} + 1 = 0.
+\end{equation}
+which joins five constants.
+\end{mathbox}
+After lrbox equation.
+
+Before lrbox align.
+\begin{mathbox}
+Two rows:
+\begin{align*}
+  a &= b + c, \\
+  d &= e - f.
+\end{align*}
+which hold together.
+\end{mathbox}
+After lrbox align.
+
+Before lrbox ampersand.
+\begin{mathbox}
+A matrix $\left(\begin{smallmatrix} u & v \\ w & t \end{smallmatrix}\right)$ and
+\[ \begin{aligned} g &= h, \\ m &= n. \end{aligned} \]
+\end{mathbox}
+After lrbox ampersand.
+
+Before lrbox list.
+\begin{mathbox}
+\begin{enumerate}
+\item The first item, with $r < s$.
+\item The second item, with \(s < t\).
+\end{enumerate}
+\end{mathbox}
+After lrbox list.
+
+Before direct. \tikz\node[draw]{Node $y^2$ end}; After direct.
+
+Before text copy. Kept \usebox{\bxa} here. After text copy.
+
+Before fbox copy. Framed \fbox{\usebox{\bxb}} here. After fbox copy.
+
+\begin{lrbox}{\bxc}\begin{minipage}{0.5\textwidth}
+Copied $v$ and
+\[ w = 2v, \]
+then
+$$ u = 3v, $$
+and
+\begin{equation} t = 4v. \end{equation}
+\end{minipage}\end{lrbox}
+Before minipage copy. Placed \usebox{\bxc} here. After minipage copy.
+
+\end{document}
