@@ -552,8 +552,22 @@ function M.boxed_listings(document)
       end
       local first, last = caption(nodes, at, -1) or at, caption(nodes, at, 1) or at
       listing._name = "code"
-      -- (a caption at the bottom is inside the <pre>, before html4.4ht's </pre>)
-      for _, inner in ipairs(listing:query_selector("figcaption")) do inner._name = "span" end
+      -- A caption at the bottom of \lstinputlisting is inside the <pre>,
+      -- before html4.4ht's </pre>. The caption, with the spaces before it
+      -- and the comment of its label after it, goes after the <code>, so
+      -- that it is set in the text's font and does not scroll with the code.
+      local code, below = {}, {}
+      local found = false
+      for _, child in ipairs(listing:get_children()) do
+        if not found and child:is_element() and child:get_element_name() == "figcaption" then
+          found = true
+          while #code > 0 and code[#code]:is_text() and not code[#code]:get_text():find("%S") do
+            table.insert(below, 1, table.remove(code))
+          end
+        end
+        table.insert(found and below or code, child)
+      end
+      dom.set_children(listing, code)
       -- (in a link, as \href{u}{\mbox{...}}, an <a> of a line's anchor would
       -- end the link, and a <span> keeps its id)
       if dom.closest(parent, function(el) return el:get_element_name() == "a" end) then
@@ -579,11 +593,14 @@ function M.boxed_listings(document)
       for i, node in ipairs(nodes) do
         if i == first then around[#around + 1] = box end
         if i >= first and i <= last then
-          if node:is_element() and node:get_element_name() == "figcaption" then node._name = "span" end
           inside[#inside + 1] = node
+          if node == listing then table.move(below, 1, #below, #inside + 1, inside) end
         else
           around[#around + 1] = node
         end
+      end
+      for _, node in ipairs(inside) do
+        if node:is_element() and node:get_element_name() == "figcaption" then node._name = "span" end
       end
       dom.set_children(box, inside)
       dom.set_children(parent, around)

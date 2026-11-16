@@ -1457,7 +1457,11 @@ const boxedListings = `(() => {
   const inParagraph = listings.filter(listing => listing.closest('p'))
     .map(listing => [...listing.childNodes].filter(node => node.nodeType !== 8 && !node.classList?.contains('caption'))
       .map(node => node.textContent).join('').trim());
-  return { empty: empty.length, inParagraph };
+  // (a boxed listing's caption, at the top or the bottom, in its paragraph's font)
+  const captions = [...document.querySelectorAll('.tex8web-boxed-listing .caption')];
+  const offFont = captions.filter(caption => getComputedStyle(caption).fontFamily !== getComputedStyle(caption.closest('p')).fontFamily)
+    .map(caption => caption.textContent.trim());
+  return { empty: empty.length, inParagraph, captions: captions.length, offFont };
 })()`;
 const paragraphListings = {
   'test-listing-hmode': ['lrbox', 'fbox', 'mbox_esc', 'fcbox', 'makebox', 'note', 'raise', 'sbox', 'savebox', 'hbox',
@@ -1569,6 +1573,23 @@ const boxedListingScroll = `(() => {
     const range = document.createRange(); range.selectNodeContents(capWord);
     const w = range.getBoundingClientRect(), caption = captioned.querySelector('.caption')?.getBoundingClientRect();
     if (!caption || Math.abs(caption.top - w.top) >= parseFloat(getComputedStyle(captioned).fontSize)) problems.push('the word before capA(); is not at the top of its caption');
+  }
+  return problems;
+})()`;
+// In print, a boxed listing runs into the margin as a <pre> does, and the
+// listing's box and its frames grow to fit its longest line, also a line
+// wider than the column (test-boxed-listings).
+const boxedListingPrint = `(() => {
+  const problems = [];
+  const codes = [...document.querySelectorAll('.tex8web-boxed-listing > code')];
+  const text = code => { const range = document.createRange(); range.selectNodeContents(code); return range.getBoundingClientRect(); };
+  const wide = codes.find(code => code.textContent.includes('printwide();'));
+  if (!wide || !(text(wide).width > wide.closest('p').clientWidth)) problems.push('the listing printwide(); is not wider than its column');
+  for (const code of codes) {
+    const right = text(code).right, name = code.textContent.trim().split(' ')[0];
+    for (let frame = code.parentElement; frame && frame.tagName !== 'P'; frame = frame.parentElement) {
+      if (frame.getBoundingClientRect().right < right - 0.5) problems.push(\`the line of \${name} runs \${right - frame.getBoundingClientRect().right}px past a box (\${frame.className})\`);
+    }
   }
   return problems;
 })()`;
@@ -1927,10 +1948,14 @@ async function compare(chrome, doc, ok) {
       const want = paragraphListings[doc.name.replace(/-caption-hyperref$/, '-caption')];
       if (boxed.empty) problems.push(`${html}: ${boxed.empty} frames without their listing`);
       if (boxed.inParagraph.join('|') !== want.join('|')) problems.push(`${html}: the listings in paragraphs read '${boxed.inParagraph.join('|')}'`);
+      if (doc.name.includes('-caption') && boxed.captions !== 2) problems.push(`${html}: ${boxed.captions} captions of boxed listings, not 2`);
+      for (const caption of boxed.offFont) problems.push(`${html}: the caption '${caption}' is not in its paragraph's font`);
     }
     if (doc.name === 'test-boxed-listings') {
       problems.push(...(await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 390, height: 844 },
         page => page.evaluate(boxedListingScroll))).map(p => `${html}: ${p}`));
+      problems.push(...(await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 740, javascript: false },
+        async page => { await page.media('print'); return page.evaluate(boxedListingPrint); })).map(p => `${html}: 740px print: ${p}`));
     }
     if (verbatimFamilies[doc.name] && !verbatimExtraCases[doc.name]) {
       problems.push(...(await literalOpeners(chrome, join(pre, html))).map(p => `${html}: ${p}`));

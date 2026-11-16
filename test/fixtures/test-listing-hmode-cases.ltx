@@ -147,11 +147,11 @@ then $l$.
 
 \begin{tabular}{l} \lstline[frame=tB,framerule=2pt,framesep=5pt,rulecolor=\color{red}]{37} \end{tabular} then $n$.
 
-% (a frame at the top level, as in a box; frame=shadowbox with a
-% rulesepcolor, drawn as a shadow in that color)
+% (a frame at the top level, as in a box; none for an inline listing;
+% frame=shadowbox with a rulesepcolor, drawn as a shadow in that color)
 \lstline[frame=single]{39}
 
-And then $o$.
+And {\lstset{frame=single}\lstinline|inframed|} then $o$.
 
 \begin{tabular}{l} \lstline[frame=shadowbox,rulesepcolor=\color{blue}]{40} \end{tabular} then $p$.
 

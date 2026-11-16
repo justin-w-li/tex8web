@@ -140,13 +140,12 @@ div.listing, div.verbatimtabinput { white-space: pre; }
    count there) */
 /* (in the text's size and in typewriter, as html4.4ht sets a <pre> of
    listings in monospace: a space outside the spans of fonts is then as
-   wide as a typewriter letter) */
+   wide as a typewriter letter. The margin gives room for the shadow of
+   frame=shadowbox, on the sides it is drawn on, as the PDF counts the
+   shadow in the listing's frame, and a box around the listing holds it;
+   tex8web-text.tex writes its offsets) */
 .tex8web-boxed-listing > code { display: block; overflow: auto clip; white-space: pre; font: inherit;
-    font-family: var(--tex8web-mono); }
-/* (room for the shadow of frame=shadowbox, on the sides it is drawn on, as
-   the PDF counts the shadow in the listing's frame, and a box around the
-   listing holds it; tex8web-text.tex writes its offsets) */
-.tex8web-boxed-listing > code {
+    font-family: var(--tex8web-mono);
     margin: max(0em, -1 * var(--tex8web-shadow-y, 0em)) max(0em, var(--tex8web-shadow-x, 0em))
         max(0em, var(--tex8web-shadow-y, 0em)) max(0em, -1 * var(--tex8web-shadow-x, 0em)); }
 :is(span.fbox, span.colorbox, .framebox-c, .framebox-l, .framebox-r):has(.tex8web-boxed-listing) {
@@ -1204,7 +1203,8 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
    tex8web-page.js sets it for the screen. A block that scrolls on the
    screen runs into the margin as in the PDF. Its rule is !important, as
    MathJax's rule follows this stylesheet. A boxed verbatim's frame grows
-   to fit its longest line, as its table is laid out by its content.
+   to fit its longest line, as its table is laid out by its content, and
+   so do a boxed listing and its frames.
    No page break inside a tcolorbox (tcolorbox's default, unless
    breakable, which tex8web cannot tell), a display, a figure, or a table,
    nor after a heading. Theorems and framed boxes break, as in the PDF */
@@ -1219,6 +1219,9 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
     mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing,
     div.listinginput, div.verbatimtabinput, .tex8web-boxed-listing > code { overflow: visible !important; }
     table.boxedverbatim { table-layout: auto; }
+    .tex8web-boxed-listing,
+    :is(span.fbox, span.colorbox, .framebox-c, .framebox-l, .framebox-r):has(.tex8web-boxed-listing) {
+        max-width: none; }
     .tex8web-scrolls { mask-image: none; }
     .tcolorbox, mjx-container[display], figure, div.table, table { break-inside: avoid; }
     h1, h2, h3, h4, h5, h6 { break-after: avoid; }

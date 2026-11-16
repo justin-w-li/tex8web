@@ -3046,6 +3046,10 @@ function check(doc, result, out, aux) {
       const found = rule ? rule.slice(1).map(value => value.trim().replace(/\s+/g, ' ')).join('|') : undefined;
       if (!id || found !== sides) problems.push(`the listing '${text}' has the frame '${found}', not '${sides}'`);
     }
+    // (no frame for the inline listing 'inframed', whose <code> has no id)
+    for (const [, id] of caption ? [] : styles.matchAll(/#([\w-]+)\s*\{\s*border-style:/g)) {
+      if (!flat.includes(` id='${id}'`)) problems.push(`a frame for '#${id}', which no listing has`);
+    }
     const red = pres[texts.indexOf('rule();')]?.[0].match(/^<(?:pre|code)[^>]* id='([\w-]+)'/)?.[1];
     if (!caption && !(red && new RegExp(`#${red}\\s*\\{\\s*border:[^;}]*#FF0000`, 'i').test(styles))) problems.push('the listing \'rule();\' has no red frame');
     // (frame=shadowbox: a shadow in rulesepcolor, rulesep (framesep) and
@@ -3125,6 +3129,7 @@ function check(doc, result, out, aux) {
       'a b c x; abcde y;', ...['center', 'top', 'bottom'].map(name => `${name}A(); ${name}B(); ${name}C();`),
       'capA(); capB(); capC(); above Captioned top', ...['lab', 'mid', 'named'].map(name => `${name}A(); ${name}B(); ${name}C();`),
       'shadowed();', 'boxedwide(); /* a line wider than the column of a phone screen, in a frame */',
+      'printwide(); /* a line of about a hundred characters, wider than the column of a printed page */',
       ...['itemfirst', 'itemlater', 'itemtop', 'itemstart'].map(name => `${name}A(); ${name}B(); ${name}C();`)];
     if (boxes.join('|') !== want.join('|')) problems.push(`the boxed listings read '${boxes.join('|')}'`);
     // (boxpos=center leaves no letters in the page, and a \ref to a boxed
@@ -3136,7 +3141,7 @@ function check(doc, result, out, aux) {
     const formulas = [...flat.matchAll(/then (?:<span class='tex8web-nowrap'>)?<mjx-container aria-label='([^']*)'/g)].map(([, label]) => label);
     // (tex8web-text.tex's marks for text.boxed_listings, also of a caption in a cell)
     if (html.includes('tex8web:')) problems.push('a mark of tex8web-text.tex is left in the page');
-    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i|j|k|l|m|n|s|o|p|q|r') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
+    if (formulas.join('|') !== 'a|b|c|d|e|f|g|h|i|j|k|l|m|n|s|t|o|p|q|r') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
     const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];

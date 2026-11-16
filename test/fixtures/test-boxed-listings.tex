@@ -154,6 +154,13 @@ boxedwide(); /* a line wider than the column of a phone screen, in a frame */
 \end{lstlisting}\end{lrbox}
 Wideshadow \fbox{\usebox{\lstbox}} then $s$.
 
+% (a line wider than the column of a printed page, in a frame inside a
+% frame: in print, the frames grow to fit it)
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+printwide(); /* a line of about a hundred characters, wider than the column of a printed page */
+\end{lstlisting}\end{lrbox}
+Print \fbox{\fbox{\usebox{\lstbox}}} then $t$.
+
 % (in a list: centered on the line in the item's first line, and in a
 % later paragraph of the item, also at the top with boxpos=t; the label
 % on the line of the text, also when the item starts with the box)
