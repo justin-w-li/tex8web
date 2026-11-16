@@ -93,6 +93,11 @@
 % mode, and text.boxed_listings sets such a listing inline. The hook of
 % the lstlisting environment runs outside the environment's group.
 % listings.4ht writes a caption without \@makecaption (\web@capskip).
+% A boxed listing's bottom caption is marked, for text.boxed_listings: the
+% lstlisting environment's </pre> comes before it, and the next listing's
+% top caption would come there too. The shadow of frame=shadowbox gets
+% the lightness of a border in dark mode, as assets.colors_in_dark_mode
+% gives the frame's rulecolor.
 \@ifpackageloaded{listings}{%
     \Configure{lstinline}
         {\HCode{<code class="lstinline">}\HtmlParOff
@@ -103,6 +108,8 @@
     \lst@AddToHook{BoxUnsafe}{\lst@ifbox\web@lsteverymath\everymath\everymath{}%
         \let\web@lstMakeCaption\lst@MakeCaption
         \def\lst@MakeCaption##1{\everymath\web@lsteverymath
+            \ifx b##1\ifx\lst@caption\@empty\else\lst@IfSubstring b\lst@captionpos
+                {\HCode{<!-- tex8web:bottom caption -->}}{}\fi\fi
             \web@lstMakeCaption{##1}\everymath{}}%
         \let\lst@frameInit\relax\let\lst@frameExit\relax
         \let\EndP\relax\HtmlParOff\fi}%
@@ -126,10 +133,12 @@
         \web@lstside tT-y\web@lstside rR{}x\web@lstside bB{}y\web@lstside lL-x%
         \web@Css{\#listing-\listingN{border-style:\web@lststyle;
             border-width:\web@lstwidth; padding:\web@lstpad}}%
-        \web@lstshadow{\begingroup\lst@rulesepcolor\extractcolorspec{.}\web@lstcolor
-            \expandafter\convertcolorspec\web@lstcolor{HTML}\web@lstcolor
-            \web@Css{\#listing-\listingN{box-shadow:\web@lstx\space\web@lsty\space 0 0 \#\web@lstcolor}}%
+        \web@lstshadow{\begingroup\lst@rulesepcolor\web@hex{.}\web@lstcolor
+            \web@Css{\#listing-\listingN{box-shadow:\web@lstx\space\web@lsty\space 0 0
+                \ifx\web@lstcolor\web@lstblack currentColor\else light-dark(\#\web@lstcolor,
+                oklch(from \#\web@lstcolor\space var(--tex8web-dark-border) c h))\fi}}%
             \endgroup}{}}%
+    \def\web@lstblack{000000}%
     \def\web@lstside#1#2#3#4{%
         \lst@IfSubstring#2\lst@frame
             {\web@lstshadow{\web@lstadd{solid}\lst@framerulewidth\lst@frametextsep

@@ -1451,7 +1451,7 @@ async function listingFonts(chrome, file, family) {
 // closes a <p> at a <pre> start tag.
 const boxedListings = `(() => {
   const listings = [...document.querySelectorAll(':is(pre, code):is(.lstlisting, .lstinputlisting, .listings)')];
-  const empty = [...document.querySelectorAll('span.fbox')].filter(box => !listings.some(listing => box.contains(listing)));
+  const empty = [...document.querySelectorAll('span.fbox, span.colorbox')].filter(box => !listings.some(listing => box.contains(listing)));
   const inParagraph = listings.filter(listing => listing.closest('p'))
     .map(listing => [...listing.childNodes].filter(node => node.nodeType !== 8 && !node.classList?.contains('caption'))
       .map(node => node.textContent).join('').trim());
@@ -1465,6 +1465,22 @@ const paragraphListings = {
     .map(name => `${name}();`),
   'test-listing-hmode-caption': ['boxenv();', 'fbox();'],
 };
+
+// A boxed listing with a line wider than a phone's column scrolls inside
+// its frame, which stays in the column, and the page is no wider than
+// the screen (test-boxed-listings).
+const boxedListingScroll = `(() => {
+  const problems = [];
+  const code = [...document.querySelectorAll('.tex8web-boxed-listing > code')].find(el => el.textContent.includes('wide();'));
+  if (!code) return ['no boxed listing wide();'];
+  const frame = code.closest('span.fbox'), column = code.closest('p').getBoundingClientRect();
+  if (!(code.scrollWidth > code.clientWidth && getComputedStyle(code).overflowX === 'auto')) problems.push('the listing wide(); does not scroll');
+  if (!frame || frame.getBoundingClientRect().right > column.right + 0.5) problems.push('the frame of wide(); is wider than its column');
+  if (document.documentElement.scrollWidth > document.documentElement.clientWidth) {
+    problems.push(\`the page is \${document.documentElement.scrollWidth - document.documentElement.clientWidth}px wider than the screen\`);
+  }
+  return problems;
+})()`;
 
 // Long boxed literals must stay inside their frame in print. On a screen,
 // the literal scrolls inside the frame.
@@ -1820,6 +1836,10 @@ async function compare(chrome, doc, ok) {
       const want = paragraphListings[doc.name.replace(/-caption-hyperref$/, '-caption')];
       if (boxed.empty) problems.push(`${html}: ${boxed.empty} frames without their listing`);
       if (boxed.inParagraph.join('|') !== want.join('|')) problems.push(`${html}: the listings in paragraphs read '${boxed.inParagraph.join('|')}'`);
+    }
+    if (doc.name === 'test-boxed-listings') {
+      problems.push(...(await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 390, height: 844 },
+        page => page.evaluate(boxedListingScroll))).map(p => `${html}: ${p}`));
     }
     if (verbatimFamilies[doc.name] && !verbatimExtraCases[doc.name]) {
       problems.push(...(await literalOpeners(chrome, join(pre, html))).map(p => `${html}: ${p}`));

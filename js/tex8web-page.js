@@ -357,7 +357,7 @@
   // on each side. The marks are updated when the layout changes, and by a
   // scroll listener on each element, so scrolling the page runs none of
   // these listeners.
-  const scrolling = 'mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing, div.listinginput, div.verbatimtabinput';
+  const scrolling = 'mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing, div.listinginput, div.verbatimtabinput, .tex8web-boxed-listing > code';
   const listening = new WeakSet();
   function fade(elements) {
     // All measured, then all marked: a mark between two measures would make

@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage{listings,xcolor}
+\newsavebox\lstbox
+% Displayed listings in boxes in a paragraph (text.boxed_listings): a
+% line wider than a phone's column, captions at the bottom, and two
+% listings in one box.
+\begin{document}
+\section{Boxed listings}
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+wide(); /* a line wider than the column of a phone screen */
+\end{lstlisting}\end{lrbox}
+Wide \fbox{\usebox{\lstbox}} then $a$.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}[caption={Below env},captionpos=b]
+bottomenv();
+\end{lstlisting}\end{lrbox}
+Bottom \fbox{\usebox{\lstbox}} then $b$.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+twoA();
+\end{lstlisting}\begin{lstlisting}[caption={Above second}]
+twoB();
+\end{lstlisting}\end{lrbox}
+Two \fbox{\usebox{\lstbox}} then $c$.
+
+\begin{lrbox}{\lstbox}\begin{lstlisting}[caption={Below first},captionpos=b]
+pairA();
+\end{lstlisting}\begin{lstlisting}[caption={Above next}]
+pairB();
+\end{lstlisting}\end{lrbox}
+Pair \fbox{\usebox{\lstbox}} then $d$.
+
+% (a title, with no number and no anchor before it)
+\begin{lrbox}{\lstbox}\begin{lstlisting}
+titleA();
+\end{lstlisting}\begin{lstlisting}[title={Titled next}]
+titleB();
+\end{lstlisting}\end{lrbox}
+Titled \fbox{\usebox{\lstbox}} then $e$.
+
+% (frame=shadowbox with a black rulesepcolor: a shadow in the text's
+% color, also in dark mode)
+\begin{lstlisting}[frame=shadowbox,rulesepcolor=\color{black}]
+blackshadow();
+\end{lstlisting}
+
+\end{document}

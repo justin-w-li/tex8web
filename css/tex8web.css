@@ -129,6 +129,12 @@ div.listing, div.verbatimtabinput { white-space: pre; }
    on the line (\vcenter), but Chrome then aligns a list's label with the
    inline block in place of the line. */
 .tex8web-boxed-listing { display: inline-block; text-align: left; text-indent: 0; }
+/* (a line wider than the column scrolls, as a <pre> does, inside the
+   frame, which is no wider than the column. The <code> scrolls, so that
+   the inline block keeps the baseline of its last line) */
+.tex8web-boxed-listing { max-width: 100%; }
+.tex8web-boxed-listing > code { overflow: auto clip; }
+:is(span.fbox, span.colorbox):has(> .tex8web-boxed-listing) { max-width: 100%; box-sizing: border-box; }
 .tex8web-boxed-listing > code { display: block; white-space: pre; font: inherit; }
 .tex8web-boxed-listing .caption { display: block; white-space: normal; }
 /* moreverb's line numbers, in roman as in the PDF, and labels that the
@@ -1194,7 +1200,7 @@ aside.footnotetext p { line-height: calc(var(--tex8web-footnote-leading, 1) * 1l
     html body { margin-block: 0; padding-inline: 0; --tex8web-column: min(var(--tex8web-textwidth), 100vw); }
     .tex8web-sidenote { top: auto !important; --tex8web-sidenote-room: 0px !important; }
     mjx-container[display], div.tabular, div.longtable, pre, div.alltt, div.verbatiminput, div.listing,
-    div.listinginput, div.verbatimtabinput { overflow: visible !important; }
+    div.listinginput, div.verbatimtabinput, .tex8web-boxed-listing > code { overflow: visible !important; }
     table.boxedverbatim { table-layout: auto; }
     .tex8web-scrolls { mask-image: none; }
     .tcolorbox, mjx-container[display], figure, div.table, table { break-inside: avoid; }

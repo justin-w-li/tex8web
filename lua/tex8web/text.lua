@@ -530,11 +530,18 @@ end
 -- drops a newline at its start, and the <code> drops it here.
 function M.boxed_listings(document)
   local function is_p(el) return el:get_element_name() == "p" end
-  -- the index of the caption next to nodes[i] in direction step, or nil
+  -- the index of the caption next to nodes[i] in direction step, or nil.
+  -- A caption after the listing is taken only after tex8web-text.tex's
+  -- mark of a bottom caption: otherwise it is the next listing's.
   local function caption(nodes, i, step)
+    local marked = step < 0
     repeat i = i + step
+      local node = nodes[i]
+      if node and node._type == "COMMENT" and (node._text or ""):find("tex8web:bottom caption", 1, true) then
+        marked = true
+      end
     until not nodes[i] or nodes[i]:is_element() or nodes[i]:is_text() and nodes[i]:get_text():find("%S")
-    if nodes[i] and nodes[i]:is_element() and nodes[i]:get_element_name() == "figcaption" then return i end
+    if marked and nodes[i] and nodes[i]:is_element() and nodes[i]:get_element_name() == "figcaption" then return i end
   end
   for _, listing in ipairs(document:query_selector("pre.lstlisting, pre.lstinputlisting, pre.listings")) do
     local parent = listing:get_parent()

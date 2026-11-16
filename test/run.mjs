@@ -3054,7 +3054,9 @@ function check(doc, result, out, aux) {
       const id = pres[texts.indexOf(text)]?.[0].match(/^<(?:pre|code)[^>]* id='([\w-]+)'/)?.[1];
       return [text, id && styles.match(new RegExp(`#${id}\\s*\\{\\s*box-shadow:\\s*([^;}]*)`))?.[1].trim().replace(/\s+/g, ' ')];
     }));
-    if (!caption && (shadows['shadowbox();']?.toUpperCase() !== '0.34EM 0.34EM 0 0 #0000FF' || shadows['rule();'] || shadows['fbox();'])) {
+    // (in dark mode at a border's lightness, as the frame's rulecolor)
+    const blue = '0.34EM 0.34EM 0 0 LIGHT-DARK(#0000FF, OKLCH(FROM #0000FF VAR(--TEX8WEB-DARK-BORDER) C H))';
+    if (!caption && (shadows['shadowbox();']?.toUpperCase() !== blue || shadows['rule();'] || shadows['fbox();'])) {
       problems.push(`the listings' shadows are '${Object.values(shadows).join('|')}'`);
     }
     for (const [words, text] of caption ? [] : [['Consider the code', 'saved();'], ['Consider the box', 'hboxed();'], ['Consider the newenv', 'hboxnew();']]) {
@@ -3101,6 +3103,29 @@ function check(doc, result, out, aux) {
       // (a boxed listing and its caption in a box in their paragraph)
       if (!/Consider the box <span class='fbox'[^>]*> (?:<a id='[^']*'><\/a> )?<span class='tex8web-boxed-listing'[^>]*><span class='caption'/.test(flat)) problems.push('the boxed listing \'boxenv();\' is not in its box');
     }
+  }
+  // (displayed listings in boxes in a paragraph: each listing in its own
+  // box with its caption, a bottom caption after the listing and a top
+  // caption before it, never the next listing's; a black shadow in the
+  // text's color; the formulas typeset)
+  if (doc.name === 'test-boxed-listings') {
+    const flat = html.replace(/\s+/g, ' ').replace(/<!--(?:(?!-->)[^])*-->/g, '');
+    const boxes = flat.split(/<span class='tex8web-boxed-listing'/).slice(1).map(segment => {
+      const box = segment.split(/ then <span class='tex8web-nowrap'>|<\/p>/)[0];
+      const code = box.match(/<code class='lstlisting'[^>]*>((?:(?!<\/code>)[^])*)<\/code>/);
+      const text = value => value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+      if (!code) return `no listing: ${text(box)}`;
+      const words = text(box.match(/<span class='content'>((?:(?!<\/span><\/span>)[^])*)<\/span><\/span>/)?.[1] ?? '');
+      return `${text(code[1])}${words ? ` ${box.indexOf('caption') > code.index ? 'below' : 'above'} ${words}` : ''}`;
+    });
+    const want = ['wide(); /* a line wider than the column of a phone screen */', 'bottomenv(); below Below env',
+      'twoA();', 'twoB(); above Above second', 'pairA(); below Below first', 'pairB(); above Above next',
+      'titleA();', 'titleB(); above Titled next'];
+    if (boxes.join('|') !== want.join('|')) problems.push(`the boxed listings read '${boxes.join('|')}'`);
+    const black = flat.match(/<pre class='lstlisting' id='([\w-]+)'>(?:(?!<\/pre>)[^])*blackshadow/)?.[1];
+    if (!(black && new RegExp(`#${black}\\s*\\{\\s*box-shadow:[^;}]*\\scurrentColor\\s*[;}]`).test(styles))) problems.push('the listing \'blackshadow();\' has no shadow in the text\'s color');
+    const formulas = [...flat.matchAll(/then (?:<span class='tex8web-nowrap'>)?<mjx-container aria-label='([^']*)'/g)].map(([, label]) => label);
+    if (formulas.join('|') !== 'a|b|c|d|e') problems.push(`the formulas after the listings read '${formulas.join('|')}'`);
   }
   if (/^test-verbatim-font-review(?:-courier|-lmodern)?$/.test(doc.name)) {
     const codes = [...html.matchAll(/<code class='(verb|lstinline)'>([^]*?)<\/code>/g)];
