@@ -975,7 +975,6 @@
 \web@needs{o:sbox:}
 \web@needs{gobble:fbox}
 \web@needs{gobble:frame}
-\web@needs{oncenter:list}
 \web@needs{this:listConfigure}
 \web@needs{SaveEndP}
 \web@needs{a:MathjaxBlock}
@@ -1001,17 +1000,29 @@
     \cs_set_eq:cN {gobble:fbox} \__web_saved_fbox:nn
     \cs_set_eq:cN {gobble:frame} \__web_saved_framebox:w
     \cs_set_eq:NN \@frameb@x \__web_saved_frame:n
-    \regex_replace_once:nnN { \c{item} (.*) \c{par} \Z }
-        { \c{__web_saved_depth:} \c{item} \1 } \center
     % (once, in a box saved in another)
-    \cs_if_eq:cNF {oncenter:list} \__web_saved_center: {
-        \cs_set_eq:Nc \__web_saved_center_list: {oncenter:list}
-        \cs_set_eq:cN {oncenter:list} \__web_saved_center:
+    \cs_if_eq:NNF \center \__web_saved_center_patch: {
+        \cs_set_eq:NN \__web_saved_center_kept: \center
+        \cs_set_eq:NN \center \__web_saved_center_patch:
     }
 }
-\cs_new_protected:Npn \__web_saved_center: {
-    \__web_saved_center_list:
-    \tl_put_right:Nn \this:listConfigure { \cs_gset_eq:NN \:DT \__web_saved_item:w }
+% \center, patched in the environment's group when a saved box uses it:
+% html4.4ht's \par after \item is dropped, the depth of the line above
+% is kept, and the list's first \:DT is \__web_saved_item:w (\@item,
+% latex.4ht). Where \center has another form, it is left as it is, and
+% tex8web warns once.
+\regex_const:Nn \c__web_saved_center_regex { \c{item} (.*) \c{par} \Z }
+\cs_new_protected:Npn \__web_saved_center_patch: {
+    \cs_set_eq:NN \center \__web_saved_center_kept:
+    \regex_replace_once:NnNTF \c__web_saved_center_regex
+        { \c{__web_saved_depth:} \c{item} \1 } \center
+        { \tl_put_right:Nn \this:listConfigure { \cs_gset_eq:NN \:DT \__web_saved_item:w } }
+        {
+            \web@outdated { \token_to_str:N \center }
+            \cs_gset_protected:Npn \__web_saved_center_patch:
+                { \cs_set_eq:NN \center \__web_saved_center_kept: \center }
+        }
+    \center
 }
 \cs_new:Npn \__web_saved_display_end: { }
 \cs_new_protected:Npn \__web_saved_display: {
