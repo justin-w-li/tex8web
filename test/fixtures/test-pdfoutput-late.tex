@@ -1,0 +1,23 @@
+% \pdfoutput set to 1 after \documentclass, in the guarded form
+% \ifdefined\pdfoutput\pdfoutput1\fi, before color, graphicx, and hyperref
+% load without a driver option. iftex's \ifpdf takes the DVI branch, as on
+% any page. The page is the same as without \pdfoutput.
+\documentclass{article}
+\ifdefined\pdfoutput\pdfoutput1\fi
+\usepackage{iftex}
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\begin{document}
+\section{Colors}\label{colors}
+
+Text in \textcolor{red}{red}.
+A link to section~\ref{colors}, and to \href{https://example.com/}{a site}.
+
+Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
+After the picture.
+
+Rotated: \rotatebox{90}{up}. After the rotation.
+
+Branch: \ifpdf PDF branch\else DVI branch\fi.
+\end{document}

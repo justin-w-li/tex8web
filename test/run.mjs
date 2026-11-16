@@ -65,6 +65,7 @@ const switched = {
   'examples/complex': 'tex8web-plain-links', 'test-likepdf': 'tex8web-like-pdf',
   'test-pdftex': 'tex8web-plain-links', 'test-pdftex-class': 'tex8web-plain-links',
   'test-pdftex-sty': 'tex8web-plain-links',
+  'test-pdfoutput': 'tex8web-plain-links', 'test-pdfoutput-sty': 'tex8web-plain-links',
 };
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
@@ -1482,6 +1483,41 @@ const drivers = {
     ...pdftexLinks('colors'),
     /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
     /Rotated: <span class='rotatebox' style='transform: rotate\(-90deg\);'> up <\/span>\. After the rotation\./,
+  ],
+  // \pdfoutput=1, which makes tex4ht's latex write a PDF and no DVI: each
+  // package's output as without it. test-pdfoutput sets it before the
+  // class, test-pdfoutput-late after it, test-pdfoutput-sty in the class
+  // and in the last package, and test-pdfoutput-body in the body. \ifpdf
+  // takes the DVI branch.
+  'test-pdfoutput': [
+    new RegExp(`Colors in <span style='color:${lightDark('#0000FF', 'color')};'>blue</span></h3>`),
+    pdftexText('#FF0000', 'red'),
+    // (in italic, sans-serif, and typewriter text)
+    ...['cmti-10', 'cmss-10', 'cmtt-10'].map(font => new RegExp(`<span style='color:${lightDark('#FF0000', 'color')};'><span class='${font}'>`)),
+    ...pdftexLinks('colors-in-blueblue'),
+    /A note with a link to section<span class='tex8web-nbsp'> <\/span><\/span><a href='#colors-in-blueblue'><span class='cmr-8'>1<\/span>/,
+    /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
+    /Math: <span class='tex8web-nowrap'><mjx-container/,
+    // (in a theorem)
+    new RegExp(`Theorem 1\\.</span> </span><span class='cmti-10'>A theorem in </span><span style='color:${lightDark('#FF0000', 'color')};'>`),
+    /with a link to section<span class='tex8web-nbsp'> <\/span><\/span><a href='#colors-in-blueblue'><span class='cmti-10'>1<\/span>/,
+    /Preamble: DVI branch\. Body: DVI branch\./,
+  ],
+  'test-pdfoutput-late': [
+    pdftexText('#FF0000', 'red'),
+    ...pdftexLinks('colors'),
+    /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
+    /Rotated: <span class='rotatebox' style='transform: rotate\(-90deg\);'> up <\/span>\. After the rotation\./,
+    /Branch: DVI branch\./,
+  ],
+  'test-pdfoutput-sty': [
+    pdftexText('#FF0000', 'red'), pdftexText('#00E000', 'forest'),
+    ...pdftexLinks('colors'),
+    /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
+  ],
+  'test-pdfoutput-body': [
+    pdftexText('#FF0000', 'red'),
+    /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
   ],
 };
 

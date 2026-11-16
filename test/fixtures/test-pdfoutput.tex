@@ -1,0 +1,40 @@
+% A document written for pdflatex that sets \pdfoutput=1 before
+% \documentclass, as arXiv asks, with the pdfTeX settings often beside it.
+% graphicx, xcolor, and hyperref then load without a driver option. ifpdf's
+% \ifpdf takes the DVI branch, in the preamble and in the body, as on any
+% page. The page is the same as without \pdfoutput.
+\pdfoutput=1
+\pdfcompresslevel=9
+\pdfminorversion=5
+\pdfinfo{/Title (A title) /Author (An author)}
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{amsthm}
+\usepackage{ifpdf}
+\usepackage[colorlinks]{hyperref}
+\newtheorem{theorem}{Theorem}
+\ifpdf
+  \newcommand\branch{PDF branch}
+\else
+  \newcommand\branch{DVI branch}
+\fi
+\begin{document}
+\section{Colors in \textcolor{blue}{blue}}\label{colors}
+
+Text in \textcolor{red}{red}, \emph{in \textcolor{red}{italic}},
+\textsf{in \textcolor{red}{sans}}, and \texttt{in \textcolor{red}{typewriter}}.
+A link to section~\ref{colors}, and to \href{https://example.com/}{a site}.\footnote{A
+note with a link to section~\ref{colors}.}
+
+Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
+After the picture.
+
+Math: $x^2 + y^2 = z^2$. After the math.
+
+\begin{theorem}
+A theorem in \textcolor{red}{red}, with a link to section~\ref{colors}.
+\end{theorem}
+
+Preamble: \branch. Body: \ifpdf PDF branch\else DVI branch\fi.
+\end{document}

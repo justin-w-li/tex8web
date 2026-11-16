@@ -1,0 +1,17 @@
+% \pdfoutput set to 1 by the class, test-pdfoutput-class.cls, which then
+% loads graphicx, and again by the document's last package,
+% test-pdfoutput-sty.sty. xcolor and hyperref load between them without a
+% driver option. The page is the same as without \pdfoutput.
+\documentclass{test-pdfoutput-class}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[colorlinks]{hyperref}
+\usepackage{test-pdfoutput-sty}
+\begin{document}
+\section{Colors}\label{colors}
+
+Text in \textcolor{red}{red} and \textcolor{ForestGreen}{forest}.
+A link to section~\ref{colors}, and to \href{https://example.com/}{a site}.
+
+Picture: \includegraphics[alt={wide picture}, width=2cm]{test-picture.png}.
+After the picture.
+\end{document}

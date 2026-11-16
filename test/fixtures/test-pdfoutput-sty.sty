@@ -1,0 +1,5 @@
+% The last package of test-pdfoutput-sty.tex: it sets \pdfoutput to 1 in
+% the guarded and spaced form, and loads nothing after it.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{test-pdfoutput-sty}[2026/11/16 tex8web test package]
+\ifx\pdfoutput\undefined\else\pdfoutput 1\relax\fi
