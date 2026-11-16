@@ -1721,6 +1721,28 @@ const pictureSizes = {
 // half of the image, where the edges and label alone leave it transparent
 const coveredPictures = { 'test-overpic': ['eps'] };
 
+// Tables in LaTeX pictures (test-pictab-cases.ltx), drawn in the picture's
+// image as in the PDF. For each case, the one image from "Before <case>."
+// to "After <case>.", and its width in pixels at dvipng's resolution
+// (within 10%, as dvipng crops the image to its ink). Without the array
+// package, tex4ht sets tabular* at its natural width, so its width is not
+// checked there. Nor is the width of the Inkscape label and the overpic
+// label, as their images leave out the graphic under the label.
+const tableWidths = {
+  plain: 88, grid: 158, 'column types': 204, star: 254, tabularx: 115, nested: 148, array: 41, booktabs: 136,
+  colortbl: 129, figure: 75, theorem: 94, italic: 64, sans: 39, typewriter: 40, small: 43, label: null, overpic: null,
+};
+const inEveryTablePage = ['plain', 'grid', 'star', 'nested', 'array', 'figure', 'theorem', 'italic', 'sans',
+  'typewriter', 'small'];
+const tablePictures = {
+  'test-pictab': Object.keys(tableWidths).filter(name => name !== 'colortbl'),
+  'test-pictab-hyperref': [...inEveryTablePage, 'column types', 'label'],
+  'test-pictab-colortbl': [...inEveryTablePage, 'column types', 'booktabs', 'colortbl'],
+  'test-pictab-plain': inEveryTablePage,
+};
+// words of the tables in the pictures, which are not the page's text
+const tablePictureWords = /AlphaOne|Gamma|DeltaBold|Xone|InnerA|InFigure|InTheorem|Slanted|InkLabel|OverLabel|Hue/;
+
 // Terms (\WebTerm), with ids for the table of contents filter; in a heading,
 // only the term's text in the heading's id and table of contents entry
 const terms = {
@@ -3181,6 +3203,24 @@ function check(doc, result, out, aux) {
     for (const file of readdirSync(join(root, 'test/fixtures'), { recursive: true })) {
       if (file.endsWith('.xbb') && !tracked.includes(file)) problems.push(`test/fixtures/${file} written beside the fixtures`);
     }
+  }
+  for (const name of tablePictures[doc.name] ?? []) {
+    const between = flat.match(new RegExp(`Before ${name}\\.([^]*?)After ${name}\\.`))?.[1] ?? '';
+    const files = [...between.matchAll(/<img [^>]*src='([^']*\.png)'/g)].map(m => join(out, m[1]));
+    if (files.length !== 1 || !existsSync(files[0])) {
+      problems.push(`not one picture from "Before ${name}." to "After ${name}.", but ${files.filter(existsSync).length} of ${files.length}`);
+      continue;
+    }
+    const width = readFileSync(files[0]).readUInt32BE(16), want = tableWidths[name];
+    if (want !== null && !(doc.name === 'test-pictab-plain' && name === 'star') && !(Math.abs(width - want) <= 0.1 * want)) {
+      problems.push(`the picture of "${name}" is ${width} pixels wide, not ${want}`);
+    }
+  }
+  if (tablePictures[doc.name]) {
+    // (the ordinary tabular after the pictures)
+    if (!/<td [^>]*> Guard <\/td> ?<td [^>]*> Table <\/td>/.test(flat)) problems.push('no table with the cells Guard and Table');
+    const main = flat.split('<main>')[1] ?? '';
+    if (tablePictureWords.test(main)) problems.push(`the page's text has ${main.match(tablePictureWords)[0]}, which a picture holds`);
   }
   for (const pattern of logs[doc.name] ?? []) {
     if (!pattern.test(result.log)) problems.push(`no ${pattern.source} in make4ht's log`);

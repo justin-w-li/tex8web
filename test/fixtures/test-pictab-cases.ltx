@@ -1,0 +1,113 @@
+% The cases of test-pictab, test-pictab-hyperref, test-pictab-colortbl,
+% and test-pictab-plain.
+% Each case's text is "Before <case>." and "After <case>.", which run.mjs
+% reads. A table in a LaTeX picture is drawn in the picture's image, as in
+% the PDF:
+% - a tabular in a \put, with one cell, and with two rows, two columns,
+%   \hline, vertical rules, and a math cell;
+% - array's column types (>{\bfseries}l and p{2cm}), tabular*, tabularx,
+%   a tabular nested in a tabular, and an array in math;
+% - booktabs' rules, alone and with colortbl's \columncolor;
+% - in a figure with a caption, in a theorem, in italic, sans-serif, and
+%   typewriter text, and in \small;
+% - an Inkscape label from a .pdf_tex file: a \makebox of zero size that
+%   holds a \smash'ed tabular[t], over an \includegraphics;
+% - overpic with a tabular in its \put.
+% An ordinary tabular after the pictures stays a table of the page.
+\newtheorem{thm}{Theorem}
+\begin{document}
+Before plain.
+\begin{picture}(100,40)\put(0,30){\begin{tabular}{l}AlphaOne\end{tabular}}\end{picture}
+After plain.
+
+Before grid.
+\begin{picture}(120,50)\put(0,0){\begin{tabular}{|l|c|}\hline Gamma & Two\\\hline x & $x^2$\end{tabular}}\end{picture}
+After grid.
+
+\ifdefined\newcolumntype
+Before column types.
+\begin{picture}(160,40)\put(0,0){\begin{tabular}{>{\bfseries}lp{2cm}}DeltaBold & DeltaPar\end{tabular}}\end{picture}
+After column types.
+\fi
+
+Before star.
+\begin{picture}(160,30)\put(0,0){\begin{tabular*}{140pt}{l@{\extracolsep{\fill}}r}Left & Right\end{tabular*}}\end{picture}
+After star.
+
+\ifdefined\tabularx
+Before tabularx.
+\begin{picture}(160,30)\put(0,0){\begin{tabularx}{140pt}{lX}Xone & Xtwo\end{tabularx}}\end{picture}
+After tabularx.
+\fi
+
+Before nested.
+\begin{picture}(160,50)\put(0,0){\begin{tabular}{l|l}Outer & \begin{tabular}{c}InnerA\\InnerB\end{tabular}\end{tabular}}\end{picture}
+After nested.
+
+Before array.
+\begin{picture}(100,40)\put(0,0){$\begin{array}{cc}a & b\\c & d\end{array}$}\end{picture}
+After array.
+
+\ifdefined\toprule
+Before booktabs.
+\begin{picture}(120,60)\put(0,0){\begin{tabular}{lr}\toprule Head & Num\\\midrule Row & 1\end{tabular}}\end{picture}
+After booktabs.
+\fi
+
+\ifdefined\columncolor
+Before colortbl.
+\begin{picture}(120,60)\put(0,0){\begin{tabular}{>{\columncolor{yellow}}lr}\toprule Hue & Num\\\midrule Row & 1\end{tabular}}\end{picture}
+After colortbl.
+\fi
+
+Before figure.
+\begin{figure}[h]
+\centering
+\begin{picture}(100,30)\put(0,0){\begin{tabular}{l}InFigure\end{tabular}}\end{picture}
+\caption{A table in a picture}
+\end{figure}
+After figure.
+
+\begin{thm}
+Before theorem.
+\begin{picture}(100,30)\put(0,0){\begin{tabular}{l}InTheorem\end{tabular}}\end{picture}
+After theorem.
+\end{thm}
+
+{\itshape Before italic.
+\begin{picture}(100,30)\put(0,0){\begin{tabular}{l}Slanted\end{tabular}}\end{picture}
+After italic.}
+
+{\sffamily Before sans.
+\begin{picture}(100,30)\put(0,0){\begin{tabular}{l}Sans\end{tabular}}\end{picture}
+After sans.}
+
+{\ttfamily Before typewriter.
+\begin{picture}(100,30)\put(0,0){\begin{tabular}{l}Mono\end{tabular}}\end{picture}
+After typewriter.}
+
+{\small Before small.
+\begin{picture}(100,30)\put(0,0){\begin{tabular}{l}Small\end{tabular}}\end{picture}
+After small.}
+
+\ifdefined\includegraphics
+Before label.
+\def\svgwidth{100pt}
+\input{test-pictab-label.pdf_tex}
+After label.
+\fi
+
+\ifdefined\overpic
+Before overpic.
+\begin{overpic}[width=100pt]{test-picture.png}
+\put(10,50){\begin{tabular}{l}OverLabel\end{tabular}}
+\end{overpic}
+After overpic.
+\fi
+
+\begin{tabular}{|l|l|}
+\hline
+Guard & Table\\
+\hline
+\end{tabular}
+\end{document}
