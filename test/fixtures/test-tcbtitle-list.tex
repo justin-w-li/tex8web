@@ -5,7 +5,10 @@
 % with the default entry, its title. pdflatex stops on these entries too,
 % in its write of the entry, with hyperref, nameref, or neither; with
 % \kind and \pick made robust, the PDF lists each entry with its number
-% and text, as the checks expect.
+% and text, as the checks expect. Guards: a box in the list of figures
+% (blend into=figures) whose title holds \thesection, which the list gives
+% as it was when the box was set, and a box without a counter added to the
+% list of figures.
 \documentclass{article}
 \usepackage[most]{tcolorbox}
 \usepackage{hyperref}
@@ -16,10 +19,12 @@
 \makeatother
 \newtcbtheorem[number within=section, list inside=thm]{theorem}{Theorem}{}{thm}
 \newtcolorbox[auto counter, list inside=ex]{named}[1]{nameref={#1}, list entry={#1}, title={#1}}
+\newtcolorbox[blend into=figures]{fig}[1]{title={#1}}
 \newtcolorbox[auto counter, list inside=ex]{listed}[1]{title={Listed \thetcbcounter: #1}}
 \begin{document}
 \tcblistof{thm}{Theorems}
 \tcblistof{ex}{Boxes}
+\listoffigures
 \section{Boxes}
 \begin{theorem}{Long \kind*}{long}Long.\end{theorem}
 \begin{theorem}[][{Short \pick[y]}]{Titled}{short}Short.\end{theorem}
@@ -28,6 +33,8 @@
 \begin{theorem*}{Unnumbered \kind}{}Not listed.\end{theorem*}
 \begin{named}{Named \kind}A box.\end{named}
 \begin{listed}{Default \pick[d]}Default entry.\end{listed}
+\begin{fig}{Data of section \thesection}A figure box.\end{fig}
+\begin{tcolorbox}[add to list={lof}{figure}, list entry={Uncounted box}]No counter.\end{tcolorbox}
 
 Named: \nameref{thm:long}; \nameref{thm:short}; \nameref{thm:key}.
 \end{document}

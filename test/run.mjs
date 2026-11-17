@@ -1386,11 +1386,15 @@ const contents = {
     ...[['Theorem~1:~Labelled starred', '1', 'Labelled starred'], ['Theorem~3:~Long title', '3', 'Short x'],
       ['Box 1: Named plain', '1', 'Named plain']].map(([title, ...links]) => boxRefs(title, ...links)),
     boxParagraph('See Theorem~[1], [3], and Box~[1]. Named: [Labelled starred]; [Short x]; [Named plain].'),
+    boxTitle('Theorem~4:~Two plain'), boxParagraph('Second label: [Two plain].'),
   ],
   // (the boxes build, with their titles and names, though tex4ht writes no
-  // entry for \tcblistof)
+  // entry of a box for \tcblistof or \listoffigures; \thesection in a
+  // title, and a box without a counter in the list of figures)
   'test-tcbtitle-list': [
-    ...['Theorem~3.4:~Plain title', 'Theorem:~Unnumbered plain', 'Named plain', 'Listed 1: Default d'].map(boxTitle),
+    ...['Theorem~3.4:~Plain title', 'Theorem:~Unnumbered plain', 'Named plain', 'Listed 1: Default d',
+      'Figure~1:~Data of section 3'].map(boxTitle),
+    boxParagraph('No counter.'),
     ...[['Theorem~3.1:~Long starred', 'Long starred'], ['Theorem~3.2:~Titled', 'Short y'],
       ['Theorem~3.3:~Keyed', 'Key x']].map(([title, ...links]) => boxRefs(title, ...links)),
   ],

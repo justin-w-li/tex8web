@@ -17,7 +17,10 @@
 \begin{theorem}{Unlabelled \pick[u]}{}Unlabelled.\end{theorem}
 \begin{theorem}[][Short \pick]{Long title}{short}With a short title.\end{theorem}
 \begin{named}{Named \kind}A box with nameref.\end{named}
+\begin{theorem}{Two \kind}{}Two labels:\begin{enumerate}\item\label{twoa} A.\item\label{twob} B.\end{enumerate}\end{theorem}
 
 See Theorem~\ref{thm:one}, \ref{thm:short}, and Box~\ref{named}.
 Named: \nameref{thm:one}; \nameref{thm:short}; \nameref{named}.
+
+Second label: \nameref{twob}.
 \end{document}
