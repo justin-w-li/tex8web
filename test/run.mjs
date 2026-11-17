@@ -863,13 +863,19 @@ const absoluteCases = [
 // heading with the title given, or to an anchor in that heading.
 const revfourRef = (words, title) => new RegExp(`^(?=[^]*${words}<span class='tex8web-nbsp'> <\\/span>\\[<a href='#([^']+)'>(?:<!--(?:(?!-->)[^])*-->)?<\\/a>\\])[^]*<h3 class='sectionHead' (?=[^>]*id='\\1'|(?:(?!<\\/h3>)[^])*<a id='\\1'><\\/a>)(?:(?!<\\/h3>)[^])*${title}`);
 // Text of tcolorbox titles and references as in the PDF: ~ is a no-break
-// space, $ a formula, and [text] a link with that text to a \label
+// space, $ a formula, $> a formula with a double arrow, and [text] a link
+// with that text to a \label
 const boxText = text => text.replace(/[.()?+*]/g, '\\$&')
   .replace(/\[([^\]]*)\]/g, (_, link) => `<a href='#[^']+'>${link}<!--[^>]*--></a>`)
   .replace(/~/g, () => "<span class='tex8web-nbsp'> </span>")
+  .replace(/\$>/g, () => '<mjx-container(?:(?!</mjx-container>)[^])*mjx-c21D2(?:(?!</mjx-container>)[^])*</mjx-container>')
   .replace(/\$/g, () => '<mjx-container(?:(?!</mjx-container>)[^])*</mjx-container>');
 const boxTitle = text => new RegExp(`<div class='tcolorbox-title'>(?:<a [^>]*class='tex8web-permalink'[^>]*>#</a>)? <p[^>]*>\\s*${boxText(text)}</p></div>`);
 const boxParagraph = text => new RegExp(boxText(text));
+// A labelled box's title, then links with these texts to its anchor, in
+// that order
+const boxRefs = (title, ...links) => new RegExp(`<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#</a>\\s*<p[^>]*>\\s*${
+  boxText(title)}</p></div>${links.map(link => `[^]*<a href='#\\1'>${boxText(link)}<!--`).join('')}`);
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,
@@ -1355,19 +1361,30 @@ const contents = {
   // the \ref to it, and the \nameref that gives its title or short title;
   // titles that set no name, and a footnote in a title)
   'test-tcbtitle': [
-    ...['Theorem~1.1:~Differentiable <span class=\'tex8web-nowrap\'>$~continuous</span>', 'Theorem~1.2:~Unlabelled $ plain',
-      'Theorem~1.3:~Starred $ starred', 'Theorem~1.4:~Option plain', 'Theorem~1.5:~Long title', 'Theorem~1.6:~Keyed title',
-      'Theorem~1.7:~Pick y or x', 'Theorem~1.8:~Styled <span class=\'cmti-10\'>starred </span>and <span class=\'cmss-10\'>s</span>',
-      'Remark~1:~Declared starred', 'Claim~1:~Renewed r', 'Theorem:~Unnumbered starred $', 'Plain $ starred', 'Also plain $ z',
-      'Exercise~1:~Keyed plain', 'Box 1: Named $ plain', 'Box 2: Labelled n'].map(boxTitle),
+    ...['Theorem~1.2:~Unlabelled $> plain', 'Theorem~1.8:~Styled <span class=\'cmti-10\'>starred </span>and <span class=\'cmss-10\'>s</span>',
+      'Remark~1:~Declared starred', 'Claim~1:~Renewed r', 'Theorem:~Unnumbered starred $>', 'Plain $> starred', 'Also plain $ z',
+      'Box 1: Named $> plain', 'Theorem~3.1:~After starred', 'Theorem~3.2:~Body starred', 'Theorem~3.3:~Holds e'].map(boxTitle),
+    ...[['Theorem~1.1:~Differentiable <span class=\'tex8web-nowrap\'>$>~continuous</span>', '1.1',
+      'Differentiable <span class=\'tex8web-nowrap\'>$>~continuous</span>'],
+    ['Theorem~1.3:~Starred $ starred', '1.3', 'Starred $ starred'], ['Theorem~1.4:~Option plain', '1.4', 'Option plain'],
+    ['Theorem~1.5:~Long title', '1.5', 'Short $> plain'], ['Theorem~1.6:~Keyed title', '1.6', 'Key y'],
+    ['Theorem~1.7:~Pick y or x', '1.7', 'Pick y or x'], ['Exercise~1:~Keyed plain', '1', 'Theorems'],
+    ['Box 2: Labelled n', '2', 'Labelled n'], ['Box 3: Outer plain', '3', 'Outer plain'], ['Theorem~3.4:~Inner i', '3.4', 'Inner i'],
+    ['Theorem~3.5:~Protected starred', '3.5', 'Protected starred'], ['Theorem~3.6:~Robust starred', '3.6', 'Robust starred'],
+    ['Theorem~3.7:~Converse of Theorem~[1.1]', '3.7']].map(([title, ...links]) => boxRefs(title, ...links)),
     /<div class='tcolorbox-title'> <p[^>]*>Noted<span class='footnote-mark'>/,
     /<span class='cmr-8'>A plain<span class='tex8web-nbsp'> <\/span>note\.<\/span>/,
     boxParagraph('See Theorem~[1.1], [1.3], [1.4], [1.5], [1.6], [1.7], Exercise~[1], and Box~[2].'),
-    boxParagraph('Named: [Differentiable <span class=\'tex8web-nowrap\'>$~continuous</span>]; [Starred $ starred]; [Option plain]; '
-      + '[Short $ plain]; [Key y]; [Pick y or x]; [Labelled n].'),
+    boxParagraph('Named: [Differentiable <span class=\'tex8web-nowrap\'>$>~continuous</span>]; [Starred $ starred]; [Option plain]; '
+      + '[Short $> plain]; [Key y]; [Pick y or x]; [Labelled n].'),
+    boxParagraph('Refs: [3.4], [3], [3.5], [3.6], [3.7].'),
+    boxParagraph('Names: [Theorems]; [Labels elsewhere]; [Inner i]; [Outer plain]; [Protected starred];'),
+    boxParagraph('[Robust starred].'),
   ],
   'test-tcbtitle-nameref': [
-    ...['Theorem~1:~Labelled starred', 'Theorem~2:~Unlabelled u', 'Theorem~3:~Long title', 'Box 1: Named plain'].map(boxTitle),
+    boxTitle('Theorem~2:~Unlabelled u'),
+    ...[['Theorem~1:~Labelled starred', '1', 'Labelled starred'], ['Theorem~3:~Long title', '3', 'Short x'],
+      ['Box 1: Named plain', '1', 'Named plain']].map(([title, ...links]) => boxRefs(title, ...links)),
     boxParagraph('See Theorem~[1], [3], and Box~[1]. Named: [Labelled starred]; [Short x]; [Named plain].'),
   ],
 };

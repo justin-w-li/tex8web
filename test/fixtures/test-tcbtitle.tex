@@ -18,6 +18,7 @@
 \newcommand\pick{\@ifnextchar[{\pick@given}{x}}
 \def\pick@given[#1]{#1}
 \makeatother
+\NewDocumentCommand\kindx{s}{\IfBooleanTF{#1}{starred}{plain}}
 \newtcbtheorem[number within=section]{theorem}{Theorem}{}{thm}
 \DeclareTcbTheorem{remark}{Remark}{}{rem}
 % (environments to renew, without the counter that \newtcbtheorem would make)
@@ -52,4 +53,18 @@ See Theorem~\ref{thm:dc}, \ref{thm:star}, \ref{byoption}, \ref{thm:short},
 
 Named: \nameref{thm:dc}; \nameref{thm:star}; \nameref{byoption};
 \nameref{thm:short}; \nameref{thm:key}; \nameref{thm:pick}; \nameref{named}.
+\section{Labels elsewhere}
+\begin{theorem}{After \kind*}{}After.\end{theorem}
+Text after it.\label{after}
+\begin{theorem}{Body \kind*}{}\label{thm:body}Text.\end{theorem}
+\begin{theorem}{Holds \pick[e]}{}\begin{equation}x\label{eq:in}\end{equation}\end{theorem}
+\begin{named}[label=outer]{Outer \kind}\begin{theorem}{Inner \pick[i]}{inner}Inner.\end{theorem}\end{named}
+\begin{theorem}{Protected \protect\kind*}{prot}Protected.\end{theorem}
+\begin{theorem}{Robust \kindx*}{robust}Robust.\end{theorem}
+\begin{theorem}{Converse of Theorem~\ref{thm:dc}}{conv}Converse.\end{theorem}
+
+Refs: \ref{thm:inner}, \ref{outer}, \ref{thm:prot}, \ref{thm:robust}, \ref{thm:conv}.
+
+Names: \nameref{ex}; \nameref{after}; \nameref{thm:inner}; \nameref{outer};
+\nameref{thm:prot}; \nameref{thm:robust}.
 \end{document}
