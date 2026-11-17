@@ -87,18 +87,19 @@ else
       end
     end
     walk(".")
-    -- (an empty .aux, .xref, and .4tc in the build directory, for each
-    -- such file beside the document that the build directory lacks, so
-    -- that the first LaTeX run does not read the one beside the document,
-    -- as web2c's open_input looks there for a file missing in the build
-    -- directory. Only for such a file: tex4ht.sty builds the table of
-    -- contents from an empty .4tc and warns on an empty .xref, where a
-    -- missing one gives neither. Not in draft mode, whose one LaTeX run
-    -- takes its references from a current .aux beside the document, as
-    -- pdflatex does)
+    -- (an empty .aux, .xref, .4tc, and .bbl in the build directory, for
+    -- each such file beside the document that the build directory lacks,
+    -- so that the first LaTeX run does not read the one beside the
+    -- document, as web2c's open_input looks there for a file missing in
+    -- the build directory. Only for such a file: tex4ht.sty builds the
+    -- table of contents from an empty .4tc and warns on an empty .xref,
+    -- where a missing one gives neither. bibliography.run removes the
+    -- empty .bbl when the .bbl beside the document is to be read. Not in
+    -- draft mode, whose one LaTeX run takes its references from a current
+    -- .aux beside the document, as pdflatex does)
     local here = lfs.attributes(".")
     if mode ~= "draft" and not (here.ino == out.ino and here.dev == out.dev) then
-      for _, extension in ipairs {"aux", "xref", "4tc"} do
+      for _, extension in ipairs {"aux", "xref", "4tc", "bbl"} do
         local name = par.input .. "." .. extension
         local file = par.builddir .. "/" .. name
         if lfs.attributes(name) and not lfs.attributes(file) then io.open(file, "w"):close() end

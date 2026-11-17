@@ -15,6 +15,15 @@ function M.run(par)
   local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""
   local bcf = files.read(dir .. "/" .. par.input .. ".bcf")
   local here = lfs.currentdir()
+  -- removes the .bbl in the build directory, an empty one from
+  -- tex8web.mk4 or one from an earlier run, so that LaTeX reads the one
+  -- beside the document. (The build directory may name the document's
+  -- own directory, as ./ or by its absolute path, where the .bbl is the
+  -- one beside.)
+  local function use_beside()
+    local a, b = lfs.attributes(dir), lfs.attributes(".")
+    if not (a and a.ino == b.ino and a.dev == b.dev) then os.remove(dir .. "/" .. par.input .. ".bbl") end
+  end
   -- (after the paths already set, as tex8web.mk4 sets TEXINPUTS)
   local function path(name) return name .. "=" .. files.quote(here .. ":" .. (os.getenv(name) or "")) end
   -- the .bib files named, and the directory bibtex or biber looks them up from
@@ -57,12 +66,14 @@ function M.run(par)
     command = "cd " .. files.quote(dir) .. " && " .. path("BIBINPUTS") .. " " .. path("BSTINPUTS")
       .. " bibtex " .. files.quote(par.input)
   else
+    -- (with no bibtex or biber run, a .bbl beside the document is read
+    -- by the document itself, as with \input{\jobname.bbl})
+    if lfs.isfile(par.input .. ".bbl") then use_beside() end
     return 0
   end
   -- When a .bib that the document names is missing, latexmk skips bibtex
   -- and biber, and LaTeX reads the .bbl beside the document for the PDF.
-  -- The empty .bbl of bibtex or biber, or one from an earlier run, in the
-  -- build directory would be read first.
+  -- The .bbl in the build directory would be read first.
   if lfs.isfile(par.input .. ".bbl") then
     for _, name in ipairs(names) do
       local p = io.popen("cd " .. files.quote(from) .. " && " .. path("BIBINPUTS")
@@ -73,10 +84,7 @@ function M.run(par)
         -- (Shown at make4ht's default level, status. latexmk prints this
         -- as a message, not among its warnings.)
         log:status("bibliography: " .. name .. " is missing, so the .bbl beside the document is used")
-        -- (The build directory may name the document's own directory,
-        -- as ./ or by its absolute path, where the .bbl is the one beside.)
-        local a, b = lfs.attributes(dir), lfs.attributes(".")
-        if not (a and a.ino == b.ino and a.dev == b.dev) then os.remove(dir .. "/" .. par.input .. ".bbl") end
+        use_beside()
         return 0
       end
     end
