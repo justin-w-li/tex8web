@@ -1547,6 +1547,42 @@ const drivers = {
     /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
     /Rotated: <span class='rotatebox' style='transform: rotate\(-90deg\);'> up <\/span>\. After the rotation\./,
   ],
+  // changebar and trimclip given the option: each one's text as with its
+  // default driver, where changebar shows no bars. test-pdftex-changebar
+  // gives it to changebar, test-pdftex-changebar-class to the class and
+  // with \PassOptionsToPackage, test-pdftex-changebar-caps as PDFTeX,
+  // test-pdftex-adjustbox to adjustbox, which passes it to graphicx and
+  // trimclip, and test-pdftex-trimclip to trimclip alone.
+  // test-pdftex-passon is a guard.
+  'test-pdftex-changebar': [
+    /Before the bar\. Inside the bar, with <span class='cmti-10'>italic<\/span>, <span class='cmss-10'>sans<\/span>, and <span class='cmtt-10'>typewriter <\/span>text\. After the bar\./,
+    // (the environment, with a link)
+    /In the environment, with a link to section<span class='tex8web-nbsp'> <\/span><a href='#changes'>1<!--[^>]*--><\/a>\. After the environment\./,
+    /Deleted here\. After the deletion\./,
+    /<span class='cmr-8'>Note in a bar\. After the note’s bar\.<\/span><\/p><\/aside>/,
+    /<span class='cmti-10'>A theorem in a bar\. After the theorem’s bar\.<\/span>/,
+    /<p class='noindent'>First item in a bar\.\s*<\/p><\/div><\/li>/,
+    /Second item\.<\/p><\/div><\/li><\/ul>\s*<p class='noindent'>After the list\./,
+  ],
+  'test-pdftex-changebar-class': [/<p class='noindent'>Before the bar\. Inside the class’s bar\. After the bar\./],
+  'test-pdftex-changebar-caps': [/<p class='noindent'>Before the bar\. Inside the capitals’ bar\. After the bar\./],
+  'test-pdftex-adjustbox': [
+    /<p class='noindent'>Clip: clipped text\. After the clip\./,
+    /Adjust: adjusted text\. After the adjustment\./,
+    /Trim: trimmed text\. After the trim\./,
+    /<span class='cmr-8'>Note: noted clip\. After the note’s clip\.<\/span>/,
+    /<span class='cmti-10'>Theorem: theorem trim\. See section<span class='tex8web-nbsp'> <\/span><\/span><a href='#boxes'>/,
+  ],
+  'test-pdftex-trimclip': [
+    /<p class='noindent'>Clip: clipped text\. After the clip\./,
+    /Trim: trimmed text\. After the trim\./,
+  ],
+  'test-pdftex-passon': [
+    /Rotated: <span class='rotatebox' style='transform: rotate\(-90deg\);'> up <\/span>\. After the rotation\./,
+    /<img alt='' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.\d+\)' \/>\. After epsfig\./,
+    pdftexText('#FF0000', 'red'),
+    new RegExp(`#TBL-1-1- td\\{ background-color:${lightDark('#FFFF00', 'background')}\\}`),
+  ],
   // \pdfoutput=1, which makes tex4ht's latex write a PDF and no DVI: each
   // package's output as without it. test-pdfoutput sets it before the
   // class, test-pdfoutput-late after it and in the body, and

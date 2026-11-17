@@ -1,0 +1,11 @@
+% trimclip loaded alone with pdfTeX's driver option, after graphicx.
+% Each box's text is the same as without the option, where trimclip uses
+% its dvips driver.
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[pdftex]{trimclip}
+\begin{document}
+Clip: \clipbox{0pt 0pt 0pt 0pt}{clipped text}. After the clip.
+
+Trim: \trimbox{0pt 0pt 0pt 0pt}{trimmed text}. After the trim.
+\end{document}

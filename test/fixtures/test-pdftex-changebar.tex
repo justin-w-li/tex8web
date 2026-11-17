@@ -1,0 +1,37 @@
+% changebar given pdfTeX's driver option, with hyperref: bars from
+% \cbstart and \cbend, from the changebar environment, and from
+% \cbdelete, in italic, sans-serif, and typewriter text, in a footnote,
+% in a theorem, and in a list; then changebar loaded again with the
+% option, which is no clash. Each input's text is the same as without
+% the option, where changebar's default driver shows no bars.
+\documentclass{article}
+\usepackage[pdftex]{changebar}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\RequirePackage[pdftex]{changebar}
+\begin{document}
+\section{Changes}\label{changes}
+
+Before the bar. \cbstart Inside the bar, with \emph{italic},
+\textsf{sans}, and \texttt{typewriter} text.\cbend{} After the bar.
+
+\begin{changebar}
+In the environment, with a link to section~\ref{changes}.
+\end{changebar}
+After the environment.
+
+Deleted here.\cbdelete{} After the deletion.
+
+A note.\footnote{\cbstart Note in a bar.\cbend{} After the note's bar.}
+After the note.
+
+\begin{theorem}
+\cbstart A theorem in a bar.\cbend{} After the theorem's bar.
+\end{theorem}
+
+\begin{itemize}
+\item \cbstart First item in a bar.\cbend
+\item Second item.
+\end{itemize}
+After the list.
+\end{document}

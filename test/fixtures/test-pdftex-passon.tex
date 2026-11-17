@@ -1,0 +1,24 @@
+% A guard: cases the fix must not break. Packages that pass pdfTeX's
+% driver option on, loaded before the package they pass it to is loaded
+% again with the option: rotating and epsfig before graphicx, and colortbl
+% before color. None is a clash, as in pdflatex. xcolor, loaded last,
+% gives the rows the colors of tex4ht's xcolor configuration.
+\documentclass{article}
+\usepackage[pdftex]{rotating}
+\usepackage[pdftex]{epsfig}
+\usepackage[pdftex]{graphicx}
+\usepackage[pdftex]{colortbl}
+\usepackage[pdftex]{color}
+\usepackage{xcolor}
+\begin{document}
+Rotated: \rotatebox{90}{up}. After the rotation.
+
+Epsfig: \epsfig{file=test-picture.png, width=1cm}. After epsfig.
+
+Text in \textcolor{red}{red}.
+
+\begin{tabular}{ll}
+\rowcolor{yellow} one & two \\
+three & four \\
+\end{tabular}
+\end{document}

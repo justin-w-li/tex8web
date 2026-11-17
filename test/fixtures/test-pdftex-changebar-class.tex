@@ -1,0 +1,10 @@
+% pdfTeX's driver option given to the class and to changebar with
+% \PassOptionsToPackage, then changebar loaded again with the option,
+% which is no clash. The text is the same as without the option.
+\documentclass[pdftex]{article}
+\PassOptionsToPackage{pdftex}{changebar}
+\usepackage{changebar}
+\RequirePackage[pdftex]{changebar}
+\begin{document}
+Before the bar. \cbstart Inside the class's bar.\cbend{} After the bar.
+\end{document}
