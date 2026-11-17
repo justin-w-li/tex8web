@@ -1,10 +1,12 @@
 % A document whose folder holds the files of an earlier build with other
 % versions or packages: test-staleaux.aux from lineno 4.41 (\@LN@col), and
 % from babel, biblatex, and hyperref, which the document no longer loads,
-% with labels and a citation whose numbers are now wrong; test-staleaux.toc
-% with babel's \babel@toc; and the stale .aux of the \included chapter. A
-% build in a build folder reads none of them: the references, the table of
-% contents, and the citation come from this build.
+% with labels and a citation whose numbers are now wrong; and the stale
+% .aux of the \included chapter. A build in a build folder reads none of
+% them: the references, the table of contents, and the citation come from
+% this build. test-staleaux.toc, with babel's \babel@toc, is a guard: tex4ht
+% reads the .4ct, not the .toc, so the build reads it neither before nor
+% after the fix, and must leave it as it is.
 \documentclass{article}
 \usepackage{lineno}
 \begin{document}

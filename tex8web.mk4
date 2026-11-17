@@ -66,7 +66,8 @@ else
   -- directory, and stops if dir does not exist. So each directory of the
   -- document is made there first, except hidden ones, build, links, and
   -- the build directory itself, which would otherwise be made inside itself
-  -- on each run.
+  -- on each run. Then the document's .aux, .xref, and .4tc of an earlier
+  -- build beside it are hidden, as described below.
   Make:add("folders", function(par)
     if par.builddir == "" then return 0 end
     local out = lfs.attributes(par.builddir)
@@ -86,14 +87,21 @@ else
       end
     end
     walk(".")
-    -- (an empty .aux, .xref, and .4tc, so that the first LaTeX run does
-    -- not read those of an earlier build beside the document, as web2c's
-    -- open_input looks there for a file missing in the build directory)
+    -- (an empty .aux, .xref, and .4tc in the build directory, for each
+    -- such file beside the document that the build directory lacks, so
+    -- that the first LaTeX run does not read the one beside the document,
+    -- as web2c's open_input looks there for a file missing in the build
+    -- directory. Only for such a file: tex4ht.sty builds the table of
+    -- contents from an empty .4tc and warns on an empty .xref, where a
+    -- missing one gives neither. Not in draft mode, whose one LaTeX run
+    -- takes its references from a current .aux beside the document, as
+    -- pdflatex does)
     local here = lfs.attributes(".")
-    if not (here.ino == out.ino and here.dev == out.dev) then
+    if mode ~= "draft" and not (here.ino == out.ino and here.dev == out.dev) then
       for _, extension in ipairs {"aux", "xref", "4tc"} do
-        local file = par.builddir .. "/" .. par.input .. "." .. extension
-        if not lfs.attributes(file) then io.open(file, "w"):close() end
+        local name = par.input .. "." .. extension
+        local file = par.builddir .. "/" .. name
+        if lfs.attributes(name) and not lfs.attributes(file) then io.open(file, "w"):close() end
       end
     end
     return 0

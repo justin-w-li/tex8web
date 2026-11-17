@@ -1066,12 +1066,12 @@ const contents = {
   // (a file \included from a folder, with a \ref each way)
   'test-include': [/The included part is section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#included'>2</,
     /Text from the included file, which follows section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#opening'>1</],
-  // (files of an earlier build beside the document: the .aux and .toc of
-  // a build with other packages and the stale .aux of an \included
-  // chapter, tex4ht's .xref, .4tc, and .tmp of a run without a build
-  // folder, and, as a guard, a current .aux from the PDF with a .bbl. Each
-  // reference, citation, and table of contents entry is this build's, and
-  // no old title or number is left)
+  // (files of an earlier build beside the document: the .aux of a build
+  // with other packages and the stale .aux of an \included chapter,
+  // tex4ht's .xref and .4tc of a run without a build folder, and, as
+  // guards, a current .aux from the PDF with a .bbl, and a .toc and a
+  // .tmp that no build reads. Each reference, citation, and table of
+  // contents entry is this build's, and no old title or number is left)
   'test-staleaux': [...staleRefs("<span class='pageref'><a href='#two'>"), ...staleToc(['one', 'One'], ['two', 'Two'], ['chapter', 'Chapter'])],
   'test-staleaux-tex4ht': [/Section<span class='tex8web-nbsp'> <\/span><a href='#two'>2<!--[^>]*--><\/a> follows\./,
     /Text after section<span class='tex8web-nbsp'> <\/span><a href='#one'>1<!--/, ...staleToc(['one', 'One'], ['two', 'Two'])],

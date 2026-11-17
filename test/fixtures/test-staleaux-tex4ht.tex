@@ -1,9 +1,11 @@
-% A document whose folder holds tex4ht's .xref, .4tc, and .tmp from an
-% earlier make4ht run there, without a build folder, by a version that
-% wrote a command this one does not define, and with the old titles; and
-% the .aux of a build that was stopped while it wrote the .aux, which
-% ends inside an \@writefile. A build in a build folder reads none of
-% them.
+% A document whose folder holds tex4ht's .xref and .4tc from an earlier
+% make4ht run there, without a build folder, by a version that wrote a
+% command this one does not define, and with the old titles; and the .aux
+% of a build that was stopped while it wrote the .aux, which ends inside
+% an \@writefile. A build in a build folder reads none of them. The .tmp
+% of that run is a guard: tex4ht.sty writes the .tmp in the build folder
+% before reading it, so the build reads it neither before nor after the
+% fix, and must leave it as it is.
 \documentclass{article}
 \begin{document}
 \tableofcontents
