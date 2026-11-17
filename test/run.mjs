@@ -1313,6 +1313,23 @@ const contents = {
     /<dd><a id='Xarticle-full'><\/a>L\[eslie\]<span class='tex8web-nbsp'> <\/span>A\. Aamport\./, /^(?![^]*Stale)/],
   'test-bblnobib-biberguard': [/<a href='#X0-book'>1<\/a>\]/, /A Book with a Title Long Enough to Wrap/, /^(?![^]*Stale)/],
   'test-bblnobib-blxguard': [/<a href='#X0-book'>1<\/a>\]/, /A Book with a Title Long Enough to Wrap/, /^(?![^]*Stale)/],
+  // (a .bib, and beside the document the .bbl of an earlier build with
+  // another backend or style: the citation and the entry from the .bib,
+  // through bibtex, biber, or biblatex's bibtex backend)
+  ...Object.fromEntries(['test-staleaux-bbl', 'test-staleaux-bbl-hyperref'].map(name => [name, [
+    /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xfresh'>1<\/a>\]<\/span>\./,
+    /<dd><a id='Xfresh'><\/a>Fay Fresh\. <span class='cmti-10'>The Fresh Entry<\/span>\. A New Publisher, 2020\./, /^(?![^]*Stale)/]])),
+  ...Object.fromEntries(['test-staleaux-bbl-biber', 'test-staleaux-bbl-blx'].map(name => [name, [
+    /Cited<span class='tex8web-nbsp'> <\/span>\[(?:<a id='[^']*'><\/a>)*<a href='#X0-fresh'>1<\/a>\]\./,
+    /Fay Fresh\. <span class='cmti-10'>The Fresh Entry<\/span>\. A New Publisher, 2020\./, /^(?![^]*Stale)/]])),
+  'test-staleaux-bbl-natbib': [
+    /As <a href='#Xfresh'>Fresh<\/a><span class='tex8web-nbsp'> <\/span>\[<a href='#Xfresh'>2020<\/a>\] says\./,
+    /Fay Fresh\. <span class='cmti-10'>The Fresh Entry<\/span>\. A New Publisher, 2020\./, /^(?![^]*Stale)/],
+  // (a .bbl beside the document that the document reads itself, with
+  // \input or \InputIfFileExists, with no .bib: its citation and entry)
+  ...Object.fromEntries(['test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists'].map(name => [name, [
+    /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xshipped'>1<\/a>\]<\/span>\./,
+    /<dd><a id='Xshipped'><\/a>Sue Shipper\. <span class='cmti-10'>The Shipped Entry<\/span>\. A Publisher, 2003\./]])),
   // (! active in the preamble: babel's shorthands, in a heading and the
   // table of contents, the text, a footnote, a theorem, three fonts, and
   // math, with no space after a bare ! as in the PDF, and literal in
@@ -1912,6 +1929,11 @@ const logs = {
   // (no LaTeX error from a file of an earlier build beside the document)
   ...Object.fromEntries(['test-staleaux', 'test-staleaux-tex4ht', 'test-staleaux-current', 'test-staleaux-lineno'].map(name =>
     [name, [/^(?![^]*Undefined control sequence)/, /^(?![^]*Missing \\begin\{document\})/, /^(?![^]*File ended while scanning)/]])),
+  // (no LaTeX error from the .bbl of an earlier build beside the document)
+  ...Object.fromEntries(['test-staleaux-bbl', 'test-staleaux-bbl-hyperref', 'test-staleaux-bbl-biber', 'test-staleaux-bbl-blx',
+    'test-staleaux-bbl-natbib', 'test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists'].map(name =>
+    [name, [/^(?![^]*Missing 'biblatex' package)/, /^(?![^]*\.bbl' not created by)/,
+      /^(?![^]*Bibliography not compatible with author-year citations)/, /^(?![^]*Undefined control sequence)/]])),
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
@@ -1922,6 +1944,13 @@ const untouched = {
   'test-staleaux-current': ['test-staleaux-current.aux', 'test-staleaux-current/chap.aux', 'test-staleaux-current.bbl',
     'test-staleaux-current.ind', 'test-staleaux-current-supp.aux'],
   'test-staleaux-lineno': ['test-staleaux-lineno.aux'],
+  'test-staleaux-bbl': ['test-staleaux-bbl.aux', 'test-staleaux-bbl.bbl'],
+  'test-staleaux-bbl-hyperref': ['test-staleaux-bbl-hyperref.bbl'],
+  'test-staleaux-bbl-biber': ['test-staleaux-bbl-biber.aux', 'test-staleaux-bbl-biber.bbl'],
+  'test-staleaux-bbl-blx': ['test-staleaux-bbl-blx.aux', 'test-staleaux-bbl-blx.bbl'],
+  'test-staleaux-bbl-natbib': ['test-staleaux-bbl-natbib.bbl'],
+  'test-staleaux-bbl-input': ['test-staleaux-bbl-input.bbl'],
+  'test-staleaux-bbl-ifexists': ['test-staleaux-bbl-ifexists.bbl'],
 };
 // (only the fixtures' own entries are walked: other builds write in
 // test/fixtures/build while this script runs, and a folder removed there

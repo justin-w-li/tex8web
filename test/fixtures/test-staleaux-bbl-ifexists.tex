@@ -1,0 +1,8 @@
+% Guard: checks cases the fix must not break. The same with hyperref,
+% and the .bbl read with \InputIfFileExists.
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+Cited~\cite{shipped}.
+\InputIfFileExists{test-staleaux-bbl-ifexists.bbl}{}{\typeout{No bibliography}}
+\end{document}

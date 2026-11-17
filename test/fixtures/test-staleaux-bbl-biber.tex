@@ -1,0 +1,9 @@
+% A document that changed from bibtex to biblatex with biber: the .aux
+% and the .bbl of its earlier bibtex build are beside it.
+\documentclass{article}
+\usepackage[backend=biber]{biblatex}
+\addbibresource{test-staleaux-bbl.bib}
+\begin{document}
+Cited~\cite{fresh}.
+\printbibliography
+\end{document}

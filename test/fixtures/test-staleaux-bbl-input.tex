@@ -1,0 +1,9 @@
+% Guard: checks cases the fix must not break. A document that comes with
+% its .bbl and reads it itself, with \input, with no \bibliography and
+% no .bib, as some arXiv sources do. The citation and the entry are
+% those of the .bbl beside the document, as in the PDF.
+\documentclass{article}
+\begin{document}
+Cited~\cite{shipped}.
+\input{test-staleaux-bbl-input.bbl}
+\end{document}

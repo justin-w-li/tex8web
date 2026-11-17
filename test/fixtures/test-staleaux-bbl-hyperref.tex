@@ -1,0 +1,10 @@
+% The same change from biblatex to bibtex, with hyperref, and only the
+% stale biblatex .bbl beside the document, as latexmk -c leaves it (it
+% removes the .aux and keeps the .bbl).
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+Cited~\cite{fresh}.
+\bibliographystyle{plain}
+\bibliography{test-staleaux-bbl}
+\end{document}

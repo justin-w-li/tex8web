@@ -1,0 +1,9 @@
+% A document that changed from bibtex to biblatex's bibtex backend: the
+% .aux and the .bbl of its earlier build with the plain style are beside it.
+\documentclass{article}
+\usepackage[backend=bibtex]{biblatex}
+\addbibresource{test-staleaux-bbl.bib}
+\begin{document}
+Cited~\cite{fresh}.
+\printbibliography
+\end{document}

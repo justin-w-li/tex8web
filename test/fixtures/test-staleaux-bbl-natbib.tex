@@ -1,0 +1,11 @@
+% A document that changed its bibtex style from plain to natbib's
+% author-year plainnat, with hyperref: the numeric .bbl of the earlier
+% build is beside it.
+\documentclass{article}
+\usepackage{natbib}
+\usepackage{hyperref}
+\begin{document}
+As \citet{fresh} says.
+\bibliographystyle{plainnat}
+\bibliography{test-staleaux-bbl}
+\end{document}
