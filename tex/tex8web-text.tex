@@ -240,12 +240,30 @@
         \web@ttl}
 \fi
 
+% \web@testtitle sets \ifweb@notitle when the document has no title:
+% \@title is the kernel's error, revtex's warning (\class@warn{No title},
+% set at \begin{document}), or empty.
+\newif\ifweb@notitle
+\def\web@revnotitle{\class@warn{No title}}
+\def\web@testtitle{\web@notitlefalse
+    \ifx\@title\web@notitle\web@notitletrue\fi
+    \ifx\@title\web@revnotitle\web@notitletrue\fi
+    \edef\web@a{\detokenize\expandafter{\@title}}%
+    \ifx\web@a\@empty\web@notitletrue\fi}
+
 % tex4ht writes a \Tag's text to the .xref and reads it back through
 % macros that are not \long (\load:ref, tex4ht.sty), so a \par in the
 % text, as from a blank line in \title, stops the next run. A space is
-% written for each \par.
+% written for each \par. revtex4.4ht's \maketitle writes the page's
+% <title> as \Tag{TITLE+}{\@title//}: with no title, the \Tag is skipped,
+% which leaves the <title> empty (an empty \Tag gives its page number),
+% and a class warning in a \Tag's text writes nothing.
 \let\web@Tag\Tag
-\def\Tag#1#2{\begingroup\let\par\space\web@Tag{#1}{#2}\endgroup}
+\def\web@titletag{TITLE+}
+\def\Tag#1#2{\begingroup\let\par\space\let\class@warn\@gobble
+    \def\web@a{#1}%
+    \ifx\web@a\web@titletag\web@testtitle\else\web@notitlefalse\fi
+    \ifweb@notitle\else\web@Tag{#1}{#2}\fi\endgroup}
 
 % without \maketitle, the page's <title> is the \title's text, written as
 % \maketitle would write it: the first argument of html4.4ht's
@@ -256,7 +274,7 @@
     \AddToHook{cmd/maketitle/before}{\global\web@titledtrue}
 \fi
 \AtEndDocument{%
-    \ifweb@titled\else\ifcsname a:mktl\endcsname\ifx\@title\web@notitle\else
+    \ifweb@titled\else\ifcsname a:mktl\endcsname\web@testtitle\ifweb@notitle\else
         \begingroup
             \let\HCode\@gobble \let\EndP\relax \let\IgnorePar\relax
             \csname a:mktl\endcsname
