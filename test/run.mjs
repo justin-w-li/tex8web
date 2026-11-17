@@ -67,6 +67,7 @@ const switched = {
   'test-pdftex': 'tex8web-plain-links', 'test-pdftex-class': 'tex8web-plain-links',
   'test-pdftex-sty': 'tex8web-plain-links',
   'test-pdfoutput': 'tex8web-plain-links', 'test-pdfoutput-sty': 'tex8web-plain-links',
+  'test-pdfprim-hyperref': 'tex8web-plain-links',
 };
 const sectpartSizes = { '--tex8web-part-size': '2.488em', '--tex8web-part-label-size': '0.8336em', '--tex8web-part-label-after': '0.96432em' };
 const measured = {
@@ -1787,7 +1788,7 @@ const pdfprimText = text => new RegExp(text.replace(/[.*+?^${}()[\]\\]/g, '\\$&'
   .replace(/ /g, '(?:<[^>]*>)* (?:<[^>]*>)*').replace(/\|/g, '(?:<[^>]*>)*'));
 const pdfprimHead = (tag, text) => new RegExp(`<${tag} class='sectionHead'[^>]*>(?:(?!</${tag}>)[^])*${pdfprimText(text).source}(?:<[^>]*>|\\s)*</${tag}>`);
 const pdfprimToc = text => new RegExp(`<span class='sectionToc'>(?:(?!</a>)[^])*${pdfprimText(text).source}(?:<[^>]*>)*</a>`);
-const pdfprimLeaks = /^(?![^]*(?:\d rg\b|foo\.map|bar\.pfb|pkg\.map|before-class\.pfb|\/Subtype|\/Border|\/Foo 1|\/[XY] [12]\b|&lt;&lt;|\bq Q\b|Outline title|pdf(?:literal|mapfile|mapline|setmatrix|save|restore|ximage|refximage|obj|refobj|xform|refxform|startlink|endlink|annot|dest|outline|thread|startthread|endthread|names|fontattr|snap|interwordspace|fakespace|spacefont|colorstack|runninglink|includechars|nobuiltintounicode|last(?:obj|ximage|xform))))/;
+const pdfprimLeaks = /^(?![^]*(?:\d rg\b|foo\.map|bar\.pfb|pkg\.map|before-class\.pfb|\/Subtype|\/Border|\/Foo 1|\/[XY] [12]\b|&lt;&lt;|\bq Q\b|Outline title|first\.map|cls\.map|0 1 -1 0|1 0 0 1|\b0 g\b|cmr10|\/Foo \[1 2\]|\/Preamble 1|\/Title|\/PageMode|\/Info|\/Rotate|pdf(?:literal|mapfile|mapline|setmatrix|save|restore|ximage|refximage|obj|refobj|xform|refxform|startlink|endlink|annot|dest|outline|thread|startthread|endthread|names|fontattr|snap|interwordspace|fakespace|spacefont|colorstack|runninglink|includechars|nobuiltintounicode|last(?:obj|ximage|xform))(?![a-z])))/;
 
 // Packages given pdfTeX's driver option, which tex4ht's DVI mode cannot
 // use: each package's output as without the option. test-pdftex gives it to
@@ -1928,33 +1929,37 @@ const drivers = {
   'test-pdfprim': [
     pdfprimHead('h3', 'Head x y z w'), pdfprimToc('Head x y z w'),
     ...['Literal: before blue after.', 'Let: before after.', 'Macro: before one after.',
-      'Italic: before two after.', 'Sans: before three after.', 'Typewriter: before four after.',
-      'Package: before five after.', 'Footnote: before|1 after.', 'Note six end.',
+      'Italic: before two after|.', 'Sans: before three after|.', 'Typewriter: before four after|.',
+      'Package: before five after.', 'Footnote: before|1 after.', '1|Note six end.',
       'Theorem 1. Theorem seven end.', 'Box: boxed after.',
       'Image: before after.', 'Image keywords: before after.',
       'Objects: before after. Number: set.', 'Stream: before after.',
       'Stack: beforepushed and set after.', 'Link: beforelinked after.', 'Goto: beforeto here after.',
       'Destination: beforeafter.', 'Number destination: beforeafter.',
       'Annotation: before after.', 'Outline: before after.', 'Thread: before after.',
-      'Snap: beforeafter.', 'Spaces: before after.', 'Started thread.',
+      'Snap: beforeafter.', 'Spaces: before after.', 'Stack macro: beforered after.',
+      'Keywords: beforexyz after.',
       // (the primitives that only warn in DVI mode)
       `Guards: ${['info', 'catalog', 'trailer', 'trailerid', 'pageattr', 'pagesattr', 'pageresources',
         'compresslevel', 'minorversion', 'gentounicode', 'glyphtounicode', 'colorstackinit']
         .map(name => `pdf${name} primitive`).join(', ')}.`].map(pdfprimText),
     /Form: before(?:<[^>]*>)*(?:form)?(?:<[^>]*>)* after\./,
-    /Matrix: before(?:<[^>]*>|\s)*turned(?:(?!<\/p>)[^])* after\./,
-    /Math: before (?:(?!<\/p>)[^])*<mjx-container(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Matrix: before(?:<[^>]*>|\s)*turned(?:<[^>]*>)* after\./,
+    /Math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Package math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /<p[^>]*>\s*Started thread\./,
+    /First\.(?:\s|<\/p>|<!--(?:(?!-->)[^])*-->)*<p[^>]*>(?:\s|<!--(?:(?!-->)[^])*-->)*Second\./,
     pdfprimLeaks,
   ],
   // (in a heading that goes to hyperref's bookmarks, and in a caption that
   // goes to the list of figures)
   'test-pdfprim-hyperref': [
     pdfprimHead('h3', 'Head x y z'), pdfprimToc('Head x y z'),
-    new RegExp(`<span class='lofToc'>(?:(?!lofToc)[^])*?${pdfprimText('Caption seven end').source}`),
+    new RegExp(`<span class='lofToc'>(?:(?!</a>)[^])*${pdfprimText('Caption seven end').source}`),
     new RegExp(`class='caption'(?:(?!</(?:figcaption|div)>)[^])*${pdfprimText('Caption seven end').source}`),
     ...['Literal: before blue after, a link to section', 'Image: before after.',
       'Objects: before after. Number: set.', 'Link: beforeto the head after.',
-      'Stack: beforepushed after.', 'Footnote: before|1 after.', 'Note six end'].map(pdfprimText),
+      'Stack: beforepushed after.', 'Footnote: before|1 after.', '1|Note six end', 'Title: before after.'].map(pdfprimText),
     pdfprimLeaks,
   ],
 };

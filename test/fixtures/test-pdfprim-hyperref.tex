@@ -1,12 +1,14 @@
+\pdfmapfile{+first.map}
 % test-pdfprim's primitives in a document that loads hyperref and leaves
-% \pdfoutput unset. A heading's text
-% goes to the table of contents and to hyperref's bookmarks, and a
-% caption's to the list of figures.
-\documentclass{article}
+% \pdfoutput unset: before the class, in the class, and in its title. A
+% heading's text goes to the table of contents and to hyperref's
+% bookmarks, and a caption's to the list of figures.
+\documentclass{test-pdfprim}
 \usepackage[colorlinks]{hyperref}
 \newcommand\blue[1]{\pdfliteral{0 0 1 rg}#1\pdfliteral{0 g}}
 \newcommand\turn[1]{\pdfsave\pdfsetmatrix{1 0 0 1}\rlap{#1}\pdfrestore\phantom{#1}}
 \begin{document}
+\maketitle
 \tableofcontents
 \listoffigures
 
@@ -20,7 +22,7 @@ Image: before\pdfximage width 1cm {test-picture.png}\pdfrefximage\pdflastximage{
 
 Objects: before\pdfobj reserveobjnum\xdef\myobj{\the\pdflastobj}%
 \immediate\pdfobj useobjnum\myobj{<< /X 1 >>}\pdfrefobj\myobj{} after.
-Number: \ifnum\myobj>0 set\else unset\fi.
+Number: \ifdefined\myobj set\else unset\fi.
 
 Link: before\pdfstartlink goto name{section.1}to the head\pdfendlink{} after.
 
