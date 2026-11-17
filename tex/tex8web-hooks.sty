@@ -177,17 +177,24 @@
   }
 % xr and xr-hyper read the URL of the other document's PDF after the file,
 % as in \externaldocument[prefix]{file}[url]. tex4ht's \XR@
-% (xr-hooks.4ht) reads no URL, so the URL is left in the preamble, where
-% it stops the build. The URL is read and dropped here, and a reference
-% links to the other document's page as without a URL. xr's \XR@cite,
-% which reads the arguments and calls \XR@, is redefined to read the URL.
-% Its \XR@ is tex4ht's, which is defined after package/xr/after.
+% (xr-hooks.4ht for xr, xrhyper-hooks.4ht for xr-hyper) reads no URL, so
+% the URL is left in the preamble, where it stops the build. The URL is
+% read and dropped here, and a reference links to the other document's
+% page as without a URL. xr's \XR@cite, which reads the arguments and
+% calls \XR@, is redefined to read the URL. Its \XR@ is tex4ht's, which
+% is defined after package/xr/after. xr's old release, which
+% \usepackage{xr}[=v5] loads, reads no URL and has no \XR@cite, so it is
+% left alone.
 \AddToHook { package/xr/after } { \__web_xr_url_wrap: }
 \AddToHook { package/xr-hyper/after } { \__web_xr_url_wrap: }
+\cs_new_nopar:Npn \__web_xr_old_release: { \@ifnextchar [ \XR@ { \XR@ [ ] } }
 \cs_new_protected:Npn \__web_xr_url_wrap:
   {
-    \web@needs { XR@cite }
-    \cs_gset_protected:Npn \XR@cite [##1] { \@testopt { \__web_xr_url:w [##1] } { } }
+    \cs_if_eq:NNF \externaldocument \__web_xr_old_release:
+      {
+        \web@needs { XR@cite }
+        \cs_gset_protected:Npn \XR@cite [##1] { \@testopt { \__web_xr_url:w [##1] } { } }
+      }
   }
 \cs_new_protected:Npn \__web_xr_url:w [#1] [#2] #3
   { \@ifnextchar [ { \__web_xr_drop:nnnw {#1} {#2} {#3} } { \XR@ [#1] [#2] {#3} } }
