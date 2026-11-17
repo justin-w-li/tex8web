@@ -1929,6 +1929,14 @@ const texWarnings = {
   'test-boxmath': [/multiply defined/, /qedhere command may not work/],
 };
 
+// Lines a document's TeX log must hold, read with its wrapped lines
+// joined. xcolor gives a named color its value itself, so a page with
+// xcolor is the same whether tex4ht reads dvipsnam.4ht or not.
+const texLines = {
+  'test-priminput-tree': [/\/dvipsnam\.4ht/],
+  'test-priminput-vendored': [/\/dvipsnam\.4ht/],
+};
+
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not
 // hyphenated in the PDF, and html4.4ht's overflow-wrap still breaks one too
 // long for a line): the stylesheet's rule, and the URLs as links of that class.
@@ -4076,11 +4084,14 @@ function check(doc, result, out, aux) {
   for (const pattern of texWarnings[doc.name] ?? []) {
     if (pattern.test(texLogText)) problems.push(`${pattern.source} in the TeX log`);
   }
+  for (const pattern of texLines[doc.name] ?? []) {
+    if (!pattern.test(texLogText.replace(/\n/g, ''))) problems.push(`no ${pattern.source} in the TeX log`);
+  }
   return [...problems, ...checkTexLog(texLog), ...checkLog(result.log), ...checkOutput(out)];
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, boxcenter, coveredPictures, tablePictures, glyphs, logs, untouched, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, boxcenter, coveredPictures, tablePictures, glyphs, logs, untouched, ligatures, texWarnings, texLines, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 
@@ -4253,7 +4264,6 @@ if (primabs) absBuilds.push({
     return { doc: primabs, env: { TEXINPUTS: `${top}:` }, page: 'test-priminput-abs.html' };
   },
 });
-// (each build's folder and label come from the fixture it is for)
 for (const { doc: fixture, key, label, wanted, setup } of absBuilds) jobs.push(async () => {
   const top = join(testDir(fixture), `absolute${key}`), out = join(top, 'html'), aux = join(top, 'aux');
   const { doc, env, page } = setup(top);
