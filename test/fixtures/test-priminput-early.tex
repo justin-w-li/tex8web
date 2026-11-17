@@ -1,6 +1,9 @@
+% A guard: it checks a case that the fix of the files read with the
+% primitive \input must not break.
 % The same as test-priminput.tex, with the file read before
-% \documentclass, where tex4ht's \ProvidesFile and the hooks are not in
-% place yet: \input test-priminput/glossary. As in the PDF, the file's
+% \documentclass: \input test-priminput/glossary. There tex4ht.sty has
+% not yet wrapped \@providesfile, and LaTeX's \@providesfile adds no name
+% to \@filelist, so glossary.4ht is not read. As in the PDF, the file's
 % text is in the page.
 \input test-priminput/glossary
 \documentclass{article}

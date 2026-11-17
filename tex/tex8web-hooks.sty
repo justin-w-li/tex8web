@@ -743,9 +743,10 @@
 % read by a relative path or through \input@path, and when it is read by
 % an absolute path, which the writer named. The primitive \input
 % runs no file hook, and from the document it leaves the current file
-% empty, before the class too and in a file it reads: the document named
-% the file that gives the name, by any path, so the name is the
-% document's. A package that reads a style with the primitive \input, as
+% empty, also in a file that such a file reads: the document named the
+% file that gives the name, by any path, so the name is the document's.
+% (Before the class, tex4ht.sty has not yet wrapped \@providesfile, and
+% LaTeX's \@providesfile lists no name.) A package that reads a style with the primitive \input, as
 % biblatex does, stays the current file, so a copy of the style beside
 % the document keeps its .4ht. A name found only in the tree is a
 % package's.
