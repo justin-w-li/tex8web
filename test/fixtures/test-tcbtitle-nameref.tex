@@ -1,0 +1,23 @@
+% tcolorbox titles that hold fragile commands, with the nameref package
+% and without hyperref: \kind with \@ifstar, and \pick with \@ifnextchar.
+% A numbered theorem, labelled or not, with a short title, and a box with
+% nameref=, each set the title as the name that a \nameref gives.
+\documentclass{article}
+\usepackage[most]{tcolorbox}
+\usepackage{nameref}
+\makeatletter
+\newcommand\kind{\@ifstar{starred}{plain}}
+\newcommand\pick{\@ifnextchar[{\pick@given}{x}}
+\def\pick@given[#1]{#1}
+\makeatother
+\newtcbtheorem{theorem}{Theorem}{}{thm}
+\newtcolorbox[auto counter]{named}[1]{nameref={#1}, title={Box \thetcbcounter: #1}, label=named}
+\begin{document}
+\begin{theorem}{Labelled \kind*}{one}Labelled.\end{theorem}
+\begin{theorem}{Unlabelled \pick[u]}{}Unlabelled.\end{theorem}
+\begin{theorem}[][Short \pick]{Long title}{short}With a short title.\end{theorem}
+\begin{named}{Named \kind}A box with nameref.\end{named}
+
+See Theorem~\ref{thm:one}, \ref{thm:short}, and Box~\ref{named}.
+Named: \nameref{thm:one}; \nameref{thm:short}; \nameref{named}.
+\end{document}

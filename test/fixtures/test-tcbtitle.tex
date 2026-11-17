@@ -1,0 +1,55 @@
+% tcolorbox titles that hold fragile commands: \implies redefined with
+% \@ifstar, \kind with \@ifstar, and \pick with \@ifnextchar, with
+% hyperref. (Without hyperref or nameref, the PDF fails on them too: a
+% fragile command breaks in tcolorbox's \protected@edef of the name.)
+% A numbered theorem, labelled or not, with the label= option, a
+% short title (the second optional argument, and the short title key), in
+% italics and sans-serif, from \DeclareTcbTheorem and \renewtcbtheorem, and
+% a box with nameref=, each set the title as the name that a \nameref
+% gives. The unnumbered theorem, the plain titles, the theorem= key on a
+% plain box, and a \footnote in a title do not, and built before.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[most]{tcolorbox}
+\usepackage{hyperref}
+\makeatletter
+\renewcommand\implies{\@ifstar{\ensuremath{\Longrightarrow}}{\ensuremath{\Rightarrow}}}
+\newcommand\kind{\@ifstar{starred}{plain}}
+\newcommand\pick{\@ifnextchar[{\pick@given}{x}}
+\def\pick@given[#1]{#1}
+\makeatother
+\newtcbtheorem[number within=section]{theorem}{Theorem}{}{thm}
+\DeclareTcbTheorem{remark}{Remark}{}{rem}
+% (environments to renew, without the counter that \newtcbtheorem would make)
+\newenvironment{claim}{}{}
+\newenvironment{claim*}{}{}
+\renewtcbtheorem{claim}{Claim}{colback=white}{cl}
+\newtcolorbox[auto counter]{named}[2][]{nameref={#2}, title={Box \thetcbcounter: #2}, #1}
+\newcounter{exercise}
+\begin{document}
+\section{Theorems}
+\begin{theorem}{Differentiable \implies\ continuous}{dc}Labelled.\end{theorem}
+\begin{theorem}{Unlabelled $p\implies q$ \kind}{}Unlabelled.\end{theorem}
+\begin{theorem}{Starred $p\implies* q$ \kind*}{star}Starred forms.\end{theorem}
+\begin{theorem}[label=byoption]{Option \kind}{}Labelled by the option.\end{theorem}
+\begin{theorem}[][Short $p\implies q$ \kind]{Long title}{short}With a short title.\end{theorem}
+\begin{theorem}[short title={Key \pick[y]}]{Keyed title}{key}With the short title key.\end{theorem}
+\begin{theorem}{Pick \pick[y] or \pick}{pick}An optional argument.\end{theorem}
+\begin{theorem}{Styled \textit{\kind*} and \textsf{\pick[s]}}{}In italics and sans-serif.\end{theorem}
+\begin{remark}{Declared \kind*}{}From DeclareTcbTheorem.\end{remark}
+\begin{claim}{Renewed \pick[r]}{}From renewtcbtheorem.\end{claim}
+\begin{theorem*}{Unnumbered \kind* $p\implies q$}{}Unnumbered.\end{theorem*}
+\begin{tcolorbox}[title={Plain $a\implies b$ \kind*}]A plain title.\end{tcolorbox}
+\begin{tcolorbox}[title={Also plain $a\implies* b$ \pick[z]}]Another.\end{tcolorbox}
+\begin{tcolorbox}[theorem={Exercise}{exercise}{Keyed \kind}{ex}]The theorem key.\end{tcolorbox}
+\begin{tcolorbox}[title={Noted\footnote{A \kind\ note.}}]A footnote in the title.\end{tcolorbox}
+\section{Named boxes}
+\begin{named}{Named $p\implies q$ \kind}A box with nameref.\end{named}
+\begin{named}[label=named]{Labelled \pick[n]}A labelled box with nameref.\end{named}
+
+See Theorem~\ref{thm:dc}, \ref{thm:star}, \ref{byoption}, \ref{thm:short},
+\ref{thm:key}, \ref{thm:pick}, Exercise~\ref{ex}, and Box~\ref{named}.
+
+Named: \nameref{thm:dc}; \nameref{thm:star}; \nameref{byoption};
+\nameref{thm:short}; \nameref{thm:key}; \nameref{thm:pick}; \nameref{named}.
+\end{document}

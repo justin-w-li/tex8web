@@ -862,6 +862,14 @@ const absoluteCases = [
 // An empty \ref after the words given, linked to the id of the section
 // heading with the title given, or to an anchor in that heading.
 const revfourRef = (words, title) => new RegExp(`^(?=[^]*${words}<span class='tex8web-nbsp'> <\\/span>\\[<a href='#([^']+)'>(?:<!--(?:(?!-->)[^])*-->)?<\\/a>\\])[^]*<h3 class='sectionHead' (?=[^>]*id='\\1'|(?:(?!<\\/h3>)[^])*<a id='\\1'><\\/a>)(?:(?!<\\/h3>)[^])*${title}`);
+// Text of tcolorbox titles and references as in the PDF: ~ is a no-break
+// space, $ a formula, and [text] a link with that text to a \label
+const boxText = text => text.replace(/[.()?+*]/g, '\\$&')
+  .replace(/\[([^\]]*)\]/g, (_, link) => `<a href='#[^']+'>${link}<!--[^>]*--></a>`)
+  .replace(/~/g, () => "<span class='tex8web-nbsp'> </span>")
+  .replace(/\$/g, () => '<mjx-container(?:(?!</mjx-container>)[^])*</mjx-container>');
+const boxTitle = text => new RegExp(`<div class='tcolorbox-title'>(?:<a [^>]*class='tex8web-permalink'[^>]*>#</a>)? <p[^>]*>\\s*${boxText(text)}</p></div>`);
+const boxParagraph = text => new RegExp(boxText(text));
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,
@@ -1342,6 +1350,25 @@ const contents = {
     noteWords(1, 'I thank a critic for this.'), noteWords(2, 'A measure is finite again.'), noteWords(3, 'We thank the binder too.'),
     noteWords(4, 'I am in debt to them.'), noteWords('a', 'I add this in a box.'), noteWords(5, 'It is so.'),
     noteWords(6, 'If so, then.'), noteWords(7, 'Me too, then.'),
+  ],
+  // (fragile commands in the titles: the number and text of each title,
+  // the \ref to it, and the \nameref that gives its title or short title;
+  // titles that set no name, and a footnote in a title)
+  'test-tcbtitle': [
+    ...['Theorem~1.1:~Differentiable <span class=\'tex8web-nowrap\'>$~continuous</span>', 'Theorem~1.2:~Unlabelled $ plain',
+      'Theorem~1.3:~Starred $ starred', 'Theorem~1.4:~Option plain', 'Theorem~1.5:~Long title', 'Theorem~1.6:~Keyed title',
+      'Theorem~1.7:~Pick y or x', 'Theorem~1.8:~Styled <span class=\'cmti-10\'>starred </span>and <span class=\'cmss-10\'>s</span>',
+      'Remark~1:~Declared starred', 'Claim~1:~Renewed r', 'Theorem:~Unnumbered starred $', 'Plain $ starred', 'Also plain $ z',
+      'Exercise~1:~Keyed plain', 'Box 1: Named $ plain', 'Box 2: Labelled n'].map(boxTitle),
+    /<div class='tcolorbox-title'> <p[^>]*>Noted<span class='footnote-mark'>/,
+    /<span class='cmr-8'>A plain<span class='tex8web-nbsp'> <\/span>note\.<\/span>/,
+    boxParagraph('See Theorem~[1.1], [1.3], [1.4], [1.5], [1.6], [1.7], Exercise~[1], and Box~[2].'),
+    boxParagraph('Named: [Differentiable <span class=\'tex8web-nowrap\'>$~continuous</span>]; [Starred $ starred]; [Option plain]; '
+      + '[Short $ plain]; [Key y]; [Pick y or x]; [Labelled n].'),
+  ],
+  'test-tcbtitle-nameref': [
+    ...['Theorem~1:~Labelled starred', 'Theorem~2:~Unlabelled u', 'Theorem~3:~Long title', 'Box 1: Named plain'].map(boxTitle),
+    boxParagraph('See Theorem~[1], [3], and Box~[1]. Named: [Labelled starred]; [Short x]; [Named plain].'),
   ],
 };
 
