@@ -1,10 +1,9 @@
 % A guard: it checks a case that the fix of the files that name themselves
 % with \ProvidesFile must not break.
-% A copy of TeX Live's dvipsnam.def in a subfolder, read with \input
-% after xcolor. The copy names itself \ProvidesFile{dvipsnam.def}, so
-% tex4ht reads dvipsnam.4ht, as for the tree's file. As in the PDF, a
-% named color keeps its value. Replace the copy with the tree's file after
-% an update of LaTeX.
+% A shortened copy of LaTeX's dvipsnam.def in a subfolder, read with
+% \input after xcolor. The copy names itself \ProvidesFile{dvipsnam.def},
+% so tex4ht reads dvipsnam.4ht, as for the tree's file. As in the PDF, a
+% named color keeps its value.
 \documentclass{article}
 \usepackage{xcolor}
 \makeatletter

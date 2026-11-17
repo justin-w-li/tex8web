@@ -1,0 +1,5 @@
+% A file of test-provname-sty.tex, beside the document, named like
+% glossary.4ht. It names itself with a package's extension. Its name ends
+% in .txt, so that it is not a fixture.
+\ProvidesFile{glossary.sty}[2024/01/01]
+\newcommand\styglossary{Text from the glossary file.}

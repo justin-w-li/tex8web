@@ -1145,8 +1145,9 @@ const contents = {
   // where glossary.4ht's errors closed the page twice; makeidx's index with
   // its title, where index.4ht gave it "0", and its entry; the named
   // color's value; a file beside the document that gives another .4ht's
-  // name, a subfolder file after glossary.ltx, and a file read before
-  // \documentclass; and, as guards, a file read with \include and a
+  // name, a subfolder file after glossary.ltx, a file read before
+  // \documentclass, and a file beside the document that names itself
+  // glossary.sty; and, as guards, a file read with \include and a
   // vendored copy of dvipsnam.def in a subfolder, which keeps dvipsnam.4ht)
   ...Object.fromEntries([
     ['test-provname', /Glossary: Text from the subfolder glossary file\./],
@@ -1160,6 +1161,7 @@ const contents = {
     ['test-provname-defs', /Definitions: Text from the definitions file\./],
     ['test-provname-both', /Glossary: Text from the glossary file\./],
     ['test-provname-early', /Glossary: Text from the subfolder glossary file\./],
+    ['test-provname-sty', /Glossary: Text from the glossary file\./],
     ['test-provname-vendored', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
   ].map(([name, text]) => [name, [
     text, /^(?![^]*refextract)/, /^(?![^]*<\/html>[^]*<\/html>)/,

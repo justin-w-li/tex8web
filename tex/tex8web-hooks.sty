@@ -690,15 +690,17 @@
 % to \@filelist, so tex4ht reads the .4ht of that name. A file of the
 % document can give the name of a .4ht, such as glossary.tex: its own name
 % from a subfolder, its name without its extension, or another file's
-% name. The name is marked as the document's, as the hook above marks a
-% file's name, when the file that gives it is the document's: a file of
-% the document's folder marked by that hook, a file read with a folder in
-% its name, or found through \input@path, that is in that folder, or,
-% for a primitive \input, which sets no current file, a file of the given
-% name beside the document. The name is not marked when it is a package's
-% or a class's (by its extension or the file that gives it, as in the
-% hook above), a kept name, or a name found only outside the document's
-% folder, as for a file of a package read with the primitive \input.
+% name. The document's file marked by the hook above lists the name it
+% gives as its own, so that the check above does not count the name as
+% another file. The name is marked as the document's, as the hook above
+% marks a file's name, when the file that gives it is the document's: a
+% file of the document's folder marked by that hook, a file read with a
+% relative folder in its name, or found through \input@path, that is in
+% that folder, or, for a primitive \input, which sets no current file, a
+% file of the given name beside the document. The name is not marked
+% when it is a package's or a class's by its extension, a kept name, or a
+% name found only outside the document's folder, as for a file of a
+% package read with the primitive \input.
 \bool_new:N \l__web_ownprov_bool
 \cs_new_eq:NN \__web_providesfile:w \@providesfile
 \cs_gset_protected:Npn \@providesfile #1
@@ -710,15 +712,16 @@
                 \cs_if_exist:cT { web@own@ \l__web_basename_tl }
                     {
                         \clist_if_in:cVT { web@own@ \l__web_basename_tl } \CurrentFileUsed
-                            { \bool_set_true:N \l__web_ownprov_bool }
+                            {
+                                \clist_gput_right:cn { web@own@ \l__web_basename_tl } { {#1} }
+                                \bool_set_true:N \l__web_ownprov_bool
+                            }
                     }
                 \file_if_exist:nT { ./ #1 }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
             {
-                \bool_lazy_and:nnT
-                    { ! \cs_if_exist_p:c { web@keepext@ \l__web_ext_tl } }
-                    { \file_if_exist_p:n { ./ \CurrentFilePathUsed / \CurrentFileUsed } }
+                \file_if_exist:nT { ./ \CurrentFilePathUsed / \CurrentFileUsed }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
         \__web_basename:w #1 .. \q_stop
