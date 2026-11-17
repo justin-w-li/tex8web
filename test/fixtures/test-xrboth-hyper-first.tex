@@ -1,0 +1,19 @@
+% Both xr and xr-hyper, xr-hyper first and xr loaded with
+% \RequirePackage, without hyperref. The page builds, and each reference
+% prints as with xr alone: from an .aux that LaTeX wrote, whose
+% \externaldocument gives the URL of its PDF, its number and page, with no
+% link and no URL; from an .aux that tex4ht wrote, with its .xref, a link
+% to that document's page.
+\documentclass{article}
+\usepackage{xr-hyper}
+\RequirePackage{xr}
+\externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
+\externaldocument[T-]{test-xr/tex4ht}
+\begin{document}
+CaseF \ref{X-ss}, page \pageref{X-front}.
+
+CaseG \ref{T-oss}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}

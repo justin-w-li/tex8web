@@ -1,0 +1,48 @@
+% References to labels of other documents with both xr and xr-hyper
+% loaded, xr first, then hyperref. The page builds, and each reference
+% prints as with one of them: from an .aux that LaTeX wrote under
+% hyperref, whose \externaldocument gives the URL of its PDF, its number,
+% page, name, and \autoref as in the PDF, with no link and no URL, in each
+% context; from an .aux that LaTeX wrote without hyperref, its number and
+% page; from an .aux that tex4ht wrote under hyperref, with its .xref, a
+% link to that document's page; one through \externalcitedocument, with no
+% prefix; a label of an \@input file of the other .aux; and a label of a
+% file that does not exist yet, as ??.
+\documentclass{article}
+\usepackage{amsthm}
+\usepackage{xr}
+\usepackage{xr-hyper}
+\usepackage{hyperref}
+\externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
+\externaldocument[H-]{test-xr/hyper4ht-hyper}
+\externalcitedocument{test-xrurl/tex4ht}
+\externaldocument[P-]{test-xr/plain}
+\externaldocument{test-xrboth-none}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{See \ref{X-ss}}
+CaseA \ref{X-ss}, page \pageref{X-front}, named \nameref{X-thm},
+auto \autoref{X-thm}.
+
+CaseB \ref{H-oss}, auto \autoref{H-oss}.
+
+CaseC \ref{oss}.
+
+CaseD \ref{P-ss}, page \pageref{P-front}.
+
+CaseE \ref{none}.
+
+Included \ref{X-c}.
+
+\textit{In italics, \ref{X-ss}.}
+A note.\footnote{In a footnote, \ref{X-ss}.}
+\textsf{In sans-serif, \ref{X-ss}.}
+\texttt{In typewriter, \ref{X-ss}.}
+
+\begin{theorem}
+In a theorem, \ref{X-ss}.
+\end{theorem}
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}

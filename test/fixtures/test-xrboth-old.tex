@@ -1,0 +1,22 @@
+% Both xr's old release, which \usepackage{xr}[=v5] loads, and xr-hyper,
+% then hyperref. xr-hyper's \externaldocument is the one used. The page
+% builds, and each reference prints as with xr-hyper alone: from an .aux
+% that LaTeX wrote under hyperref, whose \externaldocument gives the URL of
+% its PDF, its number, page, name, and \autoref as in the PDF, with no
+% link and no URL; from an .aux that tex4ht wrote under hyperref, with its
+% .xref, a link to that document's page.
+\documentclass{article}
+\usepackage{xr}[=v5]
+\usepackage{xr-hyper}
+\usepackage{hyperref}
+\externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
+\externaldocument[H-]{test-xr/hyper4ht-hyper}
+\begin{document}
+CaseH \ref{X-ss}, page \pageref{X-front}, named \nameref{X-thm},
+auto \autoref{X-thm}.
+
+CaseI \ref{H-oss}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}
