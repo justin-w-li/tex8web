@@ -1,7 +1,9 @@
 % A document whose folder holds tex4ht's .xref, .4tc, and .tmp from an
 % earlier make4ht run there, without a build folder, by a version that
-% wrote a command this one does not define, and with the old titles. A
-% build in a build folder reads none of them.
+% wrote a command this one does not define, and with the old titles; and
+% the .aux of a build that was stopped while it wrote the .aux, which
+% ends inside an \@writefile. A build in a build folder reads none of
+% them.
 \documentclass{article}
 \begin{document}
 \tableofcontents

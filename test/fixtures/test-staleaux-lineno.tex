@@ -1,0 +1,14 @@
+% A two-column document with lineno whose folder holds the .aux of a
+% build with lineno 4.41, which wrote \@LN@col for each column of each
+% page. lineno 5 no longer defines \@LN@col, so its 120 lines would give
+% LaTeX's limit of 100 errors at \begin{document}. A build in a build
+% folder does not read that .aux, and the page is written.
+\documentclass[twocolumn]{article}
+\usepackage{lineno}
+\linenumbers
+\begin{document}
+\section{One}\label{sec:one}
+Section~\ref{sec:two} follows.
+\section{Two}\label{sec:two}
+Text after section~\ref{sec:one}.
+\end{document}

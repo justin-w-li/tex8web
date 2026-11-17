@@ -1075,7 +1075,9 @@ const contents = {
   'test-staleaux': [...staleRefs("<span class='pageref'><a href='#two'>"), ...staleToc(['one', 'One'], ['two', 'Two'], ['chapter', 'Chapter'])],
   'test-staleaux-tex4ht': [/Section<span class='tex8web-nbsp'> <\/span><a href='#two'>2<!--[^>]*--><\/a> follows\./,
     /Text after section<span class='tex8web-nbsp'> <\/span><a href='#one'>1<!--/, ...staleToc(['one', 'One'], ['two', 'Two'])],
-  'test-staleaux-current': [...staleRefs("<a href='#two'>1<!--"), ...staleToc(['one', 'One'], ['two', 'Two'], ['chapter', 'Chapter'])],
+  'test-staleaux-current': [...staleRefs("<a href='#two'>1<!--"), ...staleToc(['one', 'One'], ['two', 'Two'], ['chapter', 'Chapter']),
+    /the supplement(?:’|&#x2019;|')s section<span class='tex8web-nbsp'> <\/span>4\./, /Apple, 1/],
+  'test-staleaux-lineno': [/Section<span class='tex8web-nbsp'> <\/span><a href='#two'>2<!--[^>]*--><\/a> follows\./],
   // (files of the document named like tex4ht's .4ht files, read in the
   // preamble: each file's text in the page, with nothing from the .4ht
   // file of its name, such as background.4ht's empty div, and article's
@@ -1672,19 +1674,22 @@ const logs = {
   'test-bblnobib': [/^\[STATUS\] +tex8web: bibliography: test-bblnobib-gone is missing/m],
   'test-bblnobib-biber': [/^\[STATUS\] +tex8web: bibliography: test-bblnobib-gone\.bib is missing/m],
   // (no LaTeX error from a file of an earlier build beside the document)
-  ...Object.fromEntries(['test-staleaux', 'test-staleaux-tex4ht', 'test-staleaux-current'].map(name =>
-    [name, [/^(?![^]*Undefined control sequence)/, /^(?![^]*Missing \\begin\{document\})/]])),
+  ...Object.fromEntries(['test-staleaux', 'test-staleaux-tex4ht', 'test-staleaux-current', 'test-staleaux-lineno'].map(name =>
+    [name, [/^(?![^]*Undefined control sequence)/, /^(?![^]*Missing \\begin\{document\})/, /^(?![^]*File ended while scanning)/]])),
 };
-// Files of an earlier build beside a document, each with a line it holds:
-// the build reads none of them, and leaves each as it is
+// Files of an earlier build beside a document: the build reads none of
+// them, and leaves each as it was when this script started, with the same
+// text and time of change, and writes no file beside them
 const untouched = {
-  'test-staleaux': [['test-staleaux.aux', '\\@LN@col{1}'], ['test-staleaux.toc', '\\babel@toc'],
-    ['test-staleaux/chap.aux', '\\@LN@col{1}']],
-  'test-staleaux-tex4ht': [['test-staleaux-tex4ht.xref', '\\StaleXrefEntry'], ['test-staleaux-tex4ht.4tc', '\\StaleTocEntry'],
-    ['test-staleaux-tex4ht.tmp', '\\StaleTmpEntry']],
-  'test-staleaux-current': [['test-staleaux-current.aux', '\\pgfsyspdfmark'], ['test-staleaux-current/chap.aux', '\\@setckpt'],
-    ['test-staleaux-current.bbl', '\\bibitem{book}']],
+  'test-staleaux': ['test-staleaux.aux', 'test-staleaux.toc', 'test-staleaux/chap.aux'],
+  'test-staleaux-tex4ht': ['test-staleaux-tex4ht.aux', 'test-staleaux-tex4ht.xref', 'test-staleaux-tex4ht.4tc', 'test-staleaux-tex4ht.tmp'],
+  'test-staleaux-current': ['test-staleaux-current.aux', 'test-staleaux-current/chap.aux', 'test-staleaux-current.bbl',
+    'test-staleaux-current.ind', 'test-staleaux-current-supp.aux'],
+  'test-staleaux-lineno': ['test-staleaux-lineno.aux'],
 };
+const staleFiles = () => readdirSync(join(root, 'test/fixtures'), { recursive: true }).filter(f => f.startsWith('test-staleaux')).sort();
+const staleState = f => { try { return `${statSync(join(root, 'test/fixtures', f)).ctimeMs} ${readFileSync(join(root, 'test/fixtures', f), 'utf8')}`; } catch { return null; } };
+const staleBefore = new Map(staleFiles().map(f => [f, staleState(f)]));
 // A box that holds a TikZ picture, placed in another picture, and the
 // pictures beside such boxes (test-nestpic-cases.ltx): between each case's
 // "Before" and "After" is a picture that dvisvgm wrote, and not empty. The
@@ -3622,9 +3627,11 @@ function check(doc, result, out, aux) {
   for (const pattern of logs[doc.name] ?? []) {
     if (!pattern.test(result.log)) problems.push(`no ${pattern.source} in make4ht's log`);
   }
-  for (const [file, line] of untouched[doc.name] ?? []) {
-    const path = join(doc.dir, file);
-    if (!existsSync(path) || !readFileSync(path, 'utf8').includes(line)) problems.push(`${file} beside the document changed`);
+  for (const file of untouched[doc.name] ?? []) {
+    if (!staleBefore.get(file) || staleState(file) !== staleBefore.get(file)) problems.push(`${file} beside the document changed`);
+  }
+  if (untouched[doc.name]) {
+    for (const file of staleFiles().filter(f => !staleBefore.has(f))) problems.push(`test/fixtures/${file} written beside the document`);
   }
   for (const [file, pattern] of glyphs[doc.name] ?? []) {
     const svg = existsSync(join(out, file)) ? readFileSync(join(out, file), 'utf8') : '';

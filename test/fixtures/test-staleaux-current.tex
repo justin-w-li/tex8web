@@ -2,12 +2,17 @@
 % document are current, from a PDF build by the same versions, as an
 % Overleaf zip or an arXiv source ships them: test-staleaux-current.aux
 % with hyperref's labels and TikZ's \pgfsyspdfmark, the .aux of the
-% \included chapter, and the .bbl that the bibliography is read from, as
-% the .bib is missing. The page's references, table of contents, and
-% citation are as in the PDF.
+% \included chapter, the .bbl that the bibliography is read from, as
+% the .bib is missing, and the .ind that the index is read from, as
+% there is no \makeindex. The .aux of a supplement beside the document
+% is read by xr. The page's references, table of contents, citation,
+% and index are as in the PDF.
 \documentclass{article}
 \usepackage{tikz}
 \usepackage{hyperref}
+\usepackage{xr}
+\externaldocument[S-]{test-staleaux-current-supp}
+\usepackage{makeidx}
 \begin{document}
 \tableofcontents
 \section{One}\label{sec:one}
@@ -15,8 +20,9 @@ Section~\ref{sec:two} is on page~\pageref{sec:two}, and the chapter is section~\
 Cited~\cite{book}.
 \tikz[remember picture] \node (mark) {Marked};
 \section{Two}\label{sec:two}
-Text in section~\ref{sec:one}.
+Text in section~\ref{sec:one}, and the supplement's section~\ref{S-x}.
 \include{test-staleaux-current/chap}
 \bibliographystyle{plain}
 \bibliography{test-staleaux-current-gone}
+\printindex
 \end{document}
