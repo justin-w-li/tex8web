@@ -876,6 +876,15 @@ const boxParagraph = text => new RegExp(boxText(text));
 // that order
 const boxRefs = (title, ...links) => new RegExp(`<div class='tcolorbox-title'><a [^>]*class='tex8web-permalink' href='#([^']+)'>#</a>\\s*<p[^>]*>\\s*${
   boxText(title)}</p></div>${links.map(link => `[^]*<a href='#\\1'>${boxText(link)}<!--`).join('')}`);
+// A revtex page with no title, as in the PDF: an empty <title>, no
+// og:title with text, no "No title" (revtex's default \@title, a warning),
+// and nothing after the page's end
+const untitled = [
+  /<title><\/title>/,
+  /^(?![^]*<meta content='\s*[^'\s][^']*' property='og:title')/,
+  /^(?![^]*No title)/,
+  /<\/main><\/body> ?<\/html> ?$/,
+];
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,
@@ -1089,6 +1098,31 @@ const contents = {
     /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><span class='mathjax-env mathjax-equation'><mjx-container aria-label='x equals y Label open paren cap A \.1 close paren'[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
     /^(?![^]*unskip)/,
     /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  // (revtex documents with no title: with no \maketitle, with \maketitle
+  // and no \title, with \title in the preamble, which revtex clears at
+  // \begin{document}, and with an empty \title)
+  'test-revnotitle': [...untitled,
+    /<main>\s*<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*First section<\/h3>\s*<p class='noindent'>Text of the untitled article, with <span[^>]*>emphasis<\/span>\./i,
+  ],
+  'test-revnotitle-41': [...untitled,
+    /<div class='maketitle'[^>]*>(?:(?!<\/h1>)[^])*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*<\/h1>\s*<div class='author'>(?:(?!<\/div>)[^])*Someone\s+Untitled(?:(?!<\/div>)[^])*<\/div>\s*<div class='affil'>(?:(?!<\/div>)[^])*An\s+Old\s+Institute[^]*Text of the untitled abstract\.[^]*First section<\/h3>\s*<p class='noindent'>Text of the untitled article for aps\./i,
+  ],
+  'test-revnotitle-42': [...untitled,
+    /<h3 class='sectionHead' id='([^']+)'>(?:(?!<\/h3>)[^])*Linked section<\/h3>\s*<p class='noindent'>Text of the untitled reprint, before section<span class='tex8web-nbsp'> <\/span><a href='#\1'>I</i,
+  ],
+  'test-revnotitle-preamble': [...untitled,
+    /<main>\s*<p class='noindent'>Text of the letter with a title in the preamble\./,
+    /^(?![^]*Preamble title)/,
+  ],
+  'test-revnotitle-maketitle': [...untitled,
+    /<div class='maketitle'[^>]*>(?:(?!<\/h1>)[^])*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*<\/h1>\s*<div class='author'>(?:(?!<\/div>)[^])*Someone\s+Nameless(?:(?!<\/div>)[^])*<\/div>\s*<div class='affil'>(?:(?!<\/div>)[^])*A\s+New\s+Institute/,
+    /Someone\s+Nameless<\/span>(?:<span class='cite'>)?<a href='#([^']+)'><sup[^>]*>(?:<[^>]*>)*\*<[^]*<a id='\1'><\/a><sup[^>]*>(?:<[^>]*>)*\*<(?:(?!<\/aside>)[^])*nameless@example\.com/,
+    /First section<\/h3>\s*<p class='noindent'>Text of the article with a title block and no title\./i,
+  ],
+  'test-revnotitle-empty': [...untitled,
+    /<div class='maketitle'[^>]*>(?:(?!<\/h1>)[^])*<h1 class='titleHead'[^>]*>(?:(?!<\/h1>)[^])*<\/h1>\s*<div class='author'>(?:(?!<\/div>)[^])*Someone\s+Empty(?:(?!<\/div>)[^])*<\/div>\s*<div class='affil'>(?:(?!<\/div>)[^])*An\s+Empty\s+Institute/,
+    /Text of the article with an empty title\./,
   ],
   'test-report': [
     /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
