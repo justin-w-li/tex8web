@@ -66,8 +66,8 @@ else
   -- directory, and stops if dir does not exist. So each directory of the
   -- document is made there first, except hidden ones, build, links, and
   -- the build directory itself, which would otherwise be made inside itself
-  -- on each run. Then the document's .aux, .xref, and .4tc of an earlier
-  -- build beside it are hidden, as described below.
+  -- on each run. Then the document's .aux, .xref, .4tc, and .bbl of an
+  -- earlier build beside it are hidden, as described below.
   Make:add("folders", function(par)
     if par.builddir == "" then return 0 end
     local out = lfs.attributes(par.builddir)
