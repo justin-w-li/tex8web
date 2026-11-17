@@ -835,6 +835,22 @@ const staleToc = (...entries) => [
   new RegExp(`<div class='tableofcontents'>${entries.map(([id, title], i) =>
     `<span class='sectionToc'><span class='tocnumber'>${i + 1}</span><a href='#${id}' [^>]*>${title}</a></span><br />`).join('\\s*')}\\s*</div>`),
   /^(?![^]*(?:Eins|Zwei|Kapitel))/];
+// test-abspath's cases: each case's name, and the text of its file in the
+// page, which ends with whether the file was read by an absolute path
+const absoluteCases = [
+  ['input', 'Input: Text from the file read with input.'],
+  ['ext', 'Extension: Text from the file read with its extension.'],
+  ['import', 'Import: Text from the file read with import.'],
+  ['subimport', 'Subimport: Text from the file read with subimport.'],
+  ['ifexists', 'If exists: Text from the file read with InputIfFileExists.'],
+  ['path', 'Path: Text from the file found through the input path.'],
+  ['dots', 'Dots: Text from the file read by a path with two dots.'],
+  ['option', 'Option: Text from the file that gives a date and a version.'],
+  ['defs', 'Other name: Text from the file that gives the name of another file.'],
+  ['plain', 'Unnamed: Text from the file that gives no name.'],
+  ['body', 'Body: Text from the file read in the body.'],
+  ['subfile', 'Subfile: Text from the file read with subfile.'],
+];
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,
@@ -1161,6 +1177,9 @@ const contents = {
     ['test-provname-vendored', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
     ['test-provname-bbx', /Read for the web\./,
       [/<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/]],
+    // (built as it is, every file by a relative path)
+    ['test-abspath', /Input: Text from the file read with input\. By a relative path\./,
+      absoluteCases.slice(1).map(([, text]) => new RegExp(`${text.replace(/\./g, '\\.')} By a relative path\\.`))],
   ].map(([name, text, extra = []]) => [name, [
     text, /^(?![^]*refextract)/, /^(?![^]*<\/html>[^]*<\/html>)/, ...extra,
   ]])),
@@ -3908,6 +3927,32 @@ if (pdfpic) jobs.push(async () => {
   if (beside.length) problems.push(`written beside the page's folder: ${beside.join(', ')}`);
   if (existsSync(join(testDir(pdfpic), 'test'))) problems.push('written two levels above the page\'s folder');
   report(`${pdfpic.name} (an absolute path)`, problems);
+});
+
+// test-abspath built again once for each case, with a
+// test-abspath-case.tex in TEXINPUTS that sets \AbsDir to the absolute
+// path of test/fixtures/ and \AbsCase to the case: the case's file is
+// read by an absolute path, and its text is in the page, with nothing
+// that glossary.4ht writes, and one page
+const abspath = docs.find(d => d.name === 'test-abspath');
+if (abspath) for (const [name, text] of absoluteCases) jobs.push(async () => {
+  const top = join(testDir(abspath), `absolute${name}`), out = join(top, 'html'), aux = join(top, 'aux');
+  mkdirSync(top, { recursive: true });
+  writeFileSync(join(top, 'test-abspath-case.tex'), `\\def\\AbsDir{${join(root, 'test/fixtures')}/}\\def\\AbsCase{${name}}\n`);
+  const result = await build(abspath, out, aux, { TEXINPUTS: `${top}:` });
+  const problems = [];
+  if (result.code !== 0) {
+    problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]|^! /.test(line)));
+  }
+  const page = join(out, 'test-abspath.html');
+  const flat = existsSync(page) ? readFileSync(page, 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
+  if (!flat) problems.push('no page');
+  else {
+    if (!flat.includes(`${text} By an absolute path.`)) problems.push(`no ${JSON.stringify(`${text} By an absolute path.`)} in the page`);
+    if (flat.includes('refextract')) problems.push('refextract in the page');
+    if (/<\/html>[^]*<\/html>/.test(flat)) problems.push('two pages in one');
+  }
+  report(`${abspath.name} (case ${name}, by an absolute path)`, problems);
 });
 
 // test-pdfpages-hint built again without shell escape

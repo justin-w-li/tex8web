@@ -1,0 +1,65 @@
+% Files of the document read by an absolute path, each named like
+% glossary.4ht, and each but one naming itself with \ProvidesFile: read
+% with \input, with and without the extension, with the import package's
+% \import and \subimport, with \InputIfFileExists, through an absolute
+% folder in \input@path, by a path with "..", in the body, and with the
+% subfiles package's \subfile. One names itself without the extension,
+% with a date and a version, and one gives another file's name. As in the
+% PDF, each file's text is in the page.
+%
+% Built as it is, \AbsDir is empty and every path is relative. run.mjs
+% builds the page again once for each case, with a test-abspath-case.tex
+% in TEXINPUTS that sets \AbsDir to the absolute path of test/fixtures/
+% and \AbsCase to the case's name, so that only that case is read: a
+% file marked as the document's would keep glossary.4ht from being read
+% for the cases after it. (The config is read too late, at
+% \begin{document}.) Each file gives its text with \absread, which adds
+% whether the file was read by an absolute path.
+\documentclass{article}
+\usepackage{import}
+\usepackage{subfiles}
+\usepackage{hyperref}
+\makeatletter
+\InputIfFileExists{test-abspath-case}{}{\def\AbsDir{}}
+% \abscase{<case>}{<code>}: the code, unless \AbsCase names another case
+\newcommand\abscase[1]{%
+  \def\abs@name{#1}%
+  \ifdefined\AbsCase
+    \ifx\abs@name\AbsCase\let\abs@next\@firstofone\else\let\abs@next\@gobble\fi
+  \else
+    \let\abs@next\@firstofone
+  \fi
+  \abs@next}
+% (an absolute path when the current file's folder begins with /)
+\newcommand\abskind{\expandafter\abs@kind\CurrentFilePathUsed\relax\abs@end}
+\def\abs@kind#1#2\abs@end{\if/#1an absolute\else a relative\fi}
+% (global, as \subfile reads its file in a group)
+\newcommand\absread[2]{\expandafter\xdef\csname abs#1\endcsname{#2 By \abskind\space path.}}
+\abscase{input}{\input{\AbsDir test-abspath/input/glossary}}
+\abscase{ext}{\input{\AbsDir test-abspath/ext/glossary.tex}}
+\abscase{import}{\import{\AbsDir test-abspath/import/}{glossary}}
+\abscase{subimport}{\subimport{\AbsDir test-abspath/subimport/}{glossary}}
+\abscase{ifexists}{\InputIfFileExists{\AbsDir test-abspath/ifexists/glossary}{}{}}
+\abscase{path}{%
+  \edef\input@path{{\AbsDir test-abspath/path/}}%
+  \input{provd}%
+  \let\input@path\@undefined}
+\abscase{dots}{\input{\AbsDir test-abspath/input/../dots/glossary}}
+\abscase{option}{\input{\AbsDir test-abspath/option/glossary}}
+\abscase{defs}{\input{\AbsDir test-abspath/defs/defs}}
+\abscase{plain}{\input{\AbsDir test-abspath/plain/glossary}}
+\makeatother
+\begin{document}
+\abscase{input}{Input: \absinput\par}
+\abscase{ext}{Extension: \absext\par}
+\abscase{import}{Import: \absimport\par}
+\abscase{subimport}{Subimport: \abssubimport\par}
+\abscase{ifexists}{If exists: \absifexists\par}
+\abscase{path}{Path: \abspath\par}
+\abscase{dots}{Dots: \absdots\par}
+\abscase{option}{Option: \absoption\par}
+\abscase{defs}{Other name: \absdefs\par}
+\abscase{plain}{Unnamed: \absplain\par}
+\abscase{body}{\input{\AbsDir test-abspath/body/glossary}Body: \absbody\par}
+\abscase{subfile}{\subfile{\AbsDir test-abspath/subfile/glossary}Subfile: \abssubfile\par}
+\end{document}
