@@ -1380,6 +1380,8 @@ const contents = {
   ...Object.fromEntries(['test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists', 'test-staleaux-bbl-jobname'].map(name => [name, [
     /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xshipped'>1<\/a>\]<\/span>\./,
     /<dd><a id='Xshipped'><\/a>Sue Shipper\. <span class='cmti-10'>The Shipped Entry<\/span>\. A Publisher, 2003\./]])),
+  'test-stalebcf': [/See <span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>\./,
+    /Ann Able\. <span class='cmti-10'>A Book Kept in the Build Folder<\/span>\. A Publisher, 1999\./],
   'test-staleaux-bbl-current': [
     /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xfresh'>1<\/a>\]<\/span>\./,
     /<dd><a id='Xfresh'><\/a>Fay Fresh\. <span class='cmti-10'>The Fresh Entry<\/span>\. A New Publisher, 2020\./],
@@ -4316,6 +4318,82 @@ if (oldhtf) jobs.push(async () => {
   if (result.code !== 0) problems.push(`make4ht exited with ${result.code}`);
   problems.push(...ligatureProblems(oldhtf.name, html.replace(/[^\S\u202F]+/g, ' ')));
   report(`${oldhtf.name} (an older font file in the build directory)`, problems);
+});
+
+// The documents of test/fixtures/test-stalebcf/ built twice into one build
+// folder, the default build/tex4ht or the document's directory, as doc.tex,
+// whose bibliography backend changed between the builds. The second build
+// exits with 0, and its page has the citation and the entry of a fresh
+// build of that document, with no LaTeX error from the first build's .bbl,
+// .bcf, or .aux. biber runs only for a document that loads biblatex with
+// biber. A build folder that the same backend left current takes no more
+// LaTeX runs than staleBcfRuns.
+const staleBcf = docs.find(d => d.name === 'test-stalebcf');
+const staleBcfEntry = /Ann Able\. <span class='cmti-10'>A Book Kept in the Build Folder<\/span>\. A Publisher, 1999\./;
+const staleBcfBiblatex = [/See \[(?:<a id='[^']*'><\/a>)*<a href='#X0-able'>1<\/a>\]\./, staleBcfEntry];
+const staleBcfBibtex = [/See <span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>\./, staleBcfEntry];
+// (biblatex with a bibtex backend cites a second entry, which a biber run
+// on the first build's .bcf leaves out)
+const staleBcfTwo = [/See \[(?:<a id='[^']*'><\/a>)*<a href='#X0-able'>1<\/a>\] and \[(?:<a id='[^']*'><\/a>)*<a href='#X0-baker'>2<\/a>\]\./,
+  staleBcfEntry, /Bo Baker\. <span class='cmti-10'>A Second Book<\/span>\. A Publisher, 2001\./];
+const staleBcfPages = {
+  biber: staleBcfBiblatex, 'biber-hyperref': staleBcfBiblatex, 'biber-input': staleBcfBiblatex,
+  'biber-sty': staleBcfBiblatex, 'biber-class': staleBcfBiblatex, 'blx-bibtex': staleBcfTwo,
+  'blx-bibtex8': staleBcfTwo, bibtex: staleBcfBibtex, 'bibtex-hyperref': staleBcfBibtex,
+  'bibtex-commented': staleBcfBibtex, thebibliography: staleBcfBibtex,
+  natbib: [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
+  nobib: [/No citation here\./, /^(?![^]*Ann Able)/],
+};
+const staleBcfBiber = new Set(['biber', 'biber-hyperref', 'biber-input', 'biber-sty', 'biber-class']);
+// (the LaTeX runs of a second build of an unchanged document)
+const staleBcfRuns = 2;
+const staleBcfCases = [
+  // [first document, second document, build folder]
+  ['biber', 'bibtex'], ['biber-hyperref', 'bibtex-hyperref'], ['biber', 'bibtex', '.'],
+  ['biber', 'bibtex-commented'], ['biber', 'natbib'], ['biber', 'thebibliography'], ['biber', 'nobib'],
+  ['biber-input', 'bibtex'], ['biber-sty', 'bibtex'], ['biber-class', 'bibtex'],
+  ['biber', 'blx-bibtex'], ['biber', 'blx-bibtex8'], ['blx-bibtex', 'bibtex'],
+  ['bibtex', 'biber'], ['bibtex', 'biber', '.'], ['natbib', 'biber'], ['bibtex', 'biber-input'],
+  ['bibtex', 'biber-sty'], ['bibtex', 'biber-class'], ['bibtex', 'blx-bibtex'],
+  // (a build folder left current)
+  ['biber', 'biber'], ['bibtex', 'bibtex'], ['blx-bibtex', 'blx-bibtex'],
+];
+if (staleBcf) for (const [first, second, folder = 'build/tex4ht'] of staleBcfCases) jobs.push(async () => {
+  const label = `${first}, then ${second}${folder === '.' ? ', with -B .' : ''}`;
+  const dir = join(testDir(staleBcf), 'twice', label.replace(/[^A-Za-z0-9]+/g, '_'));
+  const source = join(staleBcf.dir, 'test-stalebcf');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  for (const name of readdirSync(source)) writeFileSync(join(dir, name), readFileSync(join(source, name)));
+  const once = name => {
+    writeFileSync(join(dir, 'doc.tex'), readFileSync(join(source, `${name}.tex`)));
+    return run(join(root, 'bin/tex8web'), ['-c', staleBcf.cfg, '-B', folder, '-a', 'info', 'doc.tex'],
+      { cwd: dir, slot: true, env: { ...process.env, ...staleBcf.env } });
+  };
+  const problems = [];
+  const before = await once(first);
+  if (before.code !== 0) problems.push(`the first build exited with ${before.code}`);
+  const result = await once(second);
+  const log = result.log ?? '';
+  writeFileSync(join(dir, 'second.log'), log);
+  if (result.code !== 0) {
+    problems.push(`make4ht exited with ${result.code}`, ...log.split('\n').filter(line => /\[(ERROR|FATAL)\]/.test(line)).slice(0, 4));
+  }
+  for (const error of ["Missing 'biblatex' package", 'not created by biblatex', 'Undefined control sequence',
+    'Package biblatex Error', 'Package natbib Error', 'Missing \\begin{document}']) {
+    if (log.includes(error)) problems.push(`the second build's log has ${JSON.stringify(error)}`);
+  }
+  if (!staleBcfBiber.has(second) && /bibliography: biber/.test(log)) problems.push('biber ran for a document without biblatex and biber');
+  if (first === second) {
+    const runs = log.match(/LaTeX call/g)?.length ?? 0;
+    if (runs > staleBcfRuns) problems.push(`${runs} LaTeX runs in the second build, not ${staleBcfRuns}`);
+    if (/runs again without/.test(log)) problems.push('the first LaTeX run was made again');
+  }
+  const page = join(dir, 'build/html/doc.html');
+  const flat = existsSync(page) ? readFileSync(page, 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
+  if (!flat) problems.push('no page');
+  else for (const pattern of staleBcfPages[second]) if (!pattern.test(flat)) problems.push(`the page does not match ${pattern}`);
+  report(`${staleBcf.name} (${label})`, problems);
 });
 
 await pool(jobs, workers, job => job());

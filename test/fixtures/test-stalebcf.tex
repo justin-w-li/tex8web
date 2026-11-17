@@ -1,0 +1,9 @@
+% A bibliography built with bibtex. run.mjs also builds the documents in
+% test-stalebcf/ twice each into one build folder, the second time after
+% the document changed its bibliography backend.
+\documentclass{article}
+\begin{document}
+See \cite{able}.
+\bibliographystyle{plain}
+\bibliography{test-stalebcf/refs}
+\end{document}
