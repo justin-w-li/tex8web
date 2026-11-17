@@ -188,8 +188,9 @@
 % so the build stops in the preamble. Its \externaldocument, and the copy
 % \externalcitedocument, call \__web_xr_old:w instead, which does what
 % tex4ht's \XR@ does with the old release's arguments. The old release
-% reads an \@input file name as written, beside this document, and sets no
-% \filename@area, so \__web_xr_read:w puts no folder in front of it.
+% reads an \@input file name as written, beside this document.
+% \__web_xr_old_read:nn clears the \filename@area that \__web_xr_old:w's
+% \filename@parse left, so \__web_xr_read:w puts no folder in front of it.
 \AddToHook { package/xr/after } { \__web_xr_url_wrap: }
 \AddToHook { package/xr-hyper/after } { \__web_xr_url_wrap: }
 \cs_new_nopar:Npn \__web_xr_old_release: { \@ifnextchar [ \XR@ { \XR@ [ ] } }
@@ -212,7 +213,7 @@
   {
     \web@needs { :declare:xref:files }
     \filename@parse {#2}
-    \cs_gset:cpx { xr:dir: \filename@base } { \filename@area }
+    \cs_gset:cpe { xr:dir: \filename@base } { \filename@area }
     \use:c { :declare:xref:files } { \filename@area \filename@base } { \filename@area }
     \Configure { AtBeginDocument } { \__web_xr_old_read:nn {#1} {#2} } { }
   }
