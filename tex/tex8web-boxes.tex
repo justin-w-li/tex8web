@@ -242,6 +242,21 @@
         \let#1\undefined
     \fi}
 
+% the name that a \nameref to a box gives (its nameref key, which a theorem
+% sets to its title). tcolorbox.4ht keeps the title as given, in a global
+% macro that tex4ht expands when it writes a \label, so a fragile command
+% in it (one defined with \@ifstar or \@ifnextchar) stops the build, and a
+% \label after the box, or after a box inside it, takes that title. So the
+% name is written as a string, as nameref.sty writes it for the PDF, and
+% kept locally until the box is drawn
+\AfterEndPreamble{%
+    \web@needs{o:tcb@gettitle:}%
+    \def\tcb@gettitle#1{%
+        \csname o:tcb@gettitle:\endcsname{#1}%
+        \expandafter\edef\csname NR:Title\endcsname{%
+            \expandafter\noexpand\csname a:newlabel\endcsname
+                {\expandafter\detokenize\expandafter{\@currentlabelname}}}}}
+
 % tex4ht's box, with that style, the title in its font (fonttitle), which
 % tex4ht leaves out, and an anchor for a numbered box, where tcolorbox.4ht
 % puts a label's, for page.lua's link. A \tcbox set in its line (on line,

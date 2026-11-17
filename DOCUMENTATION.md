@@ -403,7 +403,7 @@ Smaller differences in the math are listed in [CONTRIBUTING.md](CONTRIBUTING.md#
 
 ### Packages
 
-- **tcolorbox.** Boxes have their colors, rules, corners, shadow, spacing, and title. Anything drawn with TikZ in a skin, such as overlays and shadings, is shown as a plain frame. Pictures in side-by-side listing boxes are not converted. The line before the lower part of a box stops at the box's padding, where in the PDF it reaches the frame. If the build fails on a fragile command in a box title, make the command robust with `\robustify` in your config.
+- **tcolorbox.** Boxes have their colors, rules, corners, shadow, spacing, and title. Anything drawn with TikZ in a skin, such as overlays and shadings, is shown as a plain frame. Pictures in side-by-side listing boxes are not converted. The line before the lower part of a box stops at the box's padding, where in the PDF it reaches the frame.
 - **enumitem.** `align=left`, `wide`, and `itemindent` are ignored. Labels are right-aligned and hang into the margin, as in standard LaTeX lists.
 - **Table colors.** With colortbl and without xcolor, `\textcolor` with colors defined in your document has no effect, because xcolor is loaded by tex4ht after these colors are defined. Load xcolor yourself, before you define the colors. In a table with `\hline`, the row colors of `\rowcolors` alternate wrongly.
 - **algorithm2e.** The `ruled` and `algoruled` styles have their rules, and every style has its caption in its place. `boxed`, `boxruled`, `tworuled`, and `plainruled` have no frame or rules. Block markers (`\AlgoDisplayBlockMarkers`) are not shown. A line wraps at the window width, not the PDF width, so a `\tcp*` comment can move to the next line.
