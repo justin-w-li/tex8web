@@ -1551,9 +1551,15 @@ const drivers = {
   // default driver, where changebar shows no bars. test-pdftex-changebar
   // gives it to changebar, test-pdftex-changebar-class to the class and
   // with \PassOptionsToPackage, test-pdftex-changebar-caps as PDFTeX,
-  // test-pdftex-adjustbox to adjustbox, which passes it to graphicx and
-  // trimclip, and test-pdftex-trimclip to trimclip alone.
-  // test-pdftex-passon is a guard.
+  // test-pdftex-changebar-color beside changebar's other options and as
+  // PDFTeX to the class, test-pdftex-adjustbox to adjustbox, which passes
+  // it to graphicx and trimclip, test-pdftex-trimclip to trimclip after
+  // graphicx, and test-pdftex-trimclip-first to trimclip before graphicx.
+  // changebar's error leaves its text as with its default driver, so the
+  // error itself is caught in the TeX log, and these rows check that the
+  // text stays. trimclip's dvips driver leaves a space where a clip trims
+  // the box's right side, as without the option, and texWarnings checks
+  // that no other clipping driver was read. test-pdftex-passon is a guard.
   'test-pdftex-changebar': [
     /Before the bar\. Inside the bar, with <span class='cmti-10'>italic<\/span>, <span class='cmss-10'>sans<\/span>, and <span class='cmtt-10'>typewriter <\/span>text\. After the bar\./,
     // (the environment, with a link)
@@ -1566,12 +1572,22 @@ const drivers = {
   ],
   'test-pdftex-changebar-class': [/<p class='noindent'>Before the bar\. Inside the class’s bar\. After the bar\./],
   'test-pdftex-changebar-caps': [/<p class='noindent'>Before the bar\. Inside the capitals’ bar\. After the bar\./],
+  // (without the color option, \cbcolor is undefined, and its argument is
+  // typeset)
+  'test-pdftex-changebar-color': [/<p class='noindent'>Before the bar\. Red bar\. After the red bar\./],
   'test-pdftex-adjustbox': [
-    /<p class='noindent'>Clip: clipped text\. After the clip\./,
+    /<p class='noindent'>Clip: clipped text \. After the clip\./,
     /Adjust: adjusted text\. After the adjustment\./,
     /Trim: trimmed text\. After the trim\./,
     /<span class='cmr-8'>Note: noted clip\. After the note’s clip\.<\/span>/,
     /<span class='cmti-10'>Theorem: theorem trim\. See section<span class='tex8web-nbsp'> <\/span><\/span><a href='#boxes'>/,
+    // (pictures trimmed and clipped by \includegraphics and by \adjustbox)
+    /Picture: <img alt='' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.0825\)' \/>\. After the picture\./,
+    /Boxed picture: <img alt='' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.0825\)' \/>\. After the boxed picture\./,
+  ],
+  'test-pdftex-trimclip-first': [
+    /<p class='noindent'>Clip: clipped text \. After the clip\./,
+    /Picture: <img alt='' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.0825\)' \/>\. After the picture\./,
   ],
   'test-pdftex-trimclip': [
     /<p class='noindent'>Clip: clipped text\. After the clip\./,
@@ -1633,6 +1649,12 @@ const drivers = {
 // and sets a \qedhere twice, where amsthm can.
 const texWarnings = {
   'test-pdftex-class': [/Unused global option/],
+  // (PDFTeX, given to the class, is changebar's in pdflatex. trimclip reads
+  // its dvips driver, tc-dvips.def, as without the option)
+  'test-pdftex-changebar-color': [/Unused global option/],
+  'test-pdftex-adjustbox': [/File: tc-(?!dvips)/],
+  'test-pdftex-trimclip': [/File: tc-(?!dvips)/],
+  'test-pdftex-trimclip-first': [/File: tc-(?!dvips)/],
   'test-boxmath': [/multiply defined/, /qedhere command may not work/],
 };
 

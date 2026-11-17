@@ -1,0 +1,12 @@
+% trimclip loaded with pdfTeX's driver option before graphicx, which it
+% passes the option to as it loads graphicx; then graphicx loaded again
+% with the option, which is no clash. The clipped text and the picture are
+% as without the option, where trimclip uses its dvips driver.
+\documentclass{article}
+\usepackage[pdftex]{trimclip}
+\usepackage[pdftex]{graphicx}
+\begin{document}
+Clip: \clipbox{1pt 0pt 1pt 0pt}{clipped text}. After the clip.
+
+Picture: \includegraphics[width=1cm]{test-picture.png}. After the picture.
+\end{document}

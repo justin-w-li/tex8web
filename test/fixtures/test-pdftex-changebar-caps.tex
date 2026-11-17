@@ -1,7 +1,9 @@
-% changebar given pdfTeX's driver option in its second spelling, PDFTeX.
-% The text is the same as without the option.
+% changebar given pdfTeX's driver option in its second spelling, PDFTeX,
+% then loaded again with it, which is no clash. The text is the same as
+% without the option.
 \documentclass{article}
 \usepackage[PDFTeX]{changebar}
+\RequirePackage[PDFTeX]{changebar}
 \begin{document}
 Before the bar. \cbstart Inside the capitals' bar.\cbend{} After the bar.
 \end{document}

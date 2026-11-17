@@ -1,11 +1,11 @@
-% adjustbox given pdfTeX's driver option, which it passes to graphicx and
-% trimclip, then graphicx and trimclip loaded again with the option, which
-% is no clash; with hyperref. \clipbox, \adjustbox's trim and clip, and
-% \trimbox, in a paragraph, in a footnote, and in a theorem. Each box's
-% text is the same as without the option, where trimclip uses its dvips
-% driver.
+% adjustbox given pdfTeX's driver option beside export, which it passes to
+% graphicx and trimclip, then graphicx and trimclip loaded again with the
+% option, which is no clash; with hyperref. \clipbox, \adjustbox's trim
+% and clip, and \trimbox, in a paragraph, in a footnote, and in a theorem;
+% a picture trimmed and clipped by \includegraphics and by \adjustbox.
+% Each box is as without the option, where trimclip uses its dvips driver.
 \documentclass{article}
-\usepackage[pdftex]{adjustbox}
+\usepackage[pdftex,export]{adjustbox}
 \usepackage[pdftex]{graphicx}
 \usepackage[pdftex]{trimclip}
 \usepackage{hyperref}
@@ -13,11 +13,17 @@
 \begin{document}
 \section{Boxes}\label{boxes}
 
-Clip: \clipbox{0pt 0pt 0pt 0pt}{clipped text}. After the clip.
+Clip: \clipbox{1pt 0pt 1pt 0pt}{clipped text}. After the clip.
 
 Adjust: \adjustbox{trim=0pt,clip}{adjusted text}. After the adjustment.
 
 Trim: \trimbox{0pt 0pt 0pt 0pt}{trimmed text}. After the trim.
+
+Picture: \includegraphics[trim=1pt 1pt 1pt 1pt,clip,width=1cm]{test-picture.png}.
+After the picture.
+
+Boxed picture: \adjustbox{trim=1pt 0pt 1pt 0pt,clip}{\includegraphics[width=1cm]{test-picture.png}}.
+After the boxed picture.
 
 A note.\footnote{Note: \clipbox{0pt 0pt 0pt 0pt}{noted clip}. After the
 note's clip.}

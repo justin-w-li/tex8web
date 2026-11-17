@@ -1,0 +1,9 @@
+% pdfTeX's driver option given to the class as PDFTeX, and to changebar
+% beside its color and outerbars options, which changebar still reads:
+% \cbcolor is defined only with the color option. The text is the same as
+% without the driver option.
+\documentclass[PDFTeX]{article}
+\usepackage[pdftex,color,outerbars]{changebar}
+\begin{document}
+Before the bar. \cbcolor{red}\cbstart Red bar.\cbend{} After the red bar.
+\end{document}
