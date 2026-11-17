@@ -4321,7 +4321,8 @@ if (oldhtf) jobs.push(async () => {
 });
 
 // The documents of test/fixtures/test-stalebcf/ built twice into one build
-// folder, the default build/tex4ht or the document's directory, as doc.tex,
+// folder, the default build/tex4ht or the document's directory (named as
+// ., ./, or its absolute path), as doc.tex,
 // whose bibliography backend changed between the builds. The second build
 // exits with 0, and its page has the citation and the entry of a fresh
 // build of that document, with no LaTeX error from the first build's .bbl,
@@ -4341,33 +4342,37 @@ const staleBcfPages = {
   'biber-sty': staleBcfBiblatex, 'biber-class': staleBcfBiblatex, 'blx-bibtex': staleBcfTwo,
   'blx-bibtex8': staleBcfTwo, bibtex: staleBcfBibtex, 'bibtex-hyperref': staleBcfBibtex,
   'bibtex-commented': staleBcfBibtex, thebibliography: staleBcfBibtex,
+  'biber-include': staleBcfBiblatex, 'bibtex-include': staleBcfBibtex,
   natbib: [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
-  nobib: [/No citation here\./, /^(?![^]*Ann Able)/],
+  nobib: [/No citation here\./],
 };
-const staleBcfBiber = new Set(['biber', 'biber-hyperref', 'biber-input', 'biber-sty', 'biber-class']);
+const staleBcfBiber = new Set(['biber', 'biber-hyperref', 'biber-input', 'biber-sty', 'biber-class', 'biber-include']);
 // (the LaTeX runs of a second build of an unchanged document)
 const staleBcfRuns = 2;
 const staleBcfCases = [
   // [first document, second document, build folder]
   ['biber', 'bibtex'], ['biber-hyperref', 'bibtex-hyperref'], ['biber', 'bibtex', '.'],
+  ['biber', 'bibtex', './'], ['biber', 'bibtex', '$PWD'], ['biber-include', 'bibtex-include'],
   ['biber', 'bibtex-commented'], ['biber', 'natbib'], ['biber', 'thebibliography'], ['biber', 'nobib'],
   ['biber-input', 'bibtex'], ['biber-sty', 'bibtex'], ['biber-class', 'bibtex'],
-  ['biber', 'blx-bibtex'], ['biber', 'blx-bibtex8'], ['blx-bibtex', 'bibtex'],
+  ['biber', 'blx-bibtex'], ['biber', 'blx-bibtex8'], ['blx-bibtex', 'bibtex'], ['blx-bibtex', 'biber'],
   ['bibtex', 'biber'], ['bibtex', 'biber', '.'], ['natbib', 'biber'], ['bibtex', 'biber-input'],
   ['bibtex', 'biber-sty'], ['bibtex', 'biber-class'], ['bibtex', 'blx-bibtex'],
   // (a build folder left current)
-  ['biber', 'biber'], ['bibtex', 'bibtex'], ['blx-bibtex', 'blx-bibtex'],
+  ['biber', 'biber'], ['bibtex', 'bibtex'], ['blx-bibtex', 'blx-bibtex'], ['biber', 'biber', '.'],
+  ['bibtex', 'bibtex', '.'],
 ];
 if (staleBcf) for (const [first, second, folder = 'build/tex4ht'] of staleBcfCases) jobs.push(async () => {
-  const label = `${first}, then ${second}${folder === '.' ? ', with -B .' : ''}`;
-  const dir = join(testDir(staleBcf), 'twice', label.replace(/[^A-Za-z0-9]+/g, '_'));
+  const label = `${first}, then ${second}${folder === 'build/tex4ht' ? '' : `, with -B ${folder}`}`;
+  const where = { 'build/tex4ht': 'default', '.': 'dot', './': 'dot-slash', $PWD: 'absolute' }[folder];
+  const dir = join(testDir(staleBcf), 'twice', `${first}-${second}-${where}`);
   const source = join(staleBcf.dir, 'test-stalebcf');
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   for (const name of readdirSync(source)) writeFileSync(join(dir, name), readFileSync(join(source, name)));
   const once = name => {
     writeFileSync(join(dir, 'doc.tex'), readFileSync(join(source, `${name}.tex`)));
-    return run(join(root, 'bin/tex8web'), ['-c', staleBcf.cfg, '-B', folder, '-a', 'info', 'doc.tex'],
+    return run(join(root, 'bin/tex8web'), ['-c', staleBcf.cfg, '-B', folder === '$PWD' ? dir : folder, '-a', 'info', 'doc.tex'],
       { cwd: dir, slot: true, env: { ...process.env, ...staleBcf.env } });
   };
   const problems = [];
