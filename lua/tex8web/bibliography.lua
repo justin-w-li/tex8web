@@ -28,7 +28,10 @@ function M.run(par)
   local function path(name) return name .. "=" .. files.quote(here .. ":" .. (os.getenv(name) or "")) end
   -- the .bib files named, and the directory bibtex or biber looks them up from
   local command, names, from = nil, {}, dir
-  if bcf then
+  -- (A .bcf of an earlier build stays in the build directory. biblatex
+  -- writes \abx@aux@ lines to the .aux with any backend, and its bibtex
+  -- backend writes \bibdata.)
+  if bcf and aux:find("\\abx@aux@", 1, true) and not aux:find("\\bibdata", 1, true) then
     command = "biber --input-directory " .. files.quote(dir) .. " --output-directory "
       .. files.quote(dir) .. " " .. files.quote(par.input)
     -- (Only names that end in .bib, as latexmk checks: kpsewhich does

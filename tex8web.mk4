@@ -122,27 +122,32 @@ else
   -- from the .aux, .xref, and .4tc it started with, as the first run's
   -- .aux may hold \bibcite lines that natbib rejects. Only the second
   -- run's errors are shown. bibtex or biber then write the right .bbl.
+  -- The build directory's own .aux and .bbl may come from an earlier build
+  -- that used biblatex when this one does not, or the other way, and give
+  -- errors too. Then the run is made again with that .aux or .bbl empty.
+  -- (The main .aux names the .aux of each \include'd file, which is read
+  -- through it.)
   -- (An empty .bbl from the start would cost a current .bbl, which latexmk
   -- leaves after a PDF build, one more LaTeX run: its \bibcite lines would
   -- first reach the .aux in the second run. The error's file cannot tell
   -- whether the .bbl caused it: make4ht's log parser names the .aux or the
   -- config for biblatex's and natbib's errors. So a document with other
-  -- errors runs twice here. Draft mode's one run reads the .bbl beside, as
-  -- pdflatex does.)
+  -- errors runs twice here when a .bbl is beside it. Draft mode's one run
+  -- reads the .bbl beside, as pdflatex does.)
   Make:add("htlatex_first", function(par)
-    local name = par.input .. ".bbl"
-    local file = par.builddir .. "/" .. name
+    local base = par.builddir .. "/" .. par.input
     local out, here = lfs.attributes(par.builddir), lfs.attributes(".")
-    if mode == "draft" or not out or (here.ino == out.ino and here.dev == out.dev)
-      or not lfs.attributes(name) or lfs.attributes(file) then
+    local beside = out and not (here.ino == out.ino and here.dev == out.dev)
+      and lfs.attributes(par.input .. ".bbl") and not lfs.attributes(base .. ".bbl")
+    local saved = {}
+    for _, extension in ipairs {"aux", "xref", "4tc", "bbl"} do
+      saved[extension] = files.read(base .. "." .. extension) or false
+    end
+    if mode == "draft" or not (beside or saved.aux or saved.bbl) then
       return htlatex.htlatex(par)
     end
     -- (htlatex.htlatex calls Make.testlogfile, which prints the log's
     -- errors, after the run)
-    local saved = {}
-    for _, extension in ipairs {"aux", "xref", "4tc"} do
-      saved[extension] = files.read(par.builddir .. "/" .. par.input .. "." .. extension) or false
-    end
     local testlogfile, errors = Make.testlogfile, 0
     Make.testlogfile = function(p)
       local content = files.read(p.builddir .. "/" .. p.input .. ".log") or ""
@@ -152,9 +157,23 @@ else
     htlatex.htlatex(par)
     Make.testlogfile = testlogfile
     if errors == 0 then return testlogfile(par) end
-    log:status("the first LaTeX run gave errors and a .bbl is beside the document, so it runs again without that .bbl")
+    -- (biblatex writes \abx@aux@ lines to the .aux with any backend, and
+    -- this line at the top of its .bbl)
+    local biblatex = (files.read(base .. ".aux") or ""):find("\\abx@aux@", 1, true) ~= nil
+    local function stale(content, mark)
+      return content and content ~= "" and (content:find(mark, 1, true) ~= nil) ~= biblatex
+    end
+    local aux, bbl = stale(saved.aux, "\\abx@aux@"), stale(saved.bbl, "% $ biblatex auxiliary file $")
+    if not (beside or aux or bbl) then return testlogfile(par) end
+    if beside then
+      log:status("the first LaTeX run gave errors and a .bbl is beside the document, so it runs again without that .bbl")
+    else
+      log:status("the first LaTeX run gave errors and the build directory has files of a build with another bibliography backend, so it runs again without them")
+    end
+    saved.bbl = nil
+    if aux then saved.aux = "" end
     for extension, content in pairs(saved) do
-      local path = par.builddir .. "/" .. par.input .. "." .. extension
+      local path = base .. "." .. extension
       if content then
         local f = io.open(path, "w")
         f:write(content)
@@ -163,7 +182,7 @@ else
         os.remove(path)
       end
     end
-    io.open(file, "w"):close()
+    if beside or bbl then io.open(base .. ".bbl", "w"):close() end
     return htlatex.htlatex(par)
   end, {correct_exit = 0})
   Make:htlatex_first(latex)

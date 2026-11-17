@@ -4394,8 +4394,11 @@ if (staleBcf) for (const [first, second, folder = 'build/tex4ht'] of staleBcfCas
     if (runs > staleBcfRuns) problems.push(`${runs} LaTeX runs in the second build, not ${staleBcfRuns}`);
     if (/runs again without/.test(log)) problems.push('the first LaTeX run was made again');
   }
-  const page = join(dir, 'build/html/doc.html');
-  const flat = existsSync(page) ? readFileSync(page, 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
+  // (With an absolute -B, make4ht writes the page under build/html at
+  // that path. DOCUMENTATION.md asks for a -B relative to the document.)
+  const html = join(dir, 'build/html');
+  const page = existsSync(html) && readdirSync(html, { recursive: true }).find(name => /(^|\/)doc\.html$/.test(name));
+  const flat = page ? readFileSync(join(html, page), 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
   if (!flat) problems.push('no page');
   else for (const pattern of staleBcfPages[second]) if (!pattern.test(flat)) problems.push(`the page does not match ${pattern}`);
   report(`${staleBcf.name} (${label})`, problems);
