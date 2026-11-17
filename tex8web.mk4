@@ -152,7 +152,7 @@ else
     htlatex.htlatex(par)
     Make.testlogfile = testlogfile
     if errors == 0 then return testlogfile(par) end
-    log:status("the first LaTeX run gave errors with the .bbl beside the document, so it runs again without it")
+    log:status("the first LaTeX run gave errors and a .bbl is beside the document, so it runs again without that .bbl")
     for extension, content in pairs(saved) do
       local path = par.builddir .. "/" .. par.input .. "." .. extension
       if content then

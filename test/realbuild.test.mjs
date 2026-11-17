@@ -120,4 +120,25 @@ describe('real builds', { concurrency: true }, () => {
       rmSync(dir, { recursive: true });
     }
   });
+
+  // The full build removes its .bbl, as the .bib is missing, so that LaTeX
+  // reads the shipped one beside the document. A draft build runs no
+  // bibtex, so its one LaTeX run must read that .bbl too, even when the
+  // document has an error the .bbl did not cause.
+  test('a real draft build reads a shipped .bbl after a full build, with an error in the document', { timeout: 180000 }, async () => {
+    const { dir, doc, make } = pdfDoc({ noLatexmk: true });
+    try {
+      writeFileSync(join(doc.dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nCited~\\cite{shipped}. \\undefinedmacro\n'
+        + '\\bibliographystyle{plain}\n\\bibliography{missing}\n\\end{document}\n');
+      writeFileSync(join(doc.dir, 'doc.bbl'), '\\begin{thebibliography}{1}\n\\bibitem{shipped} A.~Writer. \\newblock Shipped entry.\n\\end{thebibliography}\n');
+      const page = () => readFileSync(join(dir, 'html/doc.html'), 'utf8');
+      const full = await make();
+      assert.match(page(), /Shipped entry/, full.log);
+      doc.draft = true;
+      const draft = await make();
+      assert.match(page(), /Shipped entry/, draft.log);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
 });
