@@ -1,0 +1,19 @@
+% A guard: it checks a case that the fix of the files that name themselves
+% with \ProvidesFile must not break.
+% A bibliography style beside the document, debug.bbx, that biblatex
+% reads with the primitive \input from biblatex.sty, as for a modified
+% copy of reading.bbx. The style names itself \ProvidesFile{debug.bbx},
+% so tex4ht reads debug.4ht, as for a style of the tree. As in the PDF,
+% the citation's entry is in the page. debug.4ht defines
+% \bbx@subfieldlabel, which the style does not have, so the page shows
+% that it was read: the page's last sentence, which the PDF does not have.
+\documentclass{article}
+\usepackage[backend=bibtex,bibstyle=debug,citestyle=numeric]{biblatex}
+\addbibresource{test-biblatex-authoryear.bib}
+\begin{document}
+Some text, as cited in \cite{book}.
+\printbibliography
+\makeatletter
+\ifdefined\bbx@subfieldlabel Read for the web.\fi
+\makeatother
+\end{document}

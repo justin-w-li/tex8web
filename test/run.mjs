@@ -1147,8 +1147,9 @@ const contents = {
   // color's value; a file beside the document that gives another .4ht's
   // name, a subfolder file after glossary.ltx, a file read before
   // \documentclass, and a file beside the document that names itself
-  // glossary.sty; and, as guards, a file read with \include and a
-  // vendored copy of dvipsnam.def in a subfolder, which keeps dvipsnam.4ht)
+  // glossary.sty; and, as guards, a file read with \include, a vendored
+  // copy of dvipsnam.def in a subfolder, which keeps dvipsnam.4ht, and a
+  // biblatex style beside the document, which keeps debug.4ht)
   ...Object.fromEntries([
     ['test-provname', /Glossary: Text from the subfolder glossary file\./],
     ['test-provname-index', /Glossary: Text from the glossary file without an extension\./],
@@ -1163,6 +1164,7 @@ const contents = {
     ['test-provname-early', /Glossary: Text from the subfolder glossary file\./],
     ['test-provname-sty', /Glossary: Text from the glossary file\./],
     ['test-provname-vendored', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
+    ['test-provname-bbx', /Read for the web\./],
   ].map(([name, text]) => [name, [
     text, /^(?![^]*refextract)/, /^(?![^]*<\/html>[^]*<\/html>)/,
     ...name === 'test-provname-index' ? [
@@ -1170,6 +1172,7 @@ const contents = {
       /<h3 class='likesectionHead' id='[^']+'>.*Index<\/h3>\s*<div class='theindex'><div class='theindex-letter'>\s*<div class='index-item'>ring, <a href='#[^']+'>1<\/a>/,
     ] : [],
     ...name === 'test-provname-both' ? [/Subfolder: Text from the subfolder glossary file\./] : [],
+    ...name === 'test-provname-bbx' ? [/<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/] : [],
     ...name === 'test-provname-colors'
       ? [/<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/] : [],
   ]])),
