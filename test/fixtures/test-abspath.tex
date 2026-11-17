@@ -12,25 +12,27 @@
 % copy of epsf.tex, \epsfbox makes a picture.
 %
 % Built as it is, \AbsDir is empty and every path is relative. run.mjs
-% builds the page again once for each case, with a test-abspath-case.tex
-% in TEXINPUTS that sets \AbsDir to the absolute path of test/fixtures/
-% and \AbsAbove to that of test/abspath-above/, and \AbsCase to the
-% case's name, so that only that case is read: a
-% file marked as the document's would keep glossary.4ht from being read
-% for the cases after it. (The config is read too late, at
-% \begin{document}.) Each file gives its text with \absread, which adds
-% whether the file was read by an absolute path.
+% builds the page again with a test-abspath-case.tex in TEXINPUTS that
+% sets \AbsDir to the absolute path of test/fixtures/ and \AbsAbove to
+% that of test/abspath-above/, and \AbsCase to a list of cases, separated
+% by commas, so that only those cases are read. Each case whose file gives
+% glossary.tex's name in the preamble is built alone: a file marked as the
+% document's would keep glossary.4ht from being read for the cases after
+% it. The cases plain, keep, body, and subfile mark no such name, and are
+% built together. (The config is read too late, at \begin{document}.)
+% Each file gives its text with \absread, which adds whether the file was
+% read by an absolute path.
 \documentclass{article}
 \usepackage{import}
 \usepackage{subfiles}
 \usepackage{hyperref}
 \makeatletter
 \InputIfFileExists{test-abspath-case}{}{\def\AbsDir{}\def\AbsAbove{../abspath-above/}}
-% \abscase{<case>}{<code>}: the code, unless \AbsCase names another case
+% \abscase{<case>}{<code>}: the code, unless \AbsCase lists other cases
 \newcommand\abscase[1]{%
-  \def\abs@name{#1}%
   \ifdefined\AbsCase
-    \ifx\abs@name\AbsCase\let\abs@next\@firstofone\else\let\abs@next\@gobble\fi
+    \@expandtwoargs\in@{,#1,}{,\AbsCase,}%
+    \ifin@\let\abs@next\@firstofone\else\let\abs@next\@gobble\fi
   \else
     \let\abs@next\@firstofone
   \fi
