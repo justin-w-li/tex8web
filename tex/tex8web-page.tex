@@ -605,6 +605,9 @@
         \let\thispagestyle\@gobble \let\refstepcounter\@gobble
         \let\addcontentsline\@gobblethree \let\markboth\@gobbletwo
         \let\@part\web@@part \c@secnumdepth\z@
+        % (sectsty's \@part for KOMA classes calls \@maybeasf, which they
+        % no longer define)
+        \let\@maybeasf\relax
         \setbox0\vbox{\web@part{x}}%
     \endgroup
     \ifnum\web@nskips=2 \edef\web@skips{\expandafter\web@twoskips\web@skips}\fi
@@ -630,21 +633,31 @@
         \fi\fi\fi
     \endgroup}
 \ifdefined\c@chapter
+    % memoir's part fonts, \parttitlefont and \partnamefont, macros without
+    % parameters. sectsty's \parttitlefont takes the font as its argument,
+    % and the part then has book's \Huge and \huge
+    \let\web@parttitlefont\@undefined \let\web@partnamefont\@undefined
+    \ifdefined\parttitlefont
+        \web@meaninghas{macro:->}\parttitlefont{\let\web@parttitlefont\parttitlefont}%
+    \fi
+    \ifdefined\partnamefont
+        \web@meaninghas{macro:->}\partnamefont{\let\web@partnamefont\partnamefont}%
+    \fi
     \begingroup
         \expandafter\let\csname ttls@part\endcsname\@undefined
         % (memoir's \@part centers the part before \parttitlefont, whose
         % commands are read for the alignment, unless the font sets another)
-        \ifdefined\parttitlefont\ifdefined\web@@part
+        \ifdefined\web@parttitlefont\ifdefined\web@@part
             \let\web@b\relax
             \web@meaninghas\centering\web@@part{\let\web@b\@empty}%
-            \web@meaninghas\raggedright\parttitlefont{\let\web@b\relax}%
-            \web@meaninghas\raggedleft\parttitlefont{\let\web@b\relax}%
+            \web@meaninghas\raggedright\web@parttitlefont{\let\web@b\relax}%
+            \web@meaninghas\raggedleft\web@parttitlefont{\let\web@b\relax}%
             \ifx\web@b\@empty
-                \expandafter\def\expandafter\parttitlefont\expandafter
-                    {\expandafter\centering\parttitlefont}%
+                \expandafter\def\expandafter\web@parttitlefont\expandafter
+                    {\expandafter\centering\web@parttitlefont}%
             \fi
         \fi\fi
-        \web@bighead{part}\parttitlefont\partnamefont
+        \web@bighead{part}\web@parttitlefont\web@partnamefont
     \endgroup
     \web@bighead{chapter}\chaptitlefont\chapnamefont
     % (mwrep has no \@makechapterhead)
@@ -654,8 +667,8 @@
     % (mwrep's \part has no \@part)
     \ifcsname web@titlefont@part\endcsname\else
         \ifdefined\web@@part
-            \web@partskips{\ifdefined\partnamefont\partnamefont{}\else\huge\fi}%
-                {\ifdefined\parttitlefont\parttitlefont{}\else\Huge\fi}%
+            \web@partskips{\ifdefined\web@partnamefont\web@partnamefont{}\else\huge\fi}%
+                {\ifdefined\web@parttitlefont\web@parttitlefont{}\else\Huge\fi}%
         \fi
     \fi
 \else
