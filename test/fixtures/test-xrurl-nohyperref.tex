@@ -1,0 +1,12 @@
+% xr-hyper's URL of another document's PDF, with xr-hyper and no hyperref.
+% The page builds, and each reference to a label of an .aux that LaTeX
+% wrote prints its number or page, with no link.
+\documentclass{article}
+\usepackage{xr-hyper}
+\externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
+\begin{document}
+CaseO \ref{X-ss}, page \pageref{X-front}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}

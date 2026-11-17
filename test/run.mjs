@@ -2165,6 +2165,10 @@ const autoTex4ht = page => new RegExp(`Auto written by tex4ht <a href='test-xr\\
 const latexUrl = name => said(`${name} @, page @, named @, auto @.`, '1\\.1', 'iv', 'Main\\s+theorem', `Theorem${nbsp}2`);
 // (a link to a label of an .aux that tex4ht wrote, on that document's page)
 const tex4htLink = (page, anchor) => `<a href='test-xrurl\\/\\.\\.\\/${page}\\.html#${anchor}'>1\\.1<\\/a>`;
+// (a reference to a file that does not exist yet, as LaTeX prints it)
+const missing = name => said(`${name} @.`, '\\?\\?');
+// (the URL is dropped: no text or link of it anywhere on the page)
+const noUrl = /^(?![^]*example\.org)/;
 // (a label of this document: a link to its heading)
 const local = number => new RegExp(`Local <a href='#here'>${number}(?:<!--[^>]*-->)?<\\/a>\\.`);
 const external = {
@@ -2204,14 +2208,16 @@ const external = {
     new RegExp(`CaseC ${tex4htLink('test-xrurl', 'x1-20001\\.1')}\\.`),
     ...[['cmti-10', 'In italics'], ['cmr-8', 'In a footnote'], ['cmss-10', 'In sans-serif'], ['cmtt-10', 'In typewriter'], ['cmti-10', 'In a theorem']]
       .map(([font, context]) => new RegExp(`<span class='${font}'>${context}, 1\\.1\\.\\s*<\\/span>`)),
-    /<h3 class='sectionHead'[^>]*>(?:(?!<\/h3>)[^])*>See 1\.1<\/h3>/, local(2)],
-  'test-xrurl-first': [latexUrl('CaseI'), local(1)],
+    /<h3 class='sectionHead'[^>]*>(?:(?!<\/h3>)[^])*>See 1\.1<\/h3>/, local(2), missing('CaseE'), noUrl],
+  'test-xrurl-first': [latexUrl('CaseI'), local(1), noUrl],
+  // (xr-hyper without hyperref)
+  'test-xrurl-nohyperref': [said('CaseO @, page @.', '1\\.1', 'iv'), local(1), noUrl],
   'test-xrurl-xr': [said('CaseG @, page @.', '1\\.1', 'iv'),
     new RegExp(`CaseH ${tex4htLink('test-xrurl-xr', 'x1-20001\\.1')}\\.`),
-    said('CaseJ @, page @, cited @.', '1\\.1', 'iv', '1'), local(1)],
-  'test-xrurl-xr-first': [latexUrl('CaseK'), local(1)],
+    said('CaseJ @, page @, cited @.', '1\\.1', 'iv', '1'), local(1), missing('CaseN'), noUrl],
+  'test-xrurl-xr-first': [latexUrl('CaseK'), local(1), noUrl],
   'test-xrurl-xr-hyperref': [latexUrl('CaseL'),
-    new RegExp(`CaseM ${tex4htLink('test-xrurl-xr-hyperref', 'x1-90001\\.1')}\\.`), local(1)],
+    new RegExp(`CaseM ${tex4htLink('test-xrurl-xr-hyperref', 'x1-90001\\.1')}\\.`), local(1), noUrl],
   'test-xrurl-zref': [said('CaseZ @, page @.', '1\\.1', 'iv'), local(1)],
 };
 

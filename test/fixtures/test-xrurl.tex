@@ -1,7 +1,8 @@
 % References to labels of other documents whose \externaldocument gives
 % xr-hyper's URL of that document's PDF, loaded after hyperref: after the
 % file, on the next line, after a space, empty, and holding ~ and _; with
-% the nocite option, through \externalcitedocument, and with no prefix.
+% the nocite option, through \externalcitedocument, with no prefix, and
+% for a file that does not exist yet, whose reference prints ??.
 % The page builds, and each reference prints as without a URL: from an
 % .aux that LaTeX wrote, its number, page, or name as in the PDF, with no
 % link, in each context; from an .aux that tex4ht wrote, with its .xref, a
@@ -15,6 +16,7 @@
   [https://example.org/hyper.pdf]
 \externalcitedocument{test-xrurl/tex4ht}[https://example.org/~a/b_c.pdf]
 \externaldocument[P-]{test-xr/plain} []
+\externaldocument[M-]{test-xrurl/none}[https://example.org/none.pdf]
 \newtheorem{theorem}{Theorem}
 \begin{document}
 \section{See \ref{X-ss}}
@@ -26,6 +28,8 @@ CaseB \ref{H-oss}, auto \autoref{H-oss}.
 CaseC \ref{oss}.
 
 CaseD \ref{P-ss}, page \pageref{P-front}.
+
+CaseE \ref{M-a}.
 
 \textit{In italics, \ref{X-ss}.}
 A note.\footnote{In a footnote, \ref{X-ss}.}

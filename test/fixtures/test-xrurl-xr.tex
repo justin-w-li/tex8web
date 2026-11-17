@@ -2,20 +2,24 @@
 % as xr-hyper does: with a prefix, with none, and through
 % \externalcitedocument. The page builds, and each reference prints as
 % without a URL: a label of an .aux that LaTeX wrote with its number or
-% page, and one of an .aux that tex4ht wrote, with its .xref, as a link to
-% that document's page.
+% page, one of an .aux that tex4ht wrote, with its .xref, as a link to
+% that document's page, and one of a file that does not exist yet as ??.
+% A URL may hold an escaped \#.
 \documentclass{article}
 \usepackage{xr}
 \externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
-\externaldocument[T-]{test-xrurl/xr}[https://example.org/t.pdf]
+\externaldocument[T-]{test-xrurl/xr}[https://example.org/~a/b_c\#page=2]
 \externaldocument{test-xr/plain}[https://example.org/plain.pdf]
 \externalcitedocument[C-]{test-xr/plain}[https://example.org/cite.pdf]
+\externaldocument[M-]{test-xrurl/none}[https://example.org/none.pdf]
 \begin{document}
 CaseG \ref{X-ss}, page \pageref{X-front}.
 
 CaseH \ref{T-oss}.
 
 CaseJ \ref{ss}, page \pageref{front}, cited \ref{C-s}.
+
+CaseN \ref{M-a}.
 
 \section{Here}\label{here}
 Local \ref{here}.
