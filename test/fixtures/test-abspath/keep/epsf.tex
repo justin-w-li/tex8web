@@ -1,0 +1,6 @@
+% A file of test-abspath.tex that names itself epsf.tex, whose .4ht is
+% kept, and reads the copy of epsf.tex in test/fixtures by the same
+% folder, so that only its \ProvidesFile lists the name epsf.
+\ProvidesFile{epsf.tex}
+\input{\AbsDir epsf.ltx}
+\absread{keep}{Text from the file that gives a kept name.}
