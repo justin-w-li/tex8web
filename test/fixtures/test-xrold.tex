@@ -13,7 +13,7 @@
 \usepackage{xr}[=v5]
 \externaldocument[S-]{test-xrold-ext}
 \externaldocument[X-]{test-xr/latex}
-\externaldocument[T-]{test-xrurl/xr}
+\externaldocument[T-]{test-xrold/t4ht}
 \externaldocument{test-xrold/ext}
 \externaldocument[M-]{test-xrold/none}
 \externalcitedocument[C-]{test-xr/plain}
@@ -40,6 +40,8 @@ A note.\footnote{In a footnote, \ref{X-ss}.}
 In a theorem, \ref{X-ss}.
 \end{theorem}
 
-\section{See \ref{X-ss}}\label{here}
+\section{See \ref{X-ss}}
+
+\section{Here}\label{here}
 Local \ref{here}.
 \end{document}

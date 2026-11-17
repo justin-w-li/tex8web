@@ -2249,15 +2249,15 @@ const external = {
   // (xr's old release: an \@input of the other .aux read as written, beside
   // this document, in each context)
   'test-xrold': [said('CaseA @, included @.', '5', '6'), said('CaseB @, page @, included @.', '1\\.1', 'iv', '\\?\\?'),
-    new RegExp(`CaseC ${tex4htLink('test-xrurl-xr', 'x1-20001\\.1')}\\.`),
+    /CaseC <a href='test-xrold\/\.\.\/test-xrold\.html#x1-20001\.1'>1\.1<\/a>\./,
     said('CaseD @, included @.', '7', '8'), missing('CaseE'), said('CaseF cited @, page @.', '1', 'iv'),
     ...[['cmti-10', 'In italics'], ['cmr-8', 'In a footnote'], ['cmss-10', 'In sans-serif'], ['cmtt-10', 'In typewriter'], ['cmti-10', 'In a theorem']]
       .map(([font, context]) => new RegExp(`<span class='${font}'>${context}, 1\\.1\\.\\s*<\\/span>`)),
-    /<h3 class='sectionHead'[^>]*>(?:(?!<\/h3>)[^])*>See 1\.1<\/h3>/, local(1)],
+    /<h3 class='sectionHead'[^>]*>(?:(?!<\/h3>)[^])*>See 1\.1<\/h3>/, local(2)],
   // (xr's old release, loaded with a date, under hyperref)
   'test-xrold-hyperref': [latexUrl('CaseL'),
-    /Written by tex4ht under hyperref: <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>1\.1<\/a>, <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>Two<\/a>\./,
-    autoTex4ht('test-xr'), local(1), missing('Included')],
+    /Written by tex4ht under hyperref: <a href='test-xrold\/\.\.\/test-xrold-hyperref\.html#x1-90001\.1'>1\.1<\/a>, <a href='test-xrold\/\.\.\/test-xrold-hyperref\.html#x1-90001\.1'>Two<\/a>\./,
+    /Auto written by tex4ht <a href='test-xrold\/\.\.\/test-xrold-hyperref\.html#x1-90001\.1'>1\.1<\/a>\./, local(1), missing('Included')],
   // (xr's old release loaded before hyperref)
   'test-xrold-first': [latexUrl('CaseL'), missing('Included'), local(1)],
 };
