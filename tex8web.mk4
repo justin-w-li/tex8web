@@ -86,6 +86,16 @@ else
       end
     end
     walk(".")
+    -- (an empty .aux, .xref, and .4tc, so that the first LaTeX run does
+    -- not read those of an earlier build beside the document, as web2c's
+    -- open_input looks there for a file missing in the build directory)
+    local here = lfs.attributes(".")
+    if not (here.ino == out.ino and here.dev == out.dev) then
+      for _, extension in ipairs {"aux", "xref", "4tc"} do
+        local file = par.builddir .. "/" .. par.input .. "." .. extension
+        if not lfs.attributes(file) then io.open(file, "w"):close() end
+      end
+    end
     return 0
   end)
   Make:folders {}
