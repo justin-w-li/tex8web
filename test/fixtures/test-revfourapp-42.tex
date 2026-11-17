@@ -1,0 +1,18 @@
+% A revtex4-2 article for aps, with a single appendix from \appendix*: a
+% section with a \label, a \ref to it, which is empty in the PDF, and an
+% equation, numbered A.1 in the PDF.
+\documentclass{revtex4-2}
+\begin{document}
+\title{Revfour appendix on revtex4-2}
+\author{Someone}
+\maketitle
+\section{First section}
+Text of the first section, before appendix~[\ref{app:new}].
+\appendix*
+\section{New appendix}\label{app:new}
+Text of the new appendix.
+\begin{equation}
+x = y \label{eq:new}
+\end{equation}
+Text after Eq.~(\ref{eq:new}).
+\end{document}

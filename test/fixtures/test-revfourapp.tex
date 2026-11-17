@@ -1,0 +1,34 @@
+% A revtex4 article for aps, without hyperref, with a single appendix
+% from \appendix*. revtex4 sets \thesection to \unskip there, which
+% tex4ht wrote into the anchor of the next section, and the next run
+% stopped on it. In the PDF each section after \appendix* starts with
+% "Appendix:" and has no number, a \ref to it is empty, and its
+% equations are numbered A.1. A section with no title is "Appendix"
+% alone, and a starred section has no label.
+\documentclass{revtex4}
+\begin{document}
+\title{Revfour appendix}
+\author{Someone}
+\begin{abstract}
+Text of the abstract.
+\end{abstract}
+\maketitle
+\section{First section}\label{sec:first}
+Text of the first section, before appendix~[\ref{app:math}] and
+Eq.~(\ref{eq:app}).
+\appendix*
+\section{Mass $m$ and \emph{energy}}\label{app:math}
+Text of the appendix with math.
+\begin{equation}
+E = m c^2 \label{eq:app}
+\end{equation}
+Text after Eq.~(\ref{eq:app}), and back to appendix~[\ref{app:math}].
+\subsection{A subsection}
+Text of the appendix's subsection.
+\section[Short]{Long title of an appendix}
+Text of the long appendix.
+\section{}
+Text of the bare appendix.
+\section*{Starred tail}
+Text of the starred tail.
+\end{document}

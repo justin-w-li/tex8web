@@ -1008,6 +1008,58 @@ const contents = {
     /Text of the abstract\.[^]*Text of the body\./,
     /^(?![^]*(?:PACS|Keywords|class='pacs'|class='keywords'))/,
   ],
+  // (sections after revtex's \appendix*, as in the PDF: each heading
+  // starts with "Appendix:" and has no number, or is "Appendix" alone
+  // with no title, and no other "Appendix" comes before it. A \ref to
+  // such a section is empty, its equations are numbered A.1, and a
+  // starred section after it has no label.)
+  'test-revfourapp': [
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Mass (?:(?!<\/h3>)[^])*<mjx-container(?:(?!<\/h3>)[^])*energy(?:(?!<\/h3>)[^])*<\/h3>/,
+    // (no empty paragraph between the heading and its text: the \label's
+    // anchor is in neither)
+    /<\/h3>\s*<p class='noindent'>Text of the appendix with math\./,
+    /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the appendix.s subsection\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Long title of an appendix<\/h3>\s*<p class='noindent'>Text of the long appendix\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix<\/span>(?:\s|<[^>]*>)*<\/h3>\s*<p class='noindent'>Text of the bare appendix\./,
+    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark|Appendix)[^])*Starred tail<\/h3>\s*<p class='noindent'>Text of the starred tail\./,
+    ...['Text of the first section,', 'Text of the appendix.s subsection\\.', 'Text of the long appendix\\.'].map(text =>
+      new RegExp(`${text}(?:(?!Appendix|<h3)[^])*<h3 class='sectionHead'`)),
+    /before appendix<span class='tex8web-nbsp'> <\/span>\[(?:<[^>]*>)*\]/,
+    /back to appendix<span class='tex8web-nbsp'> <\/span>\[(?:<[^>]*>)*\]/,
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
+    /and Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#[^']+'>A\.1</,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  'test-revfourapp-hyperref': [
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Linked appendix<\/h3>/,
+    /Linked appendix<\/h3>\s*<p class='noindent'>Text of the linked appendix\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix<\/span>(?:\s|<[^>]*>)*<\/h3>\s*<p class='noindent'>Text of the bare appendix\./,
+    ...['Text of the first section,', 'Text after Eq\\.'].map(text =>
+      new RegExp(`${text}(?:(?!Appendix|<h3)[^])*<h3 class='sectionHead'`)),
+    /before appendix<span class='tex8web-nbsp'> <\/span>\[(?:<[^>]*>)*\]/,
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  // (prl numbers no section: the appendix's heading has no label)
+  'test-revfourapp-prl': [
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\.\s*<\/p>\s*<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark|Appendix)[^])*Methods<\/h3>\s*<p class='noindent'>Text of the methods\./,
+    /^(?![^]*Appendix)/,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  'test-revfourapp-aip': [
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Extra material<\/h3>\s*<p class='noindent'>Text of the extra material\./,
+    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark|Appendix)[^])*Starred tail<\/h3>\s*<p class='noindent'>Text of the starred tail\./,
+    /Text of the first section\.(?:(?!Appendix|<h3)[^])*<h3 class='sectionHead'/,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
+  'test-revfourapp-42': [
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*New appendix<\/h3>/,
+    /New appendix<\/h3>\s*<p class='noindent'>Text of the new appendix\./,
+    /Text of the first section,(?:(?!Appendix|<h3)[^])*<h3 class='sectionHead'/,
+    /before appendix<span class='tex8web-nbsp'> <\/span>\[(?:<[^>]*>)*\]/,
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
+    /<\/main><\/body> ?<\/html> ?$/,
+  ],
   'test-report': [
     /<nav [^>]*id='tex8web-toc'[^>]*><a class='tex8web-toc-doctitle' href='#'>[^<]+<\/a><p [^>]*>Contents<\/p><input [^>]*><div class='tableofcontents'>(?:(?!<\/nav>)[^])*<span class='chapterToc'><span class='tocnumber'>1<\/span>/,
     /<\/nav>(?:(?!<\/nav>)[^])*<div class='tableofcontents'>\s*<span class='lofToc'>/,

@@ -1,0 +1,14 @@
+% A revtex4 letter for prl, which numbers no section, with a single
+% appendix from \appendix*. It checks a case the fix must not break: the
+% heading has no number and no "Appendix:", as in the PDF.
+\documentclass[prl]{revtex4}
+\begin{document}
+\title{Revfour letter appendix}
+\author{Someone}
+\maketitle
+\section{First section}
+Text of the first section.
+\appendix*
+\section{Methods}
+Text of the methods.
+\end{document}

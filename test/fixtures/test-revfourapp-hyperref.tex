@@ -1,0 +1,22 @@
+% A revtex4 article for aps with hyperref, with a single appendix from
+% \appendix*: one section with a title and a \label, and one with no
+% title, whose heading is "Appendix" alone, as in the PDF. A \ref to the
+% appendix is empty, as in the PDF.
+\documentclass{revtex4}
+\usepackage{hyperref}
+\begin{document}
+\title{Revfour appendix with hyperref}
+\author{Someone}
+\maketitle
+\section{First section}
+Text of the first section, before appendix~[\ref{app:linked}].
+\appendix*
+\section{Linked appendix}\label{app:linked}
+Text of the linked appendix.
+\begin{equation}
+a = b \label{eq:linked}
+\end{equation}
+Text after Eq.~(\ref{eq:linked}).
+\section{}
+Text of the bare appendix.
+\end{document}
