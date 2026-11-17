@@ -120,8 +120,8 @@ const measured = {
   'test-part': { '--tex8web-part-size': '2.074em', '--tex8web-part-label-size': '0.6943em',
     '--tex8web-part-align': 'left', '--tex8web-part-before': '0.83038em',
     '--tex8web-part-after': '0.62279em', '--tex8web-part-label-after': '0em' },
-  // (a book or report with sectsty, whose \parttitlefont and \partnamefont
-  // take an argument: the part's title in book's \Huge, 24.88pt, and its
+  // (a book or report with sectsty, whose \parttitlefont takes an
+  // argument: the part's title in book's \Huge, 24.88pt, and its
   // label in \huge, 20.74pt, 20pt above the title, both bold and centered,
   // as sectsty's \@part sets them. In test-sectpart the title is centered,
   // as \parttitlefont{\centering} sets it, and the label's \raggedleft is
@@ -817,9 +817,9 @@ const noteWords = (mark, words) => new RegExp(`<span class='footnote-mark'><a [^
 const sectpartText = [/<h2 class='chapterHead'[^>]*>(?:(?!<\/h2>)[^])*A chapter<\/h2>/,
   /<h3 class='sectionHead'[^>]*>(?:(?!<\/h3>)[^])*A section with <span class='[^']*'>italic<\/span><\/h3>/,
   /Text in <span class='[^']*'>italic\s*<\/span>\s*with a footnote\./, /The footnote text\./];
-const sectpartParts = [...sectpartText,
-  /<h1 class='partHead'[^>]*>(?:(?!<\/h1>)[^])*Part(?:(?!<\/h1>)[^])*[ >]I<(?:(?!<\/h1>)[^])*First part<\/h1>/,
-  /<h1 class='likepartHead'[^>]*>(?:(?!<\/h1>)[^])*An unnumbered part<\/h1>/,
+const sectpartNumbered = /<h1 class='partHead'[^>]*>(?:(?!<\/h1>)[^])*Part(?:(?!<\/h1>)[^])*[ >]I<(?:(?!<\/h1>)[^])*First part<\/h1>/;
+const sectpartStarred = /<h1 class='likepartHead'[^>]*>(?:(?!<\/h1>)[^])*An unnumbered part<\/h1>/;
+const sectpartParts = [...sectpartText, sectpartNumbered, sectpartStarred,
   /<h2 class='chapterHead'[^>]*>(?:(?!<\/h2>)[^])*Another chapter<\/h2>\s*(?:<[^>]*>\s*)*Text after the unnumbered part\./];
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
@@ -827,7 +827,7 @@ const contents = {
   'test-sectpart-scrbook': sectpartText, 'test-sectpart-scrreprt': sectpartText,
   'test-sectpart-nopart': [/<p[^>]*>\s*Text of a book without headings\./],
   // (the article guard has no chapters: a part, a section, and a starred part)
-  'test-sectpart-article': [...sectpartText.slice(1), sectpartParts[4], sectpartParts[5]],
+  'test-sectpart-article': [...sectpartText.slice(1), sectpartNumbered, sectpartStarred],
   // (also test.cfg's \WebUp: the first control, with a # and an & in its URL)
   'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/\?a=1&amp;b=2#top'/],
   'test-russian': titled('Содержание'),

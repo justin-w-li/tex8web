@@ -633,15 +633,11 @@
         \fi\fi\fi
     \endgroup}
 \ifdefined\c@chapter
-    % memoir's part fonts, \parttitlefont and \partnamefont, macros without
-    % parameters. sectsty's \parttitlefont takes the font as its argument,
-    % and the part then has book's \Huge and \huge
-    \let\web@parttitlefont\@undefined \let\web@partnamefont\@undefined
+    % memoir's \parttitlefont, a macro without parameters. sectsty's
+    % \parttitlefont takes the font as its argument, and the part then has
+    % book's \Huge
     \ifdefined\parttitlefont
         \web@meaninghas{macro:->}\parttitlefont{\let\web@parttitlefont\parttitlefont}%
-    \fi
-    \ifdefined\partnamefont
-        \web@meaninghas{macro:->}\partnamefont{\let\web@partnamefont\partnamefont}%
     \fi
     \begingroup
         \expandafter\let\csname ttls@part\endcsname\@undefined
@@ -657,7 +653,7 @@
                     {\expandafter\centering\web@parttitlefont}%
             \fi
         \fi\fi
-        \web@bighead{part}\web@parttitlefont\web@partnamefont
+        \web@bighead{part}\web@parttitlefont\partnamefont
     \endgroup
     \web@bighead{chapter}\chaptitlefont\chapnamefont
     % (mwrep has no \@makechapterhead)
@@ -667,7 +663,7 @@
     % (mwrep's \part has no \@part)
     \ifcsname web@titlefont@part\endcsname\else
         \ifdefined\web@@part
-            \web@partskips{\ifdefined\web@partnamefont\web@partnamefont{}\else\huge\fi}%
+            \web@partskips{\ifdefined\partnamefont\partnamefont{}\else\huge\fi}%
                 {\ifdefined\web@parttitlefont\web@parttitlefont{}\else\Huge\fi}%
         \fi
     \fi
