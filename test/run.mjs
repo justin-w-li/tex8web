@@ -1687,7 +1687,11 @@ const untouched = {
     'test-staleaux-current.ind', 'test-staleaux-current-supp.aux'],
   'test-staleaux-lineno': ['test-staleaux-lineno.aux'],
 };
-const staleFiles = () => readdirSync(join(root, 'test/fixtures'), { recursive: true }).filter(f => f.startsWith('test-staleaux')).sort();
+// (only the fixtures' own entries are walked: other builds write in
+// test/fixtures/build while this script runs, and a folder removed there
+// during a walk would throw)
+const staleFiles = () => readdirSync(join(root, 'test/fixtures'), { withFileTypes: true }).filter(e => e.name.startsWith('test-staleaux'))
+  .flatMap(e => [e.name, ...(e.isDirectory() ? readdirSync(join(root, 'test/fixtures', e.name), { recursive: true }).map(f => join(e.name, f)) : [])]).sort();
 const staleState = f => { try { return `${statSync(join(root, 'test/fixtures', f)).ctimeMs} ${readFileSync(join(root, 'test/fixtures', f), 'utf8')}`; } catch { return null; } };
 const staleBefore = new Map(staleFiles().map(f => [f, staleState(f)]));
 // A box that holds a TikZ picture, placed in another picture, and the
