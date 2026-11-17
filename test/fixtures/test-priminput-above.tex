@@ -1,0 +1,11 @@
+% A file outside the document's folder, test/abspath-above/glossary.tex,
+% that names itself like glossary.4ht with \ProvidesFile, read with the
+% primitive \input by a relative path with "..":
+% \input ../abspath-above/glossary. A file the writer names by its path is
+% the document's. As in the PDF, the file's text is in the page.
+\documentclass{article}
+\newcommand\absread[2]{\expandafter\def\csname abs#1\endcsname{#2}}
+\input ../abspath-above/glossary
+\begin{document}
+Above: \absabove
+\end{document}

@@ -1,0 +1,6 @@
+% A file of test-priminput-chain.tex, read with the primitive \input, that
+% reads inner.tex with the primitive \input and then names itself like
+% glossary.4ht with \ProvidesFile.
+\input test-priminput/inner
+\ProvidesFile{glossary.tex}
+\def\primouter{Text from the outer file.}

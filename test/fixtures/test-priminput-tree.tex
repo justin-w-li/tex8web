@@ -3,6 +3,8 @@
 % LaTeX's dvipsnam.def, from TeX's tree, read with the primitive \input
 % after xcolor. The file names itself \ProvidesFile{dvipsnam.def}, so
 % tex4ht reads dvipsnam.4ht. As in the PDF, a named color keeps its value.
+% Its name ends in .def, which no rule marks as the document's: the page
+% checks that rule, not where a file read with the primitive comes from.
 \documentclass{article}
 \usepackage{xcolor}
 \makeatletter

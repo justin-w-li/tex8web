@@ -4,6 +4,8 @@
 % \ProvidesFile{glossary.tex}, read with the primitive \input inside a
 % file read with \input{}, and in the body. As in the PDF, each file's
 % text is in the page.
+% The body's \ProvidesFile comes after tex4ht reads the .4ht files, so
+% that line checks only that the name raises no error there.
 \documentclass{article}
 \input{test-priminput/chapter}
 \begin{document}

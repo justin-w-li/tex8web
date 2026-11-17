@@ -1,0 +1,11 @@
+% Files of the document read with the primitive \input inside each other:
+% test-priminput/outer.tex reads test-priminput/inner.tex with the
+% primitive \input, and then names itself like glossary.4ht with
+% \ProvidesFile{glossary.tex}, after the inner file ends. As in the PDF,
+% each file's text is in the page.
+\documentclass{article}
+\input test-priminput/outer
+\begin{document}
+Outer: \primouter\par
+Inner: \priminner
+\end{document}

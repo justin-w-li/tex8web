@@ -1329,6 +1329,9 @@ const contents = {
     ['test-priminput-comment', /Comment: Text from the subfolder glossary file\./],
     ['test-priminput-alias', /Alias: Text from the subfolder glossary file\./],
     ['test-priminput-quoted', /Quoted: Text from the file with a space in its name\./],
+    ['test-priminput-early', /Early: Text from the subfolder glossary file\./],
+    ['test-priminput-chain', /Outer: Text from the outer file\./, [/Inner: Text from the inner file\./]],
+    ['test-priminput-above', /Above: Text from the file outside the folder of the document\./],
     // (built as it is, by a relative path)
     ['test-priminput-abs', /Absolute: Text from the subfolder glossary file\. By a relative path\./],
     ['test-priminput-guards', /Nested: Text from the nested glossary file\./, [
