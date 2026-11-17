@@ -1,0 +1,19 @@
+% xr's old release under hyperref, loaded with a date, as
+% \usepackage{xr}[=2023-07-04] does. Each reference prints as in the PDF: a
+% label of an .aux that LaTeX wrote under hyperref with its number, page,
+% name, and \autoref, with no link, and a label of an .aux that tex4ht
+% wrote under hyperref, with its .xref, as a link to that document's page.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{xr}[=2023-07-04]
+\externaldocument[X-]{test-xr/latex}
+\externaldocument[H-]{test-xr/hyper4ht}
+\begin{document}
+CaseL \ref{X-ss}, page \pageref{X-front}, named \nameref{X-thm}, auto \autoref{X-thm}.
+
+Written by tex4ht under hyperref: \ref{H-oss}, \nameref{H-oss}.
+Auto written by tex4ht \autoref{H-oss}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}

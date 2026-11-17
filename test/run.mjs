@@ -2246,6 +2246,18 @@ const external = {
   'test-xrurl-xr-hyperref': [latexUrl('CaseL'),
     new RegExp(`CaseM ${tex4htLink('test-xrurl-xr-hyperref', 'x1-90001\\.1')}\\.`), local(1), noUrl],
   'test-xrurl-zref': [said('CaseZ @, page @.', '1\\.1', 'iv'), local(1)],
+  // (xr's old release: an \@input of the other .aux read as written, beside
+  // this document, in each context)
+  'test-xrold': [said('CaseA @, included @.', '5', '6'), said('CaseB @, page @, included @.', '1\\.1', 'iv', '\\?\\?'),
+    new RegExp(`CaseC ${tex4htLink('test-xrurl-xr', 'x1-20001\\.1')}\\.`),
+    said('CaseD @, included @.', '7', '8'), missing('CaseE'), said('CaseF cited @, page @.', '1', 'iv'),
+    ...[['cmti-10', 'In italics'], ['cmr-8', 'In a footnote'], ['cmss-10', 'In sans-serif'], ['cmtt-10', 'In typewriter'], ['cmti-10', 'In a theorem']]
+      .map(([font, context]) => new RegExp(`<span class='${font}'>${context}, 1\\.1\\.\\s*<\\/span>`)),
+    /<h3 class='sectionHead'[^>]*>(?:(?!<\/h3>)[^])*>See 1\.1<\/h3>/, local(1)],
+  // (xr's old release, loaded with a date, under hyperref)
+  'test-xrold-hyperref': [latexUrl('CaseL'),
+    /Written by tex4ht under hyperref: <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>1\.1<\/a>, <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>Two<\/a>\./,
+    autoTex4ht('test-xr'), local(1)],
 };
 
 // Text after the last \hfill of a line, up to the end of the paragraph or of

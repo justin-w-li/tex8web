@@ -1,0 +1,45 @@
+% xr's old release, which \usepackage{xr}[=v5] loads: its \externaldocument
+% takes no second optional argument, and \externalcitedocument is a copy
+% of it. The page builds, and each reference prints as in the PDF: a label
+% of an .aux beside the document, with a prefix, a label of an .aux that
+% LaTeX wrote with its number or page, one of an .aux that tex4ht wrote,
+% with its .xref, as a link to that document's page, one with no prefix,
+% one through \externalcitedocument, and one of a file that does not exist
+% yet as ??. An \@input line of the other .aux, which \include writes, is
+% read as written, beside this document, whatever folder the last
+% \externaldocument names. So the \@input{chap.aux} of test-xr/latex.aux
+% prints ??, as in the PDF.
+\documentclass{article}
+\usepackage{xr}[=v5]
+\externaldocument[S-]{test-xrold-ext}
+\externaldocument[X-]{test-xr/latex}
+\externaldocument[T-]{test-xrurl/xr}
+\externaldocument{test-xrold/ext}
+\externaldocument[M-]{test-xrold/none}
+\externalcitedocument[C-]{test-xr/plain}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+CaseA \ref{S-five}, included \ref{S-six}.
+
+CaseB \ref{X-ss}, page \pageref{X-front}, included \ref{X-c}.
+
+CaseC \ref{T-oss}.
+
+CaseD \ref{seven}, included \ref{eight}.
+
+CaseE \ref{M-a}.
+
+CaseF cited \ref{C-s}, page \pageref{C-front}.
+
+\textit{In italics, \ref{X-ss}.}
+A note.\footnote{In a footnote, \ref{X-ss}.}
+\textsf{In sans-serif, \ref{X-ss}.}
+\texttt{In typewriter, \ref{X-ss}.}
+
+\begin{theorem}
+In a theorem, \ref{X-ss}.
+\end{theorem}
+
+\section{See \ref{X-ss}}\label{here}
+Local \ref{here}.
+\end{document}
