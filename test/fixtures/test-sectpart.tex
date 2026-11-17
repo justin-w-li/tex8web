@@ -1,0 +1,12 @@
+% A book with sectsty's own part fonts, set with its one-argument
+% \partfont, \parttitlefont, and \partnumberfont, a sans-serif
+% \allsectionsfont, and a chapter font in color.
+\documentclass{book}
+\usepackage{xcolor}
+\usepackage{sectsty}
+\allsectionsfont{\sffamily}
+\partfont{\color{blue}\itshape}
+\parttitlefont{\centering\bfseries}
+\partnumberfont{\raggedleft}
+\chapterfont{\color{red}}
+\input{test-sectpart-cases.ltx}

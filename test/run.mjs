@@ -68,6 +68,7 @@ const switched = {
   'test-pdftex-sty': 'tex8web-plain-links',
   'test-pdfoutput': 'tex8web-plain-links', 'test-pdfoutput-sty': 'tex8web-plain-links',
 };
+const sectpartSizes = { '--tex8web-part-size': '2.488em', '--tex8web-part-label-size': '0.8336em', '--tex8web-part-label-after': '0.96432em' };
 const measured = {
   'test-generic': { '--tex8web-section-before': '1.19598em', '--tex8web-section-after': '0.4485em',
     '--tex8web-section-after-text': '0.64583em', '--tex8web-section-labelsep': '1.125em',
@@ -119,6 +120,18 @@ const measured = {
   'test-part': { '--tex8web-part-size': '2.074em', '--tex8web-part-label-size': '0.6943em',
     '--tex8web-part-align': 'left', '--tex8web-part-before': '0.83038em',
     '--tex8web-part-after': '0.62279em', '--tex8web-part-label-after': '0em' },
+  // (a book or report with sectsty, whose \parttitlefont and \partnamefont
+  // take an argument: the part's title in book's \Huge, 24.88pt, and its
+  // label in \huge, 20.74pt, 20pt above the title, both bold and, unless
+  // the document's part fonts align them, centered, as sectsty's \@part
+  // sets them)
+  'test-sectpart': { ...sectpartSizes, '--tex8web-part-weight': null },
+  'test-sectpart-hyperref': { ...sectpartSizes, '--tex8web-part-weight': null, '--tex8web-part-align': null },
+  'test-sectpart-ulem': { ...sectpartSizes, '--tex8web-part-weight': null, '--tex8web-part-align': null },
+  'test-sectpart-nopart': { ...sectpartSizes, '--tex8web-part-weight': null, '--tex8web-part-align': null },
+  // (an article with sectsty: its part flush left, as sectsty's article
+  // \@part sets it)
+  'test-sectpart-article': { '--tex8web-part-align': 'left' },
   // (\WebLikePDF in an 11pt document: the font size, 10.95pt over 12pt,
   // \baselineskip 13.6pt, \parindent 17pt, the fixture's \parskip of 3pt,
   // and \topsep 9pt)
@@ -793,7 +806,22 @@ const runinHead = (h, level, id, number, title, text) => new RegExp(`<${h} class
 // word in any number of tags, up to the end of the footnote.
 const noteWords = (mark, words) => new RegExp(`<span class='footnote-mark'><a [^>]*><sup class='textsuperscript'>${mark}</sup></a></span>(?:<[^>]*>)*` +
   words.split(' ').map(word => word.replace(/[.*+?()[\]\\]/g, '\\$&')).join('(?:<[^>]*>)*\\s+(?:<[^>]*>)*') + '(?:<[^>]*>)*</p></aside>');
+// The headings and text of test-sectpart-cases.ltx and test-sectpart-koma.ltx,
+// in a page that builds: each heading with its title, the italic in the
+// section's title and in the text, and the footnote.
+const sectpartText = [/<h2 class='chapterHead'[^>]*>(?:(?!<\/h2>)[^])*A chapter<\/h2>/,
+  /<h3 class='sectionHead'[^>]*>(?:(?!<\/h3>)[^])*A section with <span class='[^']*'>italic<\/span><\/h3>/,
+  /Text in <span class='[^']*'>italic\s*<\/span>\s*with a footnote\./, /The footnote text\./];
+const sectpartParts = [...sectpartText,
+  /<h1 class='partHead'[^>]*>(?:(?!<\/h1>)[^])*Part(?:(?!<\/h1>)[^])*[ >]I<(?:(?!<\/h1>)[^])*First part<\/h1>/,
+  /<h1 class='likepartHead'[^>]*>(?:(?!<\/h1>)[^])*An unnumbered part<\/h1>/,
+  /<h2 class='chapterHead'[^>]*>(?:(?!<\/h2>)[^])*Another chapter<\/h2>\s*(?:<[^>]*>\s*)*Text after the unnumbered part\./];
 const contents = {
+  'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
+  'test-sectpart-scrbook': sectpartText, 'test-sectpart-scrreprt': sectpartText,
+  'test-sectpart-nopart': [/<p[^>]*>\s*Text of a book without headings\./],
+  // (the article guard has no chapters: a part, a section, and a starred part)
+  'test-sectpart-article': [...sectpartText.slice(1), sectpartParts[4], sectpartParts[5]],
   // (also test.cfg's \WebUp: the first control, with a # and an & in its URL)
   'test': [/<div class='tex8web-controls'><a aria-label='Up' class='tex8web-control tex8web-up' href='https:\/\/example\.com\/notes\/\?a=1&amp;b=2#top'/],
   'test-russian': titled('Содержание'),

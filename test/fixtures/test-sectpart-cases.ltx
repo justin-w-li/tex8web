@@ -1,0 +1,16 @@
+% The body of test-sectpart, test-sectpart-hyperref, and test-sectpart-ulem:
+% a book or report that loads sectsty, whose \parttitlefont and
+% \partnamefont take an argument, unlike memoir's fonts of those names. A
+% numbered and an unnumbered part, each before a chapter, and a section
+% with italic in its title, then text in italic with a footnote. run.mjs
+% reads each heading's text.
+\begin{document}
+\part{First part}
+\chapter{A chapter}
+Text in \emph{italic} with a footnote.\footnote{The footnote text.}
+\section{A section with \emph{italic}}
+Text in the section.
+\part*{An unnumbered part}
+\chapter{Another chapter}
+Text after the unnumbered part.
+\end{document}

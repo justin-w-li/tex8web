@@ -1,0 +1,12 @@
+% Checks cases the fix must not break: an article with sectsty and a
+% sans-serif \allsectionsfont, whose part has no \parttitlefont to read.
+\documentclass{article}
+\usepackage{sectsty}
+\allsectionsfont{\sffamily}
+\begin{document}
+\part{First part}
+\section{A section with \emph{italic}}
+Text in \emph{italic} with a footnote.\footnote{The footnote text.}
+\part*{An unnumbered part}
+Text after the unnumbered part.
+\end{document}

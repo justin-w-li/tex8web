@@ -1,0 +1,12 @@
+% The body of test-sectpart-scrbook and test-sectpart-scrreprt: a KOMA
+% class with sectsty and a sans-serif \allsectionsfont. sectsty's \part for
+% KOMA stops the PDF too, so there is no part: a chapter, and a section with
+% italic in its title, then text in italic with a footnote.
+\usepackage{sectsty}
+\allsectionsfont{\sffamily}
+\begin{document}
+\chapter{A chapter}
+Text in \emph{italic} with a footnote.\footnote{The footnote text.}
+\section{A section with \emph{italic}}
+Text in the section.
+\end{document}

@@ -1,0 +1,9 @@
+% A book with sectsty and ulem: a part underlined with \ulemheading, a
+% chapter underlined with \underline, and a section centered with \nohang.
+\documentclass{book}
+\usepackage[normalem]{ulem}
+\usepackage{sectsty}
+\partfont{\ulemheading{\uline}}
+\chapterfont{\underline}
+\sectionfont{\nohang\centering}
+\input{test-sectpart-cases.ltx}
