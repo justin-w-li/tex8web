@@ -1,0 +1,7 @@
+% Guard: checks cases the fix must not break. The same as
+% test-staleaux-bbl-input, with the .bbl named by \jobname.
+\documentclass{article}
+\begin{document}
+Cited~\cite{shipped}.
+\input{\jobname.bbl}
+\end{document}

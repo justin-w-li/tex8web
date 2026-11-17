@@ -1316,7 +1316,7 @@ const contents = {
   // (a .bib, and beside the document the .bbl of an earlier build with
   // another backend or style: the citation and the entry from the .bib,
   // through bibtex, biber, or biblatex's bibtex backend)
-  ...Object.fromEntries(['test-staleaux-bbl', 'test-staleaux-bbl-hyperref'].map(name => [name, [
+  ...Object.fromEntries(['test-staleaux-bbl', 'test-staleaux-bbl-hyperref', 'test-staleaux-bbl-harvard'].map(name => [name, [
     /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xfresh'>1<\/a>\]<\/span>\./,
     /<dd><a id='Xfresh'><\/a>Fay Fresh\. <span class='cmti-10'>The Fresh Entry<\/span>\. A New Publisher, 2020\./, /^(?![^]*Stale)/]])),
   ...Object.fromEntries(['test-staleaux-bbl-biber', 'test-staleaux-bbl-blx'].map(name => [name, [
@@ -1327,7 +1327,7 @@ const contents = {
     /Fay Fresh\. <span class='cmti-10'>The Fresh Entry<\/span>\. A New Publisher, 2020\./, /^(?![^]*Stale)/],
   // (a .bbl beside the document that the document reads itself, with
   // \input or \InputIfFileExists, with no .bib: its citation and entry)
-  ...Object.fromEntries(['test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists'].map(name => [name, [
+  ...Object.fromEntries(['test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists', 'test-staleaux-bbl-jobname'].map(name => [name, [
     /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xshipped'>1<\/a>\]<\/span>\./,
     /<dd><a id='Xshipped'><\/a>Sue Shipper\. <span class='cmti-10'>The Shipped Entry<\/span>\. A Publisher, 2003\./]])),
   // (! active in the preamble: babel's shorthands, in a heading and the
@@ -1930,10 +1930,12 @@ const logs = {
   ...Object.fromEntries(['test-staleaux', 'test-staleaux-tex4ht', 'test-staleaux-current', 'test-staleaux-lineno'].map(name =>
     [name, [/^(?![^]*Undefined control sequence)/, /^(?![^]*Missing \\begin\{document\})/, /^(?![^]*File ended while scanning)/]])),
   // (no LaTeX error from the .bbl of an earlier build beside the document)
+  // (make4ht prints only the first 79 columns of an error)
   ...Object.fromEntries(['test-staleaux-bbl', 'test-staleaux-bbl-hyperref', 'test-staleaux-bbl-biber', 'test-staleaux-bbl-blx',
-    'test-staleaux-bbl-natbib', 'test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists'].map(name =>
-    [name, [/^(?![^]*Missing 'biblatex' package)/, /^(?![^]*\.bbl' not created by)/,
-      /^(?![^]*Bibliography not compatible with author-year citations)/, /^(?![^]*Undefined control sequence)/]])),
+    'test-staleaux-bbl-natbib', 'test-staleaux-bbl-harvard', 'test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists',
+    'test-staleaux-bbl-jobname'].map(name =>
+    [name, [/^(?![^]*Missing 'biblatex' package)/, /^(?![^]*Package biblatex Error)/,
+      /^(?![^]*Package natbib Error)/, /^(?![^]*Undefined control sequence)/]])),
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
@@ -1951,6 +1953,8 @@ const untouched = {
   'test-staleaux-bbl-natbib': ['test-staleaux-bbl-natbib.bbl'],
   'test-staleaux-bbl-input': ['test-staleaux-bbl-input.bbl'],
   'test-staleaux-bbl-ifexists': ['test-staleaux-bbl-ifexists.bbl'],
+  'test-staleaux-bbl-harvard': ['test-staleaux-bbl-harvard.bbl'],
+  'test-staleaux-bbl-jobname': ['test-staleaux-bbl-jobname.bbl'],
 };
 // (only the fixtures' own entries are walked: other builds write in
 // test/fixtures/build while this script runs, and a folder removed there
