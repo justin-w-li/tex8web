@@ -1,0 +1,33 @@
+% tcolorbox boxes with list inside, read by \tcblistof, whose entries hold
+% fragile commands: \kind with \@ifstar, and \pick with \@ifnextchar, with
+% hyperref. A theorem's title, its short title (the second optional
+% argument, and the short title key), a box with list entry=, and a box
+% with the default entry, its title. pdflatex stops on these entries too,
+% in its write of the entry, with hyperref, nameref, or neither; with
+% \kind and \pick made robust, the PDF lists each entry with its number
+% and text, as the checks expect.
+\documentclass{article}
+\usepackage[most]{tcolorbox}
+\usepackage{hyperref}
+\makeatletter
+\newcommand\kind{\@ifstar{starred}{plain}}
+\newcommand\pick{\@ifnextchar[{\pick@given}{x}}
+\def\pick@given[#1]{#1}
+\makeatother
+\newtcbtheorem[number within=section, list inside=thm]{theorem}{Theorem}{}{thm}
+\newtcolorbox[auto counter, list inside=ex]{named}[1]{nameref={#1}, list entry={#1}, title={#1}}
+\newtcolorbox[auto counter, list inside=ex]{listed}[1]{title={Listed \thetcbcounter: #1}}
+\begin{document}
+\tcblistof{thm}{Theorems}
+\tcblistof{ex}{Boxes}
+\section{Boxes}
+\begin{theorem}{Long \kind*}{long}Long.\end{theorem}
+\begin{theorem}[][{Short \pick[y]}]{Titled}{short}Short.\end{theorem}
+\begin{theorem}[short title={Key \pick}]{Keyed}{key}Keyed.\end{theorem}
+\begin{theorem}{Plain title}{}Plain.\end{theorem}
+\begin{theorem*}{Unnumbered \kind}{}Not listed.\end{theorem*}
+\begin{named}{Named \kind}A box.\end{named}
+\begin{listed}{Default \pick[d]}Default entry.\end{listed}
+
+Named: \nameref{thm:long}; \nameref{thm:short}; \nameref{thm:key}.
+\end{document}

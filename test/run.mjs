@@ -1387,6 +1387,13 @@ const contents = {
       ['Box 1: Named plain', '1', 'Named plain']].map(([title, ...links]) => boxRefs(title, ...links)),
     boxParagraph('See Theorem~[1], [3], and Box~[1]. Named: [Labelled starred]; [Short x]; [Named plain].'),
   ],
+  // (the boxes build, with their titles and names, though tex4ht writes no
+  // entry for \tcblistof)
+  'test-tcbtitle-list': [
+    ...['Theorem~3.4:~Plain title', 'Theorem:~Unnumbered plain', 'Named plain', 'Listed 1: Default d'].map(boxTitle),
+    ...[['Theorem~3.1:~Long starred', 'Long starred'], ['Theorem~3.2:~Titled', 'Short y'],
+      ['Theorem~3.3:~Keyed', 'Key x']].map(([title, ...links]) => boxRefs(title, ...links)),
+  ],
 };
 
 // Text back in its font after a font command that the PDF keeps in a

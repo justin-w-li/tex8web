@@ -242,13 +242,17 @@
         \let#1\undefined
     \fi}
 
-% the name that a \nameref to a box gives (its nameref key, which a theorem
-% sets to its title). tcolorbox.4ht keeps the title as given, in a global
-% macro that tex4ht expands when it writes a \label, so a fragile command
-% in it (one defined with \@ifstar or \@ifnextchar) stops the build, and a
-% \label after the box, or after a box inside it, takes that title. So the
-% name is written as a string, as nameref.sty writes it for the PDF, and
-% kept locally until the box is drawn
+% A fragile command (one defined with \@ifstar or \@ifnextchar) in a box's
+% title stops the build where tex4ht expands the title as it writes it: in
+% the name for a \nameref, and in the entry for \tcblistof. So both are
+% written as strings, as nameref.sty and a robust command write them for
+% the PDF.
+%
+% The name is a box's nameref key, which a theorem sets to its title or
+% short title. tcolorbox.4ht keeps it as given, in a global macro that
+% tex4ht expands when it writes a \label. A \label after the box, or after
+% a box inside it, takes that name too. So the string is kept locally,
+% until the box is drawn
 \AfterEndPreamble{%
     \web@needs{o:tcb@gettitle:}%
     \def\tcb@gettitle#1{%
@@ -256,6 +260,43 @@
         \expandafter\edef\csname NR:Title\endcsname{%
             \expandafter\noexpand\csname a:newlabel\endcsname
                 {\expandafter\detokenize\expandafter{\@currentlabelname}}}}}
+% The entry is that of a box with list inside: its list entry, else its
+% number and title. \thetcbcounter in it becomes the box's number, which
+% the PDF writes
+\web@needs{tcb@addcontentsline}
+\ExplSyntaxOn
+\tl_new:N \l__web_tcb_entry_tl
+\tl_new:N \l__web_tcb_number_tl
+\cs_set_protected:Npn \tcb@addcontentsline #1#2
+  {
+    \tl_set_eq:NN \l__web_tcb_entry_tl \kvtcb@listentry
+    \tl_if_empty:NT \l__web_tcb_entry_tl
+      {
+        \tl_set:Ne \l__web_tcb_entry_tl
+          {
+            \exp_not:n { \protect \numberline { \thetcbcounter } }
+              {
+                \exp_not:N \ignorespaces
+                \tl_if_empty:NTF \kvtcb@title
+                  {
+                    \tl_if_empty:NTF \tcbtitletext
+                      { \exp_not:o \kvtcb@savedelimiter }
+                      { \exp_not:o \tcbtitletext }
+                  }
+                  { \exp_not:o \kvtcb@title }
+              }
+          }
+      }
+    \protected@edef \l__web_tcb_number_tl { \thetcbcounter }
+    \regex_replace_all:nnN { \c{thetcbcounter} } { \u{l__web_tcb_number_tl} }
+      \l__web_tcb_entry_tl
+    \use:e
+      {
+        \exp_not:N \addcontentsline { \exp_not:n {#1} } { \exp_not:n {#2} }
+          { \tl_to_str:N \l__web_tcb_entry_tl }
+      }
+  }
+\ExplSyntaxOff
 
 % tex4ht's box, with that style, the title in its font (fonttitle), which
 % tex4ht leaves out, and an anchor for a numbered box, where tcolorbox.4ht
