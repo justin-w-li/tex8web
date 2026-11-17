@@ -586,26 +586,55 @@
 % \pdfximage, the form of \pdfxform, and the colors of \pdfliteral and
 % \pdfcolorstack are lost. The primitives that only warn in DVI mode stay.
 % \web@pdf@skip{<keywords>}{<end>} reads the keywords that follow, each
-% given as ,<keyword>=<action>: - none, . last, n a number, d a dimen, g a
-% general text, G a general text that is last, p a number and a general
-% text. Spaces before a keyword are dropped, as pdfTeX's keyword scan
-% drops them. A word that is not a keyword stays in the text. <end> is g
-% when a general text ends the primitive, n when a number does, or empty.
+% given as ,<keyword>=<action>: - none, . last, n a number, N a number that
+% is last, d a dimen, g a general text, G a general text that is last, k a
+% switch to the keywords in \web@pdf@k@<keyword>, s the last, with the
+% space after it. A target (a goto's or a thread's name, num, or page, and
+% \pdfdest's) is t a general text, m a number, or q a number and a general
+% text. After a target come only the keywords of \web@pdf@post
+% (\web@pdf@scan's second argument), or else the end: newwindow and
+% nonewwindow (e) for a goto, after which, as after user (u, a general
+% text), come those of \web@pdf@rest (its third). Spaces before a
+% keyword are dropped, as pdfTeX's keyword scan drops them, and a macro is
+% expanded, as there. A word that is not a keyword stays in the text. <end>
+% is g when a general text ends the primitive, n when a number does, or
+% empty. A general text is read by a token register's assignment, which
+% expands to the brace and drops spaces and \relax before it, as pdfTeX's
+% scan does.
+% (a protected macro is left: the primitives here are protected macros,
+% where pdfTeX's are not expandable)
+\ExplSyntaxOn
+\cs_new:Npn \web@pdf@ifexpandable #1
+    {
+        \bool_lazy_all:nTF
+            {
+                { \token_if_expandable_p:N #1 }
+                { ! \token_if_protected_macro_p:N #1 }
+                { ! \token_if_protected_long_macro_p:N #1 }
+            }
+    }
+\ExplSyntaxOff
 \newcount\web@pdf@n
 \newdimen\web@pdf@d
 \newskip\web@pdf@s
-\def\web@pdf@skip#1#2{\def\web@pdf@keys{#1}\def\web@pdf@type{#2}\web@pdf@loop}
+\newtoks\web@pdf@toks
+\def\web@pdf@skip#1{\web@pdf@scan{#1}{}{}}
+\def\web@pdf@scan#1#2#3#4{\def\web@pdf@keys{#1}\def\web@pdf@post{#2}%
+    \def\web@pdf@rest{#3}\def\web@pdf@type{#4}\web@pdf@loop}
 \def\web@pdf@loop{\futurelet\web@pdf@tok\web@pdf@peek}
 \def\web@pdf@peek{%
+    \let\web@pdf@next\web@pdf@last
     \ifx\web@pdf@tok\@sptoken
-        \expandafter\web@pdf@space
+        \let\web@pdf@next\web@pdf@space
     \else\ifcat\noexpand\web@pdf@tok a%
         \def\web@pdf@word{}%
-        \expandafter\expandafter\expandafter\web@pdf@letter
+        \let\web@pdf@next\web@pdf@letter
     \else
-        \expandafter\expandafter\expandafter\web@pdf@last
-    \fi\fi}
+        \web@pdf@ifexpandable\web@pdf@tok{\let\web@pdf@next\web@pdf@expand}{}%
+    \fi\fi
+    \web@pdf@next}
 \def\web@pdf@space{\afterassignment\web@pdf@loop\let\web@pdf@tok= }
+\def\web@pdf@expand{\expandafter\web@pdf@loop}
 \def\web@pdf@letter#1{\edef\web@pdf@word{\web@pdf@word#1}%
     \futurelet\web@pdf@tok\web@pdf@more}
 \def\web@pdf@more{%
@@ -623,25 +652,47 @@
 \def\web@pdf@dow{\expandafter\web@pdf@last\web@pdf@word}
 \@namedef{web@pdf@do-}{\web@pdf@loop}
 \@namedef{web@pdf@do.}{}
+\def\web@pdf@dos{\let\web@pdf@cont\@empty\web@pdf@opt}
+% (an optional space, then \web@pdf@cont)
+\def\web@pdf@opt{\futurelet\web@pdf@tok\web@pdf@optspace}
+\def\web@pdf@optspace{%
+    \ifx\web@pdf@tok\@sptoken
+        \expandafter\web@pdf@eatspace
+    \else
+        \expandafter\web@pdf@cont
+    \fi}
+\def\web@pdf@eatspace{\afterassignment\web@pdf@cont\let\web@pdf@tok= }
 \@namedef{web@pdf@don}{\afterassignment\web@pdf@loop\web@pdf@n=}
+\@namedef{web@pdf@doN}{\web@pdf@n=}
 \@namedef{web@pdf@dod}{\afterassignment\web@pdf@loop\web@pdf@d=}
-\@namedef{web@pdf@dog}#1{\web@pdf@loop}
-\@namedef{web@pdf@doG}#1{}
-\@namedef{web@pdf@dop}{\afterassignment\web@pdf@dog\web@pdf@n=}
-% the end of the primitive: a general text, after any \relax, or a number
+\@namedef{web@pdf@dog}{\afterassignment\web@pdf@loop\web@pdf@toks=}
+\@namedef{web@pdf@doG}{\web@pdf@toks=}
+\@namedef{web@pdf@dok}{%
+    \expandafter\let\expandafter\web@pdf@keys\csname web@pdf@k@\web@pdf@word\endcsname
+    \web@pdf@loop}
+\@namedef{web@pdf@dot}{\afterassignment\web@pdf@target\web@pdf@toks=}
+\@namedef{web@pdf@dom}{\afterassignment\web@pdf@target\web@pdf@n=}
+\@namedef{web@pdf@doq}{\afterassignment\web@pdf@dot\web@pdf@n=}
+\def\web@pdf@dou{\afterassignment\web@pdf@then\web@pdf@toks=}
+\def\web@pdf@doe{\let\web@pdf@cont\web@pdf@then\web@pdf@opt}
+\def\web@pdf@then{\let\web@pdf@post\web@pdf@rest\web@pdf@target}
+\def\web@pdf@target{%
+    \ifx\web@pdf@post\@empty
+        \expandafter\web@pdf@last
+    \else
+        \let\web@pdf@keys\web@pdf@post
+        \expandafter\web@pdf@loop
+    \fi}
+% the end of the primitive: a general text, a number, or nothing
 \def\web@pdf@last{\csname web@pdf@end\web@pdf@type\endcsname}
 \def\web@pdf@end{}
-\def\web@pdf@endg{\futurelet\web@pdf@tok\web@pdf@group}
-\def\web@pdf@group{%
-    \ifx\web@pdf@tok\relax
-        \expandafter\web@pdf@relax
-    \else\ifx\web@pdf@tok\bgroup
-        \expandafter\expandafter\expandafter\@gobble
-    \fi\fi}
-\def\web@pdf@relax#1{\web@pdf@endg}
+\def\web@pdf@endg{\web@pdf@toks=}
 \def\web@pdf@endn{\web@pdf@n=}
 \def\web@pdf@rule{,width=d,height=d,depth=d}
-\def\web@pdf@goto{,attr=g,user=G,goto=-,thread=-,file=g,struct=-,page=p,num=n,name=g,newwindow=.,nonewwindow=.}
+\def\web@pdf@goto{,attr=g,user=u,goto=-,thread=-,file=g,struct=-,page=q,num=m,name=t}
+\def\web@pdf@window{,newwindow=e,nonewwindow=e}
+\let\web@pdf@k@fitr\web@pdf@rule
+\def\web@pdf@k@xyz{,zoom=N}
 \protected\def\pdfliteral{\web@pdf@skip{,shipout=-,direct=-,page=-}g}
 \protected\def\pdfmapfile{\web@pdf@skip{}g}
 \protected\def\pdfmapline{\web@pdf@skip{}g}
@@ -660,10 +711,11 @@
 \protected\def\pdfrefxform{\web@pdf@n=}
 \protected\def\pdfcolorstack{\afterassignment\web@pdf@stack\web@pdf@n=}
 \def\web@pdf@stack{\web@pdf@skip{,push=G,set=G,pop=.,current=.}{}}
-\protected\def\pdfstartlink{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule\web@pdf@goto}{}}
-\protected\def\pdfoutline{\expandafter\web@pdf@skip\expandafter{\web@pdf@goto,count=n}g}
-\protected\def\pdfdest{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,struct=n,num=n,name=g,xyz=-,zoom=n,fit=-,fith=-,fitv=-,fitb=-,fitbh=-,fitbv=-,fitr=-}{}}
-\protected\def\pdfthread{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,attr=g,num=n,name=G}{}}
+\protected\def\pdfstartlink{\web@pdf@scan{\web@pdf@rule\web@pdf@goto}{\web@pdf@window}{}{}}
+\protected\def\pdfoutline{\web@pdf@scan{\web@pdf@goto}{\web@pdf@window,count=n}{,count=n}g}
+\protected\def\pdfdest{\expandafter\web@pdf@scan\expandafter{\web@pdf@rule,struct=n,num=m,name=t}%
+    {,xyz=k,fit=s,fith=s,fitv=s,fitb=s,fitbh=s,fitbv=s,fitr=k}{}{}}
+\protected\def\pdfthread{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,attr=g,num=N,name=G}{}}
 \let\pdfstartthread\pdfthread
 \protected\def\pdfsnapy{\web@pdf@s=}
 \protected\def\pdfsnapycomp{\web@pdf@n=}

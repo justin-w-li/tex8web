@@ -2,6 +2,7 @@
 -- math uses go in a hidden element as text, which tex8web.js gives MathJax
 -- before it typesets. Nothing else of the source is published. See "Macros
 -- in math" in CONTRIBUTING.md.
+local dom = require "tex8web.dom"
 local preamble = require "tex8web.preamble"
 
 local log = logging.new("tex8web")
@@ -150,12 +151,20 @@ local function color_definitions(texts, values_text)
 end
 
 -- pdfTeX's primitives that tex8web-hooks.sty makes do nothing in DVI mode,
--- each with its keywords and end as there: "g" a general text, "n" a
--- number. A number before the keywords (\pdfcolorstack) or a font is given
--- as "n" or "f" third. Removed with their arguments from the definitions
--- MathJax gets, which would show them in red.
+-- each with its keywords and end as there, where \web@pdf@skip explains
+-- them. A keyword's action: "-" none, "." or "s" the end, "n" a number,
+-- "N" a number that ends, "d" a dimen, "g" a general text, "G" a general
+-- text that ends, "k" the keywords in `after` instead. A target, after
+-- which only the keywords of the fourth entry come: "t" a general text,
+-- "m" a number, "q" a number and a general text. After "e" (newwindow) and
+-- "u" (user, a general text) come those of the fifth. The end: "g" a
+-- general text, "n" a number, "d" a dimen. A number before the keywords (\pdfcolorstack) or a font is
+-- given as "n" or "f" third. Removed with their arguments from the
+-- definitions and the math MathJax gets, which would show them in red.
 local rule = "width=d height=d depth=d "
-local action = "attr=g user=G goto=- thread=- file=g struct=- page=p num=n name=g newwindow=. nonewwindow=. "
+local action = "attr=g user=u goto=- thread=- file=g struct=- page=q num=m name=t "
+local window = "newwindow=e nonewwindow=e "
+local after = {xyz = "zoom=N", fitr = rule}
 local primitives = {
   pdfliteral = {"shipout=- direct=- page=-", "g"}, pdfmapfile = {"", "g"}, pdfmapline = {"", "g"},
   pdfsetmatrix = {"", "g"}, pdfnames = {"", "g"}, pdfspacefont = {"", "g"},
@@ -166,9 +175,9 @@ local primitives = {
   pdfxform = {"attr=g resources=g", "n"},
   pdfrefximage = {"", "n"}, pdfrefobj = {"", "n"}, pdfrefxform = {"", "n"},
   pdfcolorstack = {"push=G set=G pop=. current=.", "", "n"},
-  pdfstartlink = {rule .. action, ""}, pdfoutline = {action .. "count=n", "g"},
-  pdfdest = {rule .. "struct=n num=n name=g xyz=- zoom=n fit=- fith=- fitv=- fitb=- fitbh=- fitbv=- fitr=-", ""},
-  pdfthread = {rule .. "attr=g num=n name=G", ""}, pdfstartthread = {rule .. "attr=g num=n name=G", ""},
+  pdfstartlink = {rule .. action, "", nil, window}, pdfoutline = {action, "g", nil, window .. "count=n", "count=n"},
+  pdfdest = {rule .. "struct=n num=m name=t", "", nil, "xyz=k fit=s fith=s fitv=s fitb=s fitbh=s fitbv=s fitr=k"},
+  pdfthread = {rule .. "attr=g num=N name=G", ""}, pdfstartthread = {rule .. "attr=g num=N name=G", ""},
   pdfsnapy = {"", "d"}, pdfsnapycomp = {"", "n"},
 }
 for _, name in ipairs {"save", "restore", "endlink", "endthread", "snaprefpoint", "runninglinkon",
@@ -176,10 +185,15 @@ for _, name in ipairs {"save", "restore", "endlink", "endthread", "snaprefpoint"
   primitives["pdf" .. name] = {"", ""}
 end
 
--- the end of a number (or a dimen, with a unit) or a control sequence that
--- starts at i, or of a general text
+-- the end of a number (or a dimen: a factor and a unit or a register) or a
+-- control sequence that starts at i, or of a general text
 local function value(text, i, unit)
-  local _, e = text:find("^%s*[-+]?%d*[.,]?%d+" .. (unit and "%s*%a%a" or "") .. " ?", i)
+  local _, e = text:find("^%s*[-+]?%d*[.,]?%d+ ?", i)
+  if e and unit then
+    local _, u = text:find("^%s*%a%a ?", e + 1)
+    if not u then _, u = text:find("^%s*\\%a+ ?", e + 1) end
+    e = u
+  end
   if not e then _, e = text:find("^%s*\\%a+ ?", i) end
   return e and e + 1 or i
 end
@@ -189,22 +203,35 @@ local function group(text, i)
 end
 
 local function skip(text, i, shape)
-  local keys, last, first = shape[1], shape[2], shape[3]
+  local keys, last, first, post, rest = shape[1], shape[2], shape[3], shape[4] or "", shape[5] or ""
   if first then i = value(text, i, false) end
   while true do
     local _, e, word = text:find("^%s*(%a+)", i)
     local act = word and keys:match("%f[%a]" .. word .. "=(%S)")
     if not act then break end
     i = e + 1
-    if act == "." then return i end
-    if act == "n" or act == "p" then i = value(text, i) end
+    if act == "." or act == "s" then return i end
+    if act == "k" then keys = after[word] end
+    if act == "e" or act == "u" then post = rest end
+    if act:match("[nNmq]") then i = value(text, i) end
     if act == "d" then i = value(text, i, true) end
-    if act == "g" or act == "G" or act == "p" then i = group(text, i) end
-    if act == "G" then return i end
+    if act:match("[gGqtu]") then i = group(text, i) end
+    if act == "G" or act == "N" then return i end
+    if act:match("[tmqeu]") then
+      if post == "" then break end
+      keys = post
+    end
   end
   if last == "g" then return group(text, i) end
   if last ~= "" then return value(text, i, last == "d") end
   return i
+end
+
+local function each_text(el, f)
+  for _, child in ipairs(el:get_children()) do
+    if child:is_text() then f(child)
+    elseif child:is_element() then each_text(child, f) end
+  end
 end
 
 local function strip(text)
@@ -240,6 +267,7 @@ function M.define(document, context)
   -- the macros the math uses, and those they use in turn
   local used, queue, texts = {}, {}, {}
   for _, el in ipairs(document:query_selector(".mathjax-inline, .mathjax-block, .mathjax-env")) do
+    each_text(el, function(node) dom.set_node_text(node, strip(node:get_text())) end)
     texts[#texts + 1] = el:get_text()
     for _, name in ipairs(preamble.uses(texts[#texts])) do queue[#queue + 1] = name end
   end

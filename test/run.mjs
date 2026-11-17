@@ -1939,6 +1939,9 @@ const drivers = {
       'Annotation: before after.', 'Outline: before after.', 'Thread: before after.',
       'Snap: beforeafter.', 'Spaces: before after.', 'Stack macro: beforered after.',
       'Keywords: beforexyz after.',
+      'Outline user: before after.', 'Goto page: see page 3.', 'Goto space: xlinked after.', 'User link: x linked after.',
+      'Goto file: beforelinked after.', 'Destination relax: beforedepth after.',
+      'Expanded: beforeafter.', 'Image macro: before after.',
       // (the primitives that only warn in DVI mode)
       `Guards: ${['info', 'catalog', 'trailer', 'trailerid', 'pageattr', 'pagesattr', 'pageresources',
         'compresslevel', 'minorversion', 'gentounicode', 'glyphtounicode', 'colorstackinit']
@@ -1947,6 +1950,9 @@ const drivers = {
     /Matrix: before(?:<[^>]*>|\s)*turned(?:<[^>]*>)* after\./,
     /Math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Package math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Direct math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Factor math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /^(?![^]*(?:test-picture|linewidth|User title|example\.com|newwindow))/,
     /<p[^>]*>\s*Started thread\./,
     /First\.(?:\s|<\/p>|<!--(?:(?!-->)[^])*-->)*<p[^>]*>(?:\s|<!--(?:(?!-->)[^])*-->)*Second\./,
     pdfprimLeaks,

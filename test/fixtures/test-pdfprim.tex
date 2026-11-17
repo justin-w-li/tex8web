@@ -34,6 +34,9 @@
 \pdfnobuiltintounicode\font
 \let\mylit\pdfliteral
 \newcommand\blue[1]{\pdfliteral{0 0 1 rg}#1\pdfliteral{0 g}}
+\newcommand\wideblue[1]{\pdfximage width 0.5\linewidth {test-picture.png}#1}
+\def\mycolor{0 0 1 rg}
+\def\myopts{width 1cm }
 \makeatletter
 \newcommand\isprim[1]{\begingroup\edef\a{\meaning#1}\edef\b{\string#1}%
   \expandafter\@gobble\string#1~\ifx\a\b primitive\else redefined\fi\endgroup}
@@ -117,6 +120,26 @@ height 1pt depth 0pt y\pdfstartlink goto num 3 z\pdfendlink\pdfoutline goto num 
 count -2 {T}\pdfannot reserveobjnum{} after.
 
 Spaces: before\pdfspacefont{cmr10}\pdfinterwordspaceon\pdffakespace\pdfinterwordspaceoff{} after.
+
+Outline user: before\pdfoutline user{/S/URI/URI(https://example.com/)} count 2 {User title} after.
+
+Goto page: see \pdfstartlink goto name{p3}page 3\pdfendlink.
+
+Goto space: x\pdfstartlink goto name{s} linked\pdfendlink{} after.
+
+Goto file: before\pdfstartlink goto file{other.pdf} name{s} newwindow linked\pdfendlink{} after.
+
+User link: x\pdfstartlink user{/S /GoTo} linked\pdfendlink{} after.
+
+Destination relax: before\pdfdest name{r} fit\relax depth after.
+
+Expanded: before\pdfliteral\expandafter{\mycolor}after.
+
+Image macro: before\pdfximage\myopts{test-picture.png}\pdfrefximage\pdflastximage{} after.
+
+Direct math: before $a\pdfliteral{0 0 1 rg}b\pdfliteral{0 g}c$ after.
+
+Factor math: before $a\wideblue{b}c$ after.
 
 First.
 
