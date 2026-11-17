@@ -410,40 +410,67 @@
 % again with the option is no clash, as in pdflatex. graphicx and lscape
 % pass their options to graphics, so it goes back into graphics' options
 % too when graphics loaded with one of them. The raw lists keep the spaces
-% around each option, so they are set as clists first.
+% around each option, so they are set as clists first. changebar stops at
+% "PDFTeX option cannot be used", and declares the option in a second
+% spelling, PDFTeX, so the global lists and changebar's lose both.
 \ExplSyntaxOn
+% \l__web_pdftex_clist: the spellings of the option dropped last
+\clist_new:N \l__web_pdftex_clist
 \cs_new_protected:Npn \__web_drop_pdftex:N #1
     {
         \clist_gset:No #1 {#1}
-        \clist_gremove_all:Nn #1 { pdftex }
+        \clist_map_inline:Nn \l__web_pdftex_clist
+            { \clist_gremove_all:Nn #1 {##1} }
     }
-% #3 after dropping the option from the list #1 and the raw list #2, if #1
-% holds it
-\cs_new_protected:Npn \__web_drop_pdftex:NNn #1#2#3
+% #4 after dropping the spellings #1 of the option from the list #2 and the
+% raw list #3, if #2 holds one of them
+\cs_new_protected:Npn \__web_drop_pdftex:nNNn #1#2#3#4
     {
-        \clist_if_in:NnT #1 { pdftex }
-            { \__web_drop_pdftex:N #1 \__web_drop_pdftex:N #2 #3 }
+        \clist_clear:N \l__web_pdftex_clist
+        \clist_map_inline:nn {#1}
+            {
+                \clist_if_in:NnT #2 {##1}
+                    { \clist_put_right:Nn \l__web_pdftex_clist {##1} }
+            }
+        \clist_if_empty:NF \l__web_pdftex_clist
+            { \__web_drop_pdftex:N #2 \__web_drop_pdftex:N #3 #4 }
     }
-\cs_generate_variant:Nn \__web_drop_pdftex:NNn { cc }
+\cs_generate_variant:Nn \__web_drop_pdftex:nNNn { ncc }
 \AddToHook { class/before }
-    { \__web_drop_pdftex:NNn \@classoptionslist \@raw@classoptionslist { } }
-\AddToHook { class/after } { \clist_gremove_all:Nn \@unusedoptionlist { pdftex } }
+    {
+        \__web_drop_pdftex:nNNn { pdftex, PDFTeX }
+            \@classoptionslist \@raw@classoptionslist { }
+    }
+\AddToHook { class/after }
+    {
+        \clist_gremove_all:Nn \@unusedoptionlist { pdftex }
+        \clist_gremove_all:Nn \@unusedoptionlist { PDFTeX }
+    }
 \clist_map_inline:nn { hyperref, graphics, color, xcolor, pict2e }
     {
         \AddToHook { package/#1/before }
             {
-                \__web_drop_pdftex:ccn { opt@#1.sty } { @raw@opt@#1.sty }
+                \__web_drop_pdftex:nccn { pdftex } { opt@#1.sty } { @raw@opt@#1.sty }
                     {
                         \AddToHook { package/#1/after }
                             { \clist_gput_right:cn { opt@#1.sty } { pdftex } }
                     }
             }
     }
+\AddToHook { package/changebar/before }
+    {
+        \__web_drop_pdftex:nccn { pdftex, PDFTeX }
+            { opt@changebar.sty } { @raw@opt@changebar.sty }
+            {
+                \exp_args:Nne \AddToHook { package/changebar/after }
+                    { \clist_gput_right:cn { opt@changebar.sty } { \l__web_pdftex_clist } }
+            }
+    }
 \clist_map_inline:nn { graphicx, lscape }
     {
         \AddToHook { package/#1/before }
             {
-                \__web_drop_pdftex:ccn { opt@#1.sty } { @raw@opt@#1.sty }
+                \__web_drop_pdftex:nccn { pdftex } { opt@#1.sty } { @raw@opt@#1.sty }
                     {
                         \@ifpackageloaded { graphics }
                             {
@@ -463,6 +490,12 @@
             }
     }
 \ExplSyntaxOff
+% trimclip given the option, by a document or by adjustbox, reads its
+% pdftex driver, tc-pdftex.def, which stops at pdfTeX's \pdfsave in DVI
+% mode. LaTeX reads tc-dvips.def in its place, the driver trimclip reads
+% without the option, as graphics' driver is dvips.def. trimclip still
+% passes the option to graphicx, which drops it as above.
+\declare@file@substitution{tc-pdftex.def}{tc-dvips.def}
 
 % \pdfoutput, which a document written for pdflatex sets to 1, often before
 % \documentclass. pdfTeX then writes a PDF and no DVI. Packages read the
