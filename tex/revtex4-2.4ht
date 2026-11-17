@@ -1,7 +1,8 @@
 % tex4ht has revtex4.4ht and no file for revtex4-2, whose headings,
 % title, and floats are revtex4's. Without this file the headings are
 % bold text in one paragraph. tex4ht reads <class>.4ht from tex8web's
-% tex/, which tex8web.mk4 puts on TEXINPUTS.
+% tex/, which tex8web.mk4 puts on TEXINPUTS, so this line reads
+% tex8web's revtex4.4ht, which reads tex4ht's.
 \input revtex4.4ht
 % revtex4.4ht's title block restores \@makefnmark@latex and
 % \@footnotemark@latex, which revtex4.cls saves as the document starts and
@@ -105,28 +106,6 @@
 % Its \onecolumngrid at the end of the document writes a paragraph after
 % </html>, so the one-column \close@column of revtex4-2.cls is restored.
 \def\close@column{\newpage}
-% revtex4-2's \appendix* sets \thesection to \unskip, which tex4ht writes
-% into the anchor of the section that follows, and the next run stops on
-% it. The section is left without a number, and its heading starts with
-% "Appendix:", as in the PDF, unless the document numbers no section, as
-% prl does: html4.4ht's test of secnumdepth is kept. A section with no
-% title gets "Appendix" with no colon, as aps4-2's \@hangfrom@appendix
-% gives.
-\let\web@revappendix\appendix
-\def\appendix{\@ifstar{\web@revappendix*\def\thesection{}%
-    \ifx\section\web@revappsection\else
-      \let\web@revsection\section \let\section\web@revappsection\fi
-    \ConfigureMark{section}{\ifnum\c:secnumdepth>\c@secnumdepth
-        \expandafter\:gobble
-      \else\HCode{<span class="titlemark">}\appendixname
-        \web@revappcolon\HCode{</span>}\fi}}%
-  \web@revappendix}
-\def\web@revappsection{\@ifstar{\web@revsection*}%
-  {\@ifnextchar[\web@revappopt\web@revappplain}}
-\def\web@revappplain#1{\web@revappmark{#1}\web@revsection{#1}}
-\def\web@revappopt[#1]#2{\web@revappmark{#2}\web@revsection[{#1}]{#2}}
-\def\web@revappmark#1{\def\web@revappcolon{#1}%
-  \ifx\web@revappcolon\@empty\else\def\web@revappcolon{:}\fi}
 % aps and prl draw a tapered rule in place of the references' heading
 % (\bib@device), whose leaders tex4ht writes as underscores, a line that
 % does not wrap. The rule is written as a \rule of the device's width,

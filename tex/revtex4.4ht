@@ -1,0 +1,43 @@
+% tex4ht's revtex4.4ht sets up revtex4's headings, title, and floats.
+% tex4ht reads <class>.4ht from tex8web's tex/, which tex8web.mk4 puts on
+% TEXINPUTS ahead of tex4ht's files, so tex4ht's file is read by its
+% folder's name. revtex4-2.4ht reads this file for revtex4-2 and
+% revtex4-1.
+\input tex4ht/revtex4.4ht
+% revtex4's \appendix* sets \thesection to \unskip, as revtex4-1's and
+% revtex4-2's do, which tex4ht writes into the anchor of the section that
+% follows, and the next run stops on it. The section is left without a
+% number, and its heading starts with "Appendix:", as in the PDF, unless
+% the document numbers no section, as prl does: html4.4ht's test of
+% secnumdepth is kept. A section with no title gets "Appendix" with no
+% colon, as aps's \@hangfrom@appendix gives. The class writes the
+% heading's "Appendix " with \@sectioncntformat, which tex4ht sets as a
+% paragraph before the heading, so it writes nothing here. A \ref to the
+% section is empty, as \unskip makes it in the PDF. latex.4ht's \label
+% writes a new anchor, in a paragraph of its own, when its copy of the
+% label, \:currentlabel, is empty. Both are set to \@empty, which
+% latex.4ht reads as not empty and writes as nothing, so a \label after
+% the heading names the heading's anchor.
+% rmp appends its own \appendix code after the class's \@ifstar, which
+% then never sees the star: the PDF shows the star and letters the
+% sections, as after \appendix. The test of \thesection keeps that.
+\let\web@revappendix\appendix
+\def\appendix{\@ifstar{\web@revappendix*\web@revappstar}\web@revappendix}
+\def\web@revunskip{\unskip}
+\def\web@revappstar{\ifx\thesection\web@revunskip
+    \def\thesection{}\let\@sectioncntformat\@gobble
+    \ifx\section\web@revappsection\else
+      \let\web@revsection\section \let\section\web@revappsection\fi
+    \ConfigureMark{section}{\ifnum\c:secnumdepth>\c@secnumdepth
+        \expandafter\:gobble
+      \else\HCode{<span class="titlemark">}\appendixname
+        \web@revappcolon\HCode{</span>}\fi}%
+  \fi}
+\def\web@revappsection{\@ifstar{\web@revsection*}%
+  {\@ifnextchar[\web@revappopt\web@revappplain}}
+\def\web@revappplain#1{\web@revappmark{#1}\web@revsection{#1}%
+  \def\@currentlabel{\noexpand\@empty}\let\:currentlabel\@currentlabel}
+\def\web@revappopt[#1]#2{\web@revappmark{#2}\web@revsection[{#1}]{#2}%
+  \def\@currentlabel{\noexpand\@empty}\let\:currentlabel\@currentlabel}
+\def\web@revappmark#1{\def\web@revappcolon{#1}%
+  \ifx\web@revappcolon\@empty\else\def\web@revappcolon{:}\fi}
