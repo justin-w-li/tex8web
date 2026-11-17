@@ -141,4 +141,20 @@ describe('real builds', { concurrency: true }, () => {
       rmSync(dir, { recursive: true });
     }
   });
+
+  // With no \bibliography, no bibtex or biber run follows, and the build
+  // directory's empty .bbl, made for the second LaTeX run, would hide the
+  // shipped .bbl that the document reads itself.
+  test('a real full build keeps the shipped .bbl that the document reads, after an error in the first run', { timeout: 180000 }, async () => {
+    const { dir, doc, make } = pdfDoc({ noLatexmk: true });
+    try {
+      writeFileSync(join(doc.dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nCited~\\cite{shipped}.\n'
+        + '\\GenericError{}{An error that LaTeX recovers from}{}{}\n\\input{\\jobname.bbl}\n\\end{document}\n');
+      writeFileSync(join(doc.dir, 'doc.bbl'), '\\begin{thebibliography}{1}\n\\bibitem{shipped} A.~Writer. \\newblock Shipped entry.\n\\end{thebibliography}\n');
+      const full = await make();
+      assert.match(readFileSync(join(dir, 'html/doc.html'), 'utf8'), /Shipped entry/, full.log);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
 });

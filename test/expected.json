@@ -45,13 +45,5 @@
     "allow": [
       "test-nestpic-hyperref.html: no target for #fn1x18-bk"
     ]
-  },
-  "test-staleaux-bbl-error": {
-    "why": "the document gives a LaTeX error on purpose, so that the build runs LaTeX again without the .bbl beside it",
-    "allow": [
-      "An error that LaTeX recovers from",
-      "htlatex: Compilation errors in the htlatex run",
-      "htlatex: Filename"
-    ]
   }
 }
