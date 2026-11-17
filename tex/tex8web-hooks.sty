@@ -168,6 +168,21 @@
 \ExplSyntaxOn
 \AddToHook { file/xr.4ht/after } { \__web_xr_wrap: }
 \AddToHook { file/xr-hyper.4ht/after } { \__web_xr_wrap: }
+% A document may load both xr and xr-hyper. xr.4ht and xr-hyper.4ht each
+% save \XR@loop as \XR:loop and wrap it, so the second file's wrapper calls
+% itself, and the build loops. The first wrapper is taken off before the
+% second file wraps \XR@loop again.
+\AddToHook { file/xr.4ht/before } { \__web_xr_unwrap: }
+\AddToHook { file/xr-hyper.4ht/before } { \__web_xr_unwrap: }
+\cs_new_protected:Npn \__web_xr_unwrap:
+  { \cs_if_exist:NT \XR:loop { \cs_set_eq:NN \XR@loop \XR:loop } }
+% (the same for their hooks files, xr-hooks.4ht and xrhyper-hooks.4ht,
+% which tex4ht reads as each package loads: each makes the same regex
+% \l_xref_filename with \regex_new:N, and the second stops with "already
+% defined". tex4ht read the macros that input them, from usepackage.4ht,
+% when this package loaded.)
+\tl_gput_left:cn { package:hooks:xr.sty } { \cs_undefine:N \l_xref_filename }
+\tl_gput_left:cn { package:hooks:xr-hyper.sty } { \cs_undefine:N \l_xref_filename }
 \cs_new_protected:Npn \__web_xr_wrap:
   {
     \web@needs { XR@test }
@@ -188,7 +203,10 @@
 % so the build stops in the preamble. Its \externaldocument, and the copy
 % \externalcitedocument, call \__web_xr_old:w instead, which does what
 % tex4ht's \XR@ does with the old release's arguments. The old release
-% reads an \@input file name as written, beside this document.
+% reads an \@input file name as written, beside this document. Its \XR@
+% is kept as \__web_xr_old_import:w, since xr-hyper, loaded later,
+% replaces \XR@ and tex4ht's \XR: with its own, which read the arguments
+% differently.
 % \__web_xr_old_read:nn clears the \filename@area that \__web_xr_old:w's
 % \filename@parse left, so \__web_xr_read:w puts no folder in front of it.
 \AddToHook { package/xr/after } { \__web_xr_url_wrap: }
@@ -198,6 +216,7 @@
   {
     \cs_if_eq:NNTF \externaldocument \__web_xr_old_release:
       {
+        \cs_gset_eq:NN \__web_xr_old_import:w \XR@
         \cs_gset_protected:Npn \externaldocument { \@testopt \__web_xr_old:w { } }
         \cs_gset_eq:NN \externalcitedocument \externaldocument
       }
@@ -207,8 +226,7 @@
       }
   }
 % (as xr-hooks.4ht's \XR@: the other document's folder, for its links, its
-% .xref, and the old release's \XR@, which tex4ht saved as \XR:, at the
-% beginning of the document)
+% .xref, and the old release's \XR@ at the beginning of the document)
 \cs_new_protected:Npn \__web_xr_old:w [#1] #2
   {
     \web@needs { :declare:xref:files }
@@ -221,7 +239,7 @@
   {
     \group_begin:
       \tl_clear:N \filename@area
-      \use:c { XR: } [#1] {#2}
+      \__web_xr_old_import:w [#1] {#2}
     \group_end:
   }
 \cs_new_protected:Npn \__web_xr_url:w [#1] [#2] #3
