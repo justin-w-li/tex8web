@@ -743,8 +743,9 @@
 % read by a relative path or through \input@path, and when it is read by
 % an absolute path, which the writer named. The primitive \input
 % runs no file hook, and from the document it leaves the current file
-% empty: the file that gives the name is then the one beside the
-% document. A package that reads a style with the primitive \input, as
+% empty, before the class too and in a file it reads: the document named
+% the file that gives the name, by any path, so the name is the
+% document's. A package that reads a style with the primitive \input, as
 % biblatex does, stays the current file, so a copy of the style beside
 % the document keeps its .4ht. A name found only in the tree is a
 % package's.
@@ -765,10 +766,7 @@
                             }
                     }
                 \tl_if_empty:NT \CurrentFileUsed
-                    {
-                        \file_if_exist:nT { ./ #1 }
-                            { \bool_set_true:N \l__web_ownprov_bool }
-                    }
+                    { \bool_set_true:N \l__web_ownprov_bool }
             }
             {
                 \file_if_exist:nT
