@@ -1,0 +1,7 @@
+% The subfolder glossary file of test-provname.tex, read with
+% \InputIfFileExists. As in the PDF, the file's text is in the page.
+\documentclass{article}
+\InputIfFileExists{test-provname/glossary}{}{\newcommand\provglossary{No glossary file.}}
+\begin{document}
+Glossary: \provglossary
+\end{document}

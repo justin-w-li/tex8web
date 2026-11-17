@@ -1,0 +1,20 @@
+% Files of the document in subfolders, named like index.4ht and
+% glossary.4ht, that name themselves with \ProvidesFile and a date and a
+% version: index.tex with its extension, glossary without one. They are
+% read with makeidx and hyperref. As in the PDF, each file's text is in
+% the page, and makeidx's index keeps its title and its entry.
+\documentclass{article}
+\usepackage{makeidx}
+\makeindex
+\usepackage{hyperref}
+\input{test-provname/index}
+\input{test-provname/option/glossary}
+\begin{document}
+\section{Files}
+A ring\index{ring}.
+
+Index: \provindex
+
+Glossary: \provglossary
+\printindex
+\end{document}

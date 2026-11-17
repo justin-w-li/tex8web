@@ -1137,6 +1137,32 @@ const contents = {
     /<h3 class='abstracttitle'><span class='cmbx-9'>Abstract<\/span><\/h3>\s*<p class='noindent'>\s*<span class='cmr-9'>The abstract of the document\.<\/span>/,
     /<div class='appendices'>\s*<h3 class='likesectionHead' id='appendices'>.*Appendices<\/h3>/,
   ],
+  // (files of the document named like glossary.4ht and index.4ht that name
+  // themselves with \ProvidesFile, read from a subfolder, through
+  // \input@path, with import's \import, with \InputIfFileExists, after
+  // xcolor and graphicx, and with the primitive \input: each file's text,
+  // nothing that glossary.4ht writes, such as "refextract", and one page,
+  // where glossary.4ht's errors closed the page twice; makeidx's index with
+  // its title, where index.4ht gave it "0", and its entry; the named
+  // color's value; and, as a guard, a file read with \include)
+  ...Object.fromEntries([
+    ['test-provname', /Glossary: Text from the subfolder glossary file\./],
+    ['test-provname-index', /Glossary: Text from the glossary file without an extension\./],
+    ['test-provname-path', /Path: Text from the file found through the input path\./],
+    ['test-provname-colors', /Glossary: Text from the subfolder glossary file\./],
+    ['test-provname-primitive', /Glossary: Text from the glossary file\./],
+    ['test-provname-import', /Glossary: Text from the subfolder glossary file\./],
+    ['test-provname-ifexists', /Glossary: Text from the subfolder glossary file\./],
+    ['test-provname-include', /Included: Text from the included glossary file\./],
+  ].map(([name, text]) => [name, [
+    text, /^(?![^]*refextract)/, /^(?![^]*<\/html>[^]*<\/html>)/,
+    ...name === 'test-provname-index' ? [
+      /Index: Text from the subfolder index file\./,
+      /<h3 class='likesectionHead' id='[^']+'>.*Index<\/h3>\s*<div class='theindex'><div class='theindex-letter'>\s*<div class='index-item'>ring, <a href='#[^']+'>1<\/a>/,
+    ] : [],
+    ...name === 'test-provname-colors'
+      ? [/<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/] : [],
+  ]])),
   // (a citation and its entry from a .bst and a .bib named by a path that
   // begins with ../)
   'test-bibpath': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],

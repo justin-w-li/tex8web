@@ -1,0 +1,12 @@
+% A file of the document found through \input@path, read with
+% \input{provd}, that names itself like glossary.4ht with
+% \ProvidesFile{glossary.tex}. As in the PDF, the file's text is in the
+% page.
+\documentclass{article}
+\makeatletter
+\def\input@path{{test-provname/path/}}
+\makeatother
+\input{provd}
+\begin{document}
+Path: \provglossary
+\end{document}

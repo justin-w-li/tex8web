@@ -1,0 +1,12 @@
+% The subfolder glossary file of test-provname.tex, read after xcolor with
+% dvipsnames and graphicx. As in the PDF, the file's text is in the page,
+% and a named color keeps its value.
+\documentclass{article}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{graphicx}
+\input{test-provname/glossary}
+\begin{document}
+Glossary: \provglossary
+
+\textcolor{BrickRed}{Brick red text.}
+\end{document}
