@@ -2504,24 +2504,24 @@ const external = {
   // (both xr and xr-hyper, in each load order: each reference as with one
   // of them alone)
   'test-xrboth': [latexUrl('CaseA'),
-    /CaseB <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>, auto <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./,
-    new RegExp(`CaseC ${tex4htLink('test-xrurl', 'x1-20001\\.1')}\\.`),
-    /CaseEarly <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./,
+    /CaseB <a href='test-xrboth\/\.\.\/test-xrboth\.html#x1-90001\.1'>1\.1<\/a>, auto <a href='test-xrboth\/\.\.\/test-xrboth\.html#x1-90001\.1'>1\.1<\/a>\./,
+    /CaseC <a href='test-xrboth\/\.\.\/test-xrboth\.html#x1-20001\.1'>1\.1<\/a>\./,
+    /CaseEarly <a href='test-xrboth\/\.\.\/test-xrboth\.html#x1-90001\.1'>1\.1<\/a>\./,
     said('CaseD @, page @.', '1\\.1', 'iv'), missing('CaseE'), said('Included @.', '3'),
     ...[['cmti-10', 'In italics'], ['cmr-8', 'In a footnote'], ['cmss-10', 'In sans-serif'], ['cmtt-10', 'In typewriter'], ['cmti-10', 'In a theorem']]
       .map(([font, context]) => new RegExp(`<span class='${font}'>${context}, 1\\.1\\.\\s*<\\/span>`)),
     /<h3 class='sectionHead'[^>]*>(?:(?!<\/h3>)[^])*>See 1\.1<\/h3>/, local(2), noUrl],
   'test-xrboth-hyper-first': [said('CaseF @, page @.', '1\\.1', 'iv'),
-    /CaseG <a href='test-xr\/\.\.\/test-xr-plain\.html#x1-20001\.1'>1\.1<\/a>\./, local(1), noUrl],
+    /CaseG <a href='test-xrboth\/\.\.\/test-xrboth-hyper-first\.html#x1-20001\.1'>1\.1<\/a>\./, local(1), noUrl],
   'test-xrboth-old': [latexUrl('CaseH'),
-    /CaseI <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./, local(1), noUrl],
+    /CaseI <a href='test-xrboth\/\.\.\/test-xrboth-old\.html#x1-90001\.1'>1\.1<\/a>\./, local(1), noUrl],
   'test-xrboth-old-last': [latexUrl('CaseJ'),
-    /CaseK <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./, missing('Included'), local(1)],
+    /CaseK <a href='test-xrboth\/\.\.\/test-xrboth-old-last\.html#x1-90001\.1'>1\.1<\/a>\./, missing('Included'), local(1)],
   'test-xrboth-hyper-xr': [latexUrl('CaseX'),
-    /CaseY <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>, auto <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./,
+    /CaseY <a href='test-xrboth\/\.\.\/test-xrboth-hyper-xr\.html#x1-90001\.1'>1\.1<\/a>, auto <a href='test-xrboth\/\.\.\/test-xrboth-hyper-xr\.html#x1-90001\.1'>1\.1<\/a>\./,
     local(1), noUrl],
   'test-xrboth-old-early': [latexUrl('CaseM'),
-    /CaseN <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./, missing('Included'), local(1)],
+    /CaseN <a href='test-xrboth\/\.\.\/test-xrboth-old-early\.html#x1-90001\.1'>1\.1<\/a>\./, missing('Included'), local(1)],
 };
 
 // Text after the last \hfill of a line, up to the end of the paragraph or of
