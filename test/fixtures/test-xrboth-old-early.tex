@@ -1,0 +1,26 @@
+% xr's old release, which \usepackage{xr}[=v5] loads, with its
+% \externaldocument in the preamble before xr-hyper and hyperref, which
+% load later. The labels of that file are read at the beginning of the
+% document, after xr-hyper has replaced the old release's commands. The
+% page builds, and each reference prints as with the old release alone:
+% from an .aux that LaTeX wrote under hyperref, its number, page, name, and
+% \autoref as in the PDF, with no link. A later \externaldocument is
+% xr-hyper's: from an .aux that tex4ht wrote under hyperref, with its
+% .xref, a link to that document's page.
+\documentclass{article}
+\usepackage{xr}[=v5]
+\externaldocument[X-]{test-xr/latex}
+\usepackage{xr-hyper}
+\usepackage{hyperref}
+\externaldocument[H-]{test-xr/hyper4ht-hyper}
+\begin{document}
+CaseM \ref{X-ss}, page \pageref{X-front}, named \nameref{X-thm},
+auto \autoref{X-thm}.
+
+CaseN \ref{H-oss}.
+
+Included \ref{X-c}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}

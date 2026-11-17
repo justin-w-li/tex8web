@@ -5,12 +5,14 @@
 % page, name, and \autoref as in the PDF, with no link and no URL, in each
 % context; from an .aux that LaTeX wrote without hyperref, its number and
 % page; from an .aux that tex4ht wrote under hyperref, with its .xref, a
-% link to that document's page; one through \externalcitedocument, with no
-% prefix; a label of an \@input file of the other .aux; and a label of a
-% file that does not exist yet, as ??.
+% link to that document's page, also from an \externaldocument before
+% xr-hyper loads; one through \externalcitedocument, with no prefix; a
+% label of an \@input file of the other .aux; and a label of a file that
+% does not exist yet, as ??.
 \documentclass{article}
 \usepackage{amsthm}
 \usepackage{xr}
+\externaldocument[E-]{test-xr/hyper4ht-hyper}
 \usepackage{xr-hyper}
 \usepackage{hyperref}
 \externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
@@ -27,6 +29,8 @@ auto \autoref{X-thm}.
 CaseB \ref{H-oss}, auto \autoref{H-oss}.
 
 CaseC \ref{oss}.
+
+CaseEarly \ref{E-oss}.
 
 CaseD \ref{P-ss}, page \pageref{P-front}.
 

@@ -2506,6 +2506,7 @@ const external = {
   'test-xrboth': [latexUrl('CaseA'),
     /CaseB <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>, auto <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./,
     new RegExp(`CaseC ${tex4htLink('test-xrurl', 'x1-20001\\.1')}\\.`),
+    /CaseEarly <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./,
     said('CaseD @, page @.', '1\\.1', 'iv'), missing('CaseE'), said('Included @.', '3'),
     ...[['cmti-10', 'In italics'], ['cmr-8', 'In a footnote'], ['cmss-10', 'In sans-serif'], ['cmtt-10', 'In typewriter'], ['cmti-10', 'In a theorem']]
       .map(([font, context]) => new RegExp(`<span class='${font}'>${context}, 1\\.1\\.\\s*<\\/span>`)),
@@ -2516,6 +2517,11 @@ const external = {
     /CaseI <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./, local(1), noUrl],
   'test-xrboth-old-last': [latexUrl('CaseJ'),
     /CaseK <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./, missing('Included'), local(1)],
+  'test-xrboth-hyper-xr': [latexUrl('CaseX'),
+    /CaseY <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>, auto <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./,
+    local(1), noUrl],
+  'test-xrboth-old-early': [latexUrl('CaseM'),
+    /CaseN <a href='test-xr\/\.\.\/test-xr-hyper\.html#x1-90001\.1'>1\.1<\/a>\./, missing('Included'), local(1)],
 };
 
 // Text after the last \hfill of a line, up to the end of the paragraph or of
