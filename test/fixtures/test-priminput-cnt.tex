@@ -1,0 +1,16 @@
+% A guard: it checks a case that the fix of the files read with the
+% primitive \input must not break.
+% contour's dvips.cnt, from TeX's tree, read with the primitive \input.
+% The file names itself \ProvidesFile{dvips.cnt}, so tex4ht reads
+% dvips.4ht, which the TeX log lists. As in the PDF, the page builds.
+% One rule alone leaves the name unmarked: it is found in TeX's tree and
+% not beside the document. Its extension, .cnt, is not a package's, and no
+% package reads a dvips file first, so the document loads no color or
+% graphics package.
+\documentclass{article}
+\makeatletter
+\input dvips.cnt
+\makeatother
+\begin{document}
+Text after the contour driver file.
+\end{document}

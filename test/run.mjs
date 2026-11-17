@@ -1322,16 +1322,17 @@ const contents = {
     // (files of the document that give a .4ht's name in \ProvidesFile,
     // read with the primitive \input, which sets no \CurrentFileUsed)
     ['test-priminput', /Glossary: Text from the subfolder glossary file\./],
-    ['test-priminput-ext', /Extension: Text from the subfolder glossary file\./],
-    ['test-priminput-root', /Root: Text from the definitions file\./],
-    ['test-priminput-defs', /Definitions: Text from the definitions file\./],
-    ['test-priminput-relax', /Relax: Text from the subfolder glossary file\./],
-    ['test-priminput-comment', /Comment: Text from the subfolder glossary file\./],
-    ['test-priminput-alias', /Alias: Text from the subfolder glossary file\./],
-    ['test-priminput-quoted', /Quoted: Text from the file with a space in its name\./],
+    ['test-priminput-forms', /Extension: Text from the subfolder glossary file\./, [
+      /Relax: Text from the subfolder glossary file\./,
+      /Comment: Text from the subfolder glossary file\./,
+      /Alias: Text from the subfolder glossary file\./,
+      /Quoted: Text from the file with a space in its name\./,
+      /Above: Text from the file read by a path with dots\./,
+      /Definitions: Text from the definitions file\./,
+      /Root: Text from the definitions file\./,
+    ]],
     ['test-priminput-early', /Early: Text from the subfolder glossary file\./],
     ['test-priminput-chain', /Outer: Text from the outer file\./, [/Inner: Text from the inner file\./]],
-    ['test-priminput-above', /Above: Text from the file read by a path with dots\./],
     // (built as it is, by a relative path)
     ['test-priminput-abs', /Absolute: Text from the subfolder glossary file\. By a relative path\./],
     ['test-priminput-guards', /Nested: Text from the nested glossary file\./, [
@@ -1340,6 +1341,7 @@ const contents = {
     ]],
     ['test-priminput-tree', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
     ['test-priminput-vendored', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
+    ['test-priminput-cnt', /Text after the contour driver file\./],
   ].map(([name, text, extra = []]) => [name, [
     text, /^(?![^]*refextract)/, /^(?![^]*<\/html>[^]*<\/html>)/, ...extra,
   ]])),
@@ -1932,9 +1934,11 @@ const texWarnings = {
 // Lines a document's TeX log must hold, read with its wrapped lines
 // joined. xcolor gives a named color its value itself, so a page with
 // xcolor is the same whether tex4ht reads dvipsnam.4ht or not.
+// dvips.4ht only defines commands that read a color's value.
 const texLines = {
   'test-priminput-tree': [/\/dvipsnam\.4ht/],
   'test-priminput-vendored': [/\/dvipsnam\.4ht/],
+  'test-priminput-cnt': [/\/dvips\.4ht/],
 };
 
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not

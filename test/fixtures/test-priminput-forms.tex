@@ -1,0 +1,43 @@
+% Files of the document that give a .4ht's name in \ProvidesFile, read
+% with the primitive \input in each of its forms, with hyperref. Each read
+% copies the macro the file defines, so that the page shows each file's
+% text only if that read found the file. As in the PDF, each file's text
+% is in the page.
+% - test-priminput/glossary.tex names itself like glossary.4ht. It is
+%   read with its extension, with the name ended by \relax, with a % at
+%   the end of the line, so that TeX reads the name on to the next line,
+%   and with LaTeX's name of the primitive, \@@input.
+% - test-priminput/my glossary.tex has a space in its name, read with a
+%   quoted name.
+% - test-priminput/above.tex is read by a relative path that leaves the
+%   document's folder with ".." and comes back to it. (The file is in
+%   test/fixtures, whose files the build's stamp hashes, so that an edit
+%   to it builds the page again.)
+% - test-priminput/defs.tex, in a subfolder, and provdefs.ltx, beside the
+%   document, give the name of another file, glossary.tex.
+\documentclass{article}
+\usepackage{hyperref}
+\makeatletter
+\input test-priminput/glossary.tex
+\let\primext\primglossary \let\primglossary\relax
+\input test-priminput/glossary\relax
+\let\primrelax\primglossary \let\primglossary\relax
+\input test-priminput/glossary%
+\let\primcomment\primglossary \let\primglossary\relax
+\@@input test-priminput/glossary
+\let\primalias\primglossary
+\input "test-priminput/my glossary"
+\input ../fixtures/test-priminput/above
+\input test-priminput/defs
+\input provdefs.ltx
+\makeatother
+\begin{document}
+Extension: \primext\par
+Relax: \primrelax\par
+Comment: \primcomment\par
+Alias: \primalias\par
+Quoted: \primquoted\par
+Above: \primabove\par
+Definitions: \primdefs\par
+Root: \provdefs
+\end{document}
