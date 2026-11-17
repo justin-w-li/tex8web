@@ -136,6 +136,10 @@ else
   -- reads the .bbl beside, as pdflatex does.)
   Make:add("htlatex_first", function(par)
     local base = par.builddir .. "/" .. par.input
+    -- (biblatex writes the .bcf in each run with biber. bibliography.lua
+    -- runs biber for any .bcf, so one of an earlier build would have biber
+    -- run for a document that no longer uses it.)
+    os.remove(base .. ".bcf")
     local out, here = lfs.attributes(par.builddir), lfs.attributes(".")
     local beside = out and not (here.ino == out.ino and here.dev == out.dev)
       and lfs.attributes(par.input .. ".bbl") and not lfs.attributes(base .. ".bbl")
