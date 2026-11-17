@@ -1,0 +1,14 @@
+% A guard: cases the fix must not break. zref-xr reads the URL of another
+% document's PDF itself, and tex4ht does not hook it. Its starred form
+% imports the labels of an .aux that LaTeX wrote. The page builds, and a
+% reference to one prints its number and page as in the PDF.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{zref-xr,zref-user}
+\zexternaldocument*[Z-]{test-xr/latex}[https://example.org/ext.pdf]
+\begin{document}
+CaseZ \zref{Z-ss}, page \zpageref{Z-front}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}

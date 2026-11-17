@@ -1,0 +1,22 @@
+% The URL of another document's PDF with xr and no hyperref, which takes it
+% as xr-hyper does: with a prefix, with none, and through
+% \externalcitedocument. The page builds, and each reference prints as
+% without a URL: a label of an .aux that LaTeX wrote with its number or
+% page, and one of an .aux that tex4ht wrote, with its .xref, as a link to
+% that document's page.
+\documentclass{article}
+\usepackage{xr}
+\externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
+\externaldocument[T-]{test-xrurl/xr}[https://example.org/t.pdf]
+\externaldocument{test-xr/plain}[https://example.org/plain.pdf]
+\externalcitedocument[C-]{test-xr/plain}[https://example.org/cite.pdf]
+\begin{document}
+CaseG \ref{X-ss}, page \pageref{X-front}.
+
+CaseH \ref{T-oss}.
+
+CaseJ \ref{ss}, page \pageref{front}, cited \ref{C-s}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}

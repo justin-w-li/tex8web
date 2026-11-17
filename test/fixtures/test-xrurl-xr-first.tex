@@ -1,0 +1,14 @@
+% The URL of another document's PDF with xr loaded before hyperref. The
+% page builds, and each reference to a label of an .aux that LaTeX wrote
+% prints as in the PDF, with no link.
+\documentclass{article}
+\usepackage{xr}
+\usepackage{hyperref}
+\externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
+\begin{document}
+CaseK \ref{X-ss}, page \pageref{X-front}, named \nameref{X-thm},
+auto \autoref{X-thm}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}

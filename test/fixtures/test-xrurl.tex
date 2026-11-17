@@ -1,0 +1,41 @@
+% References to labels of other documents whose \externaldocument gives
+% xr-hyper's URL of that document's PDF, loaded after hyperref: after the
+% file, on the next line, after a space, empty, and holding ~ and _; with
+% the nocite option, through \externalcitedocument, and with no prefix.
+% The page builds, and each reference prints as without a URL: from an
+% .aux that LaTeX wrote, its number, page, or name as in the PDF, with no
+% link, in each context; from an .aux that tex4ht wrote, with its .xref, a
+% link to that document's page.
+\documentclass{article}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\usepackage{xr-hyper}
+\externaldocument[X-]{test-xr/latex}[https://example.org/ext.pdf]
+\externaldocument[H-][nocite]{test-xrurl/hyper}
+  [https://example.org/hyper.pdf]
+\externalcitedocument{test-xrurl/tex4ht}[https://example.org/~a/b_c.pdf]
+\externaldocument[P-]{test-xr/plain} []
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{See \ref{X-ss}}
+CaseA \ref{X-ss}, page \pageref{X-front}, named \nameref{X-thm},
+auto \autoref{X-thm}.
+
+CaseB \ref{H-oss}, auto \autoref{H-oss}.
+
+CaseC \ref{oss}.
+
+CaseD \ref{P-ss}, page \pageref{P-front}.
+
+\textit{In italics, \ref{X-ss}.}
+A note.\footnote{In a footnote, \ref{X-ss}.}
+\textsf{In sans-serif, \ref{X-ss}.}
+\texttt{In typewriter, \ref{X-ss}.}
+
+\begin{theorem}
+In a theorem, \ref{X-ss}.
+\end{theorem}
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}
