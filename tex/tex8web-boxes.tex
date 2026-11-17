@@ -262,33 +262,28 @@
         \expandafter\edef\csname NR:Title\endcsname{%
             \expandafter\noexpand\csname a:newlabel\endcsname
                 {\@currentlabelname}}}}
-% A box's entry in a list that tex4ht shows (the contents, or the list of
-% figures, tables, or listings, which a box reaches with blend into or
-% list inside) is expanded as it is written, as in the PDF. tex4ht shows no
-% other list, such as one that \tcblistof reads, so the entry there is
-% written as a string: the box's list entry, else its title
+% A box's entry in a list (list inside, blend into, or add to list) is
+% written as a string: the box's list entry, else its title. tex4ht shows
+% none of these entries: tcolorbox writes the entry in its phantom box,
+% which tex4ht never draws. Only the expansion as it is written matters,
+% and that expansion stops the build on a fragile command
 \web@needs{tcb@addcontentsline}
-\let\web@tcb@addcontentsline\tcb@addcontentsline
 \ExplSyntaxOn
 \cs_set_protected:Npn \tcb@addcontentsline #1#2
   {
-    \str_case:nnTF {#1} { {toc} { } {lof} { } {lot} { } {lol} { } }
-      { \web@tcb@addcontentsline {#1} {#2} }
+    \use:e
       {
-        \use:e
+        \exp_not:N \addcontentsline { \exp_not:n {#1} } { \exp_not:n {#2} }
           {
-            \exp_not:N \addcontentsline { \exp_not:n {#1} } { \exp_not:n {#2} }
+            \tl_to_str:e
               {
-                \tl_to_str:e
+                \tl_if_empty:NTF \kvtcb@listentry
                   {
-                    \tl_if_empty:NTF \kvtcb@listentry
-                      {
-                        \tl_if_empty:NTF \kvtcb@title
-                          { \exp_not:o \tcbtitletext }
-                          { \exp_not:o \kvtcb@title }
-                      }
-                      { \exp_not:o \kvtcb@listentry }
+                    \tl_if_empty:NTF \kvtcb@title
+                      { \exp_not:o \tcbtitletext }
+                      { \exp_not:o \kvtcb@title }
                   }
+                  { \exp_not:o \kvtcb@listentry }
               }
           }
       }

@@ -3,12 +3,11 @@
 % hyperref. A theorem's title, its short title (the second optional
 % argument, and the short title key), a box with list entry=, and a box
 % with the default entry, its title. pdflatex stops on these entries too,
-% in its write of the entry, with hyperref, nameref, or neither; with
-% \kind and \pick made robust, the PDF lists each entry with its number
-% and text, as the checks expect. Guards: a box in the list of figures
-% (blend into=figures) whose title holds \thesection, which the list gives
-% as it was when the box was set, and a box without a counter added to the
-% list of figures.
+% in its write of the entry, with hyperref, nameref, or neither. tex4ht
+% shows no box's list entry, so these boxes check that the build does not
+% stop and that the titles and the \nameref links hold. A box in the list
+% of figures (blend into=figures) whose title holds \thesection, and a box
+% without a counter added to the list of figures, check the same.
 \documentclass{article}
 \usepackage[most]{tcolorbox}
 \usepackage{hyperref}
