@@ -1,0 +1,13 @@
+% The same as test-priminput-ext.tex, by an absolute path:
+% \input /<folder>/test-priminput/glossary.tex.
+%
+% Built as it is, \AbsDir is empty and the path is relative. run.mjs
+% builds the page again with a test-priminput-abs-case.tex in TEXINPUTS
+% that sets \AbsDir to the absolute path of test/fixtures/. As in the PDF,
+% the file's text is in the page, with whether its path was absolute.
+\documentclass{article}
+\InputIfFileExists{test-priminput-abs-case}{}{\def\AbsDir{}}
+\input \AbsDir test-priminput/glossary.tex
+\begin{document}
+Absolute: \primglossary{} By \ifx\AbsDir\empty a relative\else an absolute\fi{} path.
+\end{document}

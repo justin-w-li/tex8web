@@ -1,0 +1,3 @@
+% A shortened copy of LaTeX's dvipsnam.def, for test-priminput-vendored.tex.
+\ProvidesFile{dvipsnam.def}[2026-05-17 v3.0m Driver-dependent file (DPC,SPQR)]
+\DefineNamedColor{named}{BrickRed}      {cmyk}{0,0.89,0.94,0.28}

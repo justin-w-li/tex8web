@@ -1319,6 +1319,24 @@ const contents = {
       [/<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/]],
     // (built as it is, every file by a relative path)
     ['test-abspath', /Input: Text from the file read with input\. By a relative path\./],
+    // (files of the document that give a .4ht's name in \ProvidesFile,
+    // read with the primitive \input, which sets no \CurrentFileUsed)
+    ['test-priminput', /Glossary: Text from the subfolder glossary file\./],
+    ['test-priminput-ext', /Extension: Text from the subfolder glossary file\./],
+    ['test-priminput-root', /Root: Text from the definitions file\./],
+    ['test-priminput-defs', /Definitions: Text from the definitions file\./],
+    ['test-priminput-relax', /Relax: Text from the subfolder glossary file\./],
+    ['test-priminput-comment', /Comment: Text from the subfolder glossary file\./],
+    ['test-priminput-alias', /Alias: Text from the subfolder glossary file\./],
+    ['test-priminput-quoted', /Quoted: Text from the file with a space in its name\./],
+    // (built as it is, by a relative path)
+    ['test-priminput-abs', /Absolute: Text from the subfolder glossary file\. By a relative path\./],
+    ['test-priminput-guards', /Nested: Text from the nested glossary file\./, [
+      /Chapter: Text from the chapter file\./,
+      /Body: Text from the glossary file read in the body\./,
+    ]],
+    ['test-priminput-tree', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
+    ['test-priminput-vendored', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
   ].map(([name, text, extra = []]) => [name, [
     text, /^(?![^]*refextract)/, /^(?![^]*<\/html>[^]*<\/html>)/, ...extra,
   ]])),
@@ -4235,6 +4253,35 @@ if (abspath) {
     report(`${abspath.name} (${label})`, problems);
   });
 }
+
+// test-priminput-abs built again with a test-priminput-abs-case.tex in
+// TEXINPUTS that sets \AbsDir to the absolute path of test/fixtures/, so
+// that the primitive \input reads the file by an absolute path. The file's
+// text is in the page, with nothing that glossary.4ht writes, and one page
+const primabs = docs.find(d => d.name === 'test-priminput-abs');
+if (primabs) jobs.push(async () => {
+  const top = join(testDir(primabs), 'absolute'), out = join(top, 'html'), aux = join(top, 'aux');
+  const file = join(top, 'test-priminput-abs-case.tex');
+  const cfg = `\\def\\AbsDir{${join(root, 'test/fixtures')}/}\n`;
+  if (existsSync(file) && readFileSync(file, 'utf8') !== cfg) rmSync(top, { recursive: true, force: true });
+  mkdirSync(top, { recursive: true });
+  writeFileSync(file, cfg);
+  const result = await build(primabs, out, aux, { TEXINPUTS: `${top}:` });
+  const problems = [];
+  if (result.code !== 0) {
+    problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]|^! /.test(line)));
+  }
+  const page = join(out, 'test-priminput-abs.html');
+  const flat = existsSync(page) ? readFileSync(page, 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
+  if (!flat) problems.push('no page');
+  else {
+    const text = 'Absolute: Text from the subfolder glossary file. By an absolute path.';
+    if (!flat.includes(text)) problems.push(`no ${JSON.stringify(text)} in the page`);
+    if (flat.includes('refextract')) problems.push('refextract in the page');
+    if (/<\/html>[^]*<\/html>/.test(flat)) problems.push('two pages in one');
+  }
+  report(`${primabs.name} (by an absolute path)`, problems);
+});
 
 // test-pdfpages-hint built again without shell escape
 // (kpathsea reads shell_escape from the environment before texmf.cnf):

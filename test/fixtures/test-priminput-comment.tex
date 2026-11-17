@@ -1,0 +1,9 @@
+% The same as test-priminput.tex, with a % at the end of the line, so that
+% TeX reads the name on to the next line, up to \makeatletter's \catcode.
+% As in the PDF, the file's text is in the page.
+\documentclass{article}
+\input test-priminput/glossary%
+\makeatletter
+\begin{document}
+Comment: \primglossary
+\end{document}

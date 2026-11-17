@@ -1,0 +1,11 @@
+% A file of the document in a subfolder, with a space in its name, that
+% names itself like glossary.4ht with \ProvidesFile{glossary.tex}, read
+% with the primitive \input and a quoted name, with hyperref:
+% \input "test-priminput/my glossary". As in the PDF, the file's text is
+% in the page.
+\documentclass{article}
+\usepackage{hyperref}
+\input "test-priminput/my glossary"
+\begin{document}
+Quoted: \primquoted
+\end{document}

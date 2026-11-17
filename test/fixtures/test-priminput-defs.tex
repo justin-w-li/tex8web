@@ -1,0 +1,9 @@
+% A file of the document in a subfolder, test-priminput/defs.tex, that
+% gives the name of another file, glossary.tex, in \ProvidesFile, read
+% with the primitive \input. As in the PDF, the file's text is in the
+% page.
+\documentclass{article}
+\input test-priminput/defs
+\begin{document}
+Definitions: \primdefs
+\end{document}

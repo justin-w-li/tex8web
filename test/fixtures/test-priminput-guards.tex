@@ -1,0 +1,13 @@
+% A guard: it checks cases that the fix of the files read with the
+% primitive \input must not break.
+% Files of the document that name themselves like glossary.4ht with
+% \ProvidesFile{glossary.tex}, read with the primitive \input inside a
+% file read with \input{}, and in the body. As in the PDF, each file's
+% text is in the page.
+\documentclass{article}
+\input{test-priminput/chapter}
+\begin{document}
+Nested: \primnested\par
+Chapter: \primchapter\par
+\input test-priminput/body
+\end{document}

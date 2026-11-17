@@ -1,0 +1,13 @@
+% A guard: it checks a case that the fix of the files read with the
+% primitive \input must not break.
+% LaTeX's dvipsnam.def, from TeX's tree, read with the primitive \input
+% after xcolor. The file names itself \ProvidesFile{dvipsnam.def}, so
+% tex4ht reads dvipsnam.4ht. As in the PDF, a named color keeps its value.
+\documentclass{article}
+\usepackage{xcolor}
+\makeatletter
+\input dvipsnam.def
+\makeatother
+\begin{document}
+\textcolor[named]{BrickRed}{Brick red text.}
+\end{document}
