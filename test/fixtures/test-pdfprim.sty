@@ -1,0 +1,6 @@
+% The package of test-pdfprim.tex: a map file loaded as it loads, and a
+% macro that colors its text with \pdfliteral direct.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{test-pdfprim}[2026/11/17 tex8web test package]
+\pdfmapfile{+pkg.map}
+\newcommand\pkgblue[1]{\pdfliteral direct{0 0 1 rg}#1\pdfliteral direct{0 g}}

@@ -1,0 +1,121 @@
+% A document written for pdflatex that calls the pdfTeX primitives that are
+% an error in DVI mode, where tex4ht's latex runs. In the PDF each one
+% writes into the PDF and puts nothing on the page, except the image, the
+% form, and the colors. On the page the text around each one stays, and
+% none of their arguments shows. They come in the preamble, in the body, in
+% a macro, in italic, sans-serif, and typewriter text, in a footnote, a
+% theorem, a box, a heading written to the table of contents, and in the
+% document's own package. The primitives that only warn in DVI mode stay
+% primitives.
+\pdfoutput=1
+\pdfmapline{=before-class.pfb}
+\documentclass{article}
+\usepackage{amsthm}
+\usepackage{cmap}
+\usepackage{test-pdfprim}
+\newtheorem{theorem}{Theorem}
+\pdfmapfile{+foo.map}
+\pdfmapline{=bar.pfb}
+\input glyphtounicode
+\pdfgentounicode=1
+\pdfcompresslevel=9
+\pdfminorversion=5
+\pdfinfo{/Title (A title)}
+\pdfcatalog{/PageMode /UseNone}
+\pdftrailer{/Info 1 0 R}
+\pdfpageattr{/Rotate 0}
+\pdfpagesattr{/Rotate 0}
+\pdfpageresources{/Foo 1}
+\pdfglyphtounicode{alpha}{03B1}
+\pdfnames{/Foo [1 2]}
+\pdfobj{<< /Preamble 1 >>}
+\pdffontattr\font{/Foo 1}
+\pdfincludechars\font{abc}
+\pdfnobuiltintounicode\font
+\let\mylit\pdfliteral
+\newcommand\blue[1]{\pdfliteral{0 0 1 rg}#1\pdfliteral{0 g}}
+\makeatletter
+\newcommand\isprim[1]{\begingroup\edef\a{\meaning#1}\edef\b{\string#1}%
+  \expandafter\@gobble\string#1~\ifx\a\b primitive\else redefined\fi\endgroup}
+\makeatother
+\begin{document}
+\tableofcontents
+
+\section{Head \pdfliteral direct{0 0 1 rg}x\pdfliteral page{0 g}
+  \pdfsave\pdfsetmatrix{1 0 0 1}\pdfrestore y \blue{z}
+  \pdfcolorstack0 push{0 0 1 rg}w\pdfcolorstack0 pop}
+
+Literal: before\pdfliteral{0 0 1 rg} blue\pdfliteral direct{0 g}
+\pdfliteral page{0 g}after.
+
+Let: before\mylit{0 g} after.
+
+Macro: before \blue{one} after.
+
+Math: before $a\blue{b}c$ after.
+
+Italic: \emph{before \blue{two}\pdfliteral{0 g} after}.
+
+Sans: \textsf{before \blue{three}\pdfliteral direct{0 g} after}.
+
+Typewriter: \texttt{before \blue{four}\pdfliteral page{0 g} after}.
+
+Package: before \pkgblue{five} after.
+
+Footnote: before\footnote{Note \blue{six}\pdfliteral direct{0 g} end.} after.
+
+\begin{theorem}
+Theorem \blue{seven}\pdfliteral{0 g} end.
+\end{theorem}
+
+Box: \sbox0{\pdfliteral{0 g}boxed}\usebox0{} after.
+
+Image: before\pdfximage width 1cm {test-picture.png}\pdfrefximage\pdflastximage{} after.
+
+Image keywords: before\immediate\pdfximage height 1cm depth 0pt attr{/Foo 1}
+page 1 {test-picture.png}\relax{} after.
+
+Objects: before\pdfobj reserveobjnum\xdef\myobj{\the\pdflastobj}%
+\immediate\pdfobj useobjnum\myobj{<< /X 1 >>}\pdfrefobj\myobj{} after.
+Number: \ifnum\myobj>0 set\else unset\fi.
+
+Stream: before\immediate\pdfobj stream attr{/Y 2}{q Q}\pdfrefobj\pdflastobj{} after.
+
+Form: \setbox2\hbox{form}%
+before\pdfxform attr{/X 1} resources{/Y 2} 2\pdfrefxform\pdflastxform{} after.
+
+Matrix: before \pdfsave\pdfsetmatrix{0 1 -1 0}\rlap{turned}\pdfrestore\phantom{turned}{} after.
+
+Stack: before\pdfcolorstack0 push{0 0 1 rg}pushed\pdfcolorstack0 pop{} and
+\pdfcolorstack0 set{0 g}set\pdfcolorstack0 current{} after.
+
+Link: before\pdfstartlink height 1em attr{/Border [0 0 0]} user{/Subtype /Link
+/A << /S /URI /URI (https://example.com/) >>}linked\pdfrunninglinkoff\pdfrunninglinkon\pdfendlink{} after.
+
+Goto: before\pdfstartlink goto name{here}to here\pdfendlink{} after.
+
+Destination: before\pdfdest name{here} fit after.
+
+Number destination: before\pdfdest num 7 xyz after.
+
+Annotation: before\pdfannot width 1cm height 1em depth 0pt {/Subtype /Text
+/Contents (A note)} after.
+
+Outline: before\pdfoutline goto name{here} count 0 {Outline title} after.
+
+Thread: before\pdfthread width 1cm attr{/I << /Title (T) >>} name{t} after.
+
+Snap: before\pdfsnaprefpoint\pdfsnapy 1pt\pdfsnapycomp 500 after.
+
+Spaces: before\pdfspacefont{cmr10}\pdfinterwordspaceon\pdffakespace\pdfinterwordspaceoff{} after.
+
+\pdfstartthread name{u}
+Started thread.\par
+\pdfendthread
+
+Guards: \isprim\pdfinfo, \isprim\pdfcatalog, \isprim\pdftrailer,
+\isprim\pdftrailerid, \isprim\pdfpageattr, \isprim\pdfpagesattr,
+\isprim\pdfpageresources, \isprim\pdfcompresslevel, \isprim\pdfminorversion,
+\isprim\pdfgentounicode, \isprim\pdfglyphtounicode, \isprim\pdfcolorstackinit.
+
+\end{document}

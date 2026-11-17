@@ -1779,6 +1779,16 @@ const bibliographies = {
   'test-biblatex-authoryear': [hanging('0em', '1.5em', " class='thebibliography tex8web-bibhang'")],
 };
 
+// pdfTeX's primitives that are an error in DVI mode: the text around each
+// as the PDF shows it, with any tags at its spaces and at each |, and no
+// argument or name of a primitive anywhere in the page, in the math, or in
+// its macros.
+const pdfprimText = text => new RegExp(text.replace(/[.*+?^${}()[\]\\]/g, '\\$&')
+  .replace(/ /g, '(?:<[^>]*>)* (?:<[^>]*>)*').replace(/\|/g, '(?:<[^>]*>)*'));
+const pdfprimHead = (tag, text) => new RegExp(`<${tag} class='sectionHead'[^>]*>(?:(?!</${tag}>)[^])*${pdfprimText(text).source}(?:<[^>]*>|\\s)*</${tag}>`);
+const pdfprimToc = text => new RegExp(`<span class='sectionToc'>(?:(?!</a>)[^])*${pdfprimText(text).source}(?:<[^>]*>)*</a>`);
+const pdfprimLeaks = /^(?![^]*(?:\d rg\b|foo\.map|bar\.pfb|pkg\.map|before-class\.pfb|\/Subtype|\/Border|\/Foo 1|\/[XY] [12]\b|&lt;&lt;|\bq Q\b|Outline title|pdf(?:literal|mapfile|mapline|setmatrix|save|restore|ximage|refximage|obj|refobj|xform|refxform|startlink|endlink|annot|dest|outline|thread|startthread|endthread|names|fontattr|snap|interwordspace|fakespace|spacefont|colorstack|runninglink|includechars|nobuiltintounicode|last(?:obj|ximage|xform))))/;
+
 // Packages given pdfTeX's driver option, which tex4ht's DVI mode cannot
 // use: each package's output as without the option. test-pdftex gives it to
 // each package, test-pdftex-class to the class, and test-pdftex-sty through
@@ -1911,6 +1921,41 @@ const drivers = {
     /<img alt='wide picture' src='test-picture\.png' style='width:calc\(var\(--tex8web-textwidth\) \* 0\.1649\)' \/>\. After the picture\./,
     // (the kernel's backend, which \begin{document} loads)
     /Backend: dvips\./,
+  ],
+  // (the image, the form, the rotation, and the colors are left out, where
+  // the PDF shows them. A keyword that ends a primitive takes the space
+  // after it, as \pdfdest's fit and \pdfsnapycomp's number do in the PDF)
+  'test-pdfprim': [
+    pdfprimHead('h3', 'Head x y z w'), pdfprimToc('Head x y z w'),
+    ...['Literal: before blue after.', 'Let: before after.', 'Macro: before one after.',
+      'Italic: before two after.', 'Sans: before three after.', 'Typewriter: before four after.',
+      'Package: before five after.', 'Footnote: before|1 after.', 'Note six end.',
+      'Theorem 1. Theorem seven end.', 'Box: boxed after.',
+      'Image: before after.', 'Image keywords: before after.',
+      'Objects: before after. Number: set.', 'Stream: before after.',
+      'Stack: beforepushed and set after.', 'Link: beforelinked after.', 'Goto: beforeto here after.',
+      'Destination: beforeafter.', 'Number destination: beforeafter.',
+      'Annotation: before after.', 'Outline: before after.', 'Thread: before after.',
+      'Snap: beforeafter.', 'Spaces: before after.', 'Started thread.',
+      // (the primitives that only warn in DVI mode)
+      `Guards: ${['info', 'catalog', 'trailer', 'trailerid', 'pageattr', 'pagesattr', 'pageresources',
+        'compresslevel', 'minorversion', 'gentounicode', 'glyphtounicode', 'colorstackinit']
+        .map(name => `pdf${name} primitive`).join(', ')}.`].map(pdfprimText),
+    /Form: before(?:<[^>]*>)*(?:form)?(?:<[^>]*>)* after\./,
+    /Matrix: before(?:<[^>]*>|\s)*turned(?:(?!<\/p>)[^])* after\./,
+    /Math: before (?:(?!<\/p>)[^])*<mjx-container(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    pdfprimLeaks,
+  ],
+  // (in a heading that goes to hyperref's bookmarks, and in a caption that
+  // goes to the list of figures)
+  'test-pdfprim-hyperref': [
+    pdfprimHead('h3', 'Head x y z'), pdfprimToc('Head x y z'),
+    new RegExp(`<span class='lofToc'>(?:(?!lofToc)[^])*?${pdfprimText('Caption seven end').source}`),
+    new RegExp(`class='caption'(?:(?!</(?:figcaption|div)>)[^])*${pdfprimText('Caption seven end').source}`),
+    ...['Literal: before blue after, a link to section', 'Image: before after.',
+      'Objects: before after. Number: set.', 'Link: beforeto the head after.',
+      'Stack: beforepushed after.', 'Footnote: before|1 after.', 'Note six end'].map(pdfprimText),
+    pdfprimLeaks,
   ],
 };
 

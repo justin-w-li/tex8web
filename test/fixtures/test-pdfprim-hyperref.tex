@@ -1,0 +1,36 @@
+% test-pdfprim's primitives in a document that loads hyperref and leaves
+% \pdfoutput unset. A heading's text
+% goes to the table of contents and to hyperref's bookmarks, and a
+% caption's to the list of figures.
+\documentclass{article}
+\usepackage[colorlinks]{hyperref}
+\newcommand\blue[1]{\pdfliteral{0 0 1 rg}#1\pdfliteral{0 g}}
+\newcommand\turn[1]{\pdfsave\pdfsetmatrix{1 0 0 1}\rlap{#1}\pdfrestore\phantom{#1}}
+\begin{document}
+\tableofcontents
+\listoffigures
+
+\section{Head \blue{x}\pdfliteral direct{0 g} \turn{y}
+  \pdfcolorstack0 push{0 0 1 rg}z\pdfcolorstack0 pop}\label{head}
+
+Literal: before\pdfliteral page{0 0 1 rg} blue\pdfliteral{0 g} after,
+a link to section~\ref{head} and to \href{https://example.com/}{a site}.
+
+Image: before\pdfximage width 1cm {test-picture.png}\pdfrefximage\pdflastximage{} after.
+
+Objects: before\pdfobj reserveobjnum\xdef\myobj{\the\pdflastobj}%
+\immediate\pdfobj useobjnum\myobj{<< /X 1 >>}\pdfrefobj\myobj{} after.
+Number: \ifnum\myobj>0 set\else unset\fi.
+
+Link: before\pdfstartlink goto name{section.1}to the head\pdfendlink{} after.
+
+Stack: before\pdfcolorstack0 push{0 0 1 rg}pushed\pdfcolorstack0 pop{} after.
+
+Footnote: before\footnote{Note \blue{six} \turn{end}.} after.
+
+\begin{figure}[h]
+\centering Figure text.
+\caption{Caption \blue{seven} \turn{end}}
+\end{figure}
+
+\end{document}
