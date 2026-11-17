@@ -1062,7 +1062,7 @@ const contents = {
   // (rmp's \appendix* acts as \appendix, as in the PDF: the build
   // finishes)
   'test-revfourapp-rmp': [
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Details<\/h3>\s*<p class='noindent'>Text of the details\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:<[^>]*>|#)*<span class='titlemark'>A\.<\/span>(?:<[^>]*>|\s)*Details<\/h3>\s*<p class='noindent'>Text of the details\./,
     /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Starred tail<\/h3>\s*<p class='noindent'>Text of the starred tail\./,
     /^(?![^]*unskip)/,
     /<\/main><\/body> ?<\/html> ?$/,

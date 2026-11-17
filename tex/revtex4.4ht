@@ -10,14 +10,14 @@
 % "Appendix:", as in the PDF, unless the document numbers no section, as
 % prl does: html4.4ht's test of secnumdepth is kept. A section with no
 % title gets "Appendix" with no colon, as aps's \@hangfrom@appendix gives.
-% The class writes the heading's "Appendix " with \@sectioncntformat,
-% which tex4ht sets as a paragraph before the heading, so it writes
-% nothing here. A \ref to the section is empty, as \unskip makes it in the
-% PDF. latex.4ht's \label writes a new anchor, in a paragraph of its own,
-% when its copy of the label, \:currentlabel, is empty. \@currentlabel and
-% \:currentlabel are set to \@empty, which latex.4ht reads as not empty
-% and writes as nothing, so a \label after the heading names the heading's
-% anchor.
+% The society file's \@sectioncntformat writes the heading's "Appendix ",
+% which tex4ht sets as a paragraph before the heading, so
+% \@sectioncntformat is set to write nothing here. A \ref to the section
+% is empty, as \unskip makes it in the PDF. latex.4ht's \label writes a
+% new anchor, in a paragraph of its own, when its copy of the label,
+% \:currentlabel, is empty. \@currentlabel and \:currentlabel are set to
+% \@empty, which latex.4ht reads as not empty and writes as nothing, so a
+% \label after the heading names the heading's anchor.
 % rmp appends its own \appendix code after the class's \@ifstar, which
 % then never sees the star: the PDF shows the star and letters the
 % sections, as after \appendix. The test of \thesection keeps that.
