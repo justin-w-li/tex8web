@@ -1327,7 +1327,8 @@ const contents = {
     /Fay Fresh\. <span class='cmti-10'>The Fresh Entry<\/span>\. A New Publisher, 2020\./, /^(?![^]*Stale)/],
   // (a .bbl beside the document that the document reads itself, with
   // \input or \InputIfFileExists, with no .bib: its citation and entry)
-  ...Object.fromEntries(['test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists', 'test-staleaux-bbl-jobname'].map(name => [name, [
+  ...Object.fromEntries(['test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists', 'test-staleaux-bbl-jobname',
+    'test-staleaux-bbl-error'].map(name => [name, [
     /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xshipped'>1<\/a>\]<\/span>\./,
     /<dd><a id='Xshipped'><\/a>Sue Shipper\. <span class='cmti-10'>The Shipped Entry<\/span>\. A Publisher, 2003\./]])),
   'test-staleaux-bbl-current': [
@@ -1941,7 +1942,7 @@ const logs = {
       /^(?![^]*Package natbib Error)/, /^(?![^]*Undefined control sequence)/]])),
   // (a current .bbl beside the document is read by the first LaTeX run,
   // which writes its \bibcite lines, so the second run changes no .aux)
-  'test-staleaux-bbl-current': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*runs again without it)/],
+  'test-staleaux-bbl-current': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*runs again without)/],
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
@@ -1961,6 +1962,7 @@ const untouched = {
   'test-staleaux-bbl-ifexists': ['test-staleaux-bbl-ifexists.bbl'],
   'test-staleaux-bbl-harvard': ['test-staleaux-bbl-harvard.bbl'],
   'test-staleaux-bbl-jobname': ['test-staleaux-bbl-jobname.bbl'],
+  'test-staleaux-bbl-error': ['test-staleaux-bbl-error.bbl'],
   'test-staleaux-bbl-current': ['test-staleaux-bbl-current.aux', 'test-staleaux-bbl-current.bbl'],
 };
 // (only the fixtures' own entries are walked: other builds write in
