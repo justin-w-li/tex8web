@@ -1331,7 +1331,7 @@ const contents = {
     ['test-priminput-quoted', /Quoted: Text from the file with a space in its name\./],
     ['test-priminput-early', /Early: Text from the subfolder glossary file\./],
     ['test-priminput-chain', /Outer: Text from the outer file\./, [/Inner: Text from the inner file\./]],
-    ['test-priminput-above', /Above: Text from the file outside the folder of the document\./],
+    ['test-priminput-above', /Above: Text from the file read by a path with dots\./],
     // (built as it is, by a relative path)
     ['test-priminput-abs', /Absolute: Text from the subfolder glossary file\. By a relative path\./],
     ['test-priminput-guards', /Nested: Text from the nested glossary file\./, [
@@ -4199,16 +4199,20 @@ if (pdfpic) jobs.push(async () => {
 // each case that marks glossary.tex, and once for the guards. Then a
 // document that reads a file beside it by an absolute path, written in a
 // folder of its own, so that the bare name glossary that test-abspath's
-// other cases look up does not find this file. Each case's file is read by
-// an absolute path, and its text is in the page, with nothing that
-// glossary.4ht writes, and one page
+// other cases look up does not find this file. Then test-priminput-abs
+// with a test-priminput-abs-case.tex in TEXINPUTS that sets \AbsDir, so
+// that the primitive \input reads its file by an absolute path. Each
+// case's file is read by an absolute path, and its text is in the page,
+// with nothing that glossary.4ht writes, and one page
 const abspath = docs.find(d => d.name === 'test-abspath');
+const primabs = docs.find(d => d.name === 'test-priminput-abs');
+const absBuilds = [];
 if (abspath) {
   const guards = ['plain', 'keep', 'body', 'subfile'];
   const groups = [...absoluteCases.filter(([name]) => !guards.includes(name)).map(c => [c[0], [c]]),
     ['guards', absoluteCases.filter(([name]) => guards.includes(name))]];
-  const builds = groups.map(([key, cases]) => ({
-    key, label: `case${cases.length > 1 ? 's' : ''} ${cases.map(([name]) => name).join(', ')}, by an absolute path`,
+  absBuilds.push(...groups.map(([key, cases]) => ({
+    doc: abspath, key, label: `case${cases.length > 1 ? 's' : ''} ${cases.map(([name]) => name).join(', ')}, by an absolute path`,
     wanted: cases.map(([, text, extra]) => [`${text} By an absolute path.`, extra]),
     setup(top) {
       const file = join(top, 'test-abspath-case.tex');
@@ -4221,9 +4225,9 @@ if (abspath) {
       writeFileSync(file, cfg);
       return { doc: abspath, env: { TEXINPUTS: `${top}:` }, page: 'test-abspath.html' };
     },
-  }));
-  builds.push({
-    key: 'beside', label: 'a file beside the document, by an absolute path',
+  })));
+  absBuilds.push({
+    doc: abspath, key: 'beside', label: 'a file beside the document, by an absolute path',
     wanted: [['Beside: Text from the file beside the document.']],
     setup(top) {
       const dir = join(top, 'doc');
@@ -4234,56 +4238,42 @@ if (abspath) {
       return { doc: { ...abspath, name: 'test-abspath beside', dir, tex: 'beside.tex' }, page: 'beside.html' };
     },
   });
-  for (const { key, label, wanted, setup } of builds) jobs.push(async () => {
-    const top = join(testDir(abspath), `absolute${key}`), out = join(top, 'html'), aux = join(top, 'aux');
-    const { doc, env, page } = setup(top);
-    const result = await build(doc, out, aux, env);
-    const problems = [];
-    if (result.code !== 0) {
-      problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]|^! /.test(line)));
-    }
-    const file = join(out, page);
-    const flat = existsSync(file) ? readFileSync(file, 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
-    if (!flat) problems.push('no page');
-    else {
-      for (const [text, extra] of wanted) {
-        if (!flat.includes(text)) problems.push(`no ${JSON.stringify(text)} in the page`);
-        if (extra && !extra.test(flat)) problems.push(`no ${extra} in the page`);
-      }
-      if (flat.includes('refextract')) problems.push('refextract in the page');
-      if (/<\/html>[^]*<\/html>/.test(flat)) problems.push('two pages in one');
-    }
-    report(`${abspath.name} (${label})`, problems);
-  });
 }
-
-// test-priminput-abs built again with a test-priminput-abs-case.tex in
-// TEXINPUTS that sets \AbsDir to the absolute path of test/fixtures/, so
-// that the primitive \input reads the file by an absolute path. The file's
-// text is in the page, with nothing that glossary.4ht writes, and one page
-const primabs = docs.find(d => d.name === 'test-priminput-abs');
-if (primabs) jobs.push(async () => {
-  const top = join(testDir(primabs), 'absolute'), out = join(top, 'html'), aux = join(top, 'aux');
-  const file = join(top, 'test-priminput-abs-case.tex');
-  const cfg = `\\def\\AbsDir{${join(root, 'test/fixtures')}/}\n`;
-  if (existsSync(file) && readFileSync(file, 'utf8') !== cfg) rmSync(top, { recursive: true, force: true });
-  mkdirSync(top, { recursive: true });
-  writeFileSync(file, cfg);
-  const result = await build(primabs, out, aux, { TEXINPUTS: `${top}:` });
+if (primabs) absBuilds.push({
+  doc: primabs, key: '', label: 'by an absolute path',
+  wanted: [['Absolute: Text from the subfolder glossary file. By an absolute path.']],
+  setup(top) {
+    const file = join(top, 'test-priminput-abs-case.tex');
+    const cfg = `\\def\\AbsDir{${join(root, 'test/fixtures')}/}\n`;
+    // (never reused when the path changes: the build's stamp leaves out
+    // this file)
+    if (existsSync(file) && readFileSync(file, 'utf8') !== cfg) rmSync(top, { recursive: true, force: true });
+    mkdirSync(top, { recursive: true });
+    writeFileSync(file, cfg);
+    return { doc: primabs, env: { TEXINPUTS: `${top}:` }, page: 'test-priminput-abs.html' };
+  },
+});
+// (each build's folder and label come from the fixture it is for)
+for (const { doc: fixture, key, label, wanted, setup } of absBuilds) jobs.push(async () => {
+  const top = join(testDir(fixture), `absolute${key}`), out = join(top, 'html'), aux = join(top, 'aux');
+  const { doc, env, page } = setup(top);
+  const result = await build(doc, out, aux, env);
   const problems = [];
   if (result.code !== 0) {
     problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]|^! /.test(line)));
   }
-  const page = join(out, 'test-priminput-abs.html');
-  const flat = existsSync(page) ? readFileSync(page, 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
+  const file = join(out, page);
+  const flat = existsSync(file) ? readFileSync(file, 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
   if (!flat) problems.push('no page');
   else {
-    const text = 'Absolute: Text from the subfolder glossary file. By an absolute path.';
-    if (!flat.includes(text)) problems.push(`no ${JSON.stringify(text)} in the page`);
+    for (const [text, extra] of wanted) {
+      if (!flat.includes(text)) problems.push(`no ${JSON.stringify(text)} in the page`);
+      if (extra && !extra.test(flat)) problems.push(`no ${extra} in the page`);
+    }
     if (flat.includes('refextract')) problems.push('refextract in the page');
     if (/<\/html>[^]*<\/html>/.test(flat)) problems.push('two pages in one');
   }
-  report(`${primabs.name} (by an absolute path)`, problems);
+  report(`${fixture.name} (${label})`, problems);
 });
 
 // test-pdfpages-hint built again without shell escape
