@@ -4,7 +4,8 @@
 % stopped on it. In the PDF each section after \appendix* starts with
 % "Appendix:" and has no number, a \ref to it is empty, and its
 % equations are numbered A.1. A section with no title is "Appendix"
-% alone, and a starred section has no label.
+% alone, and a starred section has no label. A subsection's \ref is its
+% number alone, and a \label in a section's title gives an empty \ref.
 \documentclass{revtex4}
 \begin{document}
 \title{Revfour appendix}
@@ -23,12 +24,14 @@ Text of the appendix with math.
 E = m c^2 \label{eq:app}
 \end{equation}
 Text after Eq.~(\ref{eq:app}), and back to appendix~[\ref{app:math}].
-\subsection{A subsection}
-Text of the appendix's subsection.
+\subsection{A subsection}\label{app:sub}
+Text of the appendix's subsection, see subsection~[\ref{app:sub}].
 \section[Short]{Long title of an appendix}
 Text of the long appendix.
 \section{}
 Text of the bare appendix.
+\section{Details\label{app:in}}
+Text of the details, see details~[\ref{app:in}].
 \section*{Starred tail}
 Text of the starred tail.
 \end{document}

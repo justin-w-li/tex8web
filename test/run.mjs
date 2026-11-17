@@ -859,6 +859,9 @@ const absoluteCases = [
   ['body', 'Body: Text from the file read in the body.'],
   ['subfile', 'Subfile: Text from the file read with subfile.'],
 ];
+// An empty \ref after the words given, linked to the id of the section
+// heading with the title given, or to an anchor in that heading.
+const revfourRef = (words, title) => new RegExp(`^(?=[^]*${words}<span class='tex8web-nbsp'> <\\/span>\\[<a href='#([^']+)'>(?:<!--(?:(?!-->)[^])*-->)?<\\/a>\\])[^]*<h3 class='sectionHead' (?=[^>]*id='\\1'|(?:(?!<\\/h3>)[^])*<a id='\\1'><\\/a>)(?:(?!<\\/h3>)[^])*${title}`);
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,
@@ -1011,53 +1014,62 @@ const contents = {
   // (sections after revtex's \appendix*, as in the PDF: each heading
   // starts with "Appendix:" and has no number, or is "Appendix" alone
   // with no title, and no other "Appendix" comes before it. A \ref to
-  // such a section is empty, its equations are numbered A.1, and a
-  // starred section after it has no label.)
+  // such a section is empty and links to its heading, its equations are
+  // numbered A.1, and a starred section after it has no label.)
   'test-revfourapp': [
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Mass (?:(?!<\/h3>)[^])*<mjx-container(?:(?!<\/h3>)[^])*energy(?:(?!<\/h3>)[^])*<\/h3>/,
+    /<h3 class='sectionHead' id='[^']+'>(?:<[^>]*>|#)*<span class='titlemark'>Appendix:<\/span>(?:<[^>]*>|\s)*Mass (?:(?!<\/h3>)[^])*<mjx-container(?:(?!<\/h3>)[^])*energy(?:(?!<\/h3>)[^])*<\/h3>/,
     // (no empty paragraph between the heading and its text: the \label's
     // anchor is in neither)
     /<\/h3>\s*<p class='noindent'>Text of the appendix with math\./,
-    /<h4 class='subsectionHead' id='[^']+'>(?:(?!<\/h4>)[^])*<span class='titlemark'>1\.<\/span>(?:(?!<\/h4>)[^])*A subsection<\/h4>\s*<p class='noindent'>Text of the appendix.s subsection\./,
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Long title of an appendix<\/h3>\s*<p class='noindent'>Text of the long appendix\./,
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix<\/span>(?:\s|<[^>]*>)*<\/h3>\s*<p class='noindent'>Text of the bare appendix\./,
+    // (a subsection's \ref is its number alone, as in the PDF)
+    /<h4 class='subsectionHead' id='([^']+)'>(?:<[^>]*>|#)*<span class='titlemark'>1\.<\/span>(?:<[^>]*>|\s)*A subsection<\/h4>\s*<p class='noindent'>Text of the appendix.s subsection, see subsection<span class='tex8web-nbsp'> <\/span>\[<a href='#\1'>1(?:<!--(?:(?!-->)[^])*-->)?<\/a>\]/,
+    /<h3 class='sectionHead' id='[^']+'>(?:<[^>]*>|#)*<span class='titlemark'>Appendix:<\/span>(?:<[^>]*>|\s)*Long title of an appendix<\/h3>\s*<p class='noindent'>Text of the long appendix\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:<[^>]*>|#)*<span class='titlemark'>Appendix<\/span>(?:\s|<[^>]*>)*<\/h3>\s*<p class='noindent'>Text of the bare appendix\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:<[^>]*>|#)*<span class='titlemark'>Appendix:<\/span>(?:<[^>]*>|\s)*Details(?:<a id='[^']+'><\/a>)?<\/h3>\s*<p class='noindent'>Text of the details,/,
     /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark|Appendix)[^])*Starred tail<\/h3>\s*<p class='noindent'>Text of the starred tail\./,
-    ...['Text of the first section,', 'Text of the appendix.s subsection\\.', 'Text of the long appendix\\.'].map(text =>
+    ...['Text of the first section,', 'see subsection', 'Text of the long appendix\\.', 'Text of the bare appendix\\.'].map(text =>
       new RegExp(`${text}(?:(?!Appendix|<h3)[^])*<h3 class='sectionHead'`)),
-    /before appendix<span class='tex8web-nbsp'> <\/span>\[(?:<[^>]*>)*\]/,
-    /back to appendix<span class='tex8web-nbsp'> <\/span>\[(?:<[^>]*>)*\]/,
-    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
-    /and Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#[^']+'>A\.1</,
+    // (an empty \ref, before and after the heading, and to a \label in
+    // the title, each linked to the heading or to an anchor in it)
+    revfourRef('before appendix', 'Mass '), revfourRef('back to appendix', 'Mass '), revfourRef('see details', 'Details'),
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><span class='mathjax-env mathjax-equation'><mjx-container aria-label='E equals m c squared Label open paren cap A \.1 close paren'[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
+    /and Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#([^']+)'>A\.1<[^]*<a class='tex8web-eq-anchor' id='\1'><\/a><span class='mathjax-env mathjax-equation'><mjx-container aria-label='E equals m c squared Label open paren cap A \.1 close paren'/,
+    /^(?![^]*unskip)/,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
   'test-revfourapp-hyperref': [
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Linked appendix<\/h3>/,
+    /<h3 class='sectionHead' id='[^']+'>(?:<[^>]*>|#)*<span class='titlemark'>Appendix:<\/span>(?:<[^>]*>|\s)*Linked appendix<\/h3>/,
     /Linked appendix<\/h3>\s*<p class='noindent'>Text of the linked appendix\./,
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix<\/span>(?:\s|<[^>]*>)*<\/h3>\s*<p class='noindent'>Text of the bare appendix\./,
+    /<h3 class='sectionHead' id='[^']+'>(?:<[^>]*>|#)*<span class='titlemark'>Appendix<\/span>(?:\s|<[^>]*>)*<\/h3>\s*<p class='noindent'>Text of the bare appendix\./,
     ...['Text of the first section,', 'Text after Eq\\.'].map(text =>
       new RegExp(`${text}(?:(?!Appendix|<h3)[^])*<h3 class='sectionHead'`)),
-    /before appendix<span class='tex8web-nbsp'> <\/span>\[(?:<[^>]*>)*\]/,
-    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
+    revfourRef('before appendix', 'Linked appendix'),
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><span class='mathjax-env mathjax-equation'><mjx-container aria-label='a equals b Label open paren cap A \.1 close paren'[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
+    /^(?![^]*unskip)/,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
   // (prl numbers no section: the appendix's heading has no label)
   'test-revfourapp-prl': [
     /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*First section<\/h3>\s*<p class='noindent'>Text of the first section\.\s*<\/p>\s*<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark|Appendix)[^])*Methods<\/h3>\s*<p class='noindent'>Text of the methods\./,
     /^(?![^]*Appendix)/,
+    /^(?![^]*unskip)/,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
-  'test-revfourapp-aip': [
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*Extra material<\/h3>\s*<p class='noindent'>Text of the extra material\./,
-    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark|Appendix)[^])*Starred tail<\/h3>\s*<p class='noindent'>Text of the starred tail\./,
-    /Text of the first section\.(?:(?!Appendix|<h3)[^])*<h3 class='sectionHead'/,
+  // (rmp's \appendix* acts as \appendix, as in the PDF: the build
+  // finishes)
+  'test-revfourapp-rmp': [
+    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Details<\/h3>\s*<p class='noindent'>Text of the details\./,
+    /<h3 class='likesectionHead' id='[^']+'>(?:(?!<\/h3>)[^])*Starred tail<\/h3>\s*<p class='noindent'>Text of the starred tail\./,
+    /^(?![^]*unskip)/,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
   'test-revfourapp-42': [
-    /<h3 class='sectionHead' id='[^']+'>(?:(?!<\/h3>|titlemark)[^])*<span class='titlemark'>Appendix:<\/span>(?:(?!<\/h3>|titlemark)[^])*New appendix<\/h3>/,
+    /<h3 class='sectionHead' id='[^']+'>(?:<[^>]*>|#)*<span class='titlemark'>Appendix:<\/span>(?:<[^>]*>|\s)*New appendix<\/h3>/,
     /New appendix<\/h3>\s*<p class='noindent'>Text of the new appendix\./,
     /Text of the first section,(?:(?!Appendix|<h3)[^])*<h3 class='sectionHead'/,
-    /before appendix<span class='tex8web-nbsp'> <\/span>\[(?:<[^>]*>)*\]/,
-    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
+    revfourRef('before appendix', 'New appendix'),
+    /<a class='tex8web-eq-anchor' id='([^']+)'><\/a><span class='mathjax-env mathjax-equation'><mjx-container aria-label='x equals y Label open paren cap A \.1 close paren'[^]*Text after Eq\.<span class='tex8web-nbsp'> <\/span>\(<a href='#\1'>A\.1</,
+    /^(?![^]*unskip)/,
     /<\/main><\/body> ?<\/html> ?$/,
   ],
   'test-report': [

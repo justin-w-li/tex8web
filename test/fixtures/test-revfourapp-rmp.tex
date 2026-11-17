@@ -1,0 +1,18 @@
+% A revtex4 article for rmp, with \appendix*. It checks a case the fix
+% must not break. rmp adds its appendix code after the class's test for
+% the star, which then never sees it: the PDF shows the star as text and
+% letters the sections, as after \appendix, and puts "Appendix:" before
+% a starred section. The build must finish, with no "unskip" in the page.
+\documentclass[rmp]{revtex4}
+\begin{document}
+\title{Revfour rmp appendix}
+\author{Someone}
+\maketitle
+\section{First section}
+Text of the first section.
+\appendix*
+\section{Details}
+Text of the details.
+\section*{Starred tail}
+Text of the starred tail.
+\end{document}
