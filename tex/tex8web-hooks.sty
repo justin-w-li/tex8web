@@ -179,8 +179,9 @@
 % as in \externaldocument[prefix]{file}[url]. tex4ht's \XR@
 % (xr-hooks.4ht) reads no URL, so the URL is left in the preamble, where
 % it stops the build. The URL is read and dropped here, and a reference
-% links to the other document's page as without a URL. tex4ht redefines
-% \XR@ after package/xr/after, so \XR@cite, which calls it, is wrapped.
+% links to the other document's page as without a URL. xr's \XR@cite,
+% which reads the arguments and calls \XR@, is redefined to read the URL.
+% Its \XR@ is tex4ht's, which is defined after package/xr/after.
 \AddToHook { package/xr/after } { \__web_xr_url_wrap: }
 \AddToHook { package/xr-hyper/after } { \__web_xr_url_wrap: }
 \cs_new_protected:Npn \__web_xr_url_wrap:
