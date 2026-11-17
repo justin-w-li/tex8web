@@ -1330,6 +1330,9 @@ const contents = {
   ...Object.fromEntries(['test-staleaux-bbl-input', 'test-staleaux-bbl-ifexists', 'test-staleaux-bbl-jobname'].map(name => [name, [
     /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xshipped'>1<\/a>\]<\/span>\./,
     /<dd><a id='Xshipped'><\/a>Sue Shipper\. <span class='cmti-10'>The Shipped Entry<\/span>\. A Publisher, 2003\./]])),
+  'test-staleaux-bbl-current': [
+    /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xfresh'>1<\/a>\]<\/span>\./,
+    /<dd><a id='Xfresh'><\/a>Fay Fresh\. <span class='cmti-10'>The Fresh Entry<\/span>\. A New Publisher, 2020\./],
   // (! active in the preamble: babel's shorthands, in a heading and the
   // table of contents, the text, a footnote, a theorem, three fonts, and
   // math, with no space after a bare ! as in the PDF, and literal in
@@ -1936,6 +1939,9 @@ const logs = {
     'test-staleaux-bbl-jobname'].map(name =>
     [name, [/^(?![^]*Missing 'biblatex' package)/, /^(?![^]*Package biblatex Error)/,
       /^(?![^]*Package natbib Error)/, /^(?![^]*Undefined control sequence)/]])),
+  // (a current .bbl beside the document is read by the first LaTeX run,
+  // which writes its \bibcite lines, so the second run changes no .aux)
+  'test-staleaux-bbl-current': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*runs again without it)/],
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
@@ -1955,6 +1961,7 @@ const untouched = {
   'test-staleaux-bbl-ifexists': ['test-staleaux-bbl-ifexists.bbl'],
   'test-staleaux-bbl-harvard': ['test-staleaux-bbl-harvard.bbl'],
   'test-staleaux-bbl-jobname': ['test-staleaux-bbl-jobname.bbl'],
+  'test-staleaux-bbl-current': ['test-staleaux-bbl-current.aux', 'test-staleaux-bbl-current.bbl'],
 };
 // (only the fixtures' own entries are walked: other builds write in
 // test/fixtures/build while this script runs, and a folder removed there

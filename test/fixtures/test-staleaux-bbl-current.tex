@@ -1,0 +1,10 @@
+% Checks a case the fix must not break: the current .aux and .bbl of a
+% pdflatex and bibtex build beside the document, as latexmk leaves them.
+% The first LaTeX run of the page's build reads that .bbl, gives no
+% error, and writes its \bibcite lines, so LaTeX runs only twice.
+\documentclass{article}
+\begin{document}
+Cited~\cite{fresh}.
+\bibliographystyle{plain}
+\bibliography{test-staleaux-bbl}
+\end{document}

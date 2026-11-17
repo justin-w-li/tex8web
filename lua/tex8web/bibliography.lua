@@ -90,6 +90,10 @@ function M.run(par)
     end
   end
   log:info("bibliography: " .. command)
+  -- (biber writes its .bbl only at the end of its run, and none when it
+  -- is missing or stops early. The empty .bbl from tex8web.mk4 would then
+  -- hide the one beside the document, which LaTeX reads when biber fails.)
+  if lfs.attributes(dir .. "/" .. par.input .. ".bbl", "size") == 0 then use_beside() end
   -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
   if os.execute(command .. " > /dev/null") ~= 0 then log:warning("the bibliography failed (" .. command .. ")") end
   return 0
