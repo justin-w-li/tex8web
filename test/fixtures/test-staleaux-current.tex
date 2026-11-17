@@ -1,0 +1,22 @@
+% Guard: checks cases the fix must not break. The files beside the
+% document are current, from a PDF build by the same versions, as an
+% Overleaf zip or an arXiv source ships them: test-staleaux-current.aux
+% with hyperref's labels and TikZ's \pgfsyspdfmark, the .aux of the
+% \included chapter, and the .bbl that the bibliography is read from, as
+% the .bib is missing. The page's references, table of contents, and
+% citation are as in the PDF.
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{hyperref}
+\begin{document}
+\tableofcontents
+\section{One}\label{sec:one}
+Section~\ref{sec:two} is on page~\pageref{sec:two}, and the chapter is section~\ref{sec:chap}.
+Cited~\cite{book}.
+\tikz[remember picture] \node (mark) {Marked};
+\section{Two}\label{sec:two}
+Text in section~\ref{sec:one}.
+\include{test-staleaux-current/chap}
+\bibliographystyle{plain}
+\bibliography{test-staleaux-current-gone}
+\end{document}

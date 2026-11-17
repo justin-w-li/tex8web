@@ -1,0 +1,12 @@
+% A document whose folder holds tex4ht's .xref, .4tc, and .tmp from an
+% earlier make4ht run there, without a build folder, by a version that
+% wrote a command this one does not define, and with the old titles. A
+% build in a build folder reads none of them.
+\documentclass{article}
+\begin{document}
+\tableofcontents
+\section{One}\label{sec:one}
+Section~\ref{sec:two} follows.
+\section{Two}\label{sec:two}
+Text after section~\ref{sec:one}.
+\end{document}

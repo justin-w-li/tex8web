@@ -1,0 +1,21 @@
+% A document whose folder holds the files of an earlier build with other
+% versions or packages: test-staleaux.aux from lineno 4.41 (\@LN@col), and
+% from babel, biblatex, and hyperref, which the document no longer loads,
+% with labels and a citation whose numbers are now wrong; test-staleaux.toc
+% with babel's \babel@toc; and the stale .aux of the \included chapter. A
+% build in a build folder reads none of them: the references, the table of
+% contents, and the citation come from this build.
+\documentclass{article}
+\usepackage{lineno}
+\begin{document}
+\tableofcontents
+\section{One}\label{sec:one}
+Section~\ref{sec:two} is on page~\pageref{sec:two}, and the chapter is section~\ref{sec:chap}.
+Cited~\cite{book}.
+\section{Two}\label{sec:two}
+Text in section~\ref{sec:one}.
+\include{test-staleaux/chap}
+\begin{thebibliography}{9}
+\bibitem{book} A. Author, \emph{A Book}, 2000.
+\end{thebibliography}
+\end{document}

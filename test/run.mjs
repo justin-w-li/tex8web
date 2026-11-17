@@ -821,6 +821,20 @@ const sectpartNumbered = /<h1 class='partHead'[^>]*>(?:(?!<\/h1>)[^])*Part(?:(?!
 const sectpartStarred = /<h1 class='likepartHead'[^>]*>(?:(?!<\/h1>)[^])*An unnumbered part<\/h1>/;
 const sectpartParts = [...sectpartText, sectpartNumbered, sectpartStarred,
   /<h2 class='chapterHead'[^>]*>(?:(?!<\/h2>)[^])*Another chapter<\/h2>\s*(?:<[^>]*>\s*)*Text after the unnumbered part\./];
+// The references and citation of test-staleaux and test-staleaux-current,
+// with the \pageref's opening tags, and their table of contents: each
+// [id, title] in order, and none of the stale files' titles
+const staleRefs = pageref => [
+  new RegExp(`Section<span class='tex8web-nbsp'> </span><a href='#two'>2<!--[^>]*--></a> is on page<span class='tex8web-nbsp'> </span>${pageref}`),
+  /the chapter is section<span class='tex8web-nbsp'> <\/span><a href='#chapter'>3<!--/,
+  /Cited<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xbook'>1<\/a>\]<\/span>\./,
+  /Text in section<span class='tex8web-nbsp'> <\/span><a href='#one'>1<!--/,
+  /Text of the chapter, after section<span class='tex8web-nbsp'> <\/span><a href='#two'>2<!--/,
+  /<dt>\s*\[1\]<\/dt><dd><a id='Xbook'><\/a>A\.(?: |<span class='tex8web-nbsp'> <\/span>)Author[,.] <span class='cmti-10'>A Book<\/span>/];
+const staleToc = (...entries) => [
+  new RegExp(`<div class='tableofcontents'>${entries.map(([id, title], i) =>
+    `<span class='sectionToc'><span class='tocnumber'>${i + 1}</span><a href='#${id}' [^>]*>${title}</a></span><br />`).join('\\s*')}\\s*</div>`),
+  /^(?![^]*(?:Eins|Zwei|Kapitel))/];
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,
@@ -1052,6 +1066,16 @@ const contents = {
   // (a file \included from a folder, with a \ref each way)
   'test-include': [/The included part is section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#included'>2</,
     /Text from the included file, which follows section<span class='tex8web-nbsp'>[^<]*<\/span><a href='#opening'>1</],
+  // (files of an earlier build beside the document: the .aux and .toc of
+  // a build with other packages and the stale .aux of an \included
+  // chapter, tex4ht's .xref, .4tc, and .tmp of a run without a build
+  // folder, and, as a guard, a current .aux from the PDF with a .bbl. Each
+  // reference, citation, and table of contents entry is this build's, and
+  // no old title or number is left)
+  'test-staleaux': [...staleRefs("<span class='pageref'><a href='#two'>"), ...staleToc(['one', 'One'], ['two', 'Two'], ['chapter', 'Chapter'])],
+  'test-staleaux-tex4ht': [/Section<span class='tex8web-nbsp'> <\/span><a href='#two'>2<!--[^>]*--><\/a> follows\./,
+    /Text after section<span class='tex8web-nbsp'> <\/span><a href='#one'>1<!--/, ...staleToc(['one', 'One'], ['two', 'Two'])],
+  'test-staleaux-current': [...staleRefs("<a href='#two'>1<!--"), ...staleToc(['one', 'One'], ['two', 'Two'], ['chapter', 'Chapter'])],
   // (files of the document named like tex4ht's .4ht files, read in the
   // preamble: each file's text in the page, with nothing from the .4ht
   // file of its name, such as background.4ht's empty div, and article's
@@ -1647,6 +1671,19 @@ const ties = {
 const logs = {
   'test-bblnobib': [/^\[STATUS\] +tex8web: bibliography: test-bblnobib-gone is missing/m],
   'test-bblnobib-biber': [/^\[STATUS\] +tex8web: bibliography: test-bblnobib-gone\.bib is missing/m],
+  // (no LaTeX error from a file of an earlier build beside the document)
+  ...Object.fromEntries(['test-staleaux', 'test-staleaux-tex4ht', 'test-staleaux-current'].map(name =>
+    [name, [/^(?![^]*Undefined control sequence)/, /^(?![^]*Missing \\begin\{document\})/]])),
+};
+// Files of an earlier build beside a document, each with a line it holds:
+// the build reads none of them, and leaves each as it is
+const untouched = {
+  'test-staleaux': [['test-staleaux.aux', '\\@LN@col{1}'], ['test-staleaux.toc', '\\babel@toc'],
+    ['test-staleaux/chap.aux', '\\@LN@col{1}']],
+  'test-staleaux-tex4ht': [['test-staleaux-tex4ht.xref', '\\StaleXrefEntry'], ['test-staleaux-tex4ht.4tc', '\\StaleTocEntry'],
+    ['test-staleaux-tex4ht.tmp', '\\StaleTmpEntry']],
+  'test-staleaux-current': [['test-staleaux-current.aux', '\\pgfsyspdfmark'], ['test-staleaux-current/chap.aux', '\\@setckpt'],
+    ['test-staleaux-current.bbl', '\\bibitem{book}']],
 };
 // A box that holds a TikZ picture, placed in another picture, and the
 // pictures beside such boxes (test-nestpic-cases.ltx): between each case's
@@ -3585,6 +3622,10 @@ function check(doc, result, out, aux) {
   for (const pattern of logs[doc.name] ?? []) {
     if (!pattern.test(result.log)) problems.push(`no ${pattern.source} in make4ht's log`);
   }
+  for (const [file, line] of untouched[doc.name] ?? []) {
+    const path = join(doc.dir, file);
+    if (!existsSync(path) || !readFileSync(path, 'utf8').includes(line)) problems.push(`${file} beside the document changed`);
+  }
   for (const [file, pattern] of glyphs[doc.name] ?? []) {
     const svg = existsSync(join(out, file)) ? readFileSync(join(out, file), 'utf8') : '';
     if (!pattern.test(svg)) problems.push(`no ${pattern.source} in ${file}`);
@@ -3614,7 +3655,7 @@ function check(doc, result, out, aux) {
 }
 
 if (!only.length) {
-  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, boxcenter, coveredPictures, tablePictures, glyphs, logs, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
+  const stray = strayKeys(measured, preloads, families, tikz, nested, boxmath, boxgfx, boxcenter, coveredPictures, tablePictures, glyphs, logs, untouched, ligatures, texWarnings, copied, pixelSizes, unspaced, pdfPages, expected, hypcap, ...patterns.map(([table]) => table));
   report('the documents the tables name', stray.map(name => `no document ${name}`));
 }
 
