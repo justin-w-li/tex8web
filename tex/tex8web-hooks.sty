@@ -175,6 +175,22 @@
     \cs_gset_eq:NN \__web_xr_test:w \XR@test
     \cs_gset_eq:NN \XR@test \__web_xr_read:w
   }
+% xr and xr-hyper read the URL of the other document's PDF after the file,
+% as in \externaldocument[prefix]{file}[url]. tex4ht's \XR@
+% (xr-hooks.4ht) reads no URL, so the URL is left in the preamble, where
+% it stops the build. The URL is read and dropped here, and a reference
+% links to the other document's page as without a URL. tex4ht redefines
+% \XR@ after package/xr/after, so \XR@cite, which calls it, is wrapped.
+\AddToHook { package/xr/after } { \__web_xr_url_wrap: }
+\AddToHook { package/xr-hyper/after } { \__web_xr_url_wrap: }
+\cs_new_protected:Npn \__web_xr_url_wrap:
+  {
+    \web@needs { XR@cite }
+    \cs_gset_protected:Npn \XR@cite [##1] { \@testopt { \__web_xr_url:w [##1] } { } }
+  }
+\cs_new_protected:Npn \__web_xr_url:w [#1] [#2] #3
+  { \@ifnextchar [ { \__web_xr_drop:nnnw {#1} {#2} {#3} } { \XR@ [#1] [#2] {#3} } }
+\cs_new_protected:Npn \__web_xr_drop:nnnw #1#2#3 [#4] { \XR@ [#1] [#2] {#3} }
 % (#1 to #4 as in xr.4ht's \XR@test: an .aux line's first token, its next
 % two arguments, and the rest)
 \cs_new_protected:Npn \__web_xr_read:w #1#2#3#4 \XR@
