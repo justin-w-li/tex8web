@@ -1573,7 +1573,8 @@ const drivers = {
   'test-pdftex-changebar-class': [/<p class='noindent'>Before the bar\. Inside the class’s bar\. After the bar\./],
   'test-pdftex-changebar-caps': [/<p class='noindent'>Before the bar\. Inside the capitals’ bar\. After the bar\./],
   // (without the color option, \cbcolor writes a warning and ignores its
-  // argument, so the text is the same; texWarnings checks the warning)
+  // argument, so the text is the same; texWarnings checks that the
+  // warning is absent)
   'test-pdftex-changebar-color': [/<p class='noindent'>Before the bar\. Red bar\. After the red bar\./],
   'test-pdftex-adjustbox': [
     /<p class='noindent'>Clip: clipped text \. After the clip\./,
