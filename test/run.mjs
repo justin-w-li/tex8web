@@ -2257,7 +2257,9 @@ const external = {
   // (xr's old release, loaded with a date, under hyperref)
   'test-xrold-hyperref': [latexUrl('CaseL'),
     /Written by tex4ht under hyperref: <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>1\.1<\/a>, <a href='test-xr\/\.\.\/test-xr\.html#x1-90001\.1'>Two<\/a>\./,
-    autoTex4ht('test-xr'), local(1)],
+    autoTex4ht('test-xr'), local(1), missing('Included')],
+  // (xr's old release loaded before hyperref)
+  'test-xrold-first': [latexUrl('CaseL'), missing('Included'), local(1)],
 };
 
 // Text after the last \hfill of a line, up to the end of the paragraph or of

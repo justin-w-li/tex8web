@@ -3,6 +3,8 @@
 % label of an .aux that LaTeX wrote under hyperref with its number, page,
 % name, and \autoref, with no link, and a label of an .aux that tex4ht
 % wrote under hyperref, with its .xref, as a link to that document's page.
+% The \@input{chap.aux} of test-xr/latex.aux is read beside this document,
+% where no chap.aux is, so its label prints ??, as in the PDF.
 \documentclass{article}
 \usepackage{hyperref}
 \usepackage{xr}[=2023-07-04]
@@ -10,6 +12,7 @@
 \externaldocument[H-]{test-xr/hyper4ht}
 \begin{document}
 CaseL \ref{X-ss}, page \pageref{X-front}, named \nameref{X-thm}, auto \autoref{X-thm}.
+Included \ref{X-c}.
 
 Written by tex4ht under hyperref: \ref{H-oss}, \nameref{H-oss}.
 Auto written by tex4ht \autoref{H-oss}.

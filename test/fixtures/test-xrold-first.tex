@@ -1,0 +1,16 @@
+% xr's old release loaded before hyperref, as many documents do. Each
+% reference to a label of an .aux that LaTeX wrote under hyperref prints
+% as in the PDF: its number, page, name, and \autoref, with no link. The
+% \@input{chap.aux} of that .aux is read beside this document, where no
+% chap.aux is, so its label prints ??, as in the PDF.
+\documentclass{article}
+\usepackage{xr}[=v5]
+\usepackage{hyperref}
+\externaldocument[X-]{test-xr/latex}
+\begin{document}
+CaseL \ref{X-ss}, page \pageref{X-front}, named \nameref{X-thm}, auto \autoref{X-thm}.
+Included \ref{X-c}.
+
+\section{Here}\label{here}
+Local \ref{here}.
+\end{document}
