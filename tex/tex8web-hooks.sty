@@ -687,20 +687,60 @@
         \clist_gclear:N \g__web_ownnames_clist
     }
 % tex4ht.sty's \@providesfile adds the name a file gives in \ProvidesFile
-% to \@filelist. The document's marked file can give its name without its
-% extension, or with another one: the name is listed as the file's, so
-% that the check above does not count it as another file.
+% to \@filelist, so tex4ht reads the .4ht of that name. A file of the
+% document can give the name of a .4ht, such as glossary.tex: its own name
+% from a subfolder, its name without its extension, or another file's
+% name. The name is marked as the document's, as the hook above marks a
+% file's name, when the file that gives it is the document's: a file of
+% the document's folder marked by that hook, a file read with a folder in
+% its name, or found through \input@path, that is in that folder, or,
+% for a primitive \input, which sets no current file, a file of the given
+% name beside the document. The name is not marked when it is a package's
+% or a class's (by its extension or the file that gives it, as in the
+% hook above), a kept name, or a name found only outside the document's
+% folder, as for a file of a package read with the primitive \input.
+\bool_new:N \l__web_ownprov_bool
 \cs_new_eq:NN \__web_providesfile:w \@providesfile
 \cs_gset_protected:Npn \@providesfile #1
     {
-        \tl_if_empty:NT \CurrentFilePathUsed
+        \bool_set_false:N \l__web_ownprov_bool
+        \exp_last_unbraced:No \__web_basename:w \CurrentFileUsed .. \q_stop
+        \tl_if_empty:NTF \CurrentFilePathUsed
             {
-                \exp_last_unbraced:No \__web_basename:w \CurrentFileUsed .. \q_stop
                 \cs_if_exist:cT { web@own@ \l__web_basename_tl }
                     {
                         \clist_if_in:cVT { web@own@ \l__web_basename_tl } \CurrentFileUsed
-                            { \clist_gput_right:cn { web@own@ \l__web_basename_tl } { {#1} } }
+                            { \bool_set_true:N \l__web_ownprov_bool }
                     }
+                \file_if_exist:nT { ./ #1 }
+                    { \bool_set_true:N \l__web_ownprov_bool }
+            }
+            {
+                \bool_lazy_and:nnT
+                    { ! \cs_if_exist_p:c { web@keepext@ \l__web_ext_tl } }
+                    { \file_if_exist_p:n { ./ \CurrentFilePathUsed / \CurrentFileUsed } }
+                    { \bool_set_true:N \l__web_ownprov_bool }
+            }
+        \__web_basename:w #1 .. \q_stop
+        \bool_lazy_all:nT
+            {
+                { \l__web_ownprov_bool }
+                { ! \cs_if_exist_p:c { web@keepext@ \l__web_ext_tl } }
+                { ! \cs_if_exist_p:c { web@keep@ \l__web_basename_tl } }
+                {
+                    \bool_lazy_or_p:nn
+                        { \file_if_exist_p:n { ./ #1 } }
+                        { ! \file_if_exist_p:n {#1} }
+                }
+            }
+            {
+                \cs_gset_eq:cN { \l__web_basename_tl :4ht } \c_empty_tl
+                \clist_if_exist:cF { web@own@ \l__web_basename_tl }
+                    {
+                        \clist_new:c { web@own@ \l__web_basename_tl }
+                        \clist_gput_right:NV \g__web_ownnames_clist \l__web_basename_tl
+                    }
+                \clist_gput_right:cn { web@own@ \l__web_basename_tl } { {#1} }
             }
         \__web_providesfile:w {#1}
     }
