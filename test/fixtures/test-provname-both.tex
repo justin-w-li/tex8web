@@ -1,0 +1,13 @@
+% Two files of the document named like glossary.4ht: glossary.ltx beside
+% it, which names itself \ProvidesFile{glossary}, then the subfolder
+% glossary file of test-provname.tex, which names itself
+% \ProvidesFile{glossary.tex}. As in the PDF, each file's text is in the
+% page.
+\documentclass{article}
+\input{glossary.ltx}
+\input{test-provname/glossary}
+\begin{document}
+Glossary: \ownglossary
+
+Subfolder: \provglossary
+\end{document}

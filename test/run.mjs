@@ -1144,7 +1144,10 @@ const contents = {
   // nothing that glossary.4ht writes, such as "refextract", and one page,
   // where glossary.4ht's errors closed the page twice; makeidx's index with
   // its title, where index.4ht gave it "0", and its entry; the named
-  // color's value; and, as a guard, a file read with \include)
+  // color's value; a file beside the document that gives another .4ht's
+  // name, a subfolder file after glossary.ltx, and a file read before
+  // \documentclass; and, as guards, a file read with \include and a
+  // vendored copy of dvipsnam.def in a subfolder, which keeps dvipsnam.4ht)
   ...Object.fromEntries([
     ['test-provname', /Glossary: Text from the subfolder glossary file\./],
     ['test-provname-index', /Glossary: Text from the glossary file without an extension\./],
@@ -1154,12 +1157,17 @@ const contents = {
     ['test-provname-import', /Glossary: Text from the subfolder glossary file\./],
     ['test-provname-ifexists', /Glossary: Text from the subfolder glossary file\./],
     ['test-provname-include', /Included: Text from the included glossary file\./],
+    ['test-provname-defs', /Definitions: Text from the definitions file\./],
+    ['test-provname-both', /Glossary: Text from the glossary file\./],
+    ['test-provname-early', /Glossary: Text from the subfolder glossary file\./],
+    ['test-provname-vendored', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
   ].map(([name, text]) => [name, [
     text, /^(?![^]*refextract)/, /^(?![^]*<\/html>[^]*<\/html>)/,
     ...name === 'test-provname-index' ? [
       /Index: Text from the subfolder index file\./,
       /<h3 class='likesectionHead' id='[^']+'>.*Index<\/h3>\s*<div class='theindex'><div class='theindex-letter'>\s*<div class='index-item'>ring, <a href='#[^']+'>1<\/a>/,
     ] : [],
+    ...name === 'test-provname-both' ? [/Subfolder: Text from the subfolder glossary file\./] : [],
     ...name === 'test-provname-colors'
       ? [/<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/] : [],
   ]])),
