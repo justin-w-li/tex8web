@@ -182,19 +182,46 @@
 % read and dropped here, and a reference links to the other document's
 % page as without a URL. xr's \XR@cite, which reads the arguments and
 % calls \XR@, is redefined to read the URL. Its \XR@ is tex4ht's, which
-% is defined after package/xr/after. xr's old release, which
-% \usepackage{xr}[=v5] loads, reads no URL and has no \XR@cite, so it is
-% left alone.
+% is defined after package/xr/after.
+% xr's old release, which \usepackage{xr}[=v5] loads, reads no URL, and
+% its \XR@ reads [prefix]{file}, where tex4ht's reads [prefix][url]{file},
+% so the build stops in the preamble. Its \externaldocument, and the copy
+% \externalcitedocument, call \__web_xr_old:w instead, which does what
+% tex4ht's \XR@ does with the old release's arguments. The old release
+% reads an \@input file name as written, beside this document, and sets no
+% \filename@area, so \__web_xr_read:w puts no folder in front of it.
 \AddToHook { package/xr/after } { \__web_xr_url_wrap: }
 \AddToHook { package/xr-hyper/after } { \__web_xr_url_wrap: }
 \cs_new_nopar:Npn \__web_xr_old_release: { \@ifnextchar [ \XR@ { \XR@ [ ] } }
 \cs_new_protected:Npn \__web_xr_url_wrap:
   {
-    \cs_if_eq:NNF \externaldocument \__web_xr_old_release:
+    \cs_if_eq:NNTF \externaldocument \__web_xr_old_release:
+      {
+        \cs_gset_protected:Npn \externaldocument { \@testopt \__web_xr_old:w { } }
+        \cs_gset_eq:NN \externalcitedocument \externaldocument
+      }
       {
         \web@needs { XR@cite }
         \cs_gset_protected:Npn \XR@cite [##1] { \@testopt { \__web_xr_url:w [##1] } { } }
       }
+  }
+% (as xr-hooks.4ht's \XR@: the other document's folder, for its links, its
+% .xref, and the old release's \XR@, which tex4ht saved as \XR:, at the
+% beginning of the document)
+\cs_new_protected:Npn \__web_xr_old:w [#1] #2
+  {
+    \web@needs { :declare:xref:files }
+    \filename@parse {#2}
+    \cs_gset:cpx { xr:dir: \filename@base } { \filename@area }
+    \use:c { :declare:xref:files } { \filename@area \filename@base } { \filename@area }
+    \Configure { AtBeginDocument } { \__web_xr_old_read:nn {#1} {#2} } { }
+  }
+\cs_new_protected:Npn \__web_xr_old_read:nn #1#2
+  {
+    \group_begin:
+      \tl_clear:N \filename@area
+      \use:c { XR: } [#1] {#2}
+    \group_end:
   }
 \cs_new_protected:Npn \__web_xr_url:w [#1] [#2] #3
   { \@ifnextchar [ { \__web_xr_drop:nnnw {#1} {#2} {#3} } { \XR@ [#1] [#2] {#3} } }
