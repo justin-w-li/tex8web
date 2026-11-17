@@ -149,6 +149,81 @@ local function color_definitions(texts, values_text)
   return defs
 end
 
+-- pdfTeX's primitives that tex8web-hooks.sty makes do nothing in DVI mode,
+-- each with its keywords and end as there: "g" a general text, "n" a
+-- number. A number before the keywords (\pdfcolorstack) or a font is given
+-- as "n" or "f" third. Removed with their arguments from the definitions
+-- MathJax gets, which would show them in red.
+local rule = "width=d height=d depth=d "
+local action = "attr=g user=G goto=- thread=- file=g struct=- page=p num=n name=g newwindow=. nonewwindow=. "
+local primitives = {
+  pdfliteral = {"shipout=- direct=- page=-", "g"}, pdfmapfile = {"", "g"}, pdfmapline = {"", "g"},
+  pdfsetmatrix = {"", "g"}, pdfnames = {"", "g"}, pdfspacefont = {"", "g"},
+  pdffontattr = {"", "g", "f"}, pdfincludechars = {"", "g", "f"}, pdfnobuiltintounicode = {"", "", "f"},
+  pdfximage = {rule .. "attr=g page=n named=g colorspace=n mediabox=- cropbox=- bleedbox=- trimbox=- artbox=-", "g"},
+  pdfobj = {"reserveobjnum=. useobjnum=n stream=- attr=g file=-", "g"},
+  pdfannot = {rule .. "reserveobjnum=. useobjnum=n", "g"},
+  pdfxform = {"attr=g resources=g", "n"},
+  pdfrefximage = {"", "n"}, pdfrefobj = {"", "n"}, pdfrefxform = {"", "n"},
+  pdfcolorstack = {"push=G set=G pop=. current=.", "", "n"},
+  pdfstartlink = {rule .. action, ""}, pdfoutline = {action .. "count=n", "g"},
+  pdfdest = {rule .. "struct=n num=n name=g xyz=- zoom=n fit=- fith=- fitv=- fitb=- fitbh=- fitbv=- fitr=-", ""},
+  pdfthread = {rule .. "attr=g num=n name=G", ""}, pdfstartthread = {rule .. "attr=g num=n name=G", ""},
+  pdfsnapy = {"", "d"}, pdfsnapycomp = {"", "n"},
+}
+for _, name in ipairs {"save", "restore", "endlink", "endthread", "snaprefpoint", "runninglinkon",
+    "runninglinkoff", "interwordspaceon", "interwordspaceoff", "fakespace"} do
+  primitives["pdf" .. name] = {"", ""}
+end
+
+-- the end of a number (or a dimen, with a unit) or a control sequence that
+-- starts at i, or of a general text
+local function value(text, i, unit)
+  local _, e = text:find("^%s*[-+]?%d*[.,]?%d+" .. (unit and "%s*%a%a" or "") .. " ?", i)
+  if not e then _, e = text:find("^%s*\\%a+ ?", i) end
+  return e and e + 1 or i
+end
+local function group(text, i)
+  local _, e = text:find("^%s*%b{}", i)
+  return e and e + 1 or i
+end
+
+local function skip(text, i, shape)
+  local keys, last, first = shape[1], shape[2], shape[3]
+  if first then i = value(text, i, false) end
+  while true do
+    local _, e, word = text:find("^%s*(%a+)", i)
+    local act = word and keys:match("%f[%a]" .. word .. "=(%S)")
+    if not act then break end
+    i = e + 1
+    if act == "." then return i end
+    if act == "n" or act == "p" then i = value(text, i) end
+    if act == "d" then i = value(text, i, true) end
+    if act == "g" or act == "G" or act == "p" then i = group(text, i) end
+    if act == "G" then return i end
+  end
+  if last == "g" then return group(text, i) end
+  if last ~= "" then return value(text, i, last == "d") end
+  return i
+end
+
+local function strip(text)
+  local out, i = {}, 1
+  while true do
+    local s, e, name = text:find("\\(pdf%a+)", i)
+    if not s then break end
+    out[#out + 1] = text:sub(i, s - 1)
+    if primitives[name] then
+      i = skip(text, e + 1, primitives[name])
+    else
+      out[#out + 1] = text:sub(s, e)
+      i = e + 1
+    end
+  end
+  out[#out + 1] = text:sub(i)
+  return table.concat(out)
+end
+
 function M.define(document, context)
   local definitions = preamble.document(context.tex_file)
   for name, def in pairs(fallbacks) do
@@ -172,6 +247,7 @@ function M.define(document, context)
     local name = table.remove(queue)
     local definition = definitions[name]
     if definition and not used[name] then
+      definition.def, definition.body = strip(definition.def), strip(definition.body)
       used[name] = definition
       texts[#texts + 1] = definition.body
       for _, inner in ipairs(preamble.uses(definition.body)) do queue[#queue + 1] = inner end

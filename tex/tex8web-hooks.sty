@@ -580,6 +580,104 @@
 \AddToHook{file/before}{\global\pdfoutput\z@}
 \AddToHook{shipout/before}{\global\pdfoutput\z@}
 
+% pdfTeX's primitives that write into the PDF stop LaTeX in DVI mode with
+% "not allowed in DVI mode". Each one reads its arguments and does nothing,
+% as in the PDF, where it puts nothing on the page. The image of
+% \pdfximage, the form of \pdfxform, and the colors of \pdfliteral and
+% \pdfcolorstack are lost. The primitives that only warn in DVI mode stay.
+% \web@pdf@skip{<keywords>}{<end>} reads the keywords that follow, each
+% given as ,<keyword>=<action>: - none, . last, n a number, d a dimen, g a
+% general text, G a general text that is last, p a number and a general
+% text. Spaces before a keyword are dropped, as pdfTeX's keyword scan
+% drops them. A word that is not a keyword stays in the text. <end> is g
+% when a general text ends the primitive, n when a number does, or empty.
+\newcount\web@pdf@n
+\newdimen\web@pdf@d
+\newskip\web@pdf@s
+\def\web@pdf@skip#1#2{\def\web@pdf@keys{#1}\def\web@pdf@type{#2}\web@pdf@loop}
+\def\web@pdf@loop{\futurelet\web@pdf@tok\web@pdf@peek}
+\def\web@pdf@peek{%
+    \ifx\web@pdf@tok\@sptoken
+        \expandafter\web@pdf@space
+    \else\ifcat\noexpand\web@pdf@tok a%
+        \def\web@pdf@word{}%
+        \expandafter\expandafter\expandafter\web@pdf@letter
+    \else
+        \expandafter\expandafter\expandafter\web@pdf@last
+    \fi\fi}
+\def\web@pdf@space{\afterassignment\web@pdf@loop\let\web@pdf@tok= }
+\def\web@pdf@letter#1{\edef\web@pdf@word{\web@pdf@word#1}%
+    \futurelet\web@pdf@tok\web@pdf@more}
+\def\web@pdf@more{%
+    \ifcat\noexpand\web@pdf@tok a%
+        \expandafter\web@pdf@letter
+    \else
+        \edef\web@pdf@tmp{\def\noexpand\web@pdf@find####1,\web@pdf@word=####2####3\noexpand\web@nil{%
+            \def\noexpand\web@pdf@act{####2}}}%
+        \web@pdf@tmp
+        \edef\web@pdf@tmp{\noexpand\web@pdf@find\web@pdf@keys,\web@pdf@word=w\noexpand\web@nil}%
+        \web@pdf@tmp
+        \expandafter\web@pdf@do
+    \fi}
+\def\web@pdf@do{\csname web@pdf@do\web@pdf@act\endcsname}
+\def\web@pdf@dow{\expandafter\web@pdf@last\web@pdf@word}
+\@namedef{web@pdf@do-}{\web@pdf@loop}
+\@namedef{web@pdf@do.}{}
+\@namedef{web@pdf@don}{\afterassignment\web@pdf@loop\web@pdf@n=}
+\@namedef{web@pdf@dod}{\afterassignment\web@pdf@loop\web@pdf@d=}
+\@namedef{web@pdf@dog}#1{\web@pdf@loop}
+\@namedef{web@pdf@doG}#1{}
+\@namedef{web@pdf@dop}{\afterassignment\web@pdf@dog\web@pdf@n=}
+% the end of the primitive: a general text, after any \relax, or a number
+\def\web@pdf@last{\csname web@pdf@end\web@pdf@type\endcsname}
+\def\web@pdf@end{}
+\def\web@pdf@endg{\futurelet\web@pdf@tok\web@pdf@group}
+\def\web@pdf@group{%
+    \ifx\web@pdf@tok\relax
+        \expandafter\web@pdf@relax
+    \else\ifx\web@pdf@tok\bgroup
+        \expandafter\expandafter\expandafter\@gobble
+    \fi\fi}
+\def\web@pdf@relax#1{\web@pdf@endg}
+\def\web@pdf@endn{\web@pdf@n=}
+\def\web@pdf@rule{,width=d,height=d,depth=d}
+\def\web@pdf@goto{,attr=g,user=G,goto=-,thread=-,file=g,struct=-,page=p,num=n,name=g,newwindow=.,nonewwindow=.}
+\protected\def\pdfliteral{\web@pdf@skip{,shipout=-,direct=-,page=-}g}
+\protected\def\pdfmapfile{\web@pdf@skip{}g}
+\protected\def\pdfmapline{\web@pdf@skip{}g}
+\protected\def\pdfsetmatrix{\web@pdf@skip{}g}
+\protected\def\pdfnames{\web@pdf@skip{}g}
+\protected\def\pdfspacefont{\web@pdf@skip{}g}
+\protected\def\pdffontattr#1{\web@pdf@skip{}g}
+\def\pdfincludechars#1#2{}
+\protected\def\pdfnobuiltintounicode#1{}
+\protected\def\pdfximage{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,attr=g,page=n,named=g,colorspace=n,mediabox=-,cropbox=-,bleedbox=-,trimbox=-,artbox=-}g}
+\protected\def\pdfobj{\web@pdf@skip{,reserveobjnum=.,useobjnum=n,stream=-,attr=g,file=-}g}
+\protected\def\pdfannot{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,reserveobjnum=.,useobjnum=n}g}
+\protected\def\pdfxform{\web@pdf@skip{,attr=g,resources=g}n}
+\protected\def\pdfrefximage{\web@pdf@n=}
+\protected\def\pdfrefobj{\web@pdf@n=}
+\protected\def\pdfrefxform{\web@pdf@n=}
+\protected\def\pdfcolorstack{\afterassignment\web@pdf@stack\web@pdf@n=}
+\def\web@pdf@stack{\web@pdf@skip{,push=G,set=G,pop=.,current=.}{}}
+\protected\def\pdfstartlink{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule\web@pdf@goto}{}}
+\protected\def\pdfoutline{\expandafter\web@pdf@skip\expandafter{\web@pdf@goto,count=n}g}
+\protected\def\pdfdest{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,struct=n,num=n,name=g,xyz=-,zoom=n,fit=-,fith=-,fitv=-,fitb=-,fitbh=-,fitbv=-,fitr=-}{}}
+\protected\def\pdfthread{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,attr=g,num=n,name=G}{}}
+\let\pdfstartthread\pdfthread
+\protected\def\pdfsnapy{\web@pdf@s=}
+\protected\def\pdfsnapycomp{\web@pdf@n=}
+\protected\def\pdfsave{}
+\let\pdfrestore\pdfsave
+\let\pdfendlink\pdfsave
+\let\pdfendthread\pdfsave
+\let\pdfsnaprefpoint\pdfsave
+\let\pdfrunninglinkon\pdfsave
+\let\pdfrunninglinkoff\pdfsave
+\let\pdfinterwordspaceon\pdfsave
+\let\pdfinterwordspaceoff\pdfsave
+\let\pdffakespace\pdfsave
+
 % report, book, and memoir: \@makechapterhead as the preamble leaves it,
 % for tex8web-page.tex to read the chapter's spacing, and \part and \@part
 % for a part's. report.4ht and book.4ht empty \@makechapterhead and replace
