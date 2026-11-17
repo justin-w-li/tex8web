@@ -1,7 +1,7 @@
 % pdfTeX's driver option given to the class as PDFTeX, and to changebar
-% beside its color and outerbars options, which changebar still reads:
-% \cbcolor is defined only with the color option. The text is the same as
-% without the driver option.
+% beside its color and outerbars options, which changebar still reads.
+% Without the color option, \cbcolor writes a warning to the log and
+% ignores its argument. The text is the same as without the driver option.
 \documentclass[PDFTeX]{article}
 \usepackage[pdftex,color,outerbars]{changebar}
 \begin{document}

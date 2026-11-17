@@ -1572,8 +1572,8 @@ const drivers = {
   ],
   'test-pdftex-changebar-class': [/<p class='noindent'>Before the bar\. Inside the class’s bar\. After the bar\./],
   'test-pdftex-changebar-caps': [/<p class='noindent'>Before the bar\. Inside the capitals’ bar\. After the bar\./],
-  // (without the color option, \cbcolor is undefined, and its argument is
-  // typeset)
+  // (without the color option, \cbcolor writes a warning and ignores its
+  // argument, so the text is the same; texWarnings checks the warning)
   'test-pdftex-changebar-color': [/<p class='noindent'>Before the bar\. Red bar\. After the red bar\./],
   'test-pdftex-adjustbox': [
     /<p class='noindent'>Clip: clipped text \. After the clip\./,
@@ -1649,9 +1649,10 @@ const drivers = {
 // and sets a \qedhere twice, where amsthm can.
 const texWarnings = {
   'test-pdftex-class': [/Unused global option/],
-  // (PDFTeX, given to the class, is changebar's in pdflatex. trimclip reads
-  // its dvips driver, tc-dvips.def, as without the option)
-  'test-pdftex-changebar-color': [/Unused global option/],
+  // (PDFTeX, given to the class, is changebar's in pdflatex, and changebar
+  // warns that \cbcolor is ignored when its color option is lost. trimclip
+  // reads its dvips driver, tc-dvips.def, as without the option)
+  'test-pdftex-changebar-color': [/Unused global option/, /You didn't specify the option/],
   'test-pdftex-adjustbox': [/File: tc-(?!dvips)/],
   'test-pdftex-trimclip': [/File: tc-(?!dvips)/],
   'test-pdftex-trimclip-first': [/File: tc-(?!dvips)/],
