@@ -220,50 +220,62 @@
     {\HCode{<p>}\csname a:thank-mark\endcsname}{\csname b:thank-mark\endcsname}
     {\HCode{</p>}}
 
+% \web@testtitle sets \ifweb@untitled when the document has no title:
+% \@title is the kernel's default, revtex's warning (\class@warn{No
+% title}, set at \begin{document}), or empty.
+\newif\ifweb@untitled
+\def\web@revnotitle{\class@warn{No title}}
+\def\web@testtitle{\web@untitledfalse
+    \ifx\@title\web@notitle\web@untitledtrue\fi
+    \ifx\@title\web@revnotitle\web@untitledtrue\fi
+    \edef\web@a{\detokenize\expandafter{\@title}}%
+    \ifx\web@a\@empty\web@untitledtrue\fi}
+
 % the title in the font that the document's or class's \maketitle sets it
 % in, when that font is not the standard \LARGE. tex4ht drops the title's
 % fonts (\NoFonts in html4.4ht's \Configure{maketitle}), so in the standard
 % font the math is left at the heading's size, as the words are. In another
 % font, the heading is at the text size, and tex4ht's spans set the title's
 % font. The letter class has no \maketitle, and so no \a:ttl.
+% A document with no title gets no title heading, as the PDF has none.
+% The anchors between \a:ttl and \b:ttl, as of revtex's \label{FirstPage},
+% are kept, with no paragraph around them.
 \ifcsname a:ttl\endcsname
     \expandafter\let\expandafter\web@ttl\csname a:ttl\endcsname
+    \expandafter\let\expandafter\web@endttl\csname b:ttl\endcsname
     \expandafter\def\csname a:ttl\endcsname{%
-        \edef\web@a{\f@family/\f@series/\f@shape/\f@size}%
-        \begingroup\normalfont\LARGE\xdef\web@b{\f@family/\f@series/\f@shape/\f@size}\endgroup
-        \ifx\web@a\web@b
-            \let\web@mathsize\@empty
+        \web@testtitle
+        \ifweb@untitled
+            \IgnorePar \let\web@ttlend\relax
         \else
-            \let\NoFonts\relax \let\EndNoFonts\relax
-            \web@Css{:root { --tex8web-title-size: 1em; }}%
-        \fi
-        \web@ttl}
+            \let\web@ttlend\web@endttl
+            \edef\web@a{\f@family/\f@series/\f@shape/\f@size}%
+            \begingroup\normalfont\LARGE\xdef\web@b{\f@family/\f@series/\f@shape/\f@size}\endgroup
+            \ifx\web@a\web@b
+                \let\web@mathsize\@empty
+            \else
+                \let\NoFonts\relax \let\EndNoFonts\relax
+                \web@Css{:root { --tex8web-title-size: 1em; }}%
+            \fi
+            \web@ttl
+        \fi}
+    \expandafter\def\csname b:ttl\endcsname{\web@ttlend}
 \fi
-
-% \web@testtitle sets \ifweb@notitle when the document has no title:
-% \@title is the kernel's error, revtex's warning (\class@warn{No title},
-% set at \begin{document}), or empty.
-\newif\ifweb@notitle
-\def\web@revnotitle{\class@warn{No title}}
-\def\web@testtitle{\web@notitlefalse
-    \ifx\@title\web@notitle\web@notitletrue\fi
-    \ifx\@title\web@revnotitle\web@notitletrue\fi
-    \edef\web@a{\detokenize\expandafter{\@title}}%
-    \ifx\web@a\@empty\web@notitletrue\fi}
 
 % tex4ht writes a \Tag's text to the .xref and reads it back through
 % macros that are not \long (\load:ref, tex4ht.sty), so a \par in the
 % text, as from a blank line in \title, stops the next run. A space is
-% written for each \par. revtex4.4ht's \maketitle writes the page's
-% <title> as \Tag{TITLE+}{\@title//}: with no title, the \Tag is skipped,
-% which leaves the <title> empty (an empty \Tag gives its page number),
-% and a class warning in a \Tag's text writes nothing.
+% written for each \par. html4.4ht's \Configure{maketitle} writes the
+% page's <title> as \Tag{TITLE+}{\@title//}, which revtex4.4ht's
+% \titleblock@produce reaches through \a:mktl. With no title, the \Tag
+% is skipped, which leaves the <title> empty: an empty \Tag gives its
+% page number.
 \let\web@Tag\Tag
 \def\web@titletag{TITLE+}
-\def\Tag#1#2{\begingroup\let\par\space\let\class@warn\@gobble
-    \def\web@a{#1}%
-    \ifx\web@a\web@titletag\web@testtitle\else\web@notitlefalse\fi
-    \ifweb@notitle\else\web@Tag{#1}{#2}\fi\endgroup}
+\def\Tag#1#2{\begingroup\let\par\space
+    \def\web@tagname{#1}%
+    \ifx\web@tagname\web@titletag\web@testtitle\else\web@untitledfalse\fi
+    \ifweb@untitled\else\web@Tag{#1}{#2}\fi\endgroup}
 
 % without \maketitle, the page's <title> is the \title's text, written as
 % \maketitle would write it: the first argument of html4.4ht's
@@ -274,7 +286,7 @@
     \AddToHook{cmd/maketitle/before}{\global\web@titledtrue}
 \fi
 \AtEndDocument{%
-    \ifweb@titled\else\ifcsname a:mktl\endcsname\web@testtitle\ifweb@notitle\else
+    \ifweb@titled\else\ifcsname a:mktl\endcsname\web@testtitle\ifweb@untitled\else
         \begingroup
             \let\HCode\@gobble \let\EndP\relax \let\IgnorePar\relax
             \csname a:mktl\endcsname
