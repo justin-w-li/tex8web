@@ -1,8 +1,10 @@
-% A report with sectsty, a sans-serif \allsectionsfont, xcolor, and
-% hyperref, whose nameref wraps \@part.
+% A report with sectsty, a sans-serif \allsectionsfont, a part in medium
+% italic, set with \partfont alone, xcolor, and hyperref, whose nameref
+% wraps \@part.
 \documentclass{report}
 \usepackage{xcolor}
 \usepackage{sectsty}
 \allsectionsfont{\sffamily}
+\partfont{\mdseries\itshape}
 \usepackage{hyperref}
 \input{test-sectpart-cases.ltx}

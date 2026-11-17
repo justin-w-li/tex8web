@@ -1,0 +1,8 @@
+% A book that loads hyperref before sectsty, so nameref keeps book's own
+% \@part, and sets every heading flush left and sans-serif with
+% \allsectionsfont, as most documents with sectsty do.
+\documentclass{book}
+\usepackage{hyperref}
+\usepackage{sectsty}
+\allsectionsfont{\raggedright\sffamily}
+\input{test-sectpart-cases.ltx}

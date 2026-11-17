@@ -122,11 +122,16 @@ const measured = {
     '--tex8web-part-after': '0.62279em', '--tex8web-part-label-after': '0em' },
   // (a book or report with sectsty, whose \parttitlefont and \partnamefont
   // take an argument: the part's title in book's \Huge, 24.88pt, and its
-  // label in \huge, 20.74pt, 20pt above the title, both bold and, unless
-  // the document's part fonts align them, centered, as sectsty's \@part
-  // sets them)
-  'test-sectpart': { ...sectpartSizes, '--tex8web-part-weight': null },
-  'test-sectpart-hyperref': { ...sectpartSizes, '--tex8web-part-weight': null, '--tex8web-part-align': null },
+  // label in \huge, 20.74pt, 20pt above the title, both bold and centered,
+  // as sectsty's \@part sets them. In test-sectpart the title is centered,
+  // as \parttitlefont{\centering} sets it, and the label's \raggedleft is
+  // not followed. sectsty's own part fonts are not read: the part of
+  // test-sectpart-hyperref is bold where the PDF's is medium italic, and the
+  // part of test-sectpart-hyperfirst centered and roman where the PDF's is
+  // flush left and sans-serif, so neither is checked)
+  'test-sectpart': { ...sectpartSizes, '--tex8web-part-weight': null, '--tex8web-part-align': null },
+  'test-sectpart-hyperref': sectpartSizes,
+  'test-sectpart-hyperfirst': sectpartSizes,
   'test-sectpart-ulem': { ...sectpartSizes, '--tex8web-part-weight': null, '--tex8web-part-align': null },
   'test-sectpart-nopart': { ...sectpartSizes, '--tex8web-part-weight': null, '--tex8web-part-align': null },
   // (an article with sectsty: its part flush left, as sectsty's article
@@ -818,6 +823,7 @@ const sectpartParts = [...sectpartText,
   /<h2 class='chapterHead'[^>]*>(?:(?!<\/h2>)[^])*Another chapter<\/h2>\s*(?:<[^>]*>\s*)*Text after the unnumbered part\./];
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
+  'test-sectpart-hyperfirst': sectpartParts,
   'test-sectpart-scrbook': sectpartText, 'test-sectpart-scrreprt': sectpartText,
   'test-sectpart-nopart': [/<p[^>]*>\s*Text of a book without headings\./],
   // (the article guard has no chapters: a part, a section, and a starred part)
