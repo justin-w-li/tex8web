@@ -23,10 +23,16 @@
 %   four-argument line with amssymb's \mathbb, which this build does not
 %   load.
 % test-staleaux-toc.sty is a package of the document's own, whose source
-% has a line that starts with \contentsline: the build reads it.
+% has a line that starts with \contentsline: the build reads it. The
+% \iffalse block below gives this source a line that starts with
+% "\contentsline {", as a list file's lines do: the build reads the
+% source from beside the document, not an empty file of its name.
 % The stale .toc, .lof, .lot, listings' .lol, and newfloat's .lop are
 % guards: tex4ht sends these lists through the .4ct, so the build reads
 % them neither before nor after the fix. Every stale file stays as it is.
+\iffalse
+\contentsline {example}{\numberline {1}Old example in the source}{1}{}
+\fi
 \documentclass{article}
 \usepackage{tocloft}
 \usepackage{thmtools}

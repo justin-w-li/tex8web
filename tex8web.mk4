@@ -108,16 +108,16 @@ else
         if lfs.attributes(name) and not lfs.attributes(file) then io.open(file, "w"):close() end
       end
       -- (and for each list of an earlier build beside the document: a
-      -- file named for the document, other than its source, with a line
-      -- that starts with "\contentsline {", which LaTeX's \addcontentsline
-      -- writes with a space after the command. The \@starttoc of
-      -- article.4ht reads each list other than the standard ones, which go
-      -- through the .4ct, and amsart's reads every list, so a list under an
-      -- extension the document chose, as with tocloft's \newlistof, is read
-      -- from beside the document. Any line counts, as biblatex writes other
-      -- lines before the entries. A file the document reads, such as a
-      -- package of its own, has no such space when written by hand, and is
-      -- not hidden. A file is read only up to that line)
+      -- file named for the document, other than its source and .tex
+      -- files, with a line that starts with "\contentsline {", which
+      -- LaTeX's \addcontentsline writes with a space after the command.
+      -- The \@starttoc of article.4ht reads each list other than the
+      -- standard ones, which go through the .4ct, and amsart's reads every
+      -- list, so a list under an extension the document chose, as with
+      -- tocloft's \newlistof, is read from beside the document. Any line
+      -- counts, as biblatex writes other lines before the entries. A file
+      -- the document reads, such as a package of its own, usually has no
+      -- such space when written by hand, and is not hidden)
       local prefix = par.input .. "."
       local function list(name)
         local file = io.open(name, "rb")
