@@ -4,11 +4,12 @@
 % in an \xdef or an \edef, typeset in the text, in italic, sans-serif, and
 % typewriter text, a footnote, a theorem, and a heading written to the
 % table of contents, given \pdflastxform, a count register, an explicit
-% number, or a macro, followed by a digit or \relax, and in the text of a
-% \special, which is expanded when the page is shipped out. In the PDF the
-% name is the form's number and the bounding box the image's. On the page
-% the name is empty, as the form is not drawn, the bounding box is zero,
-% and the text around each stays.
+% number, or a macro, followed by a digit or \relax, in a \csname, in a
+% \dimexpr, and in the text of a \special, which is expanded when the page
+% is shipped out. \meaning shows what each expands to. In the PDF the name
+% is the form's number and the bounding box the image's. On the page the
+% name is empty, as the form is not drawn, the bounding box is zero, and
+% the text around each stays.
 \pdfoutput=1
 \documentclass{article}
 \usepackage{amsthm}
@@ -27,6 +28,12 @@ Details: [\formname] end.
 
 \edef\formedef{\pdfxformname\pdflastxform}%
 Edef: [\formedef] end.
+
+\edef\formmeaning{\pdfxformname\pdflastxform}%
+Meaning: \texttt{\meaning\formmeaning} end.
+
+\expandafter\def\csname Fm\pdfxformname\pdflastxform\endcsname{named}%
+Csname: [\csname Fm\pdfxformname\pdflastxform\endcsname] end.
 
 Text: [\pdfxformname\pdflastxform] end.
 
@@ -56,6 +63,9 @@ Space digit: [\pdfxformname 1 5] end.
 
 Relax: [\pdfxformname\pdflastxform\relax] end.
 
+\edef\formrelax{[\pdfxformname\pdflastxform\relax]}%
+Relax meaning: \texttt{\meaning\formrelax} end.
+
 Special: before\special{pdf: q /Fm\pdfxformname\pdflastxform\space Do Q} after.
 
 \immediate\pdfximage{test-picture.png}\imgno=\pdflastximage
@@ -66,4 +76,6 @@ Bbox: [\bbox] end.
 Bbox dimen: [\the\dimen0] end.
 
 Bbox count: [\pdfximagebbox\imgno 1] end.
+
+Bbox width: [\the\dimexpr\pdfximagebbox\pdflastximage 3-\pdfximagebbox\pdflastximage 1\relax] end.
 \end{document}
