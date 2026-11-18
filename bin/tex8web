@@ -71,8 +71,10 @@ TEXINPUTS=${TEXINPUTS-}:$(dirname "$config"); export TEXINPUTS
 cd "$(dirname "$document")"
 # (tex4ht splits the config's path at spaces, so a config whose path has
 # one, as tex8web.cfg has when tex8web is in such a folder, is read from a
-# copy in the aux directory)
+# copy in the aux directory, named after the document, as documents in one
+# folder share that directory and make4ht reads the config on each run)
 case $config in *" "*)
-  mkdir -p "$aux"; cp "$config" "$aux/tex8web-config.cfg"; config=$aux/tex8web-config.cfg ;;
+  copy=$aux/tex8web-$(basename "$document" .tex | tr ' ' _).cfg
+  mkdir -p "$aux"; cp "$config" "$copy"; config=$copy ;;
 esac
 exec make4ht -u -c "$config" -e "$root/tex8web.mk4" -B "$aux" -d "$out" "$@" "$(basename "$document")"

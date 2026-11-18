@@ -4782,6 +4782,28 @@ if (pathspace) {
     if (after !== before) problems.push(`the config's folder holds ${after}, not ${before}`);
     report(`${pathspace.name} (${label})`, problems);
   });
+  // two documents in one folder with a space, each with a config of its
+  // own there, built at once: each page has its own config's term only
+  jobs.push(async () => {
+    const top = join(testDir(pathspace), 'spacepair'), dir = join(top, 'My Drive/notes');
+    rmSync(top, { recursive: true, force: true });
+    const pair = [['a', '\\WebTerm\\keyword', 'term-config-word', 'term-sibling-word'],
+      ['b', '\\WebTerm\\term', 'term-sibling-word', 'term-config-word']];
+    for (const [name, left] of pair) {
+      place(dir, `${name}.cfg`, readFileSync(pathspace.cfg, 'utf8').replace(`${left}\n`, ''));
+      place(dir, `${name}.tex`, fixture);
+    }
+    const results = await Promise.all(pair.map(([name]) => run(tex8web, ['-c', `${name}.cfg`, '-d', join(top, 'html'), '-a', 'info', `${name}.tex`],
+      { cwd: dir, slot: true, env: { ...process.env, ...pathspace.env } })));
+    const problems = [];
+    pair.forEach(([name, , term, other], i) => {
+      writeFileSync(join(top, `${name}.log`), results[i].log);
+      if (results[i].code !== 0) problems.push(`${name}.tex: tex8web exited with ${results[i].code}`);
+      const page = join(top, `html/${name}.html`), html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+      if (!html.includes(`id='${term}'`) || html.includes(`id='${other}'`)) problems.push(`${name}.html does not have ${term} alone as a term`);
+    });
+    report(`${pathspace.name} (two documents in a folder with a space, each with its config)`, problems);
+  });
 }
 
 await pool(jobs, workers, job => job());

@@ -195,14 +195,20 @@ test('the files beside a config outside the document\'s directory are in the sta
     writeFileSync(join(cfgDir, 'other.tex'), '% beside\n');
     assert.equal((await make()).reused, undefined);
 
-    // a contained build mounts the config's folder read-only, not the config alone
+    // a contained build mounts the files beside the config read-only, but
+    // not the folder, the folders in it, its dotfiles, or its links
+    writeFileSync(join(cfgDir, '.secret'), 'private\n');
+    symlinkSync(join(cfgDir, 'webmacros.tex'), join(cfgDir, 'linked.tex'));
     process.env.PATH = stubbed.PATH;
     doc.runner = [join(root, 'test/lib/contain.mjs')];
     writeFileSync(dockerLog, '');
     const built = await make();
     assert.equal(built.code, 0, built.log);
     const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.includes('/bin/tex8web -c '));
-    assert.ok(runs.length === 1 && runs[0].includes(`type=bind,source=${cfgDir},target=${cfgDir},readonly `), runs.join('\n'));
+    assert.equal(runs.length, 1, runs.join('\n'));
+    const mounted = [...runs[0].matchAll(/type=bind,source=([^,]+),target=\1,readonly /g)].map(([, source]) => source)
+      .filter(source => source.startsWith(cfgDir));
+    assert.deepEqual(mounted.sort(), ['other.tex', 'webmacros.tex', 'x.cfg'].map(name => join(cfgDir, name)));
   } finally {
     process.env.PATH = path;
     rmSync(top, { recursive: true });
