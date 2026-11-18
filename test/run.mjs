@@ -4601,7 +4601,11 @@ const staleBcfPages = {
     /Able, A\., 1999\. A Book Kept in the Build Folder\. A Publisher\./],
   // (natbib with a numeric style: \citet forces numbers, as in the PDF)
   'natbib-plain': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1<\/a><\/span>\] says\./, staleBcfEntry],
+  'natbib-ieeetr': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\(<span class='cite'><a href='#Xable'>1<\/a><\/span>\) says\./],
 };
+// (natbib with a numeric style that natbib does not know: from the third
+// LaTeX run, the PDF build stops at natbib's error, and so does the page's)
+const staleBcfErrors = new Set(['natbib-ieeetr']);
 const staleBcfBiber = new Set(['biber', 'biber-hyperref', 'biber-input', 'biber-sty', 'biber-class', 'biber-include']);
 // (the LaTeX runs of a second build of an unchanged document)
 const staleBcfRuns = 2;
@@ -4616,35 +4620,43 @@ const staleBcfCases = [
   ['bibtex', 'natbib'], ['bibtex-hyperref', 'natbib-hyperref'], ['bibtex-alpha', 'natbib'],
   ['bibtex', 'natbib-abbrvnat', '.'], ['natbib-numbers', 'natbib'], ['natbib-plain', 'natbib'],
   ['bibtex-include', 'natbib-include'], ['bibtex', 'elsarticle'],
+  // (a draft build of the second document between the two builds)
+  ['bibtex', 'natbib', 'build/tex4ht', 'draft'],
   // (a build folder left current)
   ['biber', 'biber'], ['bibtex', 'bibtex'], ['blx-bibtex', 'blx-bibtex'],
-  ['natbib', 'natbib'], ['natbib-plain', 'natbib-plain'],
+  ['natbib', 'natbib'], ['natbib-plain', 'natbib-plain'], ['natbib-ieeetr', 'natbib-ieeetr'],
 ];
-if (staleBcf) for (const [first, second, folder = 'build/tex4ht'] of staleBcfCases) jobs.push(async () => {
-  const label = `${first}, then ${second}${folder === 'build/tex4ht' ? '' : `, with -B ${folder}`}`;
+if (staleBcf) for (const [first, second, folder = 'build/tex4ht', draft] of staleBcfCases) jobs.push(async () => {
+  const label = `${first}, then ${second}${folder === 'build/tex4ht' ? '' : `, with -B ${folder}`}${draft ? ', with a draft build between' : ''}`;
   const where = folder === '.' ? 'dot' : 'default';
-  const dir = join(testDir(staleBcf), 'twice', `${first}-${second}-${where}`);
+  const dir = join(testDir(staleBcf), 'twice', `${first}-${second}-${where}${draft ? '-draft' : ''}`);
   const source = join(staleBcf.dir, 'test-stalebcf');
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   for (const name of readdirSync(source)) writeFileSync(join(dir, name), readFileSync(join(source, name)));
-  const once = name => {
+  const once = (name, ...options) => {
     writeFileSync(join(dir, 'doc.tex'), readFileSync(join(source, `${name}.tex`)));
-    return run(join(root, 'bin/tex8web'), ['-c', staleBcf.cfg, '-B', folder, '-a', 'info', 'doc.tex'],
+    return run(join(root, 'bin/tex8web'), ['-c', staleBcf.cfg, '-B', folder, ...options, '-a', 'info', 'doc.tex'],
       { cwd: dir, slot: true, env: { ...process.env, ...staleBcf.env } });
   };
   const problems = [];
   const before = await once(first);
-  if (before.code !== 0) problems.push(`the first build exited with ${before.code}`);
+  if (before.code !== 0 && !staleBcfErrors.has(first)) problems.push(`the first build exited with ${before.code}`);
+  if (draft) {
+    const middle = await once(second, '-m', 'draft');
+    if (middle.code !== 0) problems.push(`the draft build exited with ${middle.code}`);
+  }
   const result = await once(second);
   const log = result.log ?? '';
   writeFileSync(join(dir, 'second.log'), log);
-  if (result.code !== 0) {
+  const failing = staleBcfErrors.has(second);
+  if (failing && (result.code === 0 || !log.includes('Package natbib Error'))) problems.push("the second build does not stop at natbib's error, as the PDF build does");
+  if (result.code !== 0 && !failing) {
     problems.push(`make4ht exited with ${result.code}`, ...log.split('\n').filter(line => /\[(ERROR|FATAL)\]/.test(line)).slice(0, 4));
   }
   for (const error of ["Missing 'biblatex' package", 'not created by biblatex', 'Undefined control sequence',
     'Package biblatex Error', 'Package natbib Error', 'Missing \\begin{document}']) {
-    if (log.includes(error)) problems.push(`the second build's log has ${JSON.stringify(error)}`);
+    if (log.includes(error) && !(failing && error === 'Package natbib Error')) problems.push(`the second build's log has ${JSON.stringify(error)}`);
   }
   if (!staleBcfBiber.has(second) && /bibliography: biber/.test(log)) problems.push('biber ran for a document without biblatex and biber');
   if (first === second) {
