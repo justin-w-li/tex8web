@@ -1943,6 +1943,8 @@ const drivers = {
       'Goto file: beforelinked after.', 'Destination relax: beforedepth after.',
       'Expanded: beforeafter.', 'Image macro: before after.',
       'Uppercase: before after.', 'Struct: xlinked after.', 'Font: before after.',
+      'Reserve: xafter and xlinked after.', 'Reserve macro: xafter.', 'Protected: xafter.',
+      'Primitive after: beforeafter.',
       // (the primitives that only warn in DVI mode)
       `Guards: ${['info', 'catalog', 'trailer', 'trailerid', 'pageattr', 'pagesattr', 'pageresources',
         'compresslevel', 'minorversion', 'gentounicode', 'glyphtounicode', 'colorstackinit']
@@ -1954,6 +1956,9 @@ const drivers = {
     /Direct math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Factor math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Upper math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Let math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Snap math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /^(?![^]*(?:plus 2pt|minus 1fil))/,
     /^(?![^]*(?:test-picture|linewidth|User title|example\.com|newwindow))/,
     /<p[^>]*>\s*Started thread\./,
     /First\.(?:\s|<\/p>|<!--(?:(?!-->)[^])*-->)*<p[^>]*>(?:\s|<!--(?:(?!-->)[^])*-->)*Second\./,

@@ -37,6 +37,8 @@
 \newcommand\wideblue[1]{\pdfximage width 0.5\linewidth {test-picture.png}#1}
 \def\mycolor{0 0 1 rg}
 \def\myopts{width 1cm }
+\protected\def\popts{width 1cm }
+\def\myspace{ }
 \newcommand\structlink[1]{\pdfstartlink goto struct name{a} name{s}#1\pdfendlink}
 \makeatletter
 \newcommand\isprim[1]{\begingroup\edef\a{\meaning#1}\edef\b{\string#1}%
@@ -149,6 +151,19 @@ Struct: x\pdfstartlink goto struct name{a} name{s}linked\pdfendlink{} after.
 Font: before\pdffontattr\textfont1{/X 1}\pdfincludechars\scriptfont 2{abc}\pdfnobuiltintounicode\scriptscriptfont3{} after.
 
 Upper math: before $a\pdfliteral DIRECT{0 g}b\structlink{c}\pdfnobuiltintounicode\textfont1$ after.
+
+Reserve: x\pdfobj reserveobjnum
+after and x\pdfannot reserveobjnum linked\relax{} after.
+
+Reserve macro: x\pdfobj reserveobjnum\myspace after.
+
+Protected: x\pdfximage\popts{test-picture.png}after.
+
+Primitive after: before\pdfdest name{c} xyz\pdfsnaprefpoint\mylit{0 g}\pdfdest name{d} xyz\mylit{0 g}after.
+
+Let math: before $a\mylit{0 g}b$ after.
+
+Snap math: before $a\pdfsnapy 1pt plus 2pt minus 1fil b$ after.
 
 First.
 

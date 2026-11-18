@@ -160,7 +160,7 @@ end
 -- "m" a number, "q" a number and a general text. After "e" (newwindow) and
 -- "u" (user, a general text) come those of the fifth. "r" (a goto's struct)
 -- takes num and a number, name and a general text, or a general text. The
--- end: "g" a general text, "n" a number, "d" a dimen. A number before the
+-- end: "g" a general text, "n" a number, "d" a dimen, "s" a glue. A number before the
 -- keywords (\pdfcolorstack) or a font is given as "n" or "f" third. A
 -- keyword matches in either case, as in pdfTeX. Removed with their
 -- arguments from the definitions and the math MathJax gets, which would show
@@ -174,15 +174,15 @@ local primitives = {
   pdfsetmatrix = {"", "g"}, pdfnames = {"", "g"}, pdfspacefont = {"", "g"},
   pdffontattr = {"", "g", "f"}, pdfincludechars = {"", "g", "f"}, pdfnobuiltintounicode = {"", "", "f"},
   pdfximage = {rule .. "attr=g page=n named=g colorspace=n mediabox=- cropbox=- bleedbox=- trimbox=- artbox=-", "g"},
-  pdfobj = {"reserveobjnum=. useobjnum=n stream=- attr=g file=-", "g"},
-  pdfannot = {rule .. "reserveobjnum=. useobjnum=n", "g"},
+  pdfobj = {"reserveobjnum=s useobjnum=n stream=- attr=g file=-", "g"},
+  pdfannot = {rule .. "reserveobjnum=s useobjnum=n", "g"},
   pdfxform = {"attr=g resources=g", "n"},
   pdfrefximage = {"", "n"}, pdfrefobj = {"", "n"}, pdfrefxform = {"", "n"},
   pdfcolorstack = {"push=G set=G pop=. current=.", "", "n"},
   pdfstartlink = {rule .. action, "", nil, window}, pdfoutline = {action, "g", nil, window .. "count=n", "count=n"},
   pdfdest = {rule .. "struct=n num=m name=t", "", nil, "xyz=k fit=s fith=s fitv=s fitb=s fitbh=s fitbv=s fitr=k"},
   pdfthread = {rule .. "attr=g num=N name=G", ""}, pdfstartthread = {rule .. "attr=g num=N name=G", ""},
-  pdfsnapy = {"", "d"}, pdfsnapycomp = {"", "n"},
+  pdfsnapy = {"", "s"}, pdfsnapycomp = {"", "n"},
 }
 for _, name in ipairs {"save", "restore", "endlink", "endthread", "snaprefpoint", "runninglinkon",
     "runninglinkoff", "interwordspaceon", "interwordspaceoff", "fakespace"} do
@@ -200,6 +200,18 @@ local function value(text, i, unit)
   end
   if not e then _, e = text:find("^%s*\\%a+ ?", i) end
   return e and e + 1 or i
+end
+-- the end of a glue: a dimen, then plus and minus, each with a dimen or fil
+local function glue(text, i)
+  i = value(text, i, true)
+  for _, key in ipairs {"[pP][lL][uU][sS]", "[mM][iI][nN][uU][sS]"} do
+    local _, e = text:find("^%s*" .. key, i)
+    if e then
+      local _, f = text:find("^%s*[-+]?%d*[.,]?%d+%s*[fF][iI][lL][lL]?[lL]? ?", e + 1)
+      i = f and f + 1 or value(text, e + 1, true)
+    end
+  end
+  return i
 end
 local function group(text, i)
   local _, e = text:find("^%s*%b{}", i)
@@ -242,18 +254,20 @@ local function skip(text, i, shape)
     end
   end
   if last == "g" then return group(text, i) end
+  if last == "s" then return glue(text, i) end
   if last ~= "" then return value(text, i, last == "d") end
   return i
 end
 
-local function strip(text)
+-- (prims: the primitives, and the document's names \let to one)
+local function strip(text, prims)
   local out, i = {}, 1
   while true do
-    local s, e, name = text:find("\\(pdf%a+)", i)
+    local s, e, name = text:find("\\([%a@]+)", i)
     if not s then break end
     out[#out + 1] = text:sub(i, s - 1)
-    if primitives[name] then
-      i = skip(text, e + 1, primitives[name])
+    if prims[name] then
+      i = skip(text, e + 1, prims[name])
     else
       out[#out + 1] = text:sub(s, e)
       i = e + 1
@@ -276,10 +290,23 @@ function M.define(document, context)
     definitions[name] = definition
   end
 
+  -- a name \let to a primitive, or to such a name, is removed as the
+  -- primitive is, and its definition with it
+  local prims = setmetatable({}, {__index = primitives})
+  repeat
+    local found = false
+    for name, definition in pairs(definitions) do
+      local target = definition.def and definition.def:match("^\\let\\[%a@]+\\([%a@]+)$")
+      if target and prims[target] then
+        prims[name:sub(2)], definitions[name], found = prims[target], nil, true
+      end
+    end
+  until not found
+
   -- the macros the math uses, and those they use in turn
   local used, queue, texts = {}, {}, {}
   for _, el in ipairs(document:query_selector(".mathjax-inline, .mathjax-block, .mathjax-env")) do
-    source.each_text(el, function(node) dom.set_node_text(node, strip(node:get_text())) end)
+    source.each_text(el, function(node) dom.set_node_text(node, strip(node:get_text(), prims)) end)
     texts[#texts + 1] = el:get_text()
     for _, name in ipairs(preamble.uses(texts[#texts])) do queue[#queue + 1] = name end
   end
@@ -287,7 +314,7 @@ function M.define(document, context)
     local name = table.remove(queue)
     local definition = definitions[name]
     if definition and not used[name] then
-      definition.def, definition.body = strip(definition.def), strip(definition.body)
+      definition.def, definition.body = strip(definition.def, prims), strip(definition.body, prims)
       used[name] = definition
       texts[#texts + 1] = definition.body
       for _, inner in ipairs(preamble.uses(definition.body)) do queue[#queue + 1] = inner end

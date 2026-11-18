@@ -602,18 +602,26 @@
 % is g when a general text ends the primitive, n when a number does, or
 % empty. A general text is read by a token register's assignment, which
 % expands to the brace and drops spaces and \relax before it, as pdfTeX's
-% scan does.
-% (a protected macro is left: the primitives here are protected macros,
-% where pdfTeX's are not expandable)
+% scan does. A macro before a keyword, an optional space, or a font is
+% expanded, a protected one too, as pdfTeX's get_x_token expands it. The
+% primitives defined here are not: they are protected macros, listed in
+% \g__web_pdf_prims_tl, where pdfTeX's are not expandable. Each starts with
+% a macro of this file, so that a document's macro does not have its
+% meaning: \pdfsave and the others without arguments run \web@pdf@none.
 \ExplSyntaxOn
-\cs_new:Npn \web@pdf@ifexpandable #1
+\tl_new:N \g__web_pdf_prims_tl
+\bool_new:N \l__web_pdf_prim_bool
+\cs_new_protected:Npn \web@pdf@ifexpandable #1
     {
-        \bool_lazy_all:nTF
+        \bool_set_false:N \l__web_pdf_prim_bool
+        \tl_map_inline:Nn \g__web_pdf_prims_tl
             {
-                { \token_if_expandable_p:N #1 }
-                { ! \token_if_protected_macro_p:N #1 }
-                { ! \token_if_protected_long_macro_p:N #1 }
+                \token_if_eq_meaning:NNT #1 ##1
+                    { \bool_set_true:N \l__web_pdf_prim_bool \tl_map_break: }
             }
+        \bool_lazy_and:nnTF
+            { \token_if_expandable_p:N #1 }
+            { ! \l__web_pdf_prim_bool }
     }
 \ExplSyntaxOff
 \newcount\web@pdf@n
@@ -660,11 +668,14 @@
 % (an optional space, then \web@pdf@cont)
 \def\web@pdf@opt{\futurelet\web@pdf@tok\web@pdf@optspace}
 \def\web@pdf@optspace{%
+    \let\web@pdf@next\web@pdf@cont
     \ifx\web@pdf@tok\@sptoken
-        \expandafter\web@pdf@eatspace
+        \let\web@pdf@next\web@pdf@eatspace
     \else
-        \expandafter\web@pdf@cont
-    \fi}
+        \web@pdf@ifexpandable\web@pdf@tok{\let\web@pdf@next\web@pdf@optexpand}{}%
+    \fi
+    \web@pdf@next}
+\def\web@pdf@optexpand{\expandafter\web@pdf@opt}
 \def\web@pdf@eatspace{\afterassignment\web@pdf@cont\let\web@pdf@tok= }
 \@namedef{web@pdf@don}{\afterassignment\web@pdf@loop\web@pdf@n=}
 \@namedef{web@pdf@doN}{\web@pdf@n=}
@@ -697,7 +708,19 @@
 \def\web@pdf@back{\let\web@pdf@keys\web@pdf@savekeys\let\web@pdf@type\web@pdf@savetype
     \web@pdf@loop}
 % a font: a font's control sequence, or \textfont, \scriptfont, or
-% \scriptscriptfont and a number, then \web@pdf@cont
+% \scriptscriptfont and a number, then \web@pdf@cont. Spaces before it are
+% dropped and a macro is expanded, as pdfTeX's font scan does.
+\def\web@pdf@fontx{\futurelet\web@pdf@tok\web@pdf@fontpeek}
+\def\web@pdf@fontpeek{%
+    \let\web@pdf@next\web@pdf@font
+    \ifx\web@pdf@tok\@sptoken
+        \let\web@pdf@next\web@pdf@fontspace
+    \else
+        \web@pdf@ifexpandable\web@pdf@tok{\let\web@pdf@next\web@pdf@fontexpand}{}%
+    \fi
+    \web@pdf@next}
+\def\web@pdf@fontspace{\afterassignment\web@pdf@fontx\let\web@pdf@tok= }
+\def\web@pdf@fontexpand{\expandafter\web@pdf@fontx}
 \def\web@pdf@font#1{%
     \let\web@pdf@next\web@pdf@cont
     \ifx#1\textfont\let\web@pdf@next\web@pdf@fam\fi
@@ -721,12 +744,12 @@
 \protected\def\pdfsetmatrix{\web@pdf@skip{}g}
 \protected\def\pdfnames{\web@pdf@skip{}g}
 \protected\def\pdfspacefont{\web@pdf@skip{}g}
-\protected\def\pdffontattr{\def\web@pdf@cont{\web@pdf@skip{}g}\web@pdf@font}
-\protected\def\pdfincludechars{\def\web@pdf@cont{\web@pdf@toks=}\web@pdf@font}
-\protected\def\pdfnobuiltintounicode{\let\web@pdf@cont\@empty\web@pdf@font}
+\protected\def\pdffontattr{\def\web@pdf@cont{\web@pdf@skip{}g}\web@pdf@fontx}
+\protected\def\pdfincludechars{\def\web@pdf@cont{\web@pdf@toks=}\web@pdf@fontx}
+\protected\def\pdfnobuiltintounicode{\let\web@pdf@cont\@empty\web@pdf@fontx}
 \protected\def\pdfximage{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,attr=g,page=n,named=g,colorspace=n,mediabox=-,cropbox=-,bleedbox=-,trimbox=-,artbox=-}g}
-\protected\def\pdfobj{\web@pdf@skip{,reserveobjnum=.,useobjnum=n,stream=-,attr=g,file=-}g}
-\protected\def\pdfannot{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,reserveobjnum=.,useobjnum=n}g}
+\protected\def\pdfobj{\web@pdf@skip{,reserveobjnum=s,useobjnum=n,stream=-,attr=g,file=-}g}
+\protected\def\pdfannot{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,reserveobjnum=s,useobjnum=n}g}
 \protected\def\pdfxform{\web@pdf@skip{,attr=g,resources=g}n}
 \protected\def\pdfrefximage{\web@pdf@n=}
 \protected\def\pdfrefobj{\web@pdf@n=}
@@ -741,7 +764,8 @@
 \let\pdfstartthread\pdfthread
 \protected\def\pdfsnapy{\web@pdf@s=}
 \protected\def\pdfsnapycomp{\web@pdf@n=}
-\protected\def\pdfsave{}
+\def\web@pdf@none{}
+\protected\def\pdfsave{\web@pdf@none}
 \let\pdfrestore\pdfsave
 \let\pdfendlink\pdfsave
 \let\pdfendthread\pdfsave
@@ -751,6 +775,16 @@
 \let\pdfinterwordspaceon\pdfsave
 \let\pdfinterwordspaceoff\pdfsave
 \let\pdffakespace\pdfsave
+\ExplSyntaxOn
+\tl_gset:Nn \g__web_pdf_prims_tl
+    {
+        \pdfliteral \pdfmapfile \pdfmapline \pdfsetmatrix \pdfnames
+        \pdfspacefont \pdffontattr \pdfincludechars \pdfnobuiltintounicode
+        \pdfximage \pdfobj \pdfannot \pdfxform \pdfrefximage \pdfrefobj
+        \pdfrefxform \pdfcolorstack \pdfstartlink \pdfoutline \pdfdest
+        \pdfthread \pdfsnapy \pdfsnapycomp \pdfsave
+    }
+\ExplSyntaxOff
 
 % report, book, and memoir: \@makechapterhead as the preamble leaves it,
 % for tex8web-page.tex to read the chapter's spacing, and \part and \@part
