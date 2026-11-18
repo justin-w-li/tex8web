@@ -170,6 +170,45 @@ test('a build is reused only while nothing it was built from has changed', { tim
   }
 });
 
+test('the files beside a config outside the document\'s directory are in the stamp, and mounted in a contained build', { timeout: 30000 }, async () => {
+  const top = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webbeside')));
+  const path = process.env.PATH;
+  try {
+    const dir = join(top, 'doc'), cfgDir = join(top, 'web cfg');
+    mkdirSync(dir);
+    mkdirSync(join(cfgDir, 'sub'), { recursive: true });
+    writeFileSync(join(dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nText\n\\end{document}\n');
+    const cfg = join(cfgDir, 'x.cfg');
+    writeFileSync(cfg, readFileSync(join(root, 'tex8web.cfg'), 'utf8').replace('\\EndPreamble', '\\input{webmacros}\n\\EndPreamble'));
+    writeFileSync(join(cfgDir, 'webmacros.tex'), '% first\n');
+    const doc = { name: 'beside', dir, tex: 'doc.tex', cfg };
+    const make = () => build(doc, join(dir, 'build/html'), join(dir, 'build/aux'), stubbed);
+    assert.equal((await make()).reused, undefined);
+    assert.equal((await make()).reused, true);
+    // a file beside the config, which it inputs, counts
+    writeFileSync(join(cfgDir, 'webmacros.tex'), '% second\n');
+    assert.equal((await make()).reused, undefined);
+    assert.equal((await make()).reused, true);
+    // and a file added beside it, but not one in a folder in it
+    writeFileSync(join(cfgDir, 'sub/other.tex'), '% in a folder\n');
+    assert.equal((await make()).reused, true);
+    writeFileSync(join(cfgDir, 'other.tex'), '% beside\n');
+    assert.equal((await make()).reused, undefined);
+
+    // a contained build mounts the config's folder read-only, not the config alone
+    process.env.PATH = stubbed.PATH;
+    doc.runner = [join(root, 'test/lib/contain.mjs')];
+    writeFileSync(dockerLog, '');
+    const built = await make();
+    assert.equal(built.code, 0, built.log);
+    const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.includes('/bin/tex8web -c '));
+    assert.ok(runs.length === 1 && runs[0].includes(`type=bind,source=${cfgDir},target=${cfgDir},readonly `), runs.join('\n'));
+  } finally {
+    process.env.PATH = path;
+    rmSync(top, { recursive: true });
+  }
+});
+
 test('a contained build with a source root mounts it, and refuses a link in it outside its build directories', { timeout: 30000 }, async () => {
   const top = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webtop')));
   const path = process.env.PATH;

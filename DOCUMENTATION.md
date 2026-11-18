@@ -78,7 +78,7 @@ tex8web reads a document's macros, colors, theorem styles, and lists, and the se
 - float, for its `ruled` style, as used by algorithm
 - algorithm2e, for algorithms
 
-A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-core.tex}`. Pass it with `-c`. A file that your config inputs can be beside the config. A file of that name beside your document is read instead. For worked examples, see `examples/custom/custom.cfg` and `examples/complex/complex.cfg`.
+A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-core.tex}`. Pass it with `-c`. tex8web adds the config's folder to the end of `TEXINPUTS`, so your config can input a file beside it. A file of that name beside your document or in TeX's tree is read instead. Your document's own `\input` and `\usepackage` also find a file in that folder, when neither its folder nor TeX's tree has one. With the default config, that folder is tex8web's. A file of yours found there is a file found in a folder on `TEXINPUTS`, as in [Known limitations](#known-limitations). For worked examples, see `examples/custom/custom.cfg` and `examples/complex/complex.cfg`.
 
 ```latex
 \Preamble{xhtml,mathjax}
@@ -350,7 +350,7 @@ The options:
 - **`--pdf`**: Give each page a PDF button, as [`-p`](#building-a-page) does. The button links to the PDF in `build/pdf` in the document's directory, named after its `.tex` file, where the PDF is written with `--contain` and `--latexmk`. A `\WebPDF` in your config is used instead.
 - **`--up url`**: Give each page an up button that links to `url`, as [`-u`](#building-a-page) does. The URL is relative to the page, which is in `html/<name>` in the `--out` directory.
 
-Without `--latexmk`, no PDFs are built, and if the PDF linked with `\WebPDF` in your config is missing, the page has no PDF button. A document is built again only when one of its inputs has changed: tex8web, the document's directory or the `--root` directory, the config, the linked PDF, or the build tools.
+Without `--latexmk`, no PDFs are built, and if the PDF linked with `\WebPDF` in your config is missing, the page has no PDF button. A document is built again only when one of its inputs has changed: tex8web, the document's directory or the `--root` directory, the config or a file beside it, the linked PDF, or the build tools.
 
 ## Known limitations
 

@@ -245,9 +245,22 @@ function tools() {
     latex: JSON.stringify([latexSourceHash(root), ...tex]) };
 }
 
+// the files directly in the config's folder, which bin/tex8web puts on
+// TEXINPUTS so that the config can input a file beside it, when they are
+// not hashed already: those in tex8web's folder are among its sources, and
+// those in the document's directory, or in doc.sourceRoot, are hashed with
+// the document. (Not the folders in it: a config reads a file in one only
+// by its path, such as \input{sub/file})
+function besideConfig(doc) {
+  const folder = dirname(doc.cfg), above = relative(doc.sourceRoot ?? doc.dir, folder);
+  if (folder === root || !/^\.\.(\/|$)/.test(above)) return null;
+  return hashFiles(folder, readdirSync(folder).filter(name => !name.startsWith('.')
+    && statSync(join(folder, name), { throwIfNoEntry: false })?.isFile()).sort());
+}
+
 // the stamps of a build. page: the tools above, the files in the document's
 // directory, or in doc.sourceRoot if set, the config (which may be
-// elsewhere), the arguments, the environment variables the build reads,
+// elsewhere) and the files beside it, the arguments, the environment variables the build reads,
 // and the size and time of the linked PDF, as a page built before the PDF
 // existed lacks the link, and the day, for \today, unless the date is
 // fixed. The files are hashed, so uncommitted edits and files unknown to
@@ -260,7 +273,7 @@ function stamps(doc, args, env, pdf) {
   const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
   // (a build through a runner, whose tools are the image's, is never reused
   // as a host build, nor the reverse)
-  const rest = [hashFiles(doc.sourceRoot ?? doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), args, vars, pdf,
+  const rest = [hashFiles(doc.sourceRoot ?? doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), besideConfig(doc), args, vars, pdf,
     ...doc.runner ? [[doc.runner, ...[doc.runner[0], join(root, 'Dockerfile')].map(file => readFileSync(file, 'utf8'))]] : []];
   const hash = (...head) => createHash('sha256').update(JSON.stringify([...head, ...rest])).digest('hex');
   return { page: hash(tools().page, day), latex: hash(tools().latex, day) };
@@ -284,7 +297,8 @@ function stamps(doc, args, env, pdf) {
 // of a runner such as test/lib/contain.mjs, make4ht and latexmk run
 // through that runner. doc.sourceRoot, a directory that holds the
 // document's, is then mounted read-only too, for a document that reads
-// files above its directory. A document with shellEscape is built with
+// files above its directory, and the config's folder, as the config can
+// input a file beside it. A document with shellEscape is built with
 // full shell escape
 export async function build(doc, out, aux, env = {}) {
   mkdirSync(dirname(out), { recursive: true });
@@ -366,7 +380,7 @@ async function buildHere(doc, out, aux, env) {
   // outside them)
   mkdirSync(out, { recursive: true });
   const linked = pdf && join(doc.dir, pdf);
-  const result = await runOn(doc, [doc.cfg, ...linked && existsSync(linked) ? [linked] : [], ...reuse ? [stage.dir] : []],
+  const result = await runOn(doc, [dirname(doc.cfg), ...linked && existsSync(linked) ? [linked] : [], ...reuse ? [stage.dir] : []],
     [out, aux, ...doc.draft || reuse ? [] : [stage.dir], join(doc.dir, 'build')], join(root, 'bin/tex8web'), args, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
     TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? stage.dir : undefined,
     TEX8WEB_LATEX_SAVE: doc.draft || reuse ? undefined : stage.dir } });
