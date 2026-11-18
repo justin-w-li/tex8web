@@ -1237,10 +1237,12 @@ const contents = {
   'test-staleaux-lineno': [/Section<span class='tex8web-nbsp'> <\/span><a href='#two'>2<!--[^>]*--><\/a> follows\./],
   // (the stale list files of an earlier build beside a document with lists
   // of its own, which \@starttoc reads under their own extension: each
-  // list's heading and this build's text, the entries of the lists that
-  // tex4ht sends through the .4ct, and no old entry's title. The entries of
-  // the other lists are not checked: on the merge base these lists show
-  // none, stale file or not)
+  // list's heading and this build's text, and the entries of the lists that
+  // tex4ht sends through the .4ct. The entries of the other lists are not
+  // checked: on the merge base these lists show none, stale file or not.
+  // No old entry's title is in the page: a guard against a fix that copies
+  // a stale list into the build folder, as the page comes from a later
+  // LaTeX run than the first, which alone reads the file beside)
   'test-staleaux-toc': [...['Examples', 'Remarks'].map(title => new RegExp(`<span class='cmbx-12x-x-207'>${title}</span>`)),
     ...['list-of-theorems', 'boxes', 'todo-list'].map(id => new RegExp(`<h3 class='likesectionHead' id='${id}'>`)),
     /List of Algorithms<\/span>/, /Text of the first section\./, /Example<span class='tex8web-nbsp'> <\/span>1: A new example with/,
@@ -1252,6 +1254,9 @@ const contents = {
   'test-staleaux-toc-memoir': [/<span class='cmbx-12x-x-172'>List of Examples<\/span>/, /Text of the first chapter\./,
     /Example<span class='tex8web-nbsp'> <\/span>1: A new example/, /\(New theorem\)/, /^(?![^]*Old (?:example|theorem))/],
   'test-staleaux-toc-color': [/<span class='cmbx-12x-x-207'>Examples<\/span>/, /Text of the first section\./,
+    /Example<span class='tex8web-nbsp'> <\/span>1: A new example/, /^(?![^]*Old example)/],
+  'test-staleaux-toc-amsart': [/Text of the first section\./, /New figure/, /New table/, /^(?![^]*Old (?:figure|table))/],
+  'test-staleaux-toc-report': [/Examples<\/span>/, /Text of the first chapter\./,
     /Example<span class='tex8web-nbsp'> <\/span>1: A new example/, /^(?![^]*Old example)/],
   // (files of the document named like tex4ht's .4ht files, read in the
   // preamble: each file's text in the page, with nothing from the .4ht
@@ -2156,13 +2161,14 @@ const logs = {
   // which writes its \bibcite lines, so the second run changes no .aux)
   'test-staleaux-bbl-current': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*runs again without)/],
   // (no LaTeX error from the stale list files of an earlier build beside
-  // the document: an undefined macro, a three-argument \contentsline read
-  // past the end of the file, biblatex's \boolfalse and \defcounter lines,
-  // and babel's \foreignlanguage)
-  ...Object.fromEntries(['test-staleaux-toc', 'test-staleaux-toc-koma', 'test-staleaux-toc-memoir', 'test-staleaux-toc-color'].map(name =>
-    [name, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*File ended while scanning)/,
-      /^(?![^]*Package etoolbox Error)/, /^(?![^]*No counter 'refsection')/, /^(?![^]*No multilingual package)/,
-      /^(?![^]*\[ERROR\])/]])),
+  // the document: an undefined macro, and a three-argument \contentsline
+  // read past the end of the file; in test-staleaux-toc also biblatex's
+  // \boolfalse and \defcounter lines, babel's \foreignlanguage, and no
+  // error in the file of each list)
+  ...Object.fromEntries(['toc', 'toc-koma', 'toc-memoir', 'toc-color', 'toc-amsart', 'toc-report'].map(name =>
+    [`test-staleaux-${name}`, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*File ended while scanning)/,
+      /^(?![^]*\[ERROR\])/, ...name === 'toc' ? [/^(?![^]*Package etoolbox Error)/, /^(?![^]*No counter 'refsection')/,
+        /^(?![^]*No multilingual package)/, /^(?![^]*test-staleaux-toc\.(?:exp|rmk|loe|box|tdo|loa)\b)/] : []]])),
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
@@ -2187,6 +2193,8 @@ const untouched = {
   'test-staleaux-toc-koma': ['test-staleaux-toc-koma.lox'],
   'test-staleaux-toc-memoir': ['test-staleaux-toc-memoir.exa', 'test-staleaux-toc-memoir.thm'],
   'test-staleaux-toc-color': ['test-staleaux-toc-color.exp'],
+  'test-staleaux-toc-amsart': ['test-staleaux-toc-amsart.lof', 'test-staleaux-toc-amsart.lot'],
+  'test-staleaux-toc-report': ['test-staleaux-toc-report.exp'],
 };
 // (only the fixtures' own entries are walked: other builds write in
 // test/fixtures/build while this script runs, and a folder removed there

@@ -20,9 +20,8 @@
 % - test-staleaux-toc.tdo (todonotes \listoftodos): an entry with babel's
 %   \foreignlanguage;
 % - test-staleaux-toc.loa (algorithm2e \listofalgorithms): hyperref's
-%   four-argument lines with \textcolor, which this build defines, as
-%   tcolorbox loads xcolor. The build reads it without an error before
-%   the fix, and must not after.
+%   four-argument line with amssymb's \mathbb, which this build does not
+%   load.
 % The stale .toc, .lof, .lot, listings' .lol, and newfloat's .lop are
 % guards: tex4ht sends these lists through the .4ct, so the build reads
 % them neither before nor after the fix. Every stale file stays as it is.

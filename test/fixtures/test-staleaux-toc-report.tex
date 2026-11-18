@@ -1,0 +1,15 @@
+% A report document with tocloft's \newlistof, beside the stale
+% test-staleaux-toc-report.exp of an earlier build that loaded xcolor: an
+% entry with \textcolor, which this build does not define. report.4ht has
+% a \@starttoc of its own. The stale file stays as it is.
+\documentclass{report}
+\usepackage{tocloft}
+\newlistof{example}{exp}{Examples}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{exp}{example}{\protect\numberline{\theexample}#1}\par}
+\begin{document}
+\listofexample
+\chapter{First}
+Text of the first chapter.
+\example{A new example}
+\end{document}
