@@ -4,6 +4,7 @@
 -- in math" in CONTRIBUTING.md.
 local dom = require "tex8web.dom"
 local preamble = require "tex8web.preamble"
+local source = require "tex8web.source"
 
 local log = logging.new("tex8web")
 
@@ -157,12 +158,15 @@ end
 -- text that ends, "k" the keywords in `after` instead. A target, after
 -- which only the keywords of the fourth entry come: "t" a general text,
 -- "m" a number, "q" a number and a general text. After "e" (newwindow) and
--- "u" (user, a general text) come those of the fifth. The end: "g" a
--- general text, "n" a number, "d" a dimen. A number before the keywords (\pdfcolorstack) or a font is
--- given as "n" or "f" third. Removed with their arguments from the
--- definitions and the math MathJax gets, which would show them in red.
+-- "u" (user, a general text) come those of the fifth. "r" (a goto's struct)
+-- takes num and a number, name and a general text, or a general text. The
+-- end: "g" a general text, "n" a number, "d" a dimen. A number before the
+-- keywords (\pdfcolorstack) or a font is given as "n" or "f" third. A
+-- keyword matches in either case, as in pdfTeX. Removed with their
+-- arguments from the definitions and the math MathJax gets, which would show
+-- them in red.
 local rule = "width=d height=d depth=d "
-local action = "attr=g user=u goto=- thread=- file=g struct=- page=q num=m name=t "
+local action = "attr=g user=u goto=- thread=- file=g struct=r page=q num=m name=t "
 local window = "newwindow=e nonewwindow=e "
 local after = {xyz = "zoom=N", fitr = rule}
 local primitives = {
@@ -202,11 +206,19 @@ local function group(text, i)
   return e and e + 1 or i
 end
 
+-- a family's font, such as \textfont1, as pdfTeX's font scan reads it
+local families = {textfont = true, scriptfont = true, scriptscriptfont = true}
+
 local function skip(text, i, shape)
   local keys, last, first, post, rest = shape[1], shape[2], shape[3], shape[4] or "", shape[5] or ""
-  if first then i = value(text, i, false) end
+  if first then
+    local _, _, font = text:find("^%s*\\(%a+)", i)
+    i = value(text, i, false)
+    if first == "f" and families[font] then i = value(text, i) end
+  end
   while true do
     local _, e, word = text:find("^%s*(%a+)", i)
+    word = word and word:lower()
     local act = word and keys:match("%f[%a]" .. word .. "=(%S)")
     if not act then break end
     i = e + 1
@@ -215,6 +227,13 @@ local function skip(text, i, shape)
     if act == "e" or act == "u" then post = rest end
     if act:match("[nNmq]") then i = value(text, i) end
     if act == "d" then i = value(text, i, true) end
+    if act == "r" then
+      local _, w, id = text:find("^%s*(%a+)", i)
+      id = id and id:lower()
+      if id == "num" then i = value(text, w + 1)
+      elseif id == "name" then i = group(text, w + 1)
+      else i = group(text, i) end
+    end
     if act:match("[gGqtu]") then i = group(text, i) end
     if act == "G" or act == "N" then return i end
     if act:match("[tmqeu]") then
@@ -225,13 +244,6 @@ local function skip(text, i, shape)
   if last == "g" then return group(text, i) end
   if last ~= "" then return value(text, i, last == "d") end
   return i
-end
-
-local function each_text(el, f)
-  for _, child in ipairs(el:get_children()) do
-    if child:is_text() then f(child)
-    elseif child:is_element() then each_text(child, f) end
-  end
 end
 
 local function strip(text)
@@ -267,7 +279,7 @@ function M.define(document, context)
   -- the macros the math uses, and those they use in turn
   local used, queue, texts = {}, {}, {}
   for _, el in ipairs(document:query_selector(".mathjax-inline, .mathjax-block, .mathjax-env")) do
-    each_text(el, function(node) dom.set_node_text(node, strip(node:get_text())) end)
+    source.each_text(el, function(node) dom.set_node_text(node, strip(node:get_text())) end)
     texts[#texts + 1] = el:get_text()
     for _, name in ipairs(preamble.uses(texts[#texts])) do queue[#queue + 1] = name end
   end

@@ -594,9 +594,11 @@
 % text. After a target come only the keywords of \web@pdf@post
 % (\web@pdf@scan's second argument), or else the end: newwindow and
 % nonewwindow (e) for a goto, after which, as after user (u, a general
-% text), come those of \web@pdf@rest (its third). Spaces before a
-% keyword are dropped, as pdfTeX's keyword scan drops them, and a macro is
-% expanded, as there. A word that is not a keyword stays in the text. <end>
+% text), come those of \web@pdf@rest (its third). A goto's struct (r) takes
+% its own num, name, or general text. Spaces before a keyword are dropped,
+% as pdfTeX's keyword scan drops them, and a macro is expanded, as there. A
+% keyword matches in either case, as there. A word that is not a keyword
+% stays in the text. <end>
 % is g when a general text ends the primitive, n when a number does, or
 % empty. A general text is read by a token register's assignment, which
 % expands to the brace and drops spaces and \relax before it, as pdfTeX's
@@ -641,10 +643,12 @@
     \ifcat\noexpand\web@pdf@tok a%
         \expandafter\web@pdf@letter
     \else
-        \edef\web@pdf@tmp{\def\noexpand\web@pdf@find####1,\web@pdf@word=####2####3\noexpand\web@nil{%
+        \edef\web@pdf@tmp{\lowercase{\def\noexpand\web@pdf@lower{\web@pdf@word}}}%
+        \web@pdf@tmp
+        \edef\web@pdf@tmp{\def\noexpand\web@pdf@find####1,\web@pdf@lower=####2####3\noexpand\web@nil{%
             \def\noexpand\web@pdf@act{####2}}}%
         \web@pdf@tmp
-        \edef\web@pdf@tmp{\noexpand\web@pdf@find\web@pdf@keys,\web@pdf@word=w\noexpand\web@nil}%
+        \edef\web@pdf@tmp{\noexpand\web@pdf@find\web@pdf@keys,\web@pdf@lower=w\noexpand\web@nil}%
         \web@pdf@tmp
         \expandafter\web@pdf@do
     \fi}
@@ -668,7 +672,7 @@
 \@namedef{web@pdf@dog}{\afterassignment\web@pdf@loop\web@pdf@toks=}
 \@namedef{web@pdf@doG}{\web@pdf@toks=}
 \@namedef{web@pdf@dok}{%
-    \expandafter\let\expandafter\web@pdf@keys\csname web@pdf@k@\web@pdf@word\endcsname
+    \expandafter\let\expandafter\web@pdf@keys\csname web@pdf@k@\web@pdf@lower\endcsname
     \web@pdf@loop}
 \@namedef{web@pdf@dot}{\afterassignment\web@pdf@target\web@pdf@toks=}
 \@namedef{web@pdf@dom}{\afterassignment\web@pdf@target\web@pdf@n=}
@@ -683,13 +687,31 @@
         \let\web@pdf@keys\web@pdf@post
         \expandafter\web@pdf@loop
     \fi}
+% a goto's struct: num and a number, name and a general text, or a general
+% text, after which the goto's keywords go on
+\def\web@pdf@dor{\let\web@pdf@savekeys\web@pdf@keys\let\web@pdf@savetype\web@pdf@type
+    \def\web@pdf@keys{,num=b,name=c}\def\web@pdf@type{r}\web@pdf@loop}
+\def\web@pdf@dob{\afterassignment\web@pdf@back\web@pdf@n=}
+\def\web@pdf@doc{\afterassignment\web@pdf@back\web@pdf@toks=}
+\let\web@pdf@endr\web@pdf@doc
+\def\web@pdf@back{\let\web@pdf@keys\web@pdf@savekeys\let\web@pdf@type\web@pdf@savetype
+    \web@pdf@loop}
+% a font: a font's control sequence, or \textfont, \scriptfont, or
+% \scriptscriptfont and a number, then \web@pdf@cont
+\def\web@pdf@font#1{%
+    \let\web@pdf@next\web@pdf@cont
+    \ifx#1\textfont\let\web@pdf@next\web@pdf@fam\fi
+    \ifx#1\scriptfont\let\web@pdf@next\web@pdf@fam\fi
+    \ifx#1\scriptscriptfont\let\web@pdf@next\web@pdf@fam\fi
+    \web@pdf@next}
+\def\web@pdf@fam{\afterassignment\web@pdf@cont\web@pdf@n=}
 % the end of the primitive: a general text, a number, or nothing
 \def\web@pdf@last{\csname web@pdf@end\web@pdf@type\endcsname}
 \def\web@pdf@end{}
 \def\web@pdf@endg{\web@pdf@toks=}
 \def\web@pdf@endn{\web@pdf@n=}
 \def\web@pdf@rule{,width=d,height=d,depth=d}
-\def\web@pdf@goto{,attr=g,user=u,goto=-,thread=-,file=g,struct=-,page=q,num=m,name=t}
+\def\web@pdf@goto{,attr=g,user=u,goto=-,thread=-,file=g,struct=r,page=q,num=m,name=t}
 \def\web@pdf@window{,newwindow=e,nonewwindow=e}
 \let\web@pdf@k@fitr\web@pdf@rule
 \def\web@pdf@k@xyz{,zoom=N}
@@ -699,9 +721,9 @@
 \protected\def\pdfsetmatrix{\web@pdf@skip{}g}
 \protected\def\pdfnames{\web@pdf@skip{}g}
 \protected\def\pdfspacefont{\web@pdf@skip{}g}
-\protected\def\pdffontattr#1{\web@pdf@skip{}g}
-\def\pdfincludechars#1#2{}
-\protected\def\pdfnobuiltintounicode#1{}
+\protected\def\pdffontattr{\def\web@pdf@cont{\web@pdf@skip{}g}\web@pdf@font}
+\protected\def\pdfincludechars{\def\web@pdf@cont{\web@pdf@toks=}\web@pdf@font}
+\protected\def\pdfnobuiltintounicode{\let\web@pdf@cont\@empty\web@pdf@font}
 \protected\def\pdfximage{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,attr=g,page=n,named=g,colorspace=n,mediabox=-,cropbox=-,bleedbox=-,trimbox=-,artbox=-}g}
 \protected\def\pdfobj{\web@pdf@skip{,reserveobjnum=.,useobjnum=n,stream=-,attr=g,file=-}g}
 \protected\def\pdfannot{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,reserveobjnum=.,useobjnum=n}g}

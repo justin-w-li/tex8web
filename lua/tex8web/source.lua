@@ -3,10 +3,11 @@ local dom = require "tex8web.dom"
 
 local M = {}
 
-local function each_text(el, f)
+-- f on each text node under el
+function M.each_text(el, f)
   for _, child in ipairs(el:get_children()) do
     if child:is_text() then f(child)
-    elseif child:is_element() then each_text(child, f) end
+    elseif child:is_element() then M.each_text(child, f) end
   end
 end
 
@@ -16,7 +17,7 @@ end
 -- letter follows.
 function M.spaces(document)
   for _, el in ipairs(document:query_selector(".mathjax-inline, .mathjax-block, .mathjax-env")) do
-    each_text(el, function(node)
+    M.each_text(el, function(node)
       dom.set_node_text(node, (node:get_text():gsub("(\\%a+) ([^%a])", "%1%2")))
     end)
   end

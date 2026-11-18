@@ -1942,6 +1942,7 @@ const drivers = {
       'Outline user: before after.', 'Goto page: see page 3.', 'Goto space: xlinked after.', 'User link: x linked after.',
       'Goto file: beforelinked after.', 'Destination relax: beforedepth after.',
       'Expanded: beforeafter.', 'Image macro: before after.',
+      'Uppercase: before after.', 'Struct: xlinked after.', 'Font: before after.',
       // (the primitives that only warn in DVI mode)
       `Guards: ${['info', 'catalog', 'trailer', 'trailerid', 'pageattr', 'pagesattr', 'pageresources',
         'compresslevel', 'minorversion', 'gentounicode', 'glyphtounicode', 'colorstackinit']
@@ -1952,6 +1953,7 @@ const drivers = {
     /Package math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Direct math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Factor math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Upper math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /^(?![^]*(?:test-picture|linewidth|User title|example\.com|newwindow))/,
     /<p[^>]*>\s*Started thread\./,
     /First\.(?:\s|<\/p>|<!--(?:(?!-->)[^])*-->)*<p[^>]*>(?:\s|<!--(?:(?!-->)[^])*-->)*Second\./,

@@ -37,6 +37,7 @@
 \newcommand\wideblue[1]{\pdfximage width 0.5\linewidth {test-picture.png}#1}
 \def\mycolor{0 0 1 rg}
 \def\myopts{width 1cm }
+\newcommand\structlink[1]{\pdfstartlink goto struct name{a} name{s}#1\pdfendlink}
 \makeatletter
 \newcommand\isprim[1]{\begingroup\edef\a{\meaning#1}\edef\b{\string#1}%
   \expandafter\@gobble\string#1~\ifx\a\b primitive\else redefined\fi\endgroup}
@@ -140,6 +141,14 @@ Image macro: before\pdfximage\myopts{test-picture.png}\pdfrefximage\pdflastximag
 Direct math: before $a\pdfliteral{0 0 1 rg}b\pdfliteral{0 g}c$ after.
 
 Factor math: before $a\wideblue{b}c$ after.
+
+Uppercase: before\pdfliteral DIRECT{0 g} after.
+
+Struct: x\pdfstartlink goto struct name{a} name{s}linked\pdfendlink{} after.
+
+Font: before\pdffontattr\textfont1{/X 1}\pdfincludechars\scriptfont 2{abc}\pdfnobuiltintounicode\scriptscriptfont3{} after.
+
+Upper math: before $a\pdfliteral DIRECT{0 g}b\structlink{c}\pdfnobuiltintounicode\textfont1$ after.
 
 First.
 
