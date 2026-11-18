@@ -1975,6 +1975,23 @@ const drivers = {
       'Stack: beforepushed after.', 'Footnote: before|1 after.', '1|Note six end', 'Title: before after.'].map(pdfprimText),
     pdfprimLeaks,
   ],
+  // (a form's name, read after \pdfxform, is empty where the PDF shows the
+  // form's number, and an image's bounding box is zero. A digit after the
+  // number stays, as in the PDF)
+  'test-pdfxformname': [
+    pdfprimHead('h3', 'Form name [] end'), pdfprimToc('Form name [] end'),
+    ...['Details: [] end.', 'Edef: [] end.', 'Text: [] end.', 'Italic: |a[]b end|.', 'Sans: |c[]d end|.',
+      'Typewriter: |e[]f end|.', 'Footnote: before|1 after.', '1|Note [] end.', 'Theorem 1. Theorem [] end.',
+      'Count: [] end.', 'Explicit: [] end.', 'Macro: [] end.', 'Digit: [5] end.', 'Space digit: [5] end.',
+      'Relax: [] end.', 'Special: before after.', 'Bbox: [0pt] end.', 'Bbox dimen: [0.0pt] end.', 'Bbox count: [0pt] end.'].map(pdfprimText),
+    /^(?![^]*(?:(?<!test-)pdfxformname|pdfximagebbox|lastximage|\/Foo 1|\/Bar 2|test-picture|\/Fm|\bDo Q\b))/,
+    pdfprimLeaks,
+  ],
+  'test-pdfxformname-guard': [
+    ...['Ref: before after.', 'Literal: before after.'].map(pdfprimText),
+    /^(?![^]*(?:\/Fm|\bDo Q\b|(?<!test-)pdfxformname))/,
+    pdfprimLeaks,
+  ],
 };
 
 // Warnings a document's TeX log must not hold. test-pdftex-class's class

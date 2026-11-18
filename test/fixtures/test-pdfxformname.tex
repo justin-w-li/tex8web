@@ -1,0 +1,69 @@
+% A document written for pdflatex that reads the name of a form with
+% \pdfxformname after \pdfxform, and the bounding box of an image with
+% \pdfximagebbox after \pdfximage. Both are expandable, so they are read
+% in an \xdef or an \edef, typeset in the text, in italic, sans-serif, and
+% typewriter text, a footnote, a theorem, and a heading written to the
+% table of contents, given \pdflastxform, a count register, an explicit
+% number, or a macro, followed by a digit or \relax, and in the text of a
+% \special, which is expanded when the page is shipped out. In the PDF the
+% name is the form's number and the bounding box the image's. On the page
+% the name is empty, as the form is not drawn, the bounding box is zero,
+% and the text around each stays.
+\pdfoutput=1
+\documentclass{article}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\newcount\formno
+\newcount\imgno
+\def\formone{1}
+\begin{document}
+\tableofcontents
+
+\setbox2\hbox{x}\pdfxform2 \xdef\formname{\pdfxformname\pdflastxform}
+
+\section{Form name [\pdfxformname\pdflastxform] end}
+
+Details: [\formname] end.
+
+\edef\formedef{\pdfxformname\pdflastxform}%
+Edef: [\formedef] end.
+
+Text: [\pdfxformname\pdflastxform] end.
+
+Italic: \emph{a[\pdfxformname\pdflastxform]b end}.
+
+Sans: \textsf{c[\pdfxformname\pdflastxform]d end}.
+
+Typewriter: \texttt{e[\pdfxformname\pdflastxform]f end}.
+
+Footnote: before\footnote{Note [\pdfxformname\pdflastxform] end.} after.
+
+\begin{theorem}
+Theorem [\pdfxformname\pdflastxform] end.
+\end{theorem}
+
+\setbox2\hbox{y}\pdfxform attr{/Foo 1} resources{/Bar 2} 2
+\formno=\pdflastxform
+Count: [\pdfxformname\formno] end.
+
+Explicit: [\pdfxformname 1 ] end.
+
+Macro: [\pdfxformname\formone] end.
+
+Digit: [\pdfxformname\pdflastxform 5] end.
+
+Space digit: [\pdfxformname 1 5] end.
+
+Relax: [\pdfxformname\pdflastxform\relax] end.
+
+Special: before\special{pdf: q /Fm\pdfxformname\pdflastxform\space Do Q} after.
+
+\immediate\pdfximage{test-picture.png}\imgno=\pdflastximage
+\xdef\bbox{\pdfximagebbox\pdflastximage 3}%
+Bbox: [\bbox] end.
+
+\dimen0=\pdfximagebbox\pdflastximage 3\relax
+Bbox dimen: [\the\dimen0] end.
+
+Bbox count: [\pdfximagebbox\imgno 1] end.
+\end{document}

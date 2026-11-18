@@ -1,0 +1,11 @@
+% Checks cases the fix of \pdfxformname must not break: a form placed with
+% \pdfrefxform, and its name read inside the general text of \pdfliteral,
+% which the PDF writes into the page's content and does not show. On the
+% page the form is not drawn, and the text around each stays.
+\pdfoutput=1
+\documentclass{article}
+\begin{document}
+Ref: \setbox2\hbox{form}\pdfxform2 before\pdfrefxform\pdflastxform{} after.
+
+Literal: before\pdfliteral{q /Fm\pdfxformname\pdflastxform\space Do Q} after.
+\end{document}
