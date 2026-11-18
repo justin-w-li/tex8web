@@ -1,0 +1,10 @@
+% The package of test-staleaux-toc.tex, a source file named for the
+% document, as a writer's own package is. A line of a definition starts
+% with \contentsline, written by hand, without the space that TeX writes
+% after a control word in a list file. The build must read this file.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{test-staleaux-toc}[2026/11/18 tex8web test package]
+\newcommand{\examplelistline}[1]{%
+\contentsline{example}{#1}{}{}%
+}
+\newcommand{\packagetext}{Text of the package of the document.}

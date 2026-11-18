@@ -22,6 +22,8 @@
 % - test-staleaux-toc.loa (algorithm2e \listofalgorithms): hyperref's
 %   four-argument line with amssymb's \mathbb, which this build does not
 %   load.
+% test-staleaux-toc.sty is a package of the document's own, whose source
+% has a line that starts with \contentsline: the build reads it.
 % The stale .toc, .lof, .lot, listings' .lol, and newfloat's .lop are
 % guards: tex4ht sends these lists through the .4ct, so the build reads
 % them neither before nor after the fix. Every stale file stays as it is.
@@ -33,6 +35,7 @@
 \usepackage[ruled]{algorithm2e}
 \usepackage{listings}
 \usepackage{newfloat}
+\usepackage{test-staleaux-toc}
 \newlistof{example}{exp}{Examples}
 \newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
   \addcontentsline{exp}{example}{\protect\numberline{\theexample}#1}\par}
@@ -55,7 +58,7 @@
 \listoftodos
 \listofalgorithms
 \section{First}
-Text of the first section.
+Text of the first section. \packagetext
 \example{A new example with \emph{italic}}
 \remark{A new remark}
 \begin{theorem}[New theorem]

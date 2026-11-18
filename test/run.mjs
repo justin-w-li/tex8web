@@ -1246,6 +1246,7 @@ const contents = {
   'test-staleaux-toc': [...['Examples', 'Remarks'].map(title => new RegExp(`<span class='cmbx-12x-x-207'>${title}</span>`)),
     ...['list-of-theorems', 'boxes', 'todo-list'].map(id => new RegExp(`<h3 class='likesectionHead' id='${id}'>`)),
     /List of Algorithms<\/span>/, /Text of the first section\./, /Example<span class='tex8web-nbsp'> <\/span>1: A new example with/,
+    /Text of the package of the document\./,
     /Remark<span class='tex8web-nbsp'> <\/span>2\.1: Another new remark/, /<span class='content'>New algorithm<\/span>/,
     /<a href='#new-figure'>New figure<\/a>/, /<a href='#new-table'>New table<\/a>/, /New listing<\/a>/, /Text of the second section\./,
     /^(?![^]*(?:Old (?:example|remark|box|algorithm|section|figure|table|listing|program)|Alte[rn]? ))/],
