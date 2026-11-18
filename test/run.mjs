@@ -1235,6 +1235,24 @@ const contents = {
   'test-staleaux-current': [...staleRefs("<a href='#two'>1<!--"), ...staleToc(['one', 'One'], ['two', 'Two'], ['chapter', 'Chapter']),
     /the supplement(?:’|&#x2019;|')s section<span class='tex8web-nbsp'> <\/span>4\./, /Apple, 1/],
   'test-staleaux-lineno': [/Section<span class='tex8web-nbsp'> <\/span><a href='#two'>2<!--[^>]*--><\/a> follows\./],
+  // (the stale list files of an earlier build beside a document with lists
+  // of its own, which \@starttoc reads under their own extension: each
+  // list's heading and this build's text, the entries of the lists that
+  // tex4ht sends through the .4ct, and no old entry's title. The entries of
+  // the other lists are not checked: on the merge base these lists show
+  // none, stale file or not)
+  'test-staleaux-toc': [...['Examples', 'Remarks'].map(title => new RegExp(`<span class='cmbx-12x-x-207'>${title}</span>`)),
+    ...['list-of-theorems', 'boxes', 'todo-list'].map(id => new RegExp(`<h3 class='likesectionHead' id='${id}'>`)),
+    /List of Algorithms<\/span>/, /Text of the first section\./, /Example<span class='tex8web-nbsp'> <\/span>1: A new example with/,
+    /Remark<span class='tex8web-nbsp'> <\/span>2\.1: Another new remark/, /<span class='content'>New algorithm<\/span>/,
+    /<a href='#new-figure'>New figure<\/a>/, /<a href='#new-table'>New table<\/a>/, /New listing<\/a>/, /Text of the second section\./,
+    /^(?![^]*(?:Old (?:example|remark|box|algorithm|section|figure|table|listing|program)|Alte[rn]? ))/],
+  'test-staleaux-toc-koma': [/List of Examples<\/h2>/, /Text of the first chapter\./, /<span class='content'>New example<\/span>/,
+    /^(?![^]*Old example)/],
+  'test-staleaux-toc-memoir': [/<span class='cmbx-12x-x-172'>List of Examples<\/span>/, /Text of the first chapter\./,
+    /Example<span class='tex8web-nbsp'> <\/span>1: A new example/, /\(New theorem\)/, /^(?![^]*Old (?:example|theorem))/],
+  'test-staleaux-toc-color': [/<span class='cmbx-12x-x-207'>Examples<\/span>/, /Text of the first section\./,
+    /Example<span class='tex8web-nbsp'> <\/span>1: A new example/, /^(?![^]*Old example)/],
   // (files of the document named like tex4ht's .4ht files, read in the
   // preamble: each file's text in the page, with nothing from the .4ht
   // file of its name, such as background.4ht's empty div, and article's
@@ -2137,6 +2155,14 @@ const logs = {
   // (a current .bbl beside the document is read by the first LaTeX run,
   // which writes its \bibcite lines, so the second run changes no .aux)
   'test-staleaux-bbl-current': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*runs again without)/],
+  // (no LaTeX error from the stale list files of an earlier build beside
+  // the document: an undefined macro, a three-argument \contentsline read
+  // past the end of the file, biblatex's \boolfalse and \defcounter lines,
+  // and babel's \foreignlanguage)
+  ...Object.fromEntries(['test-staleaux-toc', 'test-staleaux-toc-koma', 'test-staleaux-toc-memoir', 'test-staleaux-toc-color'].map(name =>
+    [name, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*File ended while scanning)/,
+      /^(?![^]*Package etoolbox Error)/, /^(?![^]*No counter 'refsection')/, /^(?![^]*No multilingual package)/,
+      /^(?![^]*\[ERROR\])/]])),
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
@@ -2157,6 +2183,10 @@ const untouched = {
   'test-staleaux-bbl-harvard': ['test-staleaux-bbl-harvard.bbl'],
   'test-staleaux-bbl-jobname': ['test-staleaux-bbl-jobname.bbl'],
   'test-staleaux-bbl-current': ['test-staleaux-bbl-current.aux', 'test-staleaux-bbl-current.bbl'],
+  'test-staleaux-toc': ['exp', 'rmk', 'loe', 'box', 'tdo', 'loa', 'toc', 'lof', 'lot', 'lol', 'lop'].map(e => `test-staleaux-toc.${e}`),
+  'test-staleaux-toc-koma': ['test-staleaux-toc-koma.lox'],
+  'test-staleaux-toc-memoir': ['test-staleaux-toc-memoir.exa', 'test-staleaux-toc-memoir.thm'],
+  'test-staleaux-toc-color': ['test-staleaux-toc-color.exp'],
 };
 // (only the fixtures' own entries are walked: other builds write in
 // test/fixtures/build while this script runs, and a folder removed there

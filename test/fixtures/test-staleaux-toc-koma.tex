@@ -1,0 +1,18 @@
+% A KOMA-Script document with hyperref and a list of its own from
+% tocbasic's \DeclareNewTOC, shown with \listoftoc, beside the stale
+% test-staleaux-toc-koma.lox of a PDF build without hyperref: three-argument
+% \contentsline lines, which tex4ht's four-argument \contentsline reads past
+% the end of the file. Its old entries are not in the page, and the stale
+% file stays as it is.
+\documentclass{scrreprt}
+\usepackage{hyperref}
+\DeclareNewTOC[type=example, types=examples, float, name=Example, listname={List of Examples}]{lox}
+\begin{document}
+\listoftoc{lox}
+\chapter{First}
+Text of the first chapter.
+\begin{example}[h]
+\centering An example.
+\caption{New example}
+\end{example}
+\end{document}

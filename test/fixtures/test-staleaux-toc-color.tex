@@ -1,0 +1,16 @@
+% A document with tocloft's \newlistof, beside the stale
+% test-staleaux-toc-color.exp of an earlier build that loaded xcolor and
+% hyperref: hyperref's four-argument \contentsline with \textcolor, which
+% this build does not define. Its old entry is not in the page, and the
+% stale file stays as it is.
+\documentclass{article}
+\usepackage{tocloft}
+\newlistof{example}{exp}{Examples}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{exp}{example}{\protect\numberline{\theexample}#1}\par}
+\begin{document}
+\listofexample
+\section{First}
+Text of the first section.
+\example{A new example}
+\end{document}

@@ -1,0 +1,26 @@
+% A memoir document with a list of its own from memoir's \newlistof, and
+% ntheorem's \listtheorems, beside the stale list files of an earlier
+% build: test-staleaux-toc-memoir.exa, from a PDF build without hyperref,
+% has three-argument \contentsline lines, which tex4ht's four-argument
+% \contentsline reads past the end of the file, and
+% test-staleaux-toc-memoir.thm, from a build that loaded xcolor, has an
+% entry with \textcolor. Their old entries are not in the page, and the
+% stale files stay as they are.
+\documentclass{memoir}
+\usepackage{ntheorem}
+\newtheorem{theorem}{Theorem}
+\newlistof{listofexamples}{exa}{List of Examples}
+\newcounter{example}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{exa}{example}{\protect\numberline{\theexample}#1}\par}
+\begin{document}
+\listofexamples
+\section*{Theorems}
+\listtheorems{theorem}
+\chapter{First}
+Text of the first chapter.
+\example{A new example}
+\begin{theorem}[New theorem]
+The statement of the theorem.
+\end{theorem}
+\end{document}

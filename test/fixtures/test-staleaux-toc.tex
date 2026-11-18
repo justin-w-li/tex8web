@@ -1,0 +1,91 @@
+% A document with lists that \@starttoc reads under the document's own
+% extension, beside the stale list files of an earlier build with other
+% packages. tex4ht reads such a list from the build folder, and from the
+% document's folder when the build folder has none, so a stale file there
+% stops the build with LaTeX errors. Each list's stale file comes from
+% another earlier build:
+% - test-staleaux-toc.exp (tocloft \newlistof): hyperref's four-argument
+%   \contentsline with hyperref's \texorpdfstring, which this build does
+%   not load;
+% - test-staleaux-toc.rmk (tocloft \newlistof with a [section] counter): a
+%   PDF build without hyperref: three three-argument \contentsline lines,
+%   which tex4ht's four-argument \contentsline reads past the end of the
+%   file;
+% - test-staleaux-toc.loe (thmtools \listoftheorems): a file that starts
+%   with \addvspace, then one three-argument line with babel's
+%   \foreignlanguage;
+% - test-staleaux-toc.box (tcolorbox list inside=box): a build with
+%   biblatex, whose \boolfalse and \defcounter lines come before the first
+%   \contentsline;
+% - test-staleaux-toc.tdo (todonotes \listoftodos): an entry with babel's
+%   \foreignlanguage;
+% - test-staleaux-toc.loa (algorithm2e \listofalgorithms): hyperref's
+%   four-argument lines with \textcolor, which this build defines, as
+%   tcolorbox loads xcolor. The build reads it without an error before
+%   the fix, and must not after.
+% The stale .toc, .lof, .lot, listings' .lol, and newfloat's .lop are
+% guards: tex4ht sends these lists through the .4ct, so the build reads
+% them neither before nor after the fix. Every stale file stays as it is.
+\documentclass{article}
+\usepackage{tocloft}
+\usepackage{thmtools}
+\usepackage{tcolorbox}
+\usepackage{todonotes}
+\usepackage[ruled]{algorithm2e}
+\usepackage{listings}
+\usepackage{newfloat}
+\newlistof{example}{exp}{Examples}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{exp}{example}{\protect\numberline{\theexample}#1}\par}
+\newlistof[section]{remark}{rmk}{Remarks}
+\newcommand{\remark}[1]{\refstepcounter{remark}\par\noindent Remark~\theremark: #1%
+  \addcontentsline{rmk}{remark}{\protect\numberline{\theremark}#1}\par}
+\declaretheorem{theorem}
+\newtcolorbox[list inside=box]{mybox}[1]{title=#1}
+\DeclareFloatingEnvironment[fileext=lop]{program}
+\begin{document}
+\tableofcontents
+\listoffigures
+\listoftables
+\lstlistoflistings
+\listofprograms
+\listofexample
+\listofremark
+\listoftheorems
+\tcblistof[\section*]{box}{Boxes}
+\listoftodos
+\listofalgorithms
+\section{First}
+Text of the first section.
+\example{A new example with \emph{italic}}
+\remark{A new remark}
+\begin{theorem}[New theorem]
+The statement of the theorem.
+\end{theorem}
+\begin{mybox}{New box}
+Text in the box.
+\end{mybox}
+\todo[inline]{New todo}
+\begin{algorithm}
+Step\;
+\caption{New algorithm}
+\end{algorithm}
+\begin{figure}[h]
+\centering A figure.
+\caption{New figure}
+\end{figure}
+\begin{table}[h]
+\centering A table.
+\caption{New table}
+\end{table}
+\begin{lstlisting}[caption={New listing}]
+x = 1
+\end{lstlisting}
+\begin{program}[h]
+\centering A program.
+\caption{New program}
+\end{program}
+\section{Second}
+Text of the second section.
+\remark{Another new remark}
+\end{document}
