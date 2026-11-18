@@ -70,8 +70,8 @@ else
   -- directory, and stops if dir does not exist. So each directory of the
   -- document is made there first, except hidden ones, build, links, and
   -- the build directory itself, which would otherwise be made inside itself
-  -- on each run. Then the document's .aux, .xref, and .4tc of an earlier
-  -- build beside it are hidden, as described below.
+  -- on each run. Then the document's .aux, .xref, .4tc, and lists of an
+  -- earlier build beside it are hidden, as described below.
   Make:add("folders", function(par)
     if par.builddir == "" then return 0 end
     local out = lfs.attributes(par.builddir)
@@ -106,6 +106,21 @@ else
         local name = par.input .. "." .. extension
         local file = par.builddir .. "/" .. name
         if lfs.attributes(name) and not lfs.attributes(file) then io.open(file, "w"):close() end
+      end
+      -- (and for each list of an earlier build beside the document: a
+      -- file named for the document, other than its source, with a line
+      -- that starts with \contentsline. The \@starttoc of article.4ht and
+      -- of classes such as amsart reads a list under any extension the
+      -- document chose, as with tocloft's \newlistof. Any line counts, as
+      -- biblatex writes other lines before the entries)
+      local prefix = par.input .. "."
+      for name in lfs.dir(".") do
+        local file = par.builddir .. "/" .. name
+        if name:sub(1, #prefix) == prefix and name ~= par.tex_file and not name:find("%.tex$")
+          and lfs.attributes(name, "mode") == "file" and not lfs.attributes(file)
+          and ("\n" .. (files.read(name) or "")):find("\n\\contentsline") then
+          io.open(file, "w"):close()
+        end
       end
     end
     return 0
