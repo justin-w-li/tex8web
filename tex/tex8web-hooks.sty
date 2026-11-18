@@ -960,10 +960,12 @@
 % in a file that such a file reads: the document named the file that
 % gives the name, by any path, so the name is the document's. (Before the
 % class, tex4ht.sty has not yet wrapped \@providesfile, and LaTeX's
-% \@providesfile lists no name.) A package that reads a style with the
-% primitive \input, as biblatex does, stays the current file, so a copy
-% of the style beside the document keeps its .4ht. A name found only in
-% the tree is a package's.
+% \@providesfile lists no name.) From a package, class, or .def file
+% beside the document, the primitive \input leaves that file current, and
+% the file gives the name as the document's too. A package of the tree
+% that reads a style with the primitive \input, as biblatex does, stays
+% the current file, so a copy of the style beside the document keeps its
+% .4ht. A name found only in the tree is a package's.
 \bool_new:N \l__web_ownprov_bool
 \cs_new_eq:NN \__web_providesfile:w \@providesfile
 \cs_gset_protected:Npn \@providesfile #1
@@ -980,7 +982,9 @@
                                 \bool_set_true:N \l__web_ownprov_bool
                             }
                     }
-                \tl_if_empty:NT \CurrentFileUsed
+                \bool_lazy_or:nnT
+                    { \tl_if_empty_p:N \CurrentFileUsed }
+                    { \file_if_exist_p:n { ./ \CurrentFileUsed } }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
             {
