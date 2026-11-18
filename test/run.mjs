@@ -4378,6 +4378,24 @@ if (primabs) absBuilds.push({
     return { doc: primabs, env: { TEXINPUTS: `${top}:` }, page: 'test-priminput-abs.html' };
   },
 });
+// test-provname-bbx built again in a folder of its own, with a copy of
+// the tree's biblatex.sty beside it, as a document that ships biblatex:
+// the copy reads debug.bbx with the primitive \input, and tex4ht still
+// reads debug.4ht for the copied style
+const provbbx = docs.find(d => d.name === 'test-provname-bbx');
+if (provbbx) absBuilds.push({
+  doc: provbbx, key: 'vendored', label: 'with a copy of biblatex.sty beside it',
+  wanted: [['Read for the web.', /<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/]],
+  setup(top) {
+    const dir = join(top, 'doc');
+    mkdirSync(dir, { recursive: true });
+    const sty = spawnSync('kpsewhich', ['biblatex.sty'], { encoding: 'utf8' }).stdout.trim();
+    for (const file of [sty, ...['test-provname-bbx.tex', 'debug.bbx', 'test-biblatex-authoryear.bib'].map(name => join(root, 'test/fixtures', name))]) {
+      writeFileSync(join(dir, basename(file)), readFileSync(file));
+    }
+    return { doc: { ...provbbx, name: 'test-provname-bbx vendored', dir }, page: 'test-provname-bbx.html' };
+  },
+});
 for (const { doc: fixture, key, label, wanted, setup } of absBuilds) jobs.push(async () => {
   const top = join(testDir(fixture), `absolute${key}`), out = join(top, 'html'), aux = join(top, 'aux');
   const { doc, env, page } = setup(top);

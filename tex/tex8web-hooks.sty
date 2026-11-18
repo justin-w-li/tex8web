@@ -960,17 +960,25 @@
 % in a file that such a file reads: the document named the file that
 % gives the name, by any path, so the name is the document's. (Before the
 % class, tex4ht.sty has not yet wrapped \@providesfile, and LaTeX's
-% \@providesfile lists no name.) From a package, class, or .def file
-% beside the document, the primitive \input leaves that file current, and
+% \@providesfile lists no name.) From a file of the document's beside it,
+% such as its package, the primitive \input leaves that file current, and
 % the file gives the name as the document's too. A package of the tree
 % that reads a style with the primitive \input, as biblatex does, stays
 % the current file, so a copy of the style beside the document keeps its
-% .4ht. A name found only in the tree is a package's.
+% .4ht. biblatex's styles and localization files (.bbx, .cbx, and .lbx,
+% named like .4ht files such as debug.4ht and english.4ht) keep their
+% .4ht also when the document ships a copy of biblatex.sty beside them.
+% A name found only in the tree is a package's.
 \bool_new:N \l__web_ownprov_bool
+\tl_new:N \l__web_provext_tl
+\clist_map_inline:nn { bbx, cbx, lbx }
+    { \cs_new_eq:cN { web@bibext@ #1 } \c_empty_tl }
 \cs_new_eq:NN \__web_providesfile:w \@providesfile
 \cs_gset_protected:Npn \@providesfile #1
     {
         \bool_set_false:N \l__web_ownprov_bool
+        \__web_basename:w #1 .. \q_stop
+        \tl_set_eq:NN \l__web_provext_tl \l__web_ext_tl
         \exp_last_unbraced:No \__web_basename:w \CurrentFileUsed .. \q_stop
         \tl_if_empty:NTF \CurrentFilePathUsed
             {
@@ -984,7 +992,11 @@
                     }
                 \bool_lazy_or:nnT
                     { \tl_if_empty_p:N \CurrentFileUsed }
-                    { \file_if_exist_p:n { ./ \CurrentFileUsed } }
+                    {
+                        \bool_lazy_and_p:nn
+                            { \file_if_exist_p:n { ./ \CurrentFileUsed } }
+                            { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
+                    }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
             {
