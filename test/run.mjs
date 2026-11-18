@@ -4647,18 +4647,25 @@ if (staleBcf) for (const [first, second, folder = 'build/tex4ht'] of staleBcfCas
 // with a space, as in a synced folder named My Drive. Each build has a copy
 // of the fixture in a folder of its own, so that the file its config
 // inputs is found only beside the config:
-// - config folder: -c by an absolute path, to a folder with a space
+// - config folder: -c by an absolute path, to a folder with a space. The
+//   document inputs a file that is beside it and, with other text, beside
+//   the config, and the document's file must be read
 // - config name: -c by a relative path, to a file with a space in its name
+// - config folder without a space, given by a relative path
+// - the folders of iCloud Drive and of Dropbox, with ~ and parentheses, and
+//   a folder name with two spaces in a row
 // - together: the document and its config in one folder with a space, both
 //   given by relative paths from the folder above
 // - installed: a copy of tex8web in a folder with a space, with its own
 //   tex8web.cfg, fonts, and MathJax from node_modules
+// - linked: that copy started through a link, as npm link makes, with a
+//   config in a folder with a space that inputs tex8web-core.tex
 // - guard: a document folder, a document name, and a -d folder with a
 //   space, with the fixture's config by a path without one
 // Each build makes a page with the config's terms (none with tex8web.cfg),
 // the section and equation references, the prerendered formula with the
 // document's macro, and the fonts and scripts it loads, and writes nothing
-// beside the config.
+// beside the config. A build of the copy must use the copy's build file.
 const pathspace = docs.find(d => d.name === 'test-pathspace');
 if (pathspace) {
   // (the fixture's config, with \keyword's line in a file beside it)
@@ -4673,13 +4680,29 @@ if (pathspace) {
     place(dir, 'pathspace-beside.tex', '\\WebTerm\\keyword\n');
     return place(dir, name, config);
   };
+  const install = top => {
+    const copy = join(top, 'My Drive/tex8web');
+    for (const name of ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'package.json', 'package-lock.json']) {
+      cpSync(join(root, name), join(copy, name), { recursive: true });
+    }
+    symlinkSync(join(root, 'node_modules'), join(copy, 'node_modules'));
+    return copy;
+  };
   const tex8web = join(root, 'bin/tex8web');
+  // a config by an absolute path, and the document in doc/
+  const absolute = (top, folder) => {
+    const cfg = withConfig(join(top, folder), 'test-pathspace.cfg');
+    place(join(top, 'doc'), 'test-pathspace.tex', fixture);
+    return { cwd: join(top, 'doc'), command: tex8web, args: ['-c', cfg, '-d', join(top, 'html'), 'test-pathspace.tex'],
+      page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
+  };
   const cases = [
     ['folder', 'a config folder with a space', top => {
-      const cfg = withConfig(join(top, 'My Drive/cfg'), 'test-pathspace.cfg');
-      place(join(top, 'doc'), 'test-pathspace.tex', fixture);
-      return { cwd: join(top, 'doc'), command: tex8web, args: ['-c', cfg, '-d', join(top, 'html'), 'test-pathspace.tex'],
-        page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
+      const build = absolute(top, 'My Drive/cfg');
+      place(join(top, 'doc'), 'test-pathspace.tex', fixture.replace('\\end{document}', '\\input{pathspace-shared}\n\\end{document}'));
+      place(join(top, 'doc'), 'pathspace-shared.tex', 'Shared text of the document.\n');
+      place(build.cfgDir, 'pathspace-shared.tex', 'Shared text of the config.\n');
+      return { ...build, shared: true };
     }],
     ['name', 'a config name with a space', top => {
       const cfg = withConfig(join(top, 'cfg'), 'my config.cfg');
@@ -4687,6 +4710,15 @@ if (pathspace) {
       return { cwd: join(top, 'doc'), command: tex8web, args: ['-c', '../cfg/my config.cfg', '-d', '../html', 'test-pathspace.tex'],
         page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
     }],
+    ['plain', 'a config folder without a space', top => {
+      const cfg = withConfig(join(top, 'cfg'), 'test-pathspace.cfg');
+      place(join(top, 'doc'), 'test-pathspace.tex', fixture);
+      return { cwd: join(top, 'doc'), command: tex8web, args: ['-c', '../cfg/test-pathspace.cfg', '-d', '../html', 'test-pathspace.tex'],
+        page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
+    }],
+    ['icloud', "iCloud Drive's folder", top => absolute(top, 'Mobile Documents/com~apple~CloudDocs/cfg')],
+    ['dropbox', "Dropbox's folder", top => absolute(top, 'Dropbox (Personal)')],
+    ['twospaces', 'a config folder with two spaces in a row', top => absolute(top, 'My  Drive/cfg')],
     ['together', 'the document and its config in a folder with a space', top => {
       const dir = join(top, 'My Drive/notes');
       withConfig(dir, 'test-pathspace.cfg');
@@ -4696,14 +4728,16 @@ if (pathspace) {
         page: join(top, 'html/test-pathspace.html') };
     }],
     ['installed', 'tex8web in a folder with a space', top => {
-      const copy = join(top, 'My Drive/tex8web');
-      for (const name of ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'package.json', 'package-lock.json']) {
-        cpSync(join(root, name), join(copy, name), { recursive: true });
-      }
-      symlinkSync(join(root, 'node_modules'), join(copy, 'node_modules'));
+      const copy = install(top);
       place(join(top, 'doc'), 'test-pathspace.tex', fixture);
       return { cwd: join(top, 'doc'), command: join(copy, 'bin/tex8web'), args: ['-d', '../html', 'test-pathspace.tex'],
-        page: join(top, 'html/test-pathspace.html'), noTerms: true };
+        page: join(top, 'html/test-pathspace.html'), cfgDir: copy, copy, noTerms: true };
+    }],
+    ['linked', 'tex8web in a folder with a space, through a link, with a config in one', top => {
+      const copy = install(top);
+      mkdirSync(join(top, 'bin'));
+      symlinkSync(join(copy, 'bin/tex8web'), join(top, 'bin/tex8web'));
+      return { ...absolute(top, 'My Drive/cfg'), command: join(top, 'bin/tex8web'), copy };
     }],
     ['guard', 'a document folder, document name, and -d folder with a space', top => {
       place(join(top, 'My Notes'), 'my notes.tex', fixture);
@@ -4714,7 +4748,7 @@ if (pathspace) {
   for (const [key, label, setup] of cases) jobs.push(async () => {
     const top = join(testDir(pathspace), `space${key}`);
     rmSync(top, { recursive: true, force: true });
-    const { cwd, command, args, page, cfgDir, noTerms } = setup(top);
+    const { cwd, command, args, page, cfgDir, copy, noTerms, shared } = setup(top);
     const before = cfgDir && readdirSync(cfgDir).sort().join(', ');
     const result = await run(command, [...args.slice(0, -1), '-a', 'info', args.at(-1)],
       { cwd, slot: true, env: { ...process.env, ...pathspace.env } });
@@ -4723,8 +4757,9 @@ if (pathspace) {
     if (result.code !== 0) {
       problems.push(`tex8web exited with ${result.code}`, ...result.log.split('\n').filter(line => /\[(ERROR|FATAL)\]|^! |^tex8web: /.test(line)).slice(0, 4));
     }
+    if (copy && !result.log.includes(`Using build file\t${join(copy, 'tex8web.mk4')}`)) problems.push("the copy's build file is not used");
     const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
-    const flat = html.replace(/[^\S ]+/g, ' ');
+    const flat = html.replace(/[^\S ]+/g, ' ');
     if (!html) problems.push('no page');
     else {
       const wanted = [
@@ -4734,6 +4769,7 @@ if (pathspace) {
         /<mjx-container[^>]*>(?:(?!<\/mjx-container>)[^])*<mjx-c class='mjx-c2016'>‖<\/mjx-c><mjx-c class='mjx-c1D465'>𝑥<\/mjx-c><mjx-c class='mjx-c2016'>‖<\/mjx-c>/,
         ...noTerms ? [/^(?![^]*tex8web-term)/]
           : [/A <span class='tex8web-term' id='term-config-word'>[^]* and a <span class='tex8web-term' id='term-sibling-word'>/],
+        ...shared ? [/Shared text of the document\./, /^(?![^]*Shared text of the config)/] : [],
       ];
       for (const pattern of wanted) if (!pattern.test(flat)) problems.push(`the page does not match ${pattern}`);
       for (const href of fontsListed(html).filter(href => !existsSync(join(dirname(page), href)))) problems.push(`${href} preloaded, not written`);
