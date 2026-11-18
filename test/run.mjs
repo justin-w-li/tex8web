@@ -1343,6 +1343,27 @@ const contents = {
     ['test-priminput-tree', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
     ['test-priminput-vendored', /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/],
     ['test-priminput-cnt', /Text after the contour driver file\./],
+    // (files of the document that give a .4ht's name in \ProvidesFile,
+    // read with the primitive \input from a package, class, option file,
+    // or .def file of the document: each file's text, and no sentence that
+    // shows a .4ht of that name was read, except framed.4ht for the framed
+    // package)
+    ['test-ownprim', /Glossary: Text from the subfolder glossary file\./, [
+      /Index: Text from the subfolder index file\./, /^(?![^]*Index read for the web\.)/,
+    ]],
+    ['test-ownprim-class', /Glossary: Text from the subfolder glossary file\./, [
+      /Index: Text from the subfolder index file\./, /^(?![^]*Index read for the web\.)/,
+    ]],
+    ['test-ownprim-def', /Index: Text from the subfolder index file\./, [
+      /^(?![^]*Index read for the web\.)/,
+      /Framed: Text from the subfolder framed file\./, /Framed read for the web\./,
+    ]],
+    ['test-ownprim-beside', /Nomencl: Text from the nomencl file beside the document\./],
+    ['test-ownprim-guards', /Braced: Text from the subfolder glossary file\./, [
+      /Subfolder: Text from the subfolder index file\./,
+      /Path: Text from the subfolder framed file\./,
+      /^(?![^]*read for the web\.)/,
+    ]],
   ].map(([name, text, extra = []]) => [name, [
     text, /^(?![^]*refextract)/, /^(?![^]*<\/html>[^]*<\/html>)/, ...extra,
   ]])),

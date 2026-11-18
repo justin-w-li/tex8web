@@ -1,0 +1,16 @@
+% Files of the document that give a .4ht's name in \ProvidesFile, read
+% with the primitive \input from the document's class beside it, and from
+% the class's option file beside it. As in the PDF, each file's text is
+% in the page, and tex4ht reads no .4ht of those names.
+% - test-ownprim-class.cls reads test-ownprim/glossary.tex, named like
+%   glossary.4ht.
+% - test-ownprim-class10.clo, which the class reads with LaTeX's \input,
+%   reads test-ownprim/index.tex, named like index.4ht. index.4ht defines
+%   \printindex, which the PDF does not have, so the page shows that it
+%   was read: a sentence the PDF does not have.
+\documentclass{test-ownprim-class}
+\begin{document}
+Glossary: \ownprimglossary\par
+Index: \ownprimindex
+\ifdefined\printindex\par Index read for the web.\fi
+\end{document}

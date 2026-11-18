@@ -1,0 +1,4 @@
+% The option file of test-ownprim-class.cls, beside the document. It
+% reads a file of the document in a subfolder with the primitive \input.
+\ProvidesFile{test-ownprim-class10.clo}[2026/11/18 tex8web test option file]
+\input test-ownprim/index

@@ -1,0 +1,18 @@
+% Files of the document that give a .4ht's name in \ProvidesFile, read
+% with the primitive \input from a package of the document beside it,
+% with hyperref. As in the PDF, each file's text is in the page, and
+% tex4ht reads no .4ht of those names.
+% - test-ownprim.sty reads test-ownprim/glossary.tex, named like
+%   glossary.4ht, with \input.
+% - test-ownprim.sty reads test-ownprim/index.tex, named like index.4ht,
+%   with \@@input. index.4ht defines \printindex, which the PDF does not
+%   have, so the page shows that it was read: a sentence the PDF does not
+%   have.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{test-ownprim}
+\begin{document}
+Glossary: \ownprimglossary\par
+Index: \ownprimindex
+\ifdefined\printindex\par Index read for the web.\fi
+\end{document}

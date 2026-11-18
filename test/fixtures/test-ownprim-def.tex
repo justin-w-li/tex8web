@@ -1,0 +1,22 @@
+% Files of the document that give a .4ht's name in \ProvidesFile, read
+% with the primitive \input from the document's .def file beside it,
+% which the document reads with LaTeX's \input.
+% - test-ownprim-def.def reads test-ownprim/index.tex, named like
+%   index.4ht. As in the PDF, the file's text is in the page. index.4ht
+%   defines \printindex, which the PDF does not have, so the page shows
+%   that it was read: a sentence the PDF does not have.
+% - test-ownprim-def.def reads test-ownprim/framed.tex, named like
+%   framed.4ht, and the document then loads the framed package. As in the
+%   PDF, the file's text is in the page, and tex4ht keeps its
+%   configuration of the package: framed.4ht defines \a:makeframed, so
+%   the page shows that it was read, as for any document that loads
+%   framed.
+\documentclass{article}
+\input{test-ownprim-def.def}
+\usepackage{framed}
+\begin{document}
+Index: \ownprimindex
+\ifdefined\printindex\par Index read for the web.\fi\par
+Framed: \ownprimframed
+\expandafter\ifx\csname a:makeframed\endcsname\relax\else\par Framed read for the web.\fi
+\end{document}

@@ -1,0 +1,31 @@
+% A guard: it checks cases that the fix of files read with the primitive
+% \input from a package of the document must not break.
+% Files of the document that give a .4ht's name in \ProvidesFile, read
+% from packages of the document. As in the PDF, each file's text is in
+% the page, and tex4ht reads no .4ht of those names. index.4ht defines
+% \printindex and framed.4ht defines \MakeFramed, which the PDF does not
+% have, so the page shows that one was read: a sentence the PDF does not
+% have.
+% - test-ownprim-guards.sty, beside the document, reads
+%   test-ownprim/glossary.tex, named like glossary.4ht, with LaTeX's
+%   braced \input.
+% - test-ownprim/sty/test-ownprimsub.sty, loaded by its path, reads
+%   test-ownprim/index.tex, named like index.4ht, with the primitive
+%   \input.
+% - test-ownprim/path/test-ownprimpath.sty, found through \input@path,
+%   reads test-ownprim/framed.tex, named like framed.4ht, with the
+%   primitive \input.
+\documentclass{article}
+\usepackage{test-ownprim-guards}
+\usepackage{test-ownprim/sty/test-ownprimsub}
+\makeatletter
+\def\input@path{{test-ownprim/path/}}
+\makeatother
+\usepackage{test-ownprimpath}
+\begin{document}
+Braced: \ownprimglossary\par
+Subfolder: \ownprimindex\par
+Path: \ownprimframed
+\ifdefined\printindex\par Index read for the web.\fi
+\ifdefined\MakeFramed\par Framed read for the web.\fi
+\end{document}

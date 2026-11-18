@@ -1,0 +1,6 @@
+% The definitions file of test-ownprim-def.tex, beside the document, read
+% with LaTeX's \input. It reads two files of the document in a subfolder
+% with the primitive \input.
+\ProvidesFile{test-ownprim-def.def}[2026/11/18 tex8web test definitions]
+\input test-ownprim/index
+\input test-ownprim/framed
