@@ -1,0 +1,18 @@
+% A document built with its config, or tex8web itself, in a folder with a
+% space (test/run.mjs builds it so): its config marks \term as a term, and
+% a file that the config inputs marks \keyword. A section and an equation
+% referred to, with hyperref, and a formula with a macro of the document.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\newcommand\term[1]{\emph{#1}}
+\newcommand\keyword[1]{\textbf{#1}}
+\newcommand\norm[1]{\lVert #1\rVert}
+\begin{document}
+\section{Spaces}\label{sec:spaces}
+A \term{config word} and a \keyword{sibling word}.
+\begin{equation}\label{eq:norm}
+  \norm{x} \le 1
+\end{equation}
+See section~\ref{sec:spaces} and \eqref{eq:norm}.
+\end{document}

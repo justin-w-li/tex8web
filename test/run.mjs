@@ -3,8 +3,8 @@
 // run beside them. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
-import { basename, join, relative } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, relative } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -889,6 +889,9 @@ const untitled = [
 const contents = {
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,
+  'test-pathspace': [
+    /A <span class='tex8web-term' id='term-config-word'><span class='cmti-10'>config word<\/span><\/span> and a <span class='tex8web-term' id='term-sibling-word'><span class='cmbx-10'>sibling word<\/span><\/span>\./,
+  ],
   'test-sectpart-scrbook': sectpartText, 'test-sectpart-scrreprt': sectpartText,
   'test-sectpart-nopart': [/<p[^>]*>\s*Text of a book without headings\./],
   // (the article guard has no chapters: a part, a section, and a starred part)
@@ -4639,6 +4642,111 @@ if (staleBcf) for (const [first, second, folder = 'build/tex4ht'] of staleBcfCas
   else for (const pattern of staleBcfPages[second]) if (!pattern.test(flat)) problems.push(`the page does not match ${pattern}`);
   report(`${staleBcf.name} (${label})`, problems);
 });
+
+// test-pathspace built with its config, or tex8web itself, in a folder
+// with a space, as in a synced folder named My Drive. Each build has a copy
+// of the fixture in a folder of its own, so that the file its config
+// inputs is found only beside the config:
+// - config folder: -c by an absolute path, to a folder with a space
+// - config name: -c by a relative path, to a file with a space in its name
+// - together: the document and its config in one folder with a space, both
+//   given by relative paths from the folder above
+// - installed: a copy of tex8web in a folder with a space, with its own
+//   tex8web.cfg, fonts, and MathJax from node_modules
+// - guard: a document folder, a document name, and a -d folder with a
+//   space, with the fixture's config by a path without one
+// Each build makes a page with the config's terms (none with tex8web.cfg),
+// the section and equation references, the prerendered formula with the
+// document's macro, and the fonts and scripts it loads, and writes nothing
+// beside the config.
+const pathspace = docs.find(d => d.name === 'test-pathspace');
+if (pathspace) {
+  // (the fixture's config, with \keyword's line in a file beside it)
+  const config = readFileSync(pathspace.cfg, 'utf8').replace('\\WebTerm\\keyword', '\\input{pathspace-beside}');
+  const place = (dir, name, text) => {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, name), text);
+    return join(dir, name);
+  };
+  const fixture = readFileSync(join(pathspace.dir, pathspace.tex), 'utf8');
+  const withConfig = (dir, name) => {
+    place(dir, 'pathspace-beside.tex', '\\WebTerm\\keyword\n');
+    return place(dir, name, config);
+  };
+  const tex8web = join(root, 'bin/tex8web');
+  const cases = [
+    ['folder', 'a config folder with a space', top => {
+      const cfg = withConfig(join(top, 'My Drive/cfg'), 'test-pathspace.cfg');
+      place(join(top, 'doc'), 'test-pathspace.tex', fixture);
+      return { cwd: join(top, 'doc'), command: tex8web, args: ['-c', cfg, '-d', join(top, 'html'), 'test-pathspace.tex'],
+        page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
+    }],
+    ['name', 'a config name with a space', top => {
+      const cfg = withConfig(join(top, 'cfg'), 'my config.cfg');
+      place(join(top, 'doc'), 'test-pathspace.tex', fixture);
+      return { cwd: join(top, 'doc'), command: tex8web, args: ['-c', '../cfg/my config.cfg', '-d', '../html', 'test-pathspace.tex'],
+        page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
+    }],
+    ['together', 'the document and its config in a folder with a space', top => {
+      const dir = join(top, 'My Drive/notes');
+      withConfig(dir, 'test-pathspace.cfg');
+      place(dir, 'test-pathspace.tex', fixture);
+      return { cwd: top, command: tex8web,
+        args: ['-c', 'My Drive/notes/test-pathspace.cfg', '-d', 'html', 'My Drive/notes/test-pathspace.tex'],
+        page: join(top, 'html/test-pathspace.html') };
+    }],
+    ['installed', 'tex8web in a folder with a space', top => {
+      const copy = join(top, 'My Drive/tex8web');
+      for (const name of ['bin', 'css', 'fonts', 'js', 'lua', 'tex', 'tex8web.cfg', 'tex8web.mk4', 'package.json', 'package-lock.json']) {
+        cpSync(join(root, name), join(copy, name), { recursive: true });
+      }
+      symlinkSync(join(root, 'node_modules'), join(copy, 'node_modules'));
+      place(join(top, 'doc'), 'test-pathspace.tex', fixture);
+      return { cwd: join(top, 'doc'), command: join(copy, 'bin/tex8web'), args: ['-d', '../html', 'test-pathspace.tex'],
+        page: join(top, 'html/test-pathspace.html'), noTerms: true };
+    }],
+    ['guard', 'a document folder, document name, and -d folder with a space', top => {
+      place(join(top, 'My Notes'), 'my notes.tex', fixture);
+      return { cwd: top, command: tex8web, args: ['-c', pathspace.cfg, '-d', 'My Out/html', 'My Notes/my notes.tex'],
+        page: join(top, 'My Out/html/my_notes.html') };
+    }],
+  ];
+  for (const [key, label, setup] of cases) jobs.push(async () => {
+    const top = join(testDir(pathspace), `space${key}`);
+    rmSync(top, { recursive: true, force: true });
+    const { cwd, command, args, page, cfgDir, noTerms } = setup(top);
+    const before = cfgDir && readdirSync(cfgDir).sort().join(', ');
+    const result = await run(command, [...args.slice(0, -1), '-a', 'info', args.at(-1)],
+      { cwd, slot: true, env: { ...process.env, ...pathspace.env } });
+    writeFileSync(join(top, 'make4ht.log'), result.log);
+    const problems = [];
+    if (result.code !== 0) {
+      problems.push(`tex8web exited with ${result.code}`, ...result.log.split('\n').filter(line => /\[(ERROR|FATAL)\]|^! |^tex8web: /.test(line)).slice(0, 4));
+    }
+    const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+    const flat = html.replace(/[^\S ]+/g, ' ');
+    if (!html) problems.push('no page');
+    else {
+      const wanted = [
+        /<h3 class='sectionHead' id='spaces'>/,
+        /See section<span class='tex8web-nbsp'> <\/span><a href='#spaces'>1<!--/,
+        /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]* and \(<a href='#\1'>1<!--/,
+        /<mjx-container[^>]*>(?:(?!<\/mjx-container>)[^])*<mjx-c class='mjx-c2016'>‖<\/mjx-c><mjx-c class='mjx-c1D465'>𝑥<\/mjx-c><mjx-c class='mjx-c2016'>‖<\/mjx-c>/,
+        ...noTerms ? [/^(?![^]*tex8web-term)/]
+          : [/A <span class='tex8web-term' id='term-config-word'>[^]* and a <span class='tex8web-term' id='term-sibling-word'>/],
+      ];
+      for (const pattern of wanted) if (!pattern.test(flat)) problems.push(`the page does not match ${pattern}`);
+      for (const href of fontsListed(html).filter(href => !existsSync(join(dirname(page), href)))) problems.push(`${href} preloaded, not written`);
+      if (!fontsListed(html).length) problems.push('no fonts preloaded');
+      const scripts = [...html.matchAll(/<script [^>]*src='([^':]+)'/g)].map(([, src]) => src);
+      if (!scripts.length) problems.push('no script of tex8web');
+      for (const src of scripts.filter(src => !existsSync(join(dirname(page), src)))) problems.push(`${src} loaded, not written`);
+    }
+    const after = cfgDir && readdirSync(cfgDir).sort().join(', ');
+    if (after !== before) problems.push(`the config's folder holds ${after}, not ${before}`);
+    report(`${pathspace.name} (${label})`, problems);
+  });
+}
 
 await pool(jobs, workers, job => job());
 
