@@ -4574,6 +4574,8 @@ if (oldhtf) jobs.push(async () => {
 // with biber. A build folder that the same backend left current takes no
 // more LaTeX runs than staleBcfRuns. Each case takes a different path in
 // htlatex_first or bibliography.lua, or loads biblatex in a different way.
+// The cases with natbib keep bibtex and change the style: a .bbl without
+// author-year data, then natbib with an author-year style.
 const staleBcf = docs.find(d => d.name === 'test-stalebcf');
 const staleBcfEntry = /Ann Able\. <span class='cmti-10'>A Book Kept in the Build Folder<\/span>\. A Publisher, 1999\./;
 const staleBcfBiblatex = [/See \[(?:<a id='[^']*'><\/a>)*<a href='#X0-able'>1<\/a>\]\./, staleBcfEntry];
@@ -4590,6 +4592,15 @@ const staleBcfPages = {
   'biber-include': staleBcfBiblatex, 'bibtex-include': staleBcfBibtex,
   natbib: [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
   nobib: [/No citation here\./],
+  'natbib-hyperref': [/As <a href='#Xable'>Able<\/a><span class='tex8web-nbsp'> <\/span>\[<a href='#Xable'>1999<\/a>\] says\./, staleBcfEntry],
+  'natbib-abbrvnat': [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says, and \[<span class='cite'><a href='#Xbaker'>Baker<\/a><\/span>,<span class='tex8web-nbsp'> <\/span><span class='cite'><a href='#Xbaker'>2001<\/a><\/span>\]\./,
+    /A\.<span class='tex8web-nbsp'> <\/span>Able\. <span class='cmti-10'>A Book Kept in the Build Folder<\/span>\. A Publisher, 1999\./,
+    /B\.<span class='tex8web-nbsp'> <\/span>Baker\. <span class='cmti-10'>A Second Book<\/span>\. A Publisher, 2001\./],
+  'natbib-include': [/See <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\]\./, staleBcfEntry],
+  elsarticle: [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\(<span class='cite'><a href='#Xable'>1999<\/a><\/span>\) says\./,
+    /Able, A\., 1999\. A Book Kept in the Build Folder\. A Publisher\./],
+  // (natbib with a numeric style: \citet forces numbers, as in the PDF)
+  'natbib-plain': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1<\/a><\/span>\] says\./, staleBcfEntry],
 };
 const staleBcfBiber = new Set(['biber', 'biber-hyperref', 'biber-input', 'biber-sty', 'biber-class', 'biber-include']);
 // (the LaTeX runs of a second build of an unchanged document)
@@ -4601,8 +4612,13 @@ const staleBcfCases = [
   ['biber', 'thebibliography'], ['biber', 'nobib'], ['biber-input', 'bibtex'], ['biber-class', 'bibtex'],
   ['biber', 'blx-bibtex'], ['blx-bibtex', 'bibtex'], ['blx-bibtex', 'biber'], ['bibtex', 'biber'],
   ['natbib', 'biber'], ['bibtex', 'biber-sty'], ['bibtex', 'blx-bibtex'],
+  // (a .bbl without author-year data, then natbib with an author-year style)
+  ['bibtex', 'natbib'], ['bibtex-hyperref', 'natbib-hyperref'], ['bibtex-alpha', 'natbib'],
+  ['bibtex', 'natbib-abbrvnat', '.'], ['natbib-numbers', 'natbib'], ['natbib-plain', 'natbib'],
+  ['bibtex-include', 'natbib-include'], ['bibtex', 'elsarticle'],
   // (a build folder left current)
   ['biber', 'biber'], ['bibtex', 'bibtex'], ['blx-bibtex', 'blx-bibtex'],
+  ['natbib', 'natbib'], ['natbib-plain', 'natbib-plain'],
 ];
 if (staleBcf) for (const [first, second, folder = 'build/tex4ht'] of staleBcfCases) jobs.push(async () => {
   const label = `${first}, then ${second}${folder === 'build/tex4ht' ? '' : `, with -B ${folder}`}`;
