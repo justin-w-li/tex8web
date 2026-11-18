@@ -1358,7 +1358,13 @@ const contents = {
       /^(?![^]*Index read for the web\.)/,
       /Framed: Text from the subfolder framed file\./, /Framed read for the web\./,
     ]],
-    ['test-ownprim-beside', /Nomencl: Text from the nomencl file beside the document\./],
+    ['test-ownprim-beside', /Nomencl: Text from the nomencl file beside the document\./, [
+      /^(?![^]*Nomencl read for the web\.)/,
+    ]],
+    ['test-ownprim-after', /Framed: Text from the subfolder framed file\./, [
+      /Framed read for the web\./,
+      /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/,
+    ]],
     ['test-ownprim-guards', /Braced: Text from the subfolder glossary file\./, [
       /Subfolder: Text from the subfolder index file\./,
       /Path: Text from the subfolder framed file\./,
@@ -2042,6 +2048,7 @@ const texLines = {
   'test-priminput-tree': [/\/dvipsnam\.4ht/],
   'test-priminput-vendored': [/\/dvipsnam\.4ht/],
   'test-priminput-cnt': [/\/dvips\.4ht/],
+  'test-ownprim-after': [/\/dvipsnam\.4ht/],
 };
 
 // A \url not hyphenated (html4.4ht hyphenates every link. A \url is not

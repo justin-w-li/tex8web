@@ -1,9 +1,12 @@
 % A file of the document beside it, nomencl.ltx, named like nomencl.4ht,
 % that names itself \ProvidesFile{nomencl.ltx}, read with the primitive
 % \input from a package of the document beside it, test-ownprim-beside.sty.
-% As in the PDF, the file's text is in the page.
+% As in the PDF, the file's text is in the page. nomencl.4ht's html4.4ht
+% part defines \onthenomenclature:list, which the PDF does not have, so
+% the page shows that it was read: a sentence the PDF does not have.
 \documentclass{article}
 \usepackage{test-ownprim-beside}
 \begin{document}
 Nomencl: \ownprimnomencl
+\expandafter\ifx\csname onthenomenclature:list\endcsname\relax\else\par Nomencl read for the web.\fi
 \end{document}

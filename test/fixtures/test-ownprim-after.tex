@@ -1,0 +1,22 @@
+% A guard: it checks cases that the fix of files read with the primitive
+% \input from a package of the document must not break.
+% A package of the document beside it, loaded after the packages it
+% builds on, as is usual, reads two files with the primitive \input.
+% - test-ownprim/framed.tex, named like framed.4ht, after the framed
+%   package. As in the PDF, the file's text is in the page, and tex4ht
+%   keeps its configuration of the package: framed.4ht defines
+%   \a:makeframed, so the page shows that it was read, as for any
+%   document that loads framed.
+% - LaTeX's dvipsnam.def, from TeX's tree, after xcolor. The file names
+%   itself \ProvidesFile{dvipsnam.def}, so tex4ht reads dvipsnam.4ht,
+%   which the TeX log lists. As in the PDF, a named color keeps its
+%   value.
+\documentclass{article}
+\usepackage{framed}
+\usepackage{xcolor}
+\usepackage{test-ownprim-after}
+\begin{document}
+Framed: \ownprimframed
+\expandafter\ifx\csname a:makeframed\endcsname\relax\else\par Framed read for the web.\fi\par
+\textcolor[named]{BrickRed}{Brick red text.}
+\end{document}

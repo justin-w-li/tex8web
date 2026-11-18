@@ -1,0 +1,8 @@
+% The package of test-ownprim-after.tex, beside the document, loaded after
+% framed and xcolor. It reads a file of the document in a subfolder,
+% named like framed.4ht, with the primitive \input, and LaTeX's
+% dvipsnam.def, from TeX's tree, with \@@input.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{test-ownprim-after}[2026/11/18 tex8web test package]
+\input test-ownprim/framed
+\@@input dvipsnam.def
