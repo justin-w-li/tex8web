@@ -247,17 +247,22 @@ function tools() {
 
 // the files directly in the config's folder, which bin/tex8web puts on
 // TEXINPUTS so that the config can input a file beside it, when they are
-// not hashed already: those in tex8web's folder are among its sources, and
-// those in the document's directory, or in doc.sourceRoot, are hashed with
-// the document. Without dotfiles and folders: a file that the config reads
-// from a folder in its own, as \input{sub/file} can, is not followed, and a
-// contained build does not mount it. With links, which the host follows
-// (link: false), or without them, for a contained build's mounts
-function besideConfig(doc, { link = false } = {}) {
-  const folder = dirname(doc.cfg), above = relative(doc.sourceRoot ?? doc.dir, folder);
-  if (folder === root || !/^\.\.(\/|$)/.test(above)) return [];
-  const status = link ? lstatSync : statSync;
-  return readdirSync(folder).filter(name => !name.startsWith('.')
+// not hashed already: those in the document's directory, or in
+// doc.sourceRoot, are hashed with the document, and those beside the
+// default tex8web.cfg are tex8web's own. Without dotfiles and folders: a
+// file that the config reads from a folder in its own, as \input{sub/file}
+// can, is not followed, and a contained build does not mount it. Without
+// the stamps, logs, and locks that build() writes beside its output, which
+// may be the config's folder. With links, which the host follows, for the
+// stamp. For a contained build's mounts (mount: true), without links,
+// without the files of tex8web's folder, which is mounted whole, and
+// without a name that holds a comma, a quote, or a line break, which
+// Docker's --mount cannot take
+function besideConfig(doc, { mount = false } = {}) {
+  const folder = dirname(resolve(doc.cfg)), above = relative(doc.sourceRoot ?? doc.dir, folder);
+  if (resolve(doc.cfg) === join(root, 'tex8web.cfg') || !/^\.\.(\/|$)/.test(above) || mount && folder === root) return [];
+  const status = mount ? lstatSync : statSync;
+  return readdirSync(folder).filter(name => !name.startsWith('.') && !/\.(stamp|log|lock)$/.test(name) && !(mount && /[,"\n\r]/.test(name))
     && status(join(folder, name), { throwIfNoEntry: false })?.isFile()).sort();
 }
 
@@ -276,7 +281,7 @@ function stamps(doc, args, env, pdf) {
   const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
   // (a build through a runner, whose tools are the image's, is never reused
   // as a host build, nor the reverse)
-  const rest = [hashFiles(doc.sourceRoot ?? doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), hashFiles(dirname(doc.cfg), besideConfig(doc)), args, vars, pdf,
+  const rest = [hashFiles(doc.sourceRoot ?? doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), hashFiles(dirname(resolve(doc.cfg)), besideConfig(doc)), args, vars, pdf,
     ...doc.runner ? [[doc.runner, ...[doc.runner[0], join(root, 'Dockerfile')].map(file => readFileSync(file, 'utf8'))]] : []];
   const hash = (...head) => createHash('sha256').update(JSON.stringify([...head, ...rest])).digest('hex');
   return { page: hash(tools().page, day), latex: hash(tools().latex, day) };
@@ -383,7 +388,7 @@ async function buildHere(doc, out, aux, env) {
   // outside them)
   mkdirSync(out, { recursive: true });
   const linked = pdf && join(doc.dir, pdf);
-  const result = await runOn(doc, [doc.cfg, ...besideConfig(doc, { link: true }).map(name => join(dirname(doc.cfg), name)), ...linked && existsSync(linked) ? [linked] : [], ...reuse ? [stage.dir] : []],
+  const result = await runOn(doc, [doc.cfg, ...besideConfig(doc, { mount: true }).map(name => join(dirname(resolve(doc.cfg)), name)), ...linked && existsSync(linked) ? [linked] : [], ...reuse ? [stage.dir] : []],
     [out, aux, ...doc.draft || reuse ? [] : [stage.dir], join(doc.dir, 'build')], join(root, 'bin/tex8web'), args, { cwd: doc.dir, slot: true, env: { ...process.env, ...env,
     TEX8WEB_SPEECH_CACHE: speech, TEX8WEB_LATEX_REUSE: reuse ? stage.dir : undefined,
     TEX8WEB_LATEX_SAVE: doc.draft || reuse ? undefined : stage.dir } });

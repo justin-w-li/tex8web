@@ -196,8 +196,11 @@ test('the files beside a config outside the document\'s directory are in the sta
     assert.equal((await make()).reused, undefined);
 
     // a contained build mounts the files beside the config read-only, but
-    // not the folder, the folders in it, its dotfiles, or its links
+    // not the folder, the folders in it, its dotfiles, its links, or a name
+    // that Docker's --mount cannot take
     writeFileSync(join(cfgDir, '.secret'), 'private\n');
+    writeFileSync(join(cfgDir, 'Notes, v2.pdf'), 'a comma\n');
+    writeFileSync(join(cfgDir, 'say "hi".tex'), 'a quote\n');
     symlinkSync(join(cfgDir, 'webmacros.tex'), join(cfgDir, 'linked.tex'));
     process.env.PATH = stubbed.PATH;
     doc.runner = [join(root, 'test/lib/contain.mjs')];
@@ -209,9 +212,45 @@ test('the files beside a config outside the document\'s directory are in the sta
     const mounted = [...runs[0].matchAll(/type=bind,source=([^,]+),target=\1,readonly /g)].map(([, source]) => source)
       .filter(source => source.startsWith(cfgDir));
     assert.deepEqual(mounted.sort(), ['other.tex', 'webmacros.tex', 'x.cfg'].map(name => join(cfgDir, name)));
+    assert.ok(!runs[0].includes('Notes, v2.pdf') && !runs[0].includes('say "hi".tex'), runs[0]);
   } finally {
     process.env.PATH = path;
     rmSync(top, { recursive: true });
+  }
+});
+
+test('a config in tex8web\'s folder, other than tex8web.cfg, has the files beside it in its stamp', { timeout: 30000 }, async () => {
+  const top = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webrootcfg')));
+  const name = `tex8webrootcfg${process.pid}`, cfg = join(root, `${name}.cfg`), macros = join(root, `${name}.tex`);
+  const path = process.env.PATH;
+  try {
+    const dir = join(top, 'doc');
+    mkdirSync(dir);
+    writeFileSync(join(dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nText\n\\end{document}\n');
+    writeFileSync(cfg, readFileSync(join(root, 'tex8web.cfg'), 'utf8').replace('\\EndPreamble', `\\input{${name}}\n\\EndPreamble`));
+    writeFileSync(macros, '% first\n');
+    const doc = { name: 'rootcfg', dir, tex: 'doc.tex', cfg };
+    const make = () => build(doc, join(dir, 'build/html'), join(dir, 'build/aux'), stubbed);
+    assert.equal((await make()).reused, undefined);
+    assert.equal((await make()).reused, true);
+    writeFileSync(macros, '% second\n');
+    assert.equal((await make()).reused, undefined);
+
+    // a contained build mounts tex8web's folder whole, and not each file
+    // in it
+    process.env.PATH = stubbed.PATH;
+    doc.runner = [join(root, 'test/lib/contain.mjs')];
+    writeFileSync(dockerLog, '');
+    const built = await make();
+    assert.equal(built.code, 0, built.log);
+    const runs = readFileSync(dockerLog, 'utf8').split('\n').filter(line => line.includes('/bin/tex8web -c '));
+    assert.equal(runs.length, 1, runs.join('\n'));
+    assert.ok(!runs[0].includes(`source=${macros},`), runs[0]);
+  } finally {
+    process.env.PATH = path;
+    rmSync(top, { recursive: true });
+    rmSync(cfg, { force: true });
+    rmSync(macros, { force: true });
   }
 });
 
