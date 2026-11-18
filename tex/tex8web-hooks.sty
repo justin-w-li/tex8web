@@ -758,9 +758,10 @@
 % \pdfximagebbox stop at with "cannot find referenced object". These read
 % their numbers as pdfTeX does, with \romannumeral of the negated number,
 % and expand to an empty name and to a zero length, printed as pdfTeX
-% prints it. Both stay expandable, as pdfTeX's are.
+% prints it, with characters of category 12, which LaTeX's \rem@pt splits.
+% Both stay expandable, as pdfTeX's are.
 \def\pdfxformname{\romannumeral-}
-\def\pdfximagebbox{0.0pt\romannumeral-\romannumeral-}
+\edef\pdfximagebbox{\detokenize{0.0pt}\noexpand\romannumeral-\noexpand\romannumeral-}
 \protected\def\pdfcolorstack{\afterassignment\web@pdf@stack\web@pdf@n=}
 \def\web@pdf@stack{\web@pdf@skip{,push=G,set=G,pop=.,current=.}{}}
 \protected\def\pdfstartlink{\web@pdf@scan{\web@pdf@rule\web@pdf@goto}{\web@pdf@window}{}{}}

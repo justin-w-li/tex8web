@@ -5,11 +5,11 @@
 % typewriter text, a footnote, a theorem, and a heading written to the
 % table of contents, given \pdflastxform, a count register, an explicit
 % number, or a macro, followed by a digit or \relax, in a \csname, in a
-% \dimexpr, and in the text of a \special, which is expanded when the page
-% is shipped out. \meaning shows what each expands to. In the PDF the name
-% is the form's number and the bounding box the image's. On the page the
-% name is empty, as the form is not drawn, the bounding box is zero, and
-% the text around each stays.
+% \dimexpr, split at its pt with LaTeX's \rem@pt, and in the text of a
+% \special, which is expanded when the page is shipped out. \meaning shows
+% what each expands to. In the PDF the name is the form's number and the
+% bounding box the image's. On the page the name is empty, as the form is
+% not drawn, the bounding box is zero, and the text around each stays.
 \pdfoutput=1
 \documentclass{article}
 \usepackage{amsthm}
@@ -71,6 +71,10 @@ Special: before\special{pdf: q /Fm\pdfxformname\pdflastxform\space Do Q} after.
 \immediate\pdfximage{test-picture.png}\imgno=\pdflastximage
 \xdef\bbox{\pdfximagebbox\pdflastximage 3}%
 Bbox: [\bbox] end.
+
+\makeatletter
+Strip: [\expandafter\rem@pt\bbox] end.
+\makeatother
 
 \dimen0=\pdfximagebbox\pdflastximage 3\relax
 Bbox dimen: [\the\dimen0] end.
