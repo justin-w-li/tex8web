@@ -171,14 +171,20 @@ else
   -- document when the build directory has none, and makeindex and
   -- makeglossaries write that file only after the run. When the run gives
   -- errors, it is made again with an empty file of each such name in the
-  -- build directory: the indexes that tex8web-hooks.sty records, makeidx's
-  -- index when the run wrote a .idx, and, when the document has
-  -- \makeglossaries, the glossaries' output files in the \@newglossary
+  -- build directory: the indexes that tex8web-hooks.sty records, the
+  -- document's index when the run wrote its .idx, and, when the document
+  -- has \makeglossaries, the glossaries' output files in the \@newglossary
   -- lines of the new .aux. Those names are known only after the run.
   -- (glossaries writes \@newglossary lines without \makeglossaries too,
   -- and \@istfilename only with it, as index.lua tests before it runs
   -- makeglossaries. A .idx in the build directory from an earlier build is
   -- removed before the run, so a .idx there is one this run wrote.)
+  -- When makeindex or makeglossaries fails, the step "unsorted" removes
+  -- each such file that the failed tool did not write, so the later runs,
+  -- and the next build, read the file beside the document, as the PDF
+  -- build does. (The empty file is dated 1970, and a write dates it now.
+  -- makeglossaries writes an empty file for a glossary without entries.)
+  local placeholders = {}
   Make:add("htlatex_first", function(par)
     local base = par.builddir .. "/" .. par.input
     -- (biblatex writes the .bcf in each run with biber. bibliography.lua
@@ -252,8 +258,12 @@ else
           names[#names + 1] = par.input .. "." .. extension
         end
       end
+      local seen = {}
       for _, name in ipairs(names) do
-        if lfs.attributes(name) and not lfs.attributes(par.builddir .. "/" .. name) then sorted[#sorted + 1] = name end
+        if not seen[name] and lfs.attributes(name) and not lfs.attributes(par.builddir .. "/" .. name) then
+          sorted[#sorted + 1] = name
+        end
+        seen[name] = true
       end
     end
     if not (beside or aux or bbl or natbib or #sorted > 0) then return testlogfile(par) end
@@ -284,7 +294,12 @@ else
       end
     end
     if beside or bbl or natbib then io.open(base .. ".bbl", "w"):close() end
-    for _, name in ipairs(sorted) do io.open(par.builddir .. "/" .. name, "w"):close() end
+    for _, name in ipairs(sorted) do
+      local path = par.builddir .. "/" .. name
+      io.open(path, "w"):close()
+      lfs.touch(path, 0, 0)
+      placeholders[#placeholders + 1] = path
+    end
     return htlatex.htlatex(par)
   end, {correct_exit = 0})
   Make:htlatex_first(latex)
@@ -295,6 +310,13 @@ else
     Make:index {}
     Make:add("glossaries", index.glossaries)
     Make:glossaries {}
+    Make:add("unsorted", function()
+      for _, path in ipairs(placeholders) do
+        if lfs.attributes(path, "modification") == 0 then os.remove(path) end
+      end
+      return 0
+    end)
+    Make:unsorted {}
     Make:autohtlatex(latex)
     Make:add("glossaries_again", index.glossaries_again, {correct_exit = 0})
     Make:glossaries_again(latex)

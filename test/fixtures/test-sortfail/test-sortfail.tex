@@ -1,9 +1,9 @@
-% Built by a job of test/run.mjs. imakeidx's index with a makeindex style
-% that is missing, and glossaries with a style file that is missing, so
-% makeindex fails for both. Each has its sorted file beside the document
-% from an earlier build, with hyperref's \hyperpage, which the document no
-% longer defines, and an entry the document no longer has. No LaTeX run
-% reads those files.
+% Built twice into one build folder by a job of test/run.mjs. imakeidx's
+% index with a makeindex style that is missing, and glossaries with a style
+% file that is missing, so makeindex fails for both. Each has its sorted
+% file beside the document, current, as an Overleaf zip ships it. The
+% document has one LaTeX error of its own, \undefinedcs. The page's index
+% and glossary are read from the files beside the document, as in the PDF.
 \documentclass{article}
 \usepackage{imakeidx}
 \makeindex[options=-s test-staleaux-ind-gone]
@@ -13,7 +13,7 @@
 \makeglossaries
 \newglossaryentry{fruit}{name={fruit},description={the seed-bearing part of a plant}}
 \begin{document}
-An apple\index{Apple} is a \gls{fruit}.
+An apple\index{Apple} is a \gls{fruit}.\undefinedcs
 \printindex
 \printglossary
 \end{document}

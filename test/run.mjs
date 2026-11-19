@@ -4396,27 +4396,36 @@ if (failing) jobs.push(async () => {
 });
 
 // test-sortfail/test-sortfail.tex, in a folder of its own as makeindex and
-// makeglossaries fail on it by design, which the generic checks count as a
-// problem: with its stale .ind and .gls beside it, no LaTeX run reads them,
-// so the index and glossary are empty and the build gives no LaTeX error
+// makeglossaries fail on it by design and it has a LaTeX error, which the
+// generic checks count as problems, copied and built twice into one build
+// folder: each build's page shows the current .ind and .gls beside the
+// document, as the PDF does, and the second build is not left with empty
+// files of the first
 const sortFails = docs.find(d => d.name === 'test-staleaux-ind');
 if (sortFails) jobs.push(async () => {
-  const doc = { ...sortFails, name: 'test-sortfail', dir: join(sortFails.dir, 'test-sortfail'), tex: 'test-sortfail.tex' };
-  const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
-  const stale = ['test-sortfail.ind', 'test-sortfail.gls'].map(f => join(doc.dir, f));
-  const before = stale.map(f => readFileSync(f, 'utf8'));
-  const result = await build(doc, out, aux);
-  const page = join(out, 'test-sortfail.html');
-  const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  const source = join(sortFails.dir, 'test-sortfail'), dir = join(testDir(sortFails), 'sortfail');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  for (const name of ['tex', 'ind', 'gls']) writeFileSync(join(dir, `test-sortfail.${name}`), readFileSync(join(source, `test-sortfail.${name}`)));
+  const shipped = ['ind', 'gls'].map(name => readFileSync(join(source, `test-sortfail.${name}`), 'utf8'));
   const problems = [];
-  if (!html) problems.push('no page');
-  for (const warning of ['the index failed', 'the glossaries failed']) {
-    if (!result.log.includes(warning)) problems.push(`no warning that ${warning.slice(4)}`);
+  for (const which of ['first', 'second']) {
+    const result = await run(join(root, 'bin/tex8web'), ['-c', sortFails.cfg, '-a', 'info', 'test-sortfail.tex'],
+      { cwd: dir, slot: true, env: { ...process.env, ...sortFails.env } });
+    const log = result.log ?? '';
+    const page = join(dir, 'build/html/test-sortfail.html');
+    const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+    if (!html) problems.push(`no page from the ${which} build`);
+    for (const warning of ['the index failed', 'the glossaries failed']) {
+      if (!log.includes(warning)) problems.push(`no warning that ${warning.slice(4)} in the ${which} build`);
+    }
+    if (!/<div class='index-item'>Shipped apple, 1 <\/div>/.test(html)) problems.push(`no shipped index entry on the ${which} build's page`);
+    if (!glossary('Glossary', entry('fruit', 'fruit', 'the seed-bearing part of a plant\\. 1')).test(html)) problems.push(`no shipped glossary entry on the ${which} build's page`);
   }
-  for (const error of ['Undefined control sequence', '[ERROR]']) if (result.log.includes(error)) problems.push(`${error} in make4ht's log`);
-  for (const text of ['Old entry', 'Apple, <a', 'seed-bearing']) if (html.includes(text)) problems.push(`${text} on the page`);
-  stale.forEach((f, i) => { if (readFileSync(f, 'utf8') !== before[i]) problems.push(`${basename(f)} beside the document changed`); });
-  report(`${sortFails.name} (makeindex and makeglossaries fail)`, problems);
+  ['ind', 'gls'].forEach((name, i) => {
+    if (readFileSync(join(dir, `test-sortfail.${name}`), 'utf8') !== shipped[i]) problems.push(`test-sortfail.${name} beside the document changed`);
+  });
+  report(`${sortFails.name} (makeindex and makeglossaries fail, built twice)`, problems);
 });
 
 // test-shippederr/test-shippederr.tex, in a folder of its own as it has a
