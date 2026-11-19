@@ -74,18 +74,23 @@ cd "$(dirname "$document")"
 # (-auxdir=${builddir}), so a build folder whose path has a space is
 # reached through a link without one, made for this run in build/ beside
 # the document and removed when it ends. A link that a killed run left is
-# removed once its process is gone.)
-link=
+# removed once its process is gone. A build/ that this run made only for
+# the link is removed too, so that a build folder outside build/ leaves
+# nothing beside the document; a run that started at the same time makes
+# it again before its link.)
+link= made=
 case $aux in *" "*)
+  [ -d build ] || made=1
   mkdir -p build
   for stale in build/tex8web_aux_*; do
     [ -L "$stale" ] && ! kill -0 "${stale#build/tex8web_aux_}" 2>/dev/null && rm -f "$stale"
   done
   mkdir -p "$aux"
-  link=build/tex8web_aux_$$
-  rm -f "$link"; ln -s "$(absolute "$aux")" "$link"
+  link=build/tex8web_aux_$$ target=$(absolute "$aux")
+  rm -f "$link"
+  ln -s "$target" "$link" 2>/dev/null || { mkdir -p build; ln -s "$target" "$link"; }
   child=
-  trap 'rm -f "$link"' EXIT
+  trap 'rm -f "$link"; [ -z "$made" ] || rmdir build 2>/dev/null || :' EXIT
   for signal in HUP:129 INT:130 TERM:143; do
     trap '[ -z "$child" ] || kill "$child" 2>/dev/null; exit '"${signal#*:}" "${signal%:*}"
   done

@@ -4990,11 +4990,15 @@ if (pathspace) {
 // - guard: build/plainaux, a build folder without a space, with a -d
 //   folder with a space
 // - failed guard: a document that stops LaTeX
+// (the space sends the absolute and paren cases through tex8web's link,
+// so they check the space; a -B with parentheses or an absolute path and
+// no space still has the Known limitation of DOCUMENTATION.md)
 // Each build makes the page, with the SVG it shows. The build folder keeps
 // the document's .aux, .log, .dvi, and .bbl, and the included part's .aux
 // (each document's, for the three at once), and holds no folder of its own
 // name. No symbolic link is left in the case's folder, also after the
-// failed build.
+// failed build. With the build folder outside build/ and a -d outside the
+// document's folder (parent, root), no build/ is left beside the document.
 const builddirspace = docs.find(d => d.name === 'test-builddirspace');
 if (builddirspace) {
   const doc = builddirspace, name = 'test-builddirspace';
@@ -5024,7 +5028,7 @@ if (builddirspace) {
     }],
     ['parent', 'my build/aux', top => {
       copy(join(top, 'doc'));
-      return { cwd: join(top, 'doc'), builds: [['-B', 'my build/aux', '-d', '../html']], page: join(top, 'html', `${name}.html`) };
+      return { cwd: join(top, 'doc'), builds: [['-B', 'my build/aux', '-d', '../html']], page: join(top, 'html', `${name}.html`), noBuild: true };
     }],
     ['root', 'my aux beside the document, with a config in a folder with a space, three times', top => {
       const cfgDir = join(top, 'My Drive/cfg');
@@ -5032,9 +5036,10 @@ if (builddirspace) {
       place(cfgDir, 'builddirspace-beside.tex', '\\WebTerm\\term\n');
       copy(join(top, 'My Notes'));
       const build = ['-c', '../My Drive/cfg/my config.cfg', '-B', 'my aux', '-d', '../html'];
-      return { cwd: join(top, 'My Notes'), builds: [build, build, build], page: join(top, 'html', `${name}.html`), cfgDir };
+      return { cwd: join(top, 'My Notes'), builds: [build, build, build], page: join(top, 'html', `${name}.html`), cfgDir, noBuild: true };
     }],
     ['absolute', 'an absolute path', top => {
+      // (with a space, so through the link; see the comment above)
       copy(join(top, 'doc'));
       return { cwd: join(top, 'doc'), builds: [['-B', join(top, 'doc/build/my aux'), '-d', join(top, 'html')]],
         page: join(top, 'html', `${name}.html`) };
@@ -5053,6 +5058,7 @@ if (builddirspace) {
       return { cwd: join(top, 'doc'), builds: [['-B', 'build/my  aux']], page: join(top, 'doc/build/html', `${name}.html`) };
     }],
     ['paren', 'build/aux (1)', top => {
+      // (with a space, so through the link; see the comment above)
       copy(join(top, 'doc'));
       return { cwd: join(top, 'doc'), builds: [['-B', 'build/aux (1)']], page: join(top, 'doc/build/html', `${name}.html`) };
     }],
@@ -5073,7 +5079,7 @@ if (builddirspace) {
   for (const [key, label, setup] of cases) jobs.push(async () => {
     const top = join(testDir(doc), `space${key}`);
     rmSync(top, { recursive: true, force: true });
-    const { cwd, builds, page, cfgDir, env = [], between, saved, ...rest } = setup(top);
+    const { cwd, builds, page, cfgDir, env = [], between, saved, noBuild, ...rest } = setup(top);
     const aux = resolve(cwd, rest.aux ?? builds[0][builds[0].indexOf('-B') + 1]);
     const before = cfgDir && readdirSync(cfgDir).sort().join(', ');
     const problems = [];
@@ -5093,6 +5099,7 @@ if (builddirspace) {
     problems.push(...pageProblems(page, name, true), ...kept(aux, name));
     for (const path of nested(aux)) problems.push(`the build folder holds ${path}`);
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
+    if (noBuild && existsSync(join(cwd, 'build'))) problems.push('a build/ folder is left beside the document');
     const after = cfgDir && readdirSync(cfgDir).sort().join(', ');
     if (after !== before) problems.push(`the config's folder holds ${after}, not ${before}`);
     report(`${doc.name} (-B ${label})`, problems);
