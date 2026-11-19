@@ -160,6 +160,14 @@ else
   -- errors too. Then the run is made again with that .aux or .bbl empty.
   -- (The main .aux names the .aux of each \include'd file, which is read
   -- through it.)
+  -- The first run also reads the sorted index or glossary file beside the
+  -- document when the build directory has none, and makeindex and
+  -- makeglossaries write that file only after the run. When the run gives
+  -- errors, it is made again with an empty file of each such name in the
+  -- build directory: the indexes that tex8web-hooks.sty records, the
+  -- glossaries' output files in the \@newglossary lines of the new .aux,
+  -- and makeidx's index when the run wrote a .idx. Those names are known
+  -- only after the run.
   -- (An empty .bbl from the start would cost a current .bbl, which latexmk
   -- leaves after a PDF build, one more LaTeX run: its \bibcite lines would
   -- first reach the .aux in the second run. The error's file cannot tell
@@ -174,13 +182,13 @@ else
     -- run for a document that no longer uses it.)
     os.remove(base .. ".bcf")
     local out, here = lfs.attributes(par.builddir), lfs.attributes(".")
-    local beside = out and not (here.ino == out.ino and here.dev == out.dev)
-      and lfs.attributes(par.input .. ".bbl") and not lfs.attributes(base .. ".bbl")
+    local separate = out and not (here.ino == out.ino and here.dev == out.dev)
+    local beside = separate and lfs.attributes(par.input .. ".bbl") and not lfs.attributes(base .. ".bbl")
     local saved = {}
     for _, extension in ipairs {"aux", "xref", "4tc", "bbl"} do
       saved[extension] = files.read(base .. "." .. extension) or false
     end
-    if mode == "draft" or not (beside or saved.aux or saved.bbl) then
+    if mode == "draft" or not (separate or saved.aux or saved.bbl) then
       return htlatex.htlatex(par)
     end
     -- (htlatex.htlatex calls Make.testlogfile, which prints the log's
@@ -228,13 +236,28 @@ else
       return content and content ~= "" and (content:find(mark, 1, true) ~= nil) ~= biblatex
     end
     local aux, bbl = stale(saved.aux, "\\abx@aux@"), stale(saved.bbl, "% $ biblatex auxiliary file $")
-    if not (beside or aux or bbl or natbib) then return testlogfile(par) end
+    local sorted = {}
+    if errors > 0 and separate then
+      local names = {}
+      for _, found in ipairs(index.indexes(written, par.input, lfs.attributes(base .. ".idx"))) do
+        names[#names + 1] = found.name .. ".ind"
+      end
+      for extension in written:gmatch("\\@newglossary{[^}]*}{[^}]*}{([^}]*)}{[^}]*}") do
+        names[#names + 1] = par.input .. "." .. extension
+      end
+      for _, name in ipairs(names) do
+        if lfs.attributes(name) and not lfs.attributes(par.builddir .. "/" .. name) then sorted[#sorted + 1] = name end
+      end
+    end
+    if not (beside or aux or bbl or natbib or #sorted > 0) then return testlogfile(par) end
     if beside then
       log:status("the first LaTeX run gave errors and a .bbl is beside the document, so it runs again without that .bbl")
     elseif natbib then
       log:status("the first LaTeX run read a .bbl of another bibliography style, with items that have no author-year data for natbib, so it runs again without that .bbl")
-    else
+    elseif aux or bbl then
       log:status("the first LaTeX run gave errors and the build directory has files of a build with another bibliography backend, so it runs again without them")
+    else
+      log:status("the first LaTeX run gave errors and a sorted index or glossary file is beside the document, so it runs again without that file")
     end
     saved.bbl = nil
     if aux then
@@ -253,6 +276,7 @@ else
       end
     end
     if beside or bbl or natbib then io.open(base .. ".bbl", "w"):close() end
+    for _, name in ipairs(sorted) do io.open(par.builddir .. "/" .. name, "w"):close() end
     return htlatex.htlatex(par)
   end, {correct_exit = 0})
   Make:htlatex_first(latex)
