@@ -249,20 +249,23 @@ function tools() {
 // TEXINPUTS so that the config can input a file beside it, when they are
 // not hashed already: those in the document's directory, or in
 // doc.sourceRoot, are hashed with the document, and those beside the
-// default tex8web.cfg are tex8web's own. Without dotfiles and folders: a
+// default tex8web.cfg are tex8web's own. Only the types a config inputs or
+// loads (configTypes), so that a synced folder's other files, which may be
+// online only, are not read, and a contained build does not see them. This
+// leaves out the stamps, logs, and locks that build() writes beside its
+// output, which may be the config's folder. Without dotfiles and folders: a
 // file that the config reads from a folder in its own, as \input{sub/file}
-// can, is not followed, and a contained build does not mount it. Without
-// the stamps, logs, and locks that build() writes beside its output, which
-// may be the config's folder. With links, which the host follows, for the
-// stamp. For a contained build's mounts (mount: true), without links,
-// without the files of tex8web's folder, which is mounted whole, and
-// without a name that holds a comma, a quote, or a line break, which
-// Docker's --mount cannot take
+// can, is not followed, and a contained build does not mount it. With
+// links, which the host follows, for the stamp. For a contained build's
+// mounts (mount: true), without links, without the files of tex8web's
+// folder, which is mounted whole, and without a name that holds a comma, a
+// quote, or a line break, which Docker's --mount cannot take
+const configTypes = /\.(tex|sty|cls|cfg|def|fd|clo|ldf|4ht)$/i;
 function besideConfig(doc, { mount = false } = {}) {
   const folder = dirname(resolve(doc.cfg)), above = relative(doc.sourceRoot ?? doc.dir, folder);
   if (resolve(doc.cfg) === join(root, 'tex8web.cfg') || !/^\.\.(\/|$)/.test(above) || mount && folder === root) return [];
   const status = mount ? lstatSync : statSync;
-  return readdirSync(folder).filter(name => !name.startsWith('.') && !/\.(stamp|log|lock)$/.test(name) && !(mount && /[,"\n\r]/.test(name))
+  return readdirSync(folder).filter(name => !name.startsWith('.') && configTypes.test(name) && !(mount && /[,"\n\r]/.test(name))
     && status(join(folder, name), { throwIfNoEntry: false })?.isFile()).sort();
 }
 

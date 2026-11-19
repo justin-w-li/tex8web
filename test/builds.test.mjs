@@ -194,12 +194,19 @@ test('the files beside a config outside the document\'s directory are in the sta
     assert.equal((await make()).reused, true);
     writeFileSync(join(cfgDir, 'other.tex'), '% beside\n');
     assert.equal((await make()).reused, undefined);
+    // but not a file of a type that a config cannot load, which in a synced
+    // folder may be online only, nor one that the host cannot read
+    writeFileSync(join(cfgDir, 'Report.pdf'), 'first\n');
+    assert.equal((await make()).reused, true);
+    writeFileSync(join(cfgDir, 'Report.pdf'), 'second\n');
+    writeFileSync(join(cfgDir, 'locked.txt'), 'private\n', { mode: 0o000 });
+    assert.equal((await make()).reused, true);
 
     // a contained build mounts the files beside the config read-only, but
-    // not the folder, the folders in it, its dotfiles, its links, or a name
-    // that Docker's --mount cannot take
-    writeFileSync(join(cfgDir, '.secret'), 'private\n');
-    writeFileSync(join(cfgDir, 'Notes, v2.pdf'), 'a comma\n');
+    // not the folder, the folders in it, its dotfiles, its files of other
+    // types, its links, or a name that Docker's --mount cannot take
+    writeFileSync(join(cfgDir, '.secret.tex'), 'private\n');
+    writeFileSync(join(cfgDir, 'Notes, v2.tex'), 'a comma\n');
     writeFileSync(join(cfgDir, 'say "hi".tex'), 'a quote\n');
     symlinkSync(join(cfgDir, 'webmacros.tex'), join(cfgDir, 'linked.tex'));
     process.env.PATH = stubbed.PATH;
@@ -212,7 +219,7 @@ test('the files beside a config outside the document\'s directory are in the sta
     const mounted = [...runs[0].matchAll(/type=bind,source=([^,]+),target=\1,readonly /g)].map(([, source]) => source)
       .filter(source => source.startsWith(cfgDir));
     assert.deepEqual(mounted.sort(), ['other.tex', 'webmacros.tex', 'x.cfg'].map(name => join(cfgDir, name)));
-    assert.ok(!runs[0].includes('Notes, v2.pdf') && !runs[0].includes('say "hi".tex'), runs[0]);
+    assert.ok(!runs[0].includes('Notes, v2.tex') && !runs[0].includes('say "hi".tex') && !runs[0].includes('Report.pdf'), runs[0]);
   } finally {
     process.env.PATH = path;
     rmSync(top, { recursive: true });
