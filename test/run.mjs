@@ -4,6 +4,7 @@
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { hostname } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
@@ -5151,6 +5152,26 @@ if (builddirspace) {
     if (result.log.includes('cannot open log file')) problems.push('LaTeX could not open its log file');
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
     report(`${doc.name} (guard: a failed build into build/my aux)`, problems);
+  });
+  // links in build/ that other builds left: one of another host, as a
+  // build in a container that shares build/ makes, which a build here
+  // keeps, as that host's process IDs are not this host's; and one of
+  // this host whose process is gone, which the build removes
+  jobs.push(async () => {
+    const top = join(testDir(doc), 'spaceotherhost'), dir = join(top, 'doc');
+    rmSync(top, { recursive: true, force: true });
+    copy(dir);
+    mkdirSync(join(dir, 'build/their aux'), { recursive: true });
+    const host = hostname().replace(/[^A-Za-z0-9]/g, '_');
+    const theirs = 'tex8web_aux_otherhost_1', dead = `tex8web_aux_${host}_99999999`;
+    for (const file of [theirs, dead]) symlinkSync(join(dir, 'build/their aux'), join(dir, 'build', file));
+    const result = await run8(dir, ['-B', 'build/my aux'], `${name}.tex`);
+    writeFileSync(join(top, 'build.log'), result.log);
+    const problems = result.code !== 0 ? [`tex8web exited with ${result.code}`] : [];
+    problems.push(...pageProblems(join(dir, 'build/html', `${name}.html`), name, true), ...kept(join(dir, 'build/my aux'), name));
+    const left = links(top).sort().join(', ');
+    if (left !== `doc/build/${theirs}`) problems.push(`the links left are ${left || 'none'}, not doc/build/${theirs}`);
+    report(`${doc.name} (-B build/my aux, beside links of another host and of a process that is gone)`, problems);
   });
   // more documents built into build/my aux: biblatex with biber, an index
   // and a glossary, XCharter (whose font files tex8web writes in the build

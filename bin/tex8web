@@ -73,22 +73,26 @@ cd "$(dirname "$document")"
 # make4ht-htlatex.lua (--output-directory=${builddir}) and mkutils.lua
 # (-auxdir=${builddir}), so a build folder whose path has a space is
 # reached through a link without one, made for this run in build/ beside
-# the document and removed when it ends. A link that a killed run left is
-# removed once its process is gone. A build/ that this run made only for
-# the link is removed too, so that a build folder outside build/ leaves
-# nothing beside the document; a run that started at the same time makes
-# it again before its link.)
+# the document and removed when it ends. The link's name has the host's
+# name and the process ID, as builds in containers that share build/ have
+# the same process IDs. A link that a killed run on this host left is
+# removed once its process is gone, and a name already taken stops the
+# build. A build/ that this run made only for the link is removed too, so
+# that a build folder outside build/ leaves nothing beside the document; a
+# run that started at the same time makes it again before its link.)
 link= made=
 case $aux in *" "*)
   [ -d build ] || made=1
   mkdir -p build
-  for stale in build/tex8web_aux_*; do
-    [ -L "$stale" ] && ! kill -0 "${stale#build/tex8web_aux_}" 2>/dev/null && rm -f "$stale"
+  host=$(uname -n | tr -c 'A-Za-z0-9\n' _)
+  for stale in build/tex8web_aux_"$host"_*; do
+    pid=${stale##*_}
+    [ -L "$stale" ] && { [ "$pid" = $$ ] || ! kill -0 "$pid" 2>/dev/null; } && rm -f "$stale"
   done
   mkdir -p "$aux"
-  link=build/tex8web_aux_$$ target=$(absolute "$aux")
-  rm -f "$link"
-  ln -s "$target" "$link" 2>/dev/null || { mkdir -p build; ln -s "$target" "$link"; }
+  link=build/tex8web_aux_${host}_$$ target=$(absolute "$aux")
+  if [ -e "$link" ] || [ -L "$link" ]; then echo "tex8web: $link exists" >&2; exit 1; fi
+  ln -s "$target" "$link" 2>/dev/null || { [ -d build ] || made=1; mkdir -p build; ln -s "$target" "$link"; }
   child=
   trap 'rm -f "$link"; [ -z "$made" ] || rmdir build 2>/dev/null || :' EXIT
   for signal in HUP:129 INT:130 TERM:143; do
@@ -112,10 +116,6 @@ set -- make4ht -u -c "$config" -e "$root/tex8web.mk4" -B "$aux" -d "$out" "$@" "
 # traps stop it. sh starts a background command with INT and QUIT
 # ignored, which LaTeX would keep after a Ctrl-C; perl, which TeX Live
 # needs, restores them)
-if command -v perl >/dev/null; then
-  perl -e '$SIG{INT} = $SIG{QUIT} = "DEFAULT"; exec @ARGV or die "tex8web: $ARGV[0]: $!\n"' "$@" <&0 &
-else
-  "$@" <&0 &
-fi
+perl -e '$SIG{INT} = $SIG{QUIT} = "DEFAULT"; exec @ARGV or die "tex8web: $ARGV[0]: $!\n"' "$@" <&0 &
 child=$!
 wait "$child"
