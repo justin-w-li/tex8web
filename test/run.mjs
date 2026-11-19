@@ -4719,9 +4719,11 @@ if (staleBcf) for (const [first, second, folder = 'build/tex4ht', draft] of stal
 // of its own with its lists, and into another without them. Both builds
 // exit with 0, with no LaTeX error, and give the same page: tex4ht leaves
 // out a list's entries from a PDF build, as the full build does. No old
-// entry is in the page, and each list beside the document keeps its text.
+// entry of a stale list is in the page, and no file beside the document
+// is changed or added. hyperref.tex also has pdflatex's .aux and .out
+// beside it in both folders, and its reference must come from that .aux.
 const staleTocDraft = docs.find(d => d.name === 'test-staletoc-draft');
-const staleTocDraftOwn = { hyperref: ['hyperref.exp'], plain: ['plain.exp'], older: ['older.exp'] };
+const staleTocDraftOwn = { hyperref: ['hyperref.exp', 'hyperref.toc'], plain: ['plain.exp'], older: ['older.exp'] };
 const staleTocDraftCases = [...['toc', 'toc-koma', 'toc-memoir', 'toc-color', 'toc-amsart', 'toc-report'].map(n => `test-staleaux-${n}`),
   ...Object.keys(staleTocDraftOwn)];
 if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => {
@@ -4735,8 +4737,12 @@ if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => 
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
     for (const f of files) if (variant === 'beside' || !lists.includes(f)) writeFileSync(join(dir, f), readFileSync(join(source, f)));
+    const state = () => readdirSync(dir).filter(f => f !== 'build').sort()
+      .map(f => `${f} ${statSync(join(dir, f)).ctimeMs} ${readFileSync(join(dir, f), 'utf8')}`).join('\n');
+    const before = state();
     const result = await run(join(root, 'bin/tex8web'), ['-c', join(root, 'tex8web.cfg'), '-m', 'draft', '-a', 'info', `${name}.tex`],
       { cwd: dir, slot: true, env: { ...process.env, ...staleTocDraft.env } });
+    if (state() !== before) problems.push(`a file beside the document ${variant === 'beside' ? 'with its lists' : 'without its lists'} was changed or added`);
     const log = result.log ?? '';
     writeFileSync(join(dir, 'build.log'), log);
     const what = variant === 'beside' ? 'beside its lists' : 'without its lists';
@@ -4749,16 +4755,49 @@ if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => 
   };
   const [beside, alone] = await Promise.all([build('beside'), build('alone')]);
   if (!/Text of the first (?:section|chapter)\./.test(beside.html)) problems.push("the page does not have the first section's text");
-  if (/Old (?:example|remark|box|algorithm|section|figure|table|listing|program|theorem)|Alte[rn]? /.test(beside.html)) problems.push('the page has an old entry');
+  // (the lists of test-staletoc-draft/ hold only the document's own entry,
+  // which the comparison with the page without the lists covers)
+  if (!own && /Old (?:example|remark|box|algorithm|section|figure|table|listing|program|theorem)|Alte[rn]? /.test(beside.html)) problems.push('the page has an old entry');
+  if (name === 'hyperref' && !/See Example<span class='tex8web-nbsp'> <\/span>(?:<a [^>]*>)?1(?:<\/a>)?\./.test(beside.html)) {
+    problems.push("the reference does not show the number from the .aux beside the document");
+  }
   if (beside.html && alone.html && beside.html !== alone.html) {
     const a = beside.html.split('\n'), b = alone.html.split('\n');
     const line = a.findIndex((l, i) => l !== b[i]);
     problems.push(`the page differs from the page without the lists at line ${line + 1}: ${JSON.stringify(a[line]?.slice(0, 160))}`);
   }
-  for (const f of lists) {
-    if (readFileSync(join(beside.dir, f), 'utf8') !== readFileSync(join(source, f), 'utf8')) problems.push(`${f} changed`);
-  }
   report(`${staleTocDraft.name} (${name}, draft)`, problems);
+});
+// test-staletoc-draft built in full, then in draft mode, in the same folder
+// beside the stale list of test-staleaux-toc-color. The draft build reads
+// the list that the full build wrote in the build folder, and gives the
+// same page. The stale list keeps its text.
+if (staleTocDraft) jobs.push(async () => {
+  const dir = join(testDir(staleTocDraft), 'full-then-draft');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'doc.tex'), readFileSync(join(staleTocDraft.dir, 'test-staletoc-draft.tex')));
+  writeFileSync(join(dir, 'doc.exp'), readFileSync(join(staleTocDraft.dir, 'test-staleaux-toc-color.exp')));
+  const problems = [], pages = [];
+  for (const options of [[], ['-m', 'draft']]) {
+    const what = options.length ? 'draft build' : 'full build';
+    const result = await run(join(root, 'bin/tex8web'), ['-c', join(root, 'tex8web.cfg'), ...options, '-a', 'info', 'doc.tex'],
+      { cwd: dir, slot: true, env: { ...process.env, ...staleTocDraft.env } });
+    writeFileSync(join(dir, `${options.length ? 'draft' : 'full'}.log`), result.log ?? '');
+    if (result.code !== 0) problems.push(`the ${what} exited with ${result.code}`);
+    const page = join(dir, 'build/html/doc.html');
+    const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+    if (!/Examples<\/span>[^]*Example<span class='tex8web-nbsp'> <\/span>1: A new example/.test(html)) problems.push(`the page of the ${what} does not have the list and the example`);
+    if (/Old example/.test(html)) problems.push(`the page of the ${what} has an old entry`);
+    pages.push(html);
+  }
+  if (pages[0] !== pages[1]) {
+    const a = pages[1].split('\n'), b = pages[0].split('\n');
+    const line = a.findIndex((l, i) => l !== b[i]);
+    problems.push(`the page of the draft build differs from the full build's at line ${line + 1}: ${JSON.stringify(a[line]?.slice(0, 160))}`);
+  }
+  if (readFileSync(join(dir, 'doc.exp'), 'utf8') !== readFileSync(join(staleTocDraft.dir, 'test-staleaux-toc-color.exp'), 'utf8')) problems.push('doc.exp changed');
+  report(`${staleTocDraft.name} (full, then draft)`, problems);
 });
 
 // test-pathspace built with its config, or tex8web itself, in a folder

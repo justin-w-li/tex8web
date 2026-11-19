@@ -1,7 +1,11 @@
-% A list of tocloft's \newlistof. run.mjs also builds in draft mode the
-% documents of test-staletoc-draft/, each beside the list that pdflatex
-% wrote for it, and the test-staleaux-toc fixtures, each beside its stale
-% lists, then each document again with no list beside it.
+% A list of tocloft's \newlistof. The default build of this document,
+% with no list beside it, only carries the jobs of run.mjs that check
+% draft builds. Those build in draft mode the documents of
+% test-staletoc-draft/, each beside the list that pdflatex wrote for it,
+% and the test-staleaux-toc fixtures, each beside its stale lists, then
+% each document again with no list beside it. They also build this
+% document in full and then in draft mode, in one folder, beside the stale
+% list of test-staleaux-toc-color.
 \documentclass{article}
 \usepackage{tocloft}
 \newlistof{example}{exp}{Examples}
