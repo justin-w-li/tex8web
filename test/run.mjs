@@ -3,12 +3,8 @@
 // run beside them. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, relative } from 'node:path';
-import { lstatSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { readlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -4985,6 +4981,8 @@ if (pathspace) {
 //   tex8web copies) that inputs a file beside it, built three times into
 //   the same folder
 // - absolute: the build folder by an absolute path
+// - twospaces: build/my  aux, two spaces in a row
+// - paren: build/aux (1), a space and parentheses
 // - saved: a build that saves LaTeX's run (TEX8WEB_LATEX_SAVE), then one
 //   that reuses it (TEX8WEB_LATEX_REUSE)
 // - at once: three documents in one folder built at once into one build
@@ -5062,10 +5060,6 @@ if (builddirspace) {
   // (a -c in args comes after the fixture's config, and so replaces it)
   const run8 = (cwd, args, tex, env = {}, slot = true) => run(join(root, 'bin/tex8web'), ['-c', doc.cfg, ...args, '-a', 'info', tex],
     { cwd, slot, env: { ...process.env, ...doc.env, ...env } });
-  // links in the temporary folder that point into a case's folder
-  const tmpLinks = top => readdirSync(tmpdir()).filter(file => {
-    try { return lstatSync(join(tmpdir(), file)).isSymbolicLink() && resolve(tmpdir(), readlinkSync(join(tmpdir(), file))).startsWith(top); } catch { return false; }
-  }).map(file => `a link is left in ${tmpdir()}: ${file}`);
   // the problems of a build folder after a document's build
   const kept = (aux, tex, included = true) => [`${tex}.aux`, `${tex}.log`, `${tex}.dvi`, `${tex}.bbl`, ...included ? [`${name}/part.aux`] : []]
     .filter(file => !existsSync(join(aux, file))).map(file => `the build folder has no ${file}`);
@@ -5099,7 +5093,6 @@ if (builddirspace) {
     problems.push(...pageProblems(page, name, true), ...kept(aux, name));
     for (const path of nested(aux)) problems.push(`the build folder holds ${path}`);
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
-    problems.push(...tmpLinks(top));
     const after = cfgDir && readdirSync(cfgDir).sort().join(', ');
     if (after !== before) problems.push(`the config's folder holds ${after}, not ${before}`);
     report(`${doc.name} (-B ${label})`, problems);
@@ -5121,7 +5114,6 @@ if (builddirspace) {
         ...kept(aux, tex, false));
     });
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
-    problems.push(...tmpLinks(top));
     report(`${doc.name} (three documents built at once into build/my aux)`, problems);
   });
   // guards: a build folder without a space and a -d folder with one, which
@@ -5150,7 +5142,6 @@ if (builddirspace) {
     const texLog = join(dir, 'build/my aux', `${name}.log`);
     if (!existsSync(texLog) || !readFileSync(texLog, 'utf8').includes('\\begin{tabular} on input line')) problems.push("LaTeX's log does not name the unclosed tabular");
     if (result.log.includes('cannot open log file')) problems.push('LaTeX could not open its log file');
-    problems.push(...tmpLinks(top));
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
     report(`${doc.name} (guard: a failed build into build/my aux)`, problems);
   });
@@ -5202,35 +5193,71 @@ if (builddirspace) {
     for (const file of files) if (!existsSync(join(aux, file))) problems.push(`the build folder has no ${file}`);
     for (const path of nested(aux)) problems.push(`the build folder holds ${path}`);
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
-    problems.push(...tmpLinks(top));
     report(`${doc.name} (-B build/my aux, ${label})`, problems);
   });
-  // a build into build/my aux that hangs, killed by SIGTERM, as a terminal
-  // or timeout stops it, or by SIGKILL, as the tests' watchdog does, once
-  // LaTeX has started; then the document, fixed, built again. No link is
-  // left after the SIGTERM, nor after the build that follows the SIGKILL
-  for (const signal of ['SIGTERM', 'SIGKILL']) jobs.push(async () => {
-    const top = join(testDir(doc), `spacehang${signal.slice(3).toLowerCase()}`), dir = join(top, 'doc');
+  // a build into build/my aux that hangs, stopped once LaTeX has started:
+  // - term: SIGTERM to its process group, as a terminal or timeout sends it
+  // - termpid: SIGTERM to tex8web alone, as an editor's stop button or
+  //   Node's child.kill() sends it; tex8web ends within 20 s
+  // - int: SIGINT to its process group, as Ctrl-C sends it; LaTeX ends
+  //   too, within 20 s
+  // - kill: SIGKILL to its process group, as the tests' watchdog sends it
+  // Then the document, fixed, is built again. While the build hangs, its
+  // link is in build/, not in the document's folder. No link is left after
+  // the build ends, except after the SIGKILL, and none after the build that
+  // follows
+  // (these builds hold no build slot, so they are not in build.mjs's
+  // running commands: their process groups are killed when the tests end)
+  const hung = new Set();
+  process.on('exit', () => hung.forEach(pid => { try { process.kill(-pid, 'SIGKILL'); } catch {} }));
+  const within = (promise, ms) => Promise.race([promise, new Promise(done => setTimeout(() => done('late'), ms).unref())]);
+  const pause = ms => new Promise(done => setTimeout(done, ms));
+  // whether a process of the group runs, not counting zombies, which a
+  // container without an init does not reap
+  const groupRuns = pgid => spawnSync('ps', ['-axo', 'pgid=,stat='], { encoding: 'utf8' }).stdout.split('\n')
+    .some(line => { const [group, stat = ''] = line.trim().split(/\s+/); return Number(group) === pgid && !stat.startsWith('Z'); });
+  const stops = [
+    ['term', 'SIGTERM to its process group', 'SIGTERM', true],
+    ['termpid', 'SIGTERM to tex8web alone', 'SIGTERM', false],
+    ['int', 'SIGINT to its process group', 'SIGINT', true],
+    ['kill', 'SIGKILL to its process group', 'SIGKILL', true],
+  ];
+  for (const [key, label, signal, group] of stops) jobs.push(async () => {
+    const top = join(testDir(doc), `spacehang${key}`), dir = join(top, 'doc');
     rmSync(top, { recursive: true, force: true });
     copy(dir, name, fixture.replace('\\begin{document}\n', '\\begin{document}\n\\def\\x{\\x}\\x\n'));
     const problems = [];
     const child = spawn(join(root, 'bin/tex8web'), ['-c', doc.cfg, '-B', 'build/my aux', `${name}.tex`],
       { cwd: dir, detached: true, stdio: 'ignore', env: { ...process.env, ...doc.env } });
+    hung.add(child.pid);
     const ended = new Promise(done => child.on('exit', done));
     const texLog = join(dir, 'build/my aux', `${name}.log`);
-    for (let waited = 0; !existsSync(texLog) && waited < 120000; waited += 100) await new Promise(done => setTimeout(done, 100));
+    for (let waited = 0; !existsSync(texLog) && waited < 120000; waited += 100) await pause(100);
     if (!existsSync(texLog)) problems.push('LaTeX did not start in 120 s');
-    try { process.kill(-child.pid, signal); } catch {}
-    await ended;
-    if (signal === 'SIGTERM') for (const path of links(top)) problems.push(`a link is left after the ${signal}: ${path}`);
+    // (and has reached \x's loop: a SIGINT that comes earlier stops LaTeX
+    // whether or not tex8web passes it on)
+    await pause(3000);
+    for (const file of readdirSync(dir)) if (lstatSync(join(dir, file)).isSymbolicLink()) problems.push(`a link is made beside the document: ${file}`);
+    try { process.kill(group ? -child.pid : child.pid, signal); } catch {}
+    if (await within(ended, 20000) === 'late') problems.push(`tex8web runs 20 s after the ${signal}`);
+    if (signal === 'SIGINT') {
+      for (let waited = 0; groupRuns(child.pid) && waited < 20000; waited += 200) await pause(200);
+      if (groupRuns(child.pid)) problems.push('LaTeX runs 20 s after the SIGINT');
+    }
+    if (signal !== 'SIGKILL') for (const path of links(top)) problems.push(`a link is left after the ${signal}: ${path}`);
+    // (LaTeX, which a SIGTERM to tex8web alone leaves running, as it does
+    // for a build folder without a space)
+    try { process.kill(-child.pid, 'SIGKILL'); } catch {}
+    await within(ended, 20000);
+    for (let waited = 0; groupRuns(child.pid) && waited < 20000; waited += 200) await pause(200);
+    hung.delete(child.pid);
     copy(dir);
     const result = await run8(dir, ['-B', 'build/my aux'], `${name}.tex`);
     writeFileSync(join(top, 'build.log'), result.log);
     if (result.code !== 0) problems.push(`the build after the ${signal}: tex8web exited with ${result.code}`);
     problems.push(...pageProblems(join(dir, 'build/html', `${name}.html`), name, true), ...kept(join(dir, 'build/my aux'), name));
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
-    problems.push(...tmpLinks(top));
-    report(`${doc.name} (a hung build into build/my aux, killed by ${signal}, then built again)`, problems);
+    report(`${doc.name} (a hung build into build/my aux, stopped by ${label}, then built again)`, problems);
   });
 }
 
