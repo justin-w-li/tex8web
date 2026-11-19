@@ -1,0 +1,23 @@
+% test-xformnum's name of a form used as a number, with hyperref loaded:
+% assigned to a count register, after \ifnum, in the text, and in a
+% heading that goes to the table of contents and to hyperref's bookmarks.
+% In the PDF the name is 1.
+\pdfoutput=1
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+\tableofcontents
+
+\setbox2\hbox{x}\pdfxform2
+
+\section{Head \pdfxformname\pdflastxform{} end}
+
+\makeatletter
+\count@=\pdfxformname\pdflastxform\relax
+Count: [\the\count@] end.
+\makeatother
+
+Ifnum: [\ifnum\pdfxformname\pdflastxform>0 pos\else zero\fi] end.
+
+Text: [\pdfxformname\pdflastxform] end.
+\end{document}

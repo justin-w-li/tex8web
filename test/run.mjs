@@ -2108,6 +2108,29 @@ const drivers = {
     /^(?![^]*(?:tex_|:D\b))/,
     pdfprimLeaks,
   ],
+  // (a form's name used as a number is the form's number, as in the PDF:
+  // assigned to a count register, in a \numexpr, after \number, \ifnum,
+  // \ifcase, and \romannumeral, and in the text, for the first, second,
+  // and third form)
+  'test-xformnum': [
+    pdfprimHead('h3', 'Head 1 and 2 end'), pdfprimToc('Head 1 and 2 end'),
+    ...['Count: [1] end.', 'Advance: [16] end.', 'Setcounter: [1] end.', 'Numexpr: [13] end.', 'Number: [1] end.',
+      'Ifnum: [pos] end.', 'Ifcase: [one] end.', 'Roman: [i] end.', 'Edef: [1] end.', 'Xdef: [1] end.',
+      'Csname: [one] end.', 'Text: [1] end.', 'Italic: |a[1]b end|.', 'Sans: |c[first]d end|.',
+      'Typewriter: |e[1]f end|.', '1|Note [2] end.',
+      'Second: [2] end.', 'Second ifnum: [second] end.', 'Saved count: [1] end.', 'Explicit: [2] end.',
+      'Macro: [2] end.', 'Digit: [25] end.', 'Relax: [2] end.', 'After image: [3] end.'].map(pdfprimText),
+    new RegExp(`Theorem 1\\.(?:<[^>]*>|\\s)*${pdfprimText('Theorem [one] end.').source}`),
+    /^(?![^]*(?:(?<!test-)pdfxformname|\/Foo 1|\/Bar 2|test-picture))/,
+    pdfprimLeaks,
+  ],
+  // (with hyperref loaded too)
+  'test-xformnum-hyperref': [
+    pdfprimHead('h3', 'Head 1 end'), pdfprimToc('Head 1 end'),
+    ...['Count: [1] end.', 'Ifnum: [pos] end.', 'Text: [1] end.'].map(pdfprimText),
+    /^(?![^]*(?<!test-)pdfxformname)/,
+    pdfprimLeaks,
+  ],
 };
 
 // Warnings a document's TeX log must not hold. test-pdftex-class's class

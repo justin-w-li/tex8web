@@ -1,0 +1,89 @@
+% A document written for pdflatex that uses the name of a form, read with
+% \pdfxformname after \pdfxform, as a number: assigned to a count register
+% with \count@=, \advance, and \setcounter, in a \numexpr, after \number,
+% \ifnum, \ifcase, and \romannumeral, in the text, in italic, sans-serif,
+% and typewriter text, a footnote, a theorem, and a heading written to the
+% table of contents, read in an \edef, an \xdef, and a \csname, given
+% \pdflastxform, a count register, an explicit number, or a macro, and
+% followed by a digit or \relax, after a \pdfxform with \immediate, attr,
+% and resources, and after an image. In the PDF the name is the form's
+% number, 1 for the first form, 2 for the second, and 3 for the third.
+\pdfoutput=1
+\documentclass{article}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\newcounter{fm}
+\newcount\formno
+\def\formtwo{2}
+\expandafter\def\csname Fm1\endcsname{one}
+\begin{document}
+\tableofcontents
+
+\setbox2\hbox{x}\pdfxform2 \formno=\pdflastxform
+
+\section{Head \pdfxformname\pdflastxform{} and \number\numexpr\pdfxformname\pdflastxform+1\relax{} end}
+
+\makeatletter
+\count@=\pdfxformname\pdflastxform\relax
+Count: [\the\count@] end.
+
+\advance\count@ by \pdfxformname\pdflastxform 5\relax
+Advance: [\the\count@] end.
+\makeatother
+
+\setcounter{fm}{\pdfxformname\pdflastxform}%
+Setcounter: [\thefm] end.
+
+Numexpr: [\the\numexpr\pdfxformname\pdflastxform*10+3\relax] end.
+
+Number: [\number\pdfxformname\pdflastxform] end.
+
+Ifnum: [\ifnum\pdfxformname\pdflastxform>0 pos\else zero\fi] end.
+
+Ifcase: [\ifcase\pdfxformname\pdflastxform\relax zero\or one\or two\fi] end.
+
+Roman: [\romannumeral\pdfxformname\pdflastxform\relax] end.
+
+\edef\formedef{\pdfxformname\pdflastxform}%
+Edef: [\formedef] end.
+
+{\xdef\formxdef{\pdfxformname\pdflastxform}}%
+Xdef: [\formxdef] end.
+
+Csname: [\csname Fm\pdfxformname\pdflastxform\endcsname] end.
+
+Text: [\pdfxformname\pdflastxform] end.
+
+Italic: \emph{a[\number\pdfxformname\pdflastxform]b end}.
+
+Sans: \textsf{c[\ifnum\pdfxformname\pdflastxform=1 first\else other\fi]d end}.
+
+Typewriter: \texttt{e[\pdfxformname\pdflastxform]f end}.
+
+Footnote: before\footnote{Note [\the\numexpr\pdfxformname\pdflastxform+1\relax] end.} after.
+
+\begin{theorem}
+Theorem [\ifnum\pdfxformname\pdflastxform=1 one\else other\fi] end.
+\end{theorem}
+
+\setbox2\hbox{y}\immediate\pdfxform attr{/Foo 1} resources{/Bar 2} 2
+
+Second: [\pdfxformname\pdflastxform] end.
+
+Second ifnum: [\ifnum\pdfxformname\pdflastxform>1 second\else first\fi] end.
+
+Saved count: [\pdfxformname\formno] end.
+
+Explicit: [\pdfxformname 2 ] end.
+
+Macro: [\pdfxformname\formtwo] end.
+
+Digit: [\pdfxformname\pdflastxform 5] end.
+
+Relax: [\pdfxformname\pdflastxform\relax] end.
+
+\immediate\pdfximage{test-picture.png}%
+\setbox2\hbox{z}\pdfxform2
+
+After image: [\pdfxformname\pdflastxform] end.
+\end{document}
