@@ -4764,8 +4764,7 @@ if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => 
 // test-staletoc-draft built in full, then in draft mode, in the same folder
 // beside the stale list of test-staleaux-toc-koma, whose three-argument
 // lines stop a LaTeX run that reads them. The draft build reads the list
-// that the full build wrote in the build folder instead, and gives the
-// same page. The stale list keeps its text.
+// that the full build wrote in the build folder instead.
 if (staleTocDraft) jobs.push(async () => {
   const dir = join(testDir(staleTocDraft), 'full-then-draft');
   rmSync(dir, { recursive: true, force: true });
