@@ -1,0 +1,8 @@
+% amsart's own \makeindex and \printindex, without makeidx, called in a
+% class file of the document, with test-staleaux-ind-cls.ind beside the
+% document from an earlier build that loaded hyperref
+\documentclass{test-staleaux-ind-cls}
+\begin{document}
+An apple\index{Apple}.
+\printindex
+\end{document}

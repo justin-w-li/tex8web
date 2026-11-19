@@ -1,11 +1,14 @@
-% imakeidx's main index and a named index, each with its .ind beside the
-% document from an earlier build that loaded hyperref
+% imakeidx's main index and two named indexes, one named for the job and
+% one not, each with its .ind beside the document from an earlier build
+% that loaded hyperref
 \documentclass{article}
 \usepackage{imakeidx}
 \makeindex
 \makeindex[name=test-staleaux-ind-named-authors,title=Index of authors]
+\makeindex[name=test-staleaux-people,title=Index of people]
 \begin{document}
-An apple\index{Apple}, named by Knuth\index[test-staleaux-ind-named-authors]{Knuth}.
+An apple\index{Apple}, named by Knuth\index[test-staleaux-ind-named-authors]{Knuth}, after Euler\index[test-staleaux-people]{Euler}.
 \printindex
 \printindex[test-staleaux-ind-named-authors]
+\printindex[test-staleaux-people]
 \end{document}

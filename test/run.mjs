@@ -798,9 +798,13 @@ const index = {
   'test-staleaux-ind': [/<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/,
     /<div class='index-item'>Pear, <a href='#[^']+'>2<\/a> <\/div>/, /^(?![^]*Old entry)/],
   'test-staleaux-ind-named': [/>Index<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/,
-    /Index of authors<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Knuth, <a href='#[^']+'>1<\/a> <\/div>/, /^(?![^]*Old (?:entry|author))/],
+    /Index of authors<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Knuth, <a href='#[^']+'>1<\/a> <\/div>/,
+    /Index of people<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Euler, <a href='#[^']+'>1<\/a> <\/div>/, /^(?![^]*Old (?:entry|author|person))/],
   'test-staleaux-ind-input': [/<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/, /^(?![^]*Old entry)/],
   'test-staleaux-ind-current': [/<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/],
+  'test-staleaux-ind-cls': [/>Apple,<\/span>\s*<a href='#[^']+'><span class='cmr-8'>1<\/span><\/a>/, /^(?![^]*Old entry)/],
+  // (the .ind beside the document, read as there is no \makeindex)
+  'test-staleaux-ind-shipped': [/<div class='index-item'>Shipped apple, 1 <\/div>/],
 };
 
 // The table of contents beside the text, under the document title (a link
@@ -2230,16 +2234,14 @@ const logs = {
       /^(?![^]*\[ERROR\])/, ...name === 'toc' ? [/^(?![^]*Package etoolbox Error)/, /^(?![^]*No counter 'refsection')/,
         /^(?![^]*No multilingual package)/, /^(?![^]*test-staleaux-toc\.(?:exp|rmk|loe|box|tdo|loa)\b)/] : []]])),
   // (no LaTeX error from the sorted index and glossary files of an earlier
-  // build beside the document, which the first LaTeX run would read; in
-  // test-staleaux-ind-gls none in the file of each glossary but the main
-  // one, whose name make4ht cuts short)
-  ...Object.fromEntries(['ind', 'ind-named', 'ind-input', 'ind-gls', 'ind-abr'].map(name =>
-    [`test-staleaux-${name}`, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*\[ERROR\])/,
-      ...name === 'ind-gls' ? ['acr', 'sls', 'nls', 'notation-gls', 'tls'].map(e => new RegExp(`^(?![^]*test-staleaux-ind-gls\\.${e}\\b)`)) : []]])),
-  // (a current .ind beside the document is read by the first LaTeX run
-  // with no error, and the build takes no extra LaTeX run)
-  'test-staleaux-ind-current': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*runs again)/,
-    /^(?![^]*\[ERROR\])/],
+  // build beside the document, which the first LaTeX run would read: their
+  // \hyperpage, which the document no longer defines)
+  ...Object.fromEntries(['ind', 'ind-named', 'ind-input', 'ind-gls', 'ind-abr', 'ind-cls'].map(name =>
+    [`test-staleaux-${name}`, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*\[ERROR\])/]])),
+  // (current index and glossary files beside the document are read by the
+  // first LaTeX run with no error, and the build takes no extra LaTeX run)
+  ...Object.fromEntries(['test-staleaux-ind-current', 'test-staleaux-ind-shipped'].map(name =>
+    [name, [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*\[ERROR\])/]])),
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
@@ -2267,11 +2269,13 @@ const untouched = {
   'test-staleaux-toc-amsart': ['test-staleaux-toc-amsart.lof', 'test-staleaux-toc-amsart.lot'],
   'test-staleaux-toc-report': ['test-staleaux-toc-report.exp'],
   'test-staleaux-ind': ['test-staleaux-ind.ind'],
-  'test-staleaux-ind-named': ['test-staleaux-ind-named.ind', 'test-staleaux-ind-named-authors.ind'],
+  'test-staleaux-ind-named': ['test-staleaux-ind-named.ind', 'test-staleaux-ind-named-authors.ind', 'test-staleaux-people.ind'],
   'test-staleaux-ind-input': ['test-staleaux-ind-input.ind', 'test-staleaux-ind-input.gls', 'test-staleaux-ind-input/pre.tex'],
   'test-staleaux-ind-gls': ['gls', 'acr', 'sls', 'nls', 'notation-gls', 'tls'].map(e => `test-staleaux-ind-gls.${e}`),
   'test-staleaux-ind-abr': ['test-staleaux-ind-abr.gls', 'test-staleaux-ind-abr.gls-abr'],
   'test-staleaux-ind-current': ['test-staleaux-ind-current.ind'],
+  'test-staleaux-ind-cls': ['test-staleaux-ind-cls.ind'],
+  'test-staleaux-ind-shipped': ['test-staleaux-ind-shipped.ind', 'test-staleaux-ind-shipped.gls'],
 };
 // (only the fixtures' own entries are walked: other builds write in
 // test/fixtures/build while this script runs, and a folder removed there
@@ -3413,6 +3417,8 @@ const glossaries = {
   // (each glossary as sorted in the build folder, with a stale sorted file
   // beside the document)
   'test-staleaux-ind-input': [glossary('Glossary', entry('fruit', 'fruit', 'the seed-bearing part of a plant\\. 1'))],
+  // (the .gls shipped with a document without \makeglossaries)
+  'test-staleaux-ind-shipped': [glossary('Glossary', entry('fruit', 'fruit', 'the seed-bearing part of a plant\\. 1'))],
   'test-staleaux-ind-gls': [
     glossary('Glossary', entry('fruit', 'fruit', 'the seed-bearing part of a plant\\. 1')),
     glossary('Acronyms', entry('tla', 'TLA', 'three-letter acronym\\. 1')),
@@ -4387,6 +4393,30 @@ if (failing) jobs.push(async () => {
   // (the whole TeX Live font, for the page to show)
   if (!existsSync(join(out, 'fonts/texgyrepagella-regular.otf'))) problems.push('no whole TeX Gyre Pagella beside the page');
   report(`${failing.name} (prerendering fails)`, problems);
+});
+
+// test-sortfail/test-sortfail.tex, in a folder of its own as makeindex and
+// makeglossaries fail on it by design, which the generic checks count as a
+// problem: with its stale .ind and .gls beside it, no LaTeX run reads them,
+// so the index and glossary are empty and the build gives no LaTeX error
+const sortFails = docs.find(d => d.name === 'test-staleaux-ind');
+if (sortFails) jobs.push(async () => {
+  const doc = { ...sortFails, name: 'test-sortfail', dir: join(sortFails.dir, 'test-sortfail'), tex: 'test-sortfail.tex' };
+  const out = join(testDir(doc), 'html'), aux = join(testDir(doc), 'aux');
+  const stale = ['test-sortfail.ind', 'test-sortfail.gls'].map(f => join(doc.dir, f));
+  const before = stale.map(f => readFileSync(f, 'utf8'));
+  const result = await build(doc, out, aux);
+  const page = join(out, 'test-sortfail.html');
+  const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+  const problems = [];
+  if (!html) problems.push('no page');
+  for (const warning of ['the index failed', 'the glossaries failed']) {
+    if (!result.log.includes(warning)) problems.push(`no warning that ${warning.slice(4)}`);
+  }
+  for (const error of ['Undefined control sequence', '[ERROR]']) if (result.log.includes(error)) problems.push(`${error} in make4ht's log`);
+  for (const text of ['Old entry', 'Apple, <a', 'seed-bearing']) if (html.includes(text)) problems.push(`${text} on the page`);
+  stale.forEach((f, i) => { if (readFileSync(f, 'utf8') !== before[i]) problems.push(`${basename(f)} beside the document changed`); });
+  report(`${sortFails.name} (makeindex and makeglossaries fail)`, problems);
 });
 
 // test-mathescape built twice, without prerendering: with tex8web-math.tex's

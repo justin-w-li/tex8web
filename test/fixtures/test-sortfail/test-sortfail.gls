@@ -1,0 +1,8 @@
+\glossarysection[\glossarytoctitle]{\glossarytitle}\glossarypreamble
+\begin{theglossary}\glossaryheader
+\glsgroupheading{A}\relax \glsresetentrylist %
+\glossentry{fruit}{\glossaryentrynumbers{\relax 
+		\setentrycounter[]{page}\glsnumberformat{\hyperpage{1}}}}%
+\glossentry{oldterm}{\glossaryentrynumbers{\relax 
+		\setentrycounter[]{page}\glsnumberformat{\hyperpage{2}}}}%
+\end{theglossary}\glossarypostamble

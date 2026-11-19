@@ -1,0 +1,15 @@
+% Guard: checks cases the fix must not break. The index and glossary
+% files beside the document are current, as an Overleaf zip or an arXiv
+% source ships them, and the document neither sorts them nor has a LaTeX
+% error: \makeindex is commented out, and glossaries has no
+% \makeglossaries. The page's index and glossary are read from them.
+\documentclass{article}
+\usepackage{makeidx}
+%\makeindex
+\usepackage{glossaries}
+\newglossaryentry{fruit}{name={fruit},description={the seed-bearing part of a plant}}
+\begin{document}
+An apple\index{Apple} is a \gls{fruit}.
+\printindex
+\printglossary
+\end{document}

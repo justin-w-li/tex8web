@@ -1,0 +1,19 @@
+% Built by a job of test/run.mjs. imakeidx's index with a makeindex style
+% that is missing, and glossaries with a style file that is missing, so
+% makeindex fails for both. Each has its sorted file beside the document
+% from an earlier build, with hyperref's \hyperpage, which the document no
+% longer defines, and an entry the document no longer has. No LaTeX run
+% reads those files.
+\documentclass{article}
+\usepackage{imakeidx}
+\makeindex[options=-s test-staleaux-ind-gone]
+\usepackage{glossaries}
+\noist
+\setStyleFile{test-staleaux-ind-gone}
+\makeglossaries
+\newglossaryentry{fruit}{name={fruit},description={the seed-bearing part of a plant}}
+\begin{document}
+An apple\index{Apple} is a \gls{fruit}.
+\printindex
+\printglossary
+\end{document}
