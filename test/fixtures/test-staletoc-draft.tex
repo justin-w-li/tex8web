@@ -1,0 +1,15 @@
+% A list of tocloft's \newlistof. run.mjs also builds in draft mode the
+% documents of test-staletoc-draft/, each beside the list that pdflatex
+% wrote for it, and the test-staleaux-toc fixtures, each beside its stale
+% lists, then each document again with no list beside it.
+\documentclass{article}
+\usepackage{tocloft}
+\newlistof{example}{exp}{Examples}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{exp}{example}{\protect\numberline{\theexample}#1}\par}
+\begin{document}
+\listofexample
+\section{First}
+Text of the first section.
+\example{A new example}
+\end{document}

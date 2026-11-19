@@ -1,0 +1,15 @@
+% tocloft's \newlistof with hyperref. hyperref.exp is the list that
+% pdflatex wrote for this document, with hyperref's four-argument
+% \contentsline.
+\documentclass{article}
+\usepackage{tocloft}
+\usepackage{hyperref}
+\newlistof{example}{exp}{Examples}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{exp}{example}{\protect\numberline{\theexample}#1}\par}
+\begin{document}
+\listofexample
+\section{First}
+Text of the first section.
+\example{A new example}
+\end{document}
