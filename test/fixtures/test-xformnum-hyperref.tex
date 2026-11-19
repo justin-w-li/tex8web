@@ -1,10 +1,13 @@
 % test-xformnum's name of a form used as a number, with hyperref loaded:
 % assigned to a count register, after \ifnum, in the text, and in a
-% heading that goes to the table of contents and to hyperref's bookmarks.
-% In the PDF the name is 1.
+% heading that goes to the table of contents, and the name of a form made
+% in the preamble. hyperref writes the heading to its bookmarks too, which
+% the page does not show: the build stops there if the name is not a
+% number. In the PDF the preamble's form is 1 and the body's 2.
 \pdfoutput=1
 \documentclass{article}
 \usepackage{hyperref}
+\setbox0\hbox{logo}\immediate\pdfxform0 \edef\logoform{\the\pdflastxform}
 \begin{document}
 \tableofcontents
 
@@ -20,4 +23,6 @@ Count: [\the\count@] end.
 Ifnum: [\ifnum\pdfxformname\pdflastxform>0 pos\else zero\fi] end.
 
 Text: [\pdfxformname\pdflastxform] end.
+
+Preamble: [\pdfxformname\logoform] end.
 \end{document}

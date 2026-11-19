@@ -6,8 +6,14 @@
 % table of contents, read in an \edef, an \xdef, and a \csname, given
 % \pdflastxform, a count register, an explicit number, or a macro, and
 % followed by a digit or \relax, after a \pdfxform with \immediate, attr,
-% and resources, and after an image. In the PDF the name is the form's
-% number, 1 for the first form, 2 for the second, and 3 for the third.
+% and resources, after an image, and in a group. \pdflastxform is read
+% with \the, saved with \the in an \xdef, and followed by a digit. In the
+% PDF the name is the form's number, 1 for the first form, 2 for the
+% second, 3 for the third, and 4 for the one made in a group.
+% \pdflastxform is the form's object number, which tex8web does not know:
+% the page shows the form's number in its place, which is the object
+% number when no image or other object comes before the form (the PDF
+% shows 7 at Object, after an image).
 \pdfoutput=1
 \documentclass{article}
 \usepackage{amsthm}
@@ -20,6 +26,7 @@
 \tableofcontents
 
 \setbox2\hbox{x}\pdfxform2 \formno=\pdflastxform
+\xdef\savedform{\the\pdflastxform}
 
 \section{Head \pdfxformname\pdflastxform{} and \number\numexpr\pdfxformname\pdflastxform+1\relax{} end}
 
@@ -29,6 +36,8 @@ Count: [\the\count@] end.
 
 \advance\count@ by \pdfxformname\pdflastxform 5\relax
 Advance: [\the\count@] end.
+
+Last digit: [\count@=\pdflastxform 5\relax\the\count@] end.
 \makeatother
 
 \setcounter{fm}{\pdfxformname\pdflastxform}%
@@ -74,6 +83,8 @@ Second ifnum: [\ifnum\pdfxformname\pdflastxform>1 second\else first\fi] end.
 
 Saved count: [\pdfxformname\formno] end.
 
+Saved the: [\pdfxformname\savedform] end.
+
 Explicit: [\pdfxformname 2 ] end.
 
 Macro: [\pdfxformname\formtwo] end.
@@ -86,4 +97,8 @@ Relax: [\pdfxformname\pdflastxform\relax] end.
 \setbox2\hbox{z}\pdfxform2
 
 After image: [\pdfxformname\pdflastxform] end.
+
+Object: [\the\pdflastxform] end.
+
+{\setbox2\hbox{g}\pdfxform2}Group: [\pdfxformname\pdflastxform] end.
 \end{document}
