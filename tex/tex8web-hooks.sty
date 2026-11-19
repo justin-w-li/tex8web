@@ -599,8 +599,8 @@
 % as pdfTeX's keyword scan drops them, and a macro is expanded, as there. A
 % keyword matches in either case, as there. A word that is not a keyword
 % stays in the text. <end>
-% is g when a general text ends the primitive, n when a number does, or
-% empty. A general text is read by a token register's assignment, which
+% is g when a general text ends the primitive, n when a number does, x
+% when the number of \pdfxform does, or empty. A general text is read by a token register's assignment, which
 % expands to the brace and drops spaces and \relax before it, as pdfTeX's
 % scan does. A macro before a keyword, an optional space, or a font is
 % expanded, a protected one too, as pdfTeX's get_x_token expands it. The
@@ -733,6 +733,7 @@
 \def\web@pdf@end{}
 \def\web@pdf@endg{\web@pdf@toks=}
 \def\web@pdf@endn{\web@pdf@n=}
+\def\web@pdf@endx{\afterassignment\web@pdf@xformstep\web@pdf@n=}
 \def\web@pdf@rule{,width=d,height=d,depth=d}
 \def\web@pdf@goto{,attr=g,user=u,goto=-,thread=-,file=g,struct=r,page=q,num=m,name=t}
 \def\web@pdf@window{,newwindow=e,nonewwindow=e}
@@ -750,17 +751,28 @@
 \protected\def\pdfximage{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,attr=g,page=n,named=g,colorspace=n,mediabox=-,cropbox=-,bleedbox=-,trimbox=-,artbox=-}g}
 \protected\def\pdfobj{\web@pdf@skip{,reserveobjnum=s,useobjnum=n,stream=-,attr=g,file=-}g}
 \protected\def\pdfannot{\expandafter\web@pdf@skip\expandafter{\web@pdf@rule,reserveobjnum=s,useobjnum=n}g}
-\protected\def\pdfxform{\web@pdf@skip{,attr=g,resources=g}n}
+\protected\def\pdfxform{\web@pdf@skip{,attr=g,resources=g}x}
 \protected\def\pdfrefximage{\web@pdf@n=}
 \protected\def\pdfrefobj{\web@pdf@n=}
 \protected\def\pdfrefxform{\web@pdf@n=}
-% \pdflastxform and \pdflastximage stay 0, which \pdfxformname and
-% \pdfximagebbox stop at with "cannot find referenced object". These read
-% their numbers as pdfTeX does, with \romannumeral of the negated number,
-% and expand to an empty name and to a zero length, printed as pdfTeX
-% prints it, with characters of category 12, which LaTeX's \rem@pt splits.
-% Both stay expandable, as pdfTeX's are.
-\def\pdfxformname{\romannumeral-}
+% pdfTeX's \pdflastxform and \pdflastximage stay 0 in DVI mode, which
+% \pdfxformname and \pdfximagebbox stop at with "cannot find referenced
+% object". \pdflastxform is a count register here, which each \pdfxform
+% steps globally, after its box number, as pdfTeX sets it, so a form made
+% in a group or the preamble counts. It holds the form's number: 1 for the
+% first form, 2 for the second. pdfTeX gives the form's object number, the
+% same when no image or other object comes before the form. \pdfxformname
+% is \number, so it expands in one step to the number that follows,
+% printed with characters of category 12, as pdfTeX prints the form's
+% number, and a digit after \pdflastxform stays in the text.
+% \pdfximagebbox reads its numbers as pdfTeX does, with \romannumeral of
+% the negated number, and expands to a zero length, printed as pdfTeX
+% prints it, which LaTeX's \rem@pt splits. Both stay expandable, as
+% pdfTeX's are.
+\newcount\web@pdf@xform
+\def\web@pdf@xformstep{\global\advance\web@pdf@xform\@ne}
+\let\pdflastxform\web@pdf@xform
+\let\pdfxformname\number
 \edef\pdfximagebbox{\detokenize{0.0pt}\noexpand\romannumeral-\noexpand\romannumeral-}
 \protected\def\pdfcolorstack{\afterassignment\web@pdf@stack\web@pdf@n=}
 \def\web@pdf@stack{\web@pdf@skip{,push=G,set=G,pop=.,current=.}{}}

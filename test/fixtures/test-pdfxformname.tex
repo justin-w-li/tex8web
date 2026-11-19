@@ -8,8 +8,9 @@
 % \dimexpr, split at its pt with LaTeX's \rem@pt, and in the text of a
 % \special, which is expanded when the page is shipped out. \meaning shows
 % what each expands to. In the PDF the name is the form's number and the
-% bounding box the image's. On the page the name is empty, as the form is
-% not drawn, the bounding box is zero, and the text around each stays.
+% bounding box the image's. On the page the name is the form's number too,
+% the bounding box is zero, as the image is not read, and the text around
+% each stays.
 \pdfoutput=1
 \documentclass{article}
 \usepackage{amsthm}

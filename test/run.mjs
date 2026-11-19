@@ -2059,16 +2059,16 @@ const drivers = {
       'Stack: beforepushed after.', 'Footnote: before|1 after.', '1|Note six end', 'Title: before after.'].map(pdfprimText),
     pdfprimLeaks,
   ],
-  // (a form's name, read after \pdfxform, is empty where the PDF shows the
-  // form's number, and an image's bounding box is zero. A digit after the
-  // number stays, as in the PDF)
+  // (a form's name, read after \pdfxform, is the form's number, as in the
+  // PDF, and an image's bounding box is zero. A digit after the number
+  // stays, as in the PDF)
   'test-pdfxformname': [
-    pdfprimHead('h3', 'Form name [] end'), pdfprimToc('Form name [] end'),
-    ...['Details: [] end.', 'Edef: [] end.', 'Text: [] end.', 'Italic: |a[]b end|.', 'Sans: |c[]d end|.',
-      'Typewriter: |e[]f end|.', 'Footnote: before|1 after.', '1|Note [] end.', 'Theorem 1. Theorem [] end.',
-      'Count: [] end.', 'Explicit: [] end.', 'Macro: [] end.', 'Digit: [5] end.', 'Space digit: [5] end.',
-      'Relax: [] end.', 'Special: before after.', 'Bbox: [0.0pt] end.', 'Strip: [0] end.', 'Bbox dimen: [0.0pt] end.', 'Bbox count: [0.0pt] end.',
-      'Meaning: |macro:-&gt;| end.', 'Csname: [named] end.', 'Relax meaning: |macro:-&gt;[\\relax ]| end.',
+    pdfprimHead('h3', 'Form name [1] end'), pdfprimToc('Form name [1] end'),
+    ...['Details: [1] end.', 'Edef: [1] end.', 'Text: [1] end.', 'Italic: |a[1]b end|.', 'Sans: |c[1]d end|.',
+      'Typewriter: |e[1]f end|.', 'Footnote: before|1 after.', '1|Note [1] end.', 'Theorem 1. Theorem [1] end.',
+      'Count: [2] end.', 'Explicit: [1] end.', 'Macro: [1] end.', 'Digit: [25] end.', 'Space digit: [15] end.',
+      'Relax: [2] end.', 'Special: before after.', 'Bbox: [0.0pt] end.', 'Strip: [0] end.', 'Bbox dimen: [0.0pt] end.', 'Bbox count: [0.0pt] end.',
+      'Meaning: |macro:-&gt;1| end.', 'Csname: [named] end.', 'Relax meaning: |macro:-&gt;[2\\relax ]| end.',
       'Bbox width: [0.0pt] end.'].map(pdfprimText),
     /^(?![^]*(?:(?<!test-)pdfxformname|pdfximagebbox|lastximage|\/Foo 1|\/Bar 2|test-picture))/,
     pdfprimLeaks,
