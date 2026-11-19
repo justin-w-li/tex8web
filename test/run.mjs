@@ -1255,6 +1255,7 @@ const contents = {
     /^(?![^]*(?:Old (?:example|remark|box|algorithm|section|figure|table|listing|program)|Alte[rn]? ))/],
   'test-staleaux-toc-koma': [/List of Examples<\/h2>/, /Text of the first chapter\./, /<span class='content'>New example<\/span>/,
     /^(?![^]*Old example)/],
+  'test-staletoc-draft': [/List of Examples<\/h2>/, /Text of the first chapter\./, /<span class='content'>New example<\/span>/],
   'test-staleaux-toc-memoir': [/<span class='cmbx-12x-x-172'>List of Examples<\/span>/, /Text of the first chapter\./,
     /Example<span class='tex8web-nbsp'> <\/span>1: A new example/, /\(New theorem\)/, /^(?![^]*Old (?:example|theorem))/],
   'test-staleaux-toc-color': [/<span class='cmbx-12x-x-207'>Examples<\/span>/, /Text of the first section\./,
@@ -4714,16 +4715,17 @@ if (staleBcf) for (const [first, second, folder = 'build/tex4ht', draft] of stal
 // that \@starttoc reads under the document's own extension: the
 // test-staleaux-toc fixtures beside their stale lists (untouched above),
 // and the documents of test/fixtures/test-staletoc-draft/ beside the list
-// that pdflatex wrote for each, with hyperref, without it, and from an
-// older LaTeX with three arguments. Each document is copied into a folder
-// of its own with its lists, and into another without them. Both builds
-// exit with 0, with no LaTeX error, and give the same page: tex4ht leaves
-// out a list's entries from a PDF build, as the full build does. No old
-// entry of a stale list is in the page, and no file beside the document
-// is changed or added. hyperref.tex also has pdflatex's .aux and .out
+// that pdflatex wrote for each: tocloft's with hyperref, without it, and
+// from an older LaTeX with three arguments, and KOMA's \DeclareNewTOC.
+// Each document is copied into a folder of its own with its lists, and
+// into another without them. Both builds exit with 0, with no LaTeX
+// error. A list that stops the run is left out, so those two pages are the
+// same. A current list is read, as pdflatex does, so the page shows its
+// entry. No old entry of a stale list is in the page, and no file beside
+// the document is changed or added. hyperref.tex also has pdflatex's .aux and .out
 // beside it in both folders, and its reference must come from that .aux.
 const staleTocDraft = docs.find(d => d.name === 'test-staletoc-draft');
-const staleTocDraftOwn = { hyperref: ['hyperref.exp', 'hyperref.toc'], plain: ['plain.exp'], older: ['older.exp'] };
+const staleTocDraftOwn = { hyperref: ['hyperref.exp', 'hyperref.toc'], plain: ['plain.exp'], older: ['older.exp'], koma: ['koma.lox'] };
 const staleTocDraftCases = [...['toc', 'toc-koma', 'toc-memoir', 'toc-color', 'toc-amsart', 'toc-report'].map(n => `test-staleaux-${n}`),
   ...Object.keys(staleTocDraftOwn)];
 if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => {
@@ -4761,7 +4763,13 @@ if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => 
   if (name === 'hyperref' && !/See Example<span class='tex8web-nbsp'> <\/span>(?:<a [^>]*>)?1(?:<\/a>)?\./.test(beside.html)) {
     problems.push("the reference does not show the number from the .aux beside the document");
   }
-  if (beside.html && alone.html && beside.html !== alone.html) {
+  // (the draft build reads the current lists of pdflatex beside the
+  // document, as pdflatex does, so the page shows their entry, and the
+  // page without them has none)
+  const shown = { koma: /<span class='content'>New example<\/span>/, plain: /'tex8web-hfill-line'>1 A new example/,
+    hyperref: /'tex8web-hfill-line'>1 A new example/ }[name];
+  if (shown && !shown.test(beside.html)) problems.push("the page does not have the entry of the current list");
+  if (!shown && beside.html && alone.html && beside.html !== alone.html) {
     const a = beside.html.split('\n'), b = alone.html.split('\n');
     const line = a.findIndex((l, i) => l !== b[i]);
     problems.push(`the page differs from the page without the lists at line ${line + 1}: ${JSON.stringify(a[line]?.slice(0, 160))}`);
@@ -4769,15 +4777,16 @@ if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => 
   report(`${staleTocDraft.name} (${name}, draft)`, problems);
 });
 // test-staletoc-draft built in full, then in draft mode, in the same folder
-// beside the stale list of test-staleaux-toc-color. The draft build reads
-// the list that the full build wrote in the build folder, and gives the
+// beside the stale list of test-staleaux-toc-koma, whose three-argument
+// lines stop a LaTeX run that reads them. The draft build reads the list
+// that the full build wrote in the build folder instead, and gives the
 // same page. The stale list keeps its text.
 if (staleTocDraft) jobs.push(async () => {
   const dir = join(testDir(staleTocDraft), 'full-then-draft');
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'doc.tex'), readFileSync(join(staleTocDraft.dir, 'test-staletoc-draft.tex')));
-  writeFileSync(join(dir, 'doc.exp'), readFileSync(join(staleTocDraft.dir, 'test-staleaux-toc-color.exp')));
+  writeFileSync(join(dir, 'doc.lox'), readFileSync(join(staleTocDraft.dir, 'test-staleaux-toc-koma.lox')));
   const problems = [], pages = [];
   for (const options of [[], ['-m', 'draft']]) {
     const what = options.length ? 'draft build' : 'full build';
@@ -4787,7 +4796,8 @@ if (staleTocDraft) jobs.push(async () => {
     if (result.code !== 0) problems.push(`the ${what} exited with ${result.code}`);
     const page = join(dir, 'build/html/doc.html');
     const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
-    if (!/Examples<\/span>[^]*Example<span class='tex8web-nbsp'> <\/span>1: A new example/.test(html)) problems.push(`the page of the ${what} does not have the list and the example`);
+    if (!/List of Examples<\/h2>[^]*Text of the first chapter\./.test(html)) problems.push(`the page of the ${what} does not have the list and the chapter`);
+    if (/runs again without them/.test(result.log ?? '')) problems.push(`the ${what} read the stale list`);
     if (/Old example/.test(html)) problems.push(`the page of the ${what} has an old entry`);
     pages.push(html);
   }
@@ -4796,7 +4806,7 @@ if (staleTocDraft) jobs.push(async () => {
     const line = a.findIndex((l, i) => l !== b[i]);
     problems.push(`the page of the draft build differs from the full build's at line ${line + 1}: ${JSON.stringify(a[line]?.slice(0, 160))}`);
   }
-  if (readFileSync(join(dir, 'doc.exp'), 'utf8') !== readFileSync(join(staleTocDraft.dir, 'test-staleaux-toc-color.exp'), 'utf8')) problems.push('doc.exp changed');
+  if (readFileSync(join(dir, 'doc.lox'), 'utf8') !== readFileSync(join(staleTocDraft.dir, 'test-staleaux-toc-koma.lox'), 'utf8')) problems.push('doc.lox changed');
   report(`${staleTocDraft.name} (full, then draft)`, problems);
 });
 

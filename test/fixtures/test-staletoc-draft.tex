@@ -1,19 +1,15 @@
-% A list of tocloft's \newlistof. The default build of this document,
-% with no list beside it, only carries the jobs of run.mjs that check
-% draft builds. Those build in draft mode the documents of
-% test-staletoc-draft/, each beside the list that pdflatex wrote for it,
-% and the test-staleaux-toc fixtures, each beside its stale lists, then
-% each document again with no list beside it. They also build this
+% A list of its own from tocbasic's \DeclareNewTOC. run.mjs builds this
 % document in full and then in draft mode, in one folder, beside the stale
-% list of test-staleaux-toc-color.
-\documentclass{article}
-\usepackage{tocloft}
-\newlistof{example}{exp}{Examples}
-\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
-  \addcontentsline{exp}{example}{\protect\numberline{\theexample}#1}\par}
+% list of test-staleaux-toc-koma, which stops a LaTeX run that reads it.
+% The draft build must read the list that the full build wrote instead.
+\documentclass{scrreprt}
+\DeclareNewTOC[type=example, types=examples, float, name=Example, listname={List of Examples}]{lox}
 \begin{document}
-\listofexample
-\section{First}
-Text of the first section.
-\example{A new example}
+\listoftoc{lox}
+\chapter{First}
+Text of the first chapter.
+\begin{example}[h]
+\centering An example.
+\caption{New example}
+\end{example}
 \end{document}
