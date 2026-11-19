@@ -192,16 +192,20 @@ else
     -- item without author-year data, and the next run raises an error for
     -- an author-year style (natbib.sty, \NAT@stdbsttrue). A .bbl that
     -- bibtex made with another style gives that line, with or without
-    -- errors in this run. So the run is made again without that .bbl,
-    -- when the style differs from the one of the earlier .aux or .blg.
-    -- (A draft build writes the new style to the .aux and runs no bibtex.)
+    -- errors in this run, even when some of its items have author-year
+    -- data. So the run is made again without that .bbl, when the style
+    -- differs from the one of the earlier .aux or .blg.
+    -- (A draft build writes the new style to the .aux and runs no bibtex.
+    -- bibliography.lua gives bibtex a style name that begins with ./ or
+    -- ../ from the current directory, which the .blg shows.)
     local written = files.read(base .. ".aux") or ""
     local function style(text) return text and text:match("\\bibstyle{([^}]*)}") end
     local now = style(written)
-    local before = {style(saved.aux), (files.read(base .. ".blg") or ""):match("The style file: (%S+)%.bst")}
-    local natbib = written:find("\\NAT@force@numbers", 1, true) and saved.bbl
-      and not saved.bbl:find("\\bibitem%[[^%]]*%(") and now
-      and ((before[1] and before[1] ~= now) or (before[2] and before[2] ~= now))
+    local aux_style = style(saved.aux)
+    local blg_style = (files.read(base .. ".blg") or ""):match("The style file: ([^\r\n]*)%.bst")
+    local natbib = written:find("\\NAT@force@numbers", 1, true) and saved.bbl and now
+      and ((aux_style and aux_style ~= now)
+        or (blg_style and blg_style ~= now and blg_style ~= lfs.currentdir() .. "/" .. now))
     if errors == 0 and not natbib then return testlogfile(par) end
     -- (biblatex writes \abx@aux@ lines to the .aux with any backend, and
     -- this line at the top of its .bbl)

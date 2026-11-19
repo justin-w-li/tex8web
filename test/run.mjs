@@ -4602,6 +4602,8 @@ const staleBcfPages = {
   // (natbib with a numeric style: \citet forces numbers, as in the PDF)
   'natbib-plain': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1<\/a><\/span>\] says\./, staleBcfEntry],
   'natbib-ieeetr': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\(<span class='cite'><a href='#Xable'>1<\/a><\/span>\) says\./],
+  // (natbib with [numbers] and ./numeric.bst, a numeric style beside the document)
+  'natbib-dotstyle': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1<\/a><\/span>\] says\./, staleBcfEntry],
 };
 // (natbib with a numeric style that natbib does not know: from the third
 // LaTeX run, the PDF build stops at natbib's error, and so does the page's)
@@ -4620,11 +4622,14 @@ const staleBcfCases = [
   ['bibtex', 'natbib'], ['bibtex-hyperref', 'natbib-hyperref'], ['bibtex-alpha', 'natbib'],
   ['bibtex', 'natbib-abbrvnat', '.'], ['natbib-numbers', 'natbib'], ['natbib-plain', 'natbib'],
   ['bibtex-include', 'natbib-include'], ['bibtex', 'elsarticle'],
+  // (a .bbl whose items have author-year data only in part)
+  ['natbib-mixed', 'natbib'],
   // (a draft build of the second document between the two builds)
   ['bibtex', 'natbib', 'build/tex4ht', 'draft'],
   // (a build folder left current)
   ['biber', 'biber'], ['bibtex', 'bibtex'], ['blx-bibtex', 'blx-bibtex'],
   ['natbib', 'natbib'], ['natbib-plain', 'natbib-plain'], ['natbib-ieeetr', 'natbib-ieeetr'],
+  ['natbib-dotstyle', 'natbib-dotstyle'],
 ];
 if (staleBcf) for (const [first, second, folder = 'build/tex4ht', draft] of staleBcfCases) jobs.push(async () => {
   const label = `${first}, then ${second}${folder === 'build/tex4ht' ? '' : `, with -B ${folder}`}${draft ? ', with a draft build between' : ''}`;

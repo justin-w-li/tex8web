@@ -28,6 +28,13 @@ function M.run(par)
   local function path(name) return name .. "=" .. files.quote(here .. ":" .. (os.getenv(name) or "")) end
   -- the .bib files named, and the directory bibtex or biber looks them up from
   local command, names, from = nil, {}, dir
+  -- the .aux that bibtex reads, when it differs from the one LaTeX wrote
+  local bibtex_aux
+  local function write_aux(text)
+    local f = io.open(dir .. "/" .. par.input .. ".aux", "w")
+    f:write(text)
+    f:close()
+  end
   if bcf then
     command = "biber --input-directory " .. files.quote(dir) .. " --output-directory "
       .. files.quote(dir) .. " " .. files.quote(par.input)
@@ -47,19 +54,15 @@ function M.run(par)
     -- here. BIBINPUTS and BSTINPUTS find the .bib and .bst files in the
     -- document's directory. kpathsea looks up a name that begins with ./
     -- or ../ only from the current directory, so such names in \bibdata
-    -- and \bibstyle are made absolute. LaTeX writes the .aux again on its
-    -- next run, and ignores both commands.
+    -- and \bibstyle are made absolute for bibtex's run only: a changed
+    -- .aux would take one more LaTeX run.
     local fixed = aux:gsub("(\\bib%a+){([^}]*)}", function(cs, list)
       if cs ~= "\\bibdata" and cs ~= "\\bibstyle" then return end
       return cs .. "{" .. list:gsub("[^,]+", function(name)
         if name:find("^%.%.?/") then return here .. "/" .. name end
       end) .. "}"
     end)
-    if fixed ~= aux then
-      local f = io.open(dir .. "/" .. par.input .. ".aux", "w")
-      f:write(fixed)
-      f:close()
-    end
+    if fixed ~= aux then bibtex_aux = fixed end
     for list in fixed:gmatch("\\bibdata{([^}]*)}") do
       for name in list:gmatch("[^,]+") do names[#names + 1] = name end
     end
@@ -94,8 +97,10 @@ function M.run(par)
   -- is missing or stops early. The empty .bbl from tex8web.mk4 would then
   -- hide the one beside the document, which LaTeX reads when biber fails.)
   if lfs.attributes(dir .. "/" .. par.input .. ".bbl", "size") == 0 then use_beside() end
+  if bibtex_aux then write_aux(bibtex_aux) end
   -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
   if os.execute(command .. " > /dev/null") ~= 0 then log:warning("the bibliography failed (" .. command .. ")") end
+  if bibtex_aux then write_aux(aux) end
   return 0
 end
 
