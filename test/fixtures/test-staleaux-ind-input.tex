@@ -1,0 +1,12 @@
+% \makeindex in a file the preamble reads with \input, and \makeglossaries
+% in a package file of the document, each with its sorted file beside the
+% document from an earlier build, with hyperref's \hyperpage, which the
+% document no longer defines
+\documentclass{article}
+\input{test-staleaux-ind-input/pre}
+\usepackage{test-staleaux-ind-input}
+\begin{document}
+An apple\index{Apple} is a \gls{fruit}.
+\printindex
+\printglossary
+\end{document}

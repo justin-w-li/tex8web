@@ -1,0 +1,11 @@
+% makeidx's index, with test-staleaux-ind.ind beside the document from an
+% earlier build that loaded hyperref: its \hyperpage is undefined now. The
+% build sorts the index in its own folder, so the page's index is the
+% document's, and the build gives no error.
+\documentclass{article}
+\usepackage{makeidx}
+\makeindex
+\begin{document}
+An apple\index{Apple} and a pear\index{Pear}.
+\printindex
+\end{document}

@@ -1,0 +1,25 @@
+% glossaries' main glossary, acronyms, symbols, numbers, a glossary from
+% \newglossary* (output .notation-gls), and one from \newglossary with its
+% own extensions (output .tls), each with its sorted file beside the
+% document from an earlier build: an entry whose number is in \hyperpage,
+% which the document no longer defines
+\documentclass{article}
+\usepackage[acronym,symbols,numbers]{glossaries}
+\newglossary*{notation}{Notation}
+\newglossary[tlg]{terms}{tls}{tlo}{Terms}
+\makeglossaries
+\newglossaryentry{fruit}{name={fruit},description={the seed-bearing part of a plant}}
+\newacronym{tla}{TLA}{three-letter acronym}
+\newglossaryentry{pi}{type=symbols,name={pi},sort={pi},description={a circle's circumference over its diameter}}
+\newglossaryentry{seven}{type=numbers,name={seven},description={the number of days in a week}}
+\newglossaryentry{hom}{type=notation,name={Hom},description={the set of homomorphisms}}
+\newglossaryentry{ring}{type=terms,name={ring},description={a set with two operations}}
+\begin{document}
+A \gls{fruit}, a \gls{tla}, \gls{pi}, \gls{seven}, \gls{hom}, and a \gls{ring}.
+\printglossary
+\printglossary[type=\acronymtype]
+\printglossary[type=symbols]
+\printglossary[type=numbers]
+\printglossary[type=notation]
+\printglossary[type=terms]
+\end{document}

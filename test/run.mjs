@@ -793,6 +793,14 @@ const index = {
     /Galois<a id='([^']+)'>[^]*>Index of names<\/h3>[^]*<div class='index-item'>Galois : <a href='#\1'>1<\/a> <\/div>/,
     /theorem<a id='([^']+)'>[^]*>Index of names<\/h3>[^]*<div class='index-item'>Euler : <a href='#\1'>2<\/a> <\/div>/,
   ],
+  // (the document's index, as sorted in the build folder, with no entry of
+  // the stale .ind beside the document)
+  'test-staleaux-ind': [/<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/,
+    /<div class='index-item'>Pear, <a href='#[^']+'>2<\/a> <\/div>/, /^(?![^]*Old entry)/],
+  'test-staleaux-ind-named': [/>Index<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/,
+    /Index of authors<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Knuth, <a href='#[^']+'>1<\/a> <\/div>/, /^(?![^]*Old (?:entry|author))/],
+  'test-staleaux-ind-input': [/<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/, /^(?![^]*Old entry)/],
+  'test-staleaux-ind-current': [/<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/],
 };
 
 // The table of contents beside the text, under the document title (a link
@@ -2221,6 +2229,17 @@ const logs = {
     [`test-staleaux-${name}`, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*File ended while scanning)/,
       /^(?![^]*\[ERROR\])/, ...name === 'toc' ? [/^(?![^]*Package etoolbox Error)/, /^(?![^]*No counter 'refsection')/,
         /^(?![^]*No multilingual package)/, /^(?![^]*test-staleaux-toc\.(?:exp|rmk|loe|box|tdo|loa)\b)/] : []]])),
+  // (no LaTeX error from the sorted index and glossary files of an earlier
+  // build beside the document, which the first LaTeX run would read; in
+  // test-staleaux-ind-gls none in the file of each glossary but the main
+  // one, whose name make4ht cuts short)
+  ...Object.fromEntries(['ind', 'ind-named', 'ind-input', 'ind-gls', 'ind-abr'].map(name =>
+    [`test-staleaux-${name}`, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*\[ERROR\])/,
+      ...name === 'ind-gls' ? ['acr', 'sls', 'nls', 'notation-gls', 'tls'].map(e => new RegExp(`^(?![^]*test-staleaux-ind-gls\\.${e}\\b)`)) : []]])),
+  // (a current .ind beside the document is read by the first LaTeX run
+  // with no error, and the build takes no extra LaTeX run)
+  'test-staleaux-ind-current': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*runs again)/,
+    /^(?![^]*\[ERROR\])/],
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
@@ -2247,6 +2266,12 @@ const untouched = {
   'test-staleaux-toc-color': ['test-staleaux-toc-color.exp'],
   'test-staleaux-toc-amsart': ['test-staleaux-toc-amsart.lof', 'test-staleaux-toc-amsart.lot'],
   'test-staleaux-toc-report': ['test-staleaux-toc-report.exp'],
+  'test-staleaux-ind': ['test-staleaux-ind.ind'],
+  'test-staleaux-ind-named': ['test-staleaux-ind-named.ind', 'test-staleaux-ind-named-authors.ind'],
+  'test-staleaux-ind-input': ['test-staleaux-ind-input.ind', 'test-staleaux-ind-input.gls', 'test-staleaux-ind-input/pre.tex'],
+  'test-staleaux-ind-gls': ['gls', 'acr', 'sls', 'nls', 'notation-gls', 'tls'].map(e => `test-staleaux-ind-gls.${e}`),
+  'test-staleaux-ind-abr': ['test-staleaux-ind-abr.gls', 'test-staleaux-ind-abr.gls-abr'],
+  'test-staleaux-ind-current': ['test-staleaux-ind-current.ind'],
 };
 // (only the fixtures' own entries are walked: other builds write in
 // test/fixtures/build while this script runs, and a folder removed there
@@ -3385,6 +3410,21 @@ const glossaries = {
     glossary('Glossary', entry('group', 'group', 'a set with an associative operation\\.'), entry('ring', 'ring', 'a set with two operations\\.')),
     glossary('Acronyms', entry('gcd', 'GCD', 'greatest common divisor\\.')),
   ],
+  // (each glossary as sorted in the build folder, with a stale sorted file
+  // beside the document)
+  'test-staleaux-ind-input': [glossary('Glossary', entry('fruit', 'fruit', 'the seed-bearing part of a plant\\. 1'))],
+  'test-staleaux-ind-gls': [
+    glossary('Glossary', entry('fruit', 'fruit', 'the seed-bearing part of a plant\\. 1')),
+    glossary('Acronyms', entry('tla', 'TLA', 'three-letter acronym\\. 1')),
+    glossary('Symbols', entry('pi', 'pi', 'a circle’s circumference over its diameter\\. 1')),
+    glossary('Numbers', entry('seven', 'seven', 'the number of days in a week\\. 1')),
+    glossary('Notation', entry('hom', 'Hom', 'the set of homomorphisms\\. 1')),
+    glossary('Terms', entry('ring', 'ring', 'a set with two operations\\. 1'))],
+  // (without hyperref, glossaries-extra puts an empty paragraph with an
+  // anchor before each list)
+  'test-staleaux-ind-abr': [complete,
+    new RegExp(`>Glossary<\\/h3>(?:(?!<h3)[^])*${entry('fruit', 'fruit', 'the seed-bearing part of a plant 1')}`),
+    new RegExp(`>Abbreviations<\\/h3>(?:(?!<h3)[^])*${entry('tla', 'TLA', 'three-letter abbreviation 1')}`)],
   // (files of the document named like the glossaries package, and like
   // glossary.4ht, read before or after the package: each file's text, and
   // the package's glossary with its entry, linked to with hyperref)

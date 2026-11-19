@@ -1,0 +1,10 @@
+% Guard: checks cases the fix must not break. test-staleaux-ind-current.ind
+% beside the document is current, from a PDF build: the first LaTeX run
+% reads it with no error, and the build takes no extra LaTeX run.
+\documentclass{article}
+\usepackage{makeidx}
+\makeindex
+\begin{document}
+An apple\index{Apple}.
+\printindex
+\end{document}

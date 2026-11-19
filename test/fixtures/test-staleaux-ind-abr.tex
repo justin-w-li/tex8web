@@ -1,0 +1,13 @@
+% glossaries-extra's abbreviations (output .gls-abr) and main glossary,
+% each with its sorted file beside the document from an earlier build: an
+% entry whose number is in \hyperpage, which the document no longer defines
+\documentclass{article}
+\usepackage[abbreviations]{glossaries-extra}
+\makeglossaries
+\setabbreviationstyle{long-short}
+\newglossaryentry{fruit}{name={fruit},description={the seed-bearing part of a plant}}
+\newabbreviation{tla}{TLA}{three-letter abbreviation}
+\begin{document}
+A \gls{fruit} and a \gls{tla}.
+\printglossaries
+\end{document}

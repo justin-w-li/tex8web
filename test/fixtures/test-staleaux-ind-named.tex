@@ -1,0 +1,11 @@
+% imakeidx's main index and a named index, each with its .ind beside the
+% document from an earlier build that loaded hyperref
+\documentclass{article}
+\usepackage{imakeidx}
+\makeindex
+\makeindex[name=test-staleaux-ind-named-authors,title=Index of authors]
+\begin{document}
+An apple\index{Apple}, named by Knuth\index[test-staleaux-ind-named-authors]{Knuth}.
+\printindex
+\printindex[test-staleaux-ind-named-authors]
+\end{document}
