@@ -4604,6 +4604,9 @@ const staleBcfPages = {
   'natbib-ieeetr': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\(<span class='cite'><a href='#Xable'>1<\/a><\/span>\) says\./],
   // (natbib with [numbers] and ./numeric.bst, a numeric style beside the document)
   'natbib-dotstyle': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1<\/a><\/span>\] says\./, staleBcfEntry],
+  // (natbib with [numbers] and a .bib that is missing: with -B ., the .bbl
+  // that the first build left beside the document is read, as for the PDF)
+  'natbib-missing': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1<\/a><\/span>\] says\./, staleBcfEntry],
 };
 // (natbib with a numeric style that natbib does not know: from the third
 // LaTeX run, the PDF build stops at natbib's error, and so does the page's)
@@ -4622,6 +4625,7 @@ const staleBcfCases = [
   ['bibtex', 'natbib'], ['bibtex-hyperref', 'natbib-hyperref'], ['bibtex-alpha', 'natbib'],
   ['bibtex', 'natbib-abbrvnat', '.'], ['natbib-numbers', 'natbib'], ['natbib-plain', 'natbib'],
   ['bibtex-include', 'natbib-include'], ['bibtex', 'elsarticle'],
+  ['bibtex', 'natbib-missing', '.'],
   // (a .bbl whose items have author-year data only in part)
   ['natbib-mixed', 'natbib'],
   // (a draft build of the second document between the two builds)

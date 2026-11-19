@@ -7,6 +7,21 @@ local log = logging.new("tex8web")
 
 local M = {}
 
+-- (after the paths already set, as tex8web.mk4 sets TEXINPUTS)
+local function path(name) return name .. "=" .. files.quote(lfs.currentdir() .. ":" .. (os.getenv(name) or "")) end
+
+-- the first of the .bib files named that kpsewhich does not find, looked
+-- up from the directory from
+function M.missing(names, from)
+  for _, name in ipairs(names) do
+    local p = io.popen("cd " .. files.quote(from) .. " && " .. path("BIBINPUTS")
+      .. " kpsewhich -format=bib " .. files.quote(name))
+    local found = p:read("a")
+    p:close()
+    if found == "" then return name end
+  end
+end
+
 -- runs bibtex or biber on the auxiliary files in the build directory, if
 -- the document has a bibliography. (A failed run is only a warning: the
 -- page is still useful with unresolved references.)
@@ -24,8 +39,6 @@ function M.run(par)
     local a, b = lfs.attributes(dir), lfs.attributes(".")
     if not (a and a.ino == b.ino and a.dev == b.dev) then os.remove(dir .. "/" .. par.input .. ".bbl") end
   end
-  -- (after the paths already set, as tex8web.mk4 sets TEXINPUTS)
-  local function path(name) return name .. "=" .. files.quote(here .. ":" .. (os.getenv(name) or "")) end
   -- the .bib files named, and the directory bibtex or biber looks them up from
   local command, names, from = nil, {}, dir
   -- the .aux that bibtex reads, when it differs from the one LaTeX wrote
@@ -77,20 +90,13 @@ function M.run(par)
   -- When a .bib that the document names is missing, latexmk skips bibtex
   -- and biber, and LaTeX reads the .bbl beside the document for the PDF.
   -- The .bbl in the build directory would be read first.
-  if lfs.isfile(par.input .. ".bbl") then
-    for _, name in ipairs(names) do
-      local p = io.popen("cd " .. files.quote(from) .. " && " .. path("BIBINPUTS")
-        .. " kpsewhich -format=bib " .. files.quote(name))
-      local found = p:read("a")
-      p:close()
-      if found == "" then
-        -- (Shown at make4ht's default level, status. latexmk prints this
-        -- as a message, not among its warnings.)
-        log:status("bibliography: " .. name .. " is missing, so the .bbl beside the document is used")
-        use_beside()
-        return 0
-      end
-    end
+  local name = lfs.isfile(par.input .. ".bbl") and M.missing(names, from)
+  if name then
+    -- (Shown at make4ht's default level, status. latexmk prints this
+    -- as a message, not among its warnings.)
+    log:status("bibliography: " .. name .. " is missing, so the .bbl beside the document is used")
+    use_beside()
+    return 0
   end
   log:info("bibliography: " .. command)
   -- (biber writes its .bbl only at the end of its run, and none when it
