@@ -4419,6 +4419,34 @@ if (sortFails) jobs.push(async () => {
   report(`${sortFails.name} (makeindex and makeglossaries fail)`, problems);
 });
 
+// test-shippederr/test-shippederr.tex, in a folder of its own as it has a
+// LaTeX error by design, copied and built twice into one build folder,
+// which starts with a .idx of an earlier build that had \makeindex: the
+// document sorts neither its index nor its glossary, so each build's page
+// shows the .ind and .gls shipped beside it, and the second build is not
+// left with empty files of the first
+const shippedErr = docs.find(d => d.name === 'test-staleaux-ind-shipped');
+if (shippedErr) jobs.push(async () => {
+  const source = join(shippedErr.dir, 'test-shippederr'), dir = join(testDir(shippedErr), 'shippederr');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(join(dir, 'build/tex4ht'), { recursive: true });
+  for (const name of ['tex', 'ind', 'gls']) writeFileSync(join(dir, `test-shippederr.${name}`), readFileSync(join(source, `test-shippederr.${name}`)));
+  writeFileSync(join(dir, 'build/tex4ht/test-shippederr.idx'), '\\indexentry{Old entry}{1}\n');
+  const problems = [];
+  for (const which of ['first', 'second']) {
+    const result = await run(join(root, 'bin/tex8web'), ['-c', shippedErr.cfg, '-a', 'info', 'test-shippederr.tex'],
+      { cwd: dir, slot: true, env: { ...process.env, ...shippedErr.env } });
+    const page = join(dir, 'build/html/test-shippederr.html');
+    const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+    if (!html) problems.push(`no page from the ${which} build`);
+    if (!(result.log ?? '').includes('Undefined control sequence')) problems.push(`no error for \\undefinedcs in the ${which} build's log`);
+    if (!/<div class='index-item'>Shipped apple, 1 <\/div>/.test(html)) problems.push(`no shipped index entry on the ${which} build's page`);
+    if (!glossary('Glossary', entry('fruit', 'fruit', 'the seed-bearing part of a plant\\. 1')).test(html)) problems.push(`no shipped glossary entry on the ${which} build's page`);
+    if (html.includes('Old entry')) problems.push(`Old entry on the ${which} build's page`);
+  }
+  report(`${shippedErr.name} (with a LaTeX error, built twice)`, problems);
+});
+
 // test-mathescape built twice, without prerendering: with tex8web-math.tex's
 // escaping of each formula's source, and with tex4ht's slower escaping. The
 // two pages must be the same.

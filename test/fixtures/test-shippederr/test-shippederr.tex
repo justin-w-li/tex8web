@@ -1,0 +1,18 @@
+% The index and glossary files beside the document are current, as an
+% Overleaf zip or an arXiv source ships them, and the document sorts
+% neither: \makeindex is commented out, and glossaries has no
+% \makeglossaries. The document has one LaTeX error of its own,
+% \undefinedcs, and the build folder holds a .idx of an earlier build that
+% had \makeindex. The page's index and glossary are read from the files
+% beside the document. Built by a job of test/run.mjs, as the error would
+% fail the generic checks.
+\documentclass{article}
+\usepackage{makeidx}
+%\makeindex
+\usepackage{glossaries}
+\newglossaryentry{fruit}{name={fruit},description={the seed-bearing part of a plant}}
+\begin{document}
+An apple\index{Apple} is a \gls{fruit}.\undefinedcs
+\printindex
+\printglossary
+\end{document}

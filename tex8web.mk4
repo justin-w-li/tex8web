@@ -160,14 +160,6 @@ else
   -- errors too. Then the run is made again with that .aux or .bbl empty.
   -- (The main .aux names the .aux of each \include'd file, which is read
   -- through it.)
-  -- The first run also reads the sorted index or glossary file beside the
-  -- document when the build directory has none, and makeindex and
-  -- makeglossaries write that file only after the run. When the run gives
-  -- errors, it is made again with an empty file of each such name in the
-  -- build directory: the indexes that tex8web-hooks.sty records, the
-  -- glossaries' output files in the \@newglossary lines of the new .aux,
-  -- and makeidx's index when the run wrote a .idx. Those names are known
-  -- only after the run.
   -- (An empty .bbl from the start would cost a current .bbl, which latexmk
   -- leaves after a PDF build, one more LaTeX run: its \bibcite lines would
   -- first reach the .aux in the second run. The error's file cannot tell
@@ -175,6 +167,18 @@ else
   -- config for biblatex's and natbib's errors. So a document with other
   -- errors runs twice here when a .bbl is beside it. Draft mode's one run
   -- reads the .bbl beside, as pdflatex does.)
+  -- The first run also reads the sorted index or glossary file beside the
+  -- document when the build directory has none, and makeindex and
+  -- makeglossaries write that file only after the run. When the run gives
+  -- errors, it is made again with an empty file of each such name in the
+  -- build directory: the indexes that tex8web-hooks.sty records, makeidx's
+  -- index when the run wrote a .idx, and, when the document has
+  -- \makeglossaries, the glossaries' output files in the \@newglossary
+  -- lines of the new .aux. Those names are known only after the run.
+  -- (glossaries writes \@newglossary lines without \makeglossaries too,
+  -- and \@istfilename only with it, as index.lua tests before it runs
+  -- makeglossaries. A .idx in the build directory from an earlier build is
+  -- removed before the run, so a .idx there is one this run wrote.)
   Make:add("htlatex_first", function(par)
     local base = par.builddir .. "/" .. par.input
     -- (biblatex writes the .bcf in each run with biber. bibliography.lua
@@ -183,6 +187,7 @@ else
     os.remove(base .. ".bcf")
     local out, here = lfs.attributes(par.builddir), lfs.attributes(".")
     local separate = out and not (here.ino == out.ino and here.dev == out.dev)
+    if separate then os.remove(base .. ".idx") end
     local beside = separate and lfs.attributes(par.input .. ".bbl") and not lfs.attributes(base .. ".bbl")
     local saved = {}
     for _, extension in ipairs {"aux", "xref", "4tc", "bbl"} do
@@ -242,8 +247,10 @@ else
       for _, found in ipairs(index.indexes(written, par.input, lfs.attributes(base .. ".idx"))) do
         names[#names + 1] = found.name .. ".ind"
       end
-      for extension in written:gmatch("\\@newglossary{[^}]*}{[^}]*}{([^}]*)}{[^}]*}") do
-        names[#names + 1] = par.input .. "." .. extension
+      if written:find("\\@istfilename{", 1, true) then
+        for extension in written:gmatch("\\@newglossary{[^}]*}{[^}]*}{([^}]*)}{[^}]*}") do
+          names[#names + 1] = par.input .. "." .. extension
+        end
       end
       for _, name in ipairs(names) do
         if lfs.attributes(name) and not lfs.attributes(par.builddir .. "/" .. name) then sorted[#sorted + 1] = name end
@@ -256,8 +263,9 @@ else
       log:status("the first LaTeX run read a .bbl of another bibliography style, with items that have no author-year data for natbib, so it runs again without that .bbl")
     elseif aux or bbl then
       log:status("the first LaTeX run gave errors and the build directory has files of a build with another bibliography backend, so it runs again without them")
-    else
-      log:status("the first LaTeX run gave errors and a sorted index or glossary file is beside the document, so it runs again without that file")
+    end
+    if #sorted > 0 then
+      log:status("the first LaTeX run gave errors and sorted index or glossary files are beside the document, so it runs again without them: " .. table.concat(sorted, ", "))
     end
     saved.bbl = nil
     if aux then
