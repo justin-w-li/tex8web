@@ -101,11 +101,13 @@ else
     -- takes its references from a current .aux beside the document, as
     -- pdflatex does)
     local here = lfs.attributes(".")
-    if mode ~= "draft" and not (here.ino == out.ino and here.dev == out.dev) then
-      for _, extension in ipairs {"aux", "xref", "4tc"} do
-        local name = par.input .. "." .. extension
-        local file = par.builddir .. "/" .. name
-        if lfs.attributes(name) and not lfs.attributes(file) then io.open(file, "w"):close() end
+    if not (here.ino == out.ino and here.dev == out.dev) then
+      if mode ~= "draft" then
+        for _, extension in ipairs {"aux", "xref", "4tc"} do
+          local name = par.input .. "." .. extension
+          local file = par.builddir .. "/" .. name
+          if lfs.attributes(name) and not lfs.attributes(file) then io.open(file, "w"):close() end
+        end
       end
       -- (and for each list of an earlier build beside the document: a
       -- file named for the document, other than its source and .tex
@@ -117,7 +119,10 @@ else
       -- tocloft's \newlistof, is read from beside the document. Any line
       -- counts, as biblatex writes other lines before the entries. A file
       -- the document reads, such as a package of its own, usually has no
-      -- such space when written by hand, and is not hidden)
+      -- such space when written by hand, and is not hidden. Also in draft
+      -- mode, as such a list may come from a build with other packages
+      -- and stop its one LaTeX run. Its entries then show from the second
+      -- draft build on, from the list that the first one wrote)
       local prefix = par.input .. "."
       local function list(name)
         local file = io.open(name, "rb")
