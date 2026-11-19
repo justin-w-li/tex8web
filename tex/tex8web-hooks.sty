@@ -792,6 +792,22 @@
         \pdfrefxform \pdfcolorstack \pdfstartlink \pdfoutline \pdfdest
         \pdfthread \pdfsnapy \pdfsnapycomp \pdfsave
     }
+% expl3's copies of these primitives, such as \tex_pdfxform:D, which expl3
+% code calls, are the same macros. expl3 makes no copy of some of them,
+% such as \pdfsnapy.
+\clist_map_inline:nn
+    {
+        literal, mapfile, mapline, setmatrix, names, spacefont, fontattr,
+        includechars, nobuiltintounicode, ximage, obj, annot, xform,
+        refximage, refobj, refxform, xformname, ximagebbox, colorstack,
+        startlink, outline, dest, thread, startthread, snapy, snapycomp,
+        save, restore, endlink, endthread, snaprefpoint, runninglinkon,
+        runninglinkoff, interwordspaceon, interwordspaceoff, fakespace
+    }
+    {
+        \cs_if_exist:cT { tex_pdf #1 :D }
+            { \cs_gset_eq:cc { tex_pdf #1 :D } { pdf #1 } }
+    }
 \ExplSyntaxOff
 
 % report, book, and memoir: \@makechapterhead as the preamble leaves it,
