@@ -1,0 +1,25 @@
+% test-explprim's expl3 copies of pdfTeX's primitives in a document that
+% loads hyperref and leaves \pdfoutput unset. A heading's text goes to the
+% table of contents and to hyperref's bookmarks.
+\documentclass{article}
+\usepackage{hyperref}
+\ExplSyntaxOn
+\NewDocumentCommand \blue { m }
+    { \tex_pdfliteral:D { 0~0~1~rg } #1 \tex_pdfliteral:D { 0~g } }
+\ExplSyntaxOff
+\begin{document}
+\tableofcontents
+
+\section{Head \blue{x} end}\label{head}
+
+Literal: before \blue{one} after, a link to section~\ref{head}.
+
+Link: before\ExplSyntaxOn \tex_pdfstartlink:D goto~name {section.1} to~the~head
+\tex_pdfendlink:D \ExplSyntaxOff{} after.
+
+Stack: before\ExplSyntaxOn \tex_pdfcolorstack:D 0~push {0~0~1~rg} pushed
+\tex_pdfcolorstack:D 0~pop \ExplSyntaxOff{} after.
+
+Footnote: before\footnote{Note \blue{six} end.} after.
+
+\end{document}

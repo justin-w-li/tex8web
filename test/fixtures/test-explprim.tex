@@ -1,0 +1,119 @@
+% A document written for pdflatex that calls the expl3 copies of the
+% pdfTeX primitives that are an error in DVI mode, such as
+% \tex_pdfxform:D, as a package written in expl3 calls them. In the PDF
+% each one writes into the PDF and puts nothing on the page, except the
+% form and the colors. On the page the text around each one stays, and
+% none of their arguments shows. They come in the preamble, in the body
+% between \ExplSyntaxOn and \ExplSyntaxOff, in document commands with an
+% expl3 body, in a copy that the preamble makes with \cs_new_eq:NN, in
+% italic, sans-serif, and typewriter text, in a footnote, a theorem, a
+% box, and a heading written to the table of contents. \tex_pdfxformname:D
+% and \tex_pdfximagebbox:D are read in an \edef. The copies of the
+% primitives that only warn in DVI mode stay primitives.
+\pdfoutput=1
+\documentclass{article}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\ExplSyntaxOn
+\tex_pdfmapfile:D { +foo.map }
+\tex_pdfmapline:D { =bar.pfb }
+\tex_pdfnames:D { /Foo~[1~2] }
+\tex_pdfobj:D { <<~/Preamble~1~>> }
+\tex_pdffontattr:D \font { /Foo~1 }
+\tex_pdfincludechars:D \font { abc }
+\tex_pdfnobuiltintounicode:D \font
+\tex_pdfinfo:D { /Title~(A~title) }
+\tex_pdfcatalog:D { /PageMode~/UseNone }
+\tex_pdfcompresslevel:D = 9
+\cs_new_eq:NN \test_literal:w \tex_pdfliteral:D
+\cs_new_protected:Npn \test_blue:n #1
+    { \tex_pdfliteral:D { 0~0~1~rg } #1 \tex_pdfliteral:D { 0~g } }
+\NewDocumentCommand \blue { m } { \test_blue:n {#1} }
+\NewDocumentCommand \dblue { m }
+    { \tex_pdfliteral:D ~ direct { 0~0~1~rg } #1 \tex_pdfliteral:D ~ direct { 0~g } }
+\NewDocumentCommand \pblue { m }
+    { \tex_pdfliteral:D ~ page { 0~0~1~rg } #1 \tex_pdfliteral:D ~ shipout { 0~g } }
+\NewDocumentCommand \red { m }
+    { \test_literal:w { 1~0~0~rg } #1 \test_literal:w { 0~g } }
+\NewDocumentCommand \turn { m }
+    {
+        \tex_pdfsave:D \tex_pdfsetmatrix:D { 0~1~-1~0 }
+        \rlap {#1} \tex_pdfrestore:D \phantom {#1}
+    }
+\NewDocumentCommand \isprim { m }
+    { #1 ~ \exp_args:Nc \token_if_primitive:NTF { tex_pdf #1 :D } { primitive } { redefined } }
+\ExplSyntaxOff
+\begin{document}
+\tableofcontents
+
+\section{Head \blue{x} end}
+
+Details: before \ExplSyntaxOn \setbox2\hbox{x} \tex_pdfxform:D 2 \ExplSyntaxOff after.
+
+\setbox2\hbox{form}%
+Form: before\ExplSyntaxOn \tex_pdfxform:D attr {/X~1} resources {/Y~2} 2
+\tex_pdfrefxform:D \tex_pdflastxform:D \ExplSyntaxOff{} after.
+
+\ExplSyntaxOn
+\edef \formedef { \tex_pdfxformname:D \tex_pdflastxform:D }
+\edef \bboxedef { \tex_pdfximagebbox:D \tex_pdflastximage:D 1 }
+\ExplSyntaxOff
+Name: [\formedef] end.
+
+Meaning: \texttt{\meaning\formedef} end.
+
+Bbox: [\bboxedef] end.
+
+Literal: before \blue{one} after.
+
+Italic: \emph{before \dblue{two} after}.
+
+Sans: \textsf{before \blue{three} after}.
+
+Typewriter: \texttt{before \pblue{four} after}.
+
+Copy: before \red{five} after.
+
+Footnote: before\footnote{Note \blue{six} end.} after.
+
+\begin{theorem}
+Theorem \dblue{seven} end.
+\end{theorem}
+
+Box: \sbox0{\blue{boxed}}\usebox0{} after.
+
+Matrix: before \turn{turned}{} after.
+
+Stack: before\ExplSyntaxOn \tex_pdfcolorstack:D 0~push {0~0~1~rg} pushed
+\tex_pdfcolorstack:D 0~pop \ExplSyntaxOff{} after.
+
+Link: before\ExplSyntaxOn \tex_pdfstartlink:D user {/Subtype~/Link} linked
+\tex_pdfrunninglinkoff:D \tex_pdfrunninglinkon:D \tex_pdfendlink:D \ExplSyntaxOff{} after.
+
+Image: before\ExplSyntaxOn \tex_pdfximage:D width~1cm {test-picture.png}
+\tex_pdfrefximage:D \tex_pdflastximage:D \ExplSyntaxOff{} after.
+
+Objects: before\ExplSyntaxOn \tex_pdfobj:D reserveobjnum
+\tex_pdfobj:D attr {/X~1} {<<~/Y~2~>>} \tex_pdfrefobj:D \tex_pdflastobj:D \ExplSyntaxOff{} after.
+
+Annotation: before\ExplSyntaxOn \tex_pdfannot:D width~1cm {/Subtype~/Text} \ExplSyntaxOff{} after.
+
+Destination: before\ExplSyntaxOn \tex_pdfdest:D name {here} fit \ExplSyntaxOff{} after.
+
+Outline: before\ExplSyntaxOn \tex_pdfoutline:D goto~name {here} count~0 {Outline~title}
+\ExplSyntaxOff{} after.
+
+Thread: before\ExplSyntaxOn \tex_pdfthread:D name {t} \ExplSyntaxOff{} after.
+
+Spaces: before\ExplSyntaxOn \tex_pdfinterwordspaceon:D \tex_pdffakespace:D
+\tex_pdfinterwordspaceoff:D \ExplSyntaxOff{} after.
+
+\ExplSyntaxOn \tex_pdfstartthread:D name {u} \ExplSyntaxOff
+Started thread.\par
+\ExplSyntaxOn \tex_pdfendthread:D \ExplSyntaxOff
+
+Guards: \isprim{info}, \isprim{catalog}, \isprim{trailer},
+\isprim{compresslevel}, \isprim{minorversion}, \isprim{lastxform},
+\isprim{lastximage}, \isprim{lastobj}, \isprim{colorstackinit}.
+
+\end{document}
