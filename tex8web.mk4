@@ -66,41 +66,6 @@ if reuse then
   end, {correct_exit = 0})
   Make:latex_reused(latex)
 else
-  -- The lists of an earlier build beside the document that the build
-  -- directory lacks, as files of the build directory: each file named for
-  -- the document, other than its source and .tex files, with a line that
-  -- starts with "\contentsline {", which LaTeX's \addcontentsline writes
-  -- with a space after the command. The \@starttoc of article.4ht reads
-  -- each list other than the standard ones, which go through the .4ct,
-  -- and amsart's reads every list, so a list under an extension the
-  -- document chose, as with tocloft's \newlistof, is read from beside the
-  -- document. Any line counts, as biblatex writes other lines before the
-  -- entries. A file the document reads, such as a package of its own,
-  -- usually has no such space when written by hand, and is not one. None
-  -- when the build directory is the document's directory.
-  local function lists(par)
-    local found = {}
-    local out, here = lfs.attributes(par.builddir), lfs.attributes(".")
-    if par.builddir == "" or not out or (here.ino == out.ino and here.dev == out.dev) then return found end
-    local prefix = par.input .. "."
-    local function list(name)
-      local file = io.open(name, "rb")
-      if not file then return false end
-      for line in file:lines() do
-        if line:find("^\\contentsline {") then file:close() return true end
-      end
-      file:close()
-      return false
-    end
-    for name in lfs.dir(".") do
-      local file = par.builddir .. "/" .. name
-      if name:sub(1, #prefix) == prefix and name ~= par.tex_file and not name:find("%.tex$")
-        and lfs.attributes(name, "mode") == "file" and not lfs.attributes(file) and list(name) then
-        found[#found + 1] = file
-      end
-    end
-    return found
-  end
   -- LaTeX writes the .aux of \include{dir/file} to dir in the build
   -- directory, and stops if dir does not exist. So each directory of the
   -- document is made there first, except hidden ones, build, links, and
@@ -132,18 +97,49 @@ else
     -- as web2c's open_input looks there for a file missing in the build
     -- directory. Only for such a file: tex4ht.sty builds the table of
     -- contents from an empty .4tc and warns on an empty .xref, where a
-    -- missing one gives neither. The same for each list of an earlier
-    -- build beside the document. Not in draft mode, whose one LaTeX run
+    -- missing one gives neither. Not in draft mode, whose one LaTeX run
     -- takes its references from a current .aux beside the document, as
-    -- pdflatex does, and the entries of a current list, as below)
+    -- pdflatex does)
     local here = lfs.attributes(".")
-    if mode ~= "draft" and not (here.ino == out.ino and here.dev == out.dev) then
-      for _, extension in ipairs {"aux", "xref", "4tc"} do
-        local name = par.input .. "." .. extension
-        local file = par.builddir .. "/" .. name
-        if lfs.attributes(name) and not lfs.attributes(file) then io.open(file, "w"):close() end
+    if not (here.ino == out.ino and here.dev == out.dev) then
+      if mode ~= "draft" then
+        for _, extension in ipairs {"aux", "xref", "4tc"} do
+          local name = par.input .. "." .. extension
+          local file = par.builddir .. "/" .. name
+          if lfs.attributes(name) and not lfs.attributes(file) then io.open(file, "w"):close() end
+        end
       end
-      for _, file in ipairs(lists(par)) do io.open(file, "w"):close() end
+      -- (and for each list of an earlier build beside the document: a
+      -- file named for the document, other than its source and .tex
+      -- files, with a line that starts with "\contentsline {", which
+      -- LaTeX's \addcontentsline writes with a space after the command.
+      -- The \@starttoc of article.4ht reads each list other than the
+      -- standard ones, which go through the .4ct, and amsart's reads every
+      -- list, so a list under an extension the document chose, as with
+      -- tocloft's \newlistof, is read from beside the document. Any line
+      -- counts, as biblatex writes other lines before the entries. A file
+      -- the document reads, such as a package of its own, usually has no
+      -- such space when written by hand, and is not hidden. Also in draft
+      -- mode, as such a list may come from a build with other packages
+      -- and stop its one LaTeX run. Its entries then show from the second
+      -- draft build on, from the list that the first one wrote)
+      local prefix = par.input .. "."
+      local function list(name)
+        local file = io.open(name, "rb")
+        if not file then return false end
+        for line in file:lines() do
+          if line:find("^\\contentsline {") then file:close() return true end
+        end
+        file:close()
+        return false
+      end
+      for name in lfs.dir(".") do
+        local file = par.builddir .. "/" .. name
+        if name:sub(1, #prefix) == prefix and name ~= par.tex_file and not name:find("%.tex$")
+          and lfs.attributes(name, "mode") == "file" and not lfs.attributes(file) and list(name) then
+          io.open(file, "w"):close()
+        end
+      end
     end
     return 0
   end)
@@ -184,48 +180,19 @@ else
     for _, extension in ipairs {"aux", "xref", "4tc", "bbl"} do
       saved[extension] = files.read(base .. "." .. extension) or false
     end
+    if mode == "draft" or not (beside or saved.aux or saved.bbl) then
+      return htlatex.htlatex(par)
+    end
     -- (htlatex.htlatex calls Make.testlogfile, which prints the log's
     -- errors, after the run)
     local testlogfile, errors = Make.testlogfile, 0
-    local function counted()
-      Make.testlogfile = function(p)
-        local content = files.read(p.builddir .. "/" .. p.input .. ".log") or ""
-        if content:find("\n!") or content:find("[^:]+:%d+:.+") then errors = #errorlogparser.parse(content) end
-        return 0
-      end
-      htlatex.htlatex(par)
-      Make.testlogfile = testlogfile
+    Make.testlogfile = function(p)
+      local content = files.read(p.builddir .. "/" .. p.input .. ".log") or ""
+      if content:find("\n!") or content:find("[^:]+:%d+:.+") then errors = #errorlogparser.parse(content) end
+      return 0
     end
-    -- (Draft mode's one run reads the lists of an earlier build beside the
-    -- document, as pdflatex does, so a current list shows its entries. A
-    -- list from a build with other packages may stop the run. So when the
-    -- run gives errors with such a list beside the document, it runs again
-    -- with each such list empty in the build directory, from the .aux,
-    -- .xref, and .4tc it started with. A document with other errors then
-    -- runs twice.)
-    if mode == "draft" then
-      local hidden = lists(par)
-      if #hidden == 0 then return htlatex.htlatex(par) end
-      counted()
-      if errors == 0 then return testlogfile(par) end
-      log:status("the first LaTeX run gave errors and lists of an earlier build are beside the document, so it runs again without them")
-      for _, extension in ipairs {"aux", "xref", "4tc"} do
-        local path = base .. "." .. extension
-        if saved[extension] then
-          local f = io.open(path, "w")
-          f:write(saved[extension])
-          f:close()
-        else
-          os.remove(path)
-        end
-      end
-      for _, file in ipairs(hidden) do io.open(file, "w"):close() end
-      return htlatex.htlatex(par)
-    end
-    if not (beside or saved.aux or saved.bbl) then
-      return htlatex.htlatex(par)
-    end
-    counted()
+    htlatex.htlatex(par)
+    Make.testlogfile = testlogfile
     -- natbib writes \NAT@force@numbers to the .aux when the .bbl has an
     -- item without author-year data, and the next run raises an error for
     -- an author-year style (natbib.sty, \NAT@stdbsttrue). A .bbl that

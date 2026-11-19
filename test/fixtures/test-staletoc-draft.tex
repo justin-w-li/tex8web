@@ -1,7 +1,5 @@
-% A list of its own from tocbasic's \DeclareNewTOC. run.mjs builds this
-% document in full and then in draft mode, in one folder, beside the stale
-% list of test-staleaux-toc-koma, which stops a LaTeX run that reads it.
-% The draft build must read the list that the full build wrote instead.
+% A list of its own from tocbasic's \DeclareNewTOC. Its draft builds
+% beside lists of earlier builds are jobs of run.mjs.
 \documentclass{scrreprt}
 \DeclareNewTOC[type=example, types=examples, float, name=Example, listname={List of Examples}]{lox}
 \begin{document}
