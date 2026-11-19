@@ -182,8 +182,9 @@ else
   -- When makeindex or makeglossaries fails, the step "unsorted" removes
   -- each such file that the failed tool did not write, so the later runs,
   -- and the next build, read the file beside the document, as the PDF
-  -- build does. (The empty file is dated 1970, and a write dates it now.
-  -- makeglossaries writes an empty file for a glossary without entries.)
+  -- build does. (No sort leaves a file of 0 bytes: makeindex writes its
+  -- preamble and postamble, and makeglossaries writes \null for a glossary
+  -- without entries.)
   local placeholders = {}
   Make:add("htlatex_first", function(par)
     local base = par.builddir .. "/" .. par.input
@@ -297,7 +298,6 @@ else
     for _, name in ipairs(sorted) do
       local path = par.builddir .. "/" .. name
       io.open(path, "w"):close()
-      lfs.touch(path, 0, 0)
       placeholders[#placeholders + 1] = path
     end
     return htlatex.htlatex(par)
@@ -312,7 +312,7 @@ else
     Make:glossaries {}
     Make:add("unsorted", function()
       for _, path in ipairs(placeholders) do
-        if lfs.attributes(path, "modification") == 0 then os.remove(path) end
+        if lfs.attributes(path, "size") == 0 then os.remove(path) end
       end
       return 0
     end)
