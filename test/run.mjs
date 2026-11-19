@@ -5,6 +5,8 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
+import { lstatSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { build, expected, largestFirst, pool, root, run, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { checkLog, checkOutput, checkTexLog } from './lib/check.mjs';
@@ -886,7 +888,23 @@ const untitled = [
   /^(?![^]*No title)/,
   /<\/main><\/body> ?<\/html> ?$/,
 ];
+// test-builddirspace's page, for a document of that name: the table of
+// contents, the config's term, a \ref each way with the included part, the
+// citation and its entry from bibtex, and the TikZ picture. Without the
+// included part, the parts that do not refer to it
+const builddirspacePage = (name, included = true) => [
+  /<span class='tex8web-term' id='term-space-word'>/,
+  /citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xspacebook'>1<\/a>\]/,
+  /<dd><a id='Xspacebook'><\/a>A\.<span class='tex8web-nbsp'> <\/span>Able\. <span class='cmti-10'>A Book Built in a Folder with a Space<\/span>/,
+  new RegExp(`<img alt='' src='${name}0x\\.svg'`),
+  ...included ? [
+    /<div class='tableofcontents'>(?:(?!<\/div>)[^])*<a href='#spaces'[^>]*>Spaces<\/a>(?:(?!<\/div>)[^])*<a href='#included-part'[^>]*>Included part<\/a>/,
+    /included part in section<span class='tex8web-nbsp'> <\/span><a href='#included-part'>2<!--/,
+    /<h3 class='sectionHead' id='included-part'>[^]*Text of the included part, after section<span class='tex8web-nbsp'> <\/span><a href='#spaces'>1<!--/,
+  ] : [],
+];
 const contents = {
+  'test-builddirspace': builddirspacePage('test-builddirspace'),
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,
   'test-pathspace': [
@@ -4952,6 +4970,164 @@ if (pathspace) {
       if (!html.includes(`id='${term}'`) || html.includes(`id='${other}'`)) problems.push(`${name}.html does not have ${term} alone as a term`);
     });
     report(`${pathspace.name} (two documents in a folder with a space, each with its config)`, problems);
+  });
+}
+
+// test-builddirspace built into a build folder (-B) whose path has a
+// space, each case from a copy of the fixture in a folder of its own:
+// - relative: build/my aux, with no -d
+// - slash: build/my aux/, with a -d folder with a space
+// - parent: my build/aux, a space in the folder above
+// - root: my aux beside the document, outside build/, from a document
+//   folder with a space, with a config in a folder with a space (which
+//   tex8web copies) that inputs a file beside it, built three times into
+//   the same folder
+// - absolute: the build folder by an absolute path
+// - saved: a build that saves LaTeX's run (TEX8WEB_LATEX_SAVE), then one
+//   that reuses it (TEX8WEB_LATEX_REUSE)
+// - at once: three documents in one folder built at once into one build
+//   folder, each without the included part, which they would share
+// - guard: build/plainaux, a build folder without a space, with a -d
+//   folder with a space
+// - failed guard: a document that stops LaTeX
+// Each build makes the page, with the SVG it shows. The build folder keeps
+// the document's .aux, .log, .dvi, and .bbl, and the included part's .aux
+// (each document's, for the three at once), and holds no folder of its own
+// name. No symbolic link is left in the case's folder, also after the
+// failed build.
+const builddirspace = docs.find(d => d.name === 'test-builddirspace');
+if (builddirspace) {
+  const doc = builddirspace, name = 'test-builddirspace';
+  const fixture = readFileSync(join(doc.dir, doc.tex), 'utf8');
+  const place = (dir, file, text) => {
+    mkdirSync(dirname(join(dir, file)), { recursive: true });
+    writeFileSync(join(dir, file), text);
+  };
+  // a copy of the fixture as <tex>.tex in dir, with its .bib and part
+  const copy = (dir, tex = name, text = fixture) => {
+    place(dir, `${tex}.tex`, text);
+    place(dir, `${name}.bib`, readFileSync(join(doc.dir, `${name}.bib`)));
+    place(dir, `${name}/part.tex`, readFileSync(join(doc.dir, name, 'part.tex')));
+  };
+  const links = dir => readdirSync(dir, { recursive: true }).filter(path => lstatSync(join(dir, path)).isSymbolicLink());
+  const nested = aux => existsSync(aux)
+    ? readdirSync(aux, { recursive: true }).filter(path => basename(path) === basename(aux) && statSync(join(aux, path)).isDirectory()) : [];
+  const cases = [
+    ['relative', 'build/my aux', top => {
+      copy(join(top, 'doc'));
+      return { cwd: join(top, 'doc'), builds: [['-B', 'build/my aux']], page: join(top, 'doc/build/html', `${name}.html`) };
+    }],
+    ['slash', 'build/my aux/, with -d build/my out', top => {
+      copy(join(top, 'doc'));
+      return { cwd: join(top, 'doc'), builds: [['-B', 'build/my aux/', '-d', 'build/my out']], aux: 'build/my aux',
+        page: join(top, 'doc/build/my out', `${name}.html`) };
+    }],
+    ['parent', 'my build/aux', top => {
+      copy(join(top, 'doc'));
+      return { cwd: join(top, 'doc'), builds: [['-B', 'my build/aux', '-d', '../html']], page: join(top, 'html', `${name}.html`) };
+    }],
+    ['root', 'my aux beside the document, with a config in a folder with a space, three times', top => {
+      const cfgDir = join(top, 'My Drive/cfg');
+      place(cfgDir, 'my config.cfg', readFileSync(doc.cfg, 'utf8').replace('\\WebTerm\\term', '\\input{builddirspace-beside}'));
+      place(cfgDir, 'builddirspace-beside.tex', '\\WebTerm\\term\n');
+      copy(join(top, 'My Notes'));
+      const build = ['-c', '../My Drive/cfg/my config.cfg', '-B', 'my aux', '-d', '../html'];
+      return { cwd: join(top, 'My Notes'), builds: [build, build, build], page: join(top, 'html', `${name}.html`), cfgDir };
+    }],
+    ['absolute', 'an absolute path', top => {
+      copy(join(top, 'doc'));
+      return { cwd: join(top, 'doc'), builds: [['-B', join(top, 'doc/build/my aux'), '-d', join(top, 'html')]],
+        page: join(top, 'html', `${name}.html`) };
+    }],
+    ['saved', 'saved, then reused', top => {
+      copy(join(top, 'doc'));
+      mkdirSync(join(top, 'saved'));
+      const build = ['-B', 'build/my aux', '-d', '../html'];
+      return { cwd: join(top, 'doc'), builds: [build, build], page: join(top, 'html', `${name}.html`),
+        env: [{ TEX8WEB_LATEX_SAVE: join(top, 'saved') }, { TEX8WEB_LATEX_REUSE: join(top, 'saved') }],
+        between: () => rmSync(join(top, 'doc/build'), { recursive: true }),
+        saved: join(top, 'saved') };
+    }],
+  ];
+  // (a -c in args comes after the fixture's config, and so replaces it)
+  const run8 = (cwd, args, tex, env = {}) => run(join(root, 'bin/tex8web'), ['-c', doc.cfg, ...args, '-a', 'info', tex],
+    { cwd, slot: true, env: { ...process.env, ...doc.env, ...env } });
+  // the problems of a build folder after a document's build
+  const kept = (aux, tex, included = true) => [`${tex}.aux`, `${tex}.log`, `${tex}.dvi`, `${tex}.bbl`, ...included ? [`${name}/part.aux`] : []]
+    .filter(file => !existsSync(join(aux, file))).map(file => `the build folder has no ${file}`);
+  const pageProblems = (page, tex, included) => {
+    const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+    if (!html) return ['no page'];
+    const flat = html.replace(/\s+/g, ' ');
+    return [...builddirspacePage(tex, included).filter(pattern => !pattern.test(flat)).map(pattern => `the page does not match ${pattern}`),
+      ...existsSync(join(dirname(page), `${tex}0x.svg`)) ? [] : [`${tex}0x.svg not written`]];
+  };
+  for (const [key, label, setup] of cases) jobs.push(async () => {
+    const top = join(testDir(doc), `space${key}`);
+    rmSync(top, { recursive: true, force: true });
+    const { cwd, builds, page, cfgDir, env = [], between, saved, ...rest } = setup(top);
+    const aux = resolve(cwd, rest.aux ?? builds[0][builds[0].indexOf('-B') + 1]);
+    const before = cfgDir && readdirSync(cfgDir).sort().join(', ');
+    const problems = [];
+    for (const [i, args] of builds.entries()) {
+      if (i && between) between();
+      const result = await run8(cwd, args, `${name}.tex`, env[i]);
+      writeFileSync(join(top, `build${i + 1}.log`), result.log);
+      if (result.code !== 0) {
+        problems.push(`build ${i + 1}: tex8web exited with ${result.code}`,
+          ...result.log.split('\n').filter(line => /\[(ERROR|FATAL)\]|^! |^tex8web: |cannot open/.test(line)).slice(0, 3));
+      }
+      if (saved && !i && !existsSync(join(saved, `${name}.dvi`))) problems.push("LaTeX's run is not saved");
+    }
+    problems.push(...pageProblems(page, name, true), ...kept(aux, name));
+    for (const path of nested(aux)) problems.push(`the build folder holds ${path}`);
+    for (const path of links(top)) problems.push(`a link is left: ${path}`);
+    const after = cfgDir && readdirSync(cfgDir).sort().join(', ');
+    if (after !== before) problems.push(`the config's folder holds ${after}, not ${before}`);
+    report(`${doc.name} (-B ${label})`, problems);
+  });
+  // three documents built at once into one build folder with a space
+  jobs.push(async () => {
+    const top = join(testDir(doc), 'spaceatonce'), dir = join(top, 'doc'), aux = join(dir, 'build/my aux');
+    rmSync(top, { recursive: true, force: true });
+    const names = ['first', 'second', 'third'];
+    const text = fixture.replace(/^\\include\{[^}]*\}\n/m, '');
+    for (const tex of names) copy(dir, tex, text);
+    const results = await Promise.all(names.map(tex => run8(dir, ['-B', 'build/my aux'], `${tex}.tex`)));
+    const problems = [];
+    names.forEach((tex, i) => {
+      writeFileSync(join(top, `${tex}.log`), results[i].log);
+      if (results[i].code !== 0) problems.push(`${tex}.tex: tex8web exited with ${results[i].code}`);
+      problems.push(...pageProblems(join(dir, 'build/html', `${tex}.html`), tex, false).map(p => `${tex}.tex: ${p}`),
+        ...kept(aux, tex, false));
+    });
+    for (const path of links(top)) problems.push(`a link is left: ${path}`);
+    report(`${doc.name} (three documents built at once into build/my aux)`, problems);
+  });
+  // guards: a build folder without a space and a -d folder with one, which
+  // already work, and a failed build, which leaves no link
+  jobs.push(async () => {
+    const top = join(testDir(doc), 'spaceguard'), dir = join(top, 'doc');
+    rmSync(top, { recursive: true, force: true });
+    copy(dir);
+    const result = await run8(dir, ['-B', 'build/plainaux', '-d', 'build/my out'], `${name}.tex`);
+    writeFileSync(join(top, 'build.log'), result.log);
+    const problems = result.code !== 0 ? [`tex8web exited with ${result.code}`] : [];
+    problems.push(...pageProblems(join(dir, 'build/my out', `${name}.html`), name, true), ...kept(join(dir, 'build/plainaux'), name));
+    const made = readdirSync(join(dir, 'build')).sort().join(', ');
+    if (made !== 'my out, plainaux') problems.push(`build/ holds ${made}, not my out, plainaux`);
+    for (const path of links(top)) problems.push(`a link is left: ${path}`);
+    report(`${doc.name} (guard: -B build/plainaux, -d build/my out)`, problems);
+  });
+  jobs.push(async () => {
+    const top = join(testDir(doc), 'spacefailed'), dir = join(top, 'doc');
+    rmSync(top, { recursive: true, force: true });
+    copy(dir, name, fixture.replace('\\end{document}', '\\begin{tabular}{l}\n\\end{document}'));
+    const result = await run8(dir, ['-B', 'build/my aux'], `${name}.tex`);
+    writeFileSync(join(top, 'build.log'), result.log);
+    const problems = result.code === 0 ? ['tex8web exited with 0 for a document that stops LaTeX'] : [];
+    for (const path of links(top)) problems.push(`a link is left: ${path}`);
+    report(`${doc.name} (guard: a failed build into build/my aux)`, problems);
   });
 }
 
