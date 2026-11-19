@@ -8,7 +8,8 @@
 % expl3 body, in a copy that the preamble makes with \cs_new_eq:NN, in
 % italic, sans-serif, and typewriter text, in a footnote, a theorem, a
 % box, and a heading written to the table of contents. \tex_pdfxformname:D
-% and \tex_pdfximagebbox:D are read in an \edef. The copies of the
+% and \tex_pdfximagebbox:D are read in an \edef, and \tex_pdfxformname:D
+% in a heading. The copies of the
 % primitives that only warn in DVI mode stay primitives.
 \pdfoutput=1
 \documentclass{article}
@@ -56,13 +57,14 @@ Form: before\ExplSyntaxOn \tex_pdfxform:D attr {/X~1} resources {/Y~2} 2
 
 \ExplSyntaxOn
 \edef \formedef { \tex_pdfxformname:D \tex_pdflastxform:D }
-\edef \bboxedef { \tex_pdfximagebbox:D \tex_pdflastximage:D 1 }
 \ExplSyntaxOff
 Name: [\formedef] end.
 
-Meaning: \texttt{\meaning\formedef} end.
+\ExplSyntaxOn
+\section{Name~[\tex_pdfxformname:D \tex_pdflastxform:D]~end}
+\ExplSyntaxOff
 
-Bbox: [\bboxedef] end.
+Meaning: \texttt{\meaning\formedef} end.
 
 Literal: before \blue{one} after.
 
@@ -93,8 +95,19 @@ Link: before\ExplSyntaxOn \tex_pdfstartlink:D user {/Subtype~/Link} linked
 Image: before\ExplSyntaxOn \tex_pdfximage:D width~1cm {test-picture.png}
 \tex_pdfrefximage:D \tex_pdflastximage:D \ExplSyntaxOff{} after.
 
+\ExplSyntaxOn
+\tex_pdfximage:D {test-picture.png}
+\edef \bboxedef { \tex_pdfximagebbox:D \tex_pdflastximage:D 1 }
+\ExplSyntaxOff
+Bbox: [\bboxedef] end.
+
 Objects: before\ExplSyntaxOn \tex_pdfobj:D reserveobjnum
-\tex_pdfobj:D attr {/X~1} {<<~/Y~2~>>} \tex_pdfrefobj:D \tex_pdflastobj:D \ExplSyntaxOff{} after.
+\tex_pdfobj:D stream~attr {/X~1} {<<~/Y~2~>>} \tex_pdfrefobj:D \tex_pdflastobj:D \ExplSyntaxOff{} after.
+
+Use: before\ExplSyntaxOn \tex_pdfobj:D reserveobjnum
+\int_set:Nn \l_tmpa_int { \tex_pdflastobj:D }
+\tex_immediate:D \tex_pdfobj:D useobjnum \l_tmpa_int {<<~/Y~2~>>}
+\tex_pdfrefobj:D \l_tmpa_int \ExplSyntaxOff{} after.
 
 Annotation: before\ExplSyntaxOn \tex_pdfannot:D width~1cm {/Subtype~/Text} \ExplSyntaxOff{} after.
 
@@ -108,12 +121,22 @@ Thread: before\ExplSyntaxOn \tex_pdfthread:D name {t} \ExplSyntaxOff{} after.
 Spaces: before\ExplSyntaxOn \tex_pdfinterwordspaceon:D \tex_pdffakespace:D
 \tex_pdfinterwordspaceoff:D \ExplSyntaxOff{} after.
 
+First.
+
+\ExplSyntaxOn \tex_pdfliteral:D {0~g} \ExplSyntaxOff
+
+\ExplSyntaxOn \tex_pdfrefximage:D \tex_pdflastximage:D \ExplSyntaxOff
+
+Second.
+
 \ExplSyntaxOn \tex_pdfstartthread:D name {u} \ExplSyntaxOff
 Started thread.\par
 \ExplSyntaxOn \tex_pdfendthread:D \ExplSyntaxOff
 
 Guards: \isprim{info}, \isprim{catalog}, \isprim{trailer},
 \isprim{compresslevel}, \isprim{minorversion}, \isprim{lastxform},
-\isprim{lastximage}, \isprim{lastobj}, \isprim{colorstackinit}.
+\isprim{lastximage}, \isprim{lastobj}, \isprim{colorstackinit},
+\isprim{trailerid}, \isprim{pageattr}, \isprim{pagesattr},
+\isprim{pageresources}, \isprim{gentounicode}, \isprim{glyphtounicode}.
 
 \end{document}
