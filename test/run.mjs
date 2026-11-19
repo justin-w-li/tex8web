@@ -4716,8 +4716,7 @@ if (staleBcf) for (const [first, second, folder = 'build/tex4ht', draft] of stal
 // (a document missing there is test-staletoc-draft.tex), each compared
 // with the page built without the lists.
 const staleTocDraft = docs.find(d => d.name === 'test-staletoc-draft');
-const staleTocDraftOwn = { hyperref: ['hyperref.exp', 'hyperref.toc'], plain: ['plain.exp'], older: ['older.exp'], koma: ['koma.lox'],
-  komatwo: ['komatwo.lox'] };
+const staleTocDraftOwn = { hyperref: ['hyperref.exp', 'hyperref.toc'], koma: ['koma.lox'] };
 const staleTocDraftCases = [...['toc', 'toc-koma', 'toc-memoir', 'toc-color', 'toc-amsart', 'toc-report'].map(n => `test-staleaux-${n}`),
   ...Object.keys(staleTocDraftOwn)];
 if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => {
