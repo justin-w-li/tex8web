@@ -1,0 +1,9 @@
+% A .bst and a .bib named by a path that begins with ../, in a file read by
+% \include. bibtex, run in the build directory, looks such a name up from
+% there and not from the document's directory. Both lead back to the
+% fixtures' directory.
+\documentclass{article}
+\begin{document}
+A citation~\cite{able}.
+\include{test-bibinclude/parent}
+\end{document}

@@ -1,0 +1,10 @@
+% natbib with an author-year style, whose \bibliographystyle and
+% \bibliography are in a file read by \include, with \citet and \citep.
+% (hyperref, as natbib.4ht writes each entry's anchor twice without it)
+\documentclass{article}
+\usepackage{natbib}
+\usepackage{hyperref}
+\begin{document}
+As \citet{able} shows, and see also \citep{baker}.
+\include{test-bibinclude/natbib}
+\end{document}

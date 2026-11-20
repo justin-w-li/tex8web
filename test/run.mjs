@@ -1462,6 +1462,50 @@ const contents = {
   'test-bibpath': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
   // (the same from a .bst beside the document, named without a path)
   'test-bibstyle': [/<span class='cite'>\[<a href='#Xlattices'>1<\/a>\]<\/span>/, /<dd><a id='Xlattices'><\/a>Notes on Distributive Lattices</],
+  // (a bibliography whose \bibliographystyle and \bibliography are in a
+  // file read by \include: the citations in a heading, the text, italic, a
+  // footnote, and a theorem, and the entries, as in the PDF)
+  'test-bibinclude': [
+    /Parts after<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xbaker'>2<\/a>\]<\/span><\/h3>/,
+    /A citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>, and one in italic: <span class='cmti-10'>as<span class='tex8web-nbsp'> <\/span><\/span><span class='cite'><span class='cmti-10'>\[<\/span><a href='#Xbaker'><span class='cmti-10'>2<\/span><\/a>/,
+    /A footnote citing<span class='tex8web-nbsp'> <\/span><\/span><span class='cite'><span class='cmr-8'>\[<\/span><a href='#Xable'><span class='cmr-8'>1<\/span><\/a>/,
+    /\(<\/span><span class='cite'><span class='cmbx-10'>\[<\/span><a href='#Xbaker'><span class='cmbx-10'>2<\/span><\/a>/,
+    /A theorem citing<span class='tex8web-nbsp'> <\/span><\/span><span class='cite'><span class='cmti-10'>\[<\/span><a href='#Xable'><span class='cmti-10'>1<\/span><\/a>/,
+    /<dt> \[1\]<\/dt><dd><a id='Xable'><\/a>Ann Able\. <span class='cmti-10'>A Book on Included Bibliographies<\/span>\. A Publisher, 2001\. <\/dd>/,
+    /<dt> \[2\]<\/dt><dd><a id='Xbaker'><\/a>Bo<span class='tex8web-nbsp'> <\/span>Baker\. <span class='cmti-10'>A Second Book Cited from a Part<\/span>\. A Publisher, 2002\. <\/dd>/,
+  ],
+  // (the same with \bibliographystyle in the document and \bibliography in
+  // the included file, with hyperref)
+  'test-bibinclude-main': [
+    /A citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>, and one in italic: <span class='cmti-10'>as<span class='tex8web-nbsp'> <\/span><\/span><span class='cite'><span class='cmti-10'>\[<\/span><a href='#Xbaker'><span class='cmti-10'>2<\/span><\/a>/,
+    /<dt> \[1\]<\/dt><dd><a id='Xable'><\/a>Ann Able\. <span class='cmti-10'>A Book on Included Bibliographies<\/span>/,
+    /<dt> \[2\]<\/dt><dd><a id='Xbaker'><\/a>Bo<span class='tex8web-nbsp'> <\/span>Baker\. <span class='cmti-10'>A Second Book Cited from a Part<\/span>/,
+  ],
+  // (a .bst and a .bib named by a path that begins with ../, in the
+  // included file: test-bibpath.bst writes only the title)
+  'test-bibinclude-parent': [/A citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>\./,
+    /<dt> \[1\]<\/dt><dd><a id='Xable'><\/a>A Book on Included Bibliographies<\/dd>/],
+  // (natbib with plainnat in the included file: \citet and \citep)
+  'test-bibinclude-natbib': [
+    /As <a href='#Xable'>Able<\/a><span class='tex8web-nbsp'> <\/span>\[<a href='#Xable'>2001<\/a>\] shows, and see also \[<a href='#Xbaker'>Baker<\/a>,<span class='tex8web-nbsp'> <\/span><a href='#Xbaker'>2002<\/a>\]\./,
+    /<dd><a id='Xable'><\/a>Ann Able\. <span class='cmti-10'>A Book on Included Bibliographies<\/span>\. A Publisher, 2001\. <\/dd>/,
+    /<dd><a id='Xbaker'><\/a>Bo<span class='tex8web-nbsp'> <\/span>Baker\. <span class='cmti-10'>A Second Book Cited from a Part<\/span>\. A Publisher, 2002\. <\/dd>/,
+  ],
+  // (a report with parts in subfolders: the citation of an included
+  // chapter, the entry that its \nocite adds, from a .bib in a subfolder,
+  // and no text of the chapter that \includeonly leaves out)
+  'test-bibinclude-report': [
+    /A citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span> in an included chapter\./,
+    /<dt> \[1\]<\/dt><dd><a id='Xable'><\/a>Ann Able\. <span class='cmti-10'>A Book from a Subfolder<\/span>\. A Publisher, 2001\. <\/dd>/,
+    /<dt> \[2\]<\/dt><dd><a id='Xcole'><\/a>Cy<span class='tex8web-nbsp'> <\/span>Cole\. <span class='cmti-10'>A Book Named Only by Nocite<\/span>\. A Publisher, 2003\. <\/dd>/,
+    /^(?![^]*Omitted chapter)/,
+  ],
+  // (parts read by \input, \subfile, and \subimport: the citation and its
+  // entry)
+  'test-bibinclude-input': [
+    /A citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span> in a part read by/,
+    /<dt> \[1\]<\/dt><dd><a id='Xable'><\/a>Ann Able\. <span class='cmti-10'>A Book from a Subfolder<\/span>\. A Publisher, 2001\. <\/dd>/,
+  ],
   // (a .bbl beside the document, and a .bib that \bibliography or
   // \addbibresource names missing: the citations and entries from that
   // .bbl, as in the PDF. natbib's author-year and numbers with hyperref,
@@ -4937,6 +4981,10 @@ const staleBcfPages = {
     /A\.<span class='tex8web-nbsp'> <\/span>Able\. <span class='cmti-10'>A Book Kept in the Build Folder<\/span>\. A Publisher, 1999\./,
     /B\.<span class='tex8web-nbsp'> <\/span>Baker\. <span class='cmti-10'>A Second Book<\/span>\. A Publisher, 2001\./],
   'natbib-include': [/See <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\]\./, staleBcfEntry],
+  // (natbib with the style in a file read by \include, or in the document
+  // and \bibliography in that file)
+  'natbib-inclstyle': [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
+  'natbib-inclbib': [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
   elsarticle: [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\(<span class='cite'><a href='#Xable'>1999<\/a><\/span>\) says\./,
     /Able, A\., 1999\. A Book Kept in the Build Folder\. A Publisher\./],
   // (natbib with a numeric style: \citet forces numbers, as in the PDF)
@@ -4965,6 +5013,9 @@ const staleBcfCases = [
   ['bibtex', 'natbib'], ['bibtex-hyperref', 'natbib-hyperref'], ['bibtex-alpha', 'natbib'],
   ['bibtex', 'natbib-abbrvnat', '.'], ['natbib-numbers', 'natbib'], ['natbib-plain', 'natbib'],
   ['bibtex-include', 'natbib-include'], ['bibtex', 'elsarticle'],
+  // (the bibliography in a file read by \include, which LaTeX writes to
+  // that file's .aux, with the style there or in the document)
+  ['bibtex-inclstyle', 'natbib-inclstyle'], ['bibtex-inclbib', 'natbib-inclbib'],
   ['bibtex', 'natbib-missing', '.'],
   // (a .bbl whose items have author-year data only in part)
   ['natbib-mixed', 'natbib'],
@@ -4974,6 +5025,7 @@ const staleBcfCases = [
   ['biber', 'biber'], ['bibtex', 'bibtex'], ['blx-bibtex', 'blx-bibtex'],
   ['natbib', 'natbib'], ['natbib-plain', 'natbib-plain'], ['natbib-ieeetr', 'natbib-ieeetr'],
   ['natbib-dotstyle', 'natbib-dotstyle'],
+  ['natbib-inclstyle', 'natbib-inclstyle'],
 ];
 if (staleBcf) for (const [first, second, folder = 'build/tex4ht', draft] of staleBcfCases) jobs.push(async () => {
   const label = `${first}, then ${second}${folder === 'build/tex4ht' ? '' : `, with -B ${folder}`}${draft ? ', with a draft build between' : ''}`;

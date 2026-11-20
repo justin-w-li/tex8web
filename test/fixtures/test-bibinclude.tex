@@ -1,0 +1,13 @@
+% A bibliography whose \bibliographystyle and \bibliography are in a file
+% read by \include, which writes both to that file's .aux, with citations
+% in the text, in italic, in a footnote, in a theorem, and in a heading.
+\documentclass{article}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Parts after~\cite{baker}}
+A citation~\cite{able}, and one in italic: \emph{as~\cite{baker} shows}.\footnote{A footnote citing~\cite{able}.}
+\begin{theorem}[\cite{baker}]
+A theorem citing~\cite{able}.
+\end{theorem}
+\include{test-bibinclude/refs}
+\end{document}

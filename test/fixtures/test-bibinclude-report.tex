@@ -1,0 +1,11 @@
+% A report whose parts are read by \include from a subfolder: a chapter
+% with a citation and a \nocite, a chapter that \includeonly leaves out,
+% whose .aux LaTeX never writes, and a part two folders down with the
+% bibliography, from a .bib named by a path in a subfolder.
+\documentclass{report}
+\includeonly{test-bibinclude/chapter,test-bibinclude/sub/refs}
+\begin{document}
+\include{test-bibinclude/chapter}
+\include{test-bibinclude/omitted}
+\include{test-bibinclude/sub/refs}
+\end{document}

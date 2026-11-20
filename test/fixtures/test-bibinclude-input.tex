@@ -1,0 +1,11 @@
+% Checks cases the fix must not break: a bibliography in parts read by
+% \input, subfiles' \subfile, and import's \subimport, which LaTeX writes
+% to the document's own .aux.
+\documentclass{article}
+\usepackage{subfiles}
+\usepackage{import}
+\begin{document}
+\input{test-bibinclude/input-cite}
+\subimport{test-bibinclude/}{import-style}
+\subfile{test-bibinclude/subfile-bib}
+\end{document}

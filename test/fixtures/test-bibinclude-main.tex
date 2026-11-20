@@ -1,0 +1,9 @@
+% A bibliography whose \bibliographystyle is in the document, and whose
+% \bibliography is in a file read by \include, with hyperref.
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+A citation~\cite{able}, and one in italic: \emph{as~\cite{baker} shows}.
+\bibliographystyle{plain}
+\include{test-bibinclude/bibonly}
+\end{document}
