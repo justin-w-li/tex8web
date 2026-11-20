@@ -7,12 +7,13 @@
 % come before the class, in the preamble, in the body, in italic,
 % sans-serif, and typewriter text, in a footnote, a theorem, a heading
 % written to the table of contents, a form's name in a heading, which
-% the table of contents shows with the number it had in the heading, a macro, an \edef, math, after
-% \immediate, and after a document's own \pdfliteral, and in the math of a
-% heading and a caption, written to the table of contents and the list of
-% figures, and in index entries, one in italic, that makeindex sorts and
-% \printindex reads back. test-pdfprimitive-guard checks \pdfprimitive
-% before a primitive that DVI mode allows.
+% the table of contents shows with the number it had in the heading, a
+% macro, an \edef, math, after \immediate, and after a document's own
+% \pdfliteral, and in the math of a heading and a caption, written to
+% the table of contents and the list of figures, and in index entries,
+% one in italic, that makeindex sorts and \printindex reads back.
+% test-pdfprimitive-guard checks \pdfprimitive before a primitive that
+% DVI mode allows.
 \pdfprimitive\pdfmapline{+foo.map}
 \pdfoutput=1
 \RequirePackage{pdftexcmds}

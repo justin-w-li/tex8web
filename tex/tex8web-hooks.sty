@@ -836,11 +836,13 @@
 % pdftexcmds loads. In a write with LaTeX's \protect, such as a line of
 % the table of contents or an index entry, the macro stays with the name
 % after it, as pdfTeX's \pdfprimitive does: makeindex refuses an entry
-% with an @ of \web@prim@<name>. \pdflastxform, \pdfxformname, and
-% \pdfximagebbox, which are not \protected macros, give their values
-% there, as pdfTeX's do: \pdfxformname then reads the number of
-% \pdflastxform when the heading is typeset, not when the table of
-% contents is read back.
+% with an @ of \web@prim@<name>. \pdfxformname and \pdfximagebbox,
+% which are not \protected macros, expand there, as pdfTeX's do, and
+% \pdflastxform stays as the register they read: \pdfxformname then
+% reads the number of \pdflastxform when the heading is typeset, not
+% when the table of contents is read back. \pdflastxform itself is
+% written as its DVI-mode register, which \number or \the before it
+% reads, so makeindex refuses an entry that holds it too.
 \cs_gset_eq:NN \web@primitive \tex_primitive:D
 \cs_gset:Npn \pdfprimitive #1
     {
