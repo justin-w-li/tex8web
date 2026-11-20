@@ -404,7 +404,8 @@ const typeset = {
     spaced('<mtext>k<\\/mtext>', '1em', '<mtext>l<\\/mtext>'),
     spaced('<mi>g<\\/mi>', '2mm', '<mi>h<\\/mi>'),
     /<mi>p<\/mi><\/mtd><mtd><mspace width='2em'><\/mspace><\/mtd><mtd><mi>q<\/mi>/,
-    ...['n', 't', 'u', 'v', 'w', 'x'].map(letter => spaced(sub(letter, 1), '2mm', sub(letter, 2))),
+    spaced(sub('n', 1), '1em', sub('n', 2)),
+    ...['t', 'u', 'v', 'w', 'x'].map(letter => spaced(sub(letter, 1), '2mm', sub(letter, 2))),
   ],
   // \text nested in \text in math as its inner text, as in the PDF: in a
   // heading, in a superscript, three deep in a display, with text beside
