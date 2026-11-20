@@ -823,7 +823,31 @@
     {
         \cs_if_exist:cT { tex_pdf #1 :D }
             { \cs_gset_eq:cc { tex_pdf #1 :D } { pdf #1 } }
+        \cs_gset_eq:cc { web@prim@pdf #1 } { pdf #1 }
     }
+% \pdfprimitive runs the primitive of the name after it, whatever the name
+% means now, and so reaches the primitives above. It is a macro here that
+% runs the definition above, kept as \web@prim@<name>, for those names, and
+% the primitive \pdfprimitive, kept as \web@primitive, for any other name.
+% The macro is expandable, as pdfTeX's \pdfprimitive is before an
+% expandable primitive such as \pdfstrcmp. expl3's copy, \tex_primitive:D,
+% is the same macro. pdftexcmds copies \pdfprimitive to \pdf@primitive
+% only when \pdfprimitive is the primitive, so the copy is made after
+% pdftexcmds loads.
+\cs_gset_eq:NN \web@primitive \tex_primitive:D
+\cs_gset:Npn \pdfprimitive #1
+    {
+        \if_cs_exist:w web@prim@ \cs_to_str:N #1 \cs_end:
+            \exp_after:wN \use_i:nn
+        \else:
+            \exp_after:wN \use_ii:nn
+        \fi:
+        { \cs:w web@prim@ \cs_to_str:N #1 \cs_end: }
+        { \web@primitive #1 }
+    }
+\cs_gset_eq:NN \tex_primitive:D \pdfprimitive
+\AddToHook { package/pdftexcmds/after }
+    { \cs_gset_eq:NN \pdf@primitive \pdfprimitive }
 \ExplSyntaxOff
 
 % report, book, and memoir: \@makechapterhead as the preamble leaves it,

@@ -188,6 +188,9 @@ for _, name in ipairs {"save", "restore", "endlink", "endthread", "snaprefpoint"
     "runninglinkoff", "interwordspaceon", "interwordspaceoff", "fakespace"} do
   primitives["pdf" .. name] = {"", ""}
 end
+-- \pdfprimitive and pdftexcmds' copy, which run the primitive of the name
+-- after them, are removed and leave that name
+primitives.pdfprimitive, primitives["pdf@primitive"] = {"", ""}, {"", ""}
 
 -- the end of a number (or a dimen: a factor and a unit or a register) or a
 -- control sequence that starts at i, or of a general text
