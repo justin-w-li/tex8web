@@ -5265,7 +5265,7 @@ if (pathspace) {
 // name. No symbolic link is left in the case's folder, also after the
 // failed build. With the build folder outside build/ and a -d outside the
 // document's folder (parent, root), no build/ is left beside the document,
-// except one that holds only the root case's copy of its config.
+// except one that holds only copies of the config.
 const builddirspace = docs.find(d => d.name === 'test-builddirspace');
 if (builddirspace) {
   const doc = builddirspace, name = 'test-builddirspace';
@@ -5281,6 +5281,15 @@ if (builddirspace) {
     place(dir, `${name}/part.tex`, readFileSync(join(doc.dir, name, 'part.tex')));
   };
   const links = dir => readdirSync(dir, { recursive: true }).filter(path => lstatSync(join(dir, path)).isSymbolicLink());
+  // (a config whose path has a character outside the safe list, as the
+  // checkout's has in a folder with a space, is read from a copy in build/,
+  // which stays)
+  const copied = file => /^tex8web-[A-Za-z0-9._-]*-\d+\.cfg$/.test(file);
+  // build/ beside the document, if it holds anything but config copies
+  const leftBuild = dir => {
+    const held = existsSync(join(dir, 'build')) ? readdirSync(join(dir, 'build')) : null;
+    return held && !(held.length && held.every(copied)) ? `a build/ folder is left beside the document, holding ${held.join(', ') || 'nothing'}` : null;
+  };
   const nested = aux => existsSync(aux)
     ? readdirSync(aux, { recursive: true }).filter(path => basename(path) === basename(aux) && statSync(join(aux, path)).isDirectory()) : [];
   const cases = [
@@ -5366,10 +5375,9 @@ if (builddirspace) {
     problems.push(...pageProblems(page, name, true), ...kept(aux, name));
     for (const path of nested(aux)) problems.push(`the build folder holds ${path}`);
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
-    // (a config in a folder with a space is read from a copy in build/,
-    // which stays)
-    const held = noBuild && existsSync(join(cwd, 'build')) ? readdirSync(join(cwd, 'build')) : null;
-    if (held && !(cfgDir && held.length && held.every(file => /^tex8web-.*\.cfg$/.test(file)))) problems.push(`a build/ folder is left beside the document, holding ${held.join(', ') || 'nothing'}`);
+    if (noBuild && leftBuild(cwd)) problems.push(leftBuild(cwd));
+    const copies = existsSync(join(cwd, 'build')) ? readdirSync(join(cwd, 'build')).filter(copied) : [];
+    if (cfgDir && copies.length !== 1) problems.push(`build/ holds ${copies.length} copies of the config, not one`);
     const after = cfgDir && readdirSync(cfgDir).sort().join(', ');
     if (after !== before) problems.push(`the config's folder holds ${after}, not ${before}`);
     report(`${doc.name} (-B ${label})`, problems);
@@ -5403,7 +5411,7 @@ if (builddirspace) {
     writeFileSync(join(top, 'build.log'), result.log);
     const problems = result.code !== 0 ? [`tex8web exited with ${result.code}`] : [];
     problems.push(...pageProblems(join(dir, 'build/my out', `${name}.html`), name, true), ...kept(join(dir, 'build/plainaux'), name));
-    const made = readdirSync(join(dir, 'build')).sort().join(', ');
+    const made = readdirSync(join(dir, 'build')).filter(file => !copied(file)).sort().join(', ');
     if (made !== 'my out, plainaux') problems.push(`build/ holds ${made}, not my out, plainaux`);
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
     report(`${doc.name} (guard: -B build/plainaux, -d build/my out)`, problems);
@@ -5591,7 +5599,7 @@ if (builddirspace) {
     for (let waited = 0; groupRuns(child.pid) && waited < 20000; waited += 200) await pause(200);
     hung.delete(child.pid);
     problems.push(...pageProblems(join(top, 'html', 'first.html'), 'first', true), ...kept(join(dir, 'my aux'), 'first'));
-    if (existsSync(join(dir, 'build'))) problems.push(`a build/ folder is left beside the documents, holding ${readdirSync(join(dir, 'build')).join(', ') || 'nothing'}`);
+    if (leftBuild(dir)) problems.push(leftBuild(dir));
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
     report(`${doc.name} (two overlapping builds into my aux beside the documents, with -d ../html)`, problems);
   });

@@ -84,7 +84,10 @@ cd "$(dirname "$document")"
 if printf '%s\n' "$config" | LC_ALL=C grep -q '[^A-Za-z0-9/._+-]'; then
   name=$(basename "$document" .tex)
   copy=build/tex8web-$(printf %s "$name" | LC_ALL=C tr -c 'A-Za-z0-9._-' _)-$(printf '%s\n' "$name" "$aux" "$config" | cksum | cut -d ' ' -f 1).cfg
-  mkdir -p build; cp "$config" "$copy.$$"; mv -f "$copy.$$" "$copy"; config=$copy
+  # (an overlapping build into a -B outside build/ may remove an empty
+  # build/ when it ends, so the temporary file is made again after that)
+  mkdir -p build; temp=$(mktemp build/tex8web.XXXXXX 2>/dev/null) || { mkdir -p build; temp=$(mktemp build/tex8web.XXXXXX); }
+  cp "$config" "$temp"; mv -f "$temp" "$copy"; config=$copy
 fi
 # (make4ht and its LaTeX command line take the build folder unquoted, in
 # make4ht-htlatex.lua (--output-directory=${builddir}) and mkutils.lua
@@ -94,11 +97,11 @@ fi
 # name and the process ID, as builds in containers that share build/ have
 # the same process IDs. A link that a killed run on this host left is
 # removed once its process is gone, and a name already taken stops the
-# build. A build/ that holds nothing but such links when the run starts,
-# or that is missing, is removed when the run ends if it is empty then, so
+# build. A build/ that holds nothing but such links at this point, or
+# that is missing, is removed when the run ends if it is empty then, so
 # that a build folder outside build/ leaves no empty build/ beside the
-# document when builds overlap; a run that started at the same time makes it again
-# before its link.)
+# document when builds overlap. A run that started at the same time makes
+# it again before its link. A build/ that holds the config's copy stays.)
 link= made=
 case $aux in *" "*)
   made=1
