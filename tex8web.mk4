@@ -15,7 +15,7 @@ table.insert(package.searchers, 2, function(name)
   return loadfile(path), path
 end)
 -- The folders on TEXINPUTS outside TeX's trees, as kpathsea expands them
--- (//, !!, $VAR, ~, and braces), hold files of the document's, as a
+-- (//, $VAR, ~, and braces), hold files of the document's, as a
 -- .latexmkrc's ensure_path adds them. tex8web-hooks.sty reads them from a
 -- file that the step "texinputs" below writes. tex8web's folder, which
 -- bin/tex8web adds for the default config, is left out.
@@ -30,9 +30,9 @@ do
     return "/" .. table.concat(parts, "/")
   end
   local trees, seen = {absolute(root .. "/tex")}, {[absolute(root)] = true}
-  for tree in kpse.expand_braces("$TEXMF"):gmatch("[^:]+") do trees[#trees + 1] = tree:gsub("^!!", "") end
+  for tree in kpse.expand_braces("$TEXMF"):gmatch("[^:]+") do trees[#trees + 1] = absolute((tree:gsub("^!!", ""))) end
   for dir in kpse.expand_path(os.getenv("TEXINPUTS") or ""):gmatch("[^:]+") do
-    dir = absolute(dir:gsub("^!!", ""))
+    dir = absolute(dir)
     local inside = seen[dir]
     for _, tree in ipairs(trees) do
       if dir == tree or dir:sub(1, #tree + 1) == tree .. "/" then inside = true end
@@ -175,9 +175,12 @@ else
   Make:folders {}
   -- The folders above, one a line, in <document>.texinputs in the build
   -- directory, where web2c's open_input looks first. (Not on LaTeX's
-  -- command line, where a folder name with %, #, or ' stops the build.)
+  -- command line, where a folder name with %, #, or ' stops the build.
+  -- Without -B, nothing is written beside the document, and those folders
+  -- count as TeX's.)
   Make:add("texinputs", function(par)
-    local name = (par.builddir == "" and "" or par.builddir .. "/") .. par.input .. ".texinputs"
+    if par.builddir == "" then return 0 end
+    local name = par.builddir .. "/" .. par.input .. ".texinputs"
     if #owndirs == 0 then
       os.remove(name)
       return 0

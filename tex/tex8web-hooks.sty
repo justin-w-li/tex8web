@@ -1027,8 +1027,11 @@
 % .4ht. biblatex's styles and localization files (.bbx, .cbx, and .lbx,
 % named like .4ht files such as debug.4ht and english.4ht) keep their
 % .4ht also when the document ships a copy of biblatex.sty beside them.
-% A name found only in the tree is a package's.
+% A name found only in the tree is a package's. A name in the keep list
+% or with a kept extension is tested first, as the folder tests read the
+% disk once for each listed folder.
 \bool_new:N \l__web_ownprov_bool
+\bool_new:N \l__web_provkeep_bool
 \tl_new:N \l__web_provext_tl
 \clist_map_inline:nn { bbx, cbx, lbx }
     { \cs_new_eq:cN { web@bibext@ #1 } \c_empty_tl }
@@ -1038,6 +1041,11 @@
         \bool_set_false:N \l__web_ownprov_bool
         \__web_basename:w #1 .. \q_stop
         \tl_set_eq:NN \l__web_provext_tl \l__web_ext_tl
+        \bool_set:Nn \l__web_provkeep_bool
+            {
+                \cs_if_exist_p:c { web@keepext@ \l__web_ext_tl }
+                || \cs_if_exist_p:c { web@keep@ \l__web_basename_tl }
+            }
         \exp_last_unbraced:No \__web_basename:w \CurrentFileUsed .. \q_stop
         \tl_if_empty:NTF \CurrentFilePathUsed
             {
@@ -1052,34 +1060,40 @@
                 \bool_lazy_or:nnT
                     { \tl_if_empty_p:N \CurrentFileUsed }
                     {
-                        \bool_lazy_and_p:nn
+                        \bool_lazy_all_p:n
                             {
-                                \bool_lazy_or_p:nn
-                                    { \file_if_exist_p:n { ./ \CurrentFileUsed } }
-                                    { \__web_if_owndir_p:n { \CurrentFileUsed } }
+                                { ! \l__web_provkeep_bool }
+                                { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
+                                {
+                                    \bool_lazy_or_p:nn
+                                        { \file_if_exist_p:n { ./ \CurrentFileUsed } }
+                                        { \__web_if_owndir_p:n { \CurrentFileUsed } }
+                                }
                             }
-                            { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
                     }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
             {
-                \bool_lazy_or:nnT
+                \bool_lazy_and:nnT
+                    { ! \l__web_provkeep_bool }
                     {
-                        \file_if_exist_p:n
+                        \bool_lazy_or_p:nn
                             {
-                                \str_if_eq:eeF { \str_head:N \CurrentFilePathUsed } { / } { ./ }
-                                \CurrentFilePathUsed / \CurrentFileUsed
+                                \file_if_exist_p:n
+                                    {
+                                        \str_if_eq:eeF { \str_head:N \CurrentFilePathUsed } { / } { ./ }
+                                        \CurrentFilePathUsed / \CurrentFileUsed
+                                    }
                             }
+                            { \__web_if_owndir_p:n { \CurrentFilePathUsed / \CurrentFileUsed } }
                     }
-                    { \__web_if_owndir_p:n { \CurrentFilePathUsed / \CurrentFileUsed } }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
         \__web_basename:w #1 .. \q_stop
         \bool_lazy_all:nT
             {
                 { \l__web_ownprov_bool }
-                { ! \cs_if_exist_p:c { web@keepext@ \l__web_ext_tl } }
-                { ! \cs_if_exist_p:c { web@keep@ \l__web_basename_tl } }
+                { ! \l__web_provkeep_bool }
                 {
                     \bool_lazy_any_p:n
                         {
