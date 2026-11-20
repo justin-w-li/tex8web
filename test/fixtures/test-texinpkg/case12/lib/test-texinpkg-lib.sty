@@ -1,0 +1,4 @@
+% Case 12: a package on TEXINPUTS reads glossary.tex, beside the document, with the primitive \input. run.mjs copies the document into this folder and puts lib/ on TEXINPUTS.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{test-texinpkg-lib}[2026/11/20 tex8web test package]
+\input glossary

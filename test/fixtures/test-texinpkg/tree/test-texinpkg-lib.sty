@@ -1,9 +1,9 @@
-% A guard: a package on TEXINPUTS that loads framed and xcolor from TeX's tree, reads dvipsnam.def with \@@input and epsf.tex with the primitive \input, both from the tree. tex4ht keeps framed.4ht and dvipsnam.4ht, and a named color keeps its value.
+% A guard: a package on TEXINPUTS that loads framed and xcolor from TeX's tree, reads dvipsnam.def with \@@input and epsf.tex with LaTeX's braced \input, both from the tree. tex4ht keeps framed.4ht, dvipsnam.4ht, and epsf.4ht, and a named color keeps its value.
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{test-texinpkg-lib}[2026/11/20 tex8web test package]
 \RequirePackage{framed}
 \RequirePackage{xcolor}
 \@@input dvipsnam.def
-\input epsf
+\input{epsf}
 \def\texinpkgtext{Tree: The package loads files of the tree.}
 \def\texinpkgextra{\textcolor[named]{BrickRed}{Brick red text.}}

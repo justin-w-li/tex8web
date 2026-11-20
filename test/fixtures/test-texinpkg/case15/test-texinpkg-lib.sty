@@ -1,0 +1,5 @@
+% Case 15: a package on TEXINPUTS reads nomencl.tex beside it with the primitive \input, then loads the tree's nomencl package. tex4ht keeps nomencl.4ht for the package.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{test-texinpkg-lib}[2026/11/20 tex8web test package]
+\input nomencl
+\RequirePackage{nomencl}

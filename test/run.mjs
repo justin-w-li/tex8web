@@ -4677,15 +4677,17 @@ for (const { doc: fixture, key, label, wanted, setup } of absBuilds) jobs.push(a
 // configuration files, and the document reads one there too. Each folder
 // is named by its absolute path, except where its entry is relative and
 // recursive, as ensure_path entries often are, and a recursive entry
-// finds a package two folders below. Some folders are copied to a folder
-// whose name has a space, %, #, or '. Each case's text is in the page,
-// with no sentence that shows that index.4ht or framed.4ht was read, and
-// the TeX log reads no .4ht of the names the files give. The guards keep
-// tex4ht's configuration of the tree's files that a package on TEXINPUTS
-// loads. Then test-provname-bbx with copies of the tree's biblatex.sty and
-// of debug.bbx in a folder on TEXINPUTS, as a document that ships biblatex
-// in a folder of packages: tex4ht still reads debug.4ht for the copied
-// style
+// finds a package two folders below. One case has two folders. Some
+// folders are copied to a folder whose name has a space, %, #, or ', and
+// one, with the document, to a folder of its own. Each case's text is in
+// the page, with no sentence that shows that index.4ht or framed.4ht was
+// read, and the TeX log reads no .4ht of the names the files give. The
+// guards keep tex4ht's configuration of the tree's files that a package on
+// TEXINPUTS loads, also after such a package reads a file of the same
+// name. Then test-provname-bbx with debug.bbx in a folder on TEXINPUTS,
+// with and without a copy of the tree's biblatex.sty, as a document that
+// ships biblatex or its style in a folder of packages: tex4ht still reads
+// debug.4ht for the style
 const texinpkg = docs.find(d => d.name === 'test-texinpkg');
 const texinpkgDir = join(root, 'test/fixtures/test-texinpkg');
 const texinpkgBuilds = [];
@@ -4716,15 +4718,23 @@ if (texinpkg) {
       ['Case 9: Text of the file below a relative recursive entry.'], ['glossary.4ht'], []],
     ['11', 'a class on TEXINPUTS', 'case11', null, d => d,
       ['Case 11: Text of the glossary read by the class.'], ['glossary.4ht'], []],
-    ['percent', 'a guard: a folder with % in its name', 'plain', 'lib%percent', d => d,
-      ['Plain: The package reads no file.'], [], []],
-    ['hash', 'a guard: a folder with # in its name', 'plain', 'lib#hash', d => d,
-      ['Plain: The package reads no file.'], [], []],
-    ['quote', 'a guard: a folder with \' in its name', 'plain', 'lib\'quote', d => d,
-      ['Plain: The package reads no file.'], [], []],
+    ['12', 'a primitive \\input of a file beside the document', 'case12', 'doc', d => join(d, 'lib'),
+      ['Case 12: Text of the glossary beside the document.'], ['glossary.4ht'], []],
+    ['13', 'a package loaded by a path below the folder', 'case13', null, d => d,
+      ['Case 13: Text of the glossary read by a package loaded by its path.'], ['glossary.4ht'], []],
+    ['14', 'two folders, with the package that reads the file in the second', 'case14', null, d => `${d}/a:${d}/b`,
+      ['Case 14: Text of the glossary in the second folder.'], ['glossary.4ht'], []],
+    ['percent', 'a folder with % in its name', 'special', 'lib%percent', d => d,
+      ['Special: Text of the glossary in a folder with a special character.'], ['glossary.4ht'], []],
+    ['hash', 'a folder with # in its name', 'special', 'lib#hash', d => d,
+      ['Special: Text of the glossary in a folder with a special character.'], ['glossary.4ht'], []],
+    ['quote', 'a folder with \' in its name', 'special', 'lib\'quote', d => d,
+      ['Special: Text of the glossary in a folder with a special character.'], ['glossary.4ht'], []],
     ['tree', 'a guard: files of the tree loaded by a package on TEXINPUTS', 'tree', null, d => d,
       ['Tree: The package loads files of the tree.', 'Framed read for the web.',
-        /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/], [], ['framed.4ht', 'dvipsnam.4ht']],
+        /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/], [], ['framed.4ht', 'dvipsnam.4ht', 'epsf.4ht']],
+    ['15', 'a guard: a file named like the tree\'s nomencl package, then the package', 'case15', null, d => d,
+      ['Case 15: Text of the nomencl file before the nomencl package.'], [], ['nomencl.4ht']],
   ];
   for (const [key, label, folder, copy, entry, shows, unread, read] of cases) texinpkgBuilds.push({
     doc: texinpkg, key, label, shows, unread, read, page: 'test-texinpkg.html', log: 'test-texinpkg.log',
@@ -4738,26 +4748,32 @@ if (texinpkg) {
         cpSync(dir, join(top, copy), { recursive: true });
         dir = join(top, copy);
       }
-      return { TEXINPUTS: `${entry(dir)}:` };
+      // (copied to doc, the folder holds the document too, which is then
+      // built from there)
+      if (copy !== 'doc') return { TEXINPUTS: `${entry(dir)}:` };
+      writeFileSync(join(dir, 'test-texinpkg.tex'), readFileSync(join(texinpkg.dir, 'test-texinpkg.tex')));
+      return { TEXINPUTS: `${entry(dir)}:`, doc: { ...texinpkg, name: `test-texinpkg ${key}`, dir } };
     },
   });
 }
 const provbbxTexinputs = docs.find(d => d.name === 'test-provname-bbx');
-if (provbbxTexinputs) texinpkgBuilds.push({
-  doc: provbbxTexinputs, key: 'bbx', label: 'a guard: copies of biblatex.sty and debug.bbx on TEXINPUTS',
+// (with the copy of biblatex.sty, or with debug.bbx alone and the tree's
+// biblatex)
+if (provbbxTexinputs) for (const [key, label, sty] of [['bbx', 'copies of biblatex.sty and debug.bbx', true], ['bbxonly', 'debug.bbx', false]]) texinpkgBuilds.push({
+  doc: provbbxTexinputs, key, label: `a guard: ${label} on TEXINPUTS`,
   shows: ['Read for the web.', /<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/], hides: [], unread: [], read: ['debug.4ht'],
   page: 'test-provname-bbx.html', log: 'test-provname-bbx.log',
   setup(top) {
-    const lib = join(top, 'lib');
-    mkdirSync(lib, { recursive: true });
-    const sty = spawnSync('kpsewhich', ['biblatex.sty'], { encoding: 'utf8' }).stdout.trim();
-    for (const file of [sty, join(root, 'test/fixtures/debug.bbx')]) writeFileSync(join(lib, basename(file)), readFileSync(file));
     // (the document in a folder of its own, without the debug.bbx beside
-    // it in test/fixtures)
-    const dir = join(top, 'doc');
-    mkdirSync(dir, { recursive: true });
+    // it in test/fixtures, and the folder on TEXINPUTS inside it, which
+    // the build's stamp covers)
+    const dir = join(top, 'doc'), lib = join(dir, 'lib');
+    mkdirSync(lib, { recursive: true });
+    const copies = [join(root, 'test/fixtures/debug.bbx')];
+    if (sty) copies.push(spawnSync('kpsewhich', ['biblatex.sty'], { encoding: 'utf8' }).stdout.trim());
+    for (const file of copies) writeFileSync(join(lib, basename(file)), readFileSync(file));
     for (const name of ['test-provname-bbx.tex', 'test-biblatex-authoryear.bib']) writeFileSync(join(dir, name), readFileSync(join(root, 'test/fixtures', name)));
-    return { TEXINPUTS: `${lib}:`, doc: { ...provbbxTexinputs, name: 'test-provname-bbx texinputs', dir } };
+    return { TEXINPUTS: `${lib}:`, doc: { ...provbbxTexinputs, name: `test-provname-bbx ${key}`, dir } };
   },
 });
 for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, setup } of texinpkgBuilds) jobs.push(async () => {
@@ -4778,6 +4794,7 @@ for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, se
     if (/<\/html>[^]*<\/html>/.test(flat)) problems.push('two pages in one');
   }
   const texLog = join(aux, log), logText = existsSync(texLog) ? readFileSync(texLog, 'latin1').replace(/\n/g, '') : '';
+  if (!logText) problems.push('no TeX log');
   for (const name of unread) if (logText.includes(`/${name}`)) problems.push(`the TeX log reads ${name}`);
   for (const name of read) if (!logText.includes(`/${name}`)) problems.push(`the TeX log does not read ${name}`);
   report(`${fixture.name} (on TEXINPUTS: ${label})`, problems);

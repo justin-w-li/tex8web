@@ -1,0 +1,4 @@
+% Case 13: a package loaded as pkgs/texinpkg-inner, so that its path is not empty, reads a file in a subfolder of the TEXINPUTS folder with the primitive \input.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{texinpkg-inner}[2026/11/20 tex8web test package]
+\input sub/glossary
