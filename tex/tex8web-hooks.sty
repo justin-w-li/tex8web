@@ -600,7 +600,8 @@
 % keyword matches in either case, as there. A word that is not a keyword
 % stays in the text. <end>
 % is g when a general text ends the primitive, n when a number does, x
-% when the number of \pdfxform does, or empty. A general text is read by a token register's assignment, which
+% the box number of \pdfxform, after which \pdflastxform is stepped, or
+% empty. A general text is read by a token register's assignment, which
 % expands to the brace and drops spaces and \relax before it, as pdfTeX's
 % scan does. A macro before a keyword, an optional space, or a font is
 % expanded, a protected one too, as pdfTeX's get_x_token expands it. The
@@ -760,15 +761,19 @@
 % object". \pdflastxform is a count register here, which each \pdfxform
 % steps globally, after its box number, as pdfTeX sets it, so a form made
 % in a group or the preamble counts. It holds the form's number: 1 for the
-% first form, 2 for the second. pdfTeX gives the form's object number, the
-% same when no image or other object comes before the form. \pdfxformname
-% is \number, so it expands in one step to the number that follows,
-% printed with characters of category 12, as pdfTeX prints the form's
-% number, and a digit after \pdflastxform stays in the text.
+% first form, 2 for the second. pdfTeX gives the form's object number,
+% which is the same only when no page shipped out, form made with
+% \immediate, image, or other object comes before the form, as each of
+% these takes object numbers. In a document that loads hyperref, the two
+% are the same only in the preamble, as hyperref writes objects at
+% \begin{document}.
+% \pdfxformname is \number, which prints the number with characters of
+% category 12, as pdfTeX prints the form's number. A digit after
+% \pdflastxform stays in the text.
 % \pdfximagebbox reads its numbers as pdfTeX does, with \romannumeral of
 % the negated number, and expands to a zero length, printed as pdfTeX
-% prints it, which LaTeX's \rem@pt splits. Both stay expandable, as
-% pdfTeX's are.
+% prints it, which LaTeX's \rem@pt splits. \pdfxformname and
+% \pdfximagebbox stay expandable, as pdfTeX's are.
 \newcount\web@pdf@xform
 \def\web@pdf@xformstep{\global\advance\web@pdf@xform\@ne}
 \let\pdflastxform\web@pdf@xform

@@ -1,19 +1,22 @@
 % A document written for pdflatex that uses the name of a form, read with
-% \pdfxformname after \pdfxform, as a number: assigned to a count register
-% with \count@=, \advance, and \setcounter, in a \numexpr, after \number,
-% \ifnum, \ifcase, and \romannumeral, in the text, in italic, sans-serif,
-% and typewriter text, a footnote, a theorem, and a heading written to the
-% table of contents, read in an \edef, an \xdef, and a \csname, given
-% \pdflastxform, a count register, an explicit number, or a macro, and
-% followed by a digit or \relax, after a \pdfxform with \immediate, attr,
+% \pdfxformname after \pdfxform, as a number. The name is assigned to a
+% count register with \count@=, \advance, and \setcounter, and read in a
+% \numexpr, after \number, \ifnum, \ifcase, and \romannumeral. It is
+% printed in the text, in italic, sans-serif, and typewriter text, a
+% footnote, a theorem, and a heading written to the table of contents. It
+% is read in an \edef, an \xdef, and a \csname. \pdfxformname is given
+% \pdflastxform, a count register, an explicit number, or a macro, and is
+% followed by a digit or \relax. The forms are made with \immediate, attr,
 % and resources, after an image, and in a group. \pdflastxform is read
 % with \the, saved with \the in an \xdef, and followed by a digit. In the
 % PDF the name is the form's number, 1 for the first form, 2 for the
 % second, 3 for the third, and 4 for the one made in a group.
 % \pdflastxform is the form's object number, which tex8web does not know:
-% the page shows the form's number in its place, which is the object
-% number when no image or other object comes before the form (the PDF
-% shows 7 at Object, after an image).
+% the page shows the form's number in its place. The two are the same only
+% when no page shipped out, form made with \immediate, image, or other
+% object comes before the form, and, with hyperref, only in the preamble.
+% The PDF shows 7 at Object, where the page shows 3, as the \immediate
+% form of Second and the image take object numbers too.
 \pdfoutput=1
 \documentclass{article}
 \usepackage{amsthm}
