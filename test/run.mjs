@@ -801,6 +801,23 @@ const index = {
     /Index of authors<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Knuth, <a href='#[^']+'>1<\/a> <\/div>/,
     /Index of people<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Euler, <a href='#[^']+'>1<\/a> <\/div>/, /^(?![^]*Old (?:entry|author|person))/, /^(?![^]*Old editor)/],
   'test-staleaux-ind-input': [/<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/, /^(?![^]*Old entry)/],
+  // (indexes printed from an \include file, and from a file it reads with
+  // \input, sorted in the build folder with the options of their
+  // \makeindex: -l puts Iceberg before Ice cream. The index of places is
+  // printed in the main file.)
+  'test-staleaux-ind-incl': [
+    /Index of people<\/h3>(?:(?!<h3)[^])*People named in the text\.(?:(?!<h3)[^])*<div class='index-item'>Euler, <a href='#[^']+'>\d+<\/a> <\/div>/,
+    />Index<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Apple, <a href='#[^']+'>\d+<\/a> <\/div>/,
+    /Index of terms<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Fruit, <a href='#[^']+'>\d+<\/a> <\/div>/,
+    /Index of words<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Iceberg, <a href='#[^']+'>\d+<\/a> <\/div>(?:(?!<h3)[^])*<div class='index-item'>Ice cream, <a href='#[^']+'>\d+<\/a> <\/div>/,
+    /Index of places<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Basel, <a href='#[^']+'>\d+<\/a> <\/div>/,
+    /^(?![^]*Old (?:entry|person|term|word|place))/],
+  // (without hyperref: the stale .ind's \hyperpage is not read, and the
+  // file that \includeonly skips adds no entry)
+  'test-staleaux-ind-incl-plain': [
+    /Index of people<\/h3>(?:(?!<h3)[^])*People named in the text\.(?:(?!<h3)[^])*<div class='index-item'>Euler, <a href='#[^']+'>\d+<\/a> <\/div>/,
+    /Index of people<\/h3>(?:(?!<h3)[^])*<div class='index-item'>Iceberg, <a href='#[^']+'>\d+<\/a> <\/div>(?:(?!<h3)[^])*<div class='index-item'>Ice cream, <a href='#[^']+'>\d+<\/a> <\/div>/,
+    /^(?![^]*Old person)/, /^(?![^]*Skipped)/],
   'test-staleaux-ind-current': [/<div class='index-item'>Apple, <a href='#[^']+'>1<\/a> <\/div>/],
   'test-staleaux-ind-cls': [/>Apple,<\/span>\s*<a href='#[^']+'><span class='cmr-8'>1<\/span><\/a>/, /^(?![^]*Old entry)/],
   // (the .ind beside the document, read as there is no \makeindex)
@@ -2297,6 +2314,8 @@ const untouched = {
   'test-staleaux-ind': ['test-staleaux-ind.ind'],
   'test-staleaux-ind-named': ['test-staleaux-ind-named.ind', 'test-staleaux-ind-named-authors.ind', 'test-staleaux-people.ind', 'test-staleaux-editors.ind'],
   'test-staleaux-ind-input': ['test-staleaux-ind-input.ind', 'test-staleaux-ind-input.gls', 'test-staleaux-ind-input/pre.tex'],
+  'test-staleaux-ind-incl': ['incl', 'incl-people', 'incl-terms', 'incl-words', 'incl-places'].map(n => `test-staleaux-ind-${n}.ind`),
+  'test-staleaux-ind-incl-plain': ['test-staleaux-ind-incl-plain-people.ind'],
   'test-staleaux-ind-gls': ['gls', 'acr', 'sls', 'nls', 'notation-gls', 'tls'].map(e => `test-staleaux-ind-gls.${e}`),
   'test-staleaux-ind-abr': ['test-staleaux-ind-abr.gls', 'test-staleaux-ind-abr.gls-abr'],
   'test-staleaux-ind-current': ['test-staleaux-ind-current.ind'],

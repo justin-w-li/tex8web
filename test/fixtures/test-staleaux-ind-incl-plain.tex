@@ -1,0 +1,14 @@
+% A named imakeidx index with a title and the makeindex option -l,
+% printed after \indexprologue from an \include file that \includeonly
+% keeps, while it skips another. The document does not load hyperref, and
+% the index's .ind beside the document, from an earlier build that loaded
+% it, uses \hyperpage.
+\documentclass{article}
+\usepackage{imakeidx}
+\makeindex[name=test-staleaux-ind-incl-plain-people,title=Index of people,options=-l]
+\includeonly{test-staleaux-ind-incl-plain/back}
+\begin{document}
+Euler\index[test-staleaux-ind-incl-plain-people]{Euler} ate ice cream\index[test-staleaux-ind-incl-plain-people]{Ice cream} on an iceberg\index[test-staleaux-ind-incl-plain-people]{Iceberg}.
+\include{test-staleaux-ind-incl-plain/skipped}
+\include{test-staleaux-ind-incl-plain/back}
+\end{document}
