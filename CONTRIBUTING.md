@@ -86,10 +86,9 @@ MathJax is not given the preamble, so tex8web translates the macros defined ther
 
 The math and the definitions it uses are rewritten where MathJax reads LaTeX differently:
 
-- `\hspace*` becomes `\hspace`, whose `*` MathJax reads as the dimension. The page has no line break for the star to keep the space at.
+- `\hspace*` becomes `\hspace`. MathJax reads the `*` of `\hspace*` as its dimension. The page has no line break for the star to keep the space at.
 - `\protect` is dropped. A class writes `\thanks` text with `\protected@xdef`, which puts `\protect` before each robust command in its math.
 - tex4ht's `\mathrm@@`, which `\protected@xdef` leaves for `\mathrm` (`fontmath.4ht`), becomes `\mathrm`, and the same for `\mathbf`, `\mathit`, `\mathsf`, and `\mathtt`.
-- `\text` inside the argument of another `\text` is dropped, and its argument kept as a group. MathJax reads the outer argument as text, where `\text` is not defined. A `\text` in math inside that text stays.
 
 Only the CSS and dvips color names are defined in MathJax. tex8web adds these colors as `\definecolor` lines:
 
@@ -138,6 +137,8 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 - the columns of an alignment split at `\intertext`
 
 A `\mathclap` or `\clap` around a whole display has its content's width in `js/tex8web.js`, so that a display wider than the column can be scrolled to its left end.
+
+`js/tex8web.js` also defines `\text` in the text of MathJax's textmacros extension, as a group, as in `\text{\text{E}}`, `\textbf{\text{E}}`, or a macro whose body is `\text` used inside `\text`. LaTeX sets the inner argument in the font around it. Without the definition, MathJax shows the error "\text is only supported in math mode" in place of the formula.
 
 ### 4. Prerendering
 

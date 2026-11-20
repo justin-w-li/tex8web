@@ -1,12 +1,14 @@
 % \text nested in \text in math, which the PDF sets as the inner text: as
 % a superscript, two and three deep in a display, with text beside the
 % inner \text, in a numbered equation, in a footnote, in a theorem, and in
-% a heading. \textit in \text, and \text in math in \text, which MathJax
-% draws, stay as they are.
+% a heading; \text in \textbf and in \mbox, and a macro whose body is
+% \text used in \text. \textit in \text, and \text in math in \text,
+% which MathJax draws, stay as they are.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \usepackage{hyperref}
 \newtheorem{theorem}{Theorem}
+\newcommand{\tx}[1]{\text{#1}}
 \begin{document}
 \section{Tasks $\text{\text{H}}$}
 Task $z_{i,j}^{\text{\text{E}}}(t)$ is done.
@@ -19,5 +21,6 @@ In a footnote.\footnote{A note, $\text{\text{N}}$.}
 \begin{theorem}
 In a theorem, $\text{\text{T}}$.
 \end{theorem}
+Bold outside, $\textbf{\text{J}}$. In a box, $\mbox{\text{K}}$. Through a macro, $\text{if \tx{L}}$.
 Italic inside, $\text{\textit{q}}$. Math inside, $\text{for $x \in \text{A}$}$.
 \end{document}
