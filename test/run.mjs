@@ -5264,7 +5264,8 @@ if (pathspace) {
 // (each document's, for the three at once), and holds no folder of its own
 // name. No symbolic link is left in the case's folder, also after the
 // failed build. With the build folder outside build/ and a -d outside the
-// document's folder (parent, root), no build/ is left beside the document.
+// document's folder (parent, root), no build/ is left beside the document,
+// except one that holds only the root case's copy of its config.
 const builddirspace = docs.find(d => d.name === 'test-builddirspace');
 if (builddirspace) {
   const doc = builddirspace, name = 'test-builddirspace';
@@ -5365,7 +5366,10 @@ if (builddirspace) {
     problems.push(...pageProblems(page, name, true), ...kept(aux, name));
     for (const path of nested(aux)) problems.push(`the build folder holds ${path}`);
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
-    if (noBuild && existsSync(join(cwd, 'build'))) problems.push('a build/ folder is left beside the document');
+    // (a config in a folder with a space is read from a copy in build/,
+    // which stays)
+    const held = noBuild && existsSync(join(cwd, 'build')) ? readdirSync(join(cwd, 'build')) : null;
+    if (held && !(cfgDir && held.length && held.every(file => /^tex8web-.*\.cfg$/.test(file)))) problems.push(`a build/ folder is left beside the document, holding ${held.join(', ') || 'nothing'}`);
     const after = cfgDir && readdirSync(cfgDir).sort().join(', ');
     if (after !== before) problems.push(`the config's folder holds ${after}, not ${before}`);
     report(`${doc.name} (-B ${label})`, problems);

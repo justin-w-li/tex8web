@@ -96,8 +96,8 @@ fi
 # removed once its process is gone, and a name already taken stops the
 # build. A build/ that holds nothing but such links when the run starts,
 # or that is missing, is removed when the run ends if it is empty then, so
-# that a build folder outside build/ leaves nothing beside the document
-# when builds overlap; a run that started at the same time makes it again
+# that a build folder outside build/ leaves no empty build/ beside the
+# document when builds overlap; a run that started at the same time makes it again
 # before its link.)
 link= made=
 case $aux in *" "*)
