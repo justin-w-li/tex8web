@@ -1,0 +1,28 @@
+% Checks cases the fix of \pdfprimitive must not break: \pdfprimitive,
+% pdftexcmds' copy \pdf@primitive, and expl3's \tex_primitive:D before a
+% primitive that DVI mode allows, an expandable one in \ifnum and \edef,
+% and \hbox, with pdftexcmds loaded in the preamble. pdftexcmds' other
+% commands, which use the primitives, stay as they are.
+\documentclass{article}
+\usepackage{pdftexcmds}
+\begin{document}
+Strcmp: [\ifnum\pdfprimitive\pdfstrcmp{a}{a}=0 same\else different\fi].
+
+Edef: \edef\cmp{\pdfprimitive\pdfstrcmp{a}{b}}[\cmp].
+
+Hbox: [\pdfprimitive\hbox{y}].
+
+\makeatletter
+Copy: [\ifnum\pdf@primitive\pdfstrcmp{a}{a}=0 same\else different\fi].
+
+Copy edef: \edef\cmp{\pdf@primitive\pdfstrcmp{b}{a}}[\cmp].
+
+Copy hbox: [\pdf@primitive\hbox{z}].
+
+Command: [\pdf@strcmp{a}{c}] [\pdf@escapehex{A}].
+\makeatother
+
+\ExplSyntaxOn
+Expl:~[\int_compare:nNnTF { \tex_primitive:D \pdfstrcmp {a}{a} } = 0 {same} {different}].
+\ExplSyntaxOff
+\end{document}

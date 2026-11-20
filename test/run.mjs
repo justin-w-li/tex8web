@@ -1950,6 +1950,10 @@ const pdfprimText = text => new RegExp(text.replace(/[.*+?^${}()[\]\\]/g, '\\$&'
 const pdfprimHead = (tag, text) => new RegExp(`<${tag} class='sectionHead'[^>]*>(?:(?!</${tag}>)[^])*${pdfprimText(text).source}(?:<[^>]*>|\\s)*</${tag}>`);
 const pdfprimToc = text => new RegExp(`<span class='sectionToc'>(?:(?!</a>)[^])*${pdfprimText(text).source}(?:<[^>]*>)*</a>`);
 const pdfprimLeaks = /^(?![^]*(?:\d rg\b|foo\.map|bar\.pfb|pkg\.map|before-class\.pfb|\/Subtype|\/Border|\/Foo 1|\/[XY] [12]\b|&lt;&lt;|\bq Q\b|Outline title|first\.map|cls\.map|0 1 -1 0|1 0 0 1|\b0 g\b|cmr10|\/Foo \[1 2\]|\/Preamble 1|\/Title|\/PageMode|\/Info|\/Rotate|pdf(?:literal|mapfile|mapline|setmatrix|save|restore|ximage|refximage|obj|refobj|xform|refxform|startlink|endlink|annot|dest|outline|thread|startthread|endthread|names|fontattr|snap|interwordspace|fakespace|spacefont|colorstack|runninglink|includechars|nobuiltintounicode|last(?:obj|ximage|xform))(?![a-z])))/;
+// (the same through \pdfprimitive and its copies: no argument, no name of
+// a primitive or of a copy, and no macro of tex8web's, in the page's text,
+// its math, or its macros. A heading's anchor, in an attribute, is left out)
+const pdfprimitiveLeaks = /^(?![^]*(?<!='[^'<>]*)(?:\b0 g\b|0 0 1 rg|foo\.map|bar\.map|first\.map|(?<!test-)pdf(?:primitive|literal|mapline|mapfile|save|restore|xform|refxform|lastxform|xformname|startlink|endlink)(?![a-z])|@primitive|tex_primitive|web@))/;
 
 // Packages given pdfTeX's driver option, which tex4ht's DVI mode cannot
 // use: each package's output as without the option. test-pdftex gives it to
@@ -2154,6 +2158,34 @@ const drivers = {
     pdfprimText('Literal: before after.'),
     /^(?![^]*(?<!test-)pdfxformname)/,
     pdfprimLeaks,
+  ],
+  // (the primitives reached through \pdfprimitive, \pdf@primitive, and
+  // \tex_primitive:D, as above. A form shown by \pdfrefxform is lost, as
+  // above. The primitives that DVI mode allows stay primitives)
+  'test-pdfprimitive': [
+    pdfprimHead('h3', 'Head x end'), pdfprimToc('Head x end'),
+    ...['Details: beforeafter.', 'Literal: before after.', 'Italic: before after|.', 'Sans: before after|.',
+      'Typewriter: before after|.', 'Footnote: before|1 after.', '1|Note six end.',
+      'Theorem 1. Theorem seven end.', 'Macro: before one after.', 'Name: [2] end.', 'Csname: before after.',
+      'Mine: [mine x] and before after.', 'Pdftexcmds: before after.', 'Expl: before after.',
+      'Strcmp: [same].', 'Edef: [-1].', 'Hbox: [y].'].map(pdfprimText),
+    /Chain: before(?:<[^>]*>)*y?(?:<[^>]*>)* after\./,
+    /Math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Macro math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Blue math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Hbox math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    pdfprimitiveLeaks,
+  ],
+  'test-pdfprimitive-hyperref': [
+    pdfprimHead('h3', 'Head x end'), pdfprimToc('Head x end'),
+    ...['Literal: before after, a link to section', 'Footnote: before|1 after.', '1|Note six end',
+      'Pdftexcmds: before after.', 'Expl: before after.', 'Link: beforeto the head after.'].map(pdfprimText),
+    pdfprimitiveLeaks,
+  ],
+  'test-pdfprimitive-guard': [
+    ...['Strcmp: [same].', 'Edef: [-1].', 'Hbox: [y].', 'Copy: [same].', 'Copy edef: [1].', 'Copy hbox: [z].',
+      'Command: [-1] [41].', 'Expl: [same].'].map(pdfprimText),
+    pdfprimitiveLeaks,
   ],
   // (expl3's copies, \tex_pdf<name>:D, as the primitives above. The copies
   // of the primitives that only warn in DVI mode stay primitives)

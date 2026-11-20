@@ -1,0 +1,76 @@
+% A document written for pdflatex that reaches pdfTeX's primitives that are
+% an error in DVI mode through \pdfprimitive, which runs a primitive's own
+% meaning whatever the name's meaning is now, and through expl3's and
+% pdftexcmds' copies of it, \tex_primitive:D and \pdf@primitive. In the PDF
+% each one writes into the PDF and puts nothing on the page. On the page
+% the text around each one stays, and none of their arguments shows. They
+% come before the class, in the preamble, in the body, in italic,
+% sans-serif, and typewriter text, in a footnote, a theorem, a heading
+% written to the table of contents, a macro, math, and after a document's
+% own \pdfliteral. \pdfprimitive before a primitive that DVI mode allows
+% stays that primitive.
+\pdfoutput=1
+\pdfprimitive\pdfmapline{+foo.map}
+\RequirePackage{pdftexcmds}
+\documentclass{article}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\pdfprimitive\pdfmapline{+bar.map}
+\pdfprimitive\pdfmapfile{+first.map}
+\newcommand\lit{\pdfprimitive\pdfliteral{0 g}}
+\newcommand\blue[1]{\pdfprimitive\pdfliteral{0 0 1 rg}#1\pdfprimitive\pdfliteral{0 g}}
+\begin{document}
+\tableofcontents
+
+\section{Head \pdfprimitive\pdfliteral{0 g}x end}
+
+Details: before\setbox2\hbox{x}\pdfprimitive\pdfxform 2 after.
+
+Literal: before\pdfprimitive\pdfliteral{0 g} after.
+
+Italic: \textit{before\pdfprimitive\pdfliteral{0 g} after}.
+
+Sans: \textsf{before\pdfprimitive\pdfliteral{0 g} after}.
+
+Typewriter: \texttt{before\pdfprimitive\pdfliteral{0 g} after}.
+
+Footnote: before\footnote{Note\pdfprimitive\pdfliteral{0 g} six end.} after.
+
+\begin{theorem}
+Theorem \pdfprimitive\pdfsave\pdfprimitive\pdfrestore seven end.
+\end{theorem}
+
+Macro: before \blue{one} after.
+
+Chain: before\setbox2\hbox{y}\pdfprimitive\pdfxform2
+\pdfprimitive\pdfrefxform\pdfprimitive\pdflastxform{} after.
+
+Name: [\pdfprimitive\pdfxformname\pdfprimitive\pdflastxform] end.
+
+Csname: before\expandafter\pdfprimitive\csname pdfliteral\endcsname{0 g} after.
+
+Mine: {\renewcommand\pdfliteral[1]{[mine #1]}\pdfliteral{x} and
+before\pdfprimitive\pdfliteral{0 g} after}.
+
+\makeatletter
+Pdftexcmds: before\pdf@primitive\pdfliteral{0 g} after.
+\makeatother
+
+\ExplSyntaxOn
+Expl:~before \tex_primitive:D \pdfliteral {0~g} ~ after.
+\ExplSyntaxOff
+
+Strcmp: [\ifnum\pdfprimitive\pdfstrcmp{a}{a}=0 same\else different\fi].
+
+Edef: \edef\cmp{\pdfprimitive\pdfstrcmp{a}{b}}[\cmp].
+
+Hbox: [\pdfprimitive\hbox{y}].
+
+Math: before $a\pdfprimitive\pdfliteral{0 g}b$ after.
+
+Macro math: before $a\lit b$ after.
+
+Blue math: before $a\blue{b}c$ after.
+
+Hbox math: before $a\pdfprimitive\hbox{b}c$ after.
+\end{document}

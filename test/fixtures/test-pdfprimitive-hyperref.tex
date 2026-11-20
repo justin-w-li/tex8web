@@ -1,0 +1,25 @@
+% test-pdfprimitive's \pdfprimitive, \pdf@primitive, and \tex_primitive:D
+% in a document that loads hyperref, which loads pdftexcmds in the
+% preamble, and leaves \pdfoutput unset. A heading's text goes to the table
+% of contents and to hyperref's bookmarks.
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+\tableofcontents
+
+\section{Head \pdfprimitive\pdfliteral{0 g}x end}\label{head}
+
+Literal: before\pdfprimitive\pdfliteral{0 g} after, a link to section~\ref{head}.
+
+Footnote: before\footnote{Note\pdfprimitive\pdfliteral{0 g} six end.} after.
+
+\makeatletter
+Pdftexcmds: before\pdf@primitive\pdfliteral{0 g} after.
+\makeatother
+
+\ExplSyntaxOn
+Expl:~before \tex_primitive:D \pdfliteral {0~g} ~ after.
+\ExplSyntaxOff
+
+Link: before\pdfprimitive\pdfstartlink goto name{section.1}to the head\pdfprimitive\pdfendlink{} after.
+\end{document}
