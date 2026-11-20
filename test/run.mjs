@@ -1492,13 +1492,19 @@ const contents = {
     /<dd><a id='Xbaker'><\/a>Bo<span class='tex8web-nbsp'> <\/span>Baker\. <span class='cmti-10'>A Second Book Cited from a Part<\/span>\. A Publisher, 2002\. <\/dd>/,
   ],
   // (a report with parts in subfolders: the citation of an included
-  // chapter, the entry that its \nocite adds, from a .bib in a subfolder,
-  // and no text of the chapter that \includeonly leaves out)
+  // chapter, and the entry that its \nocite adds, from a .bib in a
+  // subfolder. A chapter that \includeonly leaves out, whose .aux the
+  // main .aux names, is checked by the build's exit code.)
   'test-bibinclude-report': [
     /A citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span> in an included chapter\./,
     /<dt> \[1\]<\/dt><dd><a id='Xable'><\/a>Ann Able\. <span class='cmti-10'>A Book from a Subfolder<\/span>\. A Publisher, 2001\. <\/dd>/,
     /<dt> \[2\]<\/dt><dd><a id='Xcole'><\/a>Cy<span class='tex8web-nbsp'> <\/span>Cole\. <span class='cmti-10'>A Book Named Only by Nocite<\/span>\. A Publisher, 2003\. <\/dd>/,
-    /^(?![^]*Omitted chapter)/,
+  ],
+  // (a .bbl beside the document, and a missing .bib named in a file read
+  // by \include: the entry of that .bbl, as in the PDF)
+  'test-bibinclude-missing': [
+    /A citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>\./,
+    /<dt> \[1\]<\/dt><dd><a id='Xable'><\/a>Ann Able\. <span class='cmti-10'>A Book Shipped beside the Document<\/span>\. A Publisher, 2001\. <\/dd>/,
   ],
   // (parts read by \input, \subfile, and \subimport: the citation and its
   // entry)
@@ -4985,6 +4991,10 @@ const staleBcfPages = {
   // and \bibliography in that file)
   'natbib-inclstyle': [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
   'natbib-inclbib': [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
+  // (the style alone in a file read by \include, and \bibliography in
+  // another such file or in the document)
+  'natbib-styleonly': [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
+  'natbib-styleonly-doc': [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1999<\/a><\/span>\] says\./, staleBcfEntry],
   elsarticle: [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\(<span class='cite'><a href='#Xable'>1999<\/a><\/span>\) says\./,
     /Able, A\., 1999\. A Book Kept in the Build Folder\. A Publisher\./],
   // (natbib with a numeric style: \citet forces numbers, as in the PDF)
@@ -4995,6 +5005,8 @@ const staleBcfPages = {
   // (natbib with [numbers] and a .bib that is missing: with -B ., the .bbl
   // that the first build left beside the document is read, as for the PDF)
   'natbib-missing': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1<\/a><\/span>\] says\./, staleBcfEntry],
+  // (the same with the missing .bib named in a file read by \include)
+  'natbib-inclmissing': [/As <span class='cmbx-10'>\(author\?\)<\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>1<\/a><\/span>\] says\./, staleBcfEntry],
 };
 // (natbib with a numeric style that natbib does not know: from the third
 // LaTeX run, the PDF build stops at natbib's error, and so does the page's)
@@ -5016,11 +5028,13 @@ const staleBcfCases = [
   // (the bibliography in a file read by \include, which LaTeX writes to
   // that file's .aux, with the style there or in the document)
   ['bibtex-inclstyle', 'natbib-inclstyle'], ['bibtex-inclbib', 'natbib-inclbib'],
-  ['bibtex', 'natbib-missing', '.'],
+  ['bibtex-inclstyle', 'natbib-inclstyle', '.'], ['bibtex-styleonly', 'natbib-styleonly'],
+  ['bibtex-styleonly-doc', 'natbib-styleonly-doc'],
+  ['bibtex', 'natbib-missing', '.'], ['bibtex-inclstyle', 'natbib-inclmissing', '.'],
   // (a .bbl whose items have author-year data only in part)
   ['natbib-mixed', 'natbib'],
   // (a draft build of the second document between the two builds)
-  ['bibtex', 'natbib', 'build/tex4ht', 'draft'],
+  ['bibtex', 'natbib', 'build/tex4ht', 'draft'], ['bibtex-inclstyle', 'natbib-inclstyle', 'build/tex4ht', 'draft'],
   // (a build folder left current)
   ['biber', 'biber'], ['bibtex', 'bibtex'], ['blx-bibtex', 'blx-bibtex'],
   ['natbib', 'natbib'], ['natbib-plain', 'natbib-plain'], ['natbib-ieeetr', 'natbib-ieeetr'],

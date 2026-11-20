@@ -1,0 +1,7 @@
+% A .bbl beside the document, and a .bib that is missing, named in a file
+% read by \include: the entries of that .bbl, as in the PDF.
+\documentclass{article}
+\begin{document}
+A citation~\cite{able}.
+\include{test-bibinclude/missing}
+\end{document}
