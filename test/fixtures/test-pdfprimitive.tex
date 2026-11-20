@@ -9,13 +9,16 @@
 % written to the table of contents, a macro, an \edef, math, after
 % \immediate, and after a document's own \pdfliteral, and in the math of a
 % heading and a caption, written to the table of contents and the list of
-% figures. test-pdfprimitive-guard checks \pdfprimitive before a primitive
-% that DVI mode allows.
+% figures, and in index entries, one in italic, that makeindex sorts and
+% \printindex reads back. test-pdfprimitive-guard checks \pdfprimitive
+% before a primitive that DVI mode allows.
 \pdfprimitive\pdfmapline{+foo.map}
 \pdfoutput=1
 \RequirePackage{pdftexcmds}
 \documentclass{article}
 \usepackage{amsthm}
+\usepackage{makeidx}
+\makeindex
 \newtheorem{theorem}{Theorem}
 \pdfprimitive\pdfmapline{+bar.map}
 \pdfprimitive\pdfmapfile{+first.map}
@@ -98,10 +101,15 @@ Copy math: before $a\litb b$ after.
 
 Let math: before $a\litc b$ after.
 
+Index: before\index{zeta\pdfprimitive\pdfliteral{0 g}} after.
+
+Index in italic: \textit{before\index{eta\pdfprimitive\pdfliteral{0 g}} after}.
+
 \section{Math $a\pdfprimitive\pdfliteral{0 g}b$ end}
 
 \begin{figure}[h]
 Figure body.
 \caption{Figure $c\pdfprimitive\pdfliteral{0 g}d$ end}
 \end{figure}
+\printindex
 \end{document}

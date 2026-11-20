@@ -833,16 +833,24 @@
 % expandable primitive such as \pdfstrcmp. expl3's copy, \tex_primitive:D,
 % is the same macro. pdftexcmds copies \pdfprimitive to \pdf@primitive
 % only when \pdfprimitive is the primitive, so the copy is made after
-% pdftexcmds loads.
+% pdftexcmds loads. In a write with LaTeX's \protect, such as a line of
+% the table of contents or an index entry, the macro stays with the name
+% after it, as pdfTeX's \pdfprimitive does: makeindex refuses an entry
+% with an @ of \web@prim@<name>.
 \cs_gset_eq:NN \web@primitive \tex_primitive:D
 \cs_gset:Npn \pdfprimitive #1
     {
         \if_cs_exist:w web@prim@ \cs_to_str:N #1 \cs_end:
-            \exp_after:wN \use_i:nn
+            \if_meaning:w \protect \@typeset@protect
+                \exp_after:wN \exp_after:wN \exp_after:wN \use_i:nnn
+            \else:
+                \exp_after:wN \exp_after:wN \exp_after:wN \use_ii:nnn
+            \fi:
         \else:
-            \exp_after:wN \use_ii:nn
+            \exp_after:wN \use_iii:nnn
         \fi:
         { \cs:w web@prim@ \cs_to_str:N #1 \cs_end: }
+        { \exp_not:N \pdfprimitive \exp_not:N #1 }
         { \web@primitive #1 }
     }
 \cs_gset_eq:NN \tex_primitive:D \pdfprimitive

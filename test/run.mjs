@@ -2181,6 +2181,9 @@ const drivers = {
     /Let math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /<span class='sectionToc'>(?:(?!<\/a>)[^])*>Math <mjx-container aria-label='a b'/,
     /<span class='lofToc'>(?:(?!<\/a>)[^])*>Figure <mjx-container aria-label='c d'/,
+    // (each index entry, which makeindex reads from the .idx: an entry with
+    // an @ that is not makeindex's own is lost)
+    /<div class='index-item'>eta, <a href='#[^']+'>2<\/a> <\/div>(?:(?!<div class='index-item')[^])*<div class='index-item'>zeta, <a href='#[^']+'>1<\/a> <\/div>/,
     pdfprimitiveLeaks,
   ],
   'test-pdfprimitive-hyperref': [
