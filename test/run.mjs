@@ -2164,6 +2164,7 @@ const drivers = {
   // above. The primitives that DVI mode allows stay primitives)
   'test-pdfprimitive': [
     pdfprimHead('h3', 'Head x end'), pdfprimToc('Head x end'),
+    pdfprimHead('h3', 'Form [3] end'), pdfprimToc('Form [3] end'),
     ...['Details: beforeafter.', 'Literal: before after.', 'Italic: before after|.', 'Sans: before after|.',
       'Typewriter: before after|.', 'Footnote: before|1 after.', '1|Note six end.',
       'Theorem 1. Theorem seven end.', 'Macro: before one after.', 'Name: [2] end.', 'Csname: before after.',

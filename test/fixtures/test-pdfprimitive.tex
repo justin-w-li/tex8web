@@ -6,7 +6,8 @@
 % the text around each one stays, and none of their arguments shows. They
 % come before the class, in the preamble, in the body, in italic,
 % sans-serif, and typewriter text, in a footnote, a theorem, a heading
-% written to the table of contents, a macro, an \edef, math, after
+% written to the table of contents, a form's name in a heading, which
+% the table of contents shows with the number it had in the heading, a macro, an \edef, math, after
 % \immediate, and after a document's own \pdfliteral, and in the math of a
 % heading and a caption, written to the table of contents and the list of
 % figures, and in index entries, one in italic, that makeindex sorts and
@@ -104,6 +105,8 @@ Let math: before $a\litc b$ after.
 Index: before\index{zeta\pdfprimitive\pdfliteral{0 g}} after.
 
 Index in italic: \textit{before\index{eta\pdfprimitive\pdfliteral{0 g}} after}.
+
+\section{Form [\pdfprimitive\pdfxformname\pdfprimitive\pdflastxform] end}
 
 \section{Math $a\pdfprimitive\pdfliteral{0 g}b$ end}
 
