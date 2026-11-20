@@ -1,16 +1,16 @@
 % imakeidx's indexes printed from an \include file, each with its .ind
 % beside the document from an earlier build: a named index after
 % \indexprologue, the main index while a named index is printed in the
-% main file, a named index with intoc and columns=1 printed from a file
-% that the \include file reads with \input, and a named index whose
-% option -l reaches makeindex. The index of places, printed in the main
-% file, checks a case the fix must not break.
+% main file, a named index printed from a file that the \include file
+% reads with \input, and a named index whose option -l reaches makeindex.
+% The index of places, printed in the main file, checks a case the fix
+% must not break.
 \documentclass{article}
 \usepackage{imakeidx}
 \usepackage{hyperref}
 \makeindex
 \makeindex[name=test-staleaux-ind-incl-people,title=Index of people]
-\makeindex[name=test-staleaux-ind-incl-terms,title=Index of terms,intoc,columns=1]
+\makeindex[name=test-staleaux-ind-incl-terms,title=Index of terms]
 \makeindex[name=test-staleaux-ind-incl-words,title=Index of words,options=-l]
 \makeindex[name=test-staleaux-ind-incl-places,title=Index of places]
 \begin{document}

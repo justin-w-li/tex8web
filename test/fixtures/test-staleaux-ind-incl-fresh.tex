@@ -1,0 +1,13 @@
+% imakeidx's indexes printed from two \include files, with no .ind
+% beside the document: a named index from the first file, and the main
+% index from the second.
+\documentclass{article}
+\usepackage{imakeidx}
+\usepackage{hyperref}
+\makeindex
+\makeindex[name=test-staleaux-ind-incl-fresh-people,title=Index of people]
+\begin{document}
+An apple\index{Apple}, after Euler\index[test-staleaux-ind-incl-fresh-people]{Euler}.
+\include{test-staleaux-ind-incl-fresh/names}
+\include{test-staleaux-ind-incl-fresh/subjects}
+\end{document}

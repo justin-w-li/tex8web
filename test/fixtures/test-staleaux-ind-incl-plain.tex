@@ -1,14 +1,19 @@
 % A named imakeidx index with a title and the makeindex option -l,
 % printed after \indexprologue from an \include file that \includeonly
-% keeps, while it skips another. The document does not load hyperref, and
-% the index's .ind beside the document, from an earlier build that loaded
-% it, uses \hyperpage.
+% keeps, while it skips another. The main index is printed from the same
+% file, while a named index of places is printed in the main file. The
+% document does not load hyperref, and the .ind files beside the document,
+% from an earlier build that loaded it, use \hyperpage.
 \documentclass{article}
 \usepackage{imakeidx}
+\makeindex
+\makeindex[name=test-staleaux-ind-incl-plain-places]
 \makeindex[name=test-staleaux-ind-incl-plain-people,title=Index of people,options=-l]
 \includeonly{test-staleaux-ind-incl-plain/back}
 \begin{document}
 Euler\index[test-staleaux-ind-incl-plain-people]{Euler} ate ice cream\index[test-staleaux-ind-incl-plain-people]{Ice cream} on an iceberg\index[test-staleaux-ind-incl-plain-people]{Iceberg}.
+An apple\index{Apple} from Basel\index[test-staleaux-ind-incl-plain-places]{Basel}.
 \include{test-staleaux-ind-incl-plain/skipped}
 \include{test-staleaux-ind-incl-plain/back}
+\printindex[test-staleaux-ind-incl-plain-places]
 \end{document}
