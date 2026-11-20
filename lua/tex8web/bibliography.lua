@@ -22,6 +22,20 @@ function M.missing(names, from)
   end
 end
 
+-- the .aux of each file read by \include that an .aux in the directory
+-- dir names with \@input, as {path, text}. LaTeX writes the \bibdata and
+-- \bibstyle of such a file there (latex.ltx, \@include), and bibtex reads
+-- that .aux in place of the \@input line. (A file that \includeonly
+-- leaves out has no .aux.)
+function M.parts(dir, aux)
+  local found = {}
+  for name in aux:gmatch("\\@input{([^}]*)}") do
+    local text = files.read(dir .. "/" .. name)
+    if text then found[#found + 1] = {path = dir .. "/" .. name, text = text} end
+  end
+  return found
+end
+
 -- runs bibtex or biber on the auxiliary files in the build directory, if
 -- the document has a bibliography. (A failed run is only a warning: the
 -- page is still useful with unresolved references.)
@@ -41,10 +55,19 @@ function M.run(par)
   end
   -- the .bib files named, and the directory bibtex or biber looks them up from
   local command, names, from = nil, {}, dir
-  -- the .aux that bibtex reads, when it differs from the one LaTeX wrote
-  local bibtex_aux
-  local function write_aux(text)
-    local f = io.open(dir .. "/" .. par.input .. ".aux", "w")
+  -- the .aux files that bibtex reads: the document's, and those of the
+  -- files read by \include
+  local auxes = {{path = dir .. "/" .. par.input .. ".aux", text = aux}, table.unpack(M.parts(dir, aux))}
+  local bibdata = false
+  for _, file in ipairs(auxes) do
+    if file.text:find("\\bibdata", 1, true) then bibdata = true end
+  end
+  -- those of them that differ for bibtex's run, as {path, text, fixed}
+  local changed = {}
+  -- the .aux files named with \@input that do not exist
+  local absent = {}
+  local function write(path, text)
+    local f = io.open(path, "w")
     f:write(text)
     f:close()
   end
@@ -62,22 +85,32 @@ function M.run(par)
       end
     end
     from = here
-  elseif aux:find("\\bibdata", 1, true) then
+  elseif bibdata then
     -- bibtex runs in the build directory, which it may not write to from
     -- here. BIBINPUTS and BSTINPUTS find the .bib and .bst files in the
     -- document's directory. kpathsea looks up a name that begins with ./
     -- or ../ only from the current directory, so such names in \bibdata
     -- and \bibstyle are made absolute for bibtex's run only: a changed
     -- .aux would take one more LaTeX run.
-    local fixed = aux:gsub("(\\bib%a+){([^}]*)}", function(cs, list)
-      if cs ~= "\\bibdata" and cs ~= "\\bibstyle" then return end
-      return cs .. "{" .. list:gsub("[^,]+", function(name)
-        if name:find("^%.%.?/") then return here .. "/" .. name end
-      end) .. "}"
-    end)
-    if fixed ~= aux then bibtex_aux = fixed end
-    for list in fixed:gmatch("\\bibdata{([^}]*)}") do
-      for name in list:gmatch("[^,]+") do names[#names + 1] = name end
+    -- (LaTeX writes a name in a file read by \include as given, so it
+    -- too is relative to the document's directory.)
+    for _, file in ipairs(auxes) do
+      local fixed = file.text:gsub("(\\bib%a+){([^}]*)}", function(cs, list)
+        if cs ~= "\\bibdata" and cs ~= "\\bibstyle" then return end
+        return cs .. "{" .. list:gsub("[^,]+", function(name)
+          if name:find("^%.%.?/") then return here .. "/" .. name end
+        end) .. "}"
+      end)
+      if fixed ~= file.text then changed[#changed + 1] = {path = file.path, text = file.text, fixed = fixed} end
+      for list in fixed:gmatch("\\bibdata{([^}]*)}") do
+        for name in list:gmatch("[^,]+") do names[#names + 1] = name end
+      end
+    end
+    -- A file that \includeonly leaves out has no .aux until a build
+    -- includes it. bibtex skips its \@input line with an error, which
+    -- latexmk ignores, so an empty .aux stands in for bibtex's run.
+    for name in aux:gmatch("\\@input{([^}]*)}") do
+      if not lfs.isfile(dir .. "/" .. name) then absent[#absent + 1] = dir .. "/" .. name end
     end
     command = "cd " .. files.quote(dir) .. " && " .. path("BIBINPUTS") .. " " .. path("BSTINPUTS")
       .. " bibtex " .. files.quote(par.input)
@@ -103,10 +136,17 @@ function M.run(par)
   -- is missing or stops early. The empty .bbl from tex8web.mk4 would then
   -- hide the one beside the document, which LaTeX reads when biber fails.)
   if lfs.attributes(dir .. "/" .. par.input .. ".bbl", "size") == 0 then use_beside() end
-  if bibtex_aux then write_aux(bibtex_aux) end
+  for _, file in ipairs(changed) do write(file.path, file.fixed) end
+  -- (A folder that the document lacks is not made in the build
+  -- directory, and bibtex then reports the error.)
+  for _, path in ipairs(absent) do
+    local f = io.open(path, "w")
+    if f then f:close() end
+  end
   -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
   if os.execute(command .. " > /dev/null") ~= 0 then log:warning("the bibliography failed (" .. command .. ")") end
-  if bibtex_aux then write_aux(aux) end
+  for _, file in ipairs(changed) do write(file.path, file.text) end
+  for _, path in ipairs(absent) do os.remove(path) end
   return 0
 end
 

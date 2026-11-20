@@ -269,17 +269,22 @@ else
     -- (A draft build writes the new style to the .aux and runs no bibtex.
     -- bibliography.lua gives bibtex a style name that begins with ./ or
     -- ../ from the current directory, which the .blg shows.)
+    -- (\NAT@force@numbers and \bibstyle are in the .aux of the file that
+    -- reads the .bbl or sets the style, which may be a file read by
+    -- \include, with an .aux of its own.)
     local written = files.read(base .. ".aux") or ""
-    local now = written:match("\\bibstyle{([^}]*)}")
+    local bib = written
+    for _, part in ipairs(bibliography.parts(par.builddir, written)) do bib = bib .. part.text end
+    local now = bib:match("\\bibstyle{([^}]*)}")
     local blg_style = (files.read(base .. ".blg") or ""):match("The style file: ([^\r\n]*)%.bst")
-    local natbib = written:find("\\NAT@force@numbers", 1, true) and saved.bbl and now and blg_style
+    local natbib = bib:find("\\NAT@force@numbers", 1, true) and saved.bbl and now and blg_style
       and blg_style ~= now and blg_style ~= lfs.currentdir() .. "/" .. now
     -- (When the build directory is the document's directory, its .bbl is
     -- the one beside the document. bibliography.lua skips bibtex when a
     -- .bib is missing, and LaTeX then reads that .bbl, as for the PDF.)
     if natbib and not beside and out and here.ino == out.ino and here.dev == out.dev then
       local names = {}
-      for list in written:gmatch("\\bibdata{([^}]*)}") do
+      for list in bib:gmatch("\\bibdata{([^}]*)}") do
         for name in list:gmatch("[^,]+") do
           names[#names + 1] = name:find("^%.%.?/") and lfs.currentdir() .. "/" .. name or name
         end
@@ -328,7 +333,15 @@ else
     if aux then
       saved.aux = ""
     elseif natbib and saved.aux then
-      saved.aux = saved.aux:gsub("\\providecommand\\NAT@force@numbers{}\\NAT@force@numbers\n?", "")
+      local force = "\\providecommand\\NAT@force@numbers{}\\NAT@force@numbers\n?"
+      saved.aux = saved.aux:gsub(force, "")
+      -- (the .aux files of the files read by \include, which the run
+      -- reads through saved.aux)
+      for _, part in ipairs(bibliography.parts(par.builddir, saved.aux)) do
+        local f = io.open(part.path, "w")
+        f:write((part.text:gsub(force, "")))
+        f:close()
+      end
     end
     for extension, content in pairs(saved) do
       local path = base .. "." .. extension
