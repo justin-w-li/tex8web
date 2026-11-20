@@ -3,6 +3,7 @@
 -- after the last LaTeX run if the glossaries changed. Each number in an
 -- index counts \index commands and links back to its \index (see "Indexes"
 -- in CONTRIBUTING.md).
+local bibliography = require "tex8web.bibliography"
 local files = require "tex8web.files"
 local indexing = require "make4ht-indexing"
 
@@ -141,19 +142,10 @@ function M.glossaries(par)
   return 0
 end
 
--- the files whose change needs another LaTeX run: the cross-references
--- and the table of contents (autohtlatex's list)
-local function checksum(par)
-  local dir = (par.builddir ~= "" and par.builddir) or "."
-  local sum = ""
-  for _, ext in ipairs {"aux", "4tc", "xref"} do
-    sum = md5.sumhexa(sum .. (files.read(dir .. "/" .. par.input .. "." .. ext) or ""))
-  end
-  return sum
-end
-
--- the most LaTeX runs M.glossaries_again makes (autohtlatex's default)
-local runs = 5
+-- (the files whose change needs another LaTeX run, and the most LaTeX
+-- runs, as for bibliography.settle)
+local checksum = bibliography.checksum
+local runs = bibliography.runs
 
 -- makeglossaries and LaTeX again, after LaTeX has settled, while the
 -- glossaries' input files or LaTeX's cross-references change: an entry used

@@ -1494,7 +1494,7 @@ const contents = {
   // (a report with parts in subfolders: the citation of an included
   // chapter, and the entry that its \nocite adds, from a .bib in a
   // subfolder. A chapter that \includeonly leaves out, whose .aux the
-  // main .aux names, is checked by the build's exit code.)
+  // main .aux names, is checked in logs: bibtex runs without an error.)
   'test-bibinclude-report': [
     /A citation<span class='tex8web-nbsp'> <\/span><span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span> in an included chapter\./,
     /<dt> \[1\]<\/dt><dd><a id='Xable'><\/a>Ann Able\. <span class='cmti-10'>A Book from a Subfolder<\/span>\. A Publisher, 2001\. <\/dd>/,
@@ -2324,6 +2324,10 @@ const logs = {
     'test-staleaux-bbl-jobname'].map(name =>
     [name, [/^(?![^]*Missing 'biblatex' package)/, /^(?![^]*Package biblatex Error)/,
       /^(?![^]*Package natbib Error)/, /^(?![^]*Undefined control sequence)/]])),
+  // (a chapter that \includeonly leaves out has no .aux, which bibtex
+  // reads in place of the \@input line that names it: bibtex runs
+  // without an error)
+  'test-bibinclude-report': [/^(?![^]*the bibliography failed)/],
   // (a current .bbl beside the document is read by the first LaTeX run,
   // which writes its \bibcite lines, so the second run changes no .aux)
   'test-staleaux-bbl-current': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*runs again without)/],
@@ -5084,6 +5088,39 @@ if (staleBcf) for (const [first, second, folder = 'build/tex4ht', draft] of stal
   if (!flat) problems.push('no page');
   else for (const pattern of staleBcfPages[second]) if (!pattern.test(flat)) problems.push(`the page does not match ${pattern}`);
   report(`${staleBcf.name} (${label})`, problems);
+});
+
+// The documents of test/fixtures/test-stalebcf/ with the bibliography in
+// a file read by \include, built twice into one build folder, with the
+// year of an entry changed in the .bib between the builds. LaTeX writes
+// the \bibcite lines to that file's .aux, so the build runs LaTeX again
+// until that .aux settles: the citation and the entry show the new year.
+if (staleBcf) for (const name of ['natbib-inclstyle', 'natbib-inclbib']) jobs.push(async () => {
+  const dir = join(testDir(staleBcf), 'edited', name);
+  const source = join(staleBcf.dir, 'test-stalebcf');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  for (const file of readdirSync(source)) writeFileSync(join(dir, file), readFileSync(join(source, file)));
+  writeFileSync(join(dir, 'doc.tex'), readFileSync(join(source, `${name}.tex`)));
+  const once = () => run(join(root, 'bin/tex8web'), ['-c', staleBcf.cfg, '-a', 'info', 'doc.tex'],
+    { cwd: dir, slot: true, env: { ...process.env, ...staleBcf.env } });
+  const problems = [];
+  const before = await once();
+  if (before.code !== 0) problems.push(`the first build exited with ${before.code}`);
+  const bib = readFileSync(join(source, 'refs.bib'), 'utf8');
+  if (!bib.includes('year = {1999}')) problems.push('refs.bib has no year 1999 to change');
+  writeFileSync(join(dir, 'refs.bib'), bib.replace('year = {1999}', 'year = {2005}'));
+  const result = await once();
+  writeFileSync(join(dir, 'second.log'), result.log ?? '');
+  if (result.code !== 0) problems.push(`the second build exited with ${result.code}`);
+  const page = join(dir, 'build/html/doc.html');
+  const flat = existsSync(page) ? readFileSync(page, 'utf8').replace(/[^\S\u202F]+/g, ' ') : '';
+  if (!flat) problems.push('no page');
+  for (const pattern of [/As <span class='cite'><a href='#Xable'>Able<\/a><\/span><span class='tex8web-nbsp'> <\/span>\[<span class='cite'><a href='#Xable'>2005<\/a><\/span>\] says\./,
+    /Ann Able\. <span class='cmti-10'>A Book Kept in the Build Folder<\/span>\. A Publisher, 2005\./]) {
+    if (flat && !pattern.test(flat)) problems.push(`the page does not match ${pattern}`);
+  }
+  report(`${staleBcf.name} (${name}, with the .bib changed between two builds)`, problems);
 });
 
 // Draft builds of the test-staleaux-toc fixtures beside their stale lists,

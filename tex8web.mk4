@@ -378,7 +378,10 @@ else
       return 0
     end)
     Make:unsorted {}
-    Make:autohtlatex(latex)
+    -- (make4ht's autohtlatex checks only the document's .aux, and not the
+    -- .aux of a file read by \include)
+    Make:add("settle", bibliography.settle, {correct_exit = 0})
+    Make:settle(latex)
     Make:add("glossaries_again", index.glossaries_again, {correct_exit = 0})
     Make:glossaries_again(latex)
   end
