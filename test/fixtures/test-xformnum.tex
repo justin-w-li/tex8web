@@ -12,9 +12,10 @@
 % PDF the name is the form's number, 1 for the first form, 2 for the
 % second, 3 for the third, and 4 for the one made in a group.
 % \pdflastxform is the form's object number, which tex8web does not know:
-% the page shows the form's number in its place. The two are the same only
-% when no page shipped out, form made with \immediate, image, or other
-% object comes before the form, and, with hyperref, only in the preamble.
+% the page shows the form's number in its place. The two differ whenever
+% anything before the form writes an object into the PDF: a page shipped
+% out, an image, a form made with \immediate, or a package such as
+% hyperref or TikZ.
 % The PDF shows 7 at Object, where the page shows 3, as the \immediate
 % form of Second and the image take object numbers too.
 \pdfoutput=1
