@@ -188,6 +188,11 @@ for _, name in ipairs {"save", "restore", "endlink", "endthread", "snaprefpoint"
     "runninglinkoff", "interwordspaceon", "interwordspaceoff", "fakespace"} do
   primitives["pdf" .. name] = {"", ""}
 end
+-- the protected macros that tex/tex8web-hooks.sty's \pdfprimitive expands
+-- to, which a write such as a heading's line in the .toc keeps
+local aliases = {}
+for name, shape in pairs(primitives) do aliases["web@prim@" .. name] = shape end
+for name, shape in pairs(aliases) do primitives[name] = shape end
 -- \pdfprimitive and pdftexcmds' copy, which run the primitive of the name
 -- after them, are removed and leave that name
 primitives.pdfprimitive, primitives["pdf@primitive"] = {"", ""}, {"", ""}

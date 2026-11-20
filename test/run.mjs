@@ -2168,7 +2168,7 @@ const drivers = {
       'Typewriter: before after|.', 'Footnote: before|1 after.', '1|Note six end.',
       'Theorem 1. Theorem seven end.', 'Macro: before one after.', 'Name: [2] end.', 'Csname: before after.',
       'Mine: [mine x] and before after.', 'Pdftexcmds: before after.', 'Expl: before after.',
-      'Strcmp: [same].', 'Edef: [-1].', 'Hbox: [y].', 'Immediate: beforeafter.', 'Image: before after.',
+      'Immediate: beforeafter.', 'Image: before after.',
       'Stack: beforepushed after.', 'Destination: beforeafter.', 'Bbox: [0.0pt].', 'Direct: before after.',
       'Edef literal: beforeafter.'].map(pdfprimText),
     /Chain: before(?:<[^>]*>)*y?(?:<[^>]*>)* after\./,
@@ -2179,6 +2179,8 @@ const drivers = {
     /Page math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Copy math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Let math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /<span class='sectionToc'>(?:(?!<\/a>)[^])*>Math <mjx-container aria-label='a b'/,
+    /<span class='lofToc'>(?:(?!<\/a>)[^])*>Figure <mjx-container aria-label='c d'/,
     pdfprimitiveLeaks,
   ],
   'test-pdfprimitive-hyperref': [

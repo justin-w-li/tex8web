@@ -7,8 +7,10 @@
 % come before the class, in the preamble, in the body, in italic,
 % sans-serif, and typewriter text, in a footnote, a theorem, a heading
 % written to the table of contents, a macro, an \edef, math, after
-% \immediate, and after a document's own \pdfliteral. \pdfprimitive before a primitive that DVI mode allows
-% stays that primitive.
+% \immediate, and after a document's own \pdfliteral, and in the math of a
+% heading and a caption, written to the table of contents and the list of
+% figures. test-pdfprimitive-guard checks \pdfprimitive before a primitive
+% that DVI mode allows.
 \pdfprimitive\pdfmapline{+foo.map}
 \pdfoutput=1
 \RequirePackage{pdftexcmds}
@@ -26,6 +28,7 @@
 \newcommand\litc{\myprim\pdfliteral{0 g}}
 \begin{document}
 \tableofcontents
+\listoffigures
 
 \section{Head \pdfprimitive\pdfliteral{0 g}x end}
 
@@ -65,12 +68,6 @@ Pdftexcmds: before\pdf@primitive\pdfliteral{0 g} after.
 Expl:~before \tex_primitive:D \pdfliteral {0~g} ~ after.
 \ExplSyntaxOff
 
-Strcmp: [\ifnum\pdfprimitive\pdfstrcmp{a}{a}=0 same\else different\fi].
-
-Edef: \def\x{a}\edef\cmp{\pdfprimitive\pdfstrcmp{\x}{b}}\def\x{c}[\cmp].
-
-Hbox: [\pdfprimitive\hbox{y}].
-
 Math: before $a\pdfprimitive\pdfliteral{0 g}b$ after.
 
 Macro math: before $a\lit b$ after.
@@ -100,4 +97,11 @@ Page math: before $a\pdfprimitive\pdfliteral page{0 g}b$ after.
 Copy math: before $a\litb b$ after.
 
 Let math: before $a\litc b$ after.
+
+\section{Math $a\pdfprimitive\pdfliteral{0 g}b$ end}
+
+\begin{figure}[h]
+Figure body.
+\caption{Figure $c\pdfprimitive\pdfliteral{0 g}d$ end}
+\end{figure}
 \end{document}
