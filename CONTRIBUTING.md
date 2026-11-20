@@ -84,6 +84,13 @@ The first LaTeX run also reads a sorted index or glossary file beside the docume
 
 MathJax is not given the preamble, so tex8web translates the macros defined there for it. Definitions are collected from the document, from the local packages it loads, and from the files that the document and these packages `\input` or `\include`. Files are read in the same order as in TeX. Later definitions replace earlier ones, except that `\providecommand` keeps an existing definition. Only macros used in the math are added to the page, so the rest of the source is not published.
 
+The math and the definitions it uses are rewritten where MathJax reads LaTeX differently:
+
+- `\hspace*` becomes `\hspace`, whose `*` MathJax reads as the dimension. The page has no line break for the star to keep the space at.
+- `\protect` is dropped. A class writes `\thanks` text with `\protected@xdef`, which puts `\protect` before each robust command in its math.
+- tex4ht's `\mathrm@@`, which `\protected@xdef` leaves for `\mathrm` (`fontmath.4ht`), becomes `\mathrm`, and the same for `\mathbf`, `\mathit`, `\mathsf`, and `\mathtt`.
+- `\text` inside the argument of another `\text` is dropped, and its argument kept as a group. MathJax reads the outer argument as text, where `\text` is not defined. A `\text` in math inside that text stays.
+
 Only the CSS and dvips color names are defined in MathJax. tex8web adds these colors as `\definecolor` lines:
 
 - colors defined in the document with `\definecolor` and `\colorlet`

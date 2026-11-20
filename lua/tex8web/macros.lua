@@ -280,6 +280,56 @@ local function strip(text, prims)
   return table.concat(out)
 end
 
+-- \text in text mode, as in \text{\text{E}}, is dropped and its argument
+-- kept as a group: MathJax's textmacros reads \text's argument as text,
+-- where \text is "only supported in math mode", and LaTeX sets the
+-- argument in the same font. A $ or \( in the text starts math, where
+-- \text stays.
+local function untext(text)
+  local out, modes, i, pending = {}, {"m"}, 1, nil
+  while i <= #text do
+    local c, mode = text:sub(i, i), modes[#modes]
+    local _, e, name = text:find("^\\([%a@]+)", i)
+    if name then
+      local _, b = text:find("^%s*{", e + 1)
+      if name == "text" and b then
+        if mode == "t" then
+          i = b
+        else
+          out[#out + 1], i = text:sub(i, b - 1), b
+        end
+        pending = "t"
+      else
+        out[#out + 1], i = text:sub(i, e), e + 1
+      end
+    else
+      if c == "{" then
+        modes[#modes + 1], pending = pending or mode, nil
+      elseif c == "}" and #modes > 1 then
+        modes[#modes] = nil
+      elseif mode == "t" and (c == "$" or text:sub(i, i + 1) == "\\(") then
+        modes[#modes + 1] = c == "$" and "$" or ")"
+      elseif mode == "$" and c == "$" or mode == ")" and text:sub(i, i + 1) == "\\)" then
+        modes[#modes] = nil
+      end
+      local n = c == "\\" and 2 or 1
+      out[#out + 1], i = text:sub(i, i + n - 1), i + n
+    end
+  end
+  return table.concat(out)
+end
+
+-- \hspace* is \hspace, as the page has no line breaks to keep it at, and
+-- MathJax's \hspace reads the * as its dimension. \thanks writes its text
+-- with \protected@xdef, so a robust command in its math comes with
+-- \protect, and \mathrm, \mathbf, \mathit, \mathsf, and \mathtt as
+-- tex4ht's \mathrm@@ (fontmath.4ht). MathJax knows neither.
+local function rewrite(text, prims)
+  text = strip(text, prims):gsub("\\hspace%s*%*", "\\hspace"):gsub("\\protect%f[^%a@]%s*", "")
+    :gsub("\\(math%l%l)@@%f[^%a@]", "\\%1")
+  return untext(text)
+end
+
 function M.define(document, context)
   local definitions = preamble.document(context.tex_file)
   for name, def in pairs(fallbacks) do
@@ -309,7 +359,7 @@ function M.define(document, context)
   -- the macros the math uses, and those they use in turn
   local used, queue, texts = {}, {}, {}
   for _, el in ipairs(document:query_selector(".mathjax-inline, .mathjax-block, .mathjax-env")) do
-    source.each_text(el, function(node) dom.set_node_text(node, strip(node:get_text(), prims)) end)
+    source.each_text(el, function(node) dom.set_node_text(node, rewrite(node:get_text(), prims)) end)
     texts[#texts + 1] = el:get_text()
     for _, name in ipairs(preamble.uses(texts[#texts])) do queue[#queue + 1] = name end
   end
@@ -317,7 +367,7 @@ function M.define(document, context)
     local name = table.remove(queue)
     local definition = definitions[name]
     if definition and not used[name] then
-      definition.def, definition.body = strip(definition.def, prims), strip(definition.body, prims)
+      definition.def, definition.body = rewrite(definition.def, prims), rewrite(definition.body, prims)
       used[name] = definition
       texts[#texts + 1] = definition.body
       for _, inner in ipairs(preamble.uses(definition.body)) do queue[#queue + 1] = inner end
