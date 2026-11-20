@@ -5302,7 +5302,9 @@ if (builddirspace) {
     copy(dir, 'second', fixture.replace('\\begin{document}\n', '\\begin{document}\n\\def\\x{\\x}\\x\n'));
     const args = ['-B', 'my aux', '-d', '../html'];
     const problems = [];
-    const first = run8(dir, args, 'first.tex');
+    // (without a build slot, so that the 120 s below count from the
+    // build's start, not from the end of a wait for a slot)
+    const first = run8(dir, args, 'first.tex', {}, false);
     const inBuild = () => existsSync(join(dir, 'build')) && readdirSync(join(dir, 'build')).some(file => file.startsWith('tex8web_aux_'));
     for (let waited = 0; !inBuild() && waited < 120000; waited += 100) await pause(100);
     if (!inBuild()) problems.push("the first build's link is not in build/ after 120 s");
