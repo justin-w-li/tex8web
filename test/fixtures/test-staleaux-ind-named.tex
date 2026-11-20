@@ -1,14 +1,17 @@
 % imakeidx's main index and two named indexes, one named for the job and
 % one not, each with its .ind beside the document from an earlier build
-% that loaded hyperref
+% that loaded hyperref, and a named index without entries yet, whose
+% makeindex run writes an empty .ind
 \documentclass{article}
 \usepackage{imakeidx}
 \makeindex
 \makeindex[name=test-staleaux-ind-named-authors,title=Index of authors]
 \makeindex[name=test-staleaux-people,title=Index of people]
+\makeindex[name=test-staleaux-editors,title=Index of editors]
 \begin{document}
 An apple\index{Apple}, named by Knuth\index[test-staleaux-ind-named-authors]{Knuth}, after Euler\index[test-staleaux-people]{Euler}.
 \printindex
 \printindex[test-staleaux-ind-named-authors]
 \printindex[test-staleaux-people]
+\printindex[test-staleaux-editors]
 \end{document}
