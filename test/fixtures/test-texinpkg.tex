@@ -1,0 +1,29 @@
+% Packages and a class of the document found on TEXINPUTS, in a folder
+% that a .latexmkrc's ensure_path or the environment adds, that read
+% files named like tex4ht configuration files. Built as it is, the
+% document finds none of them, and the page says so. run.mjs builds it
+% again with each folder of test-texinpkg/ on TEXINPUTS, some of them
+% copied to a folder whose name has a space, %, #, or '. As in the PDF,
+% each case's text is in the page, and tex4ht reads no .4ht of the names
+% the files give.
+% - test-texinpkg-class.cls, a class on TEXINPUTS, when the folder has
+%   one.
+% - test-texinpkg-lib.sty, a package on TEXINPUTS, when the folder has
+%   one. It defines \texinpkgtext, the case's text.
+% - glossary.tex, read by the document with LaTeX's \input when the
+%   package defines \texinpkgdocinput.
+% index.4ht defines \printindex, and framed.4ht \a:makeframed, so the
+% page shows when either was read: a sentence the PDF does not have.
+\IfFileExists{test-texinpkg-class.cls}
+  {\documentclass{test-texinpkg-class}}
+  {\documentclass{article}}
+\usepackage{hyperref}
+\IfFileExists{test-texinpkg-lib.sty}{\usepackage{test-texinpkg-lib}}{}
+\ifdefined\texinpkgdocinput \input{glossary}\fi
+\providecommand\texinpkgtext{No package or class on TEXINPUTS.}
+\begin{document}
+\texinpkgtext
+\ifdefined\printindex\par Index read for the web.\fi
+\expandafter\ifx\csname a:makeframed\endcsname\relax\else\par Framed read for the web.\fi
+\ifdefined\texinpkgextra\par\texinpkgextra\fi
+\end{document}
