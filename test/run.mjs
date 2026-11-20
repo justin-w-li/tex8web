@@ -285,6 +285,10 @@ const measured = {
 // - inline math broken after a relation, and at \allowbreak
 // mhchem's \ce, in text and in a heading, is an inline formula without
 // tex4ht's \texttt, whose span tex4ht splits at a line break of the HTML.
+// MathJax's space for \hspace between two parts of a formula's MathML, and
+// a letter with a number as its subscript
+const spaced = (before, width, after) => new RegExp(`${before}<mspace (?:linebreak='nobreak' )?width='${width.replace('.', '\\.')}'><\\/mspace>${after}`);
+const sub = (letter, n) => `<msub><mi>${letter}<\\/mi><mrow[^>]*><mn>${n}<\\/mn><\\/mrow><\\/msub>`;
 const typeset = {
   'test-mhchem': [/<\/a>The <mjx-container/, /forms acid: <span class='tex8web-nowrap'><mjx-container/],
   'test': [
@@ -374,6 +378,52 @@ const typeset = {
     /<math xmlns='[^']*'><mtext>st<\/mtext><\/math>/,
     /<math xmlns='[^']*'><mtext>op<\/mtext><\/math>/,
     /<math xmlns='[^']*'><mtext>qr<\/mtext><\/math>/,
+  ],
+  // \hspace* in math as the space of \hspace, as in the PDF: in a heading,
+  // in alignat at a row's start and middle with the equation's number, in
+  // align before cases, with a space before the brace, in equation,
+  // gather, multline, and split, inline, inside \text, through a macro, in
+  // an array's column spec, in a footnote, in a theorem, and in italic,
+  // sans-serif, and typewriter text; unstarred \hspace as before
+  'test-hspacemath': [
+    spaced(sub('a', 1), '1em', sub('b', 1)),
+    /<mtext>\(<\/mtext><mtext>1<\/mtext><mtext>\)<\/mtext><\/mtd><mtd>(?:<mspace [^>]*><\/mspace>)?<mspace width='-2mm'><\/mspace><mi>a<\/mi><mo[^>]*>=<\/mo><mspace width='-0\.5mm'><\/mspace><mi>b<\/mi>/,
+    /<mtext>\(<\/mtext><mtext>2<\/mtext><mtext>\)<\/mtext><\/mtd><mtd>(?:<mspace [^>]*><\/mspace>)?<mspace width='-2mm'><\/mspace><mi>f<\/mi>(?:(?!<\/math>)[^])*data-tex8web-env='cases'(?:(?!<\/math>)[^])*<mtext>otherwise<\/mtext>/,
+    spaced('<mi>c<\\/mi><mo[^>]*>=<\\/mo>', '1em', '<mi>d<\\/mi>'),
+    spaced(sub('e', 1), '3mm', sub('e', 2)),
+    spaced(sub('g', 1), '4mm', sub('g', 2)),
+    spaced(sub('m', 1), '5mm', sub('m', 2)),
+    spaced('<mo[^>]*>=<\\/mo>', '6mm', sub('s', 2)),
+    spaced('<mi>i<\\/mi>', '1em', '<mi>j<\\/mi>'),
+    spaced('<mtext>k<\\/mtext>', '1em', '<mtext>l<\\/mtext>'),
+    spaced('<mi>g<\\/mi>', '2mm', '<mi>h<\\/mi>'),
+    /<mi>p<\/mi><\/mtd><mtd><mspace width='2em'><\/mspace><\/mtd><mtd><mi>q<\/mi>/,
+    ...['n', 't', 'u', 'v', 'w', 'x'].map(letter => spaced(sub(letter, 1), '2mm', sub(letter, 2))),
+  ],
+  // \text nested in \text in math as its inner text, as in the PDF: in a
+  // heading, in a superscript, three deep in a display, with text beside
+  // the inner \text, in a numbered equation, in a footnote, and in a
+  // theorem; \textit in \text as before
+  'test-textnest': [
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext>H<\/mtext>(?:<\/mrow>)?<\/math>/,
+    /<mi>z<\/mi>(?:(?!<\/math>)[^])*<mtext>E<\/mtext>(?:(?!<\/math>)[^])*<mi>t<\/mi>/,
+    /<math display='block'[^>]*>(?:<mrow[^>]*>)?<mtext>F<\/mtext>(?:<\/mrow>)?<\/math>/,
+    /<math xmlns='[^']*'>(?:<\/?(?:mrow|mtext)[^>]*>)*a[  ](?:<\/?(?:mrow|mtext)[^>]*>)*b(?:<\/?(?:mrow|mtext)[^>]*>)*[  ]c(?:<\/?(?:mrow|mtext)[^>]*>)*<\/math>/,
+    /<mi>y<\/mi><mo[^>]*>=<\/mo><mtext>G<\/mtext>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext>N<\/mtext>(?:<\/mrow>)?<\/math>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext>T<\/mtext>(?:<\/mrow>)?<\/math>/,
+    /<math xmlns='[^']*'><mtext[^>]* mathvariant='italic'>𝑞<\/mtext><\/math>/,
+  ],
+  // \text, \mathrm, and \textbf in math in \thanks, on the title and on an
+  // author, as in the PDF, with no \protect; the same in a footnote as before
+  'test-thanksmath': [
+    /<math xmlns='[^']*'><mrow><mo[^>]*>\{<\/mo><mtext>a, b<\/mtext><mo[^>]*>\}<\/mo><\/mrow><\/math>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mi mathvariant='normal'>r<\/mi>(?:<\/mrow>)?<\/math>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mi mathvariant='normal'>x<\/mi>(?:<\/mrow>)?<\/math>/,
+    /<math xmlns='[^']*'><mtext mathvariant='bold'>𝐲<\/mtext><\/math>/,
+    /<math xmlns='[^']*'><mrow><mo[^>]*>\{<\/mo><mtext>c, d<\/mtext><mo[^>]*>\}<\/mo><\/mrow><\/math>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mi mathvariant='normal'>w<\/mi>(?:<\/mrow>)?<\/math>/,
+    /<math xmlns='[^']*'><mtext mathvariant='bold'>𝐯<\/mtext><\/math>/,
   ],
 };
 

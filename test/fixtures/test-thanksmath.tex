@@ -1,0 +1,12 @@
+% Math with a font or text command in \thanks, which the class writes
+% with \protected@xdef, so the formula holds \protect: \text, \mathrm,
+% and \textbf, each set as in the PDF, with no \protect drawn. The same
+% math in a footnote, which was drawn before, stays as it is.
+\documentclass{article}
+\usepackage{amsmath}
+\title{Title\thanks{On the title, $\mathrm{r}$.}}
+\author{A\thanks{Mail: $\{\text{a, b}\}$@x.edu.} \and B\thanks{Roman $\mathrm{x}$, bold $\textbf{y}$.}}
+\begin{document}
+\maketitle
+Text.\footnote{In a footnote, $\{\text{c, d}\}$, $\mathrm{w}$, and $\textbf{v}$.}
+\end{document}
