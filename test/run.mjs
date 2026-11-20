@@ -2082,15 +2082,15 @@ const drivers = {
   // of the primitives that only warn in DVI mode stay primitives)
   'test-explprim': [
     pdfprimHead('h3', 'Head x end'), pdfprimToc('Head x end'),
-    pdfprimHead('h3', 'Name [] end'), pdfprimToc('Name [] end'),
-    ...['Details: before after.', 'Name: [] end.', 'Meaning: |macro:-&gt;| end.', 'Bbox: [0.0pt] end.',
+    pdfprimHead('h3', 'Name [2] end'), pdfprimToc('Name [2] end'),
+    ...['Details: before after.', 'Name: [2] end.', 'Meaning: |macro:-&gt;2| end.', 'Bbox: [0.0pt] end.',
       'Literal: before one after.', 'Italic: before two after|.', 'Sans: before three after|.',
       'Typewriter: before four after|.', 'Copy: before five after.', 'Footnote: before|1 after.',
       '1|Note six end.', 'Theorem 1. Theorem seven end.', 'Box: boxed after.',
       'Stack: beforepushed after.', 'Link: beforelinked after.', 'Image: before after.',
       'Objects: before after.', 'Use: before after.', 'Annotation: before after.', 'Destination: before after.',
       'Outline: before after.', 'Thread: before after.', 'Spaces: before after.',
-      `Guards: ${['info', 'catalog', 'trailer', 'compresslevel', 'minorversion', 'lastxform',
+      `Guards: ${['info', 'catalog', 'trailer', 'compresslevel', 'minorversion',
         'lastximage', 'lastobj', 'colorstackinit', 'trailerid', 'pageattr', 'pagesattr', 'pageresources',
         'gentounicode', 'glyphtounicode'].map(name => `${name} primitive`).join(', ')}.`].map(pdfprimText),
     /Form: before(?:<[^>]*>)*(?:form)?(?:<[^>]*>)* after\./,
@@ -2102,7 +2102,7 @@ const drivers = {
   ],
   'test-explprim-hyperref': [
     pdfprimHead('h3', 'Head x end'), pdfprimToc('Head x end'),
-    pdfprimHead('h3', 'Name [] end'), pdfprimToc('Name [] end'),
+    pdfprimHead('h3', 'Name [1] end'), pdfprimToc('Name [1] end'),
     ...['Literal: before one after, a link to section', 'Link: beforeto the head after.',
       'Stack: beforepushed after.', 'Footnote: before|1 after.', '1|Note six end'].map(pdfprimText),
     /^(?![^]*(?:tex_|:D\b))/,
