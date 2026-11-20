@@ -410,8 +410,9 @@ const typeset = {
   // \text nested in \text in math as its inner text, as in the PDF: in a
   // heading, in a superscript, three deep in a display, with text beside
   // the inner \text, in a numbered equation, in a footnote, and in a
-  // theorem; in \textbf, in \mbox, and through a macro in \text; \textit
-  // in \text, and \text in math in \text, as before
+  // theorem; in \textbf, in \mbox, and through a macro in \text; \mbox
+  // and \hbox in \text, \mbox in \mbox, and \mbox through a macro in
+  // \text; \textit in \text, and \text in math in \text, as before
   'test-textnest': [
     /<math xmlns='[^']*'><mtext mathvariant='bold'>𝐉<\/mtext><\/math>/,
     /<math xmlns='[^']*'>(?:<mstyle[^>]*>)?<mtext>K<\/mtext>(?:<\/mstyle>)?<\/math>/,

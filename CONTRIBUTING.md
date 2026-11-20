@@ -90,6 +90,8 @@ The math and the definitions it uses are rewritten where MathJax reads LaTeX dif
 - `\protect` is dropped. A class writes `\thanks` text with `\protected@xdef`, which puts `\protect` before each robust command in its math.
 - tex4ht's `\mathrm@@`, which `\protected@xdef` leaves for `\mathrm` (`fontmath.4ht`), becomes `\mathrm`, and the same for `\mathbf`, `\mathit`, `\mathsf`, and `\mathtt`.
 
+In the text of MathJax's textmacros extension, `js/tex8web.js` defines `\text`, `\mbox`, and `\hbox` as groups. These commands appear in MathJax's text in `\text{\text{E}}`, `\textbf{\text{E}}`, `\text{a \mbox{b}}`, and a macro whose body is one of them used inside `\text`. LaTeX sets the inner argument in the font around it. Without the definitions, MathJax shows an error such as "\text is only supported in math mode" in place of the formula.
+
 Only the CSS and dvips color names are defined in MathJax. tex8web adds these colors as `\definecolor` lines:
 
 - colors defined in the document with `\definecolor` and `\colorlet`
@@ -137,8 +139,6 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 - the columns of an alignment split at `\intertext`
 
 A `\mathclap` or `\clap` around a whole display has its content's width in `js/tex8web.js`, so that a display wider than the column can be scrolled to its left end.
-
-`js/tex8web.js` also defines `\text`, `\mbox`, and `\hbox` in the text of MathJax's textmacros extension, as groups, as in `\text{\text{E}}`, `\textbf{\text{E}}`, `\text{a \mbox{b}}`, or a macro whose body is one of them used inside `\text`. LaTeX sets the inner argument in the font around it. Without the definitions, MathJax shows an error such as "\text is only supported in math mode" in place of the formula.
 
 ### 4. Prerendering
 
