@@ -3,7 +3,7 @@
 // run beside them. Pages go to build/test/<document>/html.
 //   node test/run.mjs [document names...]
 import { spawn, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { hostname } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { inflateSync } from 'node:zlib';
@@ -4943,24 +4943,11 @@ if (staleTocDraft) jobs.push(async () => {
 });
 
 // test-pathspace built with its config, or tex8web itself, in a folder
-// with a space, as in a synced folder named My Drive. Each build has a copy
-// of the fixture in a folder of its own, so that the file its config
-// inputs is found only beside the config:
-// - config folder: -c by an absolute path, to a folder with a space. The
-//   document inputs a file that is beside it and, with other text, beside
-//   the config, and the document's file must be read
-// - config name: -c by a relative path, to a file with a space in its name
-// - config folder without a space, given by a relative path
-// - the folders of iCloud Drive and of Dropbox, with ~ and parentheses, and
-//   a folder name with two spaces in a row
-// - together: the document and its config in one folder with a space, both
-//   given by relative paths from the folder above
-// - installed: a copy of tex8web in a folder with a space, with its own
-//   tex8web.cfg, fonts, and MathJax from node_modules
-// - linked: that copy started through a link, as npm link makes, with a
-//   config in a folder with a space that inputs tex8web-core.tex
-// - guard: a document folder, a document name, and a -d folder with a
-//   space, with the fixture's config by a path without one
+// whose path has a character that tex4ht's option list, TeX, or make4ht's
+// quoting reads. The characters are a space, as in a synced folder named
+// My Drive, a comma, %, #, ', a brace, ~, \, ^, and a letter outside
+// ASCII. Each build has a copy of the fixture in a folder of its own, so
+// that the file its config inputs is found only beside the config.
 // Each build makes a page with the config's terms (none with tex8web.cfg),
 // the section and equation references, the prerendered formula with the
 // document's macro, and the fonts and scripts it loads, and writes nothing
@@ -4994,6 +4981,34 @@ if (pathspace) {
     place(join(top, 'doc'), 'test-pathspace.tex', fixture);
     return { cwd: join(top, 'doc'), command: tex8web, args: ['-c', cfg, '-d', join(top, 'html'), 'test-pathspace.tex'],
       page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
+  };
+  // (kpathsea splits a TEXINPUTS entry at a comma and expands braces, so a
+  // config in such a folder inputs no file beside it)
+  const alone = (top, folder) => {
+    const build = absolute(top, folder);
+    place(build.cfgDir, 'test-pathspace.cfg', readFileSync(pathspace.cfg, 'utf8'));
+    return build;
+  };
+  // a config by a relative path, ../cfg/name, from doc/
+  const named = name => top => {
+    const cfg = withConfig(join(top, 'cfg'), name);
+    place(join(top, 'doc'), 'test-pathspace.tex', fixture);
+    return { cwd: join(top, 'doc'), command: tex8web, args: ['-c', `../cfg/${name}`, '-d', '../html', 'test-pathspace.tex'],
+      page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
+  };
+  // a copy of tex8web in folder, run without -c from doc/
+  const installedIn = folder => top => {
+    renameSync(dirname(install(top)), join(top, folder));
+    const copy = join(top, folder, 'tex8web');
+    place(join(top, 'doc'), 'test-pathspace.tex', fixture);
+    return { cwd: join(top, 'doc'), command: join(copy, 'bin/tex8web'), args: ['-d', '../html', 'test-pathspace.tex'],
+      page: join(top, 'html/test-pathspace.html'), cfgDir: copy, copy, noTerms: true };
+  };
+  // the document as name.tex, with the config in folder
+  const namedDocument = (name, folder) => top => {
+    const build = absolute(top, folder);
+    place(build.cwd, `${name}.tex`, fixture);
+    return { ...build, args: [...build.args.slice(0, -1), `${name}.tex`], page: join(top, `html/${name}.html`) };
   };
   const cases = [
     ['folder', 'a config folder with a space', top => {
@@ -5043,11 +5058,49 @@ if (pathspace) {
       return { cwd: top, command: tex8web, args: ['-c', pathspace.cfg, '-d', 'My Out/html', 'My Notes/my notes.tex'],
         page: join(top, 'My Out/html/my_notes.html') };
     }],
+    // (from here on, a character other than a space in the config's path)
+    ['commafolder', 'a config folder with a comma', top => alone(top, 'Notes,2025')],
+    ['commaname', 'a config name with a comma', named('my,web.cfg')],
+    ['commacwd', 'a config by a relative path from a working folder with a comma', top => {
+      const cfg = place(join(top, 'Notes,2025/cfg'), 'test-pathspace.cfg', readFileSync(pathspace.cfg, 'utf8'));
+      place(join(top, 'Notes,2025/doc'), 'test-pathspace.tex', fixture);
+      return { cwd: join(top, 'Notes,2025/doc'), command: tex8web,
+        args: ['-c', '../cfg/test-pathspace.cfg', '-d', join(top, 'html'), 'test-pathspace.tex'],
+        page: join(top, 'html/test-pathspace.html'), cfgDir: dirname(cfg) };
+    }],
+    ['percentfolder', 'a config folder named 50%', top => absolute(top, '50%')],
+    ['percentname', 'a config name with a percent sign', named('web%2.cfg')],
+    ['hashfolder', 'a config folder with a #', top => absolute(top, 'Notes#2')],
+    ['hashname', 'a config name with a #', named('web#2.cfg')],
+    ['apostrophefolder', 'a config folder with an apostrophe and no space', top => absolute(top, "Justin's")],
+    ['apostrophename', 'a config name with an apostrophe', named("Justin's.cfg")],
+    ['bracefolder', 'a config folder with braces', top => alone(top, 'a{b}')],
+    ['bracename', 'a config name with braces', named('web{2}.cfg')],
+    ['tildefolder', 'a config folder with a tilde and no space', top => absolute(top, 'Notes~old')],
+    ['backslashfolder', 'a config folder with a backslash', top => absolute(top, 'a\\b')],
+    ['caretfolder', 'a config folder with a doubled caret', top => absolute(top, 'x^^y')],
+    ['accentfolder', 'a config folder with a letter outside ASCII', top => absolute(top, 'Études')],
+    ['cjkfolder', 'a config folder with CJK characters', top => absolute(top, 'ノート')],
+    ['installedapostrophe', 'tex8web in a folder with an apostrophe and no space', installedIn("Justin's")],
+    ['installedpercent', 'tex8web in a folder named 50%', installedIn('50%')],
+    ['doccomma', 'a document name with a comma, with a config that is copied', namedDocument('hw,1', 'My Drive/cfg')],
+    ['docaccent', 'a document name outside ASCII, with a config that is copied', namedDocument('Étude', 'Études')],
+    ['commaspace', 'a config folder with a comma and a space (guard)', top => alone(top, 'My Notes, 2025')],
+    ['apostrophespace', 'a config folder with an apostrophe and a space (guard)', top => absolute(top, "Justin's Drive")],
+    ['specials', 'config folders with &, _, and $, read from a copy (guard)', top => absolute(top, 'R&D/my_notes/a$b')],
+    ['doccommaplain', 'a document name with a comma, with a plain config (guard)', namedDocument('hw,1', 'cfg')],
+    // (the copy goes in build/ beside the document, whatever -B is, so a
+    // -B with a character outside the safe list builds as it does with a
+    // plain config)
+    ['auxat', 'a config folder with @, and -B with @', top => {
+      const build = absolute(top, 'notes@work');
+      return { ...build, args: ['-B', 'aux@web', ...build.args], aux: join(build.cwd, 'aux@web') };
+    }],
   ];
   for (const [key, label, setup] of cases) jobs.push(async () => {
     const top = join(testDir(pathspace), `space${key}`);
     rmSync(top, { recursive: true, force: true });
-    const { cwd, command, args, page, cfgDir, copy, noTerms, shared } = setup(top);
+    const { cwd, command, args, page, cfgDir, copy, noTerms, shared, aux } = setup(top);
     const before = cfgDir && readdirSync(cfgDir).sort().join(', ');
     const result = await run(command, [...args.slice(0, -1), '-a', 'info', args.at(-1)],
       { cwd, slot: true, env: { ...process.env, ...pathspace.env } });
@@ -5078,7 +5131,22 @@ if (pathspace) {
       for (const src of scripts.filter(src => !existsSync(join(dirname(page), src)))) problems.push(`${src} loaded, not written`);
     }
     const after = cfgDir && readdirSync(cfgDir).sort().join(', ');
+    // (a config that is copied is read from build/ beside the document)
+    const given = /tex4ht\.sty: ([^,]*\/tex8web-[^,/]*\.cfg),/.exec(result.log)?.[1];
+    if (given && !/^build\/tex8web-[A-Za-z0-9._-]*-\d+\.cfg$/.test(given)) problems.push(`make4ht was given the copy ${given}, not one in build/`);
+    if (aux) {
+      if (!given) problems.push('make4ht was not given a copy of the config');
+      if (!existsSync(join(aux, 'test-pathspace.aux'))) problems.push(`tex4ht's files are not in ${aux}`);
+    }
     if (after !== before) problems.push(`the config's folder holds ${after}, not ${before}`);
+    // (a plain config is read where it is, and make4ht puts its path first
+    // in tex4ht's options. The path is absolute, so a checkout in a folder
+    // with a character outside bin/tex8web's safe list has it copied.)
+    if (key === 'plain') {
+      if (/[^A-Za-z0-9/._+-]/.test(cwd)) {
+        if (!/tex4ht\.sty: .*\/tex8web-test-pathspace-\d+\.cfg,/.test(result.log)) problems.push('make4ht was not given the copy of the config');
+      } else if (!result.log.includes(`tex4ht.sty: ${cwd}/../cfg/test-pathspace.cfg,`)) problems.push('make4ht was not given the config as ../cfg/test-pathspace.cfg');
+    }
     report(`${pathspace.name} (${label})`, problems);
   });
   // two documents in one folder with a space, each with a config of its
@@ -5102,6 +5170,70 @@ if (pathspace) {
       if (!html.includes(`id='${term}'`) || html.includes(`id='${other}'`)) problems.push(`${name}.html does not have ${term} alone as a term`);
     });
     report(`${pathspace.name} (two documents in a folder with a space, each with its config)`, problems);
+  });
+  // two documents in one folder with a comma, named hw,1 and hw+1, which
+  // differ only in a character that the copy's name replaces, each with a
+  // config of its own there, built at once: each page has its own config's
+  // term only
+  jobs.push(async () => {
+    const top = join(testDir(pathspace), 'spacecommapair'), dir = join(top, 'Notes,2025');
+    rmSync(top, { recursive: true, force: true });
+    const pair = [['hw,1', '\\WebTerm\\keyword', 'term-config-word', 'term-sibling-word'],
+      ['hw+1', '\\WebTerm\\term', 'term-sibling-word', 'term-config-word']];
+    pair.forEach(([name, left], i) => {
+      place(dir, `web${i}.cfg`, readFileSync(pathspace.cfg, 'utf8').replace(`${left}\n`, ''));
+      place(dir, `${name}.tex`, fixture);
+    });
+    const results = await Promise.all(pair.map(([name], i) => run(tex8web, ['-c', `web${i}.cfg`, '-d', join(top, 'html'), '-a', 'info', `${name}.tex`],
+      { cwd: dir, slot: true, env: { ...process.env, ...pathspace.env } })));
+    const problems = [];
+    pair.forEach(([name, , term, other], i) => {
+      writeFileSync(join(top, `${i}.log`), results[i].log);
+      if (results[i].code !== 0) problems.push(`${name}.tex: tex8web exited with ${results[i].code}`);
+      const page = join(top, `html/${name}.html`), html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+      if (!html.includes(`id='${term}'`) || html.includes(`id='${other}'`)) problems.push(`${name}.html does not have ${term} alone as a term`);
+    });
+    // (each build holds a slot, cp included, so with one slot free the
+    // second build starts after the first ends, and each page reads its
+    // own config even if both share one copy: so each log must name a
+    // copy of its own config, apart from the other's, and both copies
+    // must stay in build/)
+    const copies = results.map(({ log }) => /tex4ht\.sty: ([^,]*\/tex8web-hw_1-\d+\.cfg),/.exec(log)?.[1]);
+    pair.forEach(([name], i) => {
+      if (!copies[i]) problems.push(`make4ht was not given a copy named tex8web-hw_1-<checksum>.cfg for ${name}.tex`);
+      else if (!existsSync(join(dir, copies[i])) || readFileSync(join(dir, copies[i]), 'utf8') !== readFileSync(join(dir, `web${i}.cfg`), 'utf8')) problems.push(`${copies[i]} does not hold web${i}.cfg`);
+    });
+    if (copies[0] && copies[0] === copies[1]) problems.push(`both documents were given the copy ${copies[0]}`);
+    const build = join(dir, 'build'), held = existsSync(build) ? readdirSync(build).filter(file => /^tex8web-hw_1-\d+\.cfg$/.test(file)) : [];
+    if (held.length !== 2) problems.push(`build/ holds ${held.length} copies named tex8web-hw_1-<checksum>.cfg, not 2`);
+    report(`${pathspace.name} (two documents in a folder with a comma, named apart by a comma and a +)`, problems);
+  });
+  // one document in a folder with a space, built at once with two configs
+  // there and two -B folders: each build is given a copy of its own, and
+  // each page has its own config's term only
+  jobs.push(async () => {
+    const top = join(testDir(pathspace), 'spaceauxpair'), dir = join(top, 'My Drive');
+    rmSync(top, { recursive: true, force: true });
+    const pair = [['a', '\\WebTerm\\keyword', 'term-config-word', 'term-sibling-word'],
+      ['b', '\\WebTerm\\term', 'term-sibling-word', 'term-config-word']];
+    for (const [name, left] of pair) place(dir, `${name}.cfg`, readFileSync(pathspace.cfg, 'utf8').replace(`${left}\n`, ''));
+    place(dir, 'doc.tex', fixture);
+    const results = await Promise.all(pair.map(([name]) => run(tex8web, ['-c', `${name}.cfg`, '-B', `build/${name}`, '-d', join(top, `html/${name}`), '-a', 'info', 'doc.tex'],
+      { cwd: dir, slot: true, env: { ...process.env, ...pathspace.env } })));
+    const problems = [];
+    pair.forEach(([name, , term, other], i) => {
+      writeFileSync(join(top, `${name}.log`), results[i].log);
+      if (results[i].code !== 0) problems.push(`-B build/${name}: tex8web exited with ${results[i].code}`);
+      const page = join(top, `html/${name}/doc.html`), html = existsSync(page) ? readFileSync(page, 'utf8') : '';
+      if (!html.includes(`id='${term}'`) || html.includes(`id='${other}'`)) problems.push(`html/${name}/doc.html does not have ${term} alone as a term`);
+    });
+    const copies = results.map(({ log }) => /tex4ht\.sty: ([^,]*\/tex8web-doc-\d+\.cfg),/.exec(log)?.[1]);
+    pair.forEach(([name], i) => {
+      if (!copies[i]) problems.push(`make4ht was not given a copy named tex8web-doc-<checksum>.cfg with -B build/${name}`);
+      else if (!existsSync(join(dir, copies[i])) || readFileSync(join(dir, copies[i]), 'utf8') !== readFileSync(join(dir, `${name}.cfg`), 'utf8')) problems.push(`${copies[i]} does not hold ${name}.cfg`);
+    });
+    if (copies[0] && copies[0] === copies[1]) problems.push(`both builds were given the copy ${copies[0]}`);
+    report(`${pathspace.name} (one document in a folder with a space, two configs and two -B folders)`, problems);
   });
 }
 

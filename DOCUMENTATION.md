@@ -78,7 +78,7 @@ tex8web reads a document's macros, colors, theorem styles, and lists, and the se
 - float, for its `ruled` style, as used by algorithm
 - algorithm2e, for algorithms
 
-A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-core.tex}`. Pass it with `-c`. tex8web adds the config's folder to the end of `TEXINPUTS`, so your config can input a file beside it. A file of that name beside your document or in TeX's tree is read instead. Your document's own `\input` and `\usepackage` also find a file in that folder, when neither its folder nor TeX's tree has one. With the default config, that folder is tex8web's. A file of yours found there is a file found in a folder on `TEXINPUTS`, as in [Known limitations](#known-limitations). For worked examples, see `examples/custom/custom.cfg` and `examples/complex/complex.cfg`.
+A config is a copy of `tex8web.cfg` with your additions after `\input{tex8web-core.tex}`. Pass it with `-c`. tex8web adds the config's folder to the end of `TEXINPUTS`, so your config can input a file beside it. A file of that name beside your document or in TeX's tree is read instead. Your document's own `\input` and `\usepackage` also find a file in that folder, when neither its folder nor TeX's tree has one. With the default config, that folder is tex8web's. A file of yours found there is a file found in a folder on `TEXINPUTS`, as in [Known limitations](#known-limitations). If the path of your config, or of tex8web, has a character other than a letter, a digit, or `/ . _ + -`, tex8web builds with a copy of the config, `build/tex8web-<document>-<number>.cfg` beside your document. For worked examples, see `examples/custom/custom.cfg` and `examples/complex/complex.cfg`.
 
 ```latex
 \Preamble{xhtml,mathjax}

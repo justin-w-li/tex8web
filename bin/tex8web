@@ -69,6 +69,23 @@ done
 TEXINPUTS=${TEXINPUTS-}:$(dirname "$config"); export TEXINPUTS
 
 cd "$(dirname "$document")"
+# (tex4ht splits the config's path at spaces and commas, TeX reads a
+# percent sign, #, backslash, caret, brace, tilde, or byte above 127 in it,
+# and an apostrophe ends make4ht's quoting of it. So a config whose path
+# has any character outside a short safe list, as tex8web.cfg has when
+# tex8web is in such a folder, is read from a copy in build/ beside the
+# document, by a relative path, which keeps to the list whatever -B is.
+# The copy is named after the document, with the same safe characters and
+# a checksum of the document's name, -B, and the config's path, as builds
+# in one folder share build/ and make4ht reads the config on each run. It
+# is written to a temporary file and moved into place, so a build reading
+# the copy never sees it part-written. LC_ALL=C compares bytes, as a
+# bracket range follows the locale otherwise.)
+if printf '%s\n' "$config" | LC_ALL=C grep -q '[^A-Za-z0-9/._+-]'; then
+  name=$(basename "$document" .tex)
+  copy=build/tex8web-$(printf %s "$name" | LC_ALL=C tr -c 'A-Za-z0-9._-' _)-$(printf '%s\n' "$name" "$aux" "$config" | cksum | cut -d ' ' -f 1).cfg
+  mkdir -p build; cp "$config" "$copy.$$"; mv -f "$copy.$$" "$copy"; config=$copy
+fi
 # (make4ht and its LaTeX command line take the build folder unquoted, in
 # make4ht-htlatex.lua (--output-directory=${builddir}) and mkutils.lua
 # (-auxdir=${builddir}), so a build folder whose path has a space is
@@ -110,14 +127,6 @@ case $aux in *" "*)
     trap '[ -z "$child" ] || kill "$child" 2>/dev/null; exit '"${signal#*:}" "${signal%:*}"
   done
   aux=$link ;;
-esac
-# (tex4ht splits the config's path at spaces, so a config whose path has
-# one, as tex8web.cfg has when tex8web is in such a folder, is read from a
-# copy in the aux directory, named after the document, as documents in one
-# folder share that directory and make4ht reads the config on each run)
-case $config in *" "*)
-  copy=$aux/tex8web-$(basename "$document" .tex | tr ' ' _).cfg
-  mkdir -p "$aux"; cp "$config" "$copy"; config=$copy ;;
 esac
 set -- make4ht -u -c "$config" -e "$root/tex8web.mk4" -B "$aux" -d "$out" "$@" "$(basename "$document")"
 [ -n "$link" ] || exec "$@"
