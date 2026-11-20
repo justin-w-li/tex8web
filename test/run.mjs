@@ -5155,22 +5155,24 @@ if (builddirspace) {
   });
   // links in build/ that other builds left: one of another host, as a
   // build in a container that shares build/ makes, which a build here
-  // keeps, as that host's process IDs are not this host's; and one of
-  // this host whose process is gone, which the build removes
+  // keeps, as that host's process IDs are not this host's; one of a host
+  // whose name is this host's, an underscore, and more, which the build
+  // keeps too; and one of this host whose process is gone, which the
+  // build removes
   jobs.push(async () => {
     const top = join(testDir(doc), 'spaceotherhost'), dir = join(top, 'doc');
     rmSync(top, { recursive: true, force: true });
     copy(dir);
     mkdirSync(join(dir, 'build/their aux'), { recursive: true });
     const host = hostname().replace(/[^A-Za-z0-9]/g, '_');
-    const theirs = 'tex8web_aux_otherhost_1', dead = `tex8web_aux_${host}_99999999`;
-    for (const file of [theirs, dead]) symlinkSync(join(dir, 'build/their aux'), join(dir, 'build', file));
+    const theirs = 'tex8web_aux_otherhost_1', longer = `tex8web_aux_${host}_2_99999999`, dead = `tex8web_aux_${host}_99999999`;
+    for (const file of [theirs, longer, dead]) symlinkSync(join(dir, 'build/their aux'), join(dir, 'build', file));
     const result = await run8(dir, ['-B', 'build/my aux'], `${name}.tex`);
     writeFileSync(join(top, 'build.log'), result.log);
     const problems = result.code !== 0 ? [`tex8web exited with ${result.code}`] : [];
     problems.push(...pageProblems(join(dir, 'build/html', `${name}.html`), name, true), ...kept(join(dir, 'build/my aux'), name));
-    const left = links(top).sort().join(', ');
-    if (left !== `doc/build/${theirs}`) problems.push(`the links left are ${left || 'none'}, not doc/build/${theirs}`);
+    const left = links(top).sort().join(', '), want = [theirs, longer].map(file => `doc/build/${file}`).sort().join(', ');
+    if (left !== want) problems.push(`the links left are ${left || 'none'}, not ${want}`);
     report(`${doc.name} (-B build/my aux, beside links of another host and of a process that is gone)`, problems);
   });
   // more documents built into build/my aux: biblatex with biber, an index
@@ -5286,6 +5288,41 @@ if (builddirspace) {
     problems.push(...pageProblems(join(dir, 'build/html', `${name}.html`), name, true), ...kept(join(dir, 'build/my aux'), name));
     for (const path of links(top)) problems.push(`a link is left: ${path}`);
     report(`${doc.name} (a hung build into build/my aux, stopped by ${label}, then built again)`, problems);
+  });
+  // two builds that overlap, into my aux beside the document, outside
+  // build/, with -d ../html: the first, of first.tex, makes build/ for its
+  // link; the second, of second.tex, which hangs, starts while that link
+  // is in build/ and is stopped by a SIGTERM after the first has ended.
+  // The first's page is made, and no build/ or link is left beside the
+  // documents
+  jobs.push(async () => {
+    const top = join(testDir(doc), 'spaceoverlap'), dir = join(top, 'doc');
+    rmSync(top, { recursive: true, force: true });
+    copy(dir, 'first');
+    copy(dir, 'second', fixture.replace('\\begin{document}\n', '\\begin{document}\n\\def\\x{\\x}\\x\n'));
+    const args = ['-B', 'my aux', '-d', '../html'];
+    const problems = [];
+    const first = run8(dir, args, 'first.tex');
+    const inBuild = () => existsSync(join(dir, 'build')) && readdirSync(join(dir, 'build')).some(file => file.startsWith('tex8web_aux_'));
+    for (let waited = 0; !inBuild() && waited < 120000; waited += 100) await pause(100);
+    if (!inBuild()) problems.push("the first build's link is not in build/ after 120 s");
+    const child = spawn(join(root, 'bin/tex8web'), ['-c', doc.cfg, ...args, 'second.tex'],
+      { cwd: dir, detached: true, stdio: 'ignore', env: { ...process.env, ...doc.env } });
+    hung.add(child.pid);
+    const ended = new Promise(done => child.on('exit', done));
+    const result = await first;
+    writeFileSync(join(top, 'first.log'), result.log);
+    if (result.code !== 0) problems.push(`first.tex: tex8web exited with ${result.code}`);
+    if (await within(ended, 0) !== 'late') problems.push('the second build ended before the first');
+    try { process.kill(-child.pid, 'SIGTERM'); } catch {}
+    if (await within(ended, 20000) === 'late') problems.push('tex8web runs 20 s after the SIGTERM');
+    try { process.kill(-child.pid, 'SIGKILL'); } catch {}
+    for (let waited = 0; groupRuns(child.pid) && waited < 20000; waited += 200) await pause(200);
+    hung.delete(child.pid);
+    problems.push(...pageProblems(join(top, 'html', 'first.html'), 'first', true), ...kept(join(dir, 'my aux'), 'first'));
+    if (existsSync(join(dir, 'build'))) problems.push(`a build/ folder is left beside the documents, holding ${readdirSync(join(dir, 'build')).join(', ') || 'nothing'}`);
+    for (const path of links(top)) problems.push(`a link is left: ${path}`);
+    report(`${doc.name} (two overlapping builds into my aux beside the documents, with -d ../html)`, problems);
   });
 }
 

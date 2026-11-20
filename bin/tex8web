@@ -77,16 +77,27 @@ cd "$(dirname "$document")"
 # name and the process ID, as builds in containers that share build/ have
 # the same process IDs. A link that a killed run on this host left is
 # removed once its process is gone, and a name already taken stops the
-# build. A build/ that this run made only for the link is removed too, so
-# that a build folder outside build/ leaves nothing beside the document; a
-# run that started at the same time makes it again before its link.)
+# build. A build/ that holds nothing but such links when the run starts,
+# or that is missing, is removed when the run ends if it is empty then, so
+# that a build folder outside build/ leaves nothing beside the document
+# when builds overlap; a run that started at the same time makes it again
+# before its link.)
 link= made=
 case $aux in *" "*)
-  [ -d build ] || made=1
+  made=1
+  for entry in build/* build/.[!.]* build/..?*; do
+    [ -e "$entry" ] || [ -L "$entry" ] || continue
+    case $entry in build/tex8web_aux_*) [ -L "$entry" ] && continue ;; esac
+    made=; break
+  done
   mkdir -p build
   host=$(uname -n | tr -c 'A-Za-z0-9\n' _)
   for stale in build/tex8web_aux_"$host"_*; do
-    pid=${stale##*_}
+    # (the glob also matches the links of a host whose name starts with
+    # this one's and an underscore; their part after the prefix is not a
+    # process ID alone)
+    pid=${stale#build/tex8web_aux_"$host"_}
+    case $pid in *[!0-9]*|'') continue ;; esac
     [ -L "$stale" ] && { [ "$pid" = $$ ] || ! kill -0 "$pid" 2>/dev/null; } && rm -f "$stale"
   done
   mkdir -p "$aux"
