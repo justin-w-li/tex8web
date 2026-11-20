@@ -1,7 +1,9 @@
 % test-pdfprimitive's \pdfprimitive, \pdf@primitive, and \tex_primitive:D
 % in a document that loads hyperref, which loads pdftexcmds in the
 % preamble, and leaves \pdfoutput unset. A heading's text goes to the table
-% of contents and to hyperref's bookmarks.
+% of contents and to hyperref's bookmarks. The first line comes before the
+% class.
+\pdfprimitive\pdfmapline{+foo.map}
 \documentclass{article}
 \usepackage{hyperref}
 \begin{document}

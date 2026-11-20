@@ -1953,7 +1953,7 @@ const pdfprimLeaks = /^(?![^]*(?:\d rg\b|foo\.map|bar\.pfb|pkg\.map|before-class
 // (the same through \pdfprimitive and its copies: no argument, no name of
 // a primitive or of a copy, and no macro of tex8web's, in the page's text,
 // its math, or its macros. A heading's anchor, in an attribute, is left out)
-const pdfprimitiveLeaks = /^(?![^]*(?<!='[^'<>]*)(?:\b0 g\b|0 0 1 rg|foo\.map|bar\.map|first\.map|(?<!test-)pdf(?:primitive|literal|mapline|mapfile|save|restore|xform|refxform|lastxform|xformname|startlink|endlink)(?![a-z])|@primitive|tex_primitive|web@))/;
+const pdfprimitiveLeaks = /^(?![^]*(?<!='[^'<>]*)(?:\b0 g\b|0 0 1 rg|foo\.map|bar\.map|first\.map|picture\.png|\/A 1|&lt;&lt;|myprim|(?<!test-)pdf(?:primitive|literal|mapline|mapfile|save|restore|xform|refxform|lastxform|xformname|startlink|endlink|obj|ximage|refximage|lastximage|ximagebbox|colorstack|dest)(?![a-z])|@primitive|tex_primitive|web@))/;
 
 // Packages given pdfTeX's driver option, which tex4ht's DVI mode cannot
 // use: each package's output as without the option. test-pdftex gives it to
@@ -2168,12 +2168,17 @@ const drivers = {
       'Typewriter: before after|.', 'Footnote: before|1 after.', '1|Note six end.',
       'Theorem 1. Theorem seven end.', 'Macro: before one after.', 'Name: [2] end.', 'Csname: before after.',
       'Mine: [mine x] and before after.', 'Pdftexcmds: before after.', 'Expl: before after.',
-      'Strcmp: [same].', 'Edef: [-1].', 'Hbox: [y].'].map(pdfprimText),
+      'Strcmp: [same].', 'Edef: [-1].', 'Hbox: [y].', 'Immediate: beforeafter.', 'Image: before after.',
+      'Stack: beforepushed after.', 'Destination: beforeafter.', 'Bbox: [0.0pt].', 'Direct: before after.',
+      'Edef literal: beforeafter.'].map(pdfprimText),
     /Chain: before(?:<[^>]*>)*y?(?:<[^>]*>)* after\./,
     /Math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Macro math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Blue math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     /Hbox math: before <mjx-container aria-label='a b c'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Page math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Copy math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
+    /Let math: before <mjx-container aria-label='a b'(?:(?!<\/p>)[^])*<\/mjx-container>(?:<[^>]*>)* after\./,
     pdfprimitiveLeaks,
   ],
   'test-pdfprimitive-hyperref': [
@@ -2184,7 +2189,7 @@ const drivers = {
   ],
   'test-pdfprimitive-guard': [
     ...['Strcmp: [same].', 'Edef: [-1].', 'Hbox: [y].', 'Copy: [same].', 'Copy edef: [1].', 'Copy hbox: [z].',
-      'Command: [-1] [41].', 'Expl: [same].'].map(pdfprimText),
+      'Command: [-1] [41].', 'Expl: [same].', 'Expl edef: [-1].'].map(pdfprimText),
     pdfprimitiveLeaks,
   ],
   // (expl3's copies, \tex_pdf<name>:D, as the primitives above. The copies

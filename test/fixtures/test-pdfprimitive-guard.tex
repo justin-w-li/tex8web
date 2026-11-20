@@ -8,14 +8,14 @@
 \begin{document}
 Strcmp: [\ifnum\pdfprimitive\pdfstrcmp{a}{a}=0 same\else different\fi].
 
-Edef: \edef\cmp{\pdfprimitive\pdfstrcmp{a}{b}}[\cmp].
+Edef: \def\x{a}\edef\cmp{\pdfprimitive\pdfstrcmp{\x}{b}}\def\x{c}[\cmp].
 
 Hbox: [\pdfprimitive\hbox{y}].
 
 \makeatletter
 Copy: [\ifnum\pdf@primitive\pdfstrcmp{a}{a}=0 same\else different\fi].
 
-Copy edef: \edef\cmp{\pdf@primitive\pdfstrcmp{b}{a}}[\cmp].
+Copy edef: \def\x{b}\edef\cmp{\pdf@primitive\pdfstrcmp{\x}{a}}\def\x{0}[\cmp].
 
 Copy hbox: [\pdf@primitive\hbox{z}].
 
@@ -24,5 +24,10 @@ Command: [\pdf@strcmp{a}{c}] [\pdf@escapehex{A}].
 
 \ExplSyntaxOn
 Expl:~[\int_compare:nNnTF { \tex_primitive:D \pdfstrcmp {a}{a} } = 0 {same} {different}].
+
+\tl_set:Nn \l_tmpb_tl {a}
+\tl_set:Ne \l_tmpa_tl { \tex_primitive:D \pdfstrcmp { \l_tmpb_tl } {b} }
+\tl_set:Nn \l_tmpb_tl {c}
+Expl~edef:~[\tl_use:N \l_tmpa_tl].
 \ExplSyntaxOff
 \end{document}

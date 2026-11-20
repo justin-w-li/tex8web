@@ -6,11 +6,11 @@
 % the text around each one stays, and none of their arguments shows. They
 % come before the class, in the preamble, in the body, in italic,
 % sans-serif, and typewriter text, in a footnote, a theorem, a heading
-% written to the table of contents, a macro, math, and after a document's
-% own \pdfliteral. \pdfprimitive before a primitive that DVI mode allows
+% written to the table of contents, a macro, an \edef, math, after
+% \immediate, and after a document's own \pdfliteral. \pdfprimitive before a primitive that DVI mode allows
 % stays that primitive.
-\pdfoutput=1
 \pdfprimitive\pdfmapline{+foo.map}
+\pdfoutput=1
 \RequirePackage{pdftexcmds}
 \documentclass{article}
 \usepackage{amsthm}
@@ -19,6 +19,11 @@
 \pdfprimitive\pdfmapfile{+first.map}
 \newcommand\lit{\pdfprimitive\pdfliteral{0 g}}
 \newcommand\blue[1]{\pdfprimitive\pdfliteral{0 0 1 rg}#1\pdfprimitive\pdfliteral{0 g}}
+\makeatletter
+\newcommand\litb{\pdf@primitive\pdfliteral{0 g}}
+\makeatother
+\let\myprim\pdfprimitive
+\newcommand\litc{\myprim\pdfliteral{0 g}}
 \begin{document}
 \tableofcontents
 
@@ -62,7 +67,7 @@ Expl:~before \tex_primitive:D \pdfliteral {0~g} ~ after.
 
 Strcmp: [\ifnum\pdfprimitive\pdfstrcmp{a}{a}=0 same\else different\fi].
 
-Edef: \edef\cmp{\pdfprimitive\pdfstrcmp{a}{b}}[\cmp].
+Edef: \def\x{a}\edef\cmp{\pdfprimitive\pdfstrcmp{\x}{b}}\def\x{c}[\cmp].
 
 Hbox: [\pdfprimitive\hbox{y}].
 
@@ -73,4 +78,26 @@ Macro math: before $a\lit b$ after.
 Blue math: before $a\blue{b}c$ after.
 
 Hbox math: before $a\pdfprimitive\hbox{b}c$ after.
+
+Immediate: before\immediate\pdfprimitive\pdfobj{<< /A 1 >>}\setbox2\hbox{x}%
+\immediate\pdfprimitive\pdfxform 2 after.
+
+Image: before\pdfprimitive\pdfximage width 1cm{test-picture.png}%
+\pdfprimitive\pdfrefximage\pdfprimitive\pdflastximage{} after.
+
+Stack: before\pdfprimitive\pdfcolorstack0 push{0 0 1 rg}pushed\pdfprimitive\pdfcolorstack0 pop{} after.
+
+Destination: before\pdfprimitive\pdfdest name{x} xyz after.
+
+Bbox: [\pdfprimitive\pdfximagebbox\pdfprimitive\pdflastximage 1].
+
+Direct: before\pdfprimitive\pdfliteral direct{0 g} after.
+
+Edef literal: \edef\lx{\pdfprimitive\pdfliteral{0 g}}before\lx after.
+
+Page math: before $a\pdfprimitive\pdfliteral page{0 g}b$ after.
+
+Copy math: before $a\litb b$ after.
+
+Let math: before $a\litc b$ after.
 \end{document}
