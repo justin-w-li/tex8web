@@ -455,12 +455,13 @@ function tex8web(config, tex) {
     return pageReady ? pageReady() : MathJax.startup.defaultPageReady();
   };
 
-  // \text in text, as in \text{\text{E}}, \textbf{\text{E}}, or a macro
-  // whose body is \text used in \text: LaTeX sets its argument in the
-  // font around it. MathJax's textmacros reads the argument of \text as
-  // text, where \text is "only supported in math mode". tex8web-text
-  // gives it there as a group (internal: textmacros' Macro method, and the
-  // Configuration and CommandMap of a package).
+  // \text, \mbox, and \hbox in text, as in \text{\text{E}},
+  // \textbf{\text{E}}, \text{a \mbox{b}}, or a macro whose body is one of
+  // them used in \text: LaTeX sets the argument in the font around it.
+  // MathJax's textmacros reads the argument of \text as text, where these
+  // are "only supported in math mode". tex8web-text gives them there as
+  // groups (internal: textmacros' Macro method, and the Configuration and
+  // CommandMap of a package).
   const texOptions = config.tex = config.tex || {};
   const textmacros = texOptions.textmacros = texOptions.textmacros || {};
   textmacros.packages = {'[+]': ['tex8web-text']};
@@ -468,7 +469,8 @@ function tex8web(config, tex) {
     const {Configuration} = MathJax._.input.tex.Configuration;
     const {CommandMap} = MathJax._.input.tex.TokenMap;
     const {TextMacrosMethods} = MathJax._.input.tex.textmacros.TextMacrosMethods;
-    new CommandMap('tex8web-text', {text: [TextMacrosMethods.Macro, '{#1}', 1]});
+    const group = [TextMacrosMethods.Macro, '{#1}', 1];
+    new CommandMap('tex8web-text', {text: group, mbox: group, hbox: group});
     Configuration.create('tex8web-text', {parser: 'text', handler: {macro: ['tex8web-text']}});
   }
 

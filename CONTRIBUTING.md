@@ -138,7 +138,7 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 
 A `\mathclap` or `\clap` around a whole display has its content's width in `js/tex8web.js`, so that a display wider than the column can be scrolled to its left end.
 
-`js/tex8web.js` also defines `\text` in the text of MathJax's textmacros extension, as a group, as in `\text{\text{E}}`, `\textbf{\text{E}}`, or a macro whose body is `\text` used inside `\text`. LaTeX sets the inner argument in the font around it. Without the definition, MathJax shows the error "\text is only supported in math mode" in place of the formula.
+`js/tex8web.js` also defines `\text`, `\mbox`, and `\hbox` in the text of MathJax's textmacros extension, as groups, as in `\text{\text{E}}`, `\textbf{\text{E}}`, `\text{a \mbox{b}}`, or a macro whose body is one of them used inside `\text`. LaTeX sets the inner argument in the font around it. Without the definitions, MathJax shows an error such as "\text is only supported in math mode" in place of the formula.
 
 ### 4. Prerendering
 

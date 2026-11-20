@@ -425,6 +425,10 @@ const typeset = {
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext>T<\/mtext>(?:<\/mrow>)?<\/math>/,
     /<math xmlns='[^']*'><mtext[^>]* mathvariant='italic'>𝑞<\/mtext><\/math>/,
     /<mtext>for <\/mtext><mrow[^>]*>(?:<mrow>)?<mi>x<\/mi><mo[^>]*>∈<\/mo><mtext>A<\/mtext>/,
+    /<math xmlns='[^']*'><mtext>m M<\/mtext><\/math>/,
+    /<math xmlns='[^']*'><mtext>h W<\/mtext><\/math>/,
+    /<math xmlns='[^']*'>(?:<mstyle[^>]*>)?<mtext>V<\/mtext>(?:<\/mstyle>)?<\/math>/,
+    /<math xmlns='[^']*'>(?:<mrow>)?<mtext>min s\.t\. <\/mtext><mtext>x<\/mtext>(?:<\/mrow>)?<\/math>/,
   ],
   // \hspace*, \text, \mathrm, and \textbf in math in \thanks, on the title
   // and on an author, as in the PDF, with no \protect; the same in a
