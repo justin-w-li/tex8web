@@ -883,6 +883,28 @@
         psfig, diagrams, fig4tex, dratex, DraTex
     }
     { \cs_new_eq:cN { web@keep@ #1 } \c_empty_tl }
+% A file found in a folder on TEXINPUTS outside TeX's trees, which
+% tex8web.mk4 lists in <jobname>.texinputs, counts as one from the
+% document's folder, here and in \@providesfile below. The lines are read
+% as strings, as a folder name can have %, #, or a brace.
+\seq_new:N \g__web_owndirs_seq
+\ior_new:N \g__web_owndirs_ior
+\ior_open:NnT \g__web_owndirs_ior { \c_sys_jobname_str .texinputs }
+    {
+        \ior_str_map_inline:Nn \g__web_owndirs_ior
+            { \seq_gput_right:Nn \g__web_owndirs_seq {#1} }
+        \ior_close:N \g__web_owndirs_ior
+    }
+\prg_new_conditional:Npnn \__web_if_owndir:n #1 { p }
+    {
+        \seq_map_tokens:Nn \g__web_owndirs_seq { \__web_owndir:nn {#1} }
+        \prg_return_false:
+    }
+\cs_new:Npn \__web_owndir:nn #1#2
+    {
+        \file_if_exist:nT { #2 / #1 }
+            { \seq_map_break:n { \use_i:nn \prg_return_true: } }
+    }
 \AddToHook { file/before }
     { \exp_last_unbraced:No \web@ownfile \CurrentFileUsed .. \q_stop }
 \cs_new_protected:Npn \web@ownfile #1 . #2 . #3 \q_stop
@@ -893,7 +915,11 @@
                     {
                         { \cs_if_exist_p:c { web@keepext@ #2 } }
                         { \cs_if_exist_p:c { web@keep@ #1 } }
-                        { ! \file_if_exist_p:n { ./ \CurrentFileUsed } }
+                        {
+                            ! \bool_lazy_or_p:nn
+                                { \file_if_exist_p:n { ./ \CurrentFileUsed } }
+                                { \__web_if_owndir_p:n { \CurrentFileUsed } }
+                        }
                     }
                     {
                         \cs_gset_eq:cN { web@keep@ #1 } \c_empty_tl
@@ -993,7 +1019,8 @@
 % gives the name, by any path, so the name is the document's. (Before the
 % class, tex4ht.sty has not yet wrapped \@providesfile, and LaTeX's
 % \@providesfile lists no name.) From a file of the document's beside it,
-% such as its package, the primitive \input leaves that file current, and
+% or in a folder of TEXINPUTS listed above, such as its package, the
+% primitive \input leaves that file current, and
 % the file gives the name as the document's too. A package of the tree
 % that reads a style with the primitive \input, as biblatex does, stays
 % the current file, so a copy of the style beside the document keeps its
@@ -1026,17 +1053,25 @@
                     { \tl_if_empty_p:N \CurrentFileUsed }
                     {
                         \bool_lazy_and_p:nn
-                            { \file_if_exist_p:n { ./ \CurrentFileUsed } }
+                            {
+                                \bool_lazy_or_p:nn
+                                    { \file_if_exist_p:n { ./ \CurrentFileUsed } }
+                                    { \__web_if_owndir_p:n { \CurrentFileUsed } }
+                            }
                             { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
                     }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
             {
-                \file_if_exist:nT
+                \bool_lazy_or:nnT
                     {
-                        \str_if_eq:eeF { \str_head:N \CurrentFilePathUsed } { / } { ./ }
-                        \CurrentFilePathUsed / \CurrentFileUsed
+                        \file_if_exist_p:n
+                            {
+                                \str_if_eq:eeF { \str_head:N \CurrentFilePathUsed } { / } { ./ }
+                                \CurrentFilePathUsed / \CurrentFileUsed
+                            }
                     }
+                    { \__web_if_owndir_p:n { \CurrentFilePathUsed / \CurrentFileUsed } }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
         \__web_basename:w #1 .. \q_stop
@@ -1046,9 +1081,12 @@
                 { ! \cs_if_exist_p:c { web@keepext@ \l__web_ext_tl } }
                 { ! \cs_if_exist_p:c { web@keep@ \l__web_basename_tl } }
                 {
-                    \bool_lazy_or_p:nn
-                        { \file_if_exist_p:n { ./ #1 } }
-                        { ! \file_if_exist_p:n {#1} }
+                    \bool_lazy_any_p:n
+                        {
+                            { \file_if_exist_p:n { ./ #1 } }
+                            { \__web_if_owndir_p:n {#1} }
+                            { ! \file_if_exist_p:n {#1} }
+                        }
                 }
             }
             {
