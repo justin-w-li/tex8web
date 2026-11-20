@@ -95,8 +95,8 @@ function M.run(par)
   -- the .bib files named, and the directory bibtex or biber looks them up from
   local command, names, from = nil, {}, dir
   -- the .aux files that bibtex reads: the document's, and those of the
-  -- files read by \include
-  local parts, missing = M.parts(dir, aux)
+  -- files read by \include; and those named that do not exist
+  local parts, absent = M.parts(dir, aux)
   local auxes = {{path = dir .. "/" .. par.input .. ".aux", text = aux}, table.unpack(parts)}
   local bibdata = false
   for _, file in ipairs(auxes) do
@@ -104,8 +104,6 @@ function M.run(par)
   end
   -- those of them that differ for bibtex's run, as {path, text, fixed}
   local changed = {}
-  -- the .aux files named with \@input that do not exist, for bibtex
-  local absent = {}
   local function write(file, text)
     local f = io.open(file, "w")
     f:write(text)
@@ -146,10 +144,6 @@ function M.run(par)
         for name in list:gmatch("[^,]+") do names[#names + 1] = name end
       end
     end
-    -- A file that \includeonly leaves out has no .aux until a build
-    -- includes it. bibtex skips its \@input line with an error, which
-    -- latexmk ignores, so an empty .aux stands in for bibtex's run.
-    absent = missing
     command = "cd " .. files.quote(dir) .. " && " .. path("BIBINPUTS") .. " " .. path("BSTINPUTS")
       .. " bibtex " .. files.quote(par.input)
   else
@@ -175,16 +169,24 @@ function M.run(par)
   -- hide the one beside the document, which LaTeX reads when biber fails.)
   if lfs.attributes(dir .. "/" .. par.input .. ".bbl", "size") == 0 then use_beside() end
   for _, file in ipairs(changed) do write(file.path, file.fixed) end
-  -- (A folder that the document lacks is not made in the build
-  -- directory, and bibtex then reports the error.)
-  for _, file in ipairs(absent) do
-    local f = io.open(file, "w")
-    if f then f:close() end
+  -- A file that \includeonly leaves out has no .aux until a build
+  -- includes it. bibtex skips its \@input line with an error, which
+  -- latexmk ignores, so an empty .aux stands in for bibtex's run. (biber
+  -- reads the .bcf only. A folder that the document lacks is not made in
+  -- the build directory, and bibtex then reports the error.)
+  local bibtex = not bcf
+  if bibtex then
+    for _, file in ipairs(absent) do
+      local f = io.open(file, "w")
+      if f then f:close() end
+    end
   end
   -- (texlua's os.execute returns the exit status, not Lua 5.3's true)
   if os.execute(command .. " > /dev/null") ~= 0 then log:warning("the bibliography failed (" .. command .. ")") end
   for _, file in ipairs(changed) do write(file.path, file.text) end
-  for _, file in ipairs(absent) do os.remove(file) end
+  if bibtex then
+    for _, file in ipairs(absent) do os.remove(file) end
+  end
   return 0
 end
 

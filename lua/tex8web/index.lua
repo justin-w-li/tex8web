@@ -142,11 +142,6 @@ function M.glossaries(par)
   return 0
 end
 
--- (the files whose change needs another LaTeX run, and the most LaTeX
--- runs, as for bibliography.settle)
-local checksum = bibliography.checksum
-local runs = bibliography.runs
-
 -- makeglossaries and LaTeX again, after LaTeX has settled, while the
 -- glossaries' input files or LaTeX's cross-references change: an entry used
 -- only in the description of another reaches the .glo only when the
@@ -154,17 +149,17 @@ local runs = bibliography.runs
 -- makeglossaries run then), and a glossary that first has entries then
 -- adds a heading to the table of contents. Returns LaTeX's status.
 function M.glossaries_again(par)
-  local before = checksum(par)
-  for _ = 1, runs do
-    if not makeglossaries(par) and checksum(par) == before then return 0 end
-    before = checksum(par)
+  local before = bibliography.checksum(par)
+  for _ = 1, bibliography.runs do
+    if not makeglossaries(par) and bibliography.checksum(par) == before then return 0 end
+    before = bibliography.checksum(par)
     -- (required here, as it needs make4ht's Make, which the unit tests lack)
     local status = require("make4ht-htlatex").htlatex(par)
     if status ~= 0 then return status end
   end
   local _, text = inputs(par)
-  if text ~= sorted or checksum(par) ~= before then
-    log:warning("the glossaries did not settle after " .. runs .. " more LaTeX runs")
+  if text ~= sorted or bibliography.checksum(par) ~= before then
+    log:warning("the glossaries did not settle after " .. bibliography.runs .. " more LaTeX runs")
   end
   return 0
 end
