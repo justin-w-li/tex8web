@@ -3,14 +3,16 @@
 % cases in align, with a space before the brace in \[ \], in equation,
 % gather, multline, and split, in inline math, inside \text, in an array's
 % column spec, through a macro of the document, in a footnote, in a
-% theorem, in a heading, and in italic, sans-serif, and typewriter text.
-% Unstarred \hspace, which MathJax draws, stays as it is.
+% theorem, in a heading and its table of contents entry, in align*, and in
+% italic, sans-serif, and typewriter text. Unstarred \hspace, which MathJax
+% draws, stays as it is, as do \hspace* in text and in verbatim.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \usepackage{hyperref}
 \newtheorem{theorem}{Theorem}
 \newcommand{\gap}{\hspace*{2mm}}
 \begin{document}
+\tableofcontents
 \section{Spaces $a_{1}\hspace*{1em}b_{1}$}
 An alignat:
 \begin{alignat}{1}
@@ -20,6 +22,10 @@ An align before cases:
 \begin{align}
 \hspace*{-2mm} f(x) = \begin{cases} 1 & x > 0, \\ 0 & \text{otherwise}. \end{cases}
 \end{align}
+An align*:
+\begin{align*}
+y_{1} &= \hspace*{1em} y_{2}
+\end{align*}
 A space before the brace:
 \[ c = \hspace* {1em} d \]
 An equation:
@@ -50,4 +56,5 @@ In a theorem, $t_{1}\hspace*{2mm}t_{2}$.
 In italic, \emph{$u_{1}\hspace*{2mm}u_{2}$}, sans-serif,
 \textsf{$v_{1}\hspace*{2mm}v_{2}$}, and typewriter,
 \texttt{$w_{1}\hspace*{2mm}w_{2}$}. Unstarred, $x_{1}\hspace{2mm}x_{2}$.
+Text \hspace*{1em} here, and \verb|$a\hspace*{1em}b$|.
 \end{document}

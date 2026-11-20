@@ -1,7 +1,8 @@
 % \text nested in \text in math, which the PDF sets as the inner text: as
 % a superscript, two and three deep in a display, with text beside the
 % inner \text, in a numbered equation, in a footnote, in a theorem, and in
-% a heading. \textit in \text, which MathJax draws, stays as it is.
+% a heading. \textit in \text, and \text in math in \text, which MathJax
+% draws, stay as they are.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \usepackage{hyperref}
@@ -18,5 +19,5 @@ In a footnote.\footnote{A note, $\text{\text{N}}$.}
 \begin{theorem}
 In a theorem, $\text{\text{T}}$.
 \end{theorem}
-Italic inside, $\text{\textit{q}}$.
+Italic inside, $\text{\textit{q}}$. Math inside, $\text{for $x \in \text{A}$}$.
 \end{document}

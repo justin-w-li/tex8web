@@ -382,11 +382,17 @@ const typeset = {
   // \hspace* in math as the space of \hspace, as in the PDF: in a heading,
   // in alignat at a row's start and middle with the equation's number, in
   // align before cases, with a space before the brace, in equation,
-  // gather, multline, and split, inline, inside \text, through a macro, in
-  // an array's column spec, in a footnote, in a theorem, and in italic,
-  // sans-serif, and typewriter text; unstarred \hspace as before
+  // gather, multline, split, and align*, inline, inside \text, through a
+  // macro, in an array's column spec, in a footnote, in a theorem, in the
+  // table of contents, and in italic, sans-serif, and typewriter text;
+  // unstarred \hspace, and \hspace* in text and in verbatim, as before
   'test-hspacemath': [
     spaced(sub('a', 1), '1em', sub('b', 1)),
+    new RegExp(`<h3 [^>]*>(?:(?!<\\/h3>)[^])*${spaced(sub('a', 1), '1em', sub('b', 1)).source}`),
+    new RegExp(`<div class='tableofcontents'>(?:(?!<\\/div>)[^])*${spaced(sub('a', 1), '1em', sub('b', 1)).source}`),
+    spaced('<mo[^>]*>=<\\/mo>', '1em', sub('y', 2)),
+    /Text <span class='tex8web-nbsp'> <\/span> here, and/,
+    /<code class='verb'><span class='cmtt-10'>\$a\\hspace\*\{1em\}b\$<\/span><\/code>/,
     /<mtext>\(<\/mtext><mtext>1<\/mtext><mtext>\)<\/mtext><\/mtd><mtd>(?:<mspace [^>]*><\/mspace>)?<mspace width='-2mm'><\/mspace><mi>a<\/mi><mo[^>]*>=<\/mo><mspace width='-0\.5mm'><\/mspace><mi>b<\/mi>/,
     /<mtext>\(<\/mtext><mtext>2<\/mtext><mtext>\)<\/mtext><\/mtd><mtd>(?:<mspace [^>]*><\/mspace>)?<mspace width='-2mm'><\/mspace><mi>f<\/mi>(?:(?!<\/math>)[^])*data-tex8web-env='cases'(?:(?!<\/math>)[^])*<mtext>otherwise<\/mtext>/,
     spaced('<mi>c<\\/mi><mo[^>]*>=<\\/mo>', '1em', '<mi>d<\\/mi>'),
@@ -403,7 +409,7 @@ const typeset = {
   // \text nested in \text in math as its inner text, as in the PDF: in a
   // heading, in a superscript, three deep in a display, with text beside
   // the inner \text, in a numbered equation, in a footnote, and in a
-  // theorem; \textit in \text as before
+  // theorem; \textit in \text, and \text in math in \text, as before
   'test-textnest': [
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext>H<\/mtext>(?:<\/mrow>)?<\/math>/,
     /<mi>z<\/mi>(?:(?!<\/math>)[^])*<mtext>E<\/mtext>(?:(?!<\/math>)[^])*<mi>t<\/mi>/,
@@ -413,12 +419,16 @@ const typeset = {
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext>N<\/mtext>(?:<\/mrow>)?<\/math>/,
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mtext>T<\/mtext>(?:<\/mrow>)?<\/math>/,
     /<math xmlns='[^']*'><mtext[^>]* mathvariant='italic'>𝑞<\/mtext><\/math>/,
+    /<mtext>for <\/mtext><mrow[^>]*>(?:<mrow>)?<mi>x<\/mi><mo[^>]*>∈<\/mo><mtext>A<\/mtext>/,
   ],
-  // \text, \mathrm, and \textbf in math in \thanks, on the title and on an
-  // author, as in the PDF, with no \protect; the same in a footnote as before
+  // \hspace*, \text, \mathrm, and \textbf in math in \thanks, on the title
+  // and on an author, as in the PDF, with no \protect; the same in a
+  // footnote as before
   'test-thanksmath': [
+    spaced('<mi>a<\\/mi>', '1em', '<mi>b<\\/mi>'),
     /<math xmlns='[^']*'><mrow><mo[^>]*>\{<\/mo><mtext>a, b<\/mtext><mo[^>]*>\}<\/mo><\/mrow><\/math>/,
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mi mathvariant='normal'>r<\/mi>(?:<\/mrow>)?<\/math>/,
+    /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mi mathvariant='bold'>𝐳<\/mi>(?:<\/mrow>)?<\/math>/,
     /<math xmlns='[^']*'>(?:<mrow[^>]*>)?<mi mathvariant='normal'>x<\/mi>(?:<\/mrow>)?<\/math>/,
     /<math xmlns='[^']*'><mtext mathvariant='bold'>𝐲<\/mtext><\/math>/,
     /<math xmlns='[^']*'><mrow><mo[^>]*>\{<\/mo><mtext>c, d<\/mtext><mo[^>]*>\}<\/mo><\/mrow><\/math>/,
