@@ -95,11 +95,12 @@
 % imakeidx: under tex4ht, imakeidx runs no index program (imakeidx-hooks.4ht
 % passes it noautomatic). It still calls \imki@finalmessage for each index
 % that \printindex prints, with the program and options set. The command
-% it would run is written to the .aux as a comment, for index.lua. The hook
-% runs after the option quiet, which sets \imki@finalmessage to \@gobble.
+% it would run is written to the main .aux as a comment, for index.lua.
+% (Inside an \include file, \@auxout is that file's .aux.) The hook runs
+% after the option quiet, which sets \imki@finalmessage to \@gobble.
 \AddToHook{package/imakeidx/after}{%
     \web@needs{imki@finalmessage}%
-    \def\imki@finalmessage#1{\immediate\write\@auxout{\@percentchar\space
+    \def\imki@finalmessage#1{\immediate\write\@mainaux{\@percentchar\space
         tex8web index: \imki@program\imki@options#1.idx}}%
 }
 
