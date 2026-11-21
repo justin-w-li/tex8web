@@ -1,0 +1,16 @@
+% A \thechapter set in the preamble of a book, followed by \appendix, which
+% letters the appendix chapters as in the PDF: Roman chapters, then lettered
+% appendix chapters and sections, with references to each.
+\documentclass{book}
+\usepackage{hyperref}
+\renewcommand\thechapter{\Roman{chapter}}
+\begin{document}
+\tableofcontents
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+\chapter{Second}\label{second}
+\appendix
+\chapter{Extra}\label{extra}
+\section{More}\label{more}
+Ref: \ref{start}; \ref{basics}; \ref{second}; \ref{extra}; \ref{more}.
+\end{document}

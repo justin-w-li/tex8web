@@ -1,8 +1,9 @@
 % A \thechapter set in the preamble of a memoir document, as a macro:
-% chapters in Roman numerals, with a section, a theorem, and an equation
+% chapters in Roman numerals, with a section, theorems, and equations
 % numbered within them, references with hyperref, the table of contents,
 % and appendix chapters, which \appendix letters again.
 \documentclass{memoir}
+\usepackage{amsmath}
 \usepackage{hyperref}
 \newcommand\theolchapter{\Roman{chapter}}
 \def\thechapter{\theolchapter}
@@ -11,9 +12,16 @@
 \tableofcontents*
 \chapter{Start}\label{start}
 \section{Basics}\label{basics}
+\begin{proposition}
+A first claim.
+\end{proposition}
 \begin{proposition}\label{prop}
 A claim.
 \end{proposition}
+\begin{align}
+x &= 0 \\
+y &= 0
+\end{align}
 \begin{equation}
 x = 1 \label{eq}
 \end{equation}

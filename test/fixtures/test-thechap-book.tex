@@ -1,10 +1,11 @@
 % A \thechapter set in the preamble of a book: lettered chapters, with
-% sections, a theorem, and an equation numbered within them, references to
-% each with hyperref, the table of contents, and unnumbered front-matter and
-% back-matter chapters.
+% sections, theorems, equations, figures, and tables numbered within them,
+% references to each with hyperref and cleveref, the table of contents, and
+% unnumbered front-matter and back-matter chapters.
 \documentclass{book}
 \usepackage{amsmath}
 \usepackage{hyperref}
+\usepackage{cleveref}
 \renewcommand\thechapter{\Alph{chapter}}
 \newtheorem{proposition}{Proposition}[chapter]
 \begin{document}
@@ -15,20 +16,38 @@ Front text.
 \mainmatter
 \chapter{Start}\label{start}
 \section{Basics}\label{basics}
+\begin{proposition}
+A first claim.
+\end{proposition}
 \begin{proposition}\label{prop}
 A claim, see \ref{basics}.
 \end{proposition}
+\begin{align}
+x &= 0 \\
+y &= 0
+\end{align}
 \begin{equation}
 x = 1 \label{eq}
 \end{equation}
 Ref: \ref{start}; \ref{basics}; \ref{prop}; \eqref{eq}; \ref{second}.
 
-In italics, \textit{\ref{basics}}; in sans-serif, \textsf{\ref{prop}}; in typewriter, \texttt{\ref{start}}.
+In italics, \textit{\ref{basics}}; in sans-serif, \textsf{\ref{second}}; in typewriter, \texttt{\ref{start}}.
 
 In a footnote\footnote{In the note, \ref{basics}.}, too.
 \begin{proposition}
 In a theorem, \ref{second}.
 \end{proposition}
+\begin{figure}
+x
+\caption{A figure}\label{fig}
+\end{figure}
+\begin{table}
+x
+\caption{A table}\label{tab}
+\end{table}
+Floats: \ref{fig}; \ref{tab}.
+
+Cref: \cref{start}; \cref{basics}; \cref{prop}; \cref{eq}.
 \section{About \ref{start}}
 Autoref: \autoref{start}; \autoref{basics}; \autoref{eq}.
 \chapter{Second}\label{second}

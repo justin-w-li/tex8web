@@ -1,0 +1,22 @@
+% A \thechapter set in the preamble of a memoir document by a chapter style:
+% culver numbers chapters in Roman numerals, with sections within them,
+% references with hyperref, the table of contents, and unnumbered
+% front-matter and back-matter chapters.
+\documentclass{memoir}
+\usepackage{hyperref}
+\chapterstyle{culver}
+\begin{document}
+\frontmatter
+\chapter{Preface}\label{preface}
+Front text.
+\tableofcontents*
+\mainmatter
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+Ref: \ref{start}; \ref{basics}; \ref{second}.
+\chapter{Second}\label{second}
+Here \ref{second}.
+\backmatter
+\chapter{Afterword}\label{afterword}
+Back text.
+\end{document}

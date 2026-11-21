@@ -1,11 +1,12 @@
 % Checks cases a fix must not break: a \thechapter set in the preamble of a
 % book that prints a number at counter 0. The front-matter and back-matter
-% chapters stay unnumbered, in their headings and in the table of contents.
+% chapters stay unnumbered, in their headings, in the table of contents,
+% and in references to them.
 \documentclass{book}
 \renewcommand\thechapter{\arabic{chapter}}
 \begin{document}
 \frontmatter
-\chapter{Preface}
+\chapter{Preface}\label{preface}
 Front text.
 \tableofcontents
 \mainmatter
@@ -13,6 +14,8 @@ Front text.
 \section{Basics}\label{basics}
 Ref: \ref{start}; \ref{basics}.
 \backmatter
-\chapter{Afterword}
+\chapter{Afterword}\label{afterword}
 Back text.
+
+Ref: \ref{preface}; \ref{afterword}.
 \end{document}
