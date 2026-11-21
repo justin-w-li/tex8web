@@ -751,8 +751,10 @@ const wideBlocks = { 'test-wideblocks': { 1400: [7, 1], 390: [10, 1] } };
 // Each part and chapter-level heading below the text above it. In the
 // PDF such a heading starts a page, so a negative space above it from
 // \titlespacing moves it up only from the page's top margin. The heading's
-// box starts at or below the last box above it with a height that is not
-// floated, as a footnote beside the text is. With no such box, it starts
+// box starts below the last box above it with a height that is not
+// floated, as a footnote beside the text is, by a chapter's default space
+// (0.83em of its font) or for a part half the text's em, so that the break
+// shows. With no such box, it starts
 // at or below the top of its column, and below the body's top margin,
 // which clears the controls. Checked with JavaScript off, on a wide
 // screen, at 1000px, where the page has no side column for its notes, on
@@ -771,8 +773,18 @@ const chapterGaps = `(() => {
       : Math.max(column.top + parseFloat(getComputedStyle(h.parentElement).paddingTop),
         parseFloat(getComputedStyle(document.body).marginTop) - scrollY);
     const top = h.getBoundingClientRect().top;
-    return top < limit - 0.5
-      ? [[h.id, \`starts \${(limit - top).toFixed(1)}px above the bottom of \${above ? 'the ' + above.localName + ' above it' : 'its column'}\`]] : [];
+    if (top < limit - 0.5) {
+      return [[h.id, \`starts \${(limit - top).toFixed(1)}px above the bottom of \${above ? 'the ' + above.localName + ' above it' : 'its column'}\`]];
+    }
+    if (!above) return [];
+    // (a chapter's space above is the stylesheet's, 0.83em of its font, as
+    // for a chapter style whose space is negative; a part's at least half
+    // the text's em)
+    const chapter = !h.matches('.partHead, .likepartHead');
+    const least = chapter ? 0.83 * parseFloat(getComputedStyle(h).fontSize) - 0.5
+      : parseFloat(getComputedStyle(document.body).fontSize) / 2;
+    return top - limit < least
+      ? [[h.id, \`starts \${(top - limit).toFixed(1)}px below the \${above.localName} above it, less than \${least.toFixed(1)}px\`]] : [];
   });
   return { checked: heads.length, wrong };
 })()`;

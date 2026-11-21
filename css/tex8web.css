@@ -248,14 +248,11 @@ section.abstract { margin-inline: 0; }
 /* (titlesec's variant and alignment, and the space around a heading from
    titlesec or the class (tex8web-page.tex), else the browser's h1 to h5
    margins, and for a part a chapter's space where it has a page of its
-   own in the PDF. A chapter's space above is at least zero: titlesec's
-   \titlespacing may make it negative. In the PDF that moves the title
-   up from the top of its page, and on the page it would draw the heading
-   over the text above it. :where lets a class's rules in html4.4ht take
+   own in the PDF. :where lets a class's rules in html4.4ht take
    precedence, for example amsart's centered sections) */
 :where(.partHead, .likepartHead) { font-variant: var(--tex8web-part-variant, normal);
     text-align: var(--tex8web-part-align, left);
-    --tex8web-head-before: var(--tex8web-part-before, max(0em, var(--tex8web-chapter-before, 0.67em)));
+    --tex8web-head-before: var(--tex8web-part-before, var(--tex8web-chapter-before, 0.67em));
     margin-block: var(--tex8web-head-before)
         var(--tex8web-part-after, var(--tex8web-chapter-after, 0.67em)); }
 /* (html4.4ht's h1.partHead{text-align: center}, but under the alignment
@@ -264,7 +261,7 @@ h1:is(.partHead, .likepartHead) { text-align: var(--tex8web-part-align, center);
 :where(.chapterHead, .likechapterHead, .appendixHead) {
     font-variant: var(--tex8web-chapter-variant, normal);
     text-align: var(--tex8web-chapter-align, left);
-    --tex8web-head-before: max(0em, var(--tex8web-chapter-before, 0.83em));
+    --tex8web-head-before: var(--tex8web-chapter-before, 0.83em);
     margin-block: var(--tex8web-head-before) var(--tex8web-chapter-after, 0.83em); }
 :where(.sectionHead, .likesectionHead) { font-variant: var(--tex8web-section-variant, normal);
     text-align: var(--tex8web-section-align, left);
