@@ -44,6 +44,15 @@ local fallbacks = {
   ["\\stepcounter"] = "\\newcommand{\\stepcounter}[1]{}",
   ["\\refstepcounter"] = "\\newcommand{\\refstepcounter}[1]{}",
 }
+-- amsmath's matrices as the macro pairs that \begin and \end run, such as
+-- \bmatrix ... \endbmatrix, which MathJax has only as environments. MathJax
+-- puts a macro's text in place of its name before it reads on, so a \begin
+-- may open in one macro and close in another. (Not \pmatrix and \matrix,
+-- which MathJax has with braces, as in plain TeX.)
+for _, env in ipairs {"bmatrix", "Bmatrix", "vmatrix", "Vmatrix", "smallmatrix"} do
+  fallbacks["\\" .. env] = "\\newcommand{\\" .. env .. "}{\\begin{" .. env .. "}}"
+  fallbacks["\\end" .. env] = "\\newcommand{\\end" .. env .. "}{\\end{" .. env .. "}}"
+end
 
 -- The math's colors that MathJax would get wrong (see "Macros in math" in
 -- CONTRIBUTING.md) are given as \definecolor lines, from the values

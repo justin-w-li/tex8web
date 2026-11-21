@@ -91,6 +91,8 @@ The math and the definitions it uses are rewritten where MathJax reads LaTeX dif
 - `\protect` is dropped. A class writes `\thanks` text with `\protected@xdef`, which puts `\protect` before each robust command in its math.
 - tex4ht's `\mathrm@@`, which `\protected@xdef` leaves for `\mathrm` (`fontmath.4ht`), becomes `\mathrm`, and the same for `\mathbf`, `\mathit`, `\mathsf`, and `\mathtt`.
 
+amsmath's matrices can be written as the macro pairs that `\begin` and `\end` run, such as `\bmatrix ... \endbmatrix`. LaTeX accepts these pairs, and MathJax has only the environments. `macros.lua` defines `\bmatrix` for MathJax as `\begin{bmatrix}` and `\endbmatrix` as `\end{bmatrix}`, and the same for `Bmatrix`, `vmatrix`, `Vmatrix`, and `smallmatrix`. A document's own definition replaces these. Under amsmath, the code in `tex8web-math.tex` that numbers the rows of a display treats each pair as an environment, so a `\\` inside the matrix ends no row.
+
 In the text of MathJax's textmacros extension, `js/tex8web.js` defines `\text`, `\mbox`, and `\hbox` as groups. These commands appear in MathJax's text in `\text{\text{E}}`, `\textbf{\text{E}}`, `\text{a \mbox{b}}`, and a macro whose body is one of them used inside `\text`. LaTeX sets the inner argument in the font around it. Without the definitions, MathJax shows an error such as "\text is only supported in math mode" in place of the formula.
 
 Only the CSS and dvips color names are defined in MathJax. tex8web adds these colors as `\definecolor` lines:
