@@ -2882,6 +2882,8 @@ const dupAnchors = (name, count) => `Before ${name}\\.(?:(?!After ${name}\\.)[^]
 const dupSpace = "<span class='tex8web-nbsp'>[^<]*<\\/span>";
 const dupLink = (anchor, number) => `<a href='#\\${anchor}'>${number}(?:<!--[^>]*-->)?<\\/a>`;
 const dupRefs = (name, count, refs) => new RegExp(`${dupAnchors(name, count)}(?:(?!Before )[^])*Refs ${name}: ${refs}\\.`);
+// (a display with no number: its \label's anchor, the last of the case)
+const dupPlainRefs = name => new RegExp(`Before ${name}\\.(?:(?!After ${name}\\.)[^])*<a id='([^']+)'><\\/a>(?:(?!After ${name}\\.)(?!<a id=)[^])*After ${name}\\.(?:(?!Before )[^])*Refs ${name}: ${dupLink(1, 1)}\\.`);
 const duplabelNumbers = [
   dupDrawn('two', 1, 2), dupRefs('two', 1, `\\(${dupLink(1, 2)}\\) and ${dupLink(1, 2)}`),
   dupDrawn('alignat', 3, 4, 5), dupRefs('alignat', 1, `\\(${dupLink(1, 5)}\\)`),
@@ -2904,10 +2906,12 @@ const duplabelNumbers = [
   dupDrawn('qed repeat', 33, 34), dupRefs('qed repeat', 1, `\\(${dupLink(1, 34)}\\)`),
   dupDrawn('qed align', 35, 36),
   dupDrawn('tag after', 37, 'B'),
+  // (a \label in a display with no number gives the section's number)
+  dupDrawn('displaymath', 38), dupRefs('displaymath', 1, `\\(${dupLink(1, 38)}\\)`),
+  dupDrawn('dollars'), dupPlainRefs('dollars'),
+  dupDrawn('bare'), dupPlainRefs('bare'),
   dupDrawn('by section', '2\\.1', '2\\.2', '2\\.3'),
   dupRefs('by section', 2, `\\(${dupLink(1, '2\\.2')}\\) and \\(${dupLink(2, '2\\.3')}\\)`),
-  // (no id twice on the page, as MathJax's ignoreDuplicateLabels gives)
-  /^(?![^]*\bid='([^']+)'[^]*\bid='\1')/,
 ];
 
 // Equation numbers, as in the PDF

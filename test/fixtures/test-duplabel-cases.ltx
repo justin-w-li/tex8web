@@ -14,8 +14,10 @@
 % section's label used again by an equation, a label first on a \nonumber
 % row, and one \tag row of a gather with a unique label. Then a repeat on a
 % \qedhere equation, and on the \qedhere row of an align, a numbered display
-% then a repeat with its own \tag, and, numbered by section, a real label
-% equal to a repeat with the number appended. With cleveref,
+% then a repeat with its own \tag, a displaymath then an equation, two $$
+% $$, and two \[ \] (a \label in these three gives the section's number,
+% as in the PDF), and, numbered by section, a real label equal to a repeat
+% with the number appended. With cleveref,
 % \cref leads to the last display too. (A reference to a \tag row is left
 % out: its link has no target, with a unique label too.)
 \newtheorem{theorem}{Theorem}
@@ -194,6 +196,27 @@ Before tag after.
 \begin{equation} a = 6 \label{nt} \end{equation}
 \begin{equation} a = 7 \tag{B} \label{nt} \end{equation}
 After tag after.
+
+Before displaymath.
+\begin{displaymath} o = 1 \label{dm} \end{displaymath}
+\begin{equation} o = 2 \label{dm} \end{equation}
+After displaymath.
+
+Refs displaymath: \eqref{dm}.
+
+Before dollars.
+$$ o = 3 \label{dd} $$
+$$ o = 4 \label{dd} $$
+After dollars.
+
+Refs dollars: \ref{dd}.
+
+Before bare.
+\[ o = 5 \label{bare} \]
+\[ o = 6 \label{bare} \]
+After bare.
+
+Refs bare: \ref{bare}.
 
 \numberwithin{equation}{section}
 \section{By section}
