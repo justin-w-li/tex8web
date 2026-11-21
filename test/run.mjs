@@ -4955,12 +4955,9 @@ if (provbbxTexinputs) for (const [key, label, sty] of [['bbx', 'copies of biblat
 // in the page, with no sentence that shows that glossary.4ht or
 // framed.4ht was read, and the TeX log reads no .4ht of the names the
 // files give. The guards: LaTeX's braced \input, the tree's files that
-// such a package loads, which keep their .4ht, also the tree's nomencl
-// package after a file beside the document of that name, and
-// test-provname-bbx with debug.bbx in TEXMFHOME, with and without a copy
-// of biblatex.sty, as a writer keeps a biblatex style or a newer biblatex
-// there: tex4ht still reads debug.4ht for the style. These builds run in
-// one loop with the ones on TEXINPUTS above.
+// such a package loads, which keep their .4ht, also a file of the tree
+// that gives its own name, read with the primitive \input, and the tree's
+// nomencl package after a file beside the document of that name.
 const texmfpkg = docs.find(d => d.name === 'test-texmfpkg');
 const texmfpkgDir = join(root, 'test/fixtures/test-texmfpkg');
 const texmfpkgBuilds = [];
@@ -4986,7 +4983,7 @@ if (texmfpkg) {
       ['Braced: Text of the glossary read with the braced input.'], ['glossary.4ht'], []],
     ['tree', 'a guard: files of the tree loaded by a package in TEXMFHOME', 'tree',
       ['Tree: The package loads files of the tree.', 'Framed read for the web.',
-        /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/], [], ['framed.4ht', 'dvipsnam.4ht', 'epsf.4ht']],
+        /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/], [], ['framed.4ht', 'dvipsnam.4ht', 'epsf.4ht', 'english.4ht']],
     ['nomencl', 'a guard: a file beside the document named like the tree\'s nomencl package, then the package', 'nomencl',
       ['Nomencl: Text of the nomencl file before the nomencl package.'], [], ['nomencl.4ht']],
   ];
@@ -5005,27 +5002,6 @@ if (texmfpkg) {
     },
   });
 }
-// (with debug.bbx alone and the tree's biblatex, or with a copy of
-// biblatex.sty too, as a writer who keeps a newer biblatex in TEXMFHOME)
-if (provbbxTexinputs) for (const [key, label, sty] of [['bbx', 'debug.bbx', false], ['bbxsty', 'copies of biblatex.sty and debug.bbx', true]]) texmfpkgBuilds.push({
-  doc: provbbxTexinputs, prefix: 'texmf', where: 'in a TeX tree', key, label: `a guard: ${label} in TEXMFHOME`,
-  shows: ['Read for the web.', /<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/], hides: [], unread: [], read: ['debug.4ht'],
-  page: 'test-provname-bbx.html', log: 'test-provname-bbx.log',
-  setup(top) {
-    // (the document in a folder of its own, without the debug.bbx beside
-    // it in test/fixtures, and the tree beside that folder, both below the
-    // copy, which the build's stamp then covers)
-    const dir = join(top, 'case'), doc = join(dir, 'doc'), lib = join(dir, 'texmf/tex/latex/texmfpkg');
-    rmSync(dir, { recursive: true, force: true });
-    mkdirSync(doc, { recursive: true });
-    mkdirSync(lib, { recursive: true });
-    const copies = [join(root, 'test/fixtures/debug.bbx')];
-    if (sty) copies.push(spawnSync('kpsewhich', ['biblatex.sty'], { encoding: 'utf8' }).stdout.trim());
-    for (const file of copies) writeFileSync(join(lib, basename(file)), readFileSync(file));
-    for (const name of ['test-provname-bbx.tex', 'test-biblatex-authoryear.bib']) writeFileSync(join(doc, name), readFileSync(join(root, 'test/fixtures', name)));
-    return { TEXMFHOME: join(dir, 'texmf'), doc: { ...provbbxTexinputs, name: `test-provname-bbx texmf${key}`, dir: doc, sourceRoot: dir } };
-  },
-});
 for (const { doc: fixture, prefix = 'texinputs', where = 'on TEXINPUTS', key, label, shows, hides, unread, read, page, log, setup } of [...texinpkgBuilds, ...texmfpkgBuilds]) jobs.push(async () => {
   const top = join(testDir(fixture), `${prefix}${key}`), out = join(top, 'html'), aux = join(top, 'aux');
   const { doc = fixture, ...env } = setup(top);

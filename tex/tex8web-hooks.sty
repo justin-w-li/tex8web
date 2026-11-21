@@ -1069,9 +1069,9 @@
 % is the document's only when the document reads the file: from the
 % document, the primitive \input leaves the current file empty, also in a
 % file that such a file reads, and LaTeX's \input by a path to a folder of
-% the document leaves the file current with that path. (Before the class,
-% tex4ht.sty has not yet wrapped \@providesfile, and LaTeX's
-% \@providesfile lists no name.) A name in the keep list
+% the document, or by an absolute path, leaves the file current with that
+% path. (Before the class, tex4ht.sty has not yet wrapped \@providesfile,
+% and LaTeX's \@providesfile lists no name.) A name in the keep list
 % or with a kept extension is tested first, as the folder tests read the
 % disk once for each listed folder.
 \bool_new:N \l__web_ownprov_bool
@@ -1082,7 +1082,6 @@
 \cs_new_eq:NN \__web_providesfile:w \@providesfile
 \cs_gset_protected:Npn \@providesfile #1
     {
-        \bool_set_false:N \l__web_ownprov_bool
         \__web_basename:w #1 .. \q_stop
         \tl_set_eq:NN \l__web_provext_tl \l__web_ext_tl
         \bool_set:Nn \l__web_provkeep_bool
@@ -1090,6 +1089,8 @@
                 \cs_if_exist_p:c { web@keepext@ \l__web_ext_tl }
                 || \cs_if_exist_p:c { web@keep@ \l__web_basename_tl }
             }
+        \bool_set:Nn \l__web_ownprov_bool
+            { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
         \exp_last_unbraced:No \__web_basename:w \CurrentFileUsed .. \q_stop
         \tl_if_empty:NTF \CurrentFilePathUsed
             {
@@ -1101,27 +1102,22 @@
                                 \bool_set_true:N \l__web_ownprov_bool
                             }
                     }
-                \bool_lazy_or:nnT
-                    { \tl_if_empty_p:N \CurrentFileUsed }
-                    { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
+                \tl_if_empty:NT \CurrentFileUsed
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
             {
                 \bool_lazy_and:nnT
-                    { ! \l__web_provkeep_bool }
+                    { ! \l__web_ownprov_bool }
                     {
-                        \bool_lazy_any_p:n
+                        \bool_lazy_or_p:nn
                             {
-                                { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
-                                {
-                                    \file_if_exist_p:n
-                                        {
-                                            \str_if_eq:eeF { \str_head:N \CurrentFilePathUsed } { / } { ./ }
-                                            \CurrentFilePathUsed / \CurrentFileUsed
-                                        }
-                                }
-                                { \__web_if_owndir_p:n { \CurrentFilePathUsed / \CurrentFileUsed } }
+                                \file_if_exist_p:n
+                                    {
+                                        \str_if_eq:eeF { \str_head:N \CurrentFilePathUsed } { / } { ./ }
+                                        \CurrentFilePathUsed / \CurrentFileUsed
+                                    }
                             }
+                            { \__web_if_owndir_p:n { \CurrentFilePathUsed / \CurrentFileUsed } }
                     }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
