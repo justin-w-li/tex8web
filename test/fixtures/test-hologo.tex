@@ -4,7 +4,10 @@
 % footnote, in a theorem, in sans-serif, typewriter, and bold text, as
 % \Hologo, through BibTeX8, and as the sf variant. A copy of the same
 % construct in a document's macro, \m@th before content in \mbox and
-% \ensuremath, and in the body of a math macro. Guards: the sc variant,
+% \ensuremath, after other content and after a style command, in display
+% math, in a formula inside a formula, and in the body of a math macro,
+% also in a heading. The logo in the title
+% and in a caption with its list of figures. Guards: the sc variant,
 % which has no math, and logos that run \m@th outside their formula.
 % test-hologo-plain has the same logo without hyperref.
 \documentclass{article}
@@ -17,9 +20,19 @@
 \newcommand\Boxed{\mbox{$\m@th q+r$}}
 \newcommand\Ensured{\ensuremath{\m@th\alpha\beta}}
 \newcommand{\nrm}[1]{\m@th\lVert #1\rVert}
+\newcommand\Late{$k+l\m@th$}
+\newcommand\Styled{\hbox{$\displaystyle\m@th m-n$}}
+\newcommand\Shown{\[\m@th c+d\]}
+\newcommand\Numbered{\begin{equation}\m@th e+f\end{equation}}
+\newcommand\Nested{$a+\mbox{$\m@th b$}$}
 \makeatother
+\title{Using \hologo{BibTeX}}
+\author{A}
+\date{}
 \begin{document}
+\maketitle
 \tableofcontents
+\listoffigures
 \section{Using \hologo{BibTeX} files}
 Text: \hologo{BibTeX} now.
 
@@ -39,6 +52,19 @@ Copy: \OldLaTeX.
 
 Boxed: \Boxed. Ensured: \Ensured. Norm: $\nrm{w}$.
 
-Guards: \hologoVariant{BibTeX}{sc}, \hologo{LaTeXe}, \hologo{eTeX}, \hologo{ExTeX}, and \hologo{TTH}.
+Late: \Late. Styled: \Styled. Nested: \Nested.
+
+Shown: \Shown
+Numbered: \Numbered
+Norm shown: \[\nrm{v}\]
+
+\begin{figure}
+\centering Drawn.
+\caption{The \hologo{BibTeX} flow}
+\end{figure}
+
+\section{Norm $\nrm{z}$}
+
+Guards: \hologoVariant{BibTeX}{sc}, \hologo{LaTeXe}, \hologo{eTeX}, and \hologo{ExTeX}.
 {\hologoLogoSetup{BibTeX}{variant=sc}Setup: \hologo{BibTeX}.}
 \end{document}

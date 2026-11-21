@@ -537,10 +537,17 @@ const speech = {
   // its rows in a numbered align keep their numbers)
   'test-envmacro-own': [/aria-label='2 lines Line 1: x equals the 2 by 1 column matrix 1 2 Label 1 Line 2: y equals 3 Label 2'/,
     /aria-label='M equals the 2 by 2 matrix Row 1: a b Row 2: c d'/],
-  // (\m@th before content in \mbox and \ensuremath, and in a math macro's
-  // body, as the content alone; the logos' epsilon and chi, whose \m@th is
-  // outside their formula)
+  // (\m@th before content in \mbox and \ensuremath, after content, after a
+  // style command, in display math, in a formula inside a formula, and in
+  // a math macro's body, also in a heading and the table of contents, as
+  // the content alone; no formula in red; the logos' epsilon and chi, whose
+  // \m@th is outside their formula)
   'test-hologo': [/aria-label='q plus r'/, /aria-label='alpha beta'/, /aria-label='the metric of w'/,
+    /aria-label='k plus l'/, /aria-label='m minus n'/, /aria-label='a plus b'/, /aria-label='c plus d'/,
+    /aria-label='e plus f Label 1'/, /aria-label='the metric of v'/,
+    /tocnumber'>2<\/span><a [^>]*>Norm <mjx-container aria-label='the metric of z'/,
+    /<a id='[^']*'><\/a>Norm <mjx-container aria-label='the metric of z'/,
+    /^(?![^]*mathcolor='light-dark\(red)/,
     /<span class='HoLogo-2'>2<\/span><span class='HoLogo-e'><mjx-container aria-label='epsilon'/,
     /<span class='tex8web-nowrap'><mjx-container aria-label='epsilon'[^]*?<\/mjx-container>-<span class='HoLogo-TeX'>/,
     /<span class='HoLogo-X'><mjx-container aria-label='chi'/],
@@ -1063,9 +1070,9 @@ const builddirspacePage = (name, included = true) => [
     /<h3 class='sectionHead' id='included-part'>[^]*Text of the included part, after section<span class='tex8web-nbsp'> <\/span><a href='#spaces'>1<!--/,
   ] : [],
 ];
-// hologo's BibTeX logo after the text before: its B, and its IB after
-// any formula that has no \m@th
-const hologoBibtex = before => new RegExp(`${before}<span class='HoLogo-BibTeX-sf'><span class='tex8web-nowrap'>(?:<span class='[\\w-]+'>)?B(?:(?!backslash m|mathcolor|HoLogo-i|<\\/p>)[^])*<span class='HoLogo-i'>`);
+// hologo's BibTeX logo after the text before: its B, and its IB with no
+// formula between them
+const hologoBibtex = before => new RegExp(`${before}<span class='HoLogo-BibTeX-sf'><span class='tex8web-nowrap'>(?:<span class='[\\w-]+'>)?B(?:(?!<mjx-container|HoLogo-i|<\\/p>)[^])*<span class='HoLogo-i'>`);
 
 const contents = {
   // (\eqref of a row whose matrix has rows reads the row's number)
@@ -1794,13 +1801,13 @@ const contents = {
   'test-hologo': [
     ...["class='tocnumber'>1<\\/span><a [^>]*>Using ", "<a id='[^']*'><\\/a>Using ", 'Text: ', 'Italic: ',
       "Notes: <\\/span>", "Theorem: <\\/span>", 'Sans: ', 'Typewriter: ', 'Bold: ', 'Capital: ', 'Eight: ',
-      'Variant sf: '].map(hologoBibtex),
+      'Variant sf: ', "titleHead'>Using ", "lofToc'>1<span class='tex8web-nbsp'> <\\/span><a [^>]*>The ",
+      "<span class='content'>The "].map(hologoBibtex),
     // (a copy of the same construct in a macro of the document)
-    /Copy: <span class='tex8web-nowrap'>L(?:(?!backslash m|mathcolor|<\/p>)[^])*<span class='cmr-7'>A<\/span><span class='tex8web-tex'>T/,
+    /Copy: <span class='tex8web-nowrap'>L(?:(?!<mjx-container|<\/p>)[^])*<span class='cmr-7'>A<\/span><span class='tex8web-tex'>T/,
     // (the sc variant, which has no math, as a variant and by setup)
     /Guards: <span class='HoLogo-BibTeX-sc'>B<span class='HoLogo-i'>i<\/span><span class='HoLogo-b'>b<\/span>/,
     /Setup: <span class='HoLogo-BibTeX-sc'>B<span class='HoLogo-i'>i<\/span><span class='HoLogo-b'>b<\/span>/,
-    /, and T<sub>T<\/sub>H\./,
   ],
   'test-hologo-plain': ["class='tocnumber'>1<\\/span><a [^>]*>Using ", "<a id='[^']*'><\\/a>Using ", 'Text: '].map(hologoBibtex),
 };
