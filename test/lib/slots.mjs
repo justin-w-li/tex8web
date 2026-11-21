@@ -9,11 +9,13 @@ import { mkdirSync } from 'node:fs';
 import { tmpdir, totalmem } from 'node:os';
 import { join } from 'node:path';
 
-// TEX8WEB_SLOTS, else one slot for each 4 GB of memory (about what a build
-// and its Chrome or MathJax take), and at least one
+// TEX8WEB_SLOTS, else one slot for each 2 GB of memory beyond 4 GB, which
+// are left to the system and other work, and at least one. A build takes
+// up to about 600 MB. With six slots on 16 GB, a full test:visual left 27%
+// of the memory free
 export function slotCount() {
   const set = process.env.TEX8WEB_SLOTS;
-  if (set === undefined) return Math.max(1, Math.floor(totalmem() / 2 ** 32));
+  if (set === undefined) return Math.max(1, Math.floor((totalmem() - 2 ** 32) / 2 ** 31));
   if (!/^[1-9][0-9]*$/.test(set)) throw new Error(`TEX8WEB_SLOTS is the number of build slots, 1 or more, not "${set}"`);
   return Number(set);
 }

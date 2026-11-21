@@ -7,7 +7,7 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, st
 import { availableParallelism, constants } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { inSlots, lock, noLockf } from './slots.mjs';
+import { inSlots, lock, noLockf, slotCount } from './slots.mjs';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -71,12 +71,13 @@ export function strayKeys(...tables) {
 export const largestFirst = docs => docs.map(doc => [doc, statSync(join(doc.dir, doc.tex)).size])
   .sort((a, b) => b[1] - a[1]).map(([doc]) => doc);
 
-// builds at once from one tool: a build runs mostly on one core, and at
-// most four leave the rest of the machine to other work (a laptop often has
-// four performance cores). The slots limit all tools together. CI's runner
-// runs only the tests, so it builds on every core (with two builds at once
-// on its four cores, its CPU was idle a third of the time)
-export const workers = process.env.CI ? availableParallelism() : Math.min(4, Math.max(2, availableParallelism() >> 1));
+// builds at once from one tool: at most one per build slot, as the slots
+// limit all tools together, and at most one per core beyond four, or two
+// on six cores or fewer. A build runs mostly on one core, and four cores
+// are left to other work. CI's runner runs only the tests, so it builds
+// on every core (with two builds at once on its four cores, its CPU was
+// idle a third of the time)
+export const workers = process.env.CI ? availableParallelism() : Math.min(slotCount(), Math.max(2, availableParallelism() - 4));
 
 // the running commands, each in a separate process group, so that a hung
 // command is killed with what it started (LaTeX, Node, dvisvgm). Ctrl-C does

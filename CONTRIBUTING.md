@@ -242,7 +242,7 @@ The checks of each test script are listed in its header comment.
 
 A build slot is a lock file in `$TMPDIR/tex8web-slots`, taken with `lockf` (`test/lib/slots.mjs`). One is held during every make4ht or latexmk build, and while every Chrome launched by the tests runs. The slots are shared by all test runs on the machine, so the machine does not swap during several test runs at once.
 
-- One build slot for each 4 GB of memory, or as many as `TEX8WEB_SLOTS`, a whole number of 1 or more
+- One build slot for each 2 GB of memory beyond 4 GB, or as many as `TEX8WEB_SLOTS`, a whole number of 1 or more
 - A message after 10 seconds of waiting for a build slot, and every minute after that
 - No build slots without `lockf`, as on Linux
 - A separate pool of two build slots for the tests of the test tools, set up in `test/lib/stubs.mjs`
