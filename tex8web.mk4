@@ -139,28 +139,62 @@ else
         end
       end
       -- (and for each list of an earlier build beside the document: a
-      -- file named for the document, other than its source and .tex
-      -- files, with a line that starts with "\contentsline {", which
-      -- LaTeX's \addcontentsline writes with a space after the command.
-      -- The \@starttoc of article.4ht reads each list other than the
-      -- standard ones, which go through the .4ct, and amsart's reads every
-      -- list, so a list under an extension the document chose, as with
-      -- tocloft's \newlistof, is read from beside the document. Any line
-      -- counts, as biblatex writes other lines before the entries. A file
-      -- the document reads, such as a package of its own, usually has no
-      -- such space when written by hand, and is not hidden. Also in draft
-      -- mode, as such a list may come from a build with other packages
-      -- and stop its one LaTeX run. Its entries then show from the second
-      -- draft build on, from the list that the first one wrote)
+      -- file named for the document whose extension is a list's, and not
+      -- a file the document or a tool reads as its source, or one that
+      -- the other steps handle. The \@starttoc of article.4ht reads each
+      -- list other than the standard ones, which go through the .4ct,
+      -- amsart's reads every list, and titletoc reads its partial lists
+      -- with \@input, so a list under an extension the document chose, as
+      -- with tocloft's \newlistof, is read from beside the document. A
+      -- list may hold only \addtocontents writes, such as babel's
+      -- \babel@toc, with a macro that this build does not define. The
+      -- extension is a list's when:
+      -- - the .aux beside the document names it in \@writefile or
+      --   titletoc's \ttl@writefile, or, with no .aux beside, it is one
+      --   of the lists of LaTeX, titletoc, listings, and algorithm;
+      -- - the file has a line that starts with "\contentsline {", which
+      --   LaTeX's \addcontentsline writes with a space after the command.
+      --   Any line counts, as biblatex writes other lines before the
+      --   entries;
+      -- - or each of its lines starts with a command and a space, as
+      --   \write gives them: a list of an extension the document chose,
+      --   with no .aux beside. A file written by hand usually has no such
+      --   space, as in "\newcommand{".
+      -- Also in draft mode, as such a list may come from a build with
+      -- other packages and stop its one LaTeX run. Its entries then show
+      -- from the second draft build on, from the list that the first one
+      -- wrote)
       local prefix = par.input .. "."
+      local source = {}
+      for extension in ("aux bbl ind gls tex ltx sty cls clo def fd cfg 4ht bib bst bbx cbx ist txt"):gmatch("%S+") do
+        source[extension] = true
+      end
+      local named = {}
+      local auxfile = io.open(prefix .. "aux", "rb")
+      if auxfile then
+        local text = auxfile:read("a")
+        auxfile:close()
+        for extension in text:gmatch("\\@writefile{([^}]*)}") do named[extension] = true end
+        for extension in text:gmatch("\\ttl@writefile{([^}]*)}") do named[extension] = true end
+      else
+        for extension in ("toc lof lot ptc plf plt lol loa"):gmatch("%S+") do named[extension] = true end
+      end
       local function list(name)
+        local extension = name:sub(#prefix + 1)
+        if source[extension] then return false end
+        if named[extension] then return true end
         local file = io.open(name, "rb")
         if not file then return false end
+        local written, lines = true, 0
         for line in file:lines() do
           if line:find("^\\contentsline {") then file:close() return true end
+          if line:find("%S") then
+            lines = lines + 1
+            if not line:find("^\\[%a@]+ ") then written = false end
+          end
         end
         file:close()
-        return false
+        return written and lines > 0
       end
       for name in lfs.dir(".") do
         local file = par.builddir .. "/" .. name
