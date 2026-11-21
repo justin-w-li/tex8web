@@ -1,0 +1,18 @@
+% Checks cases the fix of \UseVerb must not break: fancyvrb's saved
+% verbatim blocks, shown with \UseVerbatim, \BUseVerbatim, and
+% \LUseVerbatim, stay displays, and \Verb stays inline.
+\documentclass{article}
+\usepackage{xcolor,fancyvrb}
+\begin{document}
+\begin{SaveVerbatim}{blk}
+uv-block a_b{c}%
+  uv-block-indent #1
+\end{SaveVerbatim}
+Before the block.
+\UseVerbatim{blk}
+Between, \Verb|uv-plain a_b| inline.
+\BUseVerbatim{blk}
+Then a numbered one.
+\LUseVerbatim{blk}
+After the blocks.
+\end{document}

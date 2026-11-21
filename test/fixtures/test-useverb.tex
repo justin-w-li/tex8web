@@ -1,0 +1,57 @@
+% fancyvrb's \UseVerb writes its saved text inline, as in the PDF: in a
+% paragraph, a heading and the table of contents, a footnote, a theorem,
+% italic text, a table cell, a caption, and a box; with \UseVerb*,
+% options, and \fvset's size; and \SaveGVerb's text with \UseMVerb. A
+% saved block after them stays a display.
+\documentclass{article}
+\usepackage{xcolor,fancyvrb}
+\newtheorem{theorem}{Theorem}
+\SaveVerb{head}|uv-head_h|
+\SaveGVerb{moving}|uv-moving_m|
+\begin{document}
+\tableofcontents
+\SaveVerb{v}|uv-text_a#b%|
+\SaveVerb{star}|uv-star a  b|
+Text \UseVerb{v} more.
+
+\section{Head \UseVerb{head} end}
+
+Moving \UseMVerb{moving} text.
+
+\subsection{Moving \UseMVerb{moving} head}
+
+In a footnote.\footnote{Note \UseVerb{v} end.}
+
+\begin{theorem}
+Theorem \UseVerb{v} end.
+\end{theorem}
+
+\textit{Italic \UseVerb{v} end.}
+
+\begin{tabular}{|l|}
+\hline
+Cell \UseVerb{v} end\\
+\hline
+\end{tabular}
+
+\begin{figure}[h]
+\centering
+Figure body.
+\caption{Caption \UseVerb{v} end}
+\end{figure}
+
+\fbox{Box \UseVerb{v} end}
+
+Star \UseVerb*{star} end.
+
+Shape \UseVerb[fontshape=it]{v} end.
+
+{\fvset{fontsize=\small}Small \UseVerb{v} end.}
+
+\begin{SaveVerbatim}{blk}
+uv-block a_b
+\end{SaveVerbatim}
+After the inline text.
+\UseVerbatim{blk}
+Last line.
+\end{document}

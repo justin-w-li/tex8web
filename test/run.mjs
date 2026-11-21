@@ -3463,6 +3463,11 @@ const mdframed = {
   ],
 };
 
+// fancyvrb's saved text inline: the words around it, and the text in a
+// <code> in the given font, between tags that end or start other fonts
+const usedVerb = (before, text, after, font = "[^']*") => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*` +
+  `<code class='verb'><span class='${font}'>${text}<\\/span><\\/code>\\s*(?:<\\/?span[^>]*>\\s*)*${after}`);
+
 // Spaces in verbatim, alltt, and \verbatiminput keep the font's width. Only
 // the ~ in the text is written as a space in a span.
 const verbatim = {
@@ -3522,6 +3527,46 @@ const verbatim = {
     /<pre class='verbatim'[^>]*>[^]*vf-fallback-block a b/],
   'test-verbatim-font-visible': [/vf-custom-inlineXaXb/, /vf-custom-blockXaXb/,
     /vf-custom-fancyXaXb/, /vf-custom-fancy-blockXaXb/],
+  // (fancyvrb's \UseVerb and \UseMVerb in each context, in the font of
+  // the text around it, and the saved block after them still a display)
+  'test-useverb': [usedVerb('Text', 'uv-text_a#b%', 'more\\.', 'cmtt-10'),
+    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uv-head_h', 'end<\\/h3>').source}`),
+    new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Head', 'uv-head_h', 'end<\\/a>').source}`),
+    usedVerb('<p[^>]*>Moving', 'uv-moving_m', 'text\\.', 'cmtt-10'),
+    new RegExp(`<h4 class='subsectionHead'[^>]*>(?:(?!<\\/h4>)[^])*${usedVerb('Moving', 'uv-moving_m', 'head<\\/h4>').source}`),
+    new RegExp(`<span class='subsectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Moving', 'uv-moving_m', 'head<\\/a>').source}`),
+    usedVerb('Note', 'uv-text_a#b%', 'end\\.', 'cmtt-8'),
+    usedVerb('Theorem', 'uv-text_a#b%', 'end\\.', 'cmitt-10'),
+    usedVerb('Italic', 'uv-text_a#b%', 'end\\.', 'cmitt-10'),
+    usedVerb('<td[^>]*>\\s*Cell', 'uv-text_a#b%', 'end', 'cmtt-10'),
+    usedVerb('Caption', 'uv-text_a#b%', 'end', 'cmtt-10'),
+    usedVerb('Box', 'uv-text_a#b%', 'end', 'cmtt-10'),
+    usedVerb('Star', 'uv-star␣a␣␣b', 'end\\.', 'cmtt-10'),
+    usedVerb('Shape', 'uv-text_a#b%', 'end\\.', 'cmitt-10'),
+    usedVerb('Small', 'uv-text_a#b%', 'end\\.', 'cmtt-9'),
+    /After the inline text\. <\/p>\s*<pre class='fancyvrb'[^>]*>(?:(?!<\/pre>)[^])*uv-block a_b(?:(?!<\/pre>)[^])*<\/pre>\s*<p>\s*Last line\./,
+    /^(?![^]*<pre class='fancyvrb'[^]*<pre class='fancyvrb')/],
+  'test-useverb-hyperref': [usedVerb('Text', 'uvh-text_a#b', 'more\\.', 'cmtt-10'),
+    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uvh-text_a#b', 'end<\\/h3>').source}`),
+    new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Head', 'uvh-text_a#b', 'end<\\/a>').source}`),
+    /<p[^>]*>\s*Body text\./, /^(?![^]*<pre)/],
+  // (fvextra's own inline path for \SaveVerb, \UseVerb, \UseVerb*, and
+  // \EscVerb; \UseVerb with extra=false, and \Verb. fvextra's \UseVerb* shows
+  // no visible spaces in the PDF)
+  'test-useverb-fvextra': [usedVerb('Text', 'uvx-text_a#b', 'more\\.', 'cmtt-10'),
+    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uvx-head_h', 'end<\\/h3>').source}`),
+    usedVerb('Plain', 'uvx-text_a#b', 'end\\.', 'cmtt-10'),
+    usedVerb('Star', 'uvx-star a b', 'end\\.', 'cmtt-10'),
+    usedVerb('Escaped', 'uvx-esc_e', 'end\\.', 'cmtt-10'),
+    usedVerb('Verb', 'uvx-verb_v', 'end\\.', 'cmtt-10'),
+    /^(?![^]*<pre)/],
+  // (a guard: saved blocks shown as displays, each between its paragraphs,
+  // and \Verb inline)
+  'test-useverb-display': [
+    /Before the block\. <\/p> <pre class='fancyvrb' id='fancyvrb1'>(?:(?!<\/pre>)[^])*uv-block a_b\{c\}%(?:(?!<\/pre>)[^])*uv-block-indent #1<\/span><\/span><\/pre><p> Between,/,
+    usedVerb('Between,', 'uv-plain a_b', 'inline\\.', 'cmtt-10'),
+    /<div class='BVerbatimInput'>(?:(?!<\/div>)[^])*uv-block-indent(?:(?!<\/div>)[^])*<\/div><p> Then a numbered one\./,
+    /Then a numbered one\. <\/p><pre class='fancyvrb' id='fancyvrb2'>(?:(?!<\/pre>)[^])*uv-block a_b\{c\}%(?:(?!<\/pre>)[^])*uv-block-indent #1<\/span><\/span><\/pre><p> After the blocks\./],
 };
 
 // The f-ligatures of fonts whose TFMs put them in other slots than their

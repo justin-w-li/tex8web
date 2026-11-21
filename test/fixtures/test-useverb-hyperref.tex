@@ -1,0 +1,14 @@
+% fancyvrb's \UseVerb with hyperref: the saved text inline in the text, a
+% heading, and the table of contents, as in the PDF.
+\documentclass{article}
+\usepackage{xcolor,fancyvrb}
+\usepackage{hyperref}
+\SaveVerb{v}|uvh-text_a#b|
+\begin{document}
+\tableofcontents
+Text \UseVerb{v} more.
+
+\section{Head \UseVerb{v} end}
+
+Body text.
+\end{document}
