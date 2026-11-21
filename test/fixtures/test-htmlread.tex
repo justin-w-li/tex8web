@@ -1,0 +1,64 @@
+% A page that tex4ht writes with a stray end tag, which make4ht then reads
+% as HTML. Each case has a character reference right after a start tag, or
+% a numeric reference with a character after its semicolon. Its text must
+% read as in the PDF. The addresses of the two links are guards.
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{listings,upquote,fancyvrb,alltt,amsthm,minted}
+\usepackage{hyperref}
+\lstset{language=Python,basicstyle=\ttfamily}
+\newtheorem{theorem}{Theorem}
+\title{\& Title's text}
+\author{An Author}
+\begin{document}
+\maketitle
+\section{\& heading}
+Strings: \lstinline{'Hello'}.
+
+\begin{lstlisting}
+>>> f(3)
+>>> print("hi")
+\end{lstlisting}
+
+\begin{lstlisting}[language=C]
+#include <stdio.h>
+if (a && b < c) puts("s");
+\end{lstlisting}
+
+Inline C: \lstinline[language=C]{a<b && c>d} then $x^2$.
+
+Verb: \verb|<a> & "b"|.
+
+Emph: \emph{\&}. Italic: \textit{<x}. Typewriter: \texttt{<b>} and \texttt{"y"}.
+Sans: \textsf{\&s}.
+
+\begin{theorem}
+\textbf{\&} in a theorem.
+\end{theorem}
+
+Footnote\footnote{\& in a footnote.} here.
+
+Link: \href{https://example.com/?a=1&b=2}{\&here} and \href{https://example.com/it's?c=3&d=4}{quote}.
+
+Plain: a \& b and a\&b.
+
+\begin{Verbatim}
+>>> "v" && <w>
+\end{Verbatim}
+
+\begin{verbatim}
+>>> "x" && <y>
+\end{verbatim}
+
+\begin{alltt}
+>>> "z" <
+\end{alltt}
+
+\begin{minted}{python}
+print("Bell Circuit:")
+if a < b > c: pass
+\end{minted}
+
+Mintinline: \mintinline{python}{"q" < 1}.
+\ifdefined\HCode\HCode{</div>}\fi
+\end{document}

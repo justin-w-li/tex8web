@@ -10,6 +10,14 @@
       "HTML DOM parsing OK"
     ]
   },
+  "test-htmlread": {
+    "why": "the fixture writes a stray </div>, so make4ht reads the page as HTML, as a browser does: its text must stay as in the PDF",
+    "allow": [
+      "XML DOM parsing of",
+      "Unbalanced Tag (/div)",
+      "HTML DOM parsing OK"
+    ]
+  },
   "test-units-nocolor": {
     "why": "siunitx.4ht loads the color package after tex4ht has configured the packages, so the page has no colors; tex8web says so, and that xcolor is needed",
     "allow": [

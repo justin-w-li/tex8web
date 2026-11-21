@@ -1100,6 +1100,17 @@ const builddirspacePage = (name, included = true) => [
 // formula between them
 const hologoBibtex = before => new RegExp(`${before}<span class='HoLogo-BibTeX-sf'><span class='tex8web-nowrap'>(?:<span class='[\\w-]+'>)?B(?:(?!<mjx-container|HoLogo-i|<\\/p>)[^])*<span class='HoLogo-i'>`);
 
+// Text as a reader sees it: any tags may come between its characters, and
+// each <, >, &, ", or ' may be written as a reference. A > must not close a
+// tag. A failure names the text.
+const references = {
+  '<': '&(?:lt|#x0*3[cC]|#0*60);', '>': '(?:(?<!<[^<>]*)>|&(?:gt|#x0*3[eE]|#0*62);)', '&': '&(?:amp|#x0*26|#0*38);',
+  '"': '(?:"|&(?:quot|#x0*22|#0*34);)', "'": "(?:'|&(?:apos|#x0*27|#0*39);)",
+};
+const shown = text => {
+  const pattern = new RegExp([...text].map(c => references[c] ?? c.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')).join('(?:<[^>]*>)*'));
+  return { source: text, test: html => pattern.test(html) };
+};
 const contents = {
   // (\eqref of a row whose matrix has rows reads the row's number)
   'test-envmacro': [/first row is \(<a href='#[^']*'>3<!-- +tex4ht:ref: eq:g /],
@@ -1888,6 +1899,20 @@ const contents = {
     /Let: <mjx-container aria-label='x'[^]*? and <span class='tex8web-nowrap'><mjx-container aria-label='bold v'/,
   ],
   'test-hologo-plain': ["class='tocnumber'>1<\\/span><a [^>]*>Using ", "<a id='[^']*'><\\/a>Using ", 'Text: '].map(hologoBibtex),
+  // (a page read as HTML, after a stray end tag: the text of each listing,
+  // verbatim, inline code, and font change, as in the PDF; the formula
+  // after the inline listing, prerendered; and the links' addresses)
+  'test-htmlread': [
+    /<title>&(?:amp|#x0*26);\s*Title’s text<\/title>/, /<h1 class='titleHead'>&(?:amp|#x0*26);\s*Title’s text<\/h1>/,
+    ...['& heading', "Strings: 'Hello'.", '>>> f(3)', '>>> print("hi")', '#include <stdio.h>', 'if (a && b < c) puts("s");',
+      'Inline C: a<b && c>d then', 'Verb: <a> & "b".', 'Emph: &.', 'Italic: <x.', 'Typewriter: <b> and "y".', 'Sans: &s.',
+      '& in a theorem.', '& in a footnote.', 'Link: &here and quote.', 'Plain: a & b and a&b.',
+      '>>> "v" && <w>', '>>> "x" && <y>', '>>> "z" <', 'print("Bell Circuit:")', 'if a < b > c: pass',
+      'Mintinline: "q" < 1.'].map(shown),
+    /<\/code>(?:<\/span>)* then (?:<span[^>]*>)*<mjx-container/,
+    /<a href='https:\/\/example\.com\/\?a=1&amp;b=2'>/, /<a href='https:\/\/example\.com\/it&(?:#39|#x0*27|apos);s\?c=3&amp;d=4'>/,
+    /^(?![^]*(?:\/span&gt;|(?<!&)#x0*[0-9A-F]{2,};))/,
+  ],
 };
 
 // Text back in its font after a font command that the PDF keeps in a
