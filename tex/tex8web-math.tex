@@ -854,11 +854,9 @@
 % LaTeX accepts because \begin{bmatrix} runs \bmatrix. Each pair is an
 % environment here, so its \\ and & end no row or column of the display.
 % The names are those of \web@envpairs (tex8web-hooks.sty): under amsmath,
-% each pair that the document has not defined again. Without amsmath, a
-% document may define \bmatrix with braces, as plain TeX's \pmatrix, and
-% tex4ht then defines \endbmatrix too (\VerbMath, mathjax-latex-4ht.4ht).
-% Keep the names of tex8web-hooks.sty the same as the list in macros.lua,
-% which gives MathJax the pairs.
+% each pair that the document has not defined again. Keep the names of
+% tex8web-hooks.sty the same as the list in macros.lua, which gives MathJax
+% the pairs.
 \clist_const:Ne \c__web_pairs_clist { \web@envpairs }
 \cs_new_protected:Npn \__web_pair:N #1 {
     \token_if_cs:NT #1 {

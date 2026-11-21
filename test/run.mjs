@@ -1058,7 +1058,7 @@ const builddirspacePage = (name, included = true) => [
 ];
 const contents = {
   // (\eqref of a row whose matrix has rows reads the row's number)
-  'test-envmacro': [/first row is \(<a href='#x1-2003r3'>3<!--/],
+  'test-envmacro': [/first row is \(<a href='#[^']*'>3<!-- +tex4ht:ref: eq:g /],
   // (the \label on the row of a \bmatrix of the document's names its number)
   'test-envmacro-own': [/Rows \(<a href='#[^']*'>1<!-- +tex4ht:ref: own-a +--><\/a>\) and \(<a href='#[^']*'>2<!-- +tex4ht:ref: own-b /],
   'test-builddirspace': builddirspacePage('test-builddirspace'),
