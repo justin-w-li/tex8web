@@ -1,0 +1,12 @@
+% test-chapneg with no space above a chapter, \titlespacing's {0pt}, which
+% in the PDF puts the title at the top of a new page. On the page, the
+% heading has the default space below the text above it, as for a
+% negative space, and not none.
+\documentclass{book}
+\usepackage{titlesec,makeidx}
+\makeindex
+\titleformat{\chapter}[display]{\normalfont\huge\bfseries}
+    {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing{\chapter}{0pt}{0pt}{20pt}
+\begin{document}
+\input{test-chapneg-cases.ltx}

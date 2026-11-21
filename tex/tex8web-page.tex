@@ -397,14 +397,19 @@
         % \MakeUppercase)
         \setbox0\vbox{\web@font{}%
             \ifx\web@spacing\relax\else
-                % (a chapter's negative space above is left out, so that the
+                % (a chapter's space above that is less than the
+                % stylesheet's, 0.83em, is left out, so that the
                 % stylesheet's applies, as for fncychap's negative spaces
-                % (\web@chapterspacing). In the PDF it moves the title up
-                % from the top of a new page; on the page it would draw the
-                % heading over the text above it)
+                % (\web@chapterspacing). In the PDF it is measured from the
+                % top of a new page; on the page a negative space would draw
+                % the heading over the text above it, and a zero space would
+                % set it right below that text)
                 \def\web@a{--tex8web-#1-before: \web@em\web@before;}%
-                \ifdim\web@before<\z@
-                    \in@{,#1,}{,chapter,}\ifin@\let\web@a\@empty\fi
+                \def\web@b{chapter}\def\web@c{#1}%
+                \ifx\web@b\web@c
+                    \ifdim\web@before<.83\dimexpr\f@size pt\relax
+                        \let\web@a\@empty
+                    \fi
                 \fi
                 \xdef\web@spacing{\web@a
                     --tex8web-#1-after: \web@em\web@after;

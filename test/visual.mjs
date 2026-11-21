@@ -777,8 +777,8 @@ const chapterGaps = `(() => {
       return [[h.id, \`starts \${(limit - top).toFixed(1)}px above the bottom of \${above ? 'the ' + above.localName + ' above it' : 'its column'}\`]];
     }
     if (!above) return [];
-    // (a chapter's space above is the stylesheet's, 0.83em of its font, as
-    // for a chapter style whose space is negative; a part's at least half
+    // (a chapter's space above is at least the stylesheet's, 0.83em of its
+    // font, as for a chapter style whose space is less; a part's at least half
     // the text's em)
     const chapter = !h.matches('.partHead, .likepartHead');
     const least = chapter ? 0.83 * parseFloat(getComputedStyle(h).fontSize) - 0.5
@@ -806,7 +806,7 @@ const chapterLanding = `(() => {
   });
   return wrong;
 })()`;
-const chapterHeads = { 'test-chapneg': 11, 'test-chapneg-hyperref': 11 };
+const chapterHeads = { 'test-chapneg': 11, 'test-chapneg-hyperref': 11, 'test-chapneg-zero': 11 };
 // Description lists after footnotes beside the text, on a wide screen
 // with the page script, which stacks the footnotes. Each list's box, each
 // label's box, and its text's first line are the same within 0.5px with
