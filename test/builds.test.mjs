@@ -170,6 +170,30 @@ test('a build is reused only while nothing it was built from has changed', { tim
   }
 });
 
+test('a build for MathJax in the browser starts from a prerendered build\'s LaTeX run', { timeout: 30000 }, async () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webfrom')));
+  try {
+    writeFileSync(join(dir, 'doc.tex'), '\\documentclass{article}\n\\begin{document}\nfrom\n\\end{document}\n');
+    const doc = { name: 'from', dir, tex: 'doc.tex', cfg: join(root, 'tex8web.cfg') };
+    const html = { out: join(dir, 'build/html'), aux: join(dir, 'build/aux') };
+    assert.equal((await build(doc, html.out, html.aux, { ...stubbed, TEX8WEB_MATHML: '1' })).code, 0);
+    const saved = readFileSync(join(dir, 'build/aux.latex.stamp'), 'utf8');
+    const fallback = env => build(doc, join(dir, 'build/fallback'), join(dir, 'build/fallbackaux'), { ...stubbed, ...env }, html);
+    const reused = await fallback({ TEX8WEB_NO_PRERENDER: '1' });
+    assert.equal(reused.code, 0, reused.log);
+    assert.equal(reused.latexReused, true);
+    assert.equal(reused.log.match(/LaTeX ran/g)?.length, 1);
+    // the prerendered build's run is read, never written
+    assert.equal(readFileSync(join(dir, 'build/aux.latex.stamp'), 'utf8'), saved);
+    assert.ok(!existsSync(join(dir, 'build/fallbackaux.latex.stamp')));
+    // a TEX8WEB_ variable LaTeX may read is in the stamp
+    rmSync(join(dir, 'build/fallback.stamp'));
+    assert.equal((await fallback({ TEX8WEB_NO_PRERENDER: '1', TEX8WEB_OTHER: '1' })).latexReused, undefined);
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
+});
+
 test('the files beside a config outside the document\'s directory are in the stamp, and mounted in a contained build', { timeout: 30000 }, async () => {
   const top = realpathSync(mkdtempSync(join(tmpdir(), 'tex8webbeside')));
   const path = process.env.PATH;

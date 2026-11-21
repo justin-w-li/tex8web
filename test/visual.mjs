@@ -1674,12 +1674,13 @@ const docs = select(only).filter(doc => !['test-split', 'test-cutat'].includes(d
 // prerendered build is npm test's, reused if npm test has made it.
 const variants = [[testDir, 'html', 'aux', { TEX8WEB_MATHML: '1' }],
   [doc => testDir(doc, 'visual'), 'fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
-const builds = largestFirst(docs).flatMap(doc => variants.map(([dir, out, aux, env]) =>
+// (the prerendered builds come first, as each build for the browser waits
+// for the document's prerendered build, to start from its LaTeX run, and
+// a build that waits keeps a worker idle)
+const builds = variants.flatMap(([dir, out, aux, env]) => largestFirst(docs).map(doc =>
   ({ doc, dir: dir(doc), out, aux, env, ...Promise.withResolvers() })));
-// (the build for the browser starts from the prerendered build's LaTeX run,
-// so it waits for that build, which is earlier in the list)
 const building = pool(builds, workers, async ({ doc, dir, out, aux, env, resolve }) => {
-  const from = out === 'fallback' ? join(testDir(doc), 'aux') : undefined;
+  const from = out === 'fallback' ? { out: join(testDir(doc), 'html'), aux: join(testDir(doc), 'aux') } : undefined;
   if (from) await builds.find(b => b.doc === doc && b.out === 'html').promise;
   resolve((await build(doc, join(dir, out), join(dir, aux), env, from)).code);
 });

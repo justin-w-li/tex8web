@@ -318,11 +318,16 @@ function stamps(doc, args, env, pdf) {
 // document's, is then mounted read-only too, for a document that reads
 // files above its directory, and the files directly in the config's
 // folder, but not its links, as the config can input a file beside it. A
-// document with shellEscape is built with full shell escape
+// document with shellEscape is built with full shell escape. With from,
+// { out, aux } of another build of the document, the build starts from
+// that build's LaTeX run when its stamp matches, and holds that build's
+// lock meanwhile, as another tool may be building it again
 export async function build(doc, out, aux, env = {}, from) {
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
+  let releaseFrom = () => {};
   try {
+    if (from) releaseFrom = await lock(`${from.out}.lock`);
     if (doc.runner) {
       // (what a runner killed with an earlier build, or by run(), left
       // uncleaned, in the directories the host reads next. Then a source
@@ -339,6 +344,7 @@ export async function build(doc, out, aux, env = {}, from) {
     }
     return await buildHere(doc, out, aux, env, from);
   } finally {
+    releaseFrom();
     release();
   }
 }
@@ -372,14 +378,13 @@ async function buildHere(doc, out, aux, env, from) {
     // (the stamp again, with the new PDF, as the next build will see it)
     wanted = stampNow();
   }
-  // (with from, the tex4ht directory of another build of the document,
-  // that build's LaTeX run if it matches, which is never written here)
+  // (the LaTeX run of from's build if it matches, which this build reads
+  // and never writes, else this build's. Never in draft mode, which runs
+  // LaTeX once on the previous build's files)
   const stageOf = dir => ({ dir: `${dir}.latex`, stamp: `${dir}.latex.stamp`, log: `${dir}.latex.log` });
   const matches = stage => existsSync(stage.stamp) && readFileSync(stage.stamp, 'utf8') === wanted.latex
     && existsSync(stage.dir) && existsSync(stage.log);
-  const stage = from && matches(stageOf(from)) ? stageOf(from) : stageOf(aux);
-  // (never in draft mode, which runs LaTeX once on the previous build's
-  // files)
+  const stage = from && !doc.draft && matches(stageOf(from.aux)) ? stageOf(from.aux) : stageOf(aux);
   const reuse = !doc.draft && matches(stage);
   empty(out);
   if (!doc.draft) empty(aux);

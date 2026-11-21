@@ -262,7 +262,7 @@ Each document is built with the same environment into `build/test/<document>/htm
 
 The LaTeX runs have a separate stamp: only the tex8web files that LaTeX reads, plus the day, for `\today`. After a change to other files, for example in `css/`, `js/`, `fonts/`, or the HTML passes, only tex4ht, t4ht, and the HTML passes run again. Reused LaTeX runs are noted in the build log.
 
-The LaTeX stamp also leaves out `-B`, `-d`, `TEX8WEB_NO_PRERENDER`, and `TEX8WEB_MATHML`, which only the steps after LaTeX read. So `visual.mjs` builds each page typeset by MathJax in the browser from the LaTeX runs of the document's prerendered build, when their stamps match.
+The LaTeX stamp also leaves out `-B` and `-d`, which change only where the files go, and `TEX8WEB_NO_PRERENDER` and `TEX8WEB_MATHML`, which only the steps after LaTeX read. So `visual.mjs` builds each page typeset by MathJax in the browser from the LaTeX runs of the document's prerendered build, when their stamps match.
 
 The build stamp has the day too, so a build from another day is not reused, as its `\today` would differ. With `FORCE_SOURCE_DATE`, the date is fixed by `SOURCE_DATE_EPOCH`, and the day is left out of both stamps. The test fixtures are built with the fixed date January 1, 2000, so their pages do not depend on the day.
 
