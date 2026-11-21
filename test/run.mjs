@@ -537,6 +537,13 @@ const speech = {
   // its rows in a numbered align keep their numbers)
   'test-envmacro-own': [/aria-label='2 lines Line 1: x equals the 2 by 1 column matrix 1 2 Label 1 Line 2: y equals 3 Label 2'/,
     /aria-label='M equals the 2 by 2 matrix Row 1: a b Row 2: c d'/],
+  // (\m@th before content in \mbox and \ensuremath, and in a math macro's
+  // body, as the content alone; the logos' epsilon and chi, whose \m@th is
+  // outside their formula)
+  'test-hologo': [/aria-label='q plus r'/, /aria-label='alpha beta'/, /aria-label='the metric of w'/,
+    /<span class='HoLogo-2'>2<\/span><span class='HoLogo-e'><mjx-container aria-label='epsilon'/,
+    /<span class='tex8web-nowrap'><mjx-container aria-label='epsilon'[^]*?<\/mjx-container>-<span class='HoLogo-TeX'>/,
+    /<span class='HoLogo-X'><mjx-container aria-label='chi'/],
 };
 
 // Pictures sized by \includegraphics's width, scale, or height: a share of
@@ -1056,6 +1063,10 @@ const builddirspacePage = (name, included = true) => [
     /<h3 class='sectionHead' id='included-part'>[^]*Text of the included part, after section<span class='tex8web-nbsp'> <\/span><a href='#spaces'>1<!--/,
   ] : [],
 ];
+// hologo's BibTeX logo after the text before: its B, and its IB after
+// any formula that has no \m@th
+const hologoBibtex = before => new RegExp(`${before}<span class='HoLogo-BibTeX-sf'><span class='tex8web-nowrap'>(?:<span class='[\\w-]+'>)?B(?:(?!backslash m|mathcolor|HoLogo-i|<\\/p>)[^])*<span class='HoLogo-i'>`);
+
 const contents = {
   // (\eqref of a row whose matrix has rows reads the row's number)
   'test-envmacro': [/first row is \(<a href='#[^']*'>3<!-- +tex4ht:ref: eq:g /],
@@ -1778,6 +1789,20 @@ const contents = {
     ...[['Theorem~3.1:~Long starred', 'Long starred'], ['Theorem~3.2:~Titled', 'Short y'],
       ['Theorem~3.3:~Keyed', 'Key x']].map(([title, ...links]) => boxRefs(title, ...links)),
   ],
+  // hologo's BibTeX logo after each label: its B, and then IB with no
+  // formula of \m@th between them, which MathJax draws in red
+  'test-hologo': [
+    ...["class='tocnumber'>1<\\/span><a [^>]*>Using ", "<a id='[^']*'><\\/a>Using ", 'Text: ', 'Italic: ',
+      "Notes: <\\/span>", "Theorem: <\\/span>", 'Sans: ', 'Typewriter: ', 'Bold: ', 'Capital: ', 'Eight: ',
+      'Variant sf: '].map(hologoBibtex),
+    // (a copy of the same construct in a macro of the document)
+    /Copy: <span class='tex8web-nowrap'>L(?:(?!backslash m|mathcolor|<\/p>)[^])*<span class='cmr-7'>A<\/span><span class='tex8web-tex'>T/,
+    // (the sc variant, which has no math, as a variant and by setup)
+    /Guards: <span class='HoLogo-BibTeX-sc'>B<span class='HoLogo-i'>i<\/span><span class='HoLogo-b'>b<\/span>/,
+    /Setup: <span class='HoLogo-BibTeX-sc'>B<span class='HoLogo-i'>i<\/span><span class='HoLogo-b'>b<\/span>/,
+    /, and T<sub>T<\/sub>H\./,
+  ],
+  'test-hologo-plain': ["class='tocnumber'>1<\\/span><a [^>]*>Using ", "<a id='[^']*'><\\/a>Using ", 'Text: '].map(hologoBibtex),
 };
 
 // Text back in its font after a font command that the PDF keeps in a

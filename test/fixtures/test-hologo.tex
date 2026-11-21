@@ -1,0 +1,44 @@
+% \m@th in a formula, which MathJax does not know. hologo's BibTeX logo
+% sets "ib" in a smaller font that starts with an empty $\m@th$: in text,
+% in a heading and its entry in the table of contents, in italic, in a
+% footnote, in a theorem, in sans-serif, typewriter, and bold text, as
+% \Hologo, through BibTeX8, and as the sf variant. A copy of the same
+% construct in a document's macro, \m@th before content in \mbox and
+% \ensuremath, and in the body of a math macro. Guards: the sc variant,
+% which has no math, and logos that run \m@th outside their formula.
+% test-hologo-plain has the same logo without hyperref.
+\documentclass{article}
+\usepackage{amsmath,amsthm}
+\usepackage{hologo}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\makeatletter
+\newcommand\OldLaTeX{L\kern-.36em{\setbox0\hbox{T}\vbox to\ht0{\hbox{$\m@th$\csname S@\f@size\endcsname\fontsize\sf@size\z@\math@fontsfalse\selectfont A}\vss}}\kern-.15em\TeX}
+\newcommand\Boxed{\mbox{$\m@th q+r$}}
+\newcommand\Ensured{\ensuremath{\m@th\alpha\beta}}
+\newcommand{\nrm}[1]{\m@th\lVert #1\rVert}
+\makeatother
+\begin{document}
+\tableofcontents
+\section{Using \hologo{BibTeX} files}
+Text: \hologo{BibTeX} now.
+
+Italic: \emph{\hologo{BibTeX} here}.
+
+Footnote: see below.\footnote{Notes: \hologo{BibTeX} there.}
+
+\begin{theorem}
+Theorem: \hologo{BibTeX} holds.
+\end{theorem}
+
+Sans: \textsf{\hologo{BibTeX}}. Typewriter: \texttt{\hologo{BibTeX}}. Bold: \textbf{\hologo{BibTeX}}.
+
+Capital: \Hologo{BibTeX}. Eight: \hologo{BibTeX8}. Variant sf: \hologoVariant{BibTeX}{sf}.
+
+Copy: \OldLaTeX.
+
+Boxed: \Boxed. Ensured: \Ensured. Norm: $\nrm{w}$.
+
+Guards: \hologoVariant{BibTeX}{sc}, \hologo{LaTeXe}, \hologo{eTeX}, \hologo{ExTeX}, and \hologo{TTH}.
+{\hologoLogoSetup{BibTeX}{variant=sc}Setup: \hologo{BibTeX}.}
+\end{document}
