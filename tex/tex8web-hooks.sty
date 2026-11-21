@@ -140,14 +140,15 @@
 }
 \AddToHook{begindocument/before}{\catcode`\!=\web@bangcatcode\relax}
 
-% A \thechapter that the preamble sets, by a definition or by a memoir
-% chapter style. tex4ht's \Preamble redefines it for book, scrbook, and
-% memoir as \if@mainmatter\@arabic\c@chapter\fi (html4.4ht), and chapter,
-% section, theorem, and equation numbers lose the preamble's form. That
-% form is kept when it differs from the class's, and put back inside
-% tex4ht's test, which leaves front-matter and back-matter chapters
-% unnumbered. The class's form is taken after the last class loads.
-\AddToHook{class/after}{\global\let\web@classthechapter\thechapter}
+% A \thechapter that the preamble or the class sets, by a definition or by a
+% memoir chapter style. tex4ht's \Preamble redefines it for book, scrbook,
+% and memoir as \if@mainmatter\@arabic\c@chapter\fi (html4.4ht), and
+% chapter, section, theorem, and equation numbers lose that form. The form
+% is put back inside tex4ht's test, which leaves front-matter and
+% back-matter chapters unnumbered. These classes define \thechapter as
+% \@arabic\c@chapter, so their form expands as tex4ht's does. This hook
+% runs a second time at the config's \begin{document}, after \Preamble,
+% and the form is kept only the first time.
 \AddToHook{env/document/before}{%
     \ifdefined\web@preamblethechapter\else
         \global\let\web@preamblethechapter\thechapter
@@ -157,10 +158,8 @@
 % a class without \if@mainmatter)
 \def\web@mainmatterthechapter{\if@mainmatter\web@preamblethechapter\fi}
 \AddToHook{begindocument/before}{%
-    \ifx\web@preamblethechapter\web@classthechapter\else
-        \ifx\thechapter\web@preamblethechapter\else
-            \global\let\thechapter\web@mainmatterthechapter
-        \fi
+    \ifx\thechapter\web@preamblethechapter\else
+        \global\let\thechapter\web@mainmatterthechapter
     \fi
 }
 

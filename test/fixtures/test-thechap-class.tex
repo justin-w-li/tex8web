@@ -1,0 +1,21 @@
+% A \thechapter set by the class, test-thechap-class.cls, which loads book
+% and numbers chapters in Roman numerals, and not by the preamble: chapter
+% and section numbers, the table of contents, references with hyperref,
+% and unnumbered front-matter and back-matter chapters.
+\documentclass{test-thechap-class}
+\usepackage{hyperref}
+\begin{document}
+\frontmatter
+\chapter{Preface}\label{preface}
+Front text.
+\tableofcontents
+\mainmatter
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+Ref: \ref{start}; \ref{basics}; \ref{second}.
+\chapter{Second}\label{second}
+Here \ref{second}.
+\backmatter
+\chapter{Afterword}\label{afterword}
+Back text.
+\end{document}

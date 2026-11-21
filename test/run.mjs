@@ -3930,10 +3930,9 @@ const appendixRefs = {
   'test-appref-subappendices': [['Ref: 1.A; 2.A; 1.', [null, null, 'main']]],
 };
 
-// A \thechapter set in the preamble: chapter and section headings with
-// their numbers (a heading's label, or none), the table of contents, and
-// paragraphs as in the appendixRefs table above. tex4ht redefines
-// \thechapter at \begin{document} for book and memoir.
+// A \thechapter set in the preamble or the class: chapter and section
+// headings with their numbers (a heading's label, or none), the table of
+// contents, and paragraphs as in the appendixRefs table above.
 const chapterHead = (id, label, title) => label === null
   ? new RegExp(`<h2 class='chapterHead' id='${id}'>(?:(?!</h2>|titlemark)[^])*${title}</h2>`)
   : new RegExp(`<h2 class='(?:chapter|appendix)Head' id='${id}'>(?:(?!</h2>)[^])*<span class='titlemark'>${label}</span>(?:(?!</h2>)[^])*${title}</h2>`);
@@ -4008,6 +4007,13 @@ const thechapter = {
   'test-thechap-culver': [
     chapterHead('start', `(?:${word('Chapter', '')})?I`, 'Start'), sectionHead('basics', 'I\\.1'),
     chapterHead('second', `(?:${word('Chapter', '')})?II`, 'Second'),
+    tocEntry('chapter', '', 'preface'), tocEntry('chapter', 'I', 'start'), tocEntry('section', 'I\\.1', 'basics'),
+    tocEntry('chapter', 'II', 'second'), tocEntry('chapter', '', 'afterword'),
+    ['Ref: I; I.1; II.', ['start', 'basics', 'second']], ['Here II.', ['second']],
+  ],
+  'test-thechap-class': [
+    chapterHead('preface', null, 'Preface'), chapterHead('afterword', null, 'Afterword'),
+    chapterHead('start', word('Chapter', 'I'), 'Start'), sectionHead('basics', 'I\\.1'), chapterHead('second', word('Chapter', 'II'), 'Second'),
     tocEntry('chapter', '', 'preface'), tocEntry('chapter', 'I', 'start'), tocEntry('section', 'I\\.1', 'basics'),
     tocEntry('chapter', 'II', 'second'), tocEntry('chapter', '', 'afterword'),
     ['Ref: I; I.1; II.', ['start', 'basics', 'second']], ['Here II.', ['second']],
