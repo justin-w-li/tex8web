@@ -16,10 +16,13 @@
 % \qedhere equation, and on the \qedhere row of an align, a numbered display
 % then a repeat with its own \tag, a displaymath then an equation, two $$
 % $$, and two \[ \] (a \label in these three gives the section's number,
-% as in the PDF), and, numbered by section, a real label equal to a repeat
-% with the number appended. With cleveref,
-% \cref leads to the last display too. (A reference to a \tag row is left
-% out: its link has no target, with a unique label too.)
+% as in the PDF), a \qedhere with a \label in $$ $$ and in displaymath,
+% whose box is below the display, and, numbered by section, a real label
+% equal to a repeat with the number appended. With cleveref, \cref leads
+% to the last display too, and \autoref to a \label in \[ \] after an
+% equation names an equation, as in the PDF, where \@currentHref is
+% global. (A reference to a \tag row is left out: its link has no target,
+% with a unique label too.)
 \newtheorem{theorem}{Theorem}
 \begin{document}
 \section{Start}\label{sec}
@@ -218,6 +221,17 @@ After bare.
 
 Refs bare: \ref{bare}.
 
+Before qed below.
+\begin{proof}
+R.
+$$ o = 7 \label{dq} \qedhere $$
+\end{proof}
+\begin{proof}
+S.
+\begin{displaymath} o = 8 \label{mq} \qedhere \end{displaymath}
+\end{proof}
+After qed below.
+
 \numberwithin{equation}{section}
 \section{By section}
 
@@ -230,4 +244,6 @@ After by section.
 Refs by section: \eqref{w} and \eqref{w-2.2}.
 
 \ifdefined\cref Refs cref: \cref{x}, \cref{eq:tri}, and \cref{ml}.\fi
+
+\ifdefined\cref Refs autoref: \autoref{bare}.\fi
 \end{document}

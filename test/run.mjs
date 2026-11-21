@@ -2872,10 +2872,10 @@ const qed = {
 // MathJax error between "Before <case>." and "After <case>.", with no
 // other row numbered in parentheses. A reference gives the last display's
 // number and leads to its anchor (\N, the Nth of the case's last anchors).
-// The references already do so with the error: their patterns guard
-// against a fix that moves the anchors. So do the cases section, nonumber,
-// and control. In reserved, web-qed-2 is also the name tex8web gives the
-// second \qedhere display's QED tag, which gives the same error.
+// The references lead there with the error too, so their patterns, and the
+// cases section, nonumber, and control, are guards. In reserved, web-qed-2
+// is also the name tex8web gives the second \qedhere display's QED tag,
+// which gives the same error.
 const dupFree = name => `(?:(?!After ${name}\\.)(?!<mjx-merror)(?!<mlabeledtr><mtd>(?:<mrow>)?<mtext>\\()[^])*`;
 const dupDrawn = (name, ...tags) => new RegExp(`Before ${name}\\.${tags.map(tag => `${dupFree(name)}<mlabeledtr><mtd>(?:<mrow>)?<mtext>\\((?:<\\/mtext><mtext>)?${tag}(?:<\\/mtext><mtext>)?\\)`).join('')}${dupFree(name)}After ${name}\\.`);
 const dupAnchors = (name, count) => `Before ${name}\\.(?:(?!After ${name}\\.)[^])*${`<a class='tex8web-eq-anchor(?:-end)?' id='([^']+)'><\\/a>(?:(?!After ${name}\\.)(?!tex8web-eq-anchor)[^])*`.repeat(count)}After ${name}\\.`;
@@ -2910,6 +2910,9 @@ const duplabelNumbers = [
   dupDrawn('displaymath', 38), dupRefs('displaymath', 1, `\\(${dupLink(1, 38)}\\)`),
   dupDrawn('dollars'), dupPlainRefs('dollars'),
   dupDrawn('bare'), dupPlainRefs('bare'),
+  // (a \qedhere with a \label in $$ $$ and displaymath: two boxes below
+  // the displays, none in a tag)
+  /Before qed below\.(?:(?!After qed below\.)(?!mjx-labels)[^])*(?:<\/span><span class='tex8web-qed'>(?:(?!After qed below\.)(?!mjx-labels)[^])*){2}After qed below\./,
   dupDrawn('by section', '2\\.1', '2\\.2', '2\\.3'),
   dupRefs('by section', 2, `\\(${dupLink(1, '2\\.2')}\\) and \\(${dupLink(2, '2\\.3')}\\)`),
 ];
@@ -2939,6 +2942,7 @@ const numbers = {
   'test-duplabel-hyperref': [
     ...duplabelNumbers,
     new RegExp(`${dupAnchors('two', 1)}[^]*${dupAnchors('three', 1).replace("id='(", "id='(?<three>")}[^]*${dupAnchors('multline', 1).replace("id='(", "id='(?<multline>")}[^]*Refs cref: eq\\.${dupSpace}\\(${dupLink(1, 2)}\\), eq\\.${dupSpace}\\(<a href='#\\k<three>'>10(?:<!--[^>]*-->)?<\\/a>\\), and eq\\.${dupSpace}\\(<a href='#\\k<multline>'>25(?:<!--[^>]*-->)?<\\/a>\\)\\.`),
+    /Refs autoref: <a href='#[^']+'>Equation<span class='tex8web-nbsp'>[^<]*<\/span>1(?:<!--[^>]*-->)?<\/a>\./,
   ],
 };
 

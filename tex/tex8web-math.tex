@@ -509,10 +509,17 @@
 \web@needs{VerbMathToks}
 \cs_set_eq:NN \__web_AltlDisplay:w \AltlDisplay
 \cs_set_eq:NN \__web_AltlDisplayDollars:w \AltlDisplayDollars
-% (walked as equation*)
+% (walked as equation*. In $$ $$ and displaymath, a \qedhere leaves the
+% box below the display, as without a \label: \__web_qed_wanted:)
+\bool_new:N \l__web_qed_below_bool
 \cs_new_protected:Npn \__web_walk_unnumbered:n #1 {
     \tl_clear:N \l__web_alignment_tl
     \__web_rows:nn {equation*} {#1}
+}
+\cs_new_protected:Npn \__web_walk_qed_below:n #1 {
+    \bool_set_true:N \l__web_qed_below_bool
+    \__web_walk_unnumbered:n {#1}
+    \bool_set_false:N \l__web_qed_below_bool
 }
 \cs_new_protected:Npn \__web_walked:n #1 {
     \__web_walk_unnumbered:n {#1}
@@ -536,7 +543,7 @@
             \__web_saved:n {#1}
             \str_if_in:nnTF {#1} {\label}
                 {
-                    \__web_walk_unnumbered:n {#1}
+                    \__web_walk_qed_below:n {#1}
                     \exp_after:wN \__web_AltlDisplayDollars:w \l__web_body_tl $$
                 }
                 { \__web_AltlDisplayDollars:w #1 $$ }
@@ -706,13 +713,18 @@
 % own number, the page has no such anchor. Then the \label gets an anchor
 % of its own, from a step of the counter that prints the same number and
 % is set back after it. hyperref names the anchor from \theHequation,
-% which is given a name of its own
+% which is given a name of its own. The step also sets, globally, the
+% type of the reference that \autoref and \cref print (\@currentHref,
+% and \cref@currentlabel in tex4ht's cleveref.4ht). These are set back
+% before the \label, which gets the type a \label in text would get there
 \tl_new:N \g__web_equation_anchor_tl
 \cs_new_protected:Npn \__web_refstep_equation: {
     \refstepcounter{equation}
     \tl_gset_eq:Nc \g__web_equation_anchor_tl {cur:th}
 }
 \int_new:N \g__web_plain_label_int
+\tl_new:N \l__web_cref_label_tl
+\tl_new:N \l__web_href_tl
 \cs_new_protected:Npn \__web_plain_label: {
     \bool_lazy_and:nnT
         { ! \tl_if_empty_p:N \l__web_label_tl }
@@ -723,7 +735,13 @@
             \cs_set:Npn \p@equation { }
             \int_gincr:N \g__web_plain_label_int
             \cs_set:Npe \theHequation { label. \int_use:N \g__web_plain_label_int }
+            \cs_if_exist:cT {cref@currentlabel}
+                { \tl_set_eq:Nc \l__web_cref_label_tl {cref@currentlabel} }
+            \cs_if_exist:NT \@currentHref { \tl_set_eq:NN \l__web_href_tl \@currentHref }
             \__web_refstep_equation:
+            \cs_if_exist:cT {cref@currentlabel}
+                { \tl_gset_eq:cN {cref@currentlabel} \l__web_cref_label_tl }
+            \cs_if_exist:NT \@currentHref { \tl_gset_eq:NN \@currentHref \l__web_href_tl }
             \exp_args:No \label {\l__web_label_tl}
             \addtocounter{equation}{-1}
         \group_end:
@@ -864,9 +882,10 @@
 \int_new:N \g__web_qed_int
 % In an eqnarray, amsthm sets the box in the row, which keeps any number
 % (\math@qedhere, amsthm.sty). Here the box stays on the stack, and is set
-% below the display
+% below the display, as in $$ $$ and displaymath
 \cs_new_protected:Npn \__web_qed_wanted: {
-    \bool_if:nF { \__web_eqnarray_p: } { \bool_set_true:N \l__web_qed_wanted_bool }
+    \bool_if:nF { \__web_eqnarray_p: || \l__web_qed_below_bool }
+        { \bool_set_true:N \l__web_qed_wanted_bool }
 }
 \@ifpackageloaded{amsthm}{ \web@needs{QED@stack} }{}
 \cs_new_protected:Npn \__web_qedhere: {
@@ -1026,7 +1045,7 @@
             \__web_saved_env:nn {displaymath} {#1}
             \str_if_in:nnTF {#1} {\label}
                 {
-                    \__web_walk_unnumbered:n {#1}
+                    \__web_walk_qed_below:n {#1}
                     \exp_args:No \__web_mathjax:nn {\l__web_body_tl} {displaymath}
                 }
                 { \__web_mathjax:nn {#1} {displaymath} }
