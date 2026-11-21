@@ -46,6 +46,38 @@ end
 os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 
 local domfilter = require "make4ht-domfilter"
+
+-- make4ht-domfilter.lua reads a page that is not well-formed XML with
+-- LuaXML's HTML reader. That reader (luaxml-mod-html.lua) puts a character
+-- reference that follows a start tag into the tag's last attribute, as it
+-- tests the last token instead of the state the reference returns to. It
+-- also drops the character after a numeric reference's semicolon. Text then
+-- loses characters, and a lost < shows a tag as text.
+do
+  local html = require "luaxml-mod-html"
+  local parser, states = html.HtmlParser, html.HtmlStates
+  function parser:flush_temp_buffer()
+    for _, char in ipairs(self.temp_buffer) do
+      if self.return_state:match("^attribute_value") then
+        table.insert(self.current_token.current_attr_value, char)
+      else
+        self:emit_character(char)
+      end
+    end
+    self.temp_buffer = {}
+  end
+  function parser:add_entity(char)
+    self.temp_buffer = {char}
+    self:flush_temp_buffer()
+  end
+  for _, name in ipairs({"decimal_character_reference", "hexadecimal_character_reference"}) do
+    local state = states[name]
+    states[name] = function(self)
+      if self.codepoint == 0x3B then return self:tokenize("numeric_reference_end_state") end
+      return state(self)
+    end
+  end
+end
 local errorlogparser = require "make4ht-errorlogparser"
 local fixinlines = require "make4ht-fixinlines"
 local htlatex = require "make4ht-htlatex"
