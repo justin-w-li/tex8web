@@ -1,0 +1,59 @@
+% amsmath's matrix environments written as their macro pairs, which LaTeX
+% accepts because \begin{bmatrix} runs \bmatrix: \bmatrix ... \endbmatrix,
+% \Bmatrix, \vmatrix, \Vmatrix, and \smallmatrix. Each pair in a numbered
+% equation, in \[ \], in inline math, in align*, with \\ rows in a numbered
+% align and gather, through a macro of the document, and nested. Inline in a
+% footnote, a theorem, and a heading, with hyperref.
+\documentclass{article}
+\usepackage{amsmath,amsthm}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\newcommand{\col}[2]{\Bmatrix #1 \\ #2 \endBmatrix}
+\begin{document}
+\section{Rotations by $\protect\bmatrix c & s \endbmatrix$}
+
+A row in a numbered equation:
+\begin{equation}
+v = \bmatrix 1 & 0 \endbmatrix
+\end{equation}
+The other pairs in a numbered equation:
+\begin{equation}
+p = \Bmatrix a & b \\ c & d \endBmatrix \vmatrix e & f \\ g & h \endvmatrix
+  \Vmatrix i & j \\ k & l \endVmatrix \smallmatrix m & n \\ o & q \endsmallmatrix
+\end{equation}
+In a display:
+\[ B = \bmatrix 1 & 2 \\ 3 & 4 \endbmatrix \Bmatrix 5 \\ 6 \endBmatrix
+  \vmatrix 7 \endvmatrix \Vmatrix 8 \endVmatrix \smallmatrix 9 & 0 \endsmallmatrix \]
+Inline, a column, $w = \bmatrix 1 \\ 0 \endbmatrix^T$, and the others,
+$\Bmatrix r \\ s \endBmatrix$, $\vmatrix t & u \\ x & y \endvmatrix$,
+$\Vmatrix z \\ \alpha \endVmatrix$, and $\left( \smallmatrix \beta & \gamma \\ \delta & \epsilon \endsmallmatrix \right)$.
+
+In align*:
+\begin{align*}
+A &= \bmatrix a & b \\ c & d \endbmatrix & C &= \Bmatrix e \\ f \endBmatrix \\
+D &= \vmatrix g & h \\ i & j \endvmatrix & E &= \Vmatrix k & l \\ m & n \endVmatrix \\
+F &= \smallmatrix o & p \\ q & r \endsmallmatrix
+\end{align*}
+In a numbered align, with rows inside each matrix:
+\begin{align}
+G &= \bmatrix 1 \\ 2 \endbmatrix \\
+H &= \Bmatrix 3 \\ 4 \endBmatrix \\
+I &= \vmatrix a & b \\ c & d \endvmatrix \\
+J &= \Vmatrix e & f \\ g & h \endVmatrix \\
+K &= \smallmatrix 5 \\ 6 \endsmallmatrix
+\end{align}
+In a numbered gather:
+\begin{gather}
+L = \bmatrix a \\ b \endbmatrix \\
+M = \Bmatrix c \\ d \endBmatrix \vmatrix e \\ f \endvmatrix \\
+N = \Vmatrix 7 \\ 8 \endVmatrix \smallmatrix 9 \\ 0 \endsmallmatrix
+\end{gather}
+Through a macro, $u = \col{x}{y}$, and nested:
+\[ O = \bmatrix \Vmatrix a \endVmatrix & \smallmatrix 1 & 2 \\ 3 & 4 \endsmallmatrix \\
+  \vmatrix b \endvmatrix & \Bmatrix c \endBmatrix \endbmatrix \]
+In a footnote.\footnote{The vector $\bmatrix 0 \\ 1 \endbmatrix$.}
+
+\begin{theorem}
+The matrix $\Vmatrix 2 & 3 \endVmatrix$ is a norm.
+\end{theorem}
+\end{document}

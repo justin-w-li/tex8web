@@ -490,6 +490,30 @@ const speech = {
     /aria-label='x raised to the th power'/, /aria-label='y squared super nd'/,
     /aria-label='the 2 super nd term'/, /aria-label='x period italic of italic f sine x Label \d+'/,
     /aria-label='italic ab'/, /aria-label='gh'/, /aria-label='italic ij'/, /aria-label='st'/],
+  // (amsmath's macro pairs read as the matrices of \begin and \end, with
+  // the PDF's numbers on the rows of a numbered align and gather, which the
+  // rows inside a matrix do not end; in a heading, a footnote, and a
+  // theorem)
+  'test-envmacro': [/aria-label='the 1 by 2 row matrix c s'/,
+    /aria-label='v equals the 1 by 2 row matrix 1 0 Label 1'/,
+    /aria-label='p equals the 2 by 2 matrix Row 1: a b Row 2: c d times the determinant of the 2 by 2 matrix Row 1: e f Row 2: g h times the determinant of the 2 by 2 matrix Row 1: i j Row 2: k l times 2 lines Line 1: m n Line 2: o q Label 2'/,
+    /aria-label='B equals the 2 by 2 matrix Row 1: 1 2 Row 2: 3 4 times the 2 by 1 column matrix 5 6 times the 1 by 1 column matrix 7 times the 1 by 1 column matrix 8 times 1 lines Line 1: 9 0'/,
+    /aria-label='w equals the 2 by 1 column matrix 1 0 to the T power'/,
+    /aria-label='the 2 by 1 column matrix r s'/,
+    /aria-label='the determinant of the 2 by 2 matrix Row 1: t u Row 2: x y'/,
+    /aria-label='the 2 by 1 column matrix z alpha'/,
+    /aria-label='the 2 by 2 matrix Row 1: beta gamma Row 2: delta epsilon'/,
+    /aria-label='3 lines Line 1: A equals the 2 by 2 matrix Row 1: a b Row 2: c d C equals the 2 by 1 column matrix e f Line 2: D equals the determinant of the 2 by 2 matrix Row 1: g h Row 2: i j E equals the determinant of the 2 by 2 matrix Row 1: k l Row 2: m n Line 3: F equals 2 lines Line 1: o p Line 2: q r'/,
+    /aria-label='5 lines Line 1: G equals the 2 by 1 column matrix 1 2 Label 3 Line 2: H equals the 2 by 1 column matrix 3 4 Label 4 Line 3: I equals the determinant of the 2 by 2 matrix Row 1: a b Row 2: c d Label 5 Line 4: J equals the determinant of the 2 by 2 matrix Row 1: e f Row 2: g h Label 6 Line 5: K equals 2 lines Line 1: 5 Line 2: 6 Label 7'/,
+    /aria-label='3 lines Line 1: L equals the 2 by 1 column matrix a b Label 8 Line 2: M equals the 2 by 1 column matrix c d times the 2 by 1 column matrix e f Label 9 Line 3: N equals the 2 by 1 column matrix 7 8 times 2 lines Line 1: 9 Line 2: 0 Label open paren 10 close paren'/,
+    /aria-label='u equals the 2 by 1 column matrix x y'/,
+    /aria-label='O equals the 2 by 2 matrix Row 1: Column 1, the 1 by 1 column matrix a Column 2, 2 lines Line 1: 1 2 Line 2: 3 4 Row 2: Column 1, the 1 by 1 column matrix b Column 2, the 1 by 1 matrix with entry c'/,
+    /aria-label='the 2 by 1 column matrix 0 1'/, /aria-label='the 1 by 2 row matrix 2 3'/],
+  // (plain TeX's \pmatrix, \matrix, and \cases with braces, without amsmath)
+  'test-envmacro-plain': [/aria-label='P equals the 2 by 2 matrix Row 1: a b Row 2: c d'/,
+    /aria-label='Q equals 2 lines Line 1: 1 2 Line 2: 3 4'/,
+    /aria-label='s equals 2 cases Case 1: 1 positive Case 2: 0 otherwise'/,
+    /aria-label='R equals the 2 by 1 column matrix x y Label 1'/],
 };
 
 // Pictures sized by \includegraphics's width, scale, or height: a share of

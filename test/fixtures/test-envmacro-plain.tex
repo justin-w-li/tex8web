@@ -1,0 +1,14 @@
+% Plain TeX's \pmatrix, \matrix, and \cases with braces, which LaTeX keeps
+% without amsmath and MathJax knows: cases that a fix for amsmath's macro
+% pairs, such as \bmatrix ... \endbmatrix, must not break. Inline, in a
+% display, and in a numbered equation.
+\documentclass{article}
+\begin{document}
+Inline, $P = \pmatrix{a & b \cr c & d}$ and $Q = \matrix{1 & 2 \cr 3 & 4}$.
+In a display:
+\[ s = \cases{1 & positive \cr 0 & otherwise} \]
+In a numbered equation:
+\begin{equation}
+R = \pmatrix{x \cr y}
+\end{equation}
+\end{document}
