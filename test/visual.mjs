@@ -756,8 +756,8 @@ const wideBlocks = { 'test-wideblocks': { 1400: [7, 1], 390: [10, 1] } };
 // at or below the top of its column, and below the body's top margin,
 // which clears the controls. Checked with JavaScript off, on a wide
 // screen, at 1000px, where the page has no side column for its notes, on
-// a phone, and in print. chapterHeads has the number of such headings. Failures: [the
-// heading's id, what is wrong]
+// a phone, and in print. chapterHeads has the number of such headings.
+// Failures: [the heading's id, what is wrong]
 const chapterHeadSelector = ':is(h1, h2):is(.partHead, .likepartHead, .chapterHead, .likechapterHead, .appendixHead)';
 const chapterGaps = `(() => {
   const heads = [...document.querySelectorAll('${chapterHeadSelector}')];

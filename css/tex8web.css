@@ -249,8 +249,8 @@ section.abstract { margin-inline: 0; }
    titlesec or the class (tex8web-page.tex), else the browser's h1 to h5
    margins, and for a part a chapter's space where it has a page of its
    own in the PDF. A chapter's space above is at least zero: titlesec's
-   \titlespacing may make it negative, which in the PDF moves the title
-   up from the top of its page, and on the page would draw the heading
+   \titlespacing may make it negative. In the PDF that moves the title
+   up from the top of its page, and on the page it would draw the heading
    over the text above it. :where lets a class's rules in html4.4ht take
    precedence, for example amsart's centered sections) */
 :where(.partHead, .likepartHead) { font-variant: var(--tex8web-part-variant, normal);
