@@ -297,10 +297,14 @@ end
 -- with \protected@xdef, so a robust command in its math comes with
 -- \protect, and \mathrm, \mathbf, \mathit, \mathsf, and \mathtt as
 -- tex4ht's \mathrm@@ (fontmath.4ht). MathJax knows neither \protect nor
--- \mathrm@@.
+-- \mathrm@@. \m@th sets \mathsurround, the space around a formula, to
+-- zero, and MathJax adds no such space. MathJax knows neither \m@th nor
+-- \mathsurround\z@, which \m@th expands to in the table of contents.
+-- Each becomes a space, which ends a control word before it.
 local function rewrite(text, prims)
   return (strip(text, prims):gsub("\\hspace%s*%*", "\\hspace"):gsub("\\protect%f[^%a@]%s*", "")
-    :gsub("\\(math%l%l)@@%f[^%a@]", "\\%1"))
+    :gsub("\\(math%l%l)@@%f[^%a@]", "\\%1"):gsub("\\m@th%f[^%a@]%s*", " ")
+    :gsub("\\mathsurround%s*\\z@%f[^%a@]%s*", " "))
 end
 
 function M.define(document, context)
@@ -332,8 +336,16 @@ function M.define(document, context)
   -- the macros the math uses, and those they use in turn
   local used, queue, texts = {}, {}, {}
   for _, el in ipairs(document:query_selector(".mathjax-inline, .mathjax-block, .mathjax-env")) do
+    local before = el:get_text()
     source.each_text(el, function(node) dom.set_node_text(node, rewrite(node:get_text(), prims)) end)
     texts[#texts + 1] = el:get_text()
+    -- (a formula the rewrite left empty, such as hologo's $\m@th$, has no
+    -- width in the PDF, but MathJax would give it one. Removed, with the
+    -- space text.sized_math_spaces may have put in it.)
+    local space = texts[#texts]:match("^\\%(%s*\\%)(%s*)$")
+    if space and texts[#texts] ~= before then
+      el:replace_node(el:get_parent():create_text_node(space))
+    end
     for _, name in ipairs(preamble.uses(texts[#texts])) do queue[#queue + 1] = name end
   end
   while #queue > 0 do
