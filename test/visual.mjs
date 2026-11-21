@@ -751,19 +751,25 @@ const wideBlocks = { 'test-wideblocks': { 1400: [7, 1], 390: [10, 1] } };
 // Each part and chapter-level heading below the text above it. In the
 // PDF such a heading starts a page, so a negative space above it from
 // \titlespacing moves it up only from the page's top margin. The heading's
-// box starts at or below the last box above it with a height, or the top
-// of its column. Checked with JavaScript off, on a wide screen and on a
-// phone. chapterHeads has the number of such headings. Failures: [the
+// box starts at or below the last box above it with a height that is not
+// floated, as a footnote beside the text is. With no such box, it starts
+// at or below the top of its column, and below the body's top margin,
+// which clears the controls. Checked with JavaScript off, on a wide
+// screen, at 1000px, which is narrow for these pages, on a phone, and in
+// print. chapterHeads has the number of such headings. Failures: [the
 // heading's id, what is wrong]
 const chapterHeadSelector = ':is(h1, h2):is(.partHead, .likepartHead, .chapterHead, .likechapterHead, .appendixHead)';
 const chapterGaps = `(() => {
   const heads = [...document.querySelectorAll('${chapterHeadSelector}')];
   const wrong = heads.flatMap(h => {
     let above = h.previousElementSibling;
-    while (above && !above.getBoundingClientRect().height) above = above.previousElementSibling;
+    while (above && (!above.getBoundingClientRect().height || getComputedStyle(above).float !== 'none')) {
+      above = above.previousElementSibling;
+    }
     const column = h.parentElement.getBoundingClientRect();
     const limit = above ? above.getBoundingClientRect().bottom
-      : column.top + parseFloat(getComputedStyle(h.parentElement).paddingTop);
+      : Math.max(column.top + parseFloat(getComputedStyle(h.parentElement).paddingTop),
+        parseFloat(getComputedStyle(document.body).marginTop) - scrollY);
     const top = h.getBoundingClientRect().top;
     return top < limit - 0.5
       ? [[h.id, \`starts \${(limit - top).toFixed(1)}px above the bottom of \${above ? 'the ' + above.localName + ' above it' : 'its column'}\`]] : [];
@@ -789,7 +795,7 @@ const chapterLanding = `(() => {
   });
   return wrong;
 })()`;
-const chapterHeads = { 'test-chapneg': 9, 'test-chapneg-hyperref': 9 };
+const chapterHeads = { 'test-chapneg': 11, 'test-chapneg-hyperref': 11 };
 // Description lists after footnotes beside the text, on a wide screen
 // with the page script, which stacks the footnotes. Each list's box, each
 // label's box, and its text's first line are the same within 0.5px with
@@ -1965,11 +1971,12 @@ async function compare(chrome, doc, ok) {
       for (const [n, name, what] of blocks.wrong) problems.push(`${html}: at ${width}px, block ${n} ("${name}"): ${what}`);
     }
     if (doc.name in chapterHeads) {
-      for (const width of [1000, 390]) {
+      for (const [width, media] of [[1400], [1000], [390], [740, 'print']]) {
         const heads = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width },
-          page => page.evaluate(chapterGaps));
-        if (heads.checked !== chapterHeads[doc.name]) problems.push(`${html}: at ${width}px, ${heads.checked} part and chapter headings, not ${chapterHeads[doc.name]}`);
-        for (const [id, what] of heads.wrong) problems.push(`${html}: at ${width}px, the heading #${id}: ${what}`);
+          async page => { if (media) await page.media(media); return page.evaluate(chapterGaps); });
+        const where = `${width}px${media ? ' ' + media : ''}`;
+        if (heads.checked !== chapterHeads[doc.name]) problems.push(`${html}: at ${where}, ${heads.checked} part and chapter headings, not ${chapterHeads[doc.name]}`);
+        for (const [id, what] of heads.wrong) problems.push(`${html}: at ${where}, the heading #${id}: ${what}`);
       }
       const landed = await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 1400 },
         page => page.evaluate(chapterLanding));

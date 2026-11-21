@@ -1,10 +1,13 @@
 % test-chapneg with hyperref, whose anchors a link leads to, and with
 % the starred \titlespacing*, which keeps the paragraph after the heading
-% indented.
+% indented. The first chapter comes after a title block.
 \documentclass{book}
 \usepackage{titlesec,makeidx,hyperref}
 \makeindex
 \titleformat{\chapter}[display]{\normalfont\huge\bfseries}
     {\chaptertitlename\ \thechapter}{20pt}{\Huge}
 \titlespacing*{\chapter}{0pt}{-30pt}{20pt}
+\title{A Title}\author{An Author}\date{1 May 2001}
+\begin{document}
+\maketitle
 \input{test-chapneg-cases.ltx}
