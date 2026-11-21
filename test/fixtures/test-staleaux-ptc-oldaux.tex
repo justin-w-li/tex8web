@@ -1,0 +1,15 @@
+% A document with titletoc's partial table of contents, beside the .ptc
+% of an earlier build and the .aux of a later build that did not use
+% titletoc, so the .aux does not name the .ptc. The .ptc holds titletoc's
+% \ttl@starttoc and an \addtocontents write of \oldmark, which this
+% document does not define. The stale files stay as they are.
+\documentclass{article}
+\usepackage{titletoc}
+\begin{document}
+\section{First}
+\startcontents
+\printcontents{}{1}{}
+Text of the first section.
+\subsection{New subsection}
+Text of the subsection.
+\end{document}

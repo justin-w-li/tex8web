@@ -1,0 +1,51 @@
+% An article with lists of its packages, beside each list of an earlier
+% build and its .aux, which names them in \@writefile lines: the list of
+% figures, which tex4ht reads through the .4ct, tocloft's \newlistof,
+% float's \newfloat, newfloat's \DeclareFloatingEnvironment, listings'
+% list, and algorithm's list. The earlier build had no entries: each list
+% holds only an \addtocontents write of \oldmark, which this document
+% does not define. The stale files stay as they are.
+\documentclass{article}
+\usepackage{tocloft}
+\newcommand{\listexamplename}{Examples}
+\newlistof{example}{lop}{\listexamplename}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{lop}{example}{\protect\numberline{\theexample}#1}\par}
+\usepackage{float}
+\newfloat{program}{h}{lpr}
+\floatname{program}{Program}
+\usepackage{newfloat}
+\DeclareFloatingEnvironment[fileext=lsc]{scheme}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{algorithm}
+\begin{document}
+\listoffigures
+\listofexample
+\listof{program}{List of Programs}
+\listofschemes
+\lstlistoflistings
+\listofalgorithms
+\section{First}
+Text of the first section.
+\begin{figure}[h]
+\centering A figure.
+\caption{New figure}
+\end{figure}
+\example{A new example}
+\begin{program}
+A program.
+\caption{New program}
+\end{program}
+\begin{scheme}[h]
+A scheme.
+\caption{New scheme}
+\end{scheme}
+\begin{lstlisting}[caption={New listing}]
+x = 1
+\end{lstlisting}
+\begin{algorithm}[h]
+An algorithm.
+\caption{New algorithm}
+\end{algorithm}
+\end{document}

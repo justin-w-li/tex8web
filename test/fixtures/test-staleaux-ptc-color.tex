@@ -1,0 +1,14 @@
+% Guard: checks a case the fix must not break. A document with titletoc's
+% partial table of contents, beside the .ptc and .aux of an earlier build
+% that loaded xcolor: the .ptc has an entry with \textcolor, and xcolor is
+% not loaded here. The stale files stay as they are.
+\documentclass{article}
+\usepackage{titletoc}
+\begin{document}
+\section{First}
+\startcontents
+\printcontents{}{1}{}
+Text of the first section.
+\subsection{New subsection}
+Text of the subsection.
+\end{document}

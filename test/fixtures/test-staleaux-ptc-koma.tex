@@ -1,0 +1,16 @@
+% A KOMA-Script document with a list of its own from \DeclareNewTOC,
+% beside that list of an earlier build and its .aux, which names it in
+% \@writefile lines. The earlier build had no entries: the list holds
+% only an \addtocontents write of \oldmark, which this document does not
+% define. The stale files stay as they are.
+\documentclass{scrartcl}
+\DeclareNewTOC[type=remark, types=remarks, float, listname={List of Remarks}]{lrm}
+\begin{document}
+\listofremarks
+\section{First}
+Text of the first section.
+\begin{remark}
+A remark.
+\caption{New remark}
+\end{remark}
+\end{document}

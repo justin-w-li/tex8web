@@ -1,0 +1,26 @@
+% A document with titletoc's partial table of contents, beside the .ptc
+% of an earlier build, which holds titletoc's \ttl@starttoc and an
+% \addtocontents write of \oldmark, which this document does not define,
+% and the current .aux, .bbl, .ind, and .gls of a PDF build, as latexmk
+% and makeglossaries leave them. The draft build's one LaTeX run takes
+% its reference, citation, index, and glossary from those. The stale and
+% current files stay as they are.
+\documentclass{article}
+\usepackage{titletoc}
+\usepackage{makeidx}
+\makeindex
+\usepackage{glossaries}
+\makeglossaries
+\newglossaryentry{fruit}{name={fruit},description={the seed-bearing part of a plant}}
+\begin{document}
+\section{First}\label{first}
+\startcontents
+\printcontents{}{1}{}
+Text of the first section.
+\subsection{New subsection}
+See section~\ref{first}. An apple\index{Apple} is a \gls{fruit}, as \cite{able} says.
+\bibliographystyle{plain}
+\bibliography{test-staleaux-ptc-draft}
+\printindex
+\printglossary
+\end{document}
