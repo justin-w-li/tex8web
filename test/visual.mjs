@@ -18,7 +18,6 @@ import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build, largestFirst, pool, root, select, strayKeys, testDir, workers } from './lib/build.mjs';
 import { launch } from './lib/chrome.mjs';
-import { noLockf } from './lib/slots.mjs';
 
 const only = process.argv.slice(2);
 const screen = 900;
@@ -1993,10 +1992,8 @@ async function compare(chrome, doc, ok) {
 // One document at a time in Chrome: with several tabs at once, headless
 // Chrome sometimes draws a garbled screen. Chrome starts after the builds,
 // as Chrome holds a build slot, and a process that holds a slot while it
-// waits for a build to take another can wait forever. Without build slots
-// (no lockf, as in CI), each page is compared once its builds end, while
-// other documents build.
-if (!noLockf()) await building;
+// waits for a build to take another can wait forever.
+await building;
 const chrome = await launch();
 let failures = 0;
 const waiting = new Map(docs.map(doc => [doc, built(doc).then(ok => [doc, ok])]));
