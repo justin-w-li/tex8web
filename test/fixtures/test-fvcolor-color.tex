@@ -1,7 +1,8 @@
 % Checks cases that the fix of test-fvcolor-listings must not break: the
 % color package in the preamble, where tex4ht configures color, and
-% listings.4ht still loads xcolor after the preamble. fancyvrb's colors
-% are drawn.
+% listings.4ht still loads xcolor after the preamble. This page does
+% not draw fancyvrb's colors, with or without the fix (a gap of its
+% own); test-fvcolor-xcolor checks them.
 \documentclass{article}
 \usepackage{color}
 \usepackage{fancyvrb}
@@ -12,7 +13,4 @@
 \begin{document}
 \input{test-fvcolor-cases.ltx}
 A listing: \lstinline|fv-lstinline|.
-\begin{Verbatim}[formatcom=\color{red}]
-fv-red
-\end{Verbatim}
 \end{document}

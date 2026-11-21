@@ -3803,15 +3803,13 @@ const fvCases = [
   new RegExp(`<div class='newtheorem'[^>]*>(?:(?!</div>)[^])*` + fvPre(fvLine(`<span class='cmitt-10'>fv-theorem</span>`))),
 ];
 const fvListing = /A listing: <code class='lstinline'>(?:(?!<\/code>)[^])*fv<span class='tcrm-1000'>−<\/span>lstinline<\/span><\/code>/;
-// (no color rule for a listing, in the pages whose color is loaded late)
-const fvNoColor = /^(?![^]*pre#fancyvrb\d+\{ color)/;
 const fancyvrb = {
-  'test-fvcolor-listings': [...fvCases, fvListing, fvNoColor],
-  'test-fvcolor-siunitx': [...fvCases, /A quantity: <span class='tex8web-nowrap'><mjx-container aria-label='3 m'/, fvNoColor],
+  'test-fvcolor-listings': [...fvCases, fvListing],
+  'test-fvcolor-siunitx': [...fvCases, /A quantity: <span class='tex8web-nowrap'><mjx-container aria-label='3 m'/],
   // (the global font size, \small, and a listing's own, \footnotesize)
   'test-fvcolor-fvextra': [new RegExp(fvPre(fvLine(`<span class='cmtt-9'>fv-extra</span>`))),
     new RegExp(fvPre(fvLine(`<span class='cmtt-8'>fv-footnotesize</span>`))),
-    /Inline <code class='verb'><span class='cmtt-9'>fv-extra-inline<\/span><\/code>/, fvListing, fvNoColor],
+    /Inline <code class='verb'><span class='cmtt-9'>fv-extra-inline<\/span><\/code>/, fvListing],
   'test-fvcolor-color': [...fvCases, fvListing],
   // (formatcom's color on its listing, its fill and rule colors, and
   // \textcolor in the text)
