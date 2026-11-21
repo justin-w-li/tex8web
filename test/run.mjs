@@ -3530,11 +3530,11 @@ const verbatim = {
   // (fancyvrb's \UseVerb and \UseMVerb in each context, in the font of
   // the text around it, and the saved block after them still a display)
   'test-useverb': [usedVerb('Text', 'uv-text_a#b%', 'more\\.', 'cmtt-10'),
-    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uv-head_h', 'end<\\/h3>').source}`),
-    new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Head', 'uv-head_h', 'end<\\/a>').source}`),
+    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uv-head_h', 'end<\\/h3>', 'cmtt-10').source}`),
+    new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Head', 'uv-head_h', 'end<\\/a>', 'cmtt-10').source}`),
     usedVerb('<p[^>]*>Moving', 'uv-moving_m', 'text\\.', 'cmtt-10'),
-    new RegExp(`<h4 class='subsectionHead'[^>]*>(?:(?!<\\/h4>)[^])*${usedVerb('Moving', 'uv-moving_m', 'head<\\/h4>').source}`),
-    new RegExp(`<span class='subsectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Moving', 'uv-moving_m', 'head<\\/a>').source}`),
+    new RegExp(`<h4 class='subsectionHead'[^>]*>(?:(?!<\\/h4>)[^])*${usedVerb('Moving', 'uv-moving_m', 'head<\\/h4>', 'cmtt-10').source}`),
+    new RegExp(`<span class='subsectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Moving', 'uv-moving_m', 'head<\\/a>', 'cmtt-10').source}`),
     usedVerb('Note', 'uv-text_a#b%', 'end\\.', 'cmtt-8'),
     usedVerb('Theorem', 'uv-text_a#b%', 'end\\.', 'cmitt-10'),
     usedVerb('Italic', 'uv-text_a#b%', 'end\\.', 'cmitt-10'),
@@ -3544,22 +3544,31 @@ const verbatim = {
     usedVerb('Star', 'uv-star␣a␣␣b', 'end\\.', 'cmtt-10'),
     usedVerb('Shape', 'uv-text_a#b%', 'end\\.', 'cmitt-10'),
     usedVerb('Small', 'uv-text_a#b%', 'end\\.', 'cmtt-9'),
+    usedVerb('Command', '\\\\foo\\{x\\}&lt;&amp;&gt;', 'more\\.', 'cmtt-10'),
+    usedVerb('<p[^>]*>', 'uv-text_a#b%', 'starts this paragraph\\.', 'cmtt-10'),
+    new RegExp(`<dt class='description'>(?:<a id='[^']*'><\\/a>)?${usedVerb('', 'uv-text_a#b%', '<\\/dt>\\s*<dd class=\'description\'>\\s*<p[^>]*>Label text\\.', 'cmtt-10').source}`),
     /After the inline text\. <\/p>\s*<pre class='fancyvrb'[^>]*>(?:(?!<\/pre>)[^])*uv-block a_b(?:(?!<\/pre>)[^])*<\/pre>\s*<p>\s*Last line\./,
     /^(?![^]*<pre class='fancyvrb'[^]*<pre class='fancyvrb')/],
   'test-useverb-hyperref': [usedVerb('Text', 'uvh-text_a#b', 'more\\.', 'cmtt-10'),
-    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uvh-text_a#b', 'end<\\/h3>').source}`),
-    new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Head', 'uvh-text_a#b', 'end<\\/a>').source}`),
+    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uvh-text_a#b', 'end<\\/h3>', 'cmtt-10').source}`),
+    new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Head', 'uvh-text_a#b', 'end<\\/a>', 'cmtt-10').source}`),
     /<p[^>]*>\s*Body text\./, /^(?![^]*<pre)/],
   // (fvextra's own inline path for \SaveVerb, \UseVerb, \UseVerb*, and
   // \EscVerb; \UseVerb with extra=false, and \Verb. fvextra's \UseVerb* shows
   // no visible spaces in the PDF)
   'test-useverb-fvextra': [usedVerb('Text', 'uvx-text_a#b', 'more\\.', 'cmtt-10'),
-    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uvx-head_h', 'end<\\/h3>').source}`),
+    new RegExp(`<h3 class='sectionHead'[^>]*>(?:(?!<\\/h3>)[^])*${usedVerb('Head', 'uvx-head_h', 'end<\\/h3>', 'cmtt-10').source}`),
+    new RegExp(`<span class='sectionToc'>(?:(?!<\\/a>)[^])*${usedVerb('>Head', 'uvx-head_h', 'end<\\/a>', 'cmtt-10').source}`),
     usedVerb('Plain', 'uvx-text_a#b', 'end\\.', 'cmtt-10'),
     usedVerb('Star', 'uvx-star a b', 'end\\.', 'cmtt-10'),
     usedVerb('Escaped', 'uvx-esc_e', 'end\\.', 'cmtt-10'),
     usedVerb('Verb', 'uvx-verb_v', 'end\\.', 'cmtt-10'),
+    usedVerb('Breaks', 'uvx-text_a#b', 'end\\.', 'cmtt-10'),
     /^(?![^]*<pre)/],
+  // (under a frame set for every block: the block without one, and the
+  // saved text after it inline)
+  'test-useverb-frame': [/Before the block\. <\/p> <pre class='fancyvrb' id='fancyvrb1'>(?:(?!<\/pre>)[^])*uvf-block(?:(?!<\/pre>)[^])*<\/pre> <p[^>]*>Text /,
+    usedVerb('Text', 'uvf-text_a', 'more\\.', 'cmtt-10')],
   // (a guard: saved blocks shown as displays, each between its paragraphs,
   // and \Verb inline)
   'test-useverb-display': [
@@ -4422,6 +4431,10 @@ function check(doc, result, out, aux) {
     }
   }
   problems.push(...ligatureProblems(doc.name, flat));
+  // (fancyvrb's saved text keeps both spaces, which flat joins, and the
+  // inline text leaves the block that sets frame=none without a border)
+  if (doc.name === 'test-useverb-fvextra' && !html.includes('uvx-star\u00A0a\u00A0\u00A0b')) problems.push('no uvx-star with two spaces');
+  if (doc.name === 'test-useverb-frame' && /pre#fancyvrb\d+\s*\{\s*border/.test(styles)) problems.push('a border on the block without a frame');
   if (displayPictures[doc.name]) {
     const { pictures: shown, math } = displayPictures[doc.name];
     const names = [...shown.map(name => [name].flat()[0]), ...math];

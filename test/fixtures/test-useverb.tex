@@ -1,8 +1,9 @@
 % fancyvrb's \UseVerb writes its saved text inline, as in the PDF: in a
 % paragraph, a heading and the table of contents, a footnote, a theorem,
-% italic text, a table cell, a caption, and a box; with \UseVerb*,
-% options, and \fvset's size; and \SaveGVerb's text with \UseMVerb. A
-% saved block after them stays a display.
+% italic text, a table cell, a caption, and a box; at the start of a
+% paragraph and in a list label; with \UseVerb*, options, and \fvset's
+% size; with a saved command and characters HTML escapes; and \SaveGVerb's
+% text with \UseMVerb. A saved block after them stays a display.
 \documentclass{article}
 \usepackage{xcolor,fancyvrb}
 \newtheorem{theorem}{Theorem}
@@ -12,6 +13,7 @@
 \tableofcontents
 \SaveVerb{v}|uv-text_a#b%|
 \SaveVerb{star}|uv-star a  b|
+\SaveVerb{cmd}|\foo{x}<&>|
 Text \UseVerb{v} more.
 
 \section{Head \UseVerb{head} end}
@@ -47,6 +49,14 @@ Star \UseVerb*{star} end.
 Shape \UseVerb[fontshape=it]{v} end.
 
 {\fvset{fontsize=\small}Small \UseVerb{v} end.}
+
+Command \UseVerb{cmd} more.
+
+\UseVerb{v} starts this paragraph.
+
+\begin{description}
+\item[\UseVerb{v}] Label text.
+\end{description}
 
 \begin{SaveVerbatim}{blk}
 uv-block a_b

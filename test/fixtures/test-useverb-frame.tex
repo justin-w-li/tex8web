@@ -1,0 +1,14 @@
+% fancyvrb's \UseVerb under a frame set for every verbatim block: a block
+% that sets frame=none has no border, and the saved text after it is
+% inline, as in the PDF.
+\documentclass{article}
+\usepackage{xcolor,fancyvrb}
+\fvset{frame=single}
+\SaveVerb{v}|uvf-text_a|
+\begin{document}
+Before the block.
+\begin{Verbatim}[frame=none]
+uvf-block
+\end{Verbatim}
+Text \UseVerb{v} more.
+\end{document}

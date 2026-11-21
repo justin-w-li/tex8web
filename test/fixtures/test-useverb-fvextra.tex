@@ -1,11 +1,13 @@
 % fancyvrb's \UseVerb with fvextra, whose inline commands take their own
 % path: \SaveVerb and \UseVerb, with and without extra, \UseVerb*,
-% \EscVerb, and \Verb, inline and in a heading, as in the PDF. In the PDF,
-% fvextra's \UseVerb* shows no visible spaces.
+% \EscVerb, and \Verb, inline and in a heading and the table of contents,
+% and with breaklines, as in the PDF. In the PDF, fvextra's \UseVerb*
+% shows no visible spaces.
 \documentclass{article}
 \usepackage{xcolor,fvextra}
 \SaveVerb{head}|uvx-head_h|
 \begin{document}
+\tableofcontents
 \SaveVerb{v}|uvx-text_a#b|
 \SaveVerb{star}|uvx-star a  b|
 Text \UseVerb{v} more.
@@ -19,4 +21,6 @@ Star \UseVerb*{star} end.
 Escaped \EscVerb{uvx-esc\_e} end.
 
 Verb \Verb|uvx-verb_v| end.
+
+{\fvset{breaklines}Breaks \UseVerb{v} end.}
 \end{document}
