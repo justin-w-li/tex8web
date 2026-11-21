@@ -1,0 +1,14 @@
+% amsmath, with a \bmatrix of the document's that takes an argument. Its
+% \bmatrix{...} in the rows of a numbered align is no macro pair of
+% amsmath's: each row keeps its number, and its \label names that number.
+% Inline too.
+\documentclass{article}
+\usepackage{amsmath}
+\renewcommand{\bmatrix}[1]{\left[\begin{matrix}#1\end{matrix}\right]}
+\begin{document}
+\begin{align}
+x &= \bmatrix{1 \\ 2} \label{own-a} \\
+y &= 3 \label{own-b}
+\end{align}
+Rows \eqref{own-a} and \eqref{own-b}. Inline, $M = \bmatrix{a & b \\ c & d}$.
+\end{document}

@@ -160,6 +160,36 @@
     \fi
 }
 
+% amsmath's matrices as macro pairs, such as \bmatrix ... \endbmatrix:
+% \web@envpairs lists the names whose two macros still have amsmath's
+% meanings at \begin{document}, and tex8web-math.tex walks only these pairs
+% as environments in a display's rows. A document's own definition, such as
+% \renewcommand{\bmatrix}[1]{...}, leaves its name out. The list is made
+% before tex4ht's \Preamble, whose amsmath.4ht redefines \smallmatrix, and
+% whose \VerbMath (mathjax-latex-4ht.4ht) redefines all five.
+\AddToHook{package/amsmath/after}{%
+    \@for\web@env:=bmatrix,Bmatrix,vmatrix,Vmatrix,smallmatrix\do{%
+        \expandafter\let\csname web@ams@\web@env\expandafter\endcsname
+            \csname\web@env\endcsname
+        \expandafter\let\csname web@ams@end\web@env\expandafter\endcsname
+            \csname end\web@env\endcsname}%
+}
+\AddToHook{env/document/before}{%
+    \ifdefined\web@envpairs\else
+        \gdef\web@envpairs{}%
+        \@ifpackageloaded{amsmath}{%
+            \@for\web@env:=bmatrix,Bmatrix,vmatrix,Vmatrix,smallmatrix\do{%
+                \expandafter\ifx\csname\web@env\expandafter\endcsname
+                        \csname web@ams@\web@env\endcsname
+                    \expandafter\ifx\csname end\web@env\expandafter\endcsname
+                            \csname web@ams@end\web@env\endcsname
+                        \xdef\web@envpairs{\web@envpairs,\web@env}%
+                    \fi
+                \fi}%
+        }{}%
+    \fi
+}
+
 % graphicx, which mathtools loads in \AtBeginDocument, and graphicx and
 % ccicons, which doclicense loads in \AtEndPreamble, loaded here instead,
 % before \Preamble. tex4ht reads .4ht files in \Preamble only for packages

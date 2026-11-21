@@ -533,6 +533,10 @@ const speech = {
     // (a \bmatrix of the document's, with braces)
     /aria-label='M equals the 2 by 2 matrix Row 1: a b Row 2: c d'/,
     /aria-label='2 lines Line 1: x equals the 2 by 1 column matrix 1 2 Label 2 Line 2: y equals 3 Label 3'/],
+  // (amsmath, with a \bmatrix of the document's that takes an argument:
+  // its rows in a numbered align keep their numbers)
+  'test-envmacro-own': [/aria-label='2 lines Line 1: x equals the 2 by 1 column matrix 1 2 Label 1 Line 2: y equals 3 Label 2'/,
+    /aria-label='M equals the 2 by 2 matrix Row 1: a b Row 2: c d'/],
 };
 
 // Pictures sized by \includegraphics's width, scale, or height: a share of
@@ -1055,6 +1059,8 @@ const builddirspacePage = (name, included = true) => [
 const contents = {
   // (\eqref of a row whose matrix has rows reads the row's number)
   'test-envmacro': [/first row is \(<a href='#x1-2003r3'>3<!--/],
+  // (the \label on the row of a \bmatrix of the document's names its number)
+  'test-envmacro-own': [/Rows \(<a href='#[^']*'>1<!-- +tex4ht:ref: own-a +--><\/a>\) and \(<a href='#[^']*'>2<!-- +tex4ht:ref: own-b /],
   'test-builddirspace': builddirspacePage('test-builddirspace'),
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,

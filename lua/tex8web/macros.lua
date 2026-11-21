@@ -49,8 +49,9 @@ local fallbacks = {
 -- puts a macro's text in place of its name before it reads on (Macro and
 -- ParseUtil.addArgs, NewcommandMethods), so a \begin may open in one macro
 -- and close in another. (Not \pmatrix and \matrix, which MathJax has with
--- braces, as in plain TeX.) Keep the names the same as the list of
--- \__web_pair:N in tex8web-math.tex, which walks each pair as an environment.
+-- braces, as in plain TeX.) Keep the names the same as those that
+-- tex8web-hooks.sty checks for \web@envpairs, the pairs that
+-- tex8web-math.tex walks as environments.
 for _, env in ipairs {"bmatrix", "Bmatrix", "vmatrix", "Vmatrix", "smallmatrix"} do
   fallbacks["\\" .. env] = "\\newcommand{\\" .. env .. "}{\\begin{" .. env .. "}}"
   fallbacks["\\end" .. env] = "\\newcommand{\\end" .. env .. "}{\\end{" .. env .. "}}"
