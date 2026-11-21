@@ -3,11 +3,13 @@
 % inline, as in the PDF. Saved text with a text color is red, as in the
 % PDF; with a fill color and a rule color, it colors neither the block nor
 % its frame. Saved text with frame keys leaves the next block without a
-% frame or padding.
+% frame or padding. A color in saved text with command characters is red
+% too, as in the PDF.
 \documentclass{article}
 \usepackage{xcolor,fancyvrb}
 \fvset{frame=single}
 \SaveVerb{v}|uvf-text_a|
+\SaveVerb[commandchars=\\\{\}]{cmd}|{\color{red}uvf-cmd}|
 \begin{document}
 Before the block.
 \begin{Verbatim}[frame=none]
@@ -18,6 +20,8 @@ Text \UseVerb{v} more.
 Red \UseVerb[formatcom=\color{red}]{v} end.
 
 Filled \UseVerb[fillcolor=\color{yellow},rulecolor=\color{blue}]{v} end.
+
+Inner \UseVerb{cmd} end.
 
 Spaced \UseVerb[framesep=1em,framerule=2pt]{v} end.
 \begin{Verbatim}[frame=none]

@@ -1884,7 +1884,16 @@ const lateopt = [
   /<span class='tex8web-label'>\s*\(a\)\s*<\/span>[^]*<span class='tex8web-label'>\s*\(b\)\s*<\/span>/,
   /<ol class='tex8web-list enumitem-steps' [^>]*><li><span class='tex8web-label'>\s*1\.\s*<\/span><div>\s*<p class='noindent'>Step\./,
 ];
+// (fancyvrb's inline saved text: the block before it keeps no color, and
+// the block that sets frame=none no border or padding. With fvextra, the
+// text is on yellow, and each red inline text has one red span)
+const noBlockColor = /^(?![^]*pre#fancyvrb\d+\s*\{\s*(?:color|background-color|border-color):)/;
 const colors = {
+  'test-useverb-frame': [noBlockColor, /^(?![^]*pre#fancyvrb\d+\s*\{\s*border)/,
+    /^(?![^]*pre#fancyvrb\d+\s*\{\s*padding:)/,
+    /Inner <code class='verb'><span style='color:light-dark\(#FF0000[^']*'>(?:<[^>]*>)*uvf-cmd</],
+  'test-useverb-fvextra-color': [noBlockColor, /span#colorbox1\s*\{\s*background-color:light-dark\(#FFFF00/,
+    /^(?=(?:(?:(?!color:light-dark\(#FF0000)[^])*color:light-dark\(#FF0000){4}(?![^]*color:light-dark\(#FF0000))/],
   'test-color': [
     new RegExp(`<span style='color:${lightDark('#000080', 'color')};'>navy</span>`),
     /<span style='color:var\(--tex8web-text\);'>black<\/span>/,
@@ -4442,15 +4451,8 @@ function check(doc, result, out, aux) {
     }
   }
   problems.push(...ligatureProblems(doc.name, flat));
-  // (fancyvrb's saved text keeps both spaces, which flat joins, and the
-  // inline text leaves the block that sets frame=none without a border)
+  // (fancyvrb's saved text keeps both spaces, which flat joins)
   if (doc.name === 'test-useverb-fvextra' && !html.includes('uvx-star\u00A0a\u00A0\u00A0b')) problems.push('no uvx-star with two spaces');
-  if (doc.name === 'test-useverb-frame' && /pre#fancyvrb\d+\s*\{\s*border/.test(styles)) problems.push('a border on the block without a frame');
-  if (doc.name === 'test-useverb-frame' && /pre#fancyvrb\d+\s*\{\s*padding:/.test(styles)) problems.push("the inline text's frame keys on the next block");
-  if (doc.name === 'test-useverb-fvextra-color' && !/span#colorbox1\s*\{\s*background-color:light-dark\(#FFFF00/.test(styles)) problems.push('no yellow on the inline text');
-  if (doc.name === 'test-useverb-fvextra-color' && (flat.match(/color:light-dark\(#FF0000/g) ?? []).length !== 4) problems.push('not one red span for each red inline text');
-  if (['test-useverb-frame', 'test-useverb-fvextra-color'].includes(doc.name) &&
-    /pre#fancyvrb\d+\s*\{\s*(?:color|background-color|border-color):/.test(styles)) problems.push("the inline text's color on the block");
   if (displayPictures[doc.name]) {
     const { pictures: shown, math } = displayPictures[doc.name];
     const names = [...shown.map(name => [name].flat()[0]), ...math];

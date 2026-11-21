@@ -179,14 +179,14 @@
     }
 }
 % fancyvrb.4ht's \FV@FormattingPrep points \a:color at \fv:color, so the
-% text color of formatcom gets no mark. Inline saved text
-% (tex8web-text.tex) calls this after the prep: it gives the hook back and
-% marks that color, the current one.
+% text color of formatcom, and each \color in the saved text, gets no mark.
+% Inline saved text (tex8web-text.tex) calls this after the prep: it gives
+% the hook back and marks the color of formatcom, the current one.
 \cs_new_protected:Npn \web@fvcolor { }
 \cs_if_exist:NT \a:color {
     \cs_set_protected:Npn \web@fvcolor {
+        \Configure{color}{\__web_declared:n}
         \tl_if_empty:NF \fv:color {
-            \Configure{color}{\__web_declared:n}
             \bool_set_true:N \l__web_declared_bool
             \__web_declared_mark:
         }
