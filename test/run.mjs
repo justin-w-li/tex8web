@@ -1100,16 +1100,17 @@ const builddirspacePage = (name, included = true) => [
 // formula between them
 const hologoBibtex = before => new RegExp(`${before}<span class='HoLogo-BibTeX-sf'><span class='tex8web-nowrap'>(?:<span class='[\\w-]+'>)?B(?:(?!<mjx-container|HoLogo-i|<\\/p>)[^])*<span class='HoLogo-i'>`);
 
-// Text as a reader sees it: any tags may come between its characters, and
-// each <, >, &, ", or ' may be written as a reference. A > must not close a
-// tag. A failure names the text.
+// Text as a reader sees it: the tags that match `between` may come between
+// its characters, and each <, >, &, ", or ' may be written as a reference. A
+// > must not close a tag. The patterns `before` and `after` place the text
+// in its element. A failure names the text.
 const references = {
   '<': '&(?:lt|#x0*3[cC]|#0*60);', '>': '(?:(?<!<[^<>]*)>|&(?:gt|#x0*3[eE]|#0*62);)', '&': '&(?:amp|#x0*26|#0*38);',
   '"': '(?:"|&(?:quot|#x0*22|#0*34);)', "'": "(?:'|&(?:apos|#x0*27|#0*39);)",
 };
-const shown = text => {
-  const pattern = new RegExp([...text].map(c => references[c] ?? c.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')).join('(?:<[^>]*>)*'));
-  return { source: text, test: html => pattern.test(html) };
+const shown = (text, before = '', after = '', between = '(?:<[^>]*>)*') => {
+  const pattern = new RegExp(before + [...text].map(c => references[c] ?? c.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')).join(between) + after);
+  return { source: before || after ? `${text} in ${before}...${after}` : text, test: html => pattern.test(html) };
 };
 const contents = {
   // (\eqref of a row whose matrix has rows reads the row's number)
@@ -1900,15 +1901,31 @@ const contents = {
   ],
   'test-hologo-plain': ["class='tocnumber'>1<\\/span><a [^>]*>Using ", "<a id='[^']*'><\\/a>Using ", 'Text: '].map(hologoBibtex),
   // (a page read as HTML, after a stray end tag: the text of each listing,
-  // verbatim, inline code, and font change, as in the PDF; the formula
-  // after the inline listing, prerendered; and the links' addresses)
+  // verbatim, inline code, font change, heading, table of contents entry,
+  // table cell, caption, and description label, as in the PDF, each in its
+  // element; a link after a reference; the formulas, prerendered; and the
+  // links' addresses)
   'test-htmlread': [
     /<title>&(?:amp|#x0*26);\s*Title’s text<\/title>/, /<h1 class='titleHead'>&(?:amp|#x0*26);\s*Title’s text<\/h1>/,
-    ...['& heading', "Strings: 'Hello'.", '>>> f(3)', '>>> print("hi")', '#include <stdio.h>', 'if (a && b < c) puts("s");',
-      'Inline C: a<b && c>d then', 'Verb: <a> & "b".', 'Emph: &.', 'Italic: <x.', 'Typewriter: <b> and "y".', 'Sans: &s.',
-      '& in a theorem.', '& in a footnote.', 'Link: &here and quote.', 'Plain: a & b and a&b.',
+    /<meta content='&(?:amp|#x0*26);\s*Title’s text' property='og:title'/,
+    shown('& heading', "<h3 class='sectionHead'[^>]*>(?:(?!</h3>)[^])*?", '</h3>'),
+    shown('& heading', "<span class='sectionToc'><span class='tocnumber'>1</span><a [^>]*>", '</a>'),
+    shown("'Hello'", "Strings: <code class='lstinline'>(?:<[^>]*>)*", '(?:<[^>]*>)*</code>\\.', '(?:<(?!/code)[^>]*>)*'),
+    ...['>>> f(3)', '>>> print("hi")', '#include <stdio.h>', 'if (a && b < c) puts("s");',
+      'Inline C: a<b && c>d then', 'Verb: <a> & "b".', 'Link: &here and quote.', 'Plain: a & b and a&b.',
       '>>> "v" && <w>', '>>> "x" && <y>', '>>> "z" <', 'print("Bell Circuit:")', 'if a < b > c: pass',
-      'Mintinline: "q" < 1.'].map(shown),
+      'Mintinline: "q" < 1.'].map(text => shown(text)),
+    shown('&', "Emph: <span class='ecti-1000'>", '</span>'), shown('<x', "Italic: <span class='ecti-1000'>", '</span>'),
+    shown('<b> ', "Typewriter: <span class='ectt-1000'>", '</span>'), shown('"y"', "and <span class='ectt-1000'>", '</span>'),
+    shown('&s', "Sans: <span class='ecss-1000'>", '</span>'),
+    shown('& ', "<span class='ecbi-1000'>", "</span><span class='ecti-1000'>in a theorem\\.</span>"),
+    shown('& in a footnote.', "<span class='ecrm-0800'>", '</span>'),
+    shown('&here', "<a href='https://example\\.com/\\?a=1&amp;b=2'>", '</a>'),
+    shown('& x', "<td[^>]*>\\s*", '\\s*</td>'), shown('<y>', "<td[^>]*>\\s*<span class='ectt-1000'>", '</span></td>'),
+    shown('& cap', "<span class='content'>", '</span></figcaption>'),
+    shown('&', "<dt class='description'>(?:<a [^>]*></a>)?\\s*<span class='ecbx-1000'>", '</span>'),
+    /a&(?:amp|#x0*26);<a href='https:\/\/example\.com'>y<\/a>/,
+    /<mjx-container aria-label='a is less than b'/, /<mjx-container aria-label='a ampersand b is greater than c'/,
     /<\/code>(?:<\/span>)* then (?:<span[^>]*>)*<mjx-container/,
     /<a href='https:\/\/example\.com\/\?a=1&amp;b=2'>/, /<a href='https:\/\/example\.com\/it&(?:#39|#x0*27|apos);s\?c=3&amp;d=4'>/,
     /^(?![^]*(?:\/span&gt;|(?<!&)#x0*[0-9A-F]{2,};))/,
