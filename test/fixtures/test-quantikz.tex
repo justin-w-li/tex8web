@@ -1,0 +1,108 @@
+% Display math whose body is only a quantikz circuit of quantikz 1.0 and
+% later: in \[ \], $$ $$, displaymath, equation, equation*, align*,
+% gather*, a theorem, and a proof with \qedhere, in a \resizebox and a
+% \scalebox, with options, a \label before and after it, a \tag, a period
+% or a comma after it, and the common gate commands. Each case follows a
+% paragraph that names it. A circuit in a figure and ordinary display
+% math stay as they are.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{quantikz}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+Bracket quantikz.
+\[ \begin{quantikz} \lstick{$|0\rangle$} & \gate{H} & \qw \end{quantikz} \]
+
+Dollars quantikz.
+$$ \begin{quantikz} \lstick{$|1\rangle$} & \gate{X} & \qw \end{quantikz} $$
+
+Displaymath quantikz.
+\begin{displaymath}
+\begin{quantikz} & \gate{Z} & \meter{} \end{quantikz}
+\end{displaymath}
+
+Equation quantikz period.
+\begin{equation}
+\begin{quantikz}[row sep=0.3cm, column sep=0.4cm]
+\lstick{$a$} & \ctrl{1} & \qw \\
+\lstick{$b$} & \targ{} & \qw
+\end{quantikz}.
+\label{eq:circuit}
+\end{equation}
+
+Equation star quantikz.
+\begin{equation*}
+\begin{quantikz} & \gate{T} & \gate{S} & \qw \end{quantikz}
+\end{equation*}
+
+Align star quantikz.
+\begin{align*}
+\begin{quantikz}
+& \ctrl{1} & \gate{H} \\
+& \targ{} & \qw
+\end{quantikz}
+\end{align*}
+
+Gather star quantikz.
+\begin{gather*}
+\begin{quantikz} & \swap{1} & \qw \\ & \targX{} & \qw \end{quantikz}
+\end{gather*}
+
+Bracket resizebox quantikz.
+\[ \resizebox{0.25\textwidth}{!}{%
+\begin{quantikz}
+\lstick{$|0\rangle$} & \gate{H} & \gate[2]{U_f} & \gate{H} & \meter{} \\
+\lstick{$|1\rangle$} & \gate{H} & & \qw & \qw
+\end{quantikz}} \]
+
+Bracket scalebox quantikz comma.
+\[ \scalebox{0.8}{\begin{quantikz} & \gate{R_x(\theta)} & \qw \end{quantikz}}\, , \]
+
+Bracket wire types quantikz.
+\[ \begin{quantikz}[wire types={q,c}]
+\lstick{$q$} & \gate{H} \slice{$t_1$} & \meter{} \\
+\lstick{$c$} & & \setwiretype{c}
+\end{quantikz} \]
+
+Bracket bundle quantikz.
+\[ \begin{quantikz}
+\lstick{$x$} & \qwbundle{n} & \gate[2]{U} \gategroup[2,steps=1,style={dashed,rounded corners}]{oracle} & \rstick{$x$} \\
+\lstick{$y$} & & & \rstick{$y \oplus f(x)$}
+\end{quantikz} \]
+
+Bracket tag quantikz.
+\[ \begin{quantikz} & \gate{Y} & \qw \end{quantikz} \tag{Q} \]
+
+Equation label first quantikz.
+\begin{equation}
+\label{eq:first}
+\begin{quantikz} & \phase{\phi} & \qw \end{quantikz}
+\end{equation}
+
+\begin{theorem}
+Theorem quantikz.
+\begin{equation}
+\begin{quantikz} & \gate{V} & \qw \end{quantikz}
+\label{eq:theorem}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Proof quantikz period.
+\[ \begin{quantikz} & \gate{W} & \qw \end{quantikz}. \qedhere \]
+\end{proof}
+
+Figure quantikz.
+\begin{figure}[h]
+\centering
+\begin{quantikz} & \gate{F} & \qw \end{quantikz}
+\caption{A circuit in a figure}
+\end{figure}
+
+Ordinary display.
+\[ |\psi\rangle = \alpha |0\rangle + \beta |1\rangle \]
+
+Reference to the circuit: \ref{eq:circuit}, \ref{eq:first}, and \ref{eq:theorem}.
+\end{document}

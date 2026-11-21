@@ -845,6 +845,25 @@ const element = (html, opening) => {
   }
   return '';
 };
+// Display math whose body is only a quantikz circuit: the number or tag
+// its display shows ('' for none) and the punctuation after the circuit
+// ('' for none), as in the PDF. Each name is the paragraph before.
+const quantikzMarks = {
+  'test-quantikz': { 'Bracket quantikz': ['', ''], 'Dollars quantikz': ['', ''], 'Displaymath quantikz': ['', ''],
+    'Equation quantikz period': ['(1)', '.'], 'Equation star quantikz': ['', ''], 'Align star quantikz': ['', ''],
+    'Gather star quantikz': ['', ''], 'Bracket resizebox quantikz': ['', ''], 'Bracket scalebox quantikz comma': ['', ','],
+    'Bracket wire types quantikz': ['', ''], 'Bracket bundle quantikz': ['', ''], 'Bracket tag quantikz': ['(Q)', ''],
+    'Equation label first quantikz': ['(2)', ''], 'Theorem quantikz': ['(3)', ''], 'Proof quantikz period': ['', '.'] },
+  'test-quantikz-hyperref': { 'Bracket quantikz': ['', ''], 'Equation tag quantikz': ['(P)', ''], 'Theorem quantikz': ['(1)', ''] },
+};
+// the numbers of the references after "Reference to the circuit:", each
+// linking to the anchor right before its display
+const quantikzRefs = { 'test-quantikz': ['(1)', '(2)', '(3)'], 'test-quantikz-hyperref': ['(1)'] };
+// circuits outside display math, each a picture between these two texts
+const quantikzPictures = {
+  'test-quantikz': [['Figure quantikz.', 'A circuit in a figure']],
+  'test-quantikz-old': [['Old library center.', 'Old library figure.'], ['Old library figure.', 'An old circuit in a figure']],
+};
 const displayPictures = {
   'test-display-picture': { pictures: pictureCases, math: ['Ordinary display', 'Ordinary dollars'] },
   'test-display-picture-two': { pictures: [], math: ['Two diagrams', 'Two rows'] },
@@ -852,6 +871,8 @@ const displayPictures = {
     pictures: ['Dollars tikzpicture', 'Bracket graphics', ['Equation tikzpicture', '(1)'], 'Equation tag tikzpicture',
       'Theorem tikzpicture'],
     math: ['Equation after the tag', 'Ordinary display'] },
+  'test-quantikz': { pictures: Object.keys(quantikzMarks['test-quantikz']), math: ['Ordinary display'] },
+  'test-quantikz-hyperref': { pictures: Object.keys(quantikzMarks['test-quantikz-hyperref']), math: ['Ordinary display'] },
 };
 
 // \maketitle's heading, holding these parts in order
@@ -4615,6 +4636,29 @@ function check(doc, result, out, aux) {
       const text = part(shown.length + j);
       if (!text.includes('<mjx-container') || text.includes('<img ')) problems.push(`${name}: not MathJax's display`);
     });
+  }
+  for (const [name, [number, punct]] of Object.entries(quantikzMarks[doc.name] ?? {})) {
+    const start = flat.indexOf(`${name}.`);
+    const display = start < 0 ? '' : element(flat.slice(start), /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
+    const tag = display.match(/<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
+    if (tag !== number) problems.push(`${name}: the display's number is "${tag}", not "${number}"`);
+    const after = display.match(/<img [^>]*>\s*<span class='tex8web-picture-punct'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
+    if (after !== punct) problems.push(`${name}: the punctuation after the circuit is "${after}", not "${punct}"`);
+  }
+  if (quantikzRefs[doc.name]) {
+    const refs = [...(flat.match(/Reference to the circuit: (?:(?!<\/p>)[^])*/)?.[0] ?? '').matchAll(/<a href='#([^']+)'[^>]*>((?:(?!<\/a>)[^])*)<\/a>/g)];
+    const labels = refs.map(([, , label]) => `(${label.replace(/<[^>]+>/g, '').replace(/^\((.*)\)$/, '$1')})`);
+    if (labels.join(' ') !== quantikzRefs[doc.name].join(' ')) problems.push(`references to the circuits read ${labels.join(' ')}, not ${quantikzRefs[doc.name].join(' ')}`);
+    for (const [, id, label] of refs) {
+      const at = flat.indexOf(`id='${id}'`);
+      const tag = at < 0 ? '' : flat.slice(at).match(/^(?:(?!<p\b)[^])*?<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
+      const number = label.replace(/<[^>]+>/g, '');
+      if (!tag.includes(number)) problems.push(`reference ${number} links to #${id}, not to the display numbered ${number}`);
+    }
+  }
+  for (const [from, to] of quantikzPictures[doc.name] ?? []) {
+    const start = flat.indexOf(from), end = flat.indexOf(to, start);
+    if (start < 0 || end < 0 || !/<img /.test(flat.slice(start, end))) problems.push(`no picture between "${from}" and "${to}"`);
   }
   if (preloads[doc.name]) {
     const found = fontsListed(html).map(href => href.match(/^fonts\/(.+)\.woff2$/)?.[1]).sort().join(' ');

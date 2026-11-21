@@ -1,0 +1,31 @@
+% Display math whose body is only a quantikz circuit, with hyperref: in
+% \[ \], in a numbered equation with a \label and an \eqref, with a \tag,
+% and in a theorem. Each case follows a paragraph that names it.
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{quantikz}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+Bracket quantikz.
+\[ \begin{quantikz} \lstick{$|0\rangle$} & \gate{H} & \qw \end{quantikz} \]
+
+Equation tag quantikz.
+\begin{equation}
+\begin{quantikz} & \gate{X} & \qw \end{quantikz} \tag{P}
+\end{equation}
+
+\begin{theorem}
+Theorem quantikz.
+\begin{equation}
+\begin{quantikz} \lstick{$a$} & \ctrl{1} & \qw \\ \lstick{$b$} & \targ{} & \qw \end{quantikz}
+\label{eq:circuit}
+\end{equation}
+\end{theorem}
+
+Ordinary display.
+\[ U = H \otimes H \]
+
+Reference to the circuit: \eqref{eq:circuit}.
+\end{document}

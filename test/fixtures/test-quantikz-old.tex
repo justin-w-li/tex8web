@@ -1,0 +1,20 @@
+% Checks cases the fix for quantikz in display math must not break: the
+% quantikz library before 1.0, loaded with \usetikzlibrary{quantikz},
+% whose circuit in a center environment and in a figure is a picture.
+% Each case follows a paragraph that names it.
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{quantikz}
+\begin{document}
+Old library center.
+\begin{center}
+\begin{quantikz} & \gate{X} & \qw \end{quantikz}
+\end{center}
+
+Old library figure.
+\begin{figure}[h]
+\centering
+\begin{quantikz} & \gate{Z} & \qw \end{quantikz}
+\caption{An old circuit in a figure}
+\end{figure}
+\end{document}
