@@ -1,0 +1,22 @@
+% A document with backref's back references and titletoc's partial table
+% of contents, beside the current .aux and .brf of a PDF build, as
+% latexmk leaves them, and the .ptc of an earlier build, which holds a
+% line of text and an \addtocontents write of \oldmark, which this
+% document does not define. backref's .brf is not a list: the draft
+% build's one LaTeX run shows the back reference from it, as pdflatex
+% does. The stale and current files stay as they are.
+\documentclass{article}
+\usepackage{titletoc}
+\usepackage[pageref]{backref}
+\begin{document}
+\section{First}
+\startcontents
+\printcontents{}{1}{}
+Text of the first section.
+\subsection{New subsection}
+As \cite{able} says.
+\begin{thebibliography}{1}
+\bibitem{able} Ann Able. A Book with Back References.
+
+\end{thebibliography}
+\end{document}

@@ -4,7 +4,9 @@
 % float's \newfloat, newfloat's \DeclareFloatingEnvironment, listings'
 % list, and algorithm's list. The earlier build had no entries: each list
 % holds only an \addtocontents write of \oldmark, which this document
-% does not define. The stale files stay as they are.
+% does not define, and tocloft's list also a line of text written with
+% \addtocontents, so only the .aux shows it is a list. The stale files
+% stay as they are.
 \documentclass{article}
 \usepackage{tocloft}
 \newcommand{\listexamplename}{Examples}

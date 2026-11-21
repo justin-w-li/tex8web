@@ -3,7 +3,8 @@
 % .ptc, .plf, .plt, .lol, and .loa. The earlier build had no entries: each
 % list holds only an \addtocontents write of \oldmark, which this document
 % does not define, after titletoc's \ttl@starttoc in its own files. The
-% stale files stay as they are.
+% .ptc also has a line of text written with \addtocontents, so only its
+% extension shows it is a list. The stale files stay as they are.
 \documentclass{article}
 \usepackage{titletoc}
 \usepackage{xcolor}

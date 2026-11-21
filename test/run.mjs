@@ -1492,8 +1492,13 @@ const contents = {
     /<span class='content'>New table<\/span>/, /^(?![^]*Old note)/],
   'test-staleaux-ptc-own': [/Text\s+of\s+the\s+first\s+section\.\s+Text\s+of\s+the\s+class\s+of\s+the\s+document\./, /Text\s+of\s+the\s+class\s+option\s+file\s+of\s+the\s+document\./,
     /Text\s+of\s+the\s+configuration\s+file\s+of\s+the\s+document\./, /Text\s+of\s+the\s+package\s+of\s+the\s+document\./,
-    /Text\s+of\s+the\s+definitions\s+of\s+the\s+document\./, /Text\s+of\s+the\s+text\s+file\s+of\s+the\s+document\./,
+    /Text\s+of\s+the\s+definitions\s+of\s+the\s+document\./,
+    ...['ltx', 'fd', 'bbx', 'cbx'].map(e => new RegExp(`Text\\s+of\\s+the\\s+${e}\\s+file\\s+of\\s+the\\s+document\\.`)),
+    /Text\s+of\s+the\s+text\s+file\s+of\s+the\s+document\./,
     /<span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>/, /Ann\s+Able\.\s+From\s+the\s+style\s+of\s+the\s+document:\s+A\s+Book\s+of\s+the\s+Document\./, /^(?![^]*Old note)/],
+  'test-staleaux-ptc-include': [/Text of the first section\./, /Text of the subsection\./, /Example<span class='tex8web-nbsp'> <\/span>1: A new example/,
+    /^(?![^]*Old (?:note|words))/],
+  'test-staleaux-ptc-backref': [/Text of the first section\./, /Back References\. pages<span class='tex8web-nbsp'> <\/span><a href='#[^']+'>1<\/a>/, /^(?![^]*Old (?:note|words))/],
   'test-staleaux-ptc-draft': [/See section<span class='tex8web-nbsp'> <\/span><a href='#first'>1(?:<!--[^>]*-->)?<\/a>/, /<span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>/,
     /A Book Read from the Current File/, /Apple, <a href='#[^']+'>1<\/a>/, /the seed-bearing part of a plant/, /^(?![^]*Old note)/],
   // (files of the document named like tex4ht's .4ht files, read in the
@@ -2572,7 +2577,7 @@ const ties = {
 // The fixtures beside stale lists with no \contentsline line, built in
 // full and in draft mode
 const staleListCases = ['', '-color', '-amsart', '-lists', '-koma', '-noaux', '-noaux-amsart', '-noaux-lists', '-noaux-koma', '-babel',
-  '-oldaux', '-own', '-draft']
+  '-oldaux', '-own', '-draft', '-include', '-backref']
   .map(suffix => `test-staleaux-ptc${suffix}`);
 
 // The lines that make4ht's log must hold, with their level: the tests
@@ -2657,8 +2662,10 @@ const untouched = {
   'test-staleaux-ptc-noaux': ['ptc', 'plf', 'plt', 'lol', 'loa'].map(e => `test-staleaux-ptc-noaux.${e}`),
   'test-staleaux-ptc-noaux-amsart': ['test-staleaux-ptc-noaux-amsart.lof', 'test-staleaux-ptc-noaux-amsart.lot'],
   'test-staleaux-ptc-oldaux': ['test-staleaux-ptc-oldaux.aux', 'test-staleaux-ptc-oldaux.ptc'],
-  'test-staleaux-ptc-own': ['aux', 'ptc', 'cls', 'clo', '4ht', 'sty', 'def', 'txt', 'bib', 'bst'].map(e => `test-staleaux-ptc-own.${e}`),
+  'test-staleaux-ptc-own': ['aux', 'ptc', 'cls', 'clo', '4ht', 'sty', 'def', 'ltx', 'fd', 'bbx', 'cbx', 'txt', 'bib', 'bst'].map(e => `test-staleaux-ptc-own.${e}`),
   'test-staleaux-ptc-draft': ['aux', 'ptc', 'bbl', 'ind', 'gls', 'bib'].map(e => `test-staleaux-ptc-draft.${e}`),
+  'test-staleaux-ptc-include': [...['aux', 'ptc', 'lop'].map(e => `test-staleaux-ptc-include.${e}`), 'test-staleaux-ptc-include/chapter.aux'],
+  'test-staleaux-ptc-backref': ['aux', 'brf', 'ptc'].map(e => `test-staleaux-ptc-backref.${e}`),
   'test-staleaux-ind': ['test-staleaux-ind.ind'],
   'test-staleaux-ind-named': ['test-staleaux-ind-named.ind', 'test-staleaux-ind-named-authors.ind', 'test-staleaux-people.ind', 'test-staleaux-editors.ind'],
   'test-staleaux-ind-input': ['test-staleaux-ind-input.ind', 'test-staleaux-ind-input.gls', 'test-staleaux-ind-input/pre.tex'],
@@ -5721,23 +5728,41 @@ const staleTocDraft = docs.find(d => d.name === 'test-staletoc-draft');
 const staleTocDraftOwn = { hyperref: ['hyperref.exp', 'hyperref.toc'], koma: ['koma.lox'] };
 const staleTocDraftCases = [...['toc', 'toc-koma', 'toc-memoir', 'toc-color', 'toc-amsart', 'toc-report'].map(n => `test-staleaux-${n}`),
   ...Object.keys(staleTocDraftOwn)];
-if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => {
+// The fixtures of staleListCases too, each compared with the page built
+// without its stale lists: the files of untouched other than the
+// document's own files and the current files of a PDF build. The page
+// also has each fixture's text from those files, in staleListDraft.
+const staleListCurrent = /\.(?:aux|bbl|ind|gls|brf|bib|bst|cls|clo|4ht|sty|def|txt|ltx|fd|cfg|bbx|cbx)$/;
+const staleListDraft = {
+  'test-staleaux-ptc-own': contents['test-staleaux-ptc-own'].filter(pattern => /^Text/.test(pattern.source)),
+  // (the draft build's reference and index entry are not links: the
+  // .aux and .ind of the PDF build have no anchors of tex4ht's)
+  'test-staleaux-ptc-draft': [/See section<span class='tex8web-nbsp'> <\/span>1\./, /<span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>/,
+    /A Book Read from the Current File/, /Apple, 1 /, /the seed-bearing part of a plant/],
+  // (the back reference from the current .brf, in the one LaTeX run)
+  'test-staleaux-ptc-backref': [/Back References\. pages<span class='tex8web-nbsp'> <\/span>1/],
+};
+const staleDraftCases = [...(staleTocDraft ? staleTocDraftCases.map(name => ({ doc: staleTocDraft, name })) : []),
+  ...docs.filter(d => staleListCases.includes(d.name)).map(d => ({ doc: d, name: d.name }))];
+for (const { doc, name } of staleDraftCases) jobs.push(async () => {
   const own = name in staleTocDraftOwn;
-  const source = own ? join(staleTocDraft.dir, 'test-staletoc-draft') : staleTocDraft.dir;
-  const lists = own ? staleTocDraftOwn[name] : untouched[name];
-  const files = readdirSync(source).filter(f => f.startsWith(`${name}.`));
+  const source = own ? join(doc.dir, 'test-staletoc-draft') : doc.dir;
+  const lists = own ? staleTocDraftOwn[name] : doc === staleTocDraft ? untouched[name] : untouched[name].filter(f => !staleListCurrent.test(f));
+  // (with a folder of the document's name, which holds an \include'd file)
+  const files = readdirSync(source).filter(f => f.startsWith(`${name}.`) || f === name);
   const problems = [];
   const build = async variant => {
-    const dir = join(testDir(staleTocDraft), name, variant);
+    const dir = join(testDir(doc), doc === staleTocDraft ? name : 'draft', variant);
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
-    for (const f of files) if (variant === 'beside' || !lists.includes(f)) writeFileSync(join(dir, f), readFileSync(join(source, f)));
+    for (const f of files) if (variant === 'beside' || !lists.includes(f)) cpSync(join(source, f), join(dir, f), { recursive: true });
     if (!existsSync(join(dir, `${name}.tex`))) writeFileSync(join(dir, `${name}.tex`), readFileSync(join(staleTocDraft.dir, 'test-staletoc-draft.tex')));
-    const state = () => readdirSync(dir).filter(f => f !== 'build').sort()
+    const state = () => readdirSync(dir, { recursive: true }).filter(f => f !== 'build' && !f.startsWith(`build/`)
+      && statSync(join(dir, f)).isFile()).sort()
       .map(f => `${f} ${statSync(join(dir, f)).ctimeMs} ${readFileSync(join(dir, f), 'utf8')}`).join('\n');
     const before = state();
     const result = await run(join(root, 'bin/tex8web'), ['-c', join(root, 'tex8web.cfg'), '-m', 'draft', '-a', 'info', `${name}.tex`],
-      { cwd: dir, slot: true, env: { ...process.env, ...staleTocDraft.env } });
+      { cwd: dir, slot: true, env: { ...process.env, ...doc.env } });
     if (state() !== before) problems.push(`a file beside the document ${variant === 'beside' ? 'with its lists' : 'without its lists'} was changed or added`);
     const log = result.log ?? '';
     writeFileSync(join(dir, 'build.log'), log);
@@ -5751,7 +5776,8 @@ if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => 
   };
   const [beside, alone] = await Promise.all([build('beside'), build('alone')]);
   if (!/Text of the first (?:section|chapter)\./.test(beside.html)) problems.push("the page does not have the first section's text");
-  if (/Old (?:example|remark|box|algorithm|section|figure|table|listing|program|theorem)|Alte[rn]? /.test(beside.html)) problems.push('the page has an old entry');
+  if (/Old (?:example|remark|box|algorithm|section|figure|table|listing|program|theorem|note|words)|Alte[rn]? /.test(beside.html)) problems.push('the page has an old entry');
+  for (const pattern of staleListDraft[name] ?? []) if (!pattern.test(beside.html)) problems.push(`the page does not match ${pattern}`);
   if (name === 'hyperref' && !/See Example<span class='tex8web-nbsp'> <\/span>(?:<a [^>]*>)?1(?:<\/a>)?\./.test(beside.html)) {
     problems.push("the reference does not show the number from the .aux beside the document");
   }
@@ -5760,7 +5786,7 @@ if (staleTocDraft) for (const name of staleTocDraftCases) jobs.push(async () => 
     const line = a.findIndex((l, i) => l !== b[i]);
     problems.push(`the page differs from the page without the lists at line ${line + 1}: ${JSON.stringify(a[line]?.slice(0, 160))}`);
   }
-  report(`${staleTocDraft.name} (${name}, draft)`, problems);
+  report(doc === staleTocDraft ? `${doc.name} (${name}, draft)` : `${name} (draft)`, problems);
 });
 // test-staletoc-draft built in full, then in draft mode, in the same folder
 // beside the stale list of test-staleaux-toc-koma, whose three-argument
@@ -5792,42 +5818,6 @@ if (staleTocDraft) jobs.push(async () => {
   }
   if (readFileSync(join(dir, 'doc.lox'), 'utf8') !== readFileSync(join(staleTocDraft.dir, 'test-staleaux-toc-koma.lox'), 'utf8')) problems.push('doc.lox changed');
   report(`${staleTocDraft.name} (full, then draft)`, problems);
-});
-
-// The fixtures of staleListCases in draft mode, each in a folder with its
-// files beside it: the one LaTeX run gives no error, the page has this
-// build's text and no old note, and no file beside is changed or added.
-// The current .aux, .bbl, .ind, and .gls beside test-staleaux-ptc-draft
-// give its reference, citation, index, and glossary.
-for (const doc of docs.filter(d => staleListCases.includes(d.name))) jobs.push(async () => {
-  const dir = join(testDir(doc), 'draft');
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
-  for (const f of readdirSync(doc.dir).filter(f => f.startsWith(`${doc.name}.`))) writeFileSync(join(dir, f), readFileSync(join(doc.dir, f)));
-  const state = () => readdirSync(dir).filter(f => f !== 'build').sort()
-    .map(f => `${f} ${statSync(join(dir, f)).ctimeMs} ${readFileSync(join(dir, f), 'utf8')}`).join('\n');
-  const before = state();
-  const result = await run(join(root, 'bin/tex8web'), ['-c', join(root, 'tex8web.cfg'), '-m', 'draft', '-a', 'info', doc.tex],
-    { cwd: dir, slot: true, env: { ...process.env, ...doc.env } });
-  const problems = [];
-  if (state() !== before) problems.push('a file beside the document was changed or added');
-  const log = result.log ?? '';
-  writeFileSync(join(dir, 'build.log'), log);
-  if (result.code !== 0) problems.push(`the draft build exited with ${result.code}`, ...log.split('\n').filter(line => /\[(ERROR|FATAL)\]/.test(line)).slice(0, 4));
-  if (log.includes('Undefined control sequence')) problems.push('the log has "Undefined control sequence"');
-  const page = join(dir, 'build/html', doc.tex.replace(/\.tex$/, '.html'));
-  const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
-  const wanted = {
-    'test-staleaux-ptc-own': contents['test-staleaux-ptc-own'].slice(0, 6),
-    // (the draft build's reference and index entry are not links: the
-    // .aux and .ind of the PDF build have no anchors of tex4ht's)
-    'test-staleaux-ptc-draft': [/See section<span class='tex8web-nbsp'> <\/span>1\./, /<span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>/,
-      /A Book Read from the Current File/, /Apple, 1 /, /the seed-bearing part of a plant/],
-  }[doc.name] ?? [];
-  for (const pattern of [/Text of the first section\./, /^(?![^]*Old (?:note|subsection))/, ...wanted]) {
-    if (!pattern.test(html)) problems.push(`the page does not match ${pattern}`);
-  }
-  report(`${doc.name} (draft)`, problems);
 });
 
 // test-pathspace built with its config, or tex8web itself, in a folder

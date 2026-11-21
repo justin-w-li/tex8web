@@ -1,0 +1,17 @@
+% A document with titletoc's partial table of contents and tocloft's
+% \newlistof in an \include'd file, beside the .aux of an earlier build,
+% which names no list and reads the .aux of the \include with \@input.
+% That .aux names the tocloft list in an \@writefile line. Beside are
+% the .ptc and the tocloft list of that build, each with a line of text
+% and an \addtocontents write of \oldmark, which this document does not
+% define. The stale files stay as they are.
+\documentclass{article}
+\usepackage{titletoc}
+\usepackage{tocloft}
+\newcommand{\listexamplename}{Examples}
+\newlistof{example}{lop}{\listexamplename}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{lop}{example}{\protect\numberline{\theexample}#1}\par}
+\begin{document}
+\include{test-staleaux-ptc-include/chapter}
+\end{document}

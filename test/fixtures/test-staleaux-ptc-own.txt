@@ -1,1 +1,1 @@
-Text of the text file of the document.
+\relax Text of the text file of the document.

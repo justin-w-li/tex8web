@@ -2,9 +2,11 @@
 % of an earlier build, which holds titletoc's \ttl@starttoc and an
 % \addtocontents write of \oldmark, which this document does not define,
 % and the current .aux, .bbl, .ind, and .gls of a PDF build, as latexmk
-% and makeglossaries leave them. The draft build's one LaTeX run takes
-% its reference, citation, index, and glossary from those. The stale and
-% current files stay as they are.
+% and makeglossaries leave them, with a space after each command at the
+% start of a line, as in a list that \write gives, so only their
+% extensions keep them from being hidden. The draft build's one LaTeX
+% run takes its reference, citation, index, and glossary from those. The
+% stale and current files stay as they are.
 \documentclass{article}
 \usepackage{titletoc}
 \usepackage{makeidx}

@@ -1,2 +1,2 @@
-\Configure{@HEAD}{\HCode{<meta name="own-configuration" content="yes" />\Hnewline}}
-\newcommand\fourhttext{Text of the configuration file of the document.}
+\Configure {@HEAD}{\HCode{<meta name="own-configuration" content="yes" />\Hnewline}}
+\newcommand \fourhttext {Text of the configuration file of the document.}

@@ -1,2 +1,2 @@
-\ProvidesFile{test-staleaux-ptc-own.clo}
-\newcommand\clotext{Text of the class option file of the document.}
+\ProvidesFile {test-staleaux-ptc-own.clo}
+\newcommand \clotext {Text of the class option file of the document.}
