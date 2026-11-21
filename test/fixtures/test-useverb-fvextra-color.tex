@@ -1,6 +1,7 @@
 % fvextra's \UseVerb with a background color after a verbatim block: the
 % block keeps the page's background and text color, and the saved text is
-% inline, as in the PDF.
+% inline, on yellow or in red, as in the PDF. \EscVerb is red too, and
+% \Verb stays red.
 \documentclass{article}
 \usepackage{xcolor,fvextra}
 \SaveVerb{v}|uvc-text_a|
@@ -12,4 +13,10 @@ uvc-block
 Yellow \UseVerb[backgroundcolor=yellow]{v} end.
 
 Red \UseVerb[formatcom=\color{red}]{v} end.
+
+Unextra \UseVerb[extra=false,formatcom=\color{red}]{v} end.
+
+Escaped \EscVerb[formatcom=\color{red}]{uvc-esc\_e} end.
+
+Verb \Verb[formatcom=\color{red}]|uvc-verb_v| end.
 \end{document}

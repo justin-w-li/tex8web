@@ -3569,11 +3569,17 @@ const verbatim = {
   // saved text after it inline)
   'test-useverb-frame': [/Before the block\. <\/p> <pre class='fancyvrb' id='fancyvrb1'>(?:(?!<\/pre>)[^])*uvf-block(?:(?!<\/pre>)[^])*<\/pre> <p[^>]*>Text /,
     usedVerb('Text', 'uvf-text_a', 'more\\.', 'cmtt-10'), usedVerb('Red', 'uvf-text_a', 'end\\.', 'cmtt-10'),
-    usedVerb('Filled', 'uvf-text_a', 'end\\.', 'cmtt-10')],
+    usedVerb('Filled', 'uvf-text_a', 'end\\.', 'cmtt-10'), usedVerb('Spaced', 'uvf-text_a', 'end\\.', 'cmtt-10'),
+    /Red <span style='color:light-dark\(#FF0000[^']*'>\s*(?:<\/?span[^>]*>\s*)*<code class='verb'><span class='cmtt-10'>uvf-text_a<\/span><\/code>\s*(?:<\/span>\s*)*end\./],
   // (with fvextra's background color and a text color: the saved text
   // inline after a block)
   'test-useverb-fvextra-color': [/Before the block\. <\/p> <pre class='fancyvrb' id='fancyvrb1'>(?:(?!<\/pre>)[^])*uvc-block(?:(?!<\/pre>)[^])*<\/pre> <p[^>]*>Yellow /,
-    usedVerb('Yellow', 'uvc-text_a', 'end\\.', 'cmtt-10'), usedVerb('Red', 'uvc-text_a', 'end\\.', 'cmtt-10')],
+    usedVerb('Yellow', 'uvc-text_a', 'end\\.', 'cmtt-10'), usedVerb('Red', 'uvc-text_a', 'end\\.', 'cmtt-10'),
+    /Yellow <span class='colorbox' id='colorbox1'[^>]*>\s*<code class='verb'><span class='cmtt-10'>uvc-text_a<\/span><\/code><\/span> end\./,
+    /Red <span style='color:light-dark\(#FF0000[^']*'>\s*(?:<\/?span[^>]*>\s*)*<code class='verb'><span class='cmtt-10'>uvc-text_a<\/span><\/code>\s*(?:<\/span>\s*)*end\./,
+    /Unextra <span style='color:light-dark\(#FF0000[^']*'>\s*(?:<\/?span[^>]*>\s*)*<code class='verb'><span class='cmtt-10'>uvc-text_a<\/span><\/code>\s*(?:<\/span>\s*)*end\./,
+    /Escaped <span style='color:light-dark\(#FF0000[^']*'>\s*(?:<\/?span[^>]*>\s*)*<code class='verb'><span class='cmtt-10'>uvc-esc_e<\/span><\/code>\s*(?:<\/span>\s*)*end\./,
+    /Verb <span style='color:light-dark\(#FF0000[^']*'>\s*(?:<\/?span[^>]*>\s*)*<code class='verb'><span class='cmtt-10'>uvc-verb_v<\/span><\/code>\s*(?:<\/span>\s*)*end\./],
   // (a guard: saved blocks shown as displays, each between its paragraphs,
   // and \Verb inline)
   'test-useverb-display': [
@@ -4440,6 +4446,9 @@ function check(doc, result, out, aux) {
   // inline text leaves the block that sets frame=none without a border)
   if (doc.name === 'test-useverb-fvextra' && !html.includes('uvx-star\u00A0a\u00A0\u00A0b')) problems.push('no uvx-star with two spaces');
   if (doc.name === 'test-useverb-frame' && /pre#fancyvrb\d+\s*\{\s*border/.test(styles)) problems.push('a border on the block without a frame');
+  if (doc.name === 'test-useverb-frame' && /pre#fancyvrb\d+\s*\{\s*padding:/.test(styles)) problems.push("the inline text's frame keys on the next block");
+  if (doc.name === 'test-useverb-fvextra-color' && !/span#colorbox1\s*\{\s*background-color:light-dark\(#FFFF00/.test(styles)) problems.push('no yellow on the inline text');
+  if (doc.name === 'test-useverb-fvextra-color' && (flat.match(/color:light-dark\(#FF0000/g) ?? []).length !== 4) problems.push('not one red span for each red inline text');
   if (['test-useverb-frame', 'test-useverb-fvextra-color'].includes(doc.name) &&
     /pre#fancyvrb\d+\s*\{\s*(?:color|background-color|border-color):/.test(styles)) problems.push("the inline text's color on the block");
   if (displayPictures[doc.name]) {

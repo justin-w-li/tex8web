@@ -1,7 +1,9 @@
 % fancyvrb's \UseVerb under a frame set for every verbatim block: a block
 % that sets frame=none has no border, and the saved text after it is
-% inline, as in the PDF. Saved text with a text color, a fill color, and
-% a rule color colors neither the block nor its frame.
+% inline, as in the PDF. Saved text with a text color is red, as in the
+% PDF; with a fill color and a rule color, it colors neither the block nor
+% its frame. Saved text with frame keys leaves the next block without a
+% frame or padding.
 \documentclass{article}
 \usepackage{xcolor,fancyvrb}
 \fvset{frame=single}
@@ -16,4 +18,9 @@ Text \UseVerb{v} more.
 Red \UseVerb[formatcom=\color{red}]{v} end.
 
 Filled \UseVerb[fillcolor=\color{yellow},rulecolor=\color{blue}]{v} end.
+
+Spaced \UseVerb[framesep=1em,framerule=2pt]{v} end.
+\begin{Verbatim}[frame=none]
+uvf-after
+\end{Verbatim}
 \end{document}

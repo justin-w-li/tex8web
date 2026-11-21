@@ -21,19 +21,30 @@
 % \HLet\:tempa\FV@UseVerb has the arguments reversed, which leaves the
 % definition unused. \UseVerb then runs \a:fancyvrb, which opens a <pre>
 % that nothing closes, and the page ends there. Inline text also skips the
-% frame's rules and the colors of the text, the fill, the rules, and
-% fvextra's background: \a:fancyvrbframe and \a:fancyvrbcolor write them
-% for the id of the last block. fvextra's inline commands each run
-% \FV@UseInlineKeyValues in a group before \FV@FormattingPrep.
+% frame's rules and padding and the colors of the fill, the rules, and
+% fvextra's background: \a:fancyvrbframe, \a:fancyvrbcolor, and the
+% framerule and framesep keys write them for the id of a block. The text
+% color of formatcom goes to \fv:color instead of tex8web's mark, and
+% tex8web-page.tex's \web@fvcolor writes that mark. fvextra's inline
+% commands each run \FV@UseInlineKeyValues in a group before
+% \FV@UseKeyValues, and its \UseVerb and \EscVerb end in
+% \FV@UseVerb@Extra and \FVC@EscVerb@ii after \FV@FormattingPrep.
 \@ifpackageloaded{fancyvrb}{%
     \def\web@fvinline{\let\a:fancyvrb\empty\let\a:fancyvrbframe\empty
         \let\b:fancyvrbframe\empty\let\c:fancyvrbframe\empty\let\d:fancyvrbframe\empty
+        \let\e:fancyvrbframe\empty\let\f:fancyvrbframe\empty
         \let\a:fancyvrbcolor\empty\let\b:fancyvrbcolor\empty\let\c:fancyvrbcolor\empty}%
     \web@needs{FV@UseVerb}%
-    \def\FV@UseVerb#1{\mbox{\FV@UseKeyValues\web@fvinline\FV@FormattingPrep\a:verb#1\b:verb}}%
+    \def\FV@UseVerb#1{\mbox{\web@fvinline\FV@UseKeyValues\FV@FormattingPrep\web@fvcolor
+        \a:verb#1\b:verb}}%
     \@ifpackageloaded{fvextra}{%
         \web@needs{FV@UseInlineKeyValues}%
-        \pend:def\FV@UseInlineKeyValues{\web@fvinline}}{}}{}
+        \pend:def\FV@UseInlineKeyValues{\web@fvinline}%
+        \web@needs{FV@UseVerb@Extra}\web@needs{FVC@EscVerb@ii}%
+        \let\web@fvuseverb\FV@UseVerb@Extra
+        \def\FV@UseVerb@Extra{\web@fvcolor\web@fvuseverb}%
+        \let\web@fvescverb\FVC@EscVerb@ii
+        \def\FVC@EscVerb@ii{\web@fvcolor\web@fvescverb}}{}}{}
 \@ifpackageloaded{verbatim}{%
     \Configure{verbatiminput}
         {\HAssign\Verb:N=0\ifvmode\IgnorePar\fi\EndP
