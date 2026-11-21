@@ -399,18 +399,14 @@
 % them. Other pictures beside math, and a body with two pictures, stay
 % MathJax's. amsmath's displays take a \tag, and so does \[ \] with
 % amsmath; $$ $$, displaymath, and eqnarray do not.
-% (quantikz 1.0 and later, from the package or the TikZ library
-% quantikz2, is built on tikzcd. The library before 1.0, which has no
-% \setwiretype, is garbled when TeX sets it in display math)
-\tl_const:Ne \c__web_picture_tl {
-    \exp_not:n { (?: \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
-        | \\begin \s* \{ tikzcd \} .* \\end \s* \{ tikzcd \} }
-    \cs_if_exist:NT \setwiretype { \exp_not:n { | \\begin \s* \{ quantikz \} .* \\end \s* \{ quantikz \} } }
-    \exp_not:n {
+\tl_const:Nn \c__web_picture_tl {
+    (?: \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
+        | \\begin \s* \{ tikzcd \} .* \\end \s* \{ tikzcd \}
+        | \\begin \s* \{ quantikz \} .* \\end \s* \{ quantikz \}
         | \\begin \s* \{ picture \} .* \\end \s* \{ picture \}
         | \\includegraphics \s* \*? \s* (?: \[ [^\]]* \] \s* )* \{ [^\{\}]* \}
         | \\tikz \b \s* (?: \[ [^\]]* \] \s* )?
-            (?: \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} | (?: [^;\{\}] | \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} )* ; ) ) }
+            (?: \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} | (?: [^;\{\}] | \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} )* ; ) )
 }
 \tl_const:Nn \c__web_marks_tl {
     \s | \\label \s* \{ [^\{\}]* \} | \\notag \b | \\nonumber \b
@@ -504,8 +500,15 @@
         { \tl_if_in:nnTF {#1} {\tag} { \prg_return_false: } { \prg_return_true: } }
         { \prg_return_false: }
 }
+% (& is rescanned with the catcode it has in the document's text, which
+% tex4ht restores after reading the config. The quantikz library before
+% 1.0 makes & active, \let to an alignment &. Its environment reads the
+% circuit at once, and fails on an & of catcode 4)
+\int_new:N \g__web_amp_catcode_int
+\AddToHook{begindocument/end}
+    { \int_gset:Nn \g__web_amp_catcode_int { \tex_catcode:D 38 } }
 \cs_new_protected:Npn \__web_picture:n #1 {
-    \char_set_catcode_alignment:N \& \tex_scantokens:D {#1}
+    \char_set_catcode:nn { 38 } { \g__web_amp_catcode_int } \tex_scantokens:D {#1}
 }
 % A \[ \] with a \qedhere is walked for its box (see \__web_part:nn).
 % A \[ \], $$ $$, or displaymath with a \label is walked too: MathJax

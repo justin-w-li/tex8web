@@ -819,20 +819,33 @@ const pictureCases = ['Dollars tikzpicture', 'Bracket tikzpicture', 'Bracket tik
   'Dollars tikzcd', 'Bracket matrix', 'Dollars matrix', 'Bracket graphics', 'Dollars graphics',
   'Displaymath tikzpicture', 'Displaymath graphics', ['Equation tikzpicture', '(1)'], 'Equation star graphics',
   'Equation star tikzcd', 'Bracket picture environment', 'Theorem tikzpicture', ['Proof tikzpicture', 'tex8web-qed']];
-// more cases, each with the number or tag its display shows ('' for none)
-const pictureNumbers = { 'Equation label first': '(2)', 'Equation tag graphics': '(A)', 'Equation star tag': 'B',
+// more cases, each with the number or tag its display shows ('' for none),
+// by document
+const pictureNumbers = { 'test-display-picture': { 'Equation label first': '(2)', 'Equation tag graphics': '(A)', 'Equation star tag': 'B',
   'Equation notag': '', 'Bracket tikz node': '', 'Equation star resizebox': '', 'Equation wide graphics': '(3)',
   'Equation after a blank line': '', 'Proof equation tikzpicture': '(4)', 'Equation long tag': 'the long tag',
   'Theorem equation graphics': '(5)', 'Bracket tag graphics': '(C)', 'Equation tikzcd period': '(6)',
   'Dollars graphics comma': '', 'Bracket tikzpicture period': '', 'Numbered after a blank line': '(7)',
   'Bracket after a blank line': '', 'Bracket tikzcd': '', 'Bracket tikzcd tag': '(D)', 'Proof tikzpicture period': '',
   'Equation empty star tag': '', 'Equation tikzcd thin space': '(8)', 'Dollars graphics semicolon space': '',
-  'Bracket tikzpicture quad': '' };
-// the punctuation after the picture, in its own element after it
-const picturePuncts = { 'Equation tikzcd period': '.', 'Dollars graphics comma': ',', 'Bracket tikzpicture period': '.',
-  'Proof tikzpicture period': '.', 'Equation tikzcd thin space': '.', 'Dollars graphics semicolon space': ',',
-  'Bracket tikzpicture quad': '.' };
-pictureCases.push(...Object.keys(pictureNumbers));
+  'Bracket tikzpicture quad': '' },
+  // (quantikz circuits)
+  'test-quantikz': { 'Bracket quantikz': '', 'Dollars quantikz': '', 'Displaymath quantikz': '',
+    'Equation quantikz period': '(1)', 'Equation star quantikz': '', 'Align star quantikz': '', 'Gather star quantikz': '',
+    'Bracket resizebox quantikz': '', 'Bracket scalebox quantikz comma': '', 'Bracket wire types quantikz': '',
+    'Bracket bundle quantikz': '', 'Bracket tag quantikz': '(Q)', 'Equation label first quantikz': '(2)',
+    'Theorem quantikz': '(3)', 'Proof quantikz period': '', 'Align quantikz': '(4)', 'Equation resizebox quantikz': '(5)',
+    'Figure display quantikz': '', 'Item quantikz': '' },
+  'test-quantikz-hyperref': { 'Bracket quantikz': '', 'Equation tag quantikz': '(P)', 'Theorem quantikz': '(1)' },
+  'test-quantikz-old': { 'Old library display': '', 'Old library equation period': '(1)' } };
+// the punctuation after the picture, in its own element after it, by document
+const picturePuncts = {
+  'test-display-picture': { 'Equation tikzcd period': '.', 'Dollars graphics comma': ',', 'Bracket tikzpicture period': '.',
+    'Proof tikzpicture period': '.', 'Equation tikzcd thin space': '.', 'Dollars graphics semicolon space': ',',
+    'Bracket tikzpicture quad': '.' },
+  'test-quantikz': { 'Equation quantikz period': '.', 'Bracket scalebox quantikz comma': ',', 'Proof quantikz period': '.' },
+  'test-quantikz-old': { 'Old library equation period': '.' } };
+pictureCases.push(...Object.keys(pictureNumbers['test-display-picture']));
 // the first element whose opening tag matches the pattern, whose first
 // group is the tag's name, up to its closing tag ('' if there is none)
 const element = (html, opening) => {
@@ -845,23 +858,10 @@ const element = (html, opening) => {
   }
   return '';
 };
-// Display math whose body is only a quantikz circuit: the number or tag
-// its display shows ('' for none) and the punctuation after the circuit
-// ('' for none), as in the PDF. Each name is the paragraph before.
-const quantikzMarks = {
-  'test-quantikz': { 'Bracket quantikz': ['', ''], 'Dollars quantikz': ['', ''], 'Displaymath quantikz': ['', ''],
-    'Equation quantikz period': ['(1)', '.'], 'Equation star quantikz': ['', ''], 'Align star quantikz': ['', ''],
-    'Gather star quantikz': ['', ''], 'Bracket resizebox quantikz': ['', ''], 'Bracket scalebox quantikz comma': ['', ','],
-    'Bracket wire types quantikz': ['', ''], 'Bracket bundle quantikz': ['', ''], 'Bracket tag quantikz': ['(Q)', ''],
-    'Equation label first quantikz': ['(2)', ''], 'Theorem quantikz': ['(3)', ''], 'Proof quantikz period': ['', '.'],
-    'Align quantikz': ['(4)', ''], 'Equation resizebox quantikz': ['(5)', ''], 'Figure display quantikz': ['', ''],
-    'Item quantikz': ['', ''] },
-  'test-quantikz-hyperref': { 'Bracket quantikz': ['', ''], 'Equation tag quantikz': ['(P)', ''], 'Theorem quantikz': ['(1)', ''] },
-};
 // the text of the paragraph that refers to the numbered circuits, whose
 // links each go to the anchor right before the display with that number
 const quantikzRefs = { 'test-quantikz': 'Reference to the circuit: 1, 2, 3, 4, and 5.',
-  'test-quantikz-hyperref': 'Reference to the circuit: (1).' };
+  'test-quantikz-hyperref': 'Reference to the circuit: (1).', 'test-quantikz-old': 'Reference to the old circuit: 1.' };
 // circuits outside display math, each a picture between these two texts
 const quantikzPictures = {
   'test-quantikz': [['Figure quantikz.', 'A circuit in a figure'], ['Center quantikz.', 'Ordinary display.']],
@@ -874,9 +874,9 @@ const displayPictures = {
     pictures: ['Dollars tikzpicture', 'Bracket graphics', ['Equation tikzpicture', '(1)'], 'Equation tag tikzpicture',
       'Theorem tikzpicture'],
     math: ['Equation after the tag', 'Ordinary display'] },
-  'test-quantikz': { pictures: Object.keys(quantikzMarks['test-quantikz']), math: ['Ordinary display'] },
-  'test-quantikz-hyperref': { pictures: Object.keys(quantikzMarks['test-quantikz-hyperref']), math: ['Ordinary display'] },
-  'test-quantikz-old': { pictures: [], math: ['Old library display'] },
+  'test-quantikz': { pictures: Object.keys(pictureNumbers['test-quantikz']), math: ['Ordinary display'] },
+  'test-quantikz-hyperref': { pictures: Object.keys(pictureNumbers['test-quantikz-hyperref']), math: ['Ordinary display'] },
+  'test-quantikz-old': { pictures: Object.keys(pictureNumbers['test-quantikz-old']), math: [] },
   'test-quantikz-red': { pictures: [], math: ['Two circuits'] },
 };
 
@@ -4616,10 +4616,11 @@ function check(doc, result, out, aux) {
     });
     shown.forEach((entry, i) => {
       const name = [entry].flat()[0], text = part(i);
-      if (!(name in pictureNumbers) || doc.name !== 'test-display-picture') return;
+      const numbers = pictureNumbers[doc.name] ?? {}, puncts = picturePuncts[doc.name] ?? {};
+      if (!(name in numbers)) return;
       const display = element(text, /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
       const tag = display.match(/<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
-      if (tag !== pictureNumbers[name]) problems.push(`${name}: the display's number is "${tag}", not "${pictureNumbers[name]}"`);
+      if (tag !== numbers[name]) problems.push(`${name}: the display's number is "${tag}", not "${numbers[name]}"`);
       // (the number's anchor before the display, marked, as before MathJax's
       // displays, or at the end of the paragraph before, with no empty
       // display left beside it)
@@ -4629,49 +4630,31 @@ function check(doc, result, out, aux) {
       // (upright, as amsmath sets a number, also in a theorem's italic)
       if (/<span class='tex8web-picture-tag'>(?:(?!<\/span>)[^])*class='[^']*ti-/.test(display)) problems.push(`${name}: the display's number is in italic`);
       const punct = display.match(/<img [^>]*>\s*<span class='tex8web-picture-punct'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
-      if (punct !== (picturePuncts[name] ?? '')) problems.push(`${name}: the punctuation after the picture is "${punct}", not "${picturePuncts[name] ?? ''}"`);
+      if (punct !== (puncts[name] ?? '')) problems.push(`${name}: the punctuation after the picture is "${punct}", not "${puncts[name] ?? ''}"`);
       if (name === 'Proof equation tikzpicture' && !/tex8web-picture-tag(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the number`);
-      if (name === 'Proof tikzpicture period' && !/tex8web-picture-punct(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the period`);
+      if (['Proof tikzpicture period', 'Proof quantikz period'].includes(name) && !/tex8web-picture-punct(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the period`);
       if (name === 'Equation after a blank line' && !/<p\b[^>]*>\s*where the text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
       if (name === 'Numbered after a blank line' && !/<p\b[^>]*>\s*where the numbered text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
       if (name === 'Bracket after a blank line' && !/<p\b[^>]*>\s*where the bracket text goes on/.test(text)) problems.push(`${name}: the text after the display is in no paragraph`);
       if (name === 'Equation tag graphics' && !/Reference to the tag: <a [^>]*>A(?:<!--(?:(?!-->)[^])*-->)?<\/a>/.test(text)) problems.push(`${name}: the reference does not read A`);
     });
+    // (each link of the paragraph that refers to numbered circuits goes to
+    // the anchor right before the display with that number)
+    if (quantikzRefs[doc.name]) {
+      const paragraph = flat.match(/Reference to the (?:old )?circuit: (?:(?!<\/p>)[^])*/)?.[0] ?? '';
+      const read = paragraph.replace(/<!--(?:(?!-->)[^])*-->|<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      if (read !== quantikzRefs[doc.name]) problems.push(`the references read "${read}", not "${quantikzRefs[doc.name]}"`);
+      for (const [, id, label] of paragraph.matchAll(/<a href='#([^']+)'[^>]*>((?:(?!<\/a>)[^])*)<\/a>/g)) {
+        const number = `(${label.replace(/<!--(?:(?!-->)[^])*-->|<[^>]+>/g, '').replace(/^\((.*)\)$/, '$1')})`;
+        const i = shown.findIndex(name => pictureNumbers[doc.name][name] === number), text = i < 0 ? '' : part(i);
+        const display = element(text, /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
+        if (!display || !new RegExp(`id='${id}'[^>]*>(?:\\s|<[^>]+>)*$`).test(text.slice(0, text.indexOf(display)))) problems.push(`reference ${number} links to #${id}, not to the anchor right before its display`);
+      }
+    }
     math.forEach((name, j) => {
       const text = part(shown.length + j);
       if (!text.includes('<mjx-container') || text.includes('<img ')) problems.push(`${name}: not MathJax's display`);
     });
-  }
-  // a quantikz case's display, and the text from its name to the display
-  const quantikzDisplay = name => {
-    const start = flat.indexOf(`${name}.`);
-    const display = start < 0 ? '' : element(flat.slice(start), /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
-    return [display, start < 0 ? '' : flat.slice(start, flat.indexOf(display, start))];
-  };
-  for (const [name, [number, punct]] of Object.entries(quantikzMarks[doc.name] ?? {})) {
-    const [display, before] = quantikzDisplay(name);
-    const tag = display.match(/<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
-    if (tag !== number) problems.push(`${name}: the display's number is "${tag}", not "${number}"`);
-    const after = display.match(/<img [^>]*>\s*<span class='tex8web-picture-punct'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
-    if (after !== punct) problems.push(`${name}: the punctuation after the circuit is "${after}", not "${punct}"`);
-    // (the number's anchor right before the display, as for other pictures,
-    // upright also in a theorem's italic, and no empty display before it)
-    if (number && /<a id=/.test(display)) problems.push(`${name}: the number's anchor is in the display`);
-    if (number && !/<a [^>]*\btex8web-eq-anchor(?:-end\b[^>]*><\/a>\s*<\/p>|\b[^>]*><\/a>)\s*$/.test(before)) problems.push(`${name}: no marked anchor right before the display`);
-    if (/<span class='tex8web-picture-tag'>(?:(?!<\/span>)[^])*class='[^']*ti-/.test(display)) problems.push(`${name}: the display's number is in italic`);
-    if (/<(div|span) class='[^']*\bmathjax-block\b[^']*'>\s*<\/\1>/.test(before)) problems.push(`${name}: an empty display`);
-    if (name === 'Proof quantikz period' && !/tex8web-picture-punct(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the period`);
-  }
-  if (quantikzRefs[doc.name]) {
-    const paragraph = flat.match(/Reference to the circuit: (?:(?!<\/p>)[^])*/)?.[0] ?? '';
-    const read = paragraph.replace(/<!--(?:(?!-->)[^])*-->|<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-    if (read !== quantikzRefs[doc.name]) problems.push(`the references read "${read}", not "${quantikzRefs[doc.name]}"`);
-    for (const [, id, label] of paragraph.matchAll(/<a href='#([^']+)'[^>]*>((?:(?!<\/a>)[^])*)<\/a>/g)) {
-      const number = `(${label.replace(/<!--(?:(?!-->)[^])*-->|<[^>]+>/g, '').replace(/^\((.*)\)$/, '$1')})`;
-      const name = Object.keys(quantikzMarks[doc.name]).find(name => quantikzMarks[doc.name][name][0] === number);
-      const [, before] = name ? quantikzDisplay(name) : ['', ''];
-      if (!new RegExp(`id='${id}'[^>]*>(?:\\s|<[^>]+>)*$`).test(before)) problems.push(`reference ${number} links to #${id}, not to the anchor right before its display`);
-    }
   }
   for (const [from, to] of quantikzPictures[doc.name] ?? []) {
     const start = flat.indexOf(from), end = flat.indexOf(to, start);

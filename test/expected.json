@@ -46,12 +46,6 @@
       "test-nestpic-hyperref.html: no target for #fn1x18-bk"
     ]
   },
-  "test-quantikz-old": {
-    "why": "a known gap of its own: a circuit of the quantikz library before 1.0 in display math is left to MathJax, which has no quantikz environment, because tex4ht garbles that library's circuit there",
-    "allow": [
-      "test-quantikz-old.html: 1 MathJax error(s)"
-    ]
-  },
   "test-quantikz-red": {
     "why": "a known gap of its own: a display with two quantikz circuits is left to MathJax, as one with two other pictures is, and MathJax has no quantikz environment",
     "allow": [
