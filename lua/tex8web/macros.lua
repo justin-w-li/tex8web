@@ -340,8 +340,8 @@ function M.define(document, context)
     source.each_text(el, function(node) dom.set_node_text(node, rewrite(node:get_text(), prims)) end)
     texts[#texts + 1] = el:get_text()
     -- (a formula the rewrite left empty, such as hologo's $\m@th$, has no
-    -- width in the PDF, but MathJax would give it one. Removed, with the
-    -- space text.sized_math_spaces may have put in it.)
+    -- width in the PDF, but MathJax would give it one. Replaced by the
+    -- space text.sized_math_spaces may have moved into it.)
     local space = texts[#texts]:match("^\\%(%s*\\%)(%s*)$")
     if space and texts[#texts] ~= before then
       el:replace_node(el:get_parent():create_text_node(space))

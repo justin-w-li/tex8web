@@ -90,6 +90,9 @@ The math and the definitions it uses are rewritten where MathJax reads LaTeX dif
 - `\hspace*` becomes `\hspace`. MathJax reads the `*` of `\hspace*` as its dimension. The page has no line break for the star to keep the space at.
 - `\protect` is dropped. A class writes `\thanks` text with `\protected@xdef`, which puts `\protect` before each robust command in its math.
 - tex4ht's `\mathrm@@`, which `\protected@xdef` leaves for `\mathrm` (`fontmath.4ht`), becomes `\mathrm`, and the same for `\mathbf`, `\mathit`, `\mathsf`, and `\mathtt`.
+- `\m@th` becomes a space. It sets `\mathsurround`, the space around a formula, to zero, and MathJax adds no such space. MathJax does not know `\m@th`. The space ends a control word before it.
+- `\mathsurround\z@`, which `\m@th` expands to in the table of contents, becomes a space, for the same reason.
+- An inline formula that the rewrite leaves empty, such as hologo's `$\m@th$` in its BibTeX logo, is removed. It has no width in the PDF, and MathJax would give it one. A space that `text.sized_math_spaces` moved into the formula stays in its place.
 
 amsmath's matrices can be written as the macro pairs that `\begin` and `\end` run, such as `\bmatrix ... \endbmatrix`. LaTeX accepts these pairs, and MathJax has only the environments. `macros.lua` defines `\bmatrix` for MathJax as `\begin{bmatrix}` and `\endbmatrix` as `\end{bmatrix}`, and the same for `Bmatrix`, `vmatrix`, `Vmatrix`, and `smallmatrix`. A document's own definition replaces these. Under amsmath, the code in `tex8web-math.tex` that numbers the rows of a display treats each pair as an environment, so a `\\` inside the matrix ends no row. It does so only for the names whose two macros still have amsmath's meanings at `\begin{document}`, which `tex8web-hooks.sty` lists in `\web@envpairs` before tex4ht redefines them. A document that defines `\bmatrix` again, with an argument for example, keeps its rows numbered as before.
 
