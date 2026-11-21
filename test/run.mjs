@@ -1519,6 +1519,8 @@ const contents = {
     ]],
     // (built as it is, with no folder on TEXINPUTS)
     ['test-texinpkg', /No package or class on TEXINPUTS\./],
+    // (built as it is, with no package or class in a TeX tree)
+    ['test-texmfpkg', /No package or class in TEXMFHOME or TEXMFLOCAL\./, [/^(?![^]*read for the web\.)/]],
     ['test-ownprim-guards', /Braced: Text from the subfolder glossary file\./, [
       /Subfolder: Text from the subfolder index file\./,
       /Path: Text from the subfolder framed file\./,
@@ -4965,6 +4967,109 @@ for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, se
   for (const name of unread) if (logText.includes(`/${name}`)) problems.push(`the TeX log reads ${name}`);
   for (const name of read) if (!logText.includes(`/${name}`)) problems.push(`the TeX log does not read ${name}`);
   report(`${fixture.name} (on TEXINPUTS: ${label})`, problems);
+});
+
+// test-texmfpkg built again from each folder of test-texmfpkg/, as a
+// writer keeps a package or class of their own in TEXMFHOME or
+// TEXMFLOCAL: the document is copied to the folder's doc/, with the files
+// beside it, and the folder's texmf/ is TEXMFHOME, or TEXMFLOCAL with an
+// ls-R, as kpathsea reads TEXMFLOCAL only through one. The package or
+// class reads, with the primitive \input, a file that gives the name of a
+// tex4ht configuration file: beside the document, in a subfolder of it, or
+// beside the package in the tree. Each case's text is in the page, with no
+// sentence that shows that index.4ht, glossary.4ht, or framed.4ht was
+// read, and the TeX log reads no .4ht of the names the files give. The
+// guards: LaTeX's braced \input, the tree's files that such a package
+// loads, which keep their .4ht, and test-provname-bbx with debug.bbx in
+// TEXMFHOME, as a writer keeps a biblatex style there: tex4ht still reads
+// debug.4ht for the style
+const texmfpkg = docs.find(d => d.name === 'test-texmfpkg');
+const texmfpkgDir = join(root, 'test/fixtures/test-texmfpkg');
+const texmfpkgBuilds = [];
+if (texmfpkg) {
+  // [key, label, folder of test-texmfpkg/, tree variable, texts, .4ht files
+  // the TeX log must not read, .4ht files it must read]
+  const cases = [
+    ['details', 'a package in TEXMFHOME, a primitive \\input of a file beside the document', 'details', 'TEXMFHOME',
+      ['Details: Text of the glossary beside the document.'], ['glossary.4ht'], []],
+    ['local', 'a package in TEXMFLOCAL, a primitive \\input of a file beside the document', 'details', 'TEXMFLOCAL',
+      ['Details: Text of the glossary beside the document.'], ['glossary.4ht'], []],
+    ['noext', 'a primitive \\input of a file with no extension beside the document', 'noext', 'TEXMFHOME',
+      ['No extension: Text of the glossary with no extension.'], ['glossary.4ht'], []],
+    ['sub', 'a primitive \\input of a file in a subfolder beside the document', 'sub', 'TEXMFHOME',
+      ['Subfolder: Text of the glossary in a subfolder beside the document.'], ['glossary.4ht'], []],
+    ['class', 'a class in TEXMFHOME', 'class', 'TEXMFHOME',
+      ['Class: Text of the glossary read by the class.'], ['glossary.4ht'], []],
+    ['data', 'a primitive \\input of the package\'s data file beside it in the tree', 'data', 'TEXMFHOME',
+      ['Data: Text of the data file beside the package in the tree.'], ['glossary.4ht'], []],
+    ['other', 'a primitive \\input of a file beside the document that gives another file\'s name', 'other', 'TEXMFHOME',
+      ['Other name: Text of defs.tex, which gives the name glossary.tex.'], ['glossary.4ht'], []],
+    ['atat', '\\@@input', 'atat', 'TEXMFHOME',
+      ['Atat: Text of the glossary read with the primitive input under its LaTeX name.'], ['glossary.4ht'], []],
+    ['index', 'a primitive \\input of a file beside the document that gives the name of index.4ht', 'index', 'TEXMFHOME',
+      ['Index: Text of the file that gives the name index.tex.'], ['index.4ht'], []],
+    ['braced', 'a guard: LaTeX\'s braced \\input', 'braced', 'TEXMFHOME',
+      ['Braced: Text of the glossary read with the braced input.'], ['glossary.4ht'], []],
+    ['tree', 'a guard: files of the tree loaded by a package in TEXMFHOME', 'tree', 'TEXMFHOME',
+      ['Tree: The package loads files of the tree.', 'Framed read for the web.',
+        /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/], [], ['framed.4ht', 'dvipsnam.4ht', 'epsf.4ht']],
+  ];
+  for (const [key, label, folder, tree, shows, unread, read] of cases) texmfpkgBuilds.push({
+    doc: texmfpkg, key, label, shows, unread, read, page: 'test-texmfpkg.html', log: 'test-texmfpkg.log',
+    hides: ['Index read for the web.', 'Glossary read for the web.', ...key === 'tree' ? [] : ['Framed read for the web.']],
+    setup(top) {
+      // (a fresh copy, with the document in doc/ and the tree in texmf/,
+      // both below the copy, which the build's stamp then covers)
+      const dir = join(top, 'case');
+      rmSync(dir, { recursive: true, force: true });
+      cpSync(join(texmfpkgDir, folder), dir, { recursive: true });
+      mkdirSync(join(dir, 'doc'), { recursive: true });
+      writeFileSync(join(dir, 'doc/test-texmfpkg.tex'), readFileSync(join(texmfpkg.dir, 'test-texmfpkg.tex')));
+      if (tree === 'TEXMFLOCAL') spawnSync('mktexlsr', [join(dir, 'texmf')], { encoding: 'utf8' });
+      return { [tree]: join(dir, 'texmf'), doc: { ...texmfpkg, name: `test-texmfpkg ${key}`, dir: join(dir, 'doc'), sourceRoot: dir } };
+    },
+  });
+}
+const provbbxTexmf = docs.find(d => d.name === 'test-provname-bbx');
+if (provbbxTexmf) texmfpkgBuilds.push({
+  doc: provbbxTexmf, key: 'bbx', label: 'a guard: debug.bbx in TEXMFHOME',
+  shows: ['Read for the web.', /<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/], hides: [], unread: [], read: ['debug.4ht'],
+  page: 'test-provname-bbx.html', log: 'test-provname-bbx.log',
+  setup(top) {
+    // (the document in a folder of its own, without the debug.bbx beside
+    // it in test/fixtures, and the tree beside that folder, both below the
+    // copy, which the build's stamp then covers)
+    const dir = join(top, 'case'), doc = join(dir, 'doc'), lib = join(dir, 'texmf/tex/latex/texmfpkg');
+    rmSync(dir, { recursive: true, force: true });
+    mkdirSync(doc, { recursive: true });
+    mkdirSync(lib, { recursive: true });
+    writeFileSync(join(lib, 'debug.bbx'), readFileSync(join(root, 'test/fixtures/debug.bbx')));
+    for (const name of ['test-provname-bbx.tex', 'test-biblatex-authoryear.bib']) writeFileSync(join(doc, name), readFileSync(join(root, 'test/fixtures', name)));
+    return { TEXMFHOME: join(dir, 'texmf'), doc: { ...provbbxTexmf, name: 'test-provname-bbx texmfbbx', dir: doc, sourceRoot: dir } };
+  },
+});
+for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, setup } of texmfpkgBuilds) jobs.push(async () => {
+  const top = join(testDir(fixture), `texmf${key}`), out = join(top, 'html'), aux = join(top, 'aux');
+  const { doc, ...env } = setup(top);
+  const result = await build(doc, out, aux, env);
+  const problems = [];
+  if (result.code !== 0) {
+    problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]|^! /.test(line)).slice(0, 3));
+  }
+  const file = join(out, page);
+  const flat = existsSync(file) ? readFileSync(file, 'utf8').replace(/[^\S ]+/g, ' ') : '';
+  if (!flat) problems.push('no page');
+  else {
+    for (const text of shows) if (typeof text === 'string' ? !flat.includes(text) : !text.test(flat)) problems.push(`no ${text} in the page`);
+    for (const text of hides) if (flat.includes(text)) problems.push(`${JSON.stringify(text)} in the page`);
+    if (flat.includes('refextract')) problems.push('refextract in the page');
+    if (/<\/html>[^]*<\/html>/.test(flat)) problems.push('two pages in one');
+  }
+  const texLog = join(aux, log), logText = existsSync(texLog) ? readFileSync(texLog, 'latin1').replace(/\n/g, '') : '';
+  if (!logText) problems.push('no TeX log');
+  for (const name of unread) if (logText.includes(`/${name}`)) problems.push(`the TeX log reads ${name}`);
+  for (const name of read) if (!logText.includes(`/${name}`)) problems.push(`the TeX log does not read ${name}`);
+  report(`${fixture.name} (in a TeX tree: ${label})`, problems);
 });
 
 // test-pdfpages-hint built again without shell escape

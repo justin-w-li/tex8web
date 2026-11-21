@@ -1,0 +1,9 @@
+% A guard: a package of the writer's in TEXMFHOME loads framed and xcolor from TeX's tree, reads dvipsnam.def with \@@input and epsf.tex with LaTeX's braced \input, both from the tree. tex4ht keeps framed.4ht, dvipsnam.4ht, and epsf.4ht, and a named color keeps its value.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{texmfpkg-lib}[2026/11/21 tex8web test package]
+\RequirePackage{framed}
+\RequirePackage{xcolor}
+\@@input dvipsnam.def
+\input{epsf}
+\def\texmfpkgtext{Tree: The package loads files of the tree.}
+\def\texmfpkgextra{\textcolor[named]{BrickRed}{Brick red text.}}

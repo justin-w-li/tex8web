@@ -1,0 +1,28 @@
+% A package or a class of the writer's in a TeX tree of the writer's
+% (TEXMFHOME or TEXMFLOCAL) that reads, with the primitive \input, a file
+% that gives the name of a tex4ht configuration file in \ProvidesFile.
+% Built as it is, the document finds no such package or class, and the
+% page says so. run.mjs builds it again from each folder of
+% test-texmfpkg/: the document is copied to the folder's doc/, which holds
+% the files beside the document, and the folder's texmf/ is TEXMFHOME, or
+% TEXMFLOCAL in one build. As in the PDF, each case's text is in the page,
+% and tex4ht reads no .4ht of the names the files give.
+% - texmfpkg-class.cls, a class in the tree, when the folder has one.
+% - texmfpkg-lib.sty, a package in the tree, when the folder has one.
+%   The file it reads defines \texmfpkgtext, the case's text.
+% index.4ht defines \printindex, glossary.4ht \gloskip, and framed.4ht
+% \a:makeframed, so the page shows when one of them was read: a sentence
+% the PDF does not have.
+\IfFileExists{texmfpkg-class.cls}
+  {\documentclass{texmfpkg-class}}
+  {\documentclass{article}}
+\usepackage{hyperref}
+\IfFileExists{texmfpkg-lib.sty}{\usepackage{texmfpkg-lib}}{}
+\providecommand\texmfpkgtext{No package or class in TEXMFHOME or TEXMFLOCAL.}
+\begin{document}
+\texmfpkgtext
+\ifdefined\printindex\par Index read for the web.\fi
+\ifdefined\gloskip\par Glossary read for the web.\fi
+\expandafter\ifx\csname a:makeframed\endcsname\relax\else\par Framed read for the web.\fi
+\ifdefined\texmfpkgextra\par\texmfpkgextra\fi
+\end{document}
