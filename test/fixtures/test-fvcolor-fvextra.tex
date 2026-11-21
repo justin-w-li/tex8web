@@ -1,0 +1,18 @@
+% fvextra beside listings, with no color package in the preamble, as in
+% test-fvcolor-listings. fvextra.4ht restores fancyvrb's inline command,
+% so \Verb skips fancyvrb.4ht's color hook, and Verbatim still runs it.
+% The font size comes from fancyvrb's keys, global and local.
+\documentclass{article}
+\usepackage{fvextra}
+\usepackage{listings}
+\fvset{fontsize=\small}
+\begin{document}
+\begin{Verbatim}[breaklines]
+fv-extra
+\end{Verbatim}
+\begin{Verbatim}[fontsize=\footnotesize]
+fv-footnotesize
+\end{Verbatim}
+Inline \Verb|fv-extra-inline|.
+A listing: \lstinline|fv-lstinline|.
+\end{document}

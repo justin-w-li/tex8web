@@ -1,10 +1,11 @@
 % fancyvrb beside listings, with no color package in the preamble.
 % listings.4ht loads xcolor after the preamble, so tex4ht does not
 % configure color, and the page has no colors (test/expected.json).
-% fancyvrb.4ht still configures its color hook.
+% fancyvrb.4ht still configures its color hook. listings comes first
+% here, and fancyvrb first in test-fvcolor-fvextra.
 \documentclass{article}
-\usepackage{fancyvrb}
 \usepackage{listings}
+\usepackage{fancyvrb}
 \VerbatimFootnotes
 \DefineVerbatimEnvironment{FvCode}{Verbatim}{frame=lines}
 \newtheorem{theorem}{Theorem}

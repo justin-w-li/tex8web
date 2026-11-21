@@ -3776,11 +3776,13 @@ const verbatim = {
 };
 
 // fancyvrb beside listings or siunitx, whose configurations load color
-// after the preamble, and beside xcolor in the preamble: each environment
-// and command of test-fvcolor-cases.ltx with its text, its font, its line
-// numbers, and its frame's rules in the stylesheet
-const fvPre = text => new RegExp(`<pre class='fancyvrb' id='fancyvrb\\d+'>(?:(?!<\\/pre>)[^])*${text}`);
-const fvFramed = (text, sides) => new RegExp(`<pre class='fancyvrb' id='(fancyvrb\\d+)'>(?:(?!<\\/pre>)[^])*${text}[^]*` +
+// after the preamble, and beside color or xcolor in the preamble: each
+// environment and command of test-fvcolor-cases.ltx with its text, its
+// font, its line numbers, and its frame's rules in the stylesheet. A
+// listing's lines are its whole content, so stray text in it fails.
+const fvLine = text => `<span class='fancyvrblineno'><a id='[^']*'></a></span><span class='fancyvrbline'>${text}</span>`;
+const fvPre = lines => `<pre class='fancyvrb' id='(fancyvrb\\d+)'>${lines}</pre>`;
+const fvFramed = (text, sides) => new RegExp(fvPre(fvLine(text)) + '[^]*' +
   sides.map(side => `pre#\\1\\{ border-${side}: solid 0\\.4pt; \\}`).join('\\s*'));
 const fvCases = [
   /<code class='verb'><span class='cmtt-10'>fv-inline a_b#c%<\/span><\/code>/,
@@ -3788,25 +3790,36 @@ const fvCases = [
   /<code class='verb'><span class='cmitt-10'>fv-italic<\/span><\/code>/,
   /<span class='cmss-10'>sans <\/span><code class='verb'><span class='cmtt-10'>fv-sans<\/span><\/code>/,
   /<aside class='footnotetext[^']*'[^>]*>(?:(?!<\/aside>)[^])*<code class='verb'><span class='cmtt-8'>fv-footnote<\/span><\/code>/,
-  fvPre(`<span class='cmtt-10'>fv-plain a_b#c%</span>`),
-  fvPre(`<span class='cmtt-10'>fv-commandchars </span><span class='cmitt-10'>fv-command-italic</span>`),
-  fvPre(`<span class='cmtt-10'>fv-star␣a␣␣b</span>`),
+  ...[`<span class='cmtt-10'>fv-plain a_b#c%</span>`,
+    `<span class='cmtt-10'>fv-commandchars </span><span class='cmitt-10'>fv-command-italic</span>`,
+    `<span class='cmtt-10'>fv-star␣a␣␣b</span>`,
+    `<span class='cmtt-10'>fv-saved</span>`].map(text => new RegExp(fvPre(fvLine(text)))),
   /<div class='BVerbatimInput'>\s*<span class='cmtt-10'>fv-boxed<\/span><\/div>/,
-  fvPre(`<span class='fancyvrblineno'><a id='[^']*'></a><span class='cmr-5'>1</span></span><span class='fancyvrbline'><span class='cmtt-10'>fv-numbered-one</span></span>\\s*` +
-    `<span class='fancyvrblineno'><a id='[^']*'></a><span class='cmr-5'>2</span></span><span class='fancyvrbline'><span class='cmtt-10'>fv-numbered-two</span>`),
-  fvPre(`<span class='cmtt-10'>fv-saved</span>`),
+  new RegExp(fvPre(`<span class='fancyvrblineno'><a id='[^']*'></a><span class='cmr-5'>1</span></span><span class='fancyvrbline'><span class='cmtt-10'>fv-numbered-one</span></span> ` +
+    `<span class='fancyvrblineno'><a id='[^']*'></a><span class='cmr-5'>2</span></span><span class='fancyvrbline'><span class='cmtt-10'>fv-numbered-two</span></span>`)),
   fvFramed(`<span class='cmtt-10'>fv-framed</span>`, ['top', 'left', 'bottom', 'right']),
   fvFramed(`<span class='cmtt-10'>fv-defined</span>`, ['top', 'bottom']),
-  fvPre(`<span class='cmtt-10'>vf-file a_b #c%</span></span>\\s*<span class='fancyvrblineno'><a id='[^']*'></a></span><span class='fancyvrbline'><span class='cmtt-10'>file-second</span>`),
-  /<div class='newtheorem'[^>]*>(?:(?!<\/div>)[^])*<pre class='fancyvrb'[^>]*>(?:(?!<\/pre>)[^])*<span class='cmitt-10'>fv-theorem<\/span>/,
+  new RegExp(fvPre(fvLine(`<span class='cmtt-10'>vf-file a_b #c%</span>`) + ' ' + fvLine(`<span class='cmtt-10'>file-second</span>`))),
+  new RegExp(`<div class='newtheorem'[^>]*>(?:(?!</div>)[^])*` + fvPre(fvLine(`<span class='cmitt-10'>fv-theorem</span>`))),
 ];
 const fvListing = /A listing: <code class='lstinline'>(?:(?!<\/code>)[^])*fv<span class='tcrm-1000'>−<\/span>lstinline<\/span><\/code>/;
+// (no color rule for a listing, in the pages whose color is loaded late)
+const fvNoColor = /^(?![^]*pre#fancyvrb\d+\{ color)/;
 const fancyvrb = {
-  'test-fvcolor-listings': [...fvCases, fvListing],
-  'test-fvcolor-siunitx': [...fvCases, /A quantity: <span class='tex8web-nowrap'><mjx-container aria-label='3 m'/],
-  // (formatcom's color on its listing, and \textcolor in the text)
+  'test-fvcolor-listings': [...fvCases, fvListing, fvNoColor],
+  'test-fvcolor-siunitx': [...fvCases, /A quantity: <span class='tex8web-nowrap'><mjx-container aria-label='3 m'/, fvNoColor],
+  // (the global font size, \small, and a listing's own, \footnotesize)
+  'test-fvcolor-fvextra': [new RegExp(fvPre(fvLine(`<span class='cmtt-9'>fv-extra</span>`))),
+    new RegExp(fvPre(fvLine(`<span class='cmtt-8'>fv-footnotesize</span>`))),
+    /Inline <code class='verb'><span class='cmtt-9'>fv-extra-inline<\/span><\/code>/, fvListing, fvNoColor],
+  'test-fvcolor-color': [...fvCases, fvListing],
+  // (formatcom's color on its listing, its fill and rule colors, and
+  // \textcolor in the text)
   'test-fvcolor-xcolor': [...fvCases, fvListing,
-    /<pre class='fancyvrb' id='(fancyvrb\d+)'>(?:(?!<\/pre>)[^])*<span class='cmtt-10'>fv-red<\/span>[^]*pre#\1\{ color: red; \}/,
+    new RegExp(fvPre(fvLine(`<span class='cmtt-10'>fv-red</span>`)) + '[^]*pre#\\1\\{ color: red; \\}'),
+    new RegExp(fvPre(fvLine(`<span class='cmtt-10'>fv-ruled</span>`)) +
+      `[^]*pre#\\1\\{ background-color: ${lightDark('#FFFF00', 'background')};\\}` +
+      `\\s*pre#\\1\\{ border-color: ${lightDark('#0000FF', 'border')};\\}`),
     new RegExp(`Inline <span style='color:${lightDark('#0000FF', 'color')};'>fv-blue-text</span>`)],
 };
 
