@@ -4973,16 +4973,19 @@ for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, se
 // writer keeps a package or class of their own in TEXMFHOME or
 // TEXMFLOCAL: the document is copied to the folder's doc/, with the files
 // beside it, and the folder's texmf/ is TEXMFHOME, or TEXMFLOCAL with an
-// ls-R, as kpathsea reads TEXMFLOCAL only through one. The package or
-// class reads, with the primitive \input, a file that gives the name of a
-// tex4ht configuration file: beside the document, in a subfolder of it, or
-// beside the package in the tree. Each case's text is in the page, with no
-// sentence that shows that index.4ht, glossary.4ht, or framed.4ht was
-// read, and the TeX log reads no .4ht of the names the files give. The
-// guards: LaTeX's braced \input, the tree's files that such a package
-// loads, which keep their .4ht, and test-provname-bbx with debug.bbx in
-// TEXMFHOME, as a writer keeps a biblatex style there: tex4ht still reads
-// debug.4ht for the style
+// ls-R, as kpathsea reads TEXMFLOCAL only through one. One build gives
+// TEXMFHOME as a braced list of two trees, and one gives the tree in
+// TEXMFAUXTREES. The package or class reads, with the primitive \input, a
+// file that gives the name of a tex4ht configuration file: beside the
+// document, in a subfolder of it, or beside the package in the tree. Each
+// case's text is in the page, with no sentence that shows that index.4ht,
+// glossary.4ht, or framed.4ht was read, and the TeX log reads no .4ht of
+// the names the files give. The guards: LaTeX's braced \input, the tree's
+// files that such a package loads, which keep their .4ht, also the tree's
+// nomencl package after a file beside the document of that name, and
+// test-provname-bbx with debug.bbx in TEXMFHOME, with and without a copy
+// of biblatex.sty, as a writer keeps a biblatex style or a newer biblatex
+// there: tex4ht still reads debug.4ht for the style
 const texmfpkg = docs.find(d => d.name === 'test-texmfpkg');
 const texmfpkgDir = join(root, 'test/fixtures/test-texmfpkg');
 const texmfpkgBuilds = [];
@@ -4994,6 +4997,12 @@ if (texmfpkg) {
       ['Details: Text of the glossary beside the document.'], ['glossary.4ht'], []],
     ['local', 'a package in TEXMFLOCAL, a primitive \\input of a file beside the document', 'details', 'TEXMFLOCAL',
       ['Details: Text of the glossary beside the document.'], ['glossary.4ht'], []],
+    ['list', 'a package in the second of two trees in a braced TEXMFHOME', 'details', 'TEXMFHOME list',
+      ['Details: Text of the glossary beside the document.'], ['glossary.4ht'], []],
+    ['aux', 'a package in a tree of TEXMFAUXTREES', 'details', 'TEXMFAUXTREES',
+      ['Details: Text of the glossary beside the document.'], ['glossary.4ht'], []],
+    ['path', 'a package loaded by a path below the tree\'s folders', 'path', 'TEXMFHOME',
+      ['Path: Text of the glossary read by a package loaded by its path.'], ['glossary.4ht'], []],
     ['noext', 'a primitive \\input of a file with no extension beside the document', 'noext', 'TEXMFHOME',
       ['No extension: Text of the glossary with no extension.'], ['glossary.4ht'], []],
     ['sub', 'a primitive \\input of a file in a subfolder beside the document', 'sub', 'TEXMFHOME',
@@ -5013,6 +5022,8 @@ if (texmfpkg) {
     ['tree', 'a guard: files of the tree loaded by a package in TEXMFHOME', 'tree', 'TEXMFHOME',
       ['Tree: The package loads files of the tree.', 'Framed read for the web.',
         /<span style='color:light-dark\(#B80000, [^']*\);'>Brick red text\.<\/span>/], [], ['framed.4ht', 'dvipsnam.4ht', 'epsf.4ht']],
+    ['nomencl', 'a guard: a file beside the document named like the tree\'s nomencl package, then the package', 'nomencl', 'TEXMFHOME',
+      ['Nomencl: Text of the nomencl file before the nomencl package.'], [], ['nomencl.4ht']],
   ];
   for (const [key, label, folder, tree, shows, unread, read] of cases) texmfpkgBuilds.push({
     doc: texmfpkg, key, label, shows, unread, read, page: 'test-texmfpkg.html', log: 'test-texmfpkg.log',
@@ -5026,13 +5037,21 @@ if (texmfpkg) {
       mkdirSync(join(dir, 'doc'), { recursive: true });
       writeFileSync(join(dir, 'doc/test-texmfpkg.tex'), readFileSync(join(texmfpkg.dir, 'test-texmfpkg.tex')));
       if (tree === 'TEXMFLOCAL') spawnSync('mktexlsr', [join(dir, 'texmf')], { encoding: 'utf8' });
-      return { [tree]: join(dir, 'texmf'), doc: { ...texmfpkg, name: `test-texmfpkg ${key}`, dir: join(dir, 'doc'), sourceRoot: dir } };
+      // (a braced list, as kpathsea expands it, with an empty tree first;
+      // TEXMFAUXTREES ends with a comma, as tlmgr conf auxtrees writes it)
+      const env = tree === 'TEXMFHOME list' ? { TEXMFHOME: `{${join(dir, 'empty')},${join(dir, 'texmf')}}` }
+        : tree === 'TEXMFAUXTREES' ? { TEXMFAUXTREES: `${join(dir, 'texmf')},` }
+        : { [tree]: join(dir, 'texmf') };
+      if (tree === 'TEXMFHOME list') mkdirSync(join(dir, 'empty'));
+      return { ...env, doc: { ...texmfpkg, name: `test-texmfpkg ${key}`, dir: join(dir, 'doc'), sourceRoot: dir } };
     },
   });
 }
 const provbbxTexmf = docs.find(d => d.name === 'test-provname-bbx');
-if (provbbxTexmf) texmfpkgBuilds.push({
-  doc: provbbxTexmf, key: 'bbx', label: 'a guard: debug.bbx in TEXMFHOME',
+// (with debug.bbx alone and the tree's biblatex, or with a copy of
+// biblatex.sty too, as a writer who keeps a newer biblatex in TEXMFHOME)
+if (provbbxTexmf) for (const [key, label, sty] of [['bbx', 'debug.bbx', false], ['bbxsty', 'copies of biblatex.sty and debug.bbx', true]]) texmfpkgBuilds.push({
+  doc: provbbxTexmf, key, label: `a guard: ${label} in TEXMFHOME`,
   shows: ['Read for the web.', /<dd class='thebibliography' id='bib-1'>[^]*A Book with a Title/], hides: [], unread: [], read: ['debug.4ht'],
   page: 'test-provname-bbx.html', log: 'test-provname-bbx.log',
   setup(top) {
@@ -5043,9 +5062,11 @@ if (provbbxTexmf) texmfpkgBuilds.push({
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(doc, { recursive: true });
     mkdirSync(lib, { recursive: true });
-    writeFileSync(join(lib, 'debug.bbx'), readFileSync(join(root, 'test/fixtures/debug.bbx')));
+    const copies = [join(root, 'test/fixtures/debug.bbx')];
+    if (sty) copies.push(spawnSync('kpsewhich', ['biblatex.sty'], { encoding: 'utf8' }).stdout.trim());
+    for (const file of copies) writeFileSync(join(lib, basename(file)), readFileSync(file));
     for (const name of ['test-provname-bbx.tex', 'test-biblatex-authoryear.bib']) writeFileSync(join(doc, name), readFileSync(join(root, 'test/fixtures', name)));
-    return { TEXMFHOME: join(dir, 'texmf'), doc: { ...provbbxTexmf, name: 'test-provname-bbx texmfbbx', dir: doc, sourceRoot: dir } };
+    return { TEXMFHOME: join(dir, 'texmf'), doc: { ...provbbxTexmf, name: `test-provname-bbx texmf${key}`, dir: doc, sourceRoot: dir } };
   },
 });
 for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, setup } of texmfpkgBuilds) jobs.push(async () => {

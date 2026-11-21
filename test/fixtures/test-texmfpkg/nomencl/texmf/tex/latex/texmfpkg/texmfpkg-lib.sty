@@ -1,0 +1,5 @@
+% A guard: a package of the writer's in TEXMFHOME reads nomencl.tex beside the document with the primitive \input, then loads the tree's nomencl package. tex4ht keeps nomencl.4ht for the package.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{texmfpkg-lib}[2026/11/21 tex8web test package]
+\input nomencl
+\RequirePackage{nomencl}
