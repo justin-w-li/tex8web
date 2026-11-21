@@ -4593,6 +4593,9 @@ function check(doc, result, out, aux) {
     const names = [...shown.map(name => [name].flat()[0]), ...math];
     const starts = names.map(name => flat.indexOf(`${name}.`));
     const part = i => starts[i] < 0 ? '' : flat.slice(starts[i], Math.min(...starts.filter(at => at > starts[i]), flat.indexOf('</main>')));
+    // (whether the element with this id ends the text before the display,
+    // with only tags and spaces after it)
+    const anchoredBefore = (text, display, id) => new RegExp(`id='${id}'[^>]*>(?:\\s|<[^>]+>)*$`).test(text.slice(0, text.indexOf(display)));
     shown.forEach((entry, i) => {
       const [name, extra] = [entry].flat(), text = part(i);
       const outside = text.replace(/<span class='tex8web-qed'>(?:(?!<\/mjx-container>)[^])*<\/mjx-container><\/span>/g, '');
@@ -4610,7 +4613,7 @@ function check(doc, result, out, aux) {
         if (!refs.length) problems.push(`${name}: no reference`);
         for (const [, id, label] of refs) {
           if (!['1', '(1)'].includes(label.replace(/<[^>]+>/g, ''))) problems.push(`${name}: reference reads ${label}`);
-          if (!display.includes(`id='${id}'`) && !new RegExp(`id='${id}'[^>]*>(?:\\s|<[^>]+>)*$`).test(text.slice(0, text.indexOf(display)))) problems.push(`${name}: reference to #${id} outside the display`);
+          if (!display.includes(`id='${id}'`) && !anchoredBefore(text, display, id)) problems.push(`${name}: reference to #${id} outside the display`);
         }
       }
     });
@@ -4648,7 +4651,7 @@ function check(doc, result, out, aux) {
         const number = `(${label.replace(/<!--(?:(?!-->)[^])*-->|<[^>]+>/g, '').replace(/^\((.*)\)$/, '$1')})`;
         const i = shown.findIndex(name => pictureNumbers[doc.name][name] === number), text = i < 0 ? '' : part(i);
         const display = element(text, /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
-        if (!display || !new RegExp(`id='${id}'[^>]*>(?:\\s|<[^>]+>)*$`).test(text.slice(0, text.indexOf(display)))) problems.push(`reference ${number} links to #${id}, not to the anchor right before its display`);
+        if (!display || !anchoredBefore(text, display, id)) problems.push(`reference ${number} links to #${id}, not to the anchor right before its display`);
       }
     }
     math.forEach((name, j) => {
