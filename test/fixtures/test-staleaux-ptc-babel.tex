@@ -1,0 +1,23 @@
+% An amsart document beside the list of figures, list of tables, and .aux
+% of an earlier build that loaded babel and biblatex and had no figures
+% or tables: the list of figures holds only babel's \babel@toc line, and
+% the list of tables only biblatex's \defcounter line. This document
+% loads etoolbox, which defines \defcounter, and neither babel nor
+% biblatex. amsart's \@starttoc reads every list. The stale files stay as
+% they are.
+\documentclass{amsart}
+\usepackage{etoolbox}
+\begin{document}
+\listoffigures
+\listoftables
+\section{First}
+Text of the first section.
+\begin{figure}[h]
+\centering A figure.
+\caption{New figure}
+\end{figure}
+\begin{table}[h]
+\centering A table.
+\caption{New table}
+\end{table}
+\end{document}

@@ -1460,7 +1460,13 @@ const contents = {
   // \addtocontents writes of a macro this document does not define: each
   // list's heading, this build's text and entries, and no old note. The
   // document's own class, package, definitions, text file, and
-  // bibliography beside a stale .ptc are read: their text is in the page)
+  // bibliography beside a stale .ptc are read: their text is in the page.
+  // tex4ht's page shows no entries in titletoc's partial lists, amsart's
+  // lists, tocloft's and newfloat's lists, and KOMA-Script's lists, with
+  // or without stale files, so those checks find this build's captions in
+  // the body. The full build's page comes from the last LaTeX run, which
+  // reads the list that the first run wrote: its log shows the gap, and the
+  // draft job's page does)
   ...Object.fromEntries(['test-staleaux-ptc', 'test-staleaux-ptc-color', 'test-staleaux-ptc-oldaux'].map(name =>
     [name, [/Text of the first section\./, /Text of the subsection\./, /^(?![^]*Old (?:note|subsection))/,
       ...name === 'test-staleaux-ptc' ? [/<span class='content'>New figure<\/span>/, /<span class='content'>New table<\/span>/] : []]])),
@@ -1473,14 +1479,21 @@ const contents = {
     /Listings<\/h3>\s*<div class='tableofcontents'><a href='#x1new-listing'>1\s+New listing<\/a>/,
     /List of Algorithms<\/h3>\s*<div class='tableofcontents'>\s*1 <a href='#new-algorithm'>New algorithm<\/a>/,
     /Text of the first section\./, /<span class='content'>New scheme<\/span>/, /^(?![^]*Old note)/],
-  'test-staleaux-ptc-koma': [/List of Remarks<\/h3>/, /Text of the first section\./, /<span class='content'>New remark<\/span>/, /^(?![^]*Old note)/],
+  ...Object.fromEntries(['test-staleaux-ptc-koma', 'test-staleaux-ptc-noaux-koma'].map(name =>
+    [name, [/List of Remarks<\/h3>/, /Text of the first section\./, /<span class='content'>New remark<\/span>/, /^(?![^]*Old note)/]])),
+  'test-staleaux-ptc-noaux-lists': [/<span class='cmbx-12x-x-207'>Examples<\/span>/, /Example<span class='tex8web-nbsp'> <\/span>1: A new example/,
+    /List of Programs<\/h3>\s*<div class='tableofcontents'>\s*1 <a href='#new-program'>New program<\/a>/, /List of Schemes<\/h3>/,
+    /Text of the first section\./, /<span class='content'>New scheme<\/span>/, /^(?![^]*Old note)/],
+  'test-staleaux-ptc-babel': [/List of Figures/, /List of Tables/, /Text of the first section\./, /<span class='content'>New figure<\/span>/,
+    /<span class='content'>New table<\/span>/],
   'test-staleaux-ptc-noaux': [/Listings<\/h3>\s*<div class='tableofcontents'><a href='#x1new-listing'>1\s+New listing<\/a>/,
     /List of Algorithms<\/h3>\s*<div class='tableofcontents'>\s*1 <a href='#new-algorithm'>New algorithm<\/a>/,
     /Text of the first section\./, /Text of the subsection\./, /<span class='content'>New figure<\/span>/,
     /<span class='content'>New table<\/span>/, /^(?![^]*Old note)/],
-  'test-staleaux-ptc-own': [/Text of the first section\. Text of the class of\s+the\s+document\./, /Text of the package of\s+the\s+document\./,
-    /Text of the definitions of\s+the\s+document\./, /Text of the text file of\s+the\s+document\./,
-    /<span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>/, /Ann Able\. <span class='cmti-10'>A Book of the Document<\/span>/, /^(?![^]*Old note)/],
+  'test-staleaux-ptc-own': [/Text\s+of\s+the\s+first\s+section\.\s+Text\s+of\s+the\s+class\s+of\s+the\s+document\./, /Text\s+of\s+the\s+class\s+option\s+file\s+of\s+the\s+document\./,
+    /Text\s+of\s+the\s+configuration\s+file\s+of\s+the\s+document\./, /Text\s+of\s+the\s+package\s+of\s+the\s+document\./,
+    /Text\s+of\s+the\s+definitions\s+of\s+the\s+document\./, /Text\s+of\s+the\s+text\s+file\s+of\s+the\s+document\./,
+    /<span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>/, /Ann\s+Able\.\s+From\s+the\s+style\s+of\s+the\s+document:\s+A\s+Book\s+of\s+the\s+Document\./, /^(?![^]*Old note)/],
   'test-staleaux-ptc-draft': [/See section<span class='tex8web-nbsp'> <\/span><a href='#first'>1(?:<!--[^>]*-->)?<\/a>/, /<span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>/,
     /A Book Read from the Current File/, /Apple, <a href='#[^']+'>1<\/a>/, /the seed-bearing part of a plant/, /^(?![^]*Old note)/],
   // (files of the document named like tex4ht's .4ht files, read in the
@@ -2558,7 +2571,8 @@ const ties = {
 
 // The fixtures beside stale lists with no \contentsline line, built in
 // full and in draft mode
-const staleListCases = ['', '-color', '-amsart', '-lists', '-koma', '-noaux', '-noaux-amsart', '-oldaux', '-own', '-draft']
+const staleListCases = ['', '-color', '-amsart', '-lists', '-koma', '-noaux', '-noaux-amsart', '-noaux-lists', '-noaux-koma', '-babel',
+  '-oldaux', '-own', '-draft']
   .map(suffix => `test-staleaux-ptc${suffix}`);
 
 // The lines that make4ht's log must hold, with their level: the tests
@@ -2596,7 +2610,7 @@ const logs = {
   // (no LaTeX error from stale lists with no entry line, only
   // \addtocontents writes of a macro this document does not define)
   ...Object.fromEntries(staleListCases.map(name =>
-    [name, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*\[ERROR\])/]])),
+    [name, [/LaTeX call/, /^(?![^]*Undefined control sequence)/, /^(?![^]*No counter 'refsection')/, /^(?![^]*\[ERROR\])/]])),
   // (no LaTeX error from the sorted index and glossary files of an earlier
   // build beside the document, which the first LaTeX run would read: their
   // \hyperpage, which the document no longer defines)
@@ -2637,10 +2651,13 @@ const untouched = {
   'test-staleaux-ptc-amsart': ['aux', 'lof', 'lot'].map(e => `test-staleaux-ptc-amsart.${e}`),
   'test-staleaux-ptc-lists': ['aux', 'lof', 'lop', 'lpr', 'lsc', 'lol', 'loa'].map(e => `test-staleaux-ptc-lists.${e}`),
   'test-staleaux-ptc-koma': ['test-staleaux-ptc-koma.aux', 'test-staleaux-ptc-koma.lrm'],
+  'test-staleaux-ptc-noaux-lists': ['lop', 'lpr', 'lsc'].map(e => `test-staleaux-ptc-noaux-lists.${e}`),
+  'test-staleaux-ptc-noaux-koma': ['test-staleaux-ptc-noaux-koma.lrm'],
+  'test-staleaux-ptc-babel': ['aux', 'lof', 'lot'].map(e => `test-staleaux-ptc-babel.${e}`),
   'test-staleaux-ptc-noaux': ['ptc', 'plf', 'plt', 'lol', 'loa'].map(e => `test-staleaux-ptc-noaux.${e}`),
   'test-staleaux-ptc-noaux-amsart': ['test-staleaux-ptc-noaux-amsart.lof', 'test-staleaux-ptc-noaux-amsart.lot'],
   'test-staleaux-ptc-oldaux': ['test-staleaux-ptc-oldaux.aux', 'test-staleaux-ptc-oldaux.ptc'],
-  'test-staleaux-ptc-own': ['aux', 'ptc', 'cls', 'sty', 'def', 'txt', 'bib'].map(e => `test-staleaux-ptc-own.${e}`),
+  'test-staleaux-ptc-own': ['aux', 'ptc', 'cls', 'clo', '4ht', 'sty', 'def', 'txt', 'bib', 'bst'].map(e => `test-staleaux-ptc-own.${e}`),
   'test-staleaux-ptc-draft': ['aux', 'ptc', 'bbl', 'ind', 'gls', 'bib'].map(e => `test-staleaux-ptc-draft.${e}`),
   'test-staleaux-ind': ['test-staleaux-ind.ind'],
   'test-staleaux-ind-named': ['test-staleaux-ind-named.ind', 'test-staleaux-ind-named-authors.ind', 'test-staleaux-people.ind', 'test-staleaux-editors.ind'],
@@ -5801,7 +5818,7 @@ for (const doc of docs.filter(d => staleListCases.includes(d.name))) jobs.push(a
   const page = join(dir, 'build/html', doc.tex.replace(/\.tex$/, '.html'));
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
   const wanted = {
-    'test-staleaux-ptc-own': contents['test-staleaux-ptc-own'].slice(0, 4),
+    'test-staleaux-ptc-own': contents['test-staleaux-ptc-own'].slice(0, 6),
     // (the draft build's reference and index entry are not links: the
     // .aux and .ind of the PDF build have no anchors of tex4ht's)
     'test-staleaux-ptc-draft': [/See section<span class='tex8web-nbsp'> <\/span>1\./, /<span class='cite'>\[<a href='#Xable'>1<\/a>\]<\/span>/,

@@ -1,7 +1,9 @@
 % A document with titletoc's partial table of contents, beside the .ptc
 % and .aux of an earlier build, and its own files named like it, which
-% are not lists: its class, its package, a file of definitions with the
-% extension .def, a text file, and its bibliography database. The .aux
+% are not lists: its class, the class's option file, which the class
+% reads, tex4ht's configuration file for the class and package, its
+% package, a file of definitions with the extension .def, a text file,
+% its bibliography database, and its bibliography style. The .aux
 % names the .ptc, which holds titletoc's \ttl@starttoc and an
 % \addtocontents write of \oldmark, which this document does not define.
 % The stale files and the document's own files stay as they are.
@@ -13,9 +15,9 @@
 \startcontents
 \printcontents{}{1}{}
 Text of the first section.
-\classtext\ \packagetext\ \deftext\ \input{test-staleaux-ptc-own.txt}
+\classtext\ \clotext\ \fourhttext\ \packagetext\ \deftext\ \input{test-staleaux-ptc-own.txt}
 \subsection{New subsection}
 As \cite{able} says.
-\bibliographystyle{plain}
+\bibliographystyle{test-staleaux-ptc-own}
 \bibliography{test-staleaux-ptc-own}
 \end{document}

@@ -1,0 +1,33 @@
+% An article with lists of its packages under extensions of its own,
+% beside each list of an earlier build with no .aux: tocloft's
+% \newlistof, float's \newfloat, and newfloat's
+% \DeclareFloatingEnvironment. The earlier build had no entries: each
+% list holds only an \addtocontents write of \oldmark, which this
+% document does not define. The stale files stay as they are.
+\documentclass{article}
+\usepackage{tocloft}
+\newcommand{\listexamplename}{Examples}
+\newlistof{example}{lop}{\listexamplename}
+\newcommand{\example}[1]{\refstepcounter{example}\par\noindent Example~\theexample: #1%
+  \addcontentsline{lop}{example}{\protect\numberline{\theexample}#1}\par}
+\usepackage{float}
+\newfloat{program}{h}{lpr}
+\floatname{program}{Program}
+\usepackage{newfloat}
+\DeclareFloatingEnvironment[fileext=lsc]{scheme}
+\begin{document}
+\listofexample
+\listof{program}{List of Programs}
+\listofschemes
+\section{First}
+Text of the first section.
+\example{A new example}
+\begin{program}
+A program.
+\caption{New program}
+\end{program}
+\begin{scheme}[h]
+A scheme.
+\caption{New scheme}
+\end{scheme}
+\end{document}
