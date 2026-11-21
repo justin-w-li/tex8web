@@ -160,6 +160,11 @@
                 \PackageWarningNoLine{tex8web}{The~color~package~was~loaded~after~the~preamble,~
                     by~a~tex4ht~configuration~such~as~siunitx.4ht.~tex4ht~then~does~not~configure~
                     it,~so~the~page~has~no~colors.~Load~xcolor~in~the~preamble}
+                % (fancyvrb.4ht calls \Configure{color} when \color is
+                % defined, and stops at "Missing { inserted" when
+                % color.4ht has not defined the hook; the hook stays
+                % unused, so \a:color is not defined here)
+                \NewConfigure{color}{1}
             }
             { \web@needs{a:color} }
     }
