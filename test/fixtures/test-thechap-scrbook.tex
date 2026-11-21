@@ -1,0 +1,16 @@
+% A \thechapter set in the preamble of a scrbook document: lettered
+% chapters, with a section and an equation numbered within them, and
+% references to each with hyperref.
+\documentclass{scrbook}
+\usepackage{hyperref}
+\renewcommand*\thechapter{\Alph{chapter}}
+\begin{document}
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+\begin{equation}
+x = 1 \label{eq}
+\end{equation}
+Ref: \ref{start}; \ref{basics}; (\ref{eq}); \ref{second}.
+\chapter{Second}\label{second}
+Here \ref{second}.
+\end{document}

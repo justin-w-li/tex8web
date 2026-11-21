@@ -1,0 +1,13 @@
+% Checks cases a fix must not break: a \thechapter set in the preamble of
+% a scrreprt document, which tex4ht does not redefine for this class.
+\documentclass{scrreprt}
+\usepackage{hyperref}
+\renewcommand\thechapter{\Alph{chapter}}
+\begin{document}
+\tableofcontents
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+Ref: \ref{start}; \ref{basics}; \ref{second}.
+\chapter{Second}\label{second}
+Here \ref{second}.
+\end{document}

@@ -3929,6 +3929,74 @@ const appendixRefs = {
   'test-appref-handmade': [['Ref: A; B; A.1; 1.', ['extra', 'second-extra', 'more', 'main']]],
   'test-appref-subappendices': [['Ref: 1.A; 2.A; 1.', [null, null, 'main']]],
 };
+
+// A \thechapter set in the preamble: chapter and section headings with
+// their numbers (a heading's label, or none), the table of contents, and
+// paragraphs as in the appendixRefs table above. tex4ht redefines
+// \thechapter at \begin{document} for book and memoir.
+const chapterHead = (id, label, title) => label === null
+  ? new RegExp(`<h2 class='chapterHead' id='${id}'>(?:(?!</h2>|titlemark)[^])*${title}</h2>`)
+  : new RegExp(`<h2 class='(?:chapter|appendix)Head' id='${id}'>(?:(?!</h2>)[^])*<span class='titlemark'>${label}</span>(?:(?!</h2>)[^])*${title}</h2>`);
+const sectionHead = (id, label) => new RegExp(`<h3 class='sectionHead' id='${id}'>(?:(?!</h3>)[^])*<span class='titlemark'>${label}</span>`);
+const tocEntry = (level, number, id) => new RegExp(`<span class='${level}Toc'><span class='tocnumber'>${number}</span><a href='#${id}'`);
+const word = (name, label) => `${name}<span class='tex8web-nbsp'>[^<]*</span>${label}`;
+// an equation's tag in MathJax's MathML
+const eqTag = tag => new RegExp(`<mlabeledtr><mtd><mtext>\\(</mtext><mtext>${tag.replace('.', '\\.')}</mtext><mtext>\\)</mtext>`);
+const lettered = (label = name => word('Chapter', name)) => [
+  chapterHead('start', label('A'), 'Start'), sectionHead('basics', 'A\\.1'), chapterHead('second', label('B'), 'Second'),
+  ['Ref: A; A.1; B.', ['start', 'basics', 'second']], ['Here B.', ['second']],
+];
+const letteredContents = [tocEntry('chapter', 'A', 'start'), tocEntry('section', 'A\\.1', 'basics'), tocEntry('chapter', 'B', 'second')];
+const thechapter = {
+  'test-thechap-book': [
+    chapterHead('preface', null, 'Preface'), chapterHead('afterword', null, 'Afterword'),
+    chapterHead('start', word('Chapter', 'A'), 'Start'), chapterHead('second', word('Chapter', 'B'), 'Second'),
+    sectionHead('basics', 'A\\.1'), sectionHead('more', 'B\\.1'),
+    // (a \ref in a heading, which tex4ht may write without its link)
+    /<h3 class='sectionHead' id='about-ref-start'>(?:(?!<\/h3>)[^])*<span class='titlemark'>A\.2<\/span>(?:(?!<\/h3>)[^])*About (?:<a href='#start'>)?A(?:<!--(?:(?!-->)[^])*-->)?(?:<\/a>)?<\/h3>/,
+    tocEntry('chapter', '', 'preface'), tocEntry('chapter', 'A', 'start'), tocEntry('section', 'A\\.1', 'basics'),
+    tocEntry('section', 'A\\.2', 'about-ref-start'), tocEntry('chapter', 'B', 'second'), tocEntry('section', 'B\\.1', 'more'),
+    tocEntry('chapter', '', 'afterword'),
+    eqTag('A.1'),
+    ['Proposition A.1 A claim, see A.1.', ['basics']],
+    ['Ref: A; A.1; A.1; (A.1); B.', ['start', 'basics', null, null, 'second']],
+    ['In italics, A.1; in sans-serif, A.1; in typewriter, A.', ['basics', null, 'start']],
+    ['In the note, A.1.', ['basics']],
+    ['Proposition A.2 In a theorem, B.', ['second']],
+    ['Autoref: chapter A; section A.1; Equation A.1.', ['start', 'basics', null]],
+    ['Here B; B.1.', ['second', 'more']],
+  ],
+  'test-thechap-memoir': [
+    chapterHead('start', word('Chapter', 'I'), 'Start'), sectionHead('basics', 'I\\.1'), chapterHead('second', word('Chapter', 'II'), 'Second'),
+    chapterHead('extra', word('Appendix', 'A'), 'Extra'), sectionHead('more', 'A\\.1'),
+    tocEntry('chapter', 'I', 'start'), tocEntry('section', 'I\\.1', 'basics'), tocEntry('chapter', 'II', 'second'),
+    tocEntry('appendix', 'A', 'extra'), tocEntry('section', 'A\\.1', 'more'),
+    eqTag('I.1'),
+    ['Proposition I.1 A claim.'],
+    ['Ref: I; I.1; I.1; (I.1); II; A; A.1.', ['start', 'basics', null, null, 'second', 'extra', 'more']],
+    ['Here II.', ['second']], ['In the appendix, A; A.1.', ['extra', 'more']],
+  ],
+  'test-thechap-scrbook': [
+    chapterHead('start', 'A', 'Start'), sectionHead('basics', 'A\\.1'), chapterHead('second', 'B', 'Second'),
+    eqTag('A.1'),
+    ['Ref: A; A.1; (A.1); B.', ['start', 'basics', null, 'second']], ['Here B.', ['second']],
+  ],
+  'test-thechap-front': [
+    chapterHead('preface', null, 'Preface'), chapterHead('afterword', null, 'Afterword'),
+    chapterHead('start', word('Chapter', '1'), 'Start'), sectionHead('basics', '1\\.1'),
+    tocEntry('chapter', '', 'preface'), tocEntry('chapter', '1', 'start'), tocEntry('section', '1\\.1', 'basics'),
+    tocEntry('chapter', '', 'afterword'),
+    ['Ref: 1; 1.1.', ['start', 'basics']],
+  ],
+  'test-thechap-report': [...lettered(), ...letteredContents],
+  'test-thechap-scrreprt': [...lettered(name => name), ...letteredContents],
+  'test-thechap-atbegin': [...lettered(), ...letteredContents],
+  // (amsbook numbers sections without the chapter)
+  'test-thechap-amsbook': [
+    chapterHead('start', word('Chapter', 'A'), 'Start'), sectionHead('basics', '1\\.'), chapterHead('second', word('Chapter', 'B'), 'Second'),
+    ['Ref: A; 1; B.', ['start', 'basics', 'second']], ['Here B.', ['second']],
+  ],
+};
 function appendixRefProblems(html, checks) {
   const problems = [];
   const paragraphs = [...html.matchAll(/<p[ >][^]*?<\/p>/g)].map(([inner]) => inner);
@@ -3974,6 +4042,7 @@ function check(doc, result, out, aux) {
   const html = existsSync(page) ? readFileSync(page, 'utf8') : '';
   if (hypcap[doc.name]) problems.push(...hypcapProblems(html, hypcap[doc.name]));
   if (appendixRefs[doc.name]) problems.push(...appendixRefProblems(html, appendixRefs[doc.name]));
+  if (thechapter[doc.name]) problems.push(...appendixRefProblems(html, thechapter[doc.name]));
   // memoir emulates moreverb without its tex4ht configuration hooks.
   if (/<head>(?:(?!<\/head>)[^])*<div class='listinginput'>/.test(html)) problems.push('listinginput in the head');
   if (doc.name.startsWith('test-verbatim-font-listings')) {

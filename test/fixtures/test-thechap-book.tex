@@ -1,0 +1,40 @@
+% A \thechapter set in the preamble of a book: lettered chapters, with
+% sections, a theorem, and an equation numbered within them, references to
+% each with hyperref, the table of contents, and unnumbered front-matter and
+% back-matter chapters.
+\documentclass{book}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\renewcommand\thechapter{\Alph{chapter}}
+\newtheorem{proposition}{Proposition}[chapter]
+\begin{document}
+\frontmatter
+\chapter{Preface}\label{preface}
+Front text.
+\tableofcontents
+\mainmatter
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+\begin{proposition}\label{prop}
+A claim, see \ref{basics}.
+\end{proposition}
+\begin{equation}
+x = 1 \label{eq}
+\end{equation}
+Ref: \ref{start}; \ref{basics}; \ref{prop}; \eqref{eq}; \ref{second}.
+
+In italics, \textit{\ref{basics}}; in sans-serif, \textsf{\ref{prop}}; in typewriter, \texttt{\ref{start}}.
+
+In a footnote\footnote{In the note, \ref{basics}.}, too.
+\begin{proposition}
+In a theorem, \ref{second}.
+\end{proposition}
+\section{About \ref{start}}
+Autoref: \autoref{start}; \autoref{basics}; \autoref{eq}.
+\chapter{Second}\label{second}
+\section{More}\label{more}
+Here \ref{second}; \ref{more}.
+\backmatter
+\chapter{Afterword}\label{afterword}
+Back text.
+\end{document}

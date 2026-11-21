@@ -1,0 +1,13 @@
+% Checks cases a fix must not break: a \thechapter set at the start of a
+% book's document body, after tex4ht's own definition.
+\documentclass{book}
+\usepackage{hyperref}
+\AtBeginDocument{\def\thechapter{\Alph{chapter}}}
+\begin{document}
+\tableofcontents
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+Ref: \ref{start}; \ref{basics}; \ref{second}.
+\chapter{Second}\label{second}
+Here \ref{second}.
+\end{document}

@@ -1,0 +1,27 @@
+% A \thechapter set in the preamble of a memoir document, as a macro:
+% chapters in Roman numerals, with a section, a theorem, and an equation
+% numbered within them, references with hyperref, the table of contents,
+% and appendix chapters, which \appendix letters again.
+\documentclass{memoir}
+\usepackage{hyperref}
+\newcommand\theolchapter{\Roman{chapter}}
+\def\thechapter{\theolchapter}
+\newtheorem{proposition}{Proposition}[chapter]
+\begin{document}
+\tableofcontents*
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+\begin{proposition}\label{prop}
+A claim.
+\end{proposition}
+\begin{equation}
+x = 1 \label{eq}
+\end{equation}
+Ref: \ref{start}; \ref{basics}; \ref{prop}; (\ref{eq}); \ref{second}; \ref{extra}; \ref{extrasec}.
+\chapter{Second}\label{second}
+Here \ref{second}.
+\appendix
+\chapter{Extra}\label{extra}
+\section{More}\label{extrasec}
+In the appendix, \ref{extra}; \ref{extrasec}.
+\end{document}
