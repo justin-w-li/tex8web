@@ -4988,7 +4988,7 @@ if (texmfpkg) {
       ['Nomencl: Text of the nomencl file before the nomencl package.'], [], ['nomencl.4ht']],
   ];
   for (const [key, label, folder, shows, unread, read] of cases) texmfpkgBuilds.push({
-    doc: texmfpkg, prefix: 'texmf', where: 'in a TeX tree', key, label, shows, unread, read, page: 'test-texmfpkg.html', log: 'test-texmfpkg.log',
+    doc: texmfpkg, key, label, shows, unread, read, page: 'test-texmfpkg.html', log: 'test-texmfpkg.log',
     hides: ['Glossary read for the web.', ...key === 'tree' ? [] : ['Framed read for the web.']],
     setup(top) {
       // (a fresh copy, with the document in doc/ and the tree in texmf/,
@@ -5002,8 +5002,8 @@ if (texmfpkg) {
     },
   });
 }
-for (const { doc: fixture, prefix = 'texinputs', where = 'on TEXINPUTS', key, label, shows, hides, unread, read, page, log, setup } of [...texinpkgBuilds, ...texmfpkgBuilds]) jobs.push(async () => {
-  const top = join(testDir(fixture), `${prefix}${key}`), out = join(top, 'html'), aux = join(top, 'aux');
+for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, setup } of texinpkgBuilds) jobs.push(async () => {
+  const top = join(testDir(fixture), `texinputs${key}`), out = join(top, 'html'), aux = join(top, 'aux');
   const { doc = fixture, ...env } = setup(top);
   const result = await build(doc, out, aux, env);
   const problems = [];
@@ -5023,7 +5023,31 @@ for (const { doc: fixture, prefix = 'texinputs', where = 'on TEXINPUTS', key, la
   if (!logText) problems.push('no TeX log');
   for (const name of unread) if (logText.includes(`/${name}`)) problems.push(`the TeX log reads ${name}`);
   for (const name of read) if (!logText.includes(`/${name}`)) problems.push(`the TeX log does not read ${name}`);
-  report(`${fixture.name} (${where}: ${label})`, problems);
+  report(`${fixture.name} (on TEXINPUTS: ${label})`, problems);
+});
+// The same checks for each build of test-texmfpkg, in a folder of its own.
+for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, setup } of texmfpkgBuilds) jobs.push(async () => {
+  const top = join(testDir(fixture), `texmf${key}`), out = join(top, 'html'), aux = join(top, 'aux');
+  const { doc = fixture, ...env } = setup(top);
+  const result = await build(doc, out, aux, env);
+  const problems = [];
+  if (result.code !== 0) {
+    problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]|^! /.test(line)).slice(0, 3));
+  }
+  const file = join(out, page);
+  const flat = existsSync(file) ? readFileSync(file, 'utf8').replace(/[^\S ]+/g, ' ') : '';
+  if (!flat) problems.push('no page');
+  else {
+    for (const text of shows) if (typeof text === 'string' ? !flat.includes(text) : !text.test(flat)) problems.push(`no ${text} in the page`);
+    for (const text of hides) if (flat.includes(text)) problems.push(`${JSON.stringify(text)} in the page`);
+    if (flat.includes('refextract')) problems.push('refextract in the page');
+    if (/<\/html>[^]*<\/html>/.test(flat)) problems.push('two pages in one');
+  }
+  const texLog = join(aux, log), logText = existsSync(texLog) ? readFileSync(texLog, 'latin1').replace(/\n/g, '') : '';
+  if (!logText) problems.push('no TeX log');
+  for (const name of unread) if (logText.includes(`/${name}`)) problems.push(`the TeX log reads ${name}`);
+  for (const name of read) if (!logText.includes(`/${name}`)) problems.push(`the TeX log does not read ${name}`);
+  report(`${fixture.name} (in a TeX tree: ${label})`, problems);
 });
 
 // test-pdfpages-hint built again without shell escape
