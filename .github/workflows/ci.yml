@@ -3,7 +3,7 @@
 # by digest: the latest tag is rebuilt weekly, and a new tex4ht can change
 # the pages. The Dockerfile, the image of npm run test:contain, has the same
 # digest, and both change together. To update it, take the new digest of
-# texlive/texlive:latest, put it in both, and see that both test jobs pass.
+# texlive/texlive:latest, put it in both, and see that every test job passes.
 name: CI
 
 on:
@@ -100,7 +100,8 @@ jobs:
       - *install
       - *chromium
       - run: npm run test:page
-      - run: node --test test/chrome.test.mjs test/shots.test.mjs
+      - if: ${{ !cancelled() }}
+        run: node --test test/chrome.test.mjs test/shots.test.mjs
 
   # the examples as the site, which npm run examples builds in build/site
   site:

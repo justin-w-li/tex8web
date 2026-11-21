@@ -32,21 +32,21 @@ const option = name => {
   return at < 0 ? undefined : only.splice(at, 2)[1] ?? '';
 };
 const sharding = option('--shard'), sum = option('--sum');
-const [, k, n] = sharding?.match(/^(\d+)\/(\d+)$/)?.map(Number) ?? [];
-if (sharding !== undefined && !(k >= 1 && k <= n) || sum === '') {
+const [, shard, shards] = sharding?.match(/^(\d+)\/(\d+)$/)?.map(Number) ?? [];
+if (sharding !== undefined && !(shard >= 1 && shard <= shards) || sum === '') {
   console.error('usage: node test/visual.mjs [--shard k/n] [document names...], or --sum <directory>');
   process.exit(2);
 }
 const unchecked = ran => Object.entries(ran).filter(([, count]) => !count).map(([name]) => `no document for the ${name} check to check`);
 if (sum !== undefined) {
-  const shards = readdirSync(sum).filter(file => file.endsWith('.json')).map(file => JSON.parse(readFileSync(join(sum, file), 'utf8')));
-  const of = shards[0]?.of ?? 0;
+  const files = readdirSync(sum).filter(file => file.endsWith('.json')).map(file => JSON.parse(readFileSync(join(sum, file), 'utf8')));
+  const of = files[0]?.of ?? 0;
   const problems = of ? [] : [`no shard's subjects in ${sum}`];
-  for (let shard = 1; shard <= of; shard++) {
-    if (!shards.some(s => s.shard === shard)) problems.push(`no subjects from shard ${shard} of ${of}`);
+  for (let i = 1; i <= of; i++) {
+    if (!files.some(file => file.shard === i)) problems.push(`no subjects from shard ${i} of ${of}`);
   }
   const total = {};
-  for (const { ran } of shards) for (const [name, count] of Object.entries(ran)) total[name] = (total[name] ?? 0) + count;
+  for (const { ran } of files) for (const [name, count] of Object.entries(ran)) total[name] = (total[name] ?? 0) + count;
   problems.push(...unchecked(total));
   for (const problem of problems) console.log(`not ok - ${problem}`);
   console.log(problems.length ? `\n${problems.length} failed` : `\nall passed: every check found subjects in ${of} shards`);
@@ -1700,7 +1700,7 @@ const tocFonts = {
 // test-split and test-cutat are refused by tex8web; npm test checks that
 const selected = select(only).filter(doc => !['test-split', 'test-cutat'].includes(doc.name));
 // (every n-th of the largest first, so that the shards take about as long)
-const docs = n ? largestFirst(selected).filter((doc, i) => i % n === k - 1) : selected;
+const docs = shards ? largestFirst(selected).filter((doc, i) => i % shards === shard - 1) : selected;
 // Each document is built twice, prerendered (html) and for MathJax in the
 // browser (fallback), a few builds at a time, the largest first. The
 // prerendered build is npm test's, reused if npm test has made it.
@@ -2047,11 +2047,11 @@ while (waiting.size) {
 }
 // only with every document: a subset may lack what a check looks for, and
 // a shard's counts are summed by --sum
-if (n) {
+if (shards) {
   mkdirSync(join(root, 'build/visual'), { recursive: true });
-  writeFileSync(join(root, `build/visual/ran-${k}.json`), JSON.stringify({ shard: k, of: n, ran }));
+  writeFileSync(join(root, `build/visual/ran-${shard}.json`), JSON.stringify({ shard, of: shards, ran }));
 }
-const never = only.length || n ? [] : unchecked(ran);
+const never = only.length || shards ? [] : unchecked(ran);
 const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
 stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
 stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));

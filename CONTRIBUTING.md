@@ -324,7 +324,7 @@ Move `mathjax` and every `@mathjax/*` package to the new version in one commit, 
 
 ### TeX Live
 
-Take the new digest of `texlive/texlive:latest` for the CI image, and confirm that both test jobs pass. A warning from `\web@needs` means that a command that tex8web patches was changed in tex4ht or in a package.
+Take the new digest of `texlive/texlive:latest` for the CI image, and confirm that every test job passes. A warning from `\web@needs` means that a command that tex8web patches was changed in tex4ht or in a package.
 
 ## Releasing
 
