@@ -21,12 +21,14 @@
 % \HLet\:tempa\FV@UseVerb has the arguments reversed, which leaves the
 % definition unused. \UseVerb then runs \a:fancyvrb, which opens a <pre>
 % that nothing closes, and the page ends there. Inline text also skips the
-% frame's rules: \a:fancyvrbframe writes them for the id of the last
-% block. fvextra's inline commands each run \FV@UseInlineKeyValues in a
-% group before \FV@FormattingPrep.
+% frame's rules and the colors of the text, the fill, the rules, and
+% fvextra's background: \a:fancyvrbframe and \a:fancyvrbcolor write them
+% for the id of the last block. fvextra's inline commands each run
+% \FV@UseInlineKeyValues in a group before \FV@FormattingPrep.
 \@ifpackageloaded{fancyvrb}{%
     \def\web@fvinline{\let\a:fancyvrb\empty\let\a:fancyvrbframe\empty
-        \let\b:fancyvrbframe\empty\let\c:fancyvrbframe\empty\let\d:fancyvrbframe\empty}%
+        \let\b:fancyvrbframe\empty\let\c:fancyvrbframe\empty\let\d:fancyvrbframe\empty
+        \let\a:fancyvrbcolor\empty\let\b:fancyvrbcolor\empty\let\c:fancyvrbcolor\empty}%
     \web@needs{FV@UseVerb}%
     \def\FV@UseVerb#1{\mbox{\FV@UseKeyValues\web@fvinline\FV@FormattingPrep\a:verb#1\b:verb}}%
     \@ifpackageloaded{fvextra}{%

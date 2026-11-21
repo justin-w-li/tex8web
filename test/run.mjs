@@ -3465,7 +3465,7 @@ const mdframed = {
 
 // fancyvrb's saved text inline: the words around it, and the text in a
 // <code> in the given font, between tags that end or start other fonts
-const usedVerb = (before, text, after, font = "[^']*") => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*` +
+const usedVerb = (before, text, after, font) => new RegExp(`${before}\\s*(?:<\\/?span[^>]*>\\s*)*` +
   `<code class='verb'><span class='${font}'>${text}<\\/span><\\/code>\\s*(?:<\\/?span[^>]*>\\s*)*${after}`);
 
 // Spaces in verbatim, alltt, and \verbatiminput keep the font's width. Only
@@ -3568,7 +3568,12 @@ const verbatim = {
   // (under a frame set for every block: the block without one, and the
   // saved text after it inline)
   'test-useverb-frame': [/Before the block\. <\/p> <pre class='fancyvrb' id='fancyvrb1'>(?:(?!<\/pre>)[^])*uvf-block(?:(?!<\/pre>)[^])*<\/pre> <p[^>]*>Text /,
-    usedVerb('Text', 'uvf-text_a', 'more\\.', 'cmtt-10')],
+    usedVerb('Text', 'uvf-text_a', 'more\\.', 'cmtt-10'), usedVerb('Red', 'uvf-text_a', 'end\\.', 'cmtt-10'),
+    usedVerb('Filled', 'uvf-text_a', 'end\\.', 'cmtt-10')],
+  // (with fvextra's background color and a text color: the saved text
+  // inline after a block)
+  'test-useverb-fvextra-color': [/Before the block\. <\/p> <pre class='fancyvrb' id='fancyvrb1'>(?:(?!<\/pre>)[^])*uvc-block(?:(?!<\/pre>)[^])*<\/pre> <p[^>]*>Yellow /,
+    usedVerb('Yellow', 'uvc-text_a', 'end\\.', 'cmtt-10'), usedVerb('Red', 'uvc-text_a', 'end\\.', 'cmtt-10')],
   // (a guard: saved blocks shown as displays, each between its paragraphs,
   // and \Verb inline)
   'test-useverb-display': [
@@ -4435,6 +4440,8 @@ function check(doc, result, out, aux) {
   // inline text leaves the block that sets frame=none without a border)
   if (doc.name === 'test-useverb-fvextra' && !html.includes('uvx-star\u00A0a\u00A0\u00A0b')) problems.push('no uvx-star with two spaces');
   if (doc.name === 'test-useverb-frame' && /pre#fancyvrb\d+\s*\{\s*border/.test(styles)) problems.push('a border on the block without a frame');
+  if (['test-useverb-frame', 'test-useverb-fvextra-color'].includes(doc.name) &&
+    /pre#fancyvrb\d+\s*\{\s*(?:color|background-color|border-color):/.test(styles)) problems.push("the inline text's color on the block");
   if (displayPictures[doc.name]) {
     const { pictures: shown, math } = displayPictures[doc.name];
     const names = [...shown.map(name => [name].flat()[0]), ...math];
