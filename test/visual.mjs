@@ -10,6 +10,8 @@
 // contents, blocks wider than the column scrolling inside it, printing,
 // a width that fits a phone, and TikZ pictures that hold a graphic,
 // which dark mode leaves as they are.
+// The page for MathJax in the browser is built from the prerendered
+// build's LaTeX runs (CONTRIBUTING.md, "Reused builds").
 // Needs Chrome and the network. Differing screens are saved in
 // build/visual/<document>/visual/.
 //   node test/visual.mjs [document names...]
@@ -1674,8 +1676,12 @@ const variants = [[testDir, 'html', 'aux', { TEX8WEB_MATHML: '1' }],
   [doc => testDir(doc, 'visual'), 'fallback', 'fallbackaux', { TEX8WEB_NO_PRERENDER: '1' }]];
 const builds = largestFirst(docs).flatMap(doc => variants.map(([dir, out, aux, env]) =>
   ({ doc, dir: dir(doc), out, aux, env, ...Promise.withResolvers() })));
+// (the build for the browser starts from the prerendered build's LaTeX run,
+// so it waits for that build, which is earlier in the list)
 const building = pool(builds, workers, async ({ doc, dir, out, aux, env, resolve }) => {
-  resolve((await build(doc, join(dir, out), join(dir, aux), env)).code);
+  const from = out === 'fallback' ? join(testDir(doc), 'aux') : undefined;
+  if (from) await builds.find(b => b.doc === doc && b.out === 'html').promise;
+  resolve((await build(doc, join(dir, out), join(dir, aux), env, from)).code);
 });
 const built = async doc => (await Promise.all(builds.filter(b => b.doc === doc).map(b => b.promise))).every(code => code === 0);
 

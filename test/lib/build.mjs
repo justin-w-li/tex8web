@@ -284,12 +284,18 @@ function stamps(doc, args, env, pdf) {
   const vars = Object.entries(all)
     .filter(([name]) => /^(TEX8WEB_(?!SLOTS|SPEECH_CACHE)|TEXINPUTS$|TEXMF|SOURCE_DATE_EPOCH$|FORCE_SOURCE_DATE$)/.test(name)).sort();
   const day = all.FORCE_SOURCE_DATE === '1' && all.SOURCE_DATE_EPOCH ? null : new Date().toDateString();
+  const files = [hashFiles(doc.sourceRoot ?? doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), hashFiles(dirname(resolve(doc.cfg)), besideConfig(doc))];
   // (a build through a runner, whose tools are the image's, is never reused
   // as a host build, nor the reverse)
-  const rest = [hashFiles(doc.sourceRoot ?? doc.dir, ['']), readFileSync(doc.cfg, 'utf8'), hashFiles(dirname(resolve(doc.cfg)), besideConfig(doc)), args, vars, pdf,
-    ...doc.runner ? [[doc.runner, ...[doc.runner[0], join(root, 'Dockerfile')].map(file => readFileSync(file, 'utf8'))]] : []];
-  const hash = (...head) => createHash('sha256').update(JSON.stringify([...head, ...rest])).digest('hex');
-  return { page: hash(tools().page, day), latex: hash(tools().latex, day) };
+  const runner = doc.runner ? [[doc.runner, ...[doc.runner[0], join(root, 'Dockerfile')].map(file => readFileSync(file, 'utf8'))]] : [];
+  // (LaTeX's output depends neither on where the page and tex4ht's files
+  // go, nor on whether the math is prerendered, which only the passes
+  // after LaTeX read. So a build for MathJax in the browser can start from
+  // a prerendered build's LaTeX run)
+  const latexArgs = args.filter((arg, i) => !['-B', '-d'].includes(arg) && !['-B', '-d'].includes(args[i - 1]));
+  const latexVars = vars.filter(([name]) => !['TEX8WEB_NO_PRERENDER', 'TEX8WEB_MATHML'].includes(name));
+  const hash = (head, args, vars) => createHash('sha256').update(JSON.stringify([head, day, ...files, args, vars, pdf, ...runner])).digest('hex');
+  return { page: hash(tools().page, args, vars), latex: hash(tools().latex, latexArgs, latexVars) };
 }
 
 // Runs bin/tex8web on a document, with the page in out and tex4ht's files
@@ -313,7 +319,7 @@ function stamps(doc, args, env, pdf) {
 // files above its directory, and the files directly in the config's
 // folder, but not its links, as the config can input a file beside it. A
 // document with shellEscape is built with full shell escape
-export async function build(doc, out, aux, env = {}) {
+export async function build(doc, out, aux, env = {}, from) {
   mkdirSync(dirname(out), { recursive: true });
   const release = await lock(`${out}.lock`);
   try {
@@ -331,13 +337,13 @@ export async function build(doc, out, aux, env = {}) {
       const odd = special(doc.dir) || doc.sourceRoot && special(doc.sourceRoot, { outputs: false });
       if (odd) return { code: 2, log: `refusing to build ${doc.name}: ${odd} is not a file or a directory that can be read\n` };
     }
-    return await buildHere(doc, out, aux, env);
+    return await buildHere(doc, out, aux, env, from);
   } finally {
     release();
   }
 }
 
-async function buildHere(doc, out, aux, env) {
+async function buildHere(doc, out, aux, env, from) {
   env = { ...doc.env, ...env };
   // the PDF the page links, which may not be built yet: passed with -p,
   // unless the config links it with \WebPDF, so that \WebPDF stays tested
@@ -366,11 +372,15 @@ async function buildHere(doc, out, aux, env) {
     // (the stamp again, with the new PDF, as the next build will see it)
     wanted = stampNow();
   }
+  // (with from, the tex4ht directory of another build of the document,
+  // that build's LaTeX run if it matches, which is never written here)
+  const stageOf = dir => ({ dir: `${dir}.latex`, stamp: `${dir}.latex.stamp`, log: `${dir}.latex.log` });
+  const matches = stage => existsSync(stage.stamp) && readFileSync(stage.stamp, 'utf8') === wanted.latex
+    && existsSync(stage.dir) && existsSync(stage.log);
+  const stage = from && matches(stageOf(from)) ? stageOf(from) : stageOf(aux);
   // (never in draft mode, which runs LaTeX once on the previous build's
   // files)
-  const stage = { dir: `${aux}.latex`, stamp: `${aux}.latex.stamp`, log: `${aux}.latex.log` };
-  const reuse = !doc.draft && existsSync(stage.stamp) && readFileSync(stage.stamp, 'utf8') === wanted.latex
-    && existsSync(stage.dir) && existsSync(stage.log);
+  const reuse = !doc.draft && matches(stage);
   empty(out);
   if (!doc.draft) empty(aux);
   if (reuse) {
