@@ -293,7 +293,7 @@ Differences from the PDF too small for the [known limitations](DOCUMENTATION.md#
 
 ### CI
 
-On every push to main and every pull request, `npm test` and `npm run test:visual` run in CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). CI runs in the TeX Live Docker image, pinned by digest. The published site is also built in CI and published to GitHub Pages from main.
+On every push to main and every pull request, `npm test` and `npm run test:visual` run in CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). CI runs in the TeX Live Docker image, pinned by digest. The parts of `npm run test:visual` run in parallel jobs: `visual.mjs` in shards (`--shard k/n`), each with every n-th document, and `page.mjs` with the tests of the test tools. A last job sums the subjects that each check of `visual.mjs` found in every shard (`--sum`), and fails a check that found none. The published site is also built in CI and published to GitHub Pages from main.
 
 ### The README screenshot
 

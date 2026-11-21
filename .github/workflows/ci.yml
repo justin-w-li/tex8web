@@ -48,25 +48,63 @@ jobs:
           name: test-builds
           path: build/test
 
+  # test:visual in parallel jobs: visual.mjs in shards, then the checks
+  # counted over every shard, and page.mjs with the tests of the test tools
   visual:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    container: *texlive
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - *checkout
+      - *node
+      - *install
+      - &chromium
+        run: apt-get update && apt-get install -y --no-install-recommends chromium
+      - run: node test/visual.mjs --shard ${{ matrix.shard }}/${{ strategy.job-total }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-ran-${{ matrix.shard }}
+          path: build/visual/ran-${{ matrix.shard }}.json
+          if-no-files-found: error
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-builds-${{ matrix.shard }}
+          path: build/visual
+
+  visual-sum:
+    needs: visual
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - *checkout
+      - *node
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: visual-ran-*
+          merge-multiple: true
+          path: ran
+      - run: node test/visual.mjs --sum ran
+
+  page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     container: *texlive
     steps:
       - *checkout
       - *node
       - *install
-      - run: apt-get update && apt-get install -y --no-install-recommends chromium
-      - run: npm run test:visual
-      - if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: visual-builds
-          path: build/visual
+      - *chromium
+      - run: npm run test:page
+      - run: node --test test/chrome.test.mjs test/shots.test.mjs
 
   # the examples as the site, which npm run examples builds in build/site
   site:
-    needs: [test, visual]
+    needs: [test, visual, page]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container: *texlive
@@ -81,7 +119,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: site
+    needs: [site, visual-sum]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
