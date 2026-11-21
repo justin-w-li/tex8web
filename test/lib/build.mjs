@@ -73,8 +73,10 @@ export const largestFirst = docs => docs.map(doc => [doc, statSync(join(doc.dir,
 
 // builds at once from one tool: a build runs mostly on one core, and at
 // most four leave the rest of the machine to other work (a laptop often has
-// four performance cores). The slots limit all tools together. CI's machine
-// runs nothing else, so it builds on every core
+// four performance cores). The slots limit all tools together. CI's runner
+// runs only the tests, so it builds on every core (on its four cores, even
+// with Chrome comparing pages beside the builds, its CPU was idle a third of
+// the time with two builds at once)
 export const workers = process.env.CI ? availableParallelism() : Math.min(4, Math.max(2, availableParallelism() >> 1));
 
 // the running commands, each in a separate process group, so that a hung
