@@ -3,14 +3,16 @@
 % \Bmatrix, \vmatrix, \Vmatrix, and \smallmatrix. Each pair in a numbered
 % equation, in \[ \], in inline math, in align*, with \\ rows in a numbered
 % align and gather, through a macro of the document, and nested. Inline in a
-% footnote, a theorem, and a heading, with hyperref.
+% footnote, a theorem, and a heading with the table of contents, with
+% hyperref, and with \\ rows in an eqnarray and an alignat.
 \documentclass{article}
 \usepackage{amsmath,amsthm}
 \usepackage{hyperref}
 \newtheorem{theorem}{Theorem}
 \newcommand{\col}[2]{\Bmatrix #1 \\ #2 \endBmatrix}
 \begin{document}
-\section{Rotations by $\protect\bmatrix c & s \endbmatrix$}
+\tableofcontents
+\section{Rotations by $\protect\bmatrix c & s \protect\endbmatrix$}
 
 A row in a numbered equation:
 \begin{equation}
@@ -32,11 +34,13 @@ In align*:
 \begin{align*}
 A &= \bmatrix a & b \\ c & d \endbmatrix & C &= \Bmatrix e \\ f \endBmatrix \\
 D &= \vmatrix g & h \\ i & j \endvmatrix & E &= \Vmatrix k & l \\ m & n \endVmatrix \\
-F &= \smallmatrix o & p \\ q & r \endsmallmatrix
+F &= \smallmatrix o & p \\ q & r \endsmallmatrix \\
+P &= \Bmatrix e \\ f \endBmatrix & Q &= R \\
+S &= \bmatrix a & b & c \endbmatrix & T &= U
 \end{align*}
 In a numbered align, with rows inside each matrix:
 \begin{align}
-G &= \bmatrix 1 \\ 2 \endbmatrix \\
+G &= \bmatrix 1 \\ 2 \endbmatrix \label{eq:g} \\
 H &= \Bmatrix 3 \\ 4 \endBmatrix \\
 I &= \vmatrix a & b \\ c & d \endvmatrix \\
 J &= \Vmatrix e & f \\ g & h \endVmatrix \\
@@ -48,6 +52,20 @@ L = \bmatrix a \\ b \endbmatrix \\
 M = \Bmatrix c \\ d \endBmatrix \vmatrix e \\ f \endvmatrix \\
 N = \Vmatrix 7 \\ 8 \endVmatrix \smallmatrix 9 \\ 0 \endsmallmatrix
 \end{gather}
+The align's first row is \eqref{eq:g}. Nested, in a numbered align:
+\begin{align}
+W &= \bmatrix \smallmatrix 1 \\ 2 \endsmallmatrix & 0 \\ 0 & 1 \endbmatrix \\
+X &= 1
+\end{align}
+In an eqnarray and an alignat:
+\begin{eqnarray}
+Y &=& \bmatrix 1 \\ 2 \endbmatrix \\
+Z &=& 3
+\end{eqnarray}
+\begin{alignat}{2}
+a &= \Vmatrix 1 \\ 2 \endVmatrix &\quad b &= 4 \\
+c &= 5 &\quad d &= 6
+\end{alignat}
 Through a macro, $u = \col{x}{y}$, and nested:
 \[ O = \bmatrix \Vmatrix a \endVmatrix & \smallmatrix 1 & 2 \\ 3 & 4 \endsmallmatrix \\
   \vmatrix b \endvmatrix & \Bmatrix c \endBmatrix \endbmatrix \]
@@ -56,4 +74,6 @@ In a footnote.\footnote{The vector $\bmatrix 0 \\ 1 \endbmatrix$.}
 \begin{theorem}
 The matrix $\Vmatrix 2 & 3 \endVmatrix$ is a norm.
 \end{theorem}
+
+\section{Another section}
 \end{document}

@@ -289,7 +289,18 @@ const measured = {
 // a letter with a number as its subscript
 const spaced = (before, width, after) => new RegExp(`${before}<mspace (?:linebreak='nobreak' )?width='${width.replace('.', '\\.')}'><\\/mspace>${after}`);
 const sub = (letter, n) => `<msub><mi>${letter}<\\/mi><mrow[^>]*><mn>${n}<\\/mn><\\/mrow><\\/msub>`;
+// a right-hand column of an alignment, which starts with {} before its =
+const rhs = "<mtd><mstyle indentshift='2em'><mi><\\/mi><mrow data-mjx-texclass='ORD'><\\/mrow><mo linebreakstyle='after'>=<\\/mo>";
 const typeset = {
+  // (in align*, each right-hand column after a macro pair's matrix starts
+  // with {}, and none is put in a matrix's cells; a \label on a row with
+  // a matrix of rows names that row's number)
+  'test-envmacro': [
+    new RegExp(`<mi>A<\\/mi><\\/mtd>${rhs}<mrow data-mjx-texclass='INNER'><mo data-mjx-texclass='OPEN'>\\[<\\/mo><mtable [^>]*data-tex8web-env='bmatrix'(?:(?!<\\/mtable>)[^])*<\\/mtable><mo data-mjx-texclass='CLOSE'>\\]<\\/mo><\\/mrow><\\/mstyle><\\/mtd><mtd><mi>C<\\/mi><\\/mtd>${rhs}<mrow data-mjx-texclass='INNER'><mo data-mjx-texclass='OPEN'>\\{`),
+    new RegExp(`<mi>P<\\/mi><\\/mtd>${rhs}<mrow data-mjx-texclass='INNER'><mo data-mjx-texclass='OPEN'>\\{<\\/mo><mtable [^>]*data-tex8web-env='Bmatrix'(?:(?!<\\/mtable>)[^])*<\\/mtable><mo data-mjx-texclass='CLOSE'>\\}<\\/mo><\\/mrow><\\/mstyle><\\/mtd><mtd><mi>Q<\\/mi><\\/mtd>${rhs}<mi>R<\\/mi>`),
+    new RegExp(`<mi>S<\\/mi><\\/mtd>${rhs}<mrow data-mjx-texclass='INNER'><mo data-mjx-texclass='OPEN'>\\[<\\/mo><mtable [^>]*data-tex8web-env='bmatrix'[^>]*><mtr><mtd><mspace[^>]*><\\/mspace><mi>a<\\/mi><\\/mtd><mtd><mi>b<\\/mi><\\/mtd><mtd><mi>c<\\/mi><\\/mtd><\\/mtr><\\/mtable><mo data-mjx-texclass='CLOSE'>\\]<\\/mo><\\/mrow><\\/mstyle><\\/mtd><mtd><mi>T<\\/mi><\\/mtd>${rhs}<mi>U<\\/mi>`),
+    /id='mjx-eqn_eq_g'[^>]*><mjx-mtext><mjx-c class='mjx-c28'>\(<\/mjx-c><\/mjx-mtext><mjx-mtext><mjx-c class='mjx-c33'>3</,
+  ],
   'test-mhchem': [/<\/a>The <mjx-container/, /forms acid: <span class='tex8web-nowrap'><mjx-container/],
   'test': [
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 TEX-SO'>\(/,
@@ -491,10 +502,12 @@ const speech = {
     /aria-label='the 2 super nd term'/, /aria-label='x period italic of italic f sine x Label \d+'/,
     /aria-label='italic ab'/, /aria-label='gh'/, /aria-label='italic ij'/, /aria-label='st'/],
   // (amsmath's macro pairs read as the matrices of \begin and \end, with
-  // the PDF's numbers on the rows of a numbered align and gather, which the
-  // rows inside a matrix do not end; in a heading, a footnote, and a
-  // theorem)
-  'test-envmacro': [/aria-label='the 1 by 2 row matrix c s'/,
+  // the PDF's numbers on the rows of a numbered align, gather, eqnarray,
+  // and alignat, which the rows inside a matrix do not end; in a heading
+  // and its entry in the table of contents, a footnote, and a theorem)
+  'test-envmacro': [
+    /<h3 class='sectionHead' id='rotations-by-c-s-'>(?:(?!<\/h3>)[^])*Rotations by <mjx-container aria-label='the 1 by 2 row matrix c s'/,
+    /<a href='#rotations-by-c-s-' id='[^']*'>Rotations by <mjx-container aria-label='the 1 by 2 row matrix c s'/,
     /aria-label='v equals the 1 by 2 row matrix 1 0 Label 1'/,
     /aria-label='p equals the 2 by 2 matrix Row 1: a b Row 2: c d times the determinant of the 2 by 2 matrix Row 1: e f Row 2: g h times the determinant of the 2 by 2 matrix Row 1: i j Row 2: k l times 2 lines Line 1: m n Line 2: o q Label 2'/,
     /aria-label='B equals the 2 by 2 matrix Row 1: 1 2 Row 2: 3 4 times the 2 by 1 column matrix 5 6 times the 1 by 1 column matrix 7 times the 1 by 1 column matrix 8 times 1 lines Line 1: 9 0'/,
@@ -503,9 +516,12 @@ const speech = {
     /aria-label='the determinant of the 2 by 2 matrix Row 1: t u Row 2: x y'/,
     /aria-label='the 2 by 1 column matrix z alpha'/,
     /aria-label='the 2 by 2 matrix Row 1: beta gamma Row 2: delta epsilon'/,
-    /aria-label='3 lines Line 1: A equals the 2 by 2 matrix Row 1: a b Row 2: c d C equals the 2 by 1 column matrix e f Line 2: D equals the determinant of the 2 by 2 matrix Row 1: g h Row 2: i j E equals the determinant of the 2 by 2 matrix Row 1: k l Row 2: m n Line 3: F equals 2 lines Line 1: o p Line 2: q r'/,
+    /aria-label='5 lines Line 1: A equals the 2 by 2 matrix Row 1: a b Row 2: c d C equals the 2 by 1 column matrix e f Line 2: D equals the determinant of the 2 by 2 matrix Row 1: g h Row 2: i j E equals the determinant of the 2 by 2 matrix Row 1: k l Row 2: m n Line 3: F equals 2 lines Line 1: o p Line 2: q r Line 4: P equals the 2 by 1 column matrix e f Q equals R Line 5: S equals the 1 by 3 row matrix a b c T equals U'/,
     /aria-label='5 lines Line 1: G equals the 2 by 1 column matrix 1 2 Label 3 Line 2: H equals the 2 by 1 column matrix 3 4 Label 4 Line 3: I equals the determinant of the 2 by 2 matrix Row 1: a b Row 2: c d Label 5 Line 4: J equals the determinant of the 2 by 2 matrix Row 1: e f Row 2: g h Label 6 Line 5: K equals 2 lines Line 1: 5 Line 2: 6 Label 7'/,
     /aria-label='3 lines Line 1: L equals the 2 by 1 column matrix a b Label 8 Line 2: M equals the 2 by 1 column matrix c d times the 2 by 1 column matrix e f Label 9 Line 3: N equals the 2 by 1 column matrix 7 8 times 2 lines Line 1: 9 Line 2: 0 Label open paren 10 close paren'/,
+    /aria-label='2 lines Line 1: W equals the 2 by 2 matrix Row 1: Column 1, 2 lines Line 1: 1 Line 2: 2 Column 2, 0 Row 2: Column 1, 0 Column 2, 1 Label open paren 11 close paren Line 2: X equals 1 Label open paren 12 close paren'/,
+    /aria-label='2 lines Line 1: Y equals the 2 by 1 column matrix 1 2 Label open paren 13 close paren Line 2: Z equals 3 Label open paren 14 close paren'/,
+    /aria-label='2 lines Line 1: a equals the 2 by 1 column matrix 1 2 empty b equals 4 Label open paren 15 close paren Line 2: c equals 5 empty d equals 6 Label open paren 16 close paren'/,
     /aria-label='u equals the 2 by 1 column matrix x y'/,
     /aria-label='O equals the 2 by 2 matrix Row 1: Column 1, the 1 by 1 column matrix a Column 2, 2 lines Line 1: 1 2 Line 2: 3 4 Row 2: Column 1, the 1 by 1 column matrix b Column 2, the 1 by 1 matrix with entry c'/,
     /aria-label='the 2 by 1 column matrix 0 1'/, /aria-label='the 1 by 2 row matrix 2 3'/],
@@ -513,7 +529,10 @@ const speech = {
   'test-envmacro-plain': [/aria-label='P equals the 2 by 2 matrix Row 1: a b Row 2: c d'/,
     /aria-label='Q equals 2 lines Line 1: 1 2 Line 2: 3 4'/,
     /aria-label='s equals 2 cases Case 1: 1 positive Case 2: 0 otherwise'/,
-    /aria-label='R equals the 2 by 1 column matrix x y Label 1'/],
+    /aria-label='R equals the 2 by 1 column matrix x y Label 1'/,
+    // (a \bmatrix of the document's, with braces)
+    /aria-label='M equals the 2 by 2 matrix Row 1: a b Row 2: c d'/,
+    /aria-label='2 lines Line 1: x equals the 2 by 1 column matrix 1 2 Label 2 Line 2: y equals 3 Label 3'/],
 };
 
 // Pictures sized by \includegraphics's width, scale, or height: a share of
@@ -1034,6 +1053,8 @@ const builddirspacePage = (name, included = true) => [
   ] : [],
 ];
 const contents = {
+  // (\eqref of a row whose matrix has rows reads the row's number)
+  'test-envmacro': [/first row is \(<a href='#x1-2003r3'>3<!--/],
   'test-builddirspace': builddirspacePage('test-builddirspace'),
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,

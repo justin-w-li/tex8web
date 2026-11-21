@@ -1,8 +1,10 @@
 % Plain TeX's \pmatrix, \matrix, and \cases with braces, which LaTeX keeps
 % without amsmath and MathJax knows: cases that a fix for amsmath's macro
 % pairs, such as \bmatrix ... \endbmatrix, must not break. Inline, in a
-% display, and in a numbered equation.
+% display, and in a numbered equation. Also a \bmatrix of the document's,
+% inline and in the rows of a numbered eqnarray.
 \documentclass{article}
+\newcommand{\bmatrix}[1]{\left[\matrix{#1}\right]}
 \begin{document}
 Inline, $P = \pmatrix{a & b \cr c & d}$ and $Q = \matrix{1 & 2 \cr 3 & 4}$.
 In a display:
@@ -11,4 +13,9 @@ In a numbered equation:
 \begin{equation}
 R = \pmatrix{x \cr y}
 \end{equation}
+The document's own, $M = \bmatrix{a & b \cr c & d}$, and in rows:
+\begin{eqnarray}
+x &=& \bmatrix{1 \cr 2} \\
+y &=& 3
+\end{eqnarray}
 \end{document}
