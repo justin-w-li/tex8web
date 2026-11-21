@@ -4021,6 +4021,8 @@ const thechapter = {
   'test-thechap-report': [...lettered(), ...letteredContents],
   'test-thechap-scrreprt': [...lettered(name => name), ...letteredContents],
   'test-thechap-atbegin': [...lettered(), ...letteredContents],
+  'test-thechap-hook': [...lettered(), ...letteredContents],
+  'test-thechap-hookbook': [...lettered(), ...letteredContents],
   // (amsbook numbers sections without the chapter)
   'test-thechap-amsbook': [
     chapterHead('start', word('Chapter', 'A'), 'Start'), sectionHead('basics', '1\\.'), chapterHead('second', word('Chapter', 'B'), 'Second'),

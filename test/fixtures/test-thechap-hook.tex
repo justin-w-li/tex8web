@@ -1,0 +1,13 @@
+% Checks cases a fix must not break: a \thechapter set in a report
+% document's own env/document/before hook, which runs after the preamble.
+\documentclass{report}
+\usepackage{hyperref}
+\AddToHook{env/document/before}{\renewcommand\thechapter{\Alph{chapter}}}
+\begin{document}
+\tableofcontents
+\chapter{Start}\label{start}
+\section{Basics}\label{basics}
+Ref: \ref{start}; \ref{basics}; \ref{second}.
+\chapter{Second}\label{second}
+Here \ref{second}.
+\end{document}
