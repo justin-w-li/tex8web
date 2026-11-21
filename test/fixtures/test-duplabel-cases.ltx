@@ -1,0 +1,170 @@
+% The body of the test-duplabel documents: a display whose \label names a
+% label an earlier display already used. LaTeX warns ("Label `x' multiply
+% defined"), draws every display with its number, and a reference gives the
+% last display's number and leads to it. Each case sits between "Before
+% <case>." and "After <case>.", and its references follow in "Refs <case>:".
+% The cases: two equations, an alignat with cases (twice), two rows of one
+% align, three equations, a \qedhere display then an equation, an equation
+% with its own \tag then a numbered one, two eqnarray rows, three \tag rows
+% of one gather, a real label equal to a repeat with the next number
+% appended, a real label repeated after a numbered repeat, multline and
+% flalign, the starred displays with \tag (and \[ \] with \tag), and a
+% display in a theorem. Then real labels named web-dup-1 and web-qed-2,
+% which is the name the second \qedhere display's tag gets. Guards: a
+% section's label used again by an equation, a label first on a \nonumber
+% row, and one \tag row of a gather with a unique label. With cleveref,
+% \cref leads to the last display too. (A reference to a \tag row is left
+% out: its link has no target, with a unique label too.)
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Start}\label{sec}
+
+Before two.
+\begin{equation} a = b \label{x} \end{equation}
+\begin{equation} c = d \label{x} \end{equation}
+After two.
+
+Refs two: \eqref{x} and \ref{x}.
+
+Before alignat.
+\begin{alignat}{2}
+f &= \begin{cases} 1 & u > 0 \\ 0 & u \le 0 \end{cases} \label{26} \\
+g &= h
+\end{alignat}
+Text between.
+\begin{alignat}{2}
+k &= \begin{cases} 2 & v > 0 \\ 3 & v \le 0 \end{cases} \label{26}
+\end{alignat}
+After alignat.
+
+Refs alignat: \eqref{26}.
+
+Before rows.
+\begin{align}
+m &= n \label{rows} \\
+p &= q \label{rows}
+\end{align}
+After rows.
+
+Refs rows: \eqref{rows}.
+
+Before three.
+\begin{equation} r = 1 \label{eq:tri} \end{equation}
+\begin{equation} r = 2 \label{eq:tri} \end{equation}
+\begin{equation} r = 3 \label{eq:tri} \end{equation}
+After three.
+
+Refs three: \eqref{eq:tri}.
+
+Before qed.
+\begin{proof}
+Q.
+\begin{equation} s = t \label{qq} \qedhere \end{equation}
+\end{proof}
+\begin{equation} s = u \label{qq} \end{equation}
+After qed.
+
+Refs qed: \eqref{qq}.
+
+Before own tag.
+\begin{equation} v = w \tag{A} \label{ot} \end{equation}
+\begin{equation} v = z \label{ot} \end{equation}
+After own tag.
+
+Refs own tag: \eqref{ot}.
+
+Before eqnarray.
+\begin{eqnarray}
+a & = & 1 \label{ea} \\
+b & = & 2 \label{ea}
+\end{eqnarray}
+After eqnarray.
+
+Refs eqnarray: \ref{ea}.
+
+Before tag rows.
+\begin{gather}
+a = 4 \tag{T1} \label{tt} \\
+b = 5 \tag{T2} \label{tt} \\
+c = 6 \tag{T3} \label{tt}
+\end{gather}
+After tag rows.
+
+Before suffix.
+\begin{equation} d = 1 \label{xx} \end{equation}
+\begin{equation} d = 2 \label{xx} \end{equation}
+\begin{equation} d = 3 \label{xx-2} \end{equation}
+\begin{equation} d = 4 \label{xx-17} \end{equation}
+After suffix.
+
+Refs suffix: \eqref{xx}, \eqref{xx-2}, and \eqref{xx-17}.
+
+Before again.
+\begin{equation} e = 1 \label{ag} \end{equation}
+\begin{equation} e = 2 \label{ag} \end{equation}
+\begin{equation} e = 3 \label{ag2} \end{equation}
+\begin{equation} e = 4 \label{ag} \end{equation}
+After again.
+
+Refs again: \eqref{ag} and \eqref{ag2}.
+
+Before multline.
+\begin{multline} f = 1 \\ + 2 \label{ml} \end{multline}
+\begin{flalign} g &= 3 & \label{ml} \end{flalign}
+After multline.
+
+Refs multline: \eqref{ml}.
+
+Before starred.
+\begin{equation*} h = 1 \tag{S1} \label{st} \end{equation*}
+\begin{align*} h &= 2 \tag{S2} \label{st} \end{align*}
+\begin{gather*} h = 3 \tag{S3} \label{st} \end{gather*}
+\[ h = 4 \tag{S4} \label{st} \]
+After starred.
+
+Before theorem.
+\begin{theorem}
+It holds that
+\begin{equation} i = 1 \label{th} \end{equation}
+and
+\begin{equation} i = 2 \label{th} \end{equation}
+\end{theorem}
+After theorem.
+
+Refs theorem: \eqref{th}.
+
+Before reserved.
+\begin{equation} j = 1 \label{web-dup-1} \end{equation}
+\begin{equation} j = 2 \label{web-qed-2} \end{equation}
+\begin{proof}
+R.
+\begin{equation*} j = 3 \qedhere \end{equation*}
+\end{proof}
+\begin{equation} j = 4 \label{web-dup-1} \end{equation}
+After reserved.
+
+Refs reserved: \eqref{web-dup-1} and \eqref{web-qed-2}.
+
+Before section.
+\begin{equation} k = 1 \label{sec} \end{equation}
+After section.
+
+Refs section: \ref{sec}.
+
+Before nonumber.
+\begin{align}
+l &= 1 \nonumber \label{nn} \\
+l &= 2 \label{nn}
+\end{align}
+After nonumber.
+
+Refs nonumber: \eqref{nn}.
+
+Before control.
+\begin{gather}
+m = 1 \tag{C} \label{ctl}
+\end{gather}
+After control.
+
+\ifdefined\cref Refs cref: \cref{x}, \cref{eq:tri}, and \cref{ml}.\fi
+\end{document}

@@ -2867,6 +2867,38 @@ const qed = {
   ],
 };
 
+// A display whose \label repeats an earlier one's (test-duplabel-cases.ltx):
+// each display of a case drawn with its number, or its \tag, and no
+// MathJax error between "Before <case>." and "After <case>.". A reference
+// gives the last display's number and leads to its anchor (\N, the Nth of
+// the case's last anchors).
+const dupFree = name => `(?:(?!After ${name}\\.)(?!<mjx-merror)[^])*`;
+const dupDrawn = (name, ...tags) => new RegExp(`Before ${name}\\.${tags.map(tag => `${dupFree(name)}<mlabeledtr><mtd>(?:<mrow>)?<mtext>\\((?:<\\/mtext><mtext>)?${tag}(?:<\\/mtext><mtext>)?\\)`).join('')}${dupFree(name)}After ${name}\\.`);
+const dupAnchors = (name, count) => `Before ${name}\\.(?:(?!After ${name}\\.)[^])*${`<a class='tex8web-eq-anchor(?:-end)?' id='([^']+)'><\\/a>(?:(?!After ${name}\\.)(?!tex8web-eq-anchor)[^])*`.repeat(count)}After ${name}\\.`;
+const dupSpace = "<span class='tex8web-nbsp'>[^<]*<\\/span>";
+const dupLink = (anchor, number) => `<a href='#\\${anchor}'>${number}(?:<!--[^>]*-->)?<\\/a>`;
+const dupRefs = (name, count, refs) => new RegExp(`${dupAnchors(name, count)}(?:(?!Before )[^])*Refs ${name}: ${refs}\\.`);
+const duplabelNumbers = [
+  dupDrawn('two', 1, 2), dupRefs('two', 1, `\\(${dupLink(1, 2)}\\) and ${dupLink(1, 2)}`),
+  dupDrawn('alignat', 3, 4, 5), dupRefs('alignat', 1, `\\(${dupLink(1, 5)}\\)`),
+  dupDrawn('rows', 6, 7), dupRefs('rows', 1, `\\(${dupLink(1, 7)}\\)`),
+  dupDrawn('three', 8, 9, 10), dupRefs('three', 1, `\\(${dupLink(1, 10)}\\)`),
+  dupDrawn('qed', 11, 12), dupRefs('qed', 1, `\\(${dupLink(1, 12)}\\)`),
+  dupDrawn('own tag', 'A', 13), dupRefs('own tag', 1, `\\(${dupLink(1, 13)}\\)`),
+  dupDrawn('eqnarray', 14, 15), dupRefs('eqnarray', 1, dupLink(1, 15)),
+  dupDrawn('tag rows', 'T1', 'T2', 'T3'),
+  dupDrawn('suffix', 16, 17, 18, 19),
+  dupRefs('suffix', 3, `\\(${dupLink(1, 17)}\\), \\(${dupLink(2, 18)}\\), and \\(${dupLink(3, 19)}\\)`),
+  dupDrawn('again', 20, 21, 22, 23), dupRefs('again', 2, `\\(${dupLink(2, 23)}\\) and \\(${dupLink(1, 22)}\\)`),
+  dupDrawn('multline', 24, 25), dupRefs('multline', 1, `\\(${dupLink(1, 25)}\\)`),
+  dupDrawn('starred', 'S1', 'S2', 'S3', 'S4'),
+  dupDrawn('theorem', 26, 27), dupRefs('theorem', 1, `\\(${dupLink(1, 27)}\\)`),
+  dupDrawn('reserved', 28, 29, 30), dupRefs('reserved', 2, `\\(${dupLink(2, 30)}\\) and \\(${dupLink(1, 29)}\\)`),
+  dupDrawn('section', 31), dupRefs('section', 1, dupLink(1, 31)),
+  dupDrawn('nonumber', 32), dupRefs('nonumber', 1, `\\(${dupLink(1, 32)}\\)`),
+  dupDrawn('control', 'C'),
+];
+
 // Equation numbers, as in the PDF
 const numbers = {
   // eqnarray: a \ref to a row's \label gives its number and leads to it.
@@ -2886,6 +2918,12 @@ const numbers = {
   'test-lefteqn': [
     /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>(?:(?!<\/div>)[^])*<mpadded width='0'><mstyle><mfrac>(?:(?!<\/div>)[^])*<\/div>\s*<p class='noindent'>See \(<a href='#\1'>2<!--[^>]*--><\/a>\) and <a href='#\1'>2<!--/,
     /^(?:(?!<mjx-mlabeledtr)[^])*(?:<mjx-mlabeledtr(?:(?!<mjx-mlabeledtr)[^])*){22}$/,
+  ],
+  'test-duplabel': duplabelNumbers,
+  // (cleveref's \cref, to the same anchors as the \eqref of each case)
+  'test-duplabel-hyperref': [
+    ...duplabelNumbers,
+    new RegExp(`${dupAnchors('two', 1)}[^]*${dupAnchors('three', 1).replace("id='(", "id='(?<three>")}[^]*${dupAnchors('multline', 1).replace("id='(", "id='(?<multline>")}[^]*Refs cref: eq\\.${dupSpace}\\(${dupLink(1, 2)}\\), eq\\.${dupSpace}\\(<a href='#\\k<three>'>10(?:<!--[^>]*-->)?<\\/a>\\), and eq\\.${dupSpace}\\(<a href='#\\k<multline>'>25(?:<!--[^>]*-->)?<\\/a>\\)\\.`),
   ],
 };
 
