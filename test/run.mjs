@@ -2869,10 +2869,14 @@ const qed = {
 
 // A display whose \label repeats an earlier one's (test-duplabel-cases.ltx):
 // each display of a case drawn with its number, or its \tag, and no
-// MathJax error between "Before <case>." and "After <case>.". A reference
-// gives the last display's number and leads to its anchor (\N, the Nth of
-// the case's last anchors).
-const dupFree = name => `(?:(?!After ${name}\\.)(?!<mjx-merror)[^])*`;
+// MathJax error between "Before <case>." and "After <case>.", with no
+// other row numbered in parentheses. A reference gives the last display's
+// number and leads to its anchor (\N, the Nth of the case's last anchors).
+// The references already do so with the error: their patterns guard
+// against a fix that moves the anchors. So do the cases section, nonumber,
+// and control. In reserved, web-qed-2 is also the name tex8web gives the
+// second \qedhere display's QED tag, which gives the same error.
+const dupFree = name => `(?:(?!After ${name}\\.)(?!<mjx-merror)(?!<mlabeledtr><mtd>(?:<mrow>)?<mtext>\\()[^])*`;
 const dupDrawn = (name, ...tags) => new RegExp(`Before ${name}\\.${tags.map(tag => `${dupFree(name)}<mlabeledtr><mtd>(?:<mrow>)?<mtext>\\((?:<\\/mtext><mtext>)?${tag}(?:<\\/mtext><mtext>)?\\)`).join('')}${dupFree(name)}After ${name}\\.`);
 const dupAnchors = (name, count) => `Before ${name}\\.(?:(?!After ${name}\\.)[^])*${`<a class='tex8web-eq-anchor(?:-end)?' id='([^']+)'><\\/a>(?:(?!After ${name}\\.)(?!tex8web-eq-anchor)[^])*`.repeat(count)}After ${name}\\.`;
 const dupSpace = "<span class='tex8web-nbsp'>[^<]*<\\/span>";
@@ -2897,6 +2901,13 @@ const duplabelNumbers = [
   dupDrawn('section', 31), dupRefs('section', 1, dupLink(1, 31)),
   dupDrawn('nonumber', 32), dupRefs('nonumber', 1, `\\(${dupLink(1, 32)}\\)`),
   dupDrawn('control', 'C'),
+  dupDrawn('qed repeat', 33, 34), dupRefs('qed repeat', 1, `\\(${dupLink(1, 34)}\\)`),
+  dupDrawn('qed align', 35, 36),
+  dupDrawn('tag after', 37, 'B'),
+  dupDrawn('by section', '2\\.1', '2\\.2', '2\\.3'),
+  dupRefs('by section', 2, `\\(${dupLink(1, '2\\.2')}\\) and \\(${dupLink(2, '2\\.3')}\\)`),
+  // (no id twice on the page, as MathJax's ignoreDuplicateLabels gives)
+  /^(?![^]*\bid='([^']+)'[^]*\bid='\1')/,
 ];
 
 // Equation numbers, as in the PDF

@@ -12,7 +12,10 @@
 % display in a theorem. Then real labels named web-dup-1 and web-qed-2,
 % which is the name the second \qedhere display's tag gets. Guards: a
 % section's label used again by an equation, a label first on a \nonumber
-% row, and one \tag row of a gather with a unique label. With cleveref,
+% row, and one \tag row of a gather with a unique label. Then a repeat on a
+% \qedhere equation, and on the \qedhere row of an align, a numbered display
+% then a repeat with its own \tag, and, numbered by section, a real label
+% equal to a repeat with the number appended. With cleveref,
 % \cref leads to the last display too. (A reference to a \tag row is left
 % out: its link has no target, with a unique label too.)
 \newtheorem{theorem}{Theorem}
@@ -165,6 +168,43 @@ Before control.
 m = 1 \tag{C} \label{ctl}
 \end{gather}
 After control.
+
+Before qed repeat.
+\begin{equation} a = 1 \label{qr} \end{equation}
+\begin{proof}
+Q.
+\begin{equation} a = 2 \label{qr} \qedhere \end{equation}
+\end{proof}
+After qed repeat.
+
+Refs qed repeat: \eqref{qr}.
+
+Before qed align.
+\begin{equation} a = 3 \label{qa} \end{equation}
+\begin{proof}
+Q.
+\begin{align}
+a &= 4 \\
+a &= 5 \label{qa} \qedhere
+\end{align}
+\end{proof}
+After qed align.
+
+Before tag after.
+\begin{equation} a = 6 \label{nt} \end{equation}
+\begin{equation} a = 7 \tag{B} \label{nt} \end{equation}
+After tag after.
+
+\numberwithin{equation}{section}
+\section{By section}
+
+Before by section.
+\begin{equation} a = 8 \label{w} \end{equation}
+\begin{equation} a = 9 \label{w} \end{equation}
+\begin{equation} a = 10 \label{w-2.2} \end{equation}
+After by section.
+
+Refs by section: \eqref{w} and \eqref{w-2.2}.
 
 \ifdefined\cref Refs cref: \cref{x}, \cref{eq:tri}, and \cref{ml}.\fi
 \end{document}
