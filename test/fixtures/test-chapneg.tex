@@ -1,0 +1,12 @@
+% A negative space above a chapter from titlesec's \titlespacing, under a
+% \titleformat of the chapter: a chapter, an unnumbered chapter, a part
+% with no spacing of its own, an appendix chapter, the bibliography, and
+% the index, each after text, none drawn over the text above it, also on
+% a phone, and each in view when a link leads to it.
+\documentclass{book}
+\usepackage{titlesec,makeidx}
+\makeindex
+\titleformat{\chapter}[display]{\normalfont\huge\bfseries}
+    {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing{\chapter}{0pt}{-20pt}{20pt}
+\input{test-chapneg-cases.ltx}

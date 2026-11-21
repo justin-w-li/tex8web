@@ -748,6 +748,48 @@ const scrollers = `(() => {
   return { checked: [blocks.length, wide, claps], wrong };
 })()`;
 const wideBlocks = { 'test-wideblocks': { 1400: [7, 1], 390: [10, 1] } };
+// Each part and chapter-level heading below the text above it. In the
+// PDF such a heading starts a page, so a negative space above it from
+// \titlespacing moves it up only from the page's top margin. The heading's
+// box starts at or below the last box above it with a height, or the top
+// of its column. Checked with JavaScript off, on a wide screen and on a
+// phone. chapterHeads has the number of such headings. Failures: [the
+// heading's id, what is wrong]
+const chapterHeadSelector = ':is(h1, h2):is(.partHead, .likepartHead, .chapterHead, .likechapterHead, .appendixHead)';
+const chapterGaps = `(() => {
+  const heads = [...document.querySelectorAll('${chapterHeadSelector}')];
+  const wrong = heads.flatMap(h => {
+    let above = h.previousElementSibling;
+    while (above && !above.getBoundingClientRect().height) above = above.previousElementSibling;
+    const column = h.parentElement.getBoundingClientRect();
+    const limit = above ? above.getBoundingClientRect().bottom
+      : column.top + parseFloat(getComputedStyle(h.parentElement).paddingTop);
+    const top = h.getBoundingClientRect().top;
+    return top < limit - 0.5
+      ? [[h.id, \`starts \${(limit - top).toFixed(1)}px above the bottom of \${above ? 'the ' + above.localName + ' above it' : 'its column'}\`]] : [];
+  });
+  return { checked: heads.length, wrong };
+})()`;
+// A link to each such heading, on a wide screen with the page script:
+// the heading, as the link's target, is in view from its top when
+// scrolled to the top of the window, as its space above
+// (scroll-margin-top) is not negative. On a narrow screen without the
+// script, the space for the bar is above it instead. Failures: [the
+// heading's id, what is wrong]
+const chapterLanding = `(() => {
+  // (room below the last heading, so that each one can reach the window's top)
+  const room = document.createElement('div');
+  room.style.height = 2 * innerHeight + 'px';
+  document.body.append(room);
+  const wrong = [...document.querySelectorAll('${chapterHeadSelector}')].flatMap(h => {
+    location.hash = h.id;
+    h.scrollIntoView();
+    const top = h.getBoundingClientRect().top;
+    return top < -0.5 ? [[h.id, \`starts \${(-top).toFixed(1)}px above the window after a link to it\`]] : [];
+  });
+  return wrong;
+})()`;
+const chapterHeads = { 'test-chapneg': 9, 'test-chapneg-hyperref': 9 };
 // Description lists after footnotes beside the text, on a wide screen
 // with the page script, which stacks the footnotes. Each list's box, each
 // label's box, and its text's first line are the same within 0.5px with
@@ -1922,6 +1964,17 @@ async function compare(chrome, doc, ok) {
       if (shownClaps !== claps) problems.push(`${html}: at ${width}px, ${shownClaps} claps of zero width in a display, not ${claps}`);
       for (const [n, name, what] of blocks.wrong) problems.push(`${html}: at ${width}px, block ${n} ("${name}"): ${what}`);
     }
+    if (doc.name in chapterHeads) {
+      for (const width of [1000, 390]) {
+        const heads = await chrome.withPage(pathToFileURL(join(pre, html)).href, { javascript: false, width },
+          page => page.evaluate(chapterGaps));
+        if (heads.checked !== chapterHeads[doc.name]) problems.push(`${html}: at ${width}px, ${heads.checked} part and chapter headings, not ${chapterHeads[doc.name]}`);
+        for (const [id, what] of heads.wrong) problems.push(`${html}: at ${width}px, the heading #${id}: ${what}`);
+      }
+      const landed = await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 1400 },
+        page => page.evaluate(chapterLanding));
+      for (const [id, what] of landed) problems.push(`${html}: at 1400px, the heading #${id}: ${what}`);
+    }
     if (doc.name in descLabels) {
       const labels = await chrome.withPage(pathToFileURL(join(pre, html)).href, { width: 1400 },
         page => page.evaluate(descLabeled));
@@ -2059,6 +2112,7 @@ stray.push(...strayKeys(darkPictures).map(name => `no document ${name} for its p
 stray.push(...strayKeys(graphicsInside).map(name => `no document ${name} for its graphics in pictures`));
 stray.push(...strayKeys(wideBlocks).map(name => `no document ${name} for its wide blocks`));
 stray.push(...strayKeys(descLabels).map(name => `no document ${name} for its description labels`));
+stray.push(...strayKeys(chapterHeads).map(name => `no document ${name} for its part and chapter headings`));
 for (const problem of [...never, ...stray]) console.log(`not ok - ${problem}`);
 failures += never.length + stray.length;
 const strayLiterals = strayKeys(verbatimFamilies);

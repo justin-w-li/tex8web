@@ -1,0 +1,44 @@
+% The body of test-chapneg and test-chapneg-hyperref: chapter-level
+% headings, each after text, where the space above a chapter from
+% \titlespacing is negative. In the PDF each one starts a page, and the
+% negative space only moves the title up from the top margin.
+\newcommand\filler{The space above a chapter is read from the document
+    and applied to the heading on the page, which has no page breaks.
+    This line and the next are here so that the paragraph has more than
+    one line at every width, and the heading below it has text to cover.}
+\begin{document}
+\chapter{First}
+\filler\index{chapter}
+
+\chapter{After a paragraph}
+\filler
+\begin{itemize}
+    \item An item before the next chapter.
+    \item Another item.
+\end{itemize}
+
+\chapter{After a \emph{list}}
+\filler
+\begin{itemize}
+    \item An item before an unnumbered chapter.
+    \item Another item.
+\end{itemize}
+
+\chapter*{Unnumbered after a list}
+\filler
+
+\part{A part after text}
+\chapter{Right after a part}
+\filler
+
+\appendix
+\chapter{An appendix}
+\filler
+
+\begin{thebibliography}{9}
+\bibitem{one} A.~Author, \emph{A book}, 2001.
+\bibitem{two} B.~Author, \emph{Another book}, 2002.
+\end{thebibliography}
+
+\printindex
+\end{document}

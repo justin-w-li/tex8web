@@ -1,0 +1,10 @@
+% test-chapneg with hyperref, whose anchors a link leads to, and with
+% the starred \titlespacing*, which keeps the paragraph after the heading
+% indented.
+\documentclass{book}
+\usepackage{titlesec,makeidx,hyperref}
+\makeindex
+\titleformat{\chapter}[display]{\normalfont\huge\bfseries}
+    {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-30pt}{20pt}
+\input{test-chapneg-cases.ltx}
