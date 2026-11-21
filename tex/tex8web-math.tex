@@ -391,21 +391,26 @@
 
 % a picture in display math is typeset by TeX, rescanning the source,
 % which tex4ht read with & as a letter: a body that is only one
-% tikzpicture, \tikz, tikzcd, \includegraphics, or picture environment,
-% maybe in a \resizebox or a \scalebox, with \label, \notag, and
+% tikzpicture, \tikz, tikzcd, quantikz, \includegraphics, or picture
+% environment, maybe in a \resizebox or a \scalebox, with \label, \notag, and
 % \nonumber anywhere around it, \qedhere and \tag after it, and a period
 % or a comma after it, maybe after one spacing command (\, \: \; \!
 % \quad \qquad or a control space); and a \[ \] with a tikzcd. MathJax knows none of
 % them. Other pictures beside math, and a body with two pictures, stay
 % MathJax's. amsmath's displays take a \tag, and so does \[ \] with
 % amsmath; $$ $$, displaymath, and eqnarray do not.
-\tl_const:Nn \c__web_picture_tl {
-    (?: \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
-        | \\begin \s* \{ tikzcd \} .* \\end \s* \{ tikzcd \}
+% (quantikz 1.0 and later, from the package or the TikZ library
+% quantikz2, is built on tikzcd. The library before 1.0, which has no
+% \setwiretype, is garbled when TeX sets it in display math)
+\tl_const:Ne \c__web_picture_tl {
+    \exp_not:n { (?: \\begin \s* \{ tikzpicture \} .* \\end \s* \{ tikzpicture \}
+        | \\begin \s* \{ tikzcd \} .* \\end \s* \{ tikzcd \} }
+    \cs_if_exist:NT \setwiretype { \exp_not:n { | \\begin \s* \{ quantikz \} .* \\end \s* \{ quantikz \} } }
+    \exp_not:n {
         | \\begin \s* \{ picture \} .* \\end \s* \{ picture \}
         | \\includegraphics \s* \*? \s* (?: \[ [^\]]* \] \s* )* \{ [^\{\}]* \}
         | \\tikz \b \s* (?: \[ [^\]]* \] \s* )?
-            (?: \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} | (?: [^;\{\}] | \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} )* ; ) )
+            (?: \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} | (?: [^;\{\}] | \{ (?: [^\{\}] | \{ (?: [^\{\}] | \{ [^\{\}]* \} )* \} )* \} )* ; ) ) }
 }
 \tl_const:Nn \c__web_marks_tl {
     \s | \\label \s* \{ [^\{\}]* \} | \\notag \b | \\nonumber \b
@@ -450,7 +455,7 @@
 }
 % the end of each picture, to find a body with two
 \regex_const:Nn \c__web_picture_end_regex
-    { \\end \s* \{ (?: tikzpicture | tikzcd | picture ) \} | \\tikz \b }
+    { \\end \s* \{ (?: tikzpicture | tikzcd | quantikz | picture ) \} | \\tikz \b }
 \str_new:N \l__web_picture_str
 \int_new:N \l__web_picture_int
 % (the regexes run only on a body with a picture's command. \str_if_in
@@ -474,8 +479,10 @@
     \str_if_in:NnTF \l__web_picture_str {\includegraphics} {#1} {
         \str_if_in:NnTF \l__web_picture_str {\tikz} {#1} {
             \str_if_in:NnTF \l__web_picture_str {\begin{tikzpicture}} {#1} {
-                \str_if_in:NnTF \l__web_picture_str {\begin{tikzcd}} {#1}
-                    { \str_if_in:NnTF \l__web_picture_str {\begin{picture}} {#1} {#2} }
+                \str_if_in:NnTF \l__web_picture_str {\begin{tikzcd}} {#1} {
+                    \str_if_in:NnTF \l__web_picture_str {\begin{quantikz}} {#1}
+                        { \str_if_in:NnTF \l__web_picture_str {\begin{picture}} {#1} {#2} }
+                }
             }
         }
     }
