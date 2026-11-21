@@ -140,6 +140,30 @@
 }
 \AddToHook{begindocument/before}{\catcode`\!=\web@bangcatcode\relax}
 
+% A \thechapter that the preamble sets, by a definition or by a memoir
+% chapter style. tex4ht's \Preamble redefines it for book, scrbook, and
+% memoir as \if@mainmatter\@arabic\c@chapter\fi (html4.4ht), and chapter,
+% section, theorem, and equation numbers lose the preamble's form. That
+% form is kept when it differs from the class's, and put back inside
+% tex4ht's test, which leaves front-matter and back-matter chapters
+% unnumbered. The class's form is taken after the last class loads.
+\AddToHook{class/after}{\global\let\web@classthechapter\thechapter}
+\AddToHook{env/document/before}{%
+    \ifdefined\web@preamblethechapter\else
+        \global\let\web@preamblethechapter\thechapter
+    \fi
+}
+% (defined apart: a skipped conditional would match the \fi inside it in
+% a class without \if@mainmatter)
+\def\web@mainmatterthechapter{\if@mainmatter\web@preamblethechapter\fi}
+\AddToHook{begindocument/before}{%
+    \ifx\web@preamblethechapter\web@classthechapter\else
+        \ifx\thechapter\web@preamblethechapter\else
+            \global\let\thechapter\web@mainmatterthechapter
+        \fi
+    \fi
+}
+
 % graphicx, which mathtools loads in \AtBeginDocument, and graphicx and
 % ccicons, which doclicense loads in \AtEndPreamble, loaded here instead,
 % before \Preamble. tex4ht reads .4ht files in \Preamble only for packages
