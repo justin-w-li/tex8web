@@ -1,0 +1,43 @@
+% fancyvrb's environments and commands, each with a word of its own, in
+% the contexts a document puts them in: italic and sans serif text, a
+% footnote, and a theorem. The document loads fancyvrb and the
+% package that sets the case (listings, siunitx, or xcolor), and this file
+% after \begin{document}.
+\section{Heading}
+Inline \Verb|fv-inline a_b#c%| and starred \Verb*|fv-inline-star a  b|.
+{\itshape Italic \Verb|fv-italic|} and {\sffamily sans \Verb|fv-sans|}.
+A footnote.\footnote{Note \Verb|fv-footnote|.}
+\begin{Verbatim}
+fv-plain a_b#c%
+\end{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
+fv-commandchars \textit{fv-command-italic}
+\end{Verbatim}
+\begin{Verbatim*}
+fv-star a  b
+\end{Verbatim*}
+\begin{BVerbatim}
+fv-boxed
+\end{BVerbatim}
+
+\begin{LVerbatim}[numbers=left]
+fv-numbered-one
+fv-numbered-two
+\end{LVerbatim}
+\begin{SaveVerbatim}{fvsaved}
+fv-saved
+\end{SaveVerbatim}
+Saved: \UseVerbatim{fvsaved}
+\begin{Verbatim}[frame=single]
+fv-framed
+\end{Verbatim}
+\begin{FvCode}
+fv-defined
+\end{FvCode}
+\VerbatimInput{test-verbatim-font.txt}
+\begin{theorem}
+In a theorem:
+\begin{Verbatim}
+fv-theorem
+\end{Verbatim}
+\end{theorem}

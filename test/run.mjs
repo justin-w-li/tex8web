@@ -3775,6 +3775,41 @@ const verbatim = {
     /Then a numbered one\. <\/p><pre class='fancyvrb' id='fancyvrb2'>(?:(?!<\/pre>)[^])*uv-block a_b\{c\}%(?:(?!<\/pre>)[^])*uv-block-indent #1<\/span><\/span><\/pre><p> After the blocks\./],
 };
 
+// fancyvrb beside listings or siunitx, whose configurations load color
+// after the preamble, and beside xcolor in the preamble: each environment
+// and command of test-fvcolor-cases.ltx with its text, its font, its line
+// numbers, and its frame's rules in the stylesheet
+const fvPre = text => new RegExp(`<pre class='fancyvrb' id='fancyvrb\\d+'>(?:(?!<\\/pre>)[^])*${text}`);
+const fvFramed = (text, sides) => new RegExp(`<pre class='fancyvrb' id='(fancyvrb\\d+)'>(?:(?!<\\/pre>)[^])*${text}[^]*` +
+  sides.map(side => `pre#\\1\\{ border-${side}: solid 0\\.4pt; \\}`).join('\\s*'));
+const fvCases = [
+  /<code class='verb'><span class='cmtt-10'>fv-inline a_b#c%<\/span><\/code>/,
+  /<code class='verb'><span class='cmtt-10'>fv-inline-star␣a␣␣b<\/span><\/code>/,
+  /<code class='verb'><span class='cmitt-10'>fv-italic<\/span><\/code>/,
+  /<span class='cmss-10'>sans <\/span><code class='verb'><span class='cmtt-10'>fv-sans<\/span><\/code>/,
+  /<aside class='footnotetext[^']*'[^>]*>(?:(?!<\/aside>)[^])*<code class='verb'><span class='cmtt-8'>fv-footnote<\/span><\/code>/,
+  fvPre(`<span class='cmtt-10'>fv-plain a_b#c%</span>`),
+  fvPre(`<span class='cmtt-10'>fv-commandchars </span><span class='cmitt-10'>fv-command-italic</span>`),
+  fvPre(`<span class='cmtt-10'>fv-star␣a␣␣b</span>`),
+  /<div class='BVerbatimInput'>\s*<span class='cmtt-10'>fv-boxed<\/span><\/div>/,
+  fvPre(`<span class='fancyvrblineno'><a id='[^']*'></a><span class='cmr-5'>1</span></span><span class='fancyvrbline'><span class='cmtt-10'>fv-numbered-one</span></span>\\s*` +
+    `<span class='fancyvrblineno'><a id='[^']*'></a><span class='cmr-5'>2</span></span><span class='fancyvrbline'><span class='cmtt-10'>fv-numbered-two</span>`),
+  fvPre(`<span class='cmtt-10'>fv-saved</span>`),
+  fvFramed(`<span class='cmtt-10'>fv-framed</span>`, ['top', 'left', 'bottom', 'right']),
+  fvFramed(`<span class='cmtt-10'>fv-defined</span>`, ['top', 'bottom']),
+  fvPre(`<span class='cmtt-10'>vf-file a_b #c%</span></span>\\s*<span class='fancyvrblineno'><a id='[^']*'></a></span><span class='fancyvrbline'><span class='cmtt-10'>file-second</span>`),
+  /<div class='newtheorem'[^>]*>(?:(?!<\/div>)[^])*<pre class='fancyvrb'[^>]*>(?:(?!<\/pre>)[^])*<span class='cmitt-10'>fv-theorem<\/span>/,
+];
+const fvListing = /A listing: <code class='lstinline'>(?:(?!<\/code>)[^])*fv<span class='tcrm-1000'>−<\/span>lstinline<\/span><\/code>/;
+const fancyvrb = {
+  'test-fvcolor-listings': [...fvCases, fvListing],
+  'test-fvcolor-siunitx': [...fvCases, /A quantity: <span class='tex8web-nowrap'><mjx-container aria-label='3 m'/],
+  // (formatcom's color on its listing, and \textcolor in the text)
+  'test-fvcolor-xcolor': [...fvCases, fvListing,
+    /<pre class='fancyvrb' id='(fancyvrb\d+)'>(?:(?!<\/pre>)[^])*<span class='cmtt-10'>fv-red<\/span>[^]*pre#\1\{ color: red; \}/,
+    new RegExp(`Inline <span style='color:${lightDark('#0000FF', 'color')};'>fv-blue-text</span>`)],
+};
+
 // The f-ligatures of fonts whose TFMs put them in other slots than their
 // encoding's: each line's words, in the text with tags removed and each
 // ligature character as its letters, as many times as listed. The title is
@@ -4048,6 +4083,7 @@ const patterns = [
   [glossaries, 'in the glossaries'],
   [surds, 'at the square root signs'],
   [drivers, 'with the driver option', true],
+  [fancyvrb, "in fancyvrb's verbatim text", true],
 ];
 
 // Floats under hypcap, which moves a float's link target to its top: each

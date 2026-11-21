@@ -1,0 +1,13 @@
+% fancyvrb beside siunitx, with no color package in the preamble.
+% siunitx.4ht loads color after the preamble, as listings.4ht does in
+% test-fvcolor-listings.
+\documentclass{article}
+\usepackage{siunitx}
+\usepackage{fancyvrb}
+\VerbatimFootnotes
+\DefineVerbatimEnvironment{FvCode}{Verbatim}{frame=lines}
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\input{test-fvcolor-cases.ltx}
+A quantity: \qty{3}{\metre}.
+\end{document}
