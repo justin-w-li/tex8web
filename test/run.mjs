@@ -853,15 +853,18 @@ const quantikzMarks = {
     'Equation quantikz period': ['(1)', '.'], 'Equation star quantikz': ['', ''], 'Align star quantikz': ['', ''],
     'Gather star quantikz': ['', ''], 'Bracket resizebox quantikz': ['', ''], 'Bracket scalebox quantikz comma': ['', ','],
     'Bracket wire types quantikz': ['', ''], 'Bracket bundle quantikz': ['', ''], 'Bracket tag quantikz': ['(Q)', ''],
-    'Equation label first quantikz': ['(2)', ''], 'Theorem quantikz': ['(3)', ''], 'Proof quantikz period': ['', '.'] },
+    'Equation label first quantikz': ['(2)', ''], 'Theorem quantikz': ['(3)', ''], 'Proof quantikz period': ['', '.'],
+    'Align quantikz': ['(4)', ''], 'Equation resizebox quantikz': ['(5)', ''], 'Figure display quantikz': ['', ''],
+    'Item quantikz': ['', ''] },
   'test-quantikz-hyperref': { 'Bracket quantikz': ['', ''], 'Equation tag quantikz': ['(P)', ''], 'Theorem quantikz': ['(1)', ''] },
 };
-// the numbers of the references after "Reference to the circuit:", each
-// linking to the anchor right before its display
-const quantikzRefs = { 'test-quantikz': ['(1)', '(2)', '(3)'], 'test-quantikz-hyperref': ['(1)'] };
+// the text of the paragraph that refers to the numbered circuits, whose
+// links each go to the anchor right before the display with that number
+const quantikzRefs = { 'test-quantikz': 'Reference to the circuit: 1, 2, 3, 4, and 5.',
+  'test-quantikz-hyperref': 'Reference to the circuit: (1).' };
 // circuits outside display math, each a picture between these two texts
 const quantikzPictures = {
-  'test-quantikz': [['Figure quantikz.', 'A circuit in a figure']],
+  'test-quantikz': [['Figure quantikz.', 'A circuit in a figure'], ['Center quantikz.', 'Ordinary display.']],
   'test-quantikz-old': [['Old library center.', 'Old library figure.'], ['Old library figure.', 'An old circuit in a figure']],
 };
 const displayPictures = {
@@ -873,6 +876,8 @@ const displayPictures = {
     math: ['Equation after the tag', 'Ordinary display'] },
   'test-quantikz': { pictures: Object.keys(quantikzMarks['test-quantikz']), math: ['Ordinary display'] },
   'test-quantikz-hyperref': { pictures: Object.keys(quantikzMarks['test-quantikz-hyperref']), math: ['Ordinary display'] },
+  'test-quantikz-old': { pictures: [], math: ['Old library display'] },
+  'test-quantikz-red': { pictures: [], math: ['Two circuits'] },
 };
 
 // \maketitle's heading, holding these parts in order
@@ -4637,23 +4642,35 @@ function check(doc, result, out, aux) {
       if (!text.includes('<mjx-container') || text.includes('<img ')) problems.push(`${name}: not MathJax's display`);
     });
   }
-  for (const [name, [number, punct]] of Object.entries(quantikzMarks[doc.name] ?? {})) {
+  // a quantikz case's display, and the text from its name to the display
+  const quantikzDisplay = name => {
     const start = flat.indexOf(`${name}.`);
     const display = start < 0 ? '' : element(flat.slice(start), /<(div|span) class='[^']*\bmathjax-(?:block|env)\b[^']*'>/);
+    return [display, start < 0 ? '' : flat.slice(start, flat.indexOf(display, start))];
+  };
+  for (const [name, [number, punct]] of Object.entries(quantikzMarks[doc.name] ?? {})) {
+    const [display, before] = quantikzDisplay(name);
     const tag = display.match(/<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
     if (tag !== number) problems.push(`${name}: the display's number is "${tag}", not "${number}"`);
     const after = display.match(/<img [^>]*>\s*<span class='tex8web-picture-punct'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
     if (after !== punct) problems.push(`${name}: the punctuation after the circuit is "${after}", not "${punct}"`);
+    // (the number's anchor right before the display, as for other pictures,
+    // upright also in a theorem's italic, and no empty display before it)
+    if (number && /<a id=/.test(display)) problems.push(`${name}: the number's anchor is in the display`);
+    if (number && !/<a [^>]*\btex8web-eq-anchor(?:-end\b[^>]*><\/a>\s*<\/p>|\b[^>]*><\/a>)\s*$/.test(before)) problems.push(`${name}: no marked anchor right before the display`);
+    if (/<span class='tex8web-picture-tag'>(?:(?!<\/span>)[^])*class='[^']*ti-/.test(display)) problems.push(`${name}: the display's number is in italic`);
+    if (/<(div|span) class='[^']*\bmathjax-block\b[^']*'>\s*<\/\1>/.test(before)) problems.push(`${name}: an empty display`);
+    if (name === 'Proof quantikz period' && !/tex8web-picture-punct(?:(?!<img )[^])*tex8web-qed/.test(display)) problems.push(`${name}: no QED box after the period`);
   }
   if (quantikzRefs[doc.name]) {
-    const refs = [...(flat.match(/Reference to the circuit: (?:(?!<\/p>)[^])*/)?.[0] ?? '').matchAll(/<a href='#([^']+)'[^>]*>((?:(?!<\/a>)[^])*)<\/a>/g)];
-    const labels = refs.map(([, , label]) => `(${label.replace(/<[^>]+>/g, '').replace(/^\((.*)\)$/, '$1')})`);
-    if (labels.join(' ') !== quantikzRefs[doc.name].join(' ')) problems.push(`references to the circuits read ${labels.join(' ')}, not ${quantikzRefs[doc.name].join(' ')}`);
-    for (const [, id, label] of refs) {
-      const at = flat.indexOf(`id='${id}'`);
-      const tag = at < 0 ? '' : flat.slice(at).match(/^(?:(?!<p\b)[^])*?<span class='tex8web-picture-tag'>((?:(?!<\/span>)[^])*)<\/span>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
-      const number = label.replace(/<[^>]+>/g, '');
-      if (!tag.includes(number)) problems.push(`reference ${number} links to #${id}, not to the display numbered ${number}`);
+    const paragraph = flat.match(/Reference to the circuit: (?:(?!<\/p>)[^])*/)?.[0] ?? '';
+    const read = paragraph.replace(/<!--(?:(?!-->)[^])*-->|<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (read !== quantikzRefs[doc.name]) problems.push(`the references read "${read}", not "${quantikzRefs[doc.name]}"`);
+    for (const [, id, label] of paragraph.matchAll(/<a href='#([^']+)'[^>]*>((?:(?!<\/a>)[^])*)<\/a>/g)) {
+      const number = `(${label.replace(/<!--(?:(?!-->)[^])*-->|<[^>]+>/g, '').replace(/^\((.*)\)$/, '$1')})`;
+      const name = Object.keys(quantikzMarks[doc.name]).find(name => quantikzMarks[doc.name][name][0] === number);
+      const [, before] = name ? quantikzDisplay(name) : ['', ''];
+      if (!new RegExp(`id='${id}'[^>]*>(?:\\s|<[^>]+>)*$`).test(before)) problems.push(`reference ${number} links to #${id}, not to the anchor right before its display`);
     }
   }
   for (const [from, to] of quantikzPictures[doc.name] ?? []) {

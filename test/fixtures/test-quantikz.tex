@@ -2,9 +2,10 @@
 % later: in \[ \], $$ $$, displaymath, equation, equation*, align*,
 % gather*, a theorem, and a proof with \qedhere, in a \resizebox and a
 % \scalebox, with options, a \label before and after it, a \tag, a period
-% or a comma after it, and the common gate commands. Each case follows a
-% paragraph that names it. A circuit in a figure and ordinary display
-% math stay as they are.
+% or a comma after it, and the common gate commands; also in a numbered
+% align, a numbered \resizebox to the line width, a figure, and a list
+% item. Each case follows a paragraph that names it. A circuit in a
+% figure or a center, and ordinary display math, stay as they are.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -94,6 +95,28 @@ Proof quantikz period.
 \[ \begin{quantikz} & \gate{W} & \qw \end{quantikz}. \qedhere \]
 \end{proof}
 
+Align quantikz.
+\begin{align}
+\begin{quantikz} & \ctrl{1} & \qw \\ & \targ{} & \qw \end{quantikz} \label{eq:align}
+\end{align}
+
+Equation resizebox quantikz.
+\begin{equation}
+\resizebox{\linewidth}{!}{\begin{quantikz} & \gate{H} & \gate{H} & \gate{H} & \qw \end{quantikz}}
+\label{eq:wide}
+\end{equation}
+
+\begin{figure}[h]
+Figure display quantikz.
+\[ \begin{quantikz} & \gate{G} & \qw \end{quantikz} \]
+\caption{A circuit in display math in a figure}
+\end{figure}
+
+\begin{itemize}
+\item Item quantikz.
+\[ \begin{quantikz} & \gate{I} & \qw \end{quantikz} \]
+\end{itemize}
+
 Figure quantikz.
 \begin{figure}[h]
 \centering
@@ -101,8 +124,13 @@ Figure quantikz.
 \caption{A circuit in a figure}
 \end{figure}
 
+Center quantikz.
+\begin{center}
+\begin{quantikz} & \gate{C} & \qw \end{quantikz}
+\end{center}
+
 Ordinary display.
 \[ |\psi\rangle = \alpha |0\rangle + \beta |1\rangle \]
 
-Reference to the circuit: \ref{eq:circuit}, \ref{eq:first}, and \ref{eq:theorem}.
+Reference to the circuit: \ref{eq:circuit}, \ref{eq:first}, \ref{eq:theorem}, \ref{eq:align}, and \ref{eq:wide}.
 \end{document}

@@ -1,10 +1,12 @@
-% Display math whose body is only a quantikz circuit, with hyperref: in
-% \[ \], in a numbered equation with a \label and an \eqref, with a \tag,
-% and in a theorem. Each case follows a paragraph that names it.
+% Display math whose body is only a quantikz circuit, with hyperref and
+% the TikZ library quantikz2 loaded without the package: in \[ \], in a
+% numbered equation with a \label and an \eqref, with a \tag, and in a
+% theorem. Each case follows a paragraph that names it.
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{amsthm}
-\usepackage{quantikz}
+\usepackage{tikz}
+\usetikzlibrary{quantikz2}
 \usepackage{hyperref}
 \newtheorem{theorem}{Theorem}
 \begin{document}

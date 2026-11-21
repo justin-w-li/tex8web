@@ -1,7 +1,8 @@
 % Checks cases the fix for quantikz in display math must not break: the
 % quantikz library before 1.0, loaded with \usetikzlibrary{quantikz},
 % whose circuit in a center environment and in a figure is a picture.
-% Each case follows a paragraph that names it.
+% Its circuit in display math stays MathJax's, a known gap
+% (test/expected.json). Each case follows a paragraph that names it.
 \documentclass{article}
 \usepackage{tikz}
 \usetikzlibrary{quantikz}
@@ -17,4 +18,7 @@ Old library figure.
 \begin{quantikz} & \gate{Z} & \qw \end{quantikz}
 \caption{An old circuit in a figure}
 \end{figure}
+
+Old library display.
+\[ \begin{quantikz} & \gate{Y} & \qw \end{quantikz} \]
 \end{document}

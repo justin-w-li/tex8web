@@ -1,0 +1,14 @@
+% A display with two quantikz circuits, one in each row of an align*,
+% stays MathJax's, as a display with two other pictures does: TeX would
+% set the math between them as text. MathJax has no quantikz
+% environment, so the display is red (test/expected.json).
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{quantikz}
+\begin{document}
+Two circuits.
+\begin{align*}
+\begin{quantikz} & \gate{H} & \qw \end{quantikz} \\
+\begin{quantikz} & \gate{X} & \qw \end{quantikz}
+\end{align*}
+\end{document}
