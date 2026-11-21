@@ -1054,24 +1054,24 @@
 % from a subfolder, its name without its extension, or another file's
 % name. The document's file marked by the hook above lists the name it
 % gives as its own, so that the check above does not count the name as
-% another file. A file that the hook does not mark gives the name as the
-% document's when the file is in a folder of the document, as when it is
-% read by a relative path or through \input@path, and when it is read by
-% an absolute path, which the writer named. The primitive \input runs no
-% file hook, and from the document it leaves the current file empty, also
-% in a file that such a file reads: the document named the file that
-% gives the name, by any path, so the name is the document's. (Before the
-% class, tex4ht.sty has not yet wrapped \@providesfile, and LaTeX's
-% \@providesfile lists no name.) From a file of the document's beside it,
-% or in a folder of TEXINPUTS listed above, such as its package, the
-% primitive \input leaves that file current, and
-% the file gives the name as the document's too. A package of the tree
-% that reads a style with the primitive \input, as biblatex does, stays
-% the current file, so a copy of the style beside the document keeps its
-% .4ht. biblatex's styles and localization files (.bbx, .cbx, and .lbx,
-% named like .4ht files such as debug.4ht and english.4ht) keep their
-% .4ht also when the document ships a copy of biblatex.sty beside them.
-% A name found only in the tree is a package's. A name in the keep list
+% another file. Any other name is the document's when a file of that name
+% is beside the document or in a folder of TEXINPUTS listed above, or when
+% no file has the name, as for a file read from a subfolder or a file that
+% gives another file's name. This holds whatever the current file is. The
+% primitive \input runs no file hook and leaves the reading file current,
+% such as a package of the writer's in TEXMFHOME, TEXMFLOCAL, or another
+% tree, which kpathsea finds with an empty path, as it finds the tree's
+% packages. A file of the tree gives its own name, which the tree has, so
+% the name stays a package's. biblatex's styles and localization files
+% (.bbx, .cbx, and .lbx, named like .4ht files such as debug.4ht and
+% english.4ht) are read with the primitive \input by biblatex.sty,
+% wherever its copy is, and keep their .4ht. Their name
+% is the document's only when the document reads the file: from the
+% document, the primitive \input leaves the current file empty, also in a
+% file that such a file reads, and LaTeX's \input by a path to a folder of
+% the document leaves the file current with that path. (Before the class,
+% tex4ht.sty has not yet wrapped \@providesfile, and LaTeX's
+% \@providesfile lists no name.) A name in the keep list
 % or with a kept extension is tested first, as the folder tests read the
 % disk once for each listed folder.
 \bool_new:N \l__web_ownprov_bool
@@ -1103,33 +1103,25 @@
                     }
                 \bool_lazy_or:nnT
                     { \tl_if_empty_p:N \CurrentFileUsed }
-                    {
-                        \bool_lazy_all_p:n
-                            {
-                                { ! \l__web_provkeep_bool }
-                                { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
-                                {
-                                    \bool_lazy_or_p:nn
-                                        { \file_if_exist_p:n { ./ \CurrentFileUsed } }
-                                        { \__web_if_owndir_p:n { \CurrentFileUsed } }
-                                }
-                            }
-                    }
+                    { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
             {
                 \bool_lazy_and:nnT
                     { ! \l__web_provkeep_bool }
                     {
-                        \bool_lazy_or_p:nn
+                        \bool_lazy_any_p:n
                             {
-                                \file_if_exist_p:n
-                                    {
-                                        \str_if_eq:eeF { \str_head:N \CurrentFilePathUsed } { / } { ./ }
-                                        \CurrentFilePathUsed / \CurrentFileUsed
-                                    }
+                                { ! \cs_if_exist_p:c { web@bibext@ \l__web_provext_tl } }
+                                {
+                                    \file_if_exist_p:n
+                                        {
+                                            \str_if_eq:eeF { \str_head:N \CurrentFilePathUsed } { / } { ./ }
+                                            \CurrentFilePathUsed / \CurrentFileUsed
+                                        }
+                                }
+                                { \__web_if_owndir_p:n { \CurrentFilePathUsed / \CurrentFileUsed } }
                             }
-                            { \__web_if_owndir_p:n { \CurrentFilePathUsed / \CurrentFileUsed } }
                     }
                     { \bool_set_true:N \l__web_ownprov_bool }
             }
