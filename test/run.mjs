@@ -1815,10 +1815,13 @@ const contents = {
     // (an empty formula in \small text: removed after text, with its space
     // in the formula's size; kept after a space, as are the formulas empty
     // in the source between spaces; removed between letters)
-    /Small:<span style='--tex8web-math-size: 0\.9; font-size: calc\(var\(--tex8web-math-size, 1\) \* 1em\)'> <\/span><\/span><span class='cmr-9'>word/,
+    /Small:<span class='tex8web-math-space' style='--tex8web-math-size: 0\.9'> <\/span><\/span><span class='cmr-9'>word/,
     /Spaced: <span class='mathjax-inline' style='--tex8web-math-size: 0\.9'><mjx-container [^>]*><mjx-math [^>]*><\/mjx-math>/,
     /Empty: <mjx-container [^>]*><mjx-math [^>]*><\/mjx-math>(?:(?!<\/p>)[^])*?<\/mjx-container> and <mjx-container [^>]*><mjx-math [^>]*><\/mjx-math>/,
     /Bare:\s*<span class='tex8web-nowrap'>xy\.<\/span>/,
+    // (a macro \let to \m@th, which takes nothing from the definition
+    // after it)
+    /Let: <mjx-container aria-label='x'[^]*? and <span class='tex8web-nowrap'><mjx-container aria-label='bold v'/,
   ],
   'test-hologo-plain': ["class='tocnumber'>1<\\/span><a [^>]*>Using ", "<a id='[^']*'><\\/a>Using ", 'Text: '].map(hologoBibtex),
 };

@@ -353,9 +353,7 @@ function M.define(document, context)
         and (space ~= "" or (following and following:get_text():find("^%s")))) then
       local style, kept = el:get_attribute("style"), el:get_parent():create_text_node(space)
       if style and space ~= "" then
-        -- (the size the stylesheet gives a formula's span)
-        local span = el:create_element("span", {style = style})
-        dom.add_style(span, "font-size: calc(var(--tex8web-math-size, 1) * 1em)")
+        local span = el:create_element("span", {class = "tex8web-math-space", style = style}, el:get_parent())
         span:add_child_node(kept)
         kept = span
       end
@@ -367,6 +365,11 @@ function M.define(document, context)
     local name = table.remove(queue)
     local definition = definitions[name]
     if definition and not used[name] then
+      -- (a name \let to \m@th means nothing to MathJax, as \m@th does,
+      -- and the rewrite would leave the \let with no target)
+      if definition.def and definition.def:match("^\\let\\[%a@]+\\m@th$") then
+        definition.def, definition.body = "\\def" .. name .. "{}", ""
+      end
       definition.def, definition.body = rewrite(definition.def, prims), rewrite(definition.body, prims)
       used[name] = definition
       texts[#texts + 1] = definition.body
