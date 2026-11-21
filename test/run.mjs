@@ -1808,6 +1808,17 @@ const contents = {
     // (the sc variant, which has no math, as a variant and by setup)
     /Guards: <span class='HoLogo-BibTeX-sc'>B<span class='HoLogo-i'>i<\/span><span class='HoLogo-b'>b<\/span>/,
     /Setup: <span class='HoLogo-BibTeX-sc'>B<span class='HoLogo-i'>i<\/span><span class='HoLogo-b'>b<\/span>/,
+    // (\m@th before content in a box of text, and between letters in
+    // \text: no space added)
+    /Tight: <span class='tex8web-nowrap'><mjx-container aria-label='a x b'[^>]*><mjx-math[^>]*><mjx-c class='mjx-c1D44E'>\u{1D44E}<\/mjx-c><mjx-mstyle><mjx-c class='mjx-c1D465'>/u,
+    /Glued: <span class='tex8web-nowrap'><mjx-container aria-label='gh'/,
+    // (an empty formula in \small text: removed after text, with its space
+    // in the formula's size; kept after a space, as are the formulas empty
+    // in the source between spaces; removed between letters)
+    /Small:<span style='--tex8web-math-size: 0\.9; font-size: calc\(var\(--tex8web-math-size, 1\) \* 1em\)'> <\/span><\/span><span class='cmr-9'>word/,
+    /Spaced: <span class='mathjax-inline' style='--tex8web-math-size: 0\.9'><mjx-container [^>]*><mjx-math [^>]*><\/mjx-math>/,
+    /Empty: <mjx-container [^>]*><mjx-math [^>]*><\/mjx-math>(?:(?!<\/p>)[^])*?<\/mjx-container> and <mjx-container [^>]*><mjx-math [^>]*><\/mjx-math>/,
+    /Bare:\s*<span class='tex8web-nowrap'>xy\.<\/span>/,
   ],
   'test-hologo-plain': ["class='tocnumber'>1<\\/span><a [^>]*>Using ", "<a id='[^']*'><\\/a>Using ", 'Text: '].map(hologoBibtex),
 };

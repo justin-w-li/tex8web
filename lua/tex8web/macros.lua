@@ -300,11 +300,15 @@ end
 -- \mathrm@@. \m@th sets \mathsurround, the space around a formula, to
 -- zero, and MathJax adds no such space. MathJax knows neither \m@th nor
 -- \mathsurround\z@, which \m@th expands to in the table of contents.
--- Each becomes a space, which ends a control word before it.
+-- Each is dropped. After a control word it becomes a space, which ends
+-- the word: in the text of \text or \hbox, any other space would show.
 local function rewrite(text, prims)
-  return (strip(text, prims):gsub("\\hspace%s*%*", "\\hspace"):gsub("\\protect%f[^%a@]%s*", "")
-    :gsub("\\(math%l%l)@@%f[^%a@]", "\\%1"):gsub("\\m@th%f[^%a@]%s*", " ")
-    :gsub("\\mathsurround%s*\\z@%f[^%a@]%s*", " "))
+  text = strip(text, prims):gsub("\\hspace%s*%*", "\\hspace"):gsub("\\protect%f[^%a@]%s*", "")
+    :gsub("\\(math%l%l)@@%f[^%a@]", "\\%1")
+  for _, pattern in ipairs({"\\m@th%f[^%a@]%s*", "\\mathsurround%s*\\z@%f[^%a@]%s*"}) do
+    text = text:gsub("(\\[%a@]+)" .. pattern, "%1 "):gsub(pattern, "")
+  end
+  return text
 end
 
 function M.define(document, context)
@@ -336,15 +340,26 @@ function M.define(document, context)
   -- the macros the math uses, and those they use in turn
   local used, queue, texts = {}, {}, {}
   for _, el in ipairs(document:query_selector(".mathjax-inline, .mathjax-block, .mathjax-env")) do
-    local before = el:get_text()
     source.each_text(el, function(node) dom.set_node_text(node, rewrite(node:get_text(), prims)) end)
     texts[#texts + 1] = el:get_text()
-    -- (a formula the rewrite left empty, such as hologo's $\m@th$, has no
-    -- width in the PDF, but MathJax would give it one. Replaced by the
-    -- space text.sized_math_spaces may have moved into it.)
+    -- (an empty inline formula, such as hologo's $\m@th$ between B and IB,
+    -- sets nothing in the PDF, and is removed. Between two spaces, as in
+    -- "a $ $ b", it stays: the PDF sets both spaces, and the page would
+    -- join them. The space text.sized_math_spaces may have moved into the
+    -- formula stays in the formula's size.)
     local space = texts[#texts]:match("^\\%(%s*\\%)(%s*)$")
-    if space and texts[#texts] ~= before then
-      el:replace_node(el:get_parent():create_text_node(space))
+    local previous, following = el:get_prev_node(), el:get_next_node()
+    if space and not ((previous and previous:get_text():find("%s$"))
+        and (space ~= "" or (following and following:get_text():find("^%s")))) then
+      local style, kept = el:get_attribute("style"), el:get_parent():create_text_node(space)
+      if style and space ~= "" then
+        -- (the size the stylesheet gives a formula's span)
+        local span = el:create_element("span", {style = style})
+        dom.add_style(span, "font-size: calc(var(--tex8web-math-size, 1) * 1em)")
+        span:add_child_node(kept)
+        kept = span
+      end
+      el:replace_node(kept)
     end
     for _, name in ipairs(preamble.uses(texts[#texts])) do queue[#queue + 1] = name end
   end

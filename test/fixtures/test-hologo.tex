@@ -6,7 +6,10 @@
 % construct in a document's macro, \m@th before content in \mbox and
 % \ensuremath, after other content and after a style command, in display
 % math, in a formula inside a formula, and in the body of a math macro,
-% also in a heading. The logo in the title
+% also in a heading, and before content in a box of text. An empty
+% formula in a smaller size before a space, after text and after a space;
+% formulas empty in the source between spaces and between letters. The
+% logo in the title
 % and in a caption with its list of figures. Guards: the sc variant,
 % which has no math, and logos that run \m@th outside their formula.
 % test-hologo-plain has the same logo without hyperref.
@@ -25,6 +28,9 @@
 \newcommand\Shown{\[\m@th c+d\]}
 \newcommand\Numbered{\begin{equation}\m@th e+f\end{equation}}
 \newcommand\Nested{$a+\mbox{$\m@th b$}$}
+\newcommand\Tight{\hbox{\m@th$x$}}
+\newcommand\Glued{\text{g\m@th h}}
+\newcommand\Small{{\small $\m@th$ word}}
 \makeatother
 \title{Using \hologo{BibTeX}}
 \author{A}
@@ -53,6 +59,8 @@ Copy: \OldLaTeX.
 Boxed: \Boxed. Ensured: \Ensured. Norm: $\nrm{w}$.
 
 Late: \Late. Styled: \Styled. Nested: \Nested.
+
+Tight: $a\Tight b$. Glued: $\Glued$. Small:\Small. Spaced: \Small. Empty: $ $ and \( \) end. Bare: x$ $y.
 
 Shown: \Shown
 Numbered: \Numbered
