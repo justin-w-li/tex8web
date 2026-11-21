@@ -680,7 +680,7 @@
         }
     \bool_lazy_and:nnTF \l__web_numbered_bool \l__web_number_row_bool
         {
-            \refstepcounter{equation}
+            \__web_refstep_equation:
             \bool_if:NTF \l__web_qed_bool
                 { \__web_qed_row:e { (\theequation) \exp_not:N \\ } }
                 {
@@ -700,20 +700,30 @@
 }
 % A \label on a row with no number and no \tag, as in \[ \] or equation*,
 % gives the number of the last \refstepcounter, a section's for example,
-% as in the PDF. tex4ht's \label would lead to an anchor named after the
-% last equation's anchor, which the page does not have (\anc:lbl and
-% \l:bel, latex.4ht). So it gets an anchor of its own, from a step of the
-% counter that prints the same number and is set back after it. hyperref
-% names the anchor from \theHequation, which is given a name of its own
+% as in the PDF. tex4ht's \label leads to an anchor named after the last
+% anchor tex4ht made and that number (\anc:lbl and \l:bel, latex.4ht).
+% After an equation's anchor, which the equation's group named with its
+% own number, the page has no such anchor. Then the \label gets an anchor
+% of its own, from a step of the counter that prints the same number and
+% is set back after it. hyperref names the anchor from \theHequation,
+% which is given a name of its own
+\tl_new:N \g__web_equation_anchor_tl
+\cs_new_protected:Npn \__web_refstep_equation: {
+    \refstepcounter{equation}
+    \tl_gset_eq:Nc \g__web_equation_anchor_tl {cur:th}
+}
 \int_new:N \g__web_plain_label_int
 \cs_new_protected:Npn \__web_plain_label: {
-    \tl_if_empty:NF \l__web_label_tl {
+    \bool_lazy_and:nnT
+        { ! \tl_if_empty_p:N \l__web_label_tl }
+        { \cs_if_eq_p:cN {cur:th} \g__web_equation_anchor_tl }
+    {
         \group_begin:
             \cs_set:Npe \theequation { \exp_not:o { \@currentlabel } }
             \cs_set:Npn \p@equation { }
             \int_gincr:N \g__web_plain_label_int
             \cs_set:Npe \theHequation { label. \int_use:N \g__web_plain_label_int }
-            \refstepcounter{equation}
+            \__web_refstep_equation:
             \exp_args:No \label {\l__web_label_tl}
             \addtocounter{equation}{-1}
         \group_end:
@@ -764,7 +774,7 @@
         { ! \tl_if_empty_p:N \l__web_label_tl }
         {
             \group_begin:
-                \refstepcounter{equation}
+                \__web_refstep_equation:
                 \exp_args:No \label {\l__web_label_tl}
                 \addtocounter{equation}{-1}
             \group_end:
