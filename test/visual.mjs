@@ -755,8 +755,8 @@ const wideBlocks = { 'test-wideblocks': { 1400: [7, 1], 390: [10, 1] } };
 // floated, as a footnote beside the text is. With no such box, it starts
 // at or below the top of its column, and below the body's top margin,
 // which clears the controls. Checked with JavaScript off, on a wide
-// screen, at 1000px, which is narrow for these pages, on a phone, and in
-// print. chapterHeads has the number of such headings. Failures: [the
+// screen, at 1000px, where the page has no side column for its notes, on
+// a phone, and in print. chapterHeads has the number of such headings. Failures: [the
 // heading's id, what is wrong]
 const chapterHeadSelector = ':is(h1, h2):is(.partHead, .likepartHead, .chapterHead, .likechapterHead, .appendixHead)';
 const chapterGaps = `(() => {
@@ -779,9 +779,8 @@ const chapterGaps = `(() => {
 // A link to each such heading, on a wide screen with the page script:
 // the heading, as the link's target, is in view from its top when
 // scrolled to the top of the window, as its space above
-// (scroll-margin-top) is not negative. On a narrow screen without the
-// script, the space for the bar is above it instead. Failures: [the
-// heading's id, what is wrong]
+// (scroll-margin-top) is not negative. Failures: [the heading's id, what
+// is wrong]
 const chapterLanding = `(() => {
   // (room below the last heading, so that each one can reach the window's top)
   const room = document.createElement('div');

@@ -1,12 +1,16 @@
 % test-chapneg with hyperref, whose anchors a link leads to, and with
 % the starred \titlespacing*, which keeps the paragraph after the heading
-% indented. The first chapter comes after a title block.
+% indented. The first chapter comes after a title block. The part has a
+% \titleformat and a negative \titlespacing of its own, which in a class
+% with chapters only moves it up on a page of its own in the PDF.
 \documentclass{book}
 \usepackage{titlesec,makeidx,hyperref}
 \makeindex
 \titleformat{\chapter}[display]{\normalfont\huge\bfseries}
     {\chaptertitlename\ \thechapter}{20pt}{\Huge}
 \titlespacing*{\chapter}{0pt}{-30pt}{20pt}
+\titleformat{\part}[display]{\Huge\bfseries}{Part \thepart}{20pt}{}
+\titlespacing{\part}{0pt}{-20pt}{20pt}
 \title{A Title}\author{An Author}\date{1 May 2001}
 \begin{document}
 \maketitle
