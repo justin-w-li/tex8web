@@ -1467,12 +1467,11 @@ const contents = {
   // the body. The full build's page comes from the last LaTeX run, which
   // reads the list that the first run wrote: its log shows the gap, and the
   // draft job's page does)
-  ...Object.fromEntries(['test-staleaux-ptc', 'test-staleaux-ptc-color', 'test-staleaux-ptc-oldaux'].map(name =>
-    [name, [/Text of the first section\./, /Text of the subsection\./, /^(?![^]*Old (?:note|subsection))/,
-      ...name === 'test-staleaux-ptc' ? [/<span class='content'>New figure<\/span>/, /<span class='content'>New table<\/span>/] : []]])),
-  ...Object.fromEntries(['test-staleaux-ptc-amsart', 'test-staleaux-ptc-noaux-amsart'].map(name =>
-    [name, [/List of Figures/, /List of Tables/, /Text of the first section\./, /<span class='content'>New figure<\/span>/,
-      /<span class='content'>New table<\/span>/, /^(?![^]*Old note)/]])),
+  'test-staleaux-ptc': [/List of Algorithms<\/h3>\s*<div class='tableofcontents'>\s*1 <a href='#new-algorithm'>New algorithm<\/a>/,
+    /Text of the first section\./, /Text of the subsection\./, /<span class='content'>New figure<\/span>/,
+    /<span class='content'>New table<\/span>/, /^(?![^]*Old (?:note|subsection|words))/],
+  'test-staleaux-ptc-amsart': [/List of Figures/, /List of Tables/, /Text of the first section\./, /<span class='content'>New figure<\/span>/,
+    /<span class='content'>New table<\/span>/, /^(?![^]*Old note)/],
   'test-staleaux-ptc-lists': [/List of Figures<\/h3>\s*<div class='tableofcontents'><span class='lofToc'>1<span class='tex8web-nbsp'> <\/span><a href='#new-figure'>New figure<\/a>/,
     /<span class='cmbx-12x-x-207'>Examples<\/span>/, /Example<span class='tex8web-nbsp'> <\/span>1: A new example/,
     /List of Programs<\/h3>\s*<div class='tableofcontents'>\s*1 <a href='#new-program'>New program<\/a>/, /List of Schemes<\/h3>/,
@@ -1484,12 +1483,6 @@ const contents = {
   'test-staleaux-ptc-noaux-lists': [/<span class='cmbx-12x-x-207'>Examples<\/span>/, /Example<span class='tex8web-nbsp'> <\/span>1: A new example/,
     /List of Programs<\/h3>\s*<div class='tableofcontents'>\s*1 <a href='#new-program'>New program<\/a>/, /List of Schemes<\/h3>/,
     /Text of the first section\./, /<span class='content'>New scheme<\/span>/, /^(?![^]*Old note)/],
-  'test-staleaux-ptc-babel': [/List of Figures/, /List of Tables/, /Text of the first section\./, /<span class='content'>New figure<\/span>/,
-    /<span class='content'>New table<\/span>/],
-  'test-staleaux-ptc-noaux': [/Listings<\/h3>\s*<div class='tableofcontents'><a href='#x1new-listing'>1\s+New listing<\/a>/,
-    /List of Algorithms<\/h3>\s*<div class='tableofcontents'>\s*1 <a href='#new-algorithm'>New algorithm<\/a>/,
-    /Text of the first section\./, /Text of the subsection\./, /<span class='content'>New figure<\/span>/,
-    /<span class='content'>New table<\/span>/, /^(?![^]*Old note)/],
   'test-staleaux-ptc-own': [/Text\s+of\s+the\s+first\s+section\.\s+Text\s+of\s+the\s+class\s+of\s+the\s+document\./, /Text\s+of\s+the\s+class\s+option\s+file\s+of\s+the\s+document\./,
     /Text\s+of\s+the\s+configuration\s+file\s+of\s+the\s+document\./, /Text\s+of\s+the\s+package\s+of\s+the\s+document\./,
     /Text\s+of\s+the\s+definitions\s+of\s+the\s+document\./,
@@ -2575,10 +2568,23 @@ const ties = {
 };
 
 // The fixtures beside stale lists with no \contentsline line, built in
-// full and in draft mode
-const staleListCases = ['', '-color', '-amsart', '-lists', '-koma', '-noaux', '-noaux-amsart', '-noaux-lists', '-noaux-koma', '-babel',
-  '-oldaux', '-own', '-draft', '-include', '-backref']
-  .map(suffix => `test-staleaux-ptc${suffix}`);
+// full and in draft mode: for each, the suffixes of its stale lists, and
+// of the other files beside it, which a draft build reads: the
+// document's own files and the files of a PDF build
+const staleListFiles = {
+  'test-staleaux-ptc': { lists: ['.ptc', '.plf', '.plt', '.loa'], read: ['.aux'] },
+  'test-staleaux-ptc-amsart': { lists: ['.lof', '.lot'] },
+  'test-staleaux-ptc-lists': { lists: ['.lof', '.lop', '.lpr', '.lsc', '.lol', '.loa'], read: ['.aux'] },
+  'test-staleaux-ptc-koma': { lists: ['.lrm'], read: ['.aux'] },
+  'test-staleaux-ptc-noaux-lists': { lists: ['.lop', '.lpr', '.lsc'] },
+  'test-staleaux-ptc-noaux-koma': { lists: ['.lrm'] },
+  'test-staleaux-ptc-own': { lists: ['.ptc'],
+    read: ['aux', 'cls', 'clo', '4ht', 'sty', 'def', 'ltx', 'fd', 'bbx', 'cbx', 'txt', 'bib', 'bst'].map(e => `.${e}`) },
+  'test-staleaux-ptc-draft': { lists: ['.ptc'], read: ['.aux', '.bbl', '.ind', '.gls', '.bib'] },
+  'test-staleaux-ptc-include': { lists: ['.ptc', '.lop'], read: ['.aux', '/chapter.aux'] },
+  'test-staleaux-ptc-backref': { lists: ['.ptc'], read: ['.aux', '.brf'] },
+};
+const staleListCases = Object.keys(staleListFiles);
 
 // The lines that make4ht's log must hold, with their level: the tests
 // build at -a info, and make4ht shows status and above by default.
@@ -2651,21 +2657,8 @@ const untouched = {
   'test-staleaux-toc-color': ['test-staleaux-toc-color.exp'],
   'test-staleaux-toc-amsart': ['test-staleaux-toc-amsart.lof', 'test-staleaux-toc-amsart.lot'],
   'test-staleaux-toc-report': ['test-staleaux-toc-report.exp'],
-  'test-staleaux-ptc': ['aux', 'ptc', 'plf', 'plt'].map(e => `test-staleaux-ptc.${e}`),
-  'test-staleaux-ptc-color': ['test-staleaux-ptc-color.aux', 'test-staleaux-ptc-color.ptc'],
-  'test-staleaux-ptc-amsart': ['aux', 'lof', 'lot'].map(e => `test-staleaux-ptc-amsart.${e}`),
-  'test-staleaux-ptc-lists': ['aux', 'lof', 'lop', 'lpr', 'lsc', 'lol', 'loa'].map(e => `test-staleaux-ptc-lists.${e}`),
-  'test-staleaux-ptc-koma': ['test-staleaux-ptc-koma.aux', 'test-staleaux-ptc-koma.lrm'],
-  'test-staleaux-ptc-noaux-lists': ['lop', 'lpr', 'lsc'].map(e => `test-staleaux-ptc-noaux-lists.${e}`),
-  'test-staleaux-ptc-noaux-koma': ['test-staleaux-ptc-noaux-koma.lrm'],
-  'test-staleaux-ptc-babel': ['aux', 'lof', 'lot'].map(e => `test-staleaux-ptc-babel.${e}`),
-  'test-staleaux-ptc-noaux': ['ptc', 'plf', 'plt', 'lol', 'loa'].map(e => `test-staleaux-ptc-noaux.${e}`),
-  'test-staleaux-ptc-noaux-amsart': ['test-staleaux-ptc-noaux-amsart.lof', 'test-staleaux-ptc-noaux-amsart.lot'],
-  'test-staleaux-ptc-oldaux': ['test-staleaux-ptc-oldaux.aux', 'test-staleaux-ptc-oldaux.ptc'],
-  'test-staleaux-ptc-own': ['aux', 'ptc', 'cls', 'clo', '4ht', 'sty', 'def', 'ltx', 'fd', 'bbx', 'cbx', 'txt', 'bib', 'bst'].map(e => `test-staleaux-ptc-own.${e}`),
-  'test-staleaux-ptc-draft': ['aux', 'ptc', 'bbl', 'ind', 'gls', 'bib'].map(e => `test-staleaux-ptc-draft.${e}`),
-  'test-staleaux-ptc-include': [...['aux', 'ptc', 'lop'].map(e => `test-staleaux-ptc-include.${e}`), 'test-staleaux-ptc-include/chapter.aux'],
-  'test-staleaux-ptc-backref': ['aux', 'brf', 'ptc'].map(e => `test-staleaux-ptc-backref.${e}`),
+  ...Object.fromEntries(Object.entries(staleListFiles).map(([name, { lists, read = [] }]) =>
+    [name, [...read, ...lists].map(suffix => name + suffix)])),
   'test-staleaux-ind': ['test-staleaux-ind.ind'],
   'test-staleaux-ind-named': ['test-staleaux-ind-named.ind', 'test-staleaux-ind-named-authors.ind', 'test-staleaux-people.ind', 'test-staleaux-editors.ind'],
   'test-staleaux-ind-input': ['test-staleaux-ind-input.ind', 'test-staleaux-ind-input.gls', 'test-staleaux-ind-input/pre.tex'],
@@ -5729,10 +5722,8 @@ const staleTocDraftOwn = { hyperref: ['hyperref.exp', 'hyperref.toc'], koma: ['k
 const staleTocDraftCases = [...['toc', 'toc-koma', 'toc-memoir', 'toc-color', 'toc-amsart', 'toc-report'].map(n => `test-staleaux-${n}`),
   ...Object.keys(staleTocDraftOwn)];
 // The fixtures of staleListCases too, each compared with the page built
-// without its stale lists: the files of untouched other than the
-// document's own files and the current files of a PDF build. The page
-// also has each fixture's text from those files, in staleListDraft.
-const staleListCurrent = /\.(?:aux|bbl|ind|gls|brf|bib|bst|cls|clo|4ht|sty|def|txt|ltx|fd|cfg|bbx|cbx)$/;
+// without its stale lists, the lists of staleListFiles. The page also has
+// each fixture's text from the other files, in staleListDraft.
 const staleListDraft = {
   'test-staleaux-ptc-own': contents['test-staleaux-ptc-own'].filter(pattern => /^Text/.test(pattern.source)),
   // (the draft build's reference and index entry are not links: the
@@ -5747,7 +5738,7 @@ const staleDraftCases = [...(staleTocDraft ? staleTocDraftCases.map(name => ({ d
 for (const { doc, name } of staleDraftCases) jobs.push(async () => {
   const own = name in staleTocDraftOwn;
   const source = own ? join(doc.dir, 'test-staletoc-draft') : doc.dir;
-  const lists = own ? staleTocDraftOwn[name] : doc === staleTocDraft ? untouched[name] : untouched[name].filter(f => !staleListCurrent.test(f));
+  const lists = own ? staleTocDraftOwn[name] : doc === staleTocDraft ? untouched[name] : staleListFiles[name].lists.map(suffix => name + suffix);
   // (with a folder of the document's name, which holds an \include'd file)
   const files = readdirSync(source).filter(f => f.startsWith(`${name}.`) || f === name);
   const problems = [];

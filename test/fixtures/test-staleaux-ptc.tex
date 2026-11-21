@@ -1,13 +1,19 @@
 % A document with titletoc's partial table of contents, list of figures,
-% and list of tables, beside the .ptc, .plf, and .plt of an earlier build
-% and its .aux, which names them in \ttl@writefile lines. The earlier
-% build had no entries in them: each holds titletoc's \ttl@starttoc and
-% an \addtocontents write of \oldmark, which this document does not
-% define. titletoc reads these files with \@input when it prints them.
-% The stale files stay as they are.
+% and list of tables, and algorithm's list, beside those lists of an
+% earlier build and the .aux of a later build that used none of these
+% packages, so the .aux names none of the lists. titletoc reads
+% its partial lists with \@input when it prints them. The .ptc comes
+% from a build that loaded xcolor: it has an entry with \textcolor, and
+% xcolor is not loaded here. Each other list holds an \addtocontents
+% write of \oldmark, which this document does not define, after
+% titletoc's \ttl@starttoc in its own files. The .plf also has a line of
+% text written with \addtocontents, so only its extension shows it is a
+% list. The stale files stay as they are.
 \documentclass{article}
 \usepackage{titletoc}
+\usepackage{algorithm}
 \begin{document}
+\listofalgorithms
 \section{First}
 \startcontents
 \printcontents{}{1}{}
@@ -26,4 +32,8 @@ Text of the subsection.
 \centering A table.
 \caption{New table}
 \end{table}
+\begin{algorithm}[h]
+An algorithm.
+\caption{New algorithm}
+\end{algorithm}
 \end{document}

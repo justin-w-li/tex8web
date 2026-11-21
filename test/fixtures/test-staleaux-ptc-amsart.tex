@@ -1,9 +1,13 @@
 % An amsart document beside the list of figures and list of tables of an
-% earlier build and its .aux. The earlier build had no figures or tables:
-% each list holds only an \addtocontents write of \oldmark, which this
-% document does not define. amsart's \@starttoc reads every list. The
-% stale files stay as they are.
+% earlier build with no .aux, which loaded babel and biblatex and had no
+% figures or tables: the list of figures holds babel's \babel@toc line,
+% the list of tables biblatex's \defcounter line, and each an
+% \addtocontents write of \oldmark, which this document does not define.
+% This document loads etoolbox, which defines \defcounter, and neither
+% babel nor biblatex. amsart's \@starttoc reads every list. The stale
+% files stay as they are.
 \documentclass{amsart}
+\usepackage{etoolbox}
 \begin{document}
 \listoffigures
 \listoftables
