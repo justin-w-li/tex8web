@@ -135,12 +135,13 @@ const pageChecks = [
   },
   // (in a formula's MathML, \hat and \tilde are not stretchy, and their
   // glyph is the unsized one. TeX's wide accents are the next three sizes.
-  // The TeX Gyre math fonts, whose accent is the combining one, have more
-  // sizes, any of which the minsize and maxsize of tex8web.js allow)
+  // Latin Modern Math and the TeX Gyre math fonts, whose accent is the
+  // combining one, have more sizes, any of which the minsize and maxsize of
+  // tex8web.js allow)
   function wideAccents(html) {
     for (const [formula] of html.matchAll(/<mjx-container[^]*?<\/mjx-container>/g)) {
       const wide = formula.match(/<mo(?![^>]*stretchy=['"]false)[^>]*>[\^~]<\/mo>/g) || [];
-      const sized = formula.match(/mjx-c(?:(?:2C6|2DC) TEX-(?:SO|LO|S3)|(?:302|303) G[TPS]-(?:SO|LO|S\d))\b/g) || [];
+      const sized = formula.match(/mjx-c(?:(?:2C6|2DC) TEX-(?:SO|LO|S3)|(?:302|303) (?:MM|G[TPS])-(?:SO|LO|S\d))\b/g) || [];
       if (sized.length < wide.length) return ["a \\widehat or \\widetilde narrower or wider than TeX's"];
     }
     return [];

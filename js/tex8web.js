@@ -327,10 +327,14 @@ function tex8web(config, tex) {
           // and 1.444em) not wider than the base, or else the narrowest.
           // Internal, getStretchedVariant: an accent takes the size before
           // the first one at least as wide as its base, that width clamped
-          // to minsize and maxsize, hence bounds a little above 0.556 and
-          // 1.444em. Without them, MathJax aims wider than the base, among
-          // sizes from \hat's 0.5em to 1.889em.
-          node.attributes.set('minsize', '0.557em');
+          // to minsize and maxsize, hence bounds a little above the font's
+          // narrowest wide size and 1.444em. The narrowest is 0.556em in
+          // the TeX font and 0.644em in Latin Modern Math, and a bound below
+          // it gives a narrow base \hat's glyph (internal: the font's
+          // getDelimiter). Without bounds, MathJax aims wider than the
+          // base, among sizes from \hat's 0.5em to 1.889em.
+          const narrowest = MathJax.startup.output.font.getDelimiter(node.getText().codePointAt(0)).sizes[1];
+          node.attributes.set('minsize', (narrowest + 0.001).toFixed(3) + 'em');
           node.attributes.set('maxsize', '1.445em');
         } else if (minsize) {
           node.attributes.set('mathsize', scale);
