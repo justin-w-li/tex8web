@@ -100,7 +100,7 @@ amsmath's matrices can be written as the macro pairs that `\begin` and `\end` ru
 
 In the text of MathJax's textmacros extension, `js/tex8web.js` defines `\text`, `\mbox`, and `\hbox` as groups. These commands appear in MathJax's text in `\text{\text{E}}`, `\textbf{\text{E}}`, `\text{a \mbox{b}}`, and a macro whose body is one of them used inside `\text`. LaTeX sets the inner argument in the font around it. Without the definitions, MathJax shows an error such as "\text is only supported in math mode" in place of the formula.
 
-In math, `js/tex8web.js` defines `\hidewidth`, which MathJax lacks. A cell that starts with it is set at the right of its column, one that ends with it at the left, and one with it on both sides centered, as MathJax does for `\hfill` at a cell's start or end. An empty group before `\hidewidth`, such as the `{}` that starts an `align`'s left column, counts as the start. Outside a table, `\hidewidth` is nothing, where `\hfill` is an error.
+In math, `js/tex8web.js` defines `\hidewidth`, which MathJax lacks. A cell that starts with it is set at the right of its column, one that ends with it at the left, and one with it on both sides centered, as MathJax does for `\hfill` at a cell's start or end. Outside a table, `\hidewidth` is nothing, where `\hfill` is an error.
 
 Only the CSS and dvips color names are defined in MathJax. tex8web adds these colors as `\definecolor` lines:
 

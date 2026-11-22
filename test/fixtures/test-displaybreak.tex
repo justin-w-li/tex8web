@@ -13,12 +13,11 @@
 % Then \displaybreak on rows with \notag and \tag, with no space before
 % it or \\, with a space before [3] and \\[2pt] after, in a macro of the
 % document, and on the last row; in numbered gather and flalign;
-% \hidewidth in an align cell before \text, in aligned, and in a macro of
-% the document; before \text in an align cell narrower than its column,
-% and in a group in a matrix cell. \allowdisplaybreaks[1] in the preamble
-% is only built. A cell narrower than its column goes to the side away
-% from \hidewidth, as in the PDF. Last, mathtools's \coloneqq and
-% \mathclap, whose MathJax extension must stay configured beside \hidewidth.
+% \hidewidth in aligned, in a macro of the document, and in a group in a
+% matrix cell. \allowdisplaybreaks[1] in the preamble is only built. A
+% cell narrower than its column goes to the side away from \hidewidth, as
+% in the PDF. Last, mathtools's \coloneqq and \mathclap, whose MathJax
+% extension must stay configured beside \hidewidth.
 \documentclass{article}
 \usepackage{amsmath,amsthm,mathtools}
 \usepackage{hyperref}
@@ -101,10 +100,6 @@ x &= y \displaybreak \\
 z &= w
 \end{flalign}
 \section{Widths}
-\begin{align}
-a &= b + c \\
-&\hidewidth \text{(by (1))}
-\end{align}
 \[
 \begin{aligned} \hidewidth x &= yyy \\ z &= w \end{aligned}
 \qquad
@@ -122,10 +117,6 @@ a &= b + c \\
 \[
 |x| = \begin{cases} \hidewidth x & x \ge 0 \\ -x & x < 0 \end{cases}
 \]
-\begin{align*}
-a &= b + c + d + e \\
-&\hidewidth \text{(2)}
-\end{align*}
 \[
 \begin{matrix} {\hidewidth u} \\ vvv \end{matrix}
 \]

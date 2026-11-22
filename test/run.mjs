@@ -332,15 +332,14 @@ const typeset = {
   // no command name in red and no error, also for \hidewidth in a group;
   // a cell that starts with \hidewidth set at the right of its column, one
   // that ends with it at the left, and one with it on both sides centered,
-  // as in the PDF, also after the {} of an align's left column; mathtools's
-  // \coloneqq and \mathclap, whose extension stays configured)
+  // as in the PDF; mathtools's \coloneqq and \mathclap, whose extension
+  // stays configured)
   'test-displaybreak': [/^(?![^]*mathcolor='light-dark\(red)/, /^(?![^]*<merror)/,
     /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>a<\/mi><\/mtd>/,
     /<mtd columnalign='left'>(?:<mspace[^>]*><\/mspace>)?<mi mathvariant='italic'>𝑐𝑐𝑐<\/mi><\/mtd>/,
     /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>e<\/mi><\/mtd>/,
     /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>x<\/mi><\/mtd><mtd>(?:<mspace[^>]*><\/mspace>)?<mi>x<\/mi><mo[^>]*>≥/,
     /<mtd columnalign='right'><mi>o<\/mi><\/mtd>/, /<mtd columnalign='left'><mi mathvariant='italic'>𝑞𝑞𝑞<\/mi><\/mtd>/,
-    /<mtd columnalign='right'><mstyle[^>]*><mrow data-mjx-texclass='ORD'><\/mrow><mtext>\(2\)<\/mtext>/,
     /<mtd(?: columnalign='center')?>(?:<mspace[^>]*><\/mspace>)?<mi>l<\/mi><\/mtd>/,
     /<mi>a<\/mi><mrow data-mjx-texclass='REL'><mpadded[^>]*><mtext[^>]*>:<\/mtext><\/mpadded><mo[^>]*>=<\/mo><\/mrow><mi>b<\/mi>/,
     /<mpadded lspace='-\.5width' width='0'><mi>x<\/mi><\/mpadded>/],
@@ -533,7 +532,6 @@ const speech = {
       `Line 4: g equals h ${eqLabel(19)} Line 5: i equals j ${eqLabel(20)} Line 6: k equals l ${eqLabel(21)} Line 7: o equals p ${eqLabel(22)}'`),
     new RegExp(`aria-label='2 lines Line 1: x ${eqLabel(23)} Line 2: y ${eqLabel(24)}'`),
     new RegExp(`aria-label='2 lines Line 1: x equals y ${eqLabel(25)} Line 2: z equals w ${eqLabel(26)}'`),
-    new RegExp(`aria-label='2 lines Line 1: a equals b plus c ${eqLabel(27)} Line 2: (?:blank )?open paren by open paren 1 close paren close paren ${eqLabel(28)}'`),
     /aria-label='2 lines Line 1: x equals y y y Line 2: z equals w empty 2 lines Line 1: x Line 2: y y y'/,
     /^(?![^]*aria-label='[^']*backslash)/,
   ],
