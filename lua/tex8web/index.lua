@@ -76,8 +76,8 @@ local function found(par)
   return indexes, dir
 end
 
--- the names of the indexes whose .idx changed since it was last sorted
-function M.unsorted(par)
+-- the names of the stale indexes: those whose .idx changed since it was last sorted
+function M.stale(par)
   local names = {}
   for _, index in ipairs((found(par))) do
     if given[index.name] ~= index.compared then names[#names + 1] = index.name end
@@ -207,14 +207,14 @@ function M.glossaries_again(par)
     local status = require("make4ht-htlatex").htlatex(par)
     if status ~= 0 then return status end
   end
-  -- (an index still unsorted links to ids the page may not have)
+  -- (a stale index links to ids the page may not have)
   local _, text = inputs(par)
-  local unsorted = M.unsorted(par)
+  local stale = M.stale(par)
   local more = " did not settle after " .. bibliography.runs .. " more LaTeX runs"
-  if #unsorted > 0 then
-    log:warning("the index " .. table.concat(unsorted, ", ") .. more .. ", so its links may name missing places")
+  if #stale > 0 then
+    log:warning("the index " .. table.concat(stale, ", ") .. more .. ", so its links may name missing places")
   end
-  if text ~= sorted or (#unsorted == 0 and bibliography.checksum(par) ~= before) then
+  if text ~= sorted or (#stale == 0 and bibliography.checksum(par) ~= before) then
     log:warning("the glossaries" .. more)
   end
   return 0
