@@ -187,10 +187,12 @@ else
       -- - it is one of the lists of LaTeX, titletoc, listings, and
       --   algorithm, or the .aux beside the document, or an .aux of an
       --   \include that it reads with \@input, names it in \@writefile;
-      -- - it is one of minitoc's numbered lists, a name of the long or
-      --   the shortext form followed by digits, such as .mtc1 or .M1.
-      --   These hold minitoc's own lines, which need not have
-      --   \contentsline, as for a coffee line, and no .aux names them;
+      -- - it has the name of one of minitoc's numbered lists, a name of
+      --   the long or the shortext form followed by digits, such as .mtc1
+      --   or .M1, and a line of the file holds \mtc@string, which minitoc
+      --   writes in each entry and coffee line. Such a line need not have
+      --   \contentsline, and no .aux names these lists. The name alone
+      --   would also hide a file of the document such as a .F90 source;
       -- - the file has a line that starts with "\contentsline {", which
       --   LaTeX's \addcontentsline writes with a space after the
       --   command. Any line counts, as biblatex writes other lines
@@ -227,12 +229,16 @@ else
       local function list(name)
         local extension = name:sub(#prefix + 1)
         if source[extension] then return false end
-        if named[extension] or numbered[extension:match("^(%a+)%d+$")] then return true end
+        if named[extension] then return true end
+        local minitoc = numbered[extension:match("^(%a+)%d+$")]
         local file = io.open(name, "rb")
         if not file then return false end
         local written, lines = true, 0
         for line in file:lines() do
-          if line:find("^\\contentsline {") then file:close() return true end
+          if line:find("^\\contentsline {") or minitoc and line:find("\\mtc@string") then
+            file:close()
+            return true
+          end
           if line:find("%S") then
             lines = lines + 1
             if not line:find("^\\[%a@]+ ") then written = false end

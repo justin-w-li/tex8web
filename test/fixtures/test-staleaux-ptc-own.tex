@@ -4,12 +4,14 @@
 % reads, tex4ht's configuration file for the class and package, its
 % package, files read with \input under the extensions .def, .ltx, .fd,
 % .bbx, and .cbx, a text file, its bibliography database, and its
-% bibliography style. Each line of the TeX files and the text file
-% starts with a command and a space, as in a list that \write gives, so
-% only their extensions keep them from being hidden. The .aux names the
-% .ptc, which holds titletoc's \ttl@starttoc and an \addtocontents write
-% of \oldmark, which this document does not define. The stale files and
-% the document's own files stay as they are.
+% bibliography style, and a Fortran source under the extension .F90, a
+% letter and digits like minitoc's numbered lists under its shortext
+% option, read with \input, with no command. Each line of the TeX files
+% and the text file starts with a command and a space, as in a list that
+% \write gives, so only their extensions keep them from being hidden.
+% The .aux names the .ptc, which holds titletoc's \ttl@starttoc and an
+% \addtocontents write of \oldmark, which this document does not define.
+% The stale files and the document's own files stay as they are.
 \documentclass{test-staleaux-ptc-own}
 \usepackage{test-staleaux-ptc-own}
 \input{test-staleaux-ptc-own.def}
@@ -23,6 +25,7 @@
 \printcontents{}{1}{}
 Text of the first section.
 \classtext\ \clotext\ \fourhttext\ \packagetext\ \deftext\ \ltxtext\ \fdtext\ \bbxtext\ \cbxtext\ \input{test-staleaux-ptc-own.txt}
+\input{test-staleaux-ptc-own.F90}
 \subsection{New subsection}
 As \cite{able} says.
 \bibliographystyle{test-staleaux-ptc-own}
