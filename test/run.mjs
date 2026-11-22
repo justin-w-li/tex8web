@@ -328,6 +328,9 @@ const typeset = {
     /<mn>30<\/mn><mrow data-mjx-texclass='ORD'><msup><mrow data-mjx-texclass='ORD'><\/mrow><mrow data-mjx-texclass='ORD'><mtext[^>]*>∘<\/mtext>/,
     /^(?![^]*°)/,
   ],
+  // (\displaybreak, \allowdisplaybreaks, and \hidewidth as nothing, with
+  // no command name in red)
+  'test-displaybreak': [/^(?![^]*mathcolor='light-dark\(red)/],
   // eqnarray's rows \jot apart, as an align's
   'test-eqnarray': [
     /<mtable [^>]*data-tex8web-env='eqnarray'[^>]*rowspacing='0.274em'/,
@@ -463,6 +466,8 @@ const typeset = {
 // before an upright letter, Δ as "Delta", and A^\top as "A transpose"; a
 // numbered equation without its number, then its label; an alignment of
 // several lines as one formula
+// an equation number as MathJax reads it, with or without its parentheses
+const eqLabel = n => `Label (?:open paren )?${n}(?: close paren)?`;
 const speech = {
   'test-speech': [/aria-label='a divides b'/, /aria-label='3 divides 12'/],
   'test': [/aria-label='P of open paren A given B close paren'/, /aria-label='Gamma of z'/,
@@ -489,6 +494,29 @@ const speech = {
     /aria-label='v equals 3 times m s to the negative 1 power'/,
     /aria-label='9\.81 times the fraction with numerator m and denominator s squared'/,
     /aria-label='E equals 1\.6 times 10 to the negative 19 power J Label 1'/],
+  // (\displaybreak with and without its optional argument, which leaves no
+  // [n], on each kind of display, with the PDF's numbers; \allowdisplaybreaks
+  // inside a display; and the cells that \hidewidth starts or ends with
+  // their text alone)
+  'test-displaybreak': [
+    new RegExp(`aria-label='2 lines Line 1: a equals b ${eqLabel(1)} Line 2: c equals d ${eqLabel(2)}'`),
+    new RegExp(`aria-label='6 lines Line 1: e equals f ${eqLabel(3)} Line 2: g equals h ${eqLabel(4)} Line 3: i equals j ${eqLabel(5)} ` +
+      `Line 4: k equals l ${eqLabel(6)} Line 5: m equals n ${eqLabel(7)} Line 6: o equals p ${eqLabel(8)}'`),
+    /aria-label='2 lines Line 1: x plus y Line 2: z'/,
+    new RegExp(`aria-label='2 lines Line 1: q plus r plus s Line 2: equals t ${eqLabel(9)}'`),
+    new RegExp(`aria-label='2 lines Line 1: u equals v empty w equals y ${eqLabel(10)} Line 2: A equals B C equals D ${eqLabel(11)}'`),
+    /aria-label='2 lines Line 1: E equals F Line 2: G equals H'/,
+    new RegExp(`aria-label='2 lines Line 1: I equals J ${eqLabel(12)} Line 2: K equals L ${eqLabel(13)}'`),
+    new RegExp(`aria-label='2 lines Line 1: M equals N ${eqLabel(14)} Line 2: O equals P ${eqLabel(15)}'`),
+    /aria-label='2 lines Line 1: Q equals R Line 2: S equals T'/,
+    new RegExp(`aria-label='2 lines Line 1: U equals V ${eqLabel(16)} Line 2: W equals X ${eqLabel(17)}'`),
+    /aria-label='2 lines Line 1: Y equals Z Line 2: alpha equals beta'/,
+    /aria-label='2 lines Line 1: a Line 2: b b b empty 2 lines Line 1: c c c Line 2: d empty /,
+    /Row 1: (?:Column 1, )?e (?:Column 2, )?f Row 2: /, /Row 1: Column 1, k k k Column 2, l Row 2: Column 1, m /,
+    /Case 1: x x is greater than or equal to 0 Case 2: /,
+    /aria-label='2 lines Line 1: o Line 2: p p p'/, /aria-label='2 lines Line 1: q q q Line 2: r'/,
+    /^(?![^]*aria-label='[^']*backslash)/,
+  ],
   // (\enskip as "empty", as MathJax reads \quad; the counter commands as
   // nothing; the scripts and fonts as their text)
   'test-textmath': [/aria-label='f empty g'/, /aria-label='a empty b'/, /aria-label='p empty q'/,
@@ -1143,6 +1171,11 @@ const contents = {
   'test-envmacro': [/first row is \(<a href='#[^']*'>3<!-- +tex4ht:ref: eq:g /],
   // (the \label on the row of a \bmatrix of the document's names its number)
   'test-envmacro-own': [/Rows \(<a href='#[^']*'>1<!-- +tex4ht:ref: own-a +--><\/a>\) and \(<a href='#[^']*'>2<!-- +tex4ht:ref: own-b /],
+  // (\eqref and \ref of rows with \displaybreak read their numbers; a
+  // text tabular's cell with \hidewidth on both sides holds its word)
+  'test-displaybreak': [/See \(<a href='#[^']*'>3<!-- +tex4ht:ref: eq:two +--><\/a>\) and <a href='#[^']*'>3<!-- +tex4ht:ref: eq:two /,
+    /Rows \(<a href='#[^']*'>12<!-- +tex4ht:ref: eq:arr +--><\/a>\) and \(<a href='#[^']*'>14<!-- +tex4ht:ref: eq:thm /,
+    /<td [^>]*>wide\s*<\/td><\/tr><tr [^>]*><td [^>]*>\s*s<\/td>/],
   'test-builddirspace': builddirspacePage('test-builddirspace'),
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
   'test-sectpart-hyperfirst': sectpartParts,

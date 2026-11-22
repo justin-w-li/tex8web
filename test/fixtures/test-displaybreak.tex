@@ -1,0 +1,94 @@
+% amsmath's \displaybreak, \allowdisplaybreaks, and \hidewidth in math,
+% which MathJax lacks. \displaybreak and \allowdisplaybreaks only allow a
+% page break, and \hidewidth only lets a cell stick out, so none of them
+% shows on the page. \displaybreak before \\ in align, with its optional
+% argument from [0] to [4], on a numbered row with a \label, after the row
+% end in gather*, in multline, alignat, flalign*, and eqnarray, in a
+% theorem, and in align*, with an \eqref to rows that have it. Then
+% \allowdisplaybreaks and \allowdisplaybreaks[2] inside a display, and
+% \allowdisplaybreaks[1] in the preamble. Then \hidewidth at the start of
+% a matrix cell, at the end of an array cell, in pmatrix, bmatrix, and
+% cases, in smallmatrix in inline math and in a footnote, and on both
+% sides of a cell of a text tabular, which tex4ht sets outside MathJax.
+\documentclass{article}
+\usepackage{amsmath,amsthm}
+\usepackage{hyperref}
+\allowdisplaybreaks[1]
+\newtheorem{theorem}{Theorem}
+\begin{document}
+\section{Breaks}
+\begin{align}
+a &= b \displaybreak \\
+c &= d
+\end{align}
+\begin{align}
+e &= f \label{eq:two} \displaybreak[3] \\
+g &= h \displaybreak[0] \\
+i &= j \displaybreak[1] \\
+k &= l \displaybreak[2] \\
+m &= n \displaybreak[4] \\
+o &= p
+\end{align}
+See \eqref{eq:two} and \ref{eq:two}.
+\begin{gather*}
+x + y \\ \displaybreak[0]
+z
+\end{gather*}
+\begin{multline}
+q + r + s \displaybreak \\
+= t
+\end{multline}
+\begin{alignat}{2}
+u &= v &\quad w &= y \displaybreak[2] \\
+A &= B & C &= D
+\end{alignat}
+\begin{flalign*}
+E &= F \displaybreak \\
+G &= H
+\end{flalign*}
+\begin{eqnarray}
+I & = & J \label{eq:arr} \displaybreak \\
+K & = & L
+\end{eqnarray}
+\begin{theorem}
+\begin{align}
+M &= N \label{eq:thm} \displaybreak \\
+O &= P
+\end{align}
+\end{theorem}
+\begin{align*}
+Q &= R \displaybreak \\
+S &= T
+\end{align*}
+Rows \eqref{eq:arr} and \eqref{eq:thm}.
+\begin{align}
+\allowdisplaybreaks
+U &= V \\
+W &= X
+\end{align}
+\begin{align*}
+\allowdisplaybreaks[2]
+Y &= Z \\
+\alpha &= \beta
+\end{align*}
+\section{Widths}
+\[
+\begin{matrix} \hidewidth a \\ bbb \end{matrix}
+\qquad
+\begin{array}{c} ccc\hidewidth \\ d \end{array}
+\qquad
+\begin{pmatrix} \hidewidth e & f \\ ggg & h \end{pmatrix}
+\qquad
+\begin{bmatrix} kkk & \hidewidth l \hidewidth \\ m & nnn \end{bmatrix}
+\]
+\[
+|x| = \begin{cases} \hidewidth x & x \ge 0 \\ -x & x < 0 \end{cases}
+\]
+Inline $\begin{smallmatrix} \hidewidth o \\ ppp \end{smallmatrix}$ and in
+a note.\footnote{A note $\begin{smallmatrix} qqq\hidewidth \\ r \end{smallmatrix}$.}
+
+\begin{tabular}{c}
+\hidewidth wide\hidewidth \\
+s
+\end{tabular}
+\end{document}
