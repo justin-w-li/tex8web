@@ -332,7 +332,8 @@ const typeset = {
   // no command name in red and no error, also for \hidewidth in a group;
   // a cell that starts with \hidewidth set at the right of its column, one
   // that ends with it at the left, and one with it on both sides centered,
-  // as in the PDF; mathtools's \coloneqq and \mathclap, whose extension
+  // as in the PDF, also after a style command or a column template's
+  // \displaystyle; mathtools's \coloneqq and \mathclap, whose extension
   // stays configured)
   'test-displaybreak': [/^(?![^]*mathcolor='light-dark\(red)/, /^(?![^]*<merror)/,
     /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>a<\/mi><\/mtd>/,
@@ -341,6 +342,12 @@ const typeset = {
     /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>x<\/mi><\/mtd><mtd>(?:<mspace[^>]*><\/mspace>)?<mi>x<\/mi><mo[^>]*>≥/,
     /<mtd columnalign='right'><mi>o<\/mi><\/mtd>/, /<mtd columnalign='left'><mi mathvariant='italic'>𝑞𝑞𝑞<\/mi><\/mtd>/,
     /<mtd(?: columnalign='center')?>(?:<mspace[^>]*><\/mspace>)?<mi>l<\/mi><\/mtd>/,
+    /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mstyle scriptlevel='1'><mi>α<\/mi><\/mstyle><\/mtd>/,
+    /<mtd columnalign='left'>(?:<mspace[^>]*><\/mspace>)?<mstyle scriptlevel='1'><mi>β<\/mi><\/mstyle><\/mtd>/,
+    /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?(?:<mstyle[^>]*>)+<mi>δ<\/mi>/,
+    /<mtd columnalign='left'>(?:<mspace[^>]*><\/mspace>)?<mstyle[^>]*><mi>η<\/mi><mstyle scriptlevel='1'><mi>ζ<\/mi>/,
+    /<mtd(?: columnalign='center')?>(?:<mspace[^>]*><\/mspace>)?<mstyle scriptlevel='1'><mi>ϵ<\/mi>/,
+    /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mstyle displaystyle='true'><mi>γ<\/mi><\/mstyle><\/mtd>/,
     /<mi>a<\/mi><mrow data-mjx-texclass='REL'><mpadded[^>]*><mtext[^>]*>:<\/mtext><\/mpadded><mo[^>]*>=<\/mo><\/mrow><mi>b<\/mi>/,
     /<mpadded lspace='-\.5width' width='0'><mi>x<\/mi><\/mpadded>/],
   // eqnarray's rows \jot apart, as an align's

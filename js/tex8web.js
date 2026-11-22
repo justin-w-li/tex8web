@@ -478,18 +478,43 @@ function tex8web(config, tex) {
   // it, as in the PDF, where its fill glue is stronger than the column's
   // \hfil. MathJax's \hfill does this at a cell's start or end (internal:
   // an ArrayItem's hfill, read when the cell ends), but is an error outside
-  // a table.
+  // a table. A style command, such as \scriptstyle or the \displaystyle of
+  // a column's template, opens a StyleItem over the cell that closes only
+  // when the cell ends, into one mstyle. Under such items, \hidewidth is
+  // at the cell's start when they and the cell are empty, and at its end
+  // when nothing follows it in them: each item notes, when it closes,
+  // whether \hidewidth ends it, for the item below.
   const packages = texOptions.packages = texOptions.packages || {};
   (packages['[+]'] = packages['[+]'] || []).push('tex8web-hidewidth');
   function addHidewidth() {
     const {Configuration} = MathJax._.input.tex.Configuration;
     const {CommandMap} = MathJax._.input.tex.TokenMap;
-    const {ArrayItem} = MathJax._.input.tex.base.BaseItems;
+    const {ArrayItem, StyleItem} = MathJax._.input.tex.base.BaseItems;
     new CommandMap('tex8web-hidewidth', {hidewidth(parser) {
-      const top = parser.stack.Top();
-      if (!(top instanceof ArrayItem)) return;
-      top.hfill.push(top.Size());
+      const styles = [];
+      let item = parser.stack.Top();
+      while (item instanceof StyleItem) {
+        styles.push(item);
+        item = parser.stack.Top(styles.length + 1);
+      }
+      if (!(item instanceof ArrayItem)) return;
+      if (!styles.length) {
+        item.hfill.push(item.Size());
+        return;
+      }
+      if (!item.Size() && styles.every(style => !style.Size())) item.hfill.push(0);
+      styles.forEach((style, i) => style.hidewidthBelow = styles[i + 1] || item);
+      styles[0].hidewidthEnd = styles[0].Size();
     }});
+    const checkItem = StyleItem.prototype.checkItem;
+    StyleItem.prototype.checkItem = function (item) {
+      const below = this.hidewidthBelow;
+      if (item.isClose && below && this.hidewidthEnd === this.Size()) {
+        if (below instanceof ArrayItem) below.hfill.push(below.Size() + 1);
+        else below.hidewidthEnd = below.Size() + 1;
+      }
+      return checkItem.call(this, item);
+    };
     Configuration.create('tex8web-hidewidth', {handler: {macro: ['tex8web-hidewidth']}});
   }
 

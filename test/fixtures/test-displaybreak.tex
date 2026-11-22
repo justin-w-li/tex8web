@@ -16,10 +16,11 @@
 % \hidewidth in aligned, in a macro of the document, and in a group in a
 % matrix cell. \allowdisplaybreaks[1] in the preamble is only built. A
 % cell narrower than its column goes to the side away from \hidewidth, as
-% in the PDF. Last, mathtools's \coloneqq and \mathclap, whose MathJax
+% in the PDF, also after \scriptstyle in the cell and after the
+% \displaystyle that an array column's template puts first. Last, mathtools's \coloneqq and \mathclap, whose MathJax
 % extension must stay configured beside \hidewidth.
 \documentclass{article}
-\usepackage{amsmath,amsthm,mathtools}
+\usepackage{amsmath,amsthm,mathtools,array}
 \usepackage{hyperref}
 \allowdisplaybreaks[1]
 \newtheorem{theorem}{Theorem}
@@ -119,6 +120,19 @@ z &= w
 \]
 \[
 \begin{matrix} {\hidewidth u} \\ vvv \end{matrix}
+\]
+\[
+\begin{matrix} \scriptstyle\hidewidth \alpha \\ bbb \end{matrix}
+\qquad
+\begin{matrix} \scriptstyle\beta\hidewidth \\ bbb \end{matrix}
+\qquad
+\begin{matrix} \textstyle\scriptstyle\hidewidth\delta \\ bbb \end{matrix}
+\qquad
+\begin{matrix} \textstyle\eta\scriptstyle\zeta\hidewidth \\ bbbbb \end{matrix}
+\qquad
+\begin{matrix} \scriptstyle\hidewidth\epsilon\hidewidth \\ bbb \end{matrix}
+\qquad
+\begin{array}{>{\displaystyle}c} \hidewidth \gamma \\ bbb \end{array}
 \]
 Inline $\begin{smallmatrix} \hidewidth o \\ ppp \end{smallmatrix}$ and in
 a note.\footnote{A note $\begin{smallmatrix} qqq\hidewidth \\ r \end{smallmatrix}$.}
