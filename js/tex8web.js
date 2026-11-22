@@ -474,9 +474,30 @@ function tex8web(config, tex) {
     Configuration.create('tex8web-text', {parser: 'text', handler: {macro: ['tex8web-text']}});
   }
 
+  // \hidewidth: a cell narrower than its column goes to the side away from
+  // it, as in the PDF, where its fill glue is stronger than the column's
+  // \hfil. MathJax's \hfill does this at a cell's start or end (internal:
+  // an ArrayItem's hfill, read when the cell ends), but is an error outside
+  // a table. An empty group before it, such as the {} that starts an
+  // align's left column, has no width.
+  texOptions.packages = {'[+]': ['tex8web-hidewidth']};
+  function addHidewidth() {
+    const {Configuration} = MathJax._.input.tex.Configuration;
+    const {CommandMap} = MathJax._.input.tex.TokenMap;
+    const {ArrayItem} = MathJax._.input.tex.base.BaseItems;
+    const empty = node => !node.isToken && node.childNodes.every(empty);
+    new CommandMap('tex8web-hidewidth', {hidewidth(parser) {
+      const top = parser.stack.Top();
+      if (!(top instanceof ArrayItem)) return;
+      top.hfill.push(top.nodes.every(empty) ? 0 : top.Size());
+    }});
+    Configuration.create('tex8web-hidewidth', {handler: {macro: ['tex8web-hidewidth']}});
+  }
+
   const ready = startup.ready;
   startup.ready = function () {
     addTextInText();
+    addHidewidth();
     sizeBigDelimiters();
     fixRowHeights();
     clearNumbers();

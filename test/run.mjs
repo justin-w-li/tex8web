@@ -329,8 +329,18 @@ const typeset = {
     /^(?![^]*°)/,
   ],
   // (\displaybreak, \allowdisplaybreaks, and \hidewidth as nothing, with
-  // no command name in red)
-  'test-displaybreak': [/^(?![^]*mathcolor='light-dark\(red)/],
+  // no command name in red and no error, also for \hidewidth in a group;
+  // a cell that starts with \hidewidth set at the right of its column, one
+  // that ends with it at the left, and one with it on both sides centered,
+  // as in the PDF, also after the {} of an align's left column)
+  'test-displaybreak': [/^(?![^]*mathcolor='light-dark\(red)/, /^(?![^]*<merror)/,
+    /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>a<\/mi><\/mtd>/,
+    /<mtd columnalign='left'>(?:<mspace[^>]*><\/mspace>)?<mi mathvariant='italic'>𝑐𝑐𝑐<\/mi><\/mtd>/,
+    /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>e<\/mi><\/mtd>/,
+    /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>x<\/mi><\/mtd><mtd>(?:<mspace[^>]*><\/mspace>)?<mi>x<\/mi><mo[^>]*>≥/,
+    /<mtd columnalign='right'><mi>o<\/mi><\/mtd>/, /<mtd columnalign='left'><mi mathvariant='italic'>𝑞𝑞𝑞<\/mi><\/mtd>/,
+    /<mtd columnalign='right'><mstyle[^>]*><mrow data-mjx-texclass='ORD'><\/mrow><mtext>\(2\)<\/mtext>/,
+    /<mtd(?: columnalign='center')?>(?:<mspace[^>]*><\/mspace>)?<mi>l<\/mi><\/mtd>/],
   // eqnarray's rows \jot apart, as an align's
   'test-eqnarray': [
     /<mtable [^>]*data-tex8web-env='eqnarray'[^>]*rowspacing='0.274em'/,
@@ -461,13 +471,14 @@ const typeset = {
   ],
 };
 
+// an equation number as MathJax reads it, with or without its parentheses
+const eqLabel = n => `Label (?:open paren )?${n}(?: close paren)?`;
+
 // What screen readers hear: ClearSpeak's words, | as "given" with
 // \WebSpeechGiven (test.cfg) and as "divides" without it, no "normal"
 // before an upright letter, Δ as "Delta", and A^\top as "A transpose"; a
 // numbered equation without its number, then its label; an alignment of
 // several lines as one formula
-// an equation number as MathJax reads it, with or without its parentheses
-const eqLabel = n => `Label (?:open paren )?${n}(?: close paren)?`;
 const speech = {
   'test-speech': [/aria-label='a divides b'/, /aria-label='3 divides 12'/],
   'test': [/aria-label='P of open paren A given B close paren'/, /aria-label='Gamma of z'/,

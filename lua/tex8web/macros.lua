@@ -26,12 +26,10 @@ local fallbacks = {
   -- (LaTeX's \rlap{$\displaystyle #1$}, in latex.ltx. MathJax's \rlap
   -- takes math in math, so the dollar signs would be drawn.)
   ["\\lefteqn"] = "\\newcommand{\\lefteqn}[1]{\\rlap{\\displaystyle #1}}",
-  -- (amsmath's page breaks, which a page does not have. \hidewidth lets a
-  -- cell stick out of its column, which MathJax cannot do, so the cell
-  -- widens its column.)
+  -- (amsmath's page breaks, which a page does not have. tex8web.js gives
+  -- MathJax \hidewidth.)
   ["\\displaybreak"] = "\\newcommand{\\displaybreak}[1][]{}",
   ["\\allowdisplaybreaks"] = "\\newcommand{\\allowdisplaybreaks}[1][]{}",
-  ["\\hidewidth"] = "\\newcommand{\\hidewidth}{}",
   -- LaTeX's text commands, which it also sets in math. MathJax expands these
   -- in \text too (textmacros), so each body is valid in text and in math. A
   -- script is math in \(...\), which textmacros reads in text, and which

@@ -100,6 +100,8 @@ amsmath's matrices can be written as the macro pairs that `\begin` and `\end` ru
 
 In the text of MathJax's textmacros extension, `js/tex8web.js` defines `\text`, `\mbox`, and `\hbox` as groups. These commands appear in MathJax's text in `\text{\text{E}}`, `\textbf{\text{E}}`, `\text{a \mbox{b}}`, and a macro whose body is one of them used inside `\text`. LaTeX sets the inner argument in the font around it. Without the definitions, MathJax shows an error such as "\text is only supported in math mode" in place of the formula.
 
+In math, `js/tex8web.js` defines `\hidewidth`, which MathJax lacks. A cell that starts with it is set at the right of its column, one that ends with it at the left, and one with it on both sides centered, as MathJax does for `\hfill` at a cell's start or end. An empty group before `\hidewidth`, such as the `{}` that starts an `align`'s left column, counts as the start. Outside a table, `\hidewidth` is nothing, where `\hfill` is an error.
+
 Only the CSS and dvips color names are defined in MathJax. tex8web adds these colors as `\definecolor` lines:
 
 - colors defined in the document with `\definecolor` and `\colorlet`
@@ -292,7 +294,6 @@ Differences from the PDF too small for the [known limitations](DOCUMENTATION.md#
 - **Delimiters and radicals** can differ slightly in size from the PDF, as they come from the MathJax font.
 - **The space before inline math after a word in another font**, for example an algorithm2e keyword before its argument. It can be in the word's font without Node, and is in the text font with Node. The two pages can be a pixel apart, and neither always matches the PDF.
 - **An `\fbox` or `\colorbox` in a line** is a few points taller than in the PDF. Its text is as tall as a line of the font, where TeX's box is as tall as its letters.
-- **`\hidewidth` in math** is dropped. Its cell widens its column and is aligned as the column's other cells. In the PDF, the cell's text sticks out of the column on the side of `\hidewidth`, and the column keeps the width of its other cells.
 - **Text commands in math.** `\emph` in math is always italic, also in italic text such as a theorem, where the PDF sets it upright. `\textsc` in math is upright, without small capitals.
 - **Two [H] algorithms of algorithm2e in a row** are 2em apart, the margins of both. In the PDF, they are about 1em apart.
 - **A long caption of algorithm2e's plain, boxed, or plainruled style** ends short of the right edge where the PDF's caption reaches it.
