@@ -187,6 +187,10 @@ else
       -- - it is one of the lists of LaTeX, titletoc, listings, and
       --   algorithm, or the .aux beside the document, or an .aux of an
       --   \include that it reads with \@input, names it in \@writefile;
+      -- - it is one of minitoc's numbered lists, a name of the long or
+      --   the shortext form followed by digits, such as .mtc1 or .M1.
+      --   These hold minitoc's own lines, which need not have
+      --   \contentsline, as for a coffee line, and no .aux names them;
       -- - the file has a line that starts with "\contentsline {", which
       --   LaTeX's \addcontentsline writes with a space after the
       --   command. Any line counts, as biblatex writes other lines
@@ -207,6 +211,7 @@ else
       end
       local source = set("aux bbl ind gls brf ltx sty cls clo def fd cfg 4ht bbx cbx txt")
       local named = set("toc lof lot ptc plf plt lol loa")
+      local numbered = set("mtc mlf mlt ptc plf plt stc slf slt M F T P G U S H V")
       local read = {}
       local function scan(name)
         if read[name] then return end
@@ -222,7 +227,7 @@ else
       local function list(name)
         local extension = name:sub(#prefix + 1)
         if source[extension] then return false end
-        if named[extension] then return true end
+        if named[extension] or numbered[extension:match("^(%a+)%d+$")] then return true end
         local file = io.open(name, "rb")
         if not file then return false end
         local written, lines = true, 0
