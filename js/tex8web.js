@@ -518,6 +518,87 @@ function tex8web(config, tex) {
     Configuration.create('tex8web-hidewidth', {handler: {macro: ['tex8web-hidewidth']}});
   }
 
+  // mathjax-modern (Latin Modern Math) with the PDF's \mathbb, \mathcal, and
+  // accents. \mathbb takes New Computer Modern's double-struck capitals,
+  // drawn as AMS's msbm, and \mathcal the TeX font's calligraphic capitals,
+  // with cmsy10's widths. mathjax-modern 4.1.3 has wrong skews and
+  // combining offsets (dx), which place accents (a skew of 0.303em on the
+  // italic a, where TeX has 0.022em). Both come from New Computer Modern,
+  // whose data is in tex-chtml.js, for each character of the same width. The metrics are those of the 4.1.3 fonts.
+  // Added as font extensions, as MathJax's dsfont extension does, to the
+  // font class, before MathJax makes the font (internal: the class, its
+  // dynamic files, and AddFontIds).
+  function matchModernFont() {
+    const Font = MathJax._.output.fonts?.['mathjax-modern']?.chtml_ts.MathJaxModernFont;
+    if (!Font) return;
+    const {AddFontIds} = MathJax._.output.chtml.DynamicFonts;
+    const {Package} = MathJax._.components.package;
+    const newcm = MathJax._.output.chtml.DefaultFont.DefaultFont.defaultChars;
+    const skewed = {};
+    for (const [variant, chars] of Object.entries(Font.defaultChars)) {
+      for (const [n, char] of Object.entries(chars)) {
+        const other = newcm[variant]?.[n];
+        if (!Array.isArray(char) || !Array.isArray(other) || char[2] !== other[2]) continue;
+        const {sk = 0, dx = 0} = other[3] || {};
+        if ((char[3]?.sk || 0) === sk && (char[3]?.dx || 0) === dx) continue;
+        (skewed[variant] = skewed[variant] || {})[n] = [...char.slice(0, 3), {...char[3], sk, dx}];
+      }
+    }
+    // the path of the modern font with another name: on a CDN, it has
+    // MathJax's version
+    const url = name => Package.resolvePath(
+      MathJax.config.loader.paths['mathjax-modern'].replace('modern', name) + '/chtml/woff2', false);
+    const doubleStruck = {
+      0x1D538: [.704, 0, .722, {sk: -.014}], 0x1D539: [.685, 0, .666], 0x2102: [.704, .019, .722, {sk: .036}],
+      0x1D53B: [.685, 0, .722, {sk: -.02}], 0x1D53C: [.685, 0, .666], 0x1D53D: [.685, 0, .611, {sk: .03}],
+      0x1D53E: [.704, .019, .777], 0x210D: [.685, 0, .777, {sk: .011}], 0x1D540: [.685, 0, .388],
+      0x1D541: [.685, .075, .5, {sk: .055}], 0x1D542: [.685, 0, .777, {sk: .015}], 0x1D543: [.685, 0, .666, {sk: -.148}],
+      0x1D544: [.685, 0, .944, {sk: .073}], 0x2115: [.685, .019, .722, {sk: .022}], 0x1D546: [.704, .019, .777],
+      0x2119: [.685, 0, .611, {sk: .028}], 0x211A: [.704, .179, .777], 0x211D: [.685, 0, .722],
+      0x1D54A: [.704, .012, .555, {sk: -.013}], 0x1D54B: [.685, 0, .666], 0x1D54C: [.685, .019, .722, {sk: .053}],
+      0x1D54D: [.685, .019, .722, {sk: .072}], 0x1D54E: [.685, .019, 1, {sk: .048}], 0x1D54F: [.685, 0, .722, {sk: .026}],
+      0x1D550: [.685, 0, .722, {sk: .038}], 0x2124: [.685, 0, .666, {sk: .057}],
+    };
+    const calligraphic = {
+      0x41: [.728, .05, .798, {ic: .021, sk: .274}], 0x42: [.705, .022, .657, {ic: .007, sk: .09}],
+      0x43: [.705, .025, .527, {ic: .006, sk: .135}], 0x44: [.683, 0, .771, {sk: .06}],
+      0x45: [.705, .022, .528, {ic: .036, sk: .143}], 0x46: [.683, .032, .719, {ic: .11, sk: .266}],
+      0x47: [.704, .119, .595, {ic: .004, sk: .164}], 0x48: [.683, .048, .845, {sk: .163}],
+      0x49: [.683, 0, .545, {ic: .097, sk: .159}], 0x4A: [.683, .119, .678, {ic: .161, sk: .219}],
+      0x4B: [.705, .022, .762, {sk: .173}], 0x4C: [.705, .022, .69, {sk: .249}],
+      0x4D: [.705, .05, 1.201, {sk: .128}], 0x4E: [.789, .05, .82, {ic: .159, sk: .121}],
+      0x4F: [.705, .022, .796, {sk: .166}], 0x50: [.683, .057, .696, {ic: .037, sk: .099}],
+      0x51: [.705, .131, .817, {sk: .124}], 0x52: [.682, .022, .848, {sk: .123}],
+      0x53: [.705, .022, .606, {ic: .036, sk: .139}], 0x54: [.717, .068, .545, {ic: .288, sk: .112}],
+      0x55: [.683, .028, .626, {ic: .061, sk: .06}], 0x56: [.683, .052, .613, {ic: .045, sk: .042}],
+      0x57: [.683, .055, .988, {ic: .046, sk: .035}], 0x58: [.683, 0, .713, {ic: .094, sk: .121}],
+      0x59: [.683, .143, .668, {ic: .046, sk: .083}], 0x5A: [.683, 0, .725, {ic: .042, sk: .033}],
+    };
+    const boldCalligraphic = {
+      0x41: [.751, .049, .921, {ic: .068, sk: .283}], 0x42: [.705, .017, .748, {sk: .101}],
+      0x43: [.703, .02, .613, {sk: .15}], 0x44: [.686, 0, .892, {sk: .045}],
+      0x45: [.703, .016, .607, {ic: .02, sk: .151}], 0x46: [.686, .03, .814, {ic: .116, sk: .151}],
+      0x47: [.703, .113, .682, {sk: .177}], 0x48: [.686, .048, .987, {sk: .178}],
+      0x49: [.686, 0, .642, {ic: .104, sk: .199}], 0x4A: [.686, .114, .779, {ic: .158, sk: .26}],
+      0x4B: [.703, .017, .871, {sk: .196}], 0x4C: [.703, .017, .788, {sk: .259}],
+      0x4D: [.703, .049, 1.378, {sk: .115}], 0x4E: [.84, .049, .937, {ic: .168, sk: .139}],
+      0x4F: [.703, .017, .906, {sk: .183}], 0x50: [.686, .067, .81, {ic: .036, sk: .126}],
+      0x51: [.703, .146, .939, {sk: .138}], 0x52: [.686, .017, .99, {sk: .133}],
+      0x53: [.703, .016, .696, {ic: .025, sk: .141}], 0x54: [.72, .069, .644, {ic: .303, sk: .144}],
+      0x55: [.686, .024, .715, {ic: .056, sk: .07}], 0x56: [.686, .077, .737, {ic: .037, sk: .035}],
+      0x57: [.686, .077, 1.169, {ic: .037, sk: .057}], 0x58: [.686, -.001, .817, {ic: .089, sk: .125}],
+      0x59: [.686, .164, .759, {ic: .038, sk: .079}], 0x5A: [.686, 0, .818, {ic: .035, sk: .133}],
+    };
+    Font.addExtension({name: 'tex8web-skews', chars: skewed});
+    Font.addExtension({name: 'tex8web-newcm', fonts: ['MJX-NCM-DS'], fontURL: url('newcm'),
+      chars: AddFontIds({DS: {'double-struck': doubleStruck}}, 'NCM')});
+    // the font's dynamic file of calligraphic letters would otherwise set
+    // its letters over these, when first used
+    delete Font.dynamicFiles.calligraphic;
+    Font.addExtension({name: 'tex8web-tex', fonts: ['MJX-TEX-C', 'MJX-TEX-CB'], fontURL: url('tex'),
+      chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic}}, 'TEX')});
+  }
+
   const ready = startup.ready;
   startup.ready = function () {
     addTextInText();
@@ -525,6 +606,7 @@ function tex8web(config, tex) {
     sizeBigDelimiters();
     fixRowHeights();
     clearNumbers();
+    matchModernFont();
     if (ready) ready(); else MathJax.startup.defaultReady();
     TEXCLASS = MathJax._.core.MmlTree.MmlNode.TEXCLASS;
     const input = MathJax.startup.document.inputJax.find(jax => jax.name === 'TeX');

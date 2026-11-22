@@ -44,7 +44,7 @@
 \edef\web@load{\web@load\ifx\web@units\empty\else, "[tex]/units"\fi}
 % (newtxmath's options for other fonts turn \iftx@ntxmath off; nc is New
 % Century Schoolbook)
-\def\web@mathfont{tex}
+\def\web@mathfont{modern}
 \@for\web@package:=mathptmx,txfonts\do{\@ifpackageloaded\web@package{\def\web@mathfont{termes}}{}}
 \@for\web@package:=mathpazo,pxfonts,newpxmath\do{\@ifpackageloaded\web@package{\def\web@mathfont{pagella}}{}}
 \@ifpackageloaded{fouriernc}{\def\web@mathfont{schola}}{}
