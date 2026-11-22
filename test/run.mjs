@@ -2745,7 +2745,7 @@ const staleListFiles = {
   'test-staleaux-ptc-koma': { lists: ['.lrm'], read: ['.aux'] },
   'test-staleaux-ptc-noaux-lists': { lists: ['.lop', '.lpr', '.lsc'] },
   'test-staleaux-ptc-noaux-koma': { lists: ['.lrm'] },
-  'test-staleaux-ptc-own': { lists: ['.ptc'],
+  'test-staleaux-ptc-own': { lists: ['.ptc', '.S1'],
     read: ['aux', 'cls', 'clo', '4ht', 'sty', 'def', 'ltx', 'fd', 'bbx', 'cbx', 'txt', 'bib', 'bst', 'F90'].map(e => `.${e}`) },
   'test-staleaux-ptc-draft': { lists: ['.ptc'], read: ['.aux', '.bbl', '.ind', '.gls', '.bib'] },
   'test-staleaux-ptc-include': { lists: ['.ptc', '.lop'], read: ['.aux', '/chapter.aux'] },
@@ -5395,6 +5395,30 @@ if (shippedErr) jobs.push(async () => {
     if (html.includes('Old entry')) problems.push(`Old entry on the ${which} build's page`);
   }
   report(`${shippedErr.name} (with a LaTeX error, built twice)`, problems);
+});
+
+// test-staleaux-mtc with its numbered files of an earlier build, copied
+// and built twice into one build folder: the log of each build has the
+// status line that names minitoc's files beside the document, also when
+// the build folder has the empty files of the first build
+const staleMtc = docs.find(d => d.name === 'test-staleaux-mtc');
+if (staleMtc) jobs.push(async () => {
+  const dir = join(testDir(staleMtc), 'twice');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  for (const file of readdirSync(staleMtc.dir).filter(f => f.startsWith('test-staleaux-mtc.'))) {
+    writeFileSync(join(dir, file), readFileSync(join(staleMtc.dir, file)));
+  }
+  const problems = [];
+  for (const which of ['first', 'second']) {
+    const result = await run(join(root, 'bin/tex8web'), ['-c', staleMtc.cfg, '-a', 'info', 'test-staleaux-mtc.tex'],
+      { cwd: dir, slot: true, env: { ...process.env, ...staleMtc.env } });
+    if (result.code !== 0) problems.push(`the ${which} build exited with ${result.code}`);
+    if (!/^\[STATUS\] +tex8web: minitoc's mini tables are empty: .*test-staleaux-mtc\.mlf1, .*test-staleaux-mtc\.mtc1, .*test-staleaux-mtc\.ptc1$/m.test(result.log ?? '')) {
+      problems.push(`the ${which} build's log has no status line that names minitoc's files`);
+    }
+  }
+  report(`${staleMtc.name} (built twice)`, problems);
 });
 
 // test-mathescape built twice, without prerendering: with tex8web-math.tex's

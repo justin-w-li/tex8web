@@ -11,6 +11,9 @@
 % \write gives, so only their extensions keep them from being hidden.
 % The .aux names the .ptc, which holds titletoc's \ttl@starttoc and an
 % \addtocontents write of \oldmark, which this document does not define.
+% A .S1, named like a list of minitoc's shortext option, holds only lines
+% of a command and a space, with no \mtc@string: it is hidden as a list,
+% and the log names no file of minitoc's, as this document has no minitoc.
 % The stale files and the document's own files stay as they are.
 \documentclass{test-staleaux-ptc-own}
 \usepackage{test-staleaux-ptc-own}

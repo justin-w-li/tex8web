@@ -229,6 +229,8 @@ else
         for included in text:gmatch("\\@input%s*{([^}]*)}") do scan(included) end
       end
       scan(prefix .. "aux")
+      -- (the second result is true for a file of minitoc's, one that the
+      -- rule of \mtc@string matched)
       local function list(name)
         local extension = name:sub(#prefix + 1)
         if source[extension] then return false end
@@ -238,7 +240,11 @@ else
         if not file then return false end
         local written, lines = true, 0
         for line in file:lines() do
-          if line:find("^\\contentsline {") or minitoc and line:find("\\mtc@string") then
+          if minitoc and line:find("\\mtc@string") then
+            file:close()
+            return true, true
+          end
+          if line:find("^\\contentsline {") then
             file:close()
             return true
           end
@@ -250,13 +256,17 @@ else
         file:close()
         return written and lines > 0
       end
+      -- (a file of minitoc's beside the document is named in the status
+      -- line also when the build directory has its empty file from an
+      -- earlier build, which LaTeX reads in its place)
       local minitocs = {}
       for name in lfs.dir(".") do
         local file = par.builddir .. "/" .. name
         if name:sub(1, #prefix) == prefix and name ~= par.tex_file and not name:find("%.tex$")
-          and lfs.attributes(name, "mode") == "file" and not lfs.attributes(file) and list(name) then
-          io.open(file, "w"):close()
-          if numbered[name:sub(#prefix + 1):match("^(%a+)%d+$")] then table.insert(minitocs, name) end
+          and lfs.attributes(name, "mode") == "file" then
+          local hidden, mtc = list(name)
+          if hidden and not lfs.attributes(file) then io.open(file, "w"):close() end
+          if hidden and mtc then table.insert(minitocs, name) end
         end
       end
       if #minitocs > 0 then
