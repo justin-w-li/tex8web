@@ -1,0 +1,17 @@
+% The math font of a document in Computer Modern, Latin Modern Math, with
+% the PDF's alphabets, accents, and dots: \mathbb in AMS's msbm, \mathcal
+% and its bold in cmsy's design, accents over the italic letters where TeX
+% puts them, and dots spaced as TeX spaces them, also when \dots chooses
+% them. Then the dots in a subscript, where TeX drops their thin spaces,
+% and in a matrix.
+\documentclass{article}
+\usepackage{amsmath,amssymb}
+\begin{document}
+Alphabets: $\mathbb{R}$, $\mathcal{A}$, and $\boldsymbol{\mathcal{A}}$.
+
+Accents: $\hat a$, $\hat x$, $\vec a$, and $\hat A$.
+
+Dots: $1,2,\ldots,n$, $a+\cdots+b$, $1,\dots,n$, $a+\dots+b$, and
+$x_{1,\ldots,n}$.
+\[ \begin{pmatrix} 1 & \cdots & 0 \\ \vdots & \ddots & \vdots \\ 0 & \cdots & 1 \end{pmatrix} \]
+\end{document}

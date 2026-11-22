@@ -524,6 +524,56 @@ const lapped = `(() => {
 })()`;
 const laps = { 'test-lefteqn': 18 };
 
+// Latin Modern Math as in the PDF (js/tex8web.js, matchModernFont): the
+// font of the first character of each formula given, and none of
+// mathjax-modern's own calligraphic letters; each accent's center from its
+// base's left edge, in ems, as placed by MathJax with New Computer Modern's
+// skews; each inline formula given as wide as in the PDF (TeX's \wd of
+// its box, in ems); and ⋮ and ⋱, each one dot drawn with two text
+// shadows, in a box as high as in the PDF. Failures: [what, got, want]
+const modernFont = want => `(() => {
+  const want = ${JSON.stringify(want)}, wrong = [], em = el => parseFloat(getComputedStyle(el).fontSize);
+  const off = (got, value) => Math.abs(got - value) > 0.01;
+  const formulas = [...document.querySelectorAll('mjx-container:not([display])')];
+  want.fonts.forEach((font, i) => {
+    const c = formulas[i]?.querySelector('mjx-c');
+    if (!c?.classList.contains(font)) wrong.push([\`formula \${i + 1}\`, c?.className, font]);
+  });
+  const own = document.querySelectorAll('mjx-c.MM-C, mjx-c.MM-CB').length;
+  if (own) wrong.push(["mathjax-modern's calligraphic letters", own, 0]);
+  const accents = [...document.querySelectorAll('mjx-mover')].map(m => {
+    const base = m.querySelector('mjx-base').getBoundingClientRect(), accent = m.querySelector('mjx-over mjx-c').getBoundingClientRect();
+    return [m.textContent, ((accent.left + accent.right) / 2 - base.left) / em(m)];
+  });
+  if (accents.length !== want.accents.length) wrong.push(['accents', accents.length, want.accents.length]);
+  accents.forEach(([text, got], i) => { if (off(got, want.accents[i])) wrong.push([text, got.toFixed(3), want.accents[i]]); });
+  for (const [i, value] of want.widths) {
+    const got = formulas[i] && formulas[i].getBoundingClientRect().width / em(formulas[i]);
+    if (!formulas[i] || off(got, value)) wrong.push([\`formula \${i + 1}\`, got?.toFixed(3), value]);
+  }
+  const dots = [...document.querySelectorAll('mjx-c.mjx-c22EE, mjx-c.mjx-c22F1')];
+  if (dots.length !== 3) wrong.push(['⋮ and ⋱', dots.length, 3]);
+  for (const c of dots) {
+    const shadows = getComputedStyle(c).textShadow.split(/,(?![^(]*\\))/).length;
+    if (shadows !== 2) wrong.push([c.className + ' shadows', shadows, 2]);
+    const height = c.getBoundingClientRect().height / em(c);
+    if (off(height, want.dots)) wrong.push([c.className + ' height', height.toFixed(3), want.dots]);
+  }
+  return wrong;
+})()`;
+const modernFonts = {
+  'test-mathfont': {
+    // (of the first three inline formulas: \mathbb{R}, \mathcal{A}, and
+    // its bold)
+    fonts: ['NCM-DS', 'TEX-C', 'TEX-CB'],
+    accents: [0.286, 0.328, 0.286, 0.55],
+    // (the inline formulas from the eighth, each by its index)
+    widths: [[7, 4.267], [8, 4.569], [9, 3.322], [10, 4.569]],
+    // (the height of \vdots's and \ddots's boxes, which have no depth)
+    dots: 1.506,
+  },
+};
+
 // dcolumn's D columns: in each column of a table, the numbers line up on
 // their separators as in the PDF, and an integer ends where the
 // separators start. A cell is a number if its text is digits with at most
@@ -1818,6 +1868,11 @@ async function compare(chrome, doc, ok) {
         const notes = await page.evaluate(offColor);
         if (file !== typeset) ran.sidenotes += notes.checked;
         if (notes.wrong) problems.push(`${name}: ${notes.wrong} footnotes not in the text's color`);
+        if (doc.name in modernFonts) {
+          for (const [what, got, want] of await page.evaluate(modernFont(modernFonts[doc.name]))) {
+            problems.push(`${name}: ${what}: ${got}, not ${want}`);
+          }
+        }
         if (file !== typeset) {
           // the theme button needs tex8web-page.js, which is not running
           if (await page.evaluate(`document.querySelector('.tex8web-theme').checkVisibility()`)) {
@@ -2125,6 +2180,7 @@ if (shards) {
 const never = only.length || shards ? [] : unchecked(ran);
 const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
 stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
+stray.push(...strayKeys(modernFonts).map(name => `no document ${name} for its math font`));
 stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));
 stray.push(...strayKeys(darkPictures).map(name => `no document ${name} for its pictures in dark mode`));
 stray.push(...strayKeys(graphicsInside).map(name => `no document ${name} for its graphics in pictures`));
