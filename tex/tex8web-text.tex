@@ -230,6 +230,15 @@
     }
 \fi
 
+% --- margin notes -----------------------------------------------------------
+
+% marginnote.4ht puts a \marginnote's text in the page outside any group,
+% so a size or a color declared at its start applied to the rest of the
+% page. The note is set in a group, as LaTeX sets it in a box.
+\@ifpackageloaded{marginnote}{%
+    \Configure{marginnote}{\HCode{<span class="marginnote">}\bgroup}{\egroup\HCode{</span>}}%
+}{}
+
 % --- title ------------------------------------------------------------------
 
 % each \thanks mark where the \thanks is, as in the PDF. tex4ht (latex.4ht)
