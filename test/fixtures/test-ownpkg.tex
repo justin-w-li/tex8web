@@ -8,10 +8,11 @@
 % and tex4ht reads no .4ht for the writer's file, as for any other file
 % of the document: a .4ht configures the tree's file, not the writer's.
 % The cases with \maketitle and with exam.cls's page style show what
-% slides.4ht and exam.4ht change. The guards: an older copy of the
-% tree's url.sty, which keeps url.4ht, the tree's slides class, which
-% keeps slides.4ht, and a writer's exam.cls with none of the macros that
-% exam.4ht tests, which only checks that the page builds. The tree's
+% slides.4ht and exam.4ht change. The guards: older copies of the tree's
+% url.sty and IEEEtran.cls, which keep url.4ht and IEEEtran.4ht, the
+% tree's slides class, which keeps slides.4ht, and a writer's exam.cls
+% with none of the macros that exam.4ht tests, which only checks that the
+% page builds. The tree's
 % slides.sty is left out: it loads the slides class, and LaTeX stops
 % with the error "Two \LoadClass commands" after article.
 \InputIfFileExists{ownpkg-case.tex}{}{%

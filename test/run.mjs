@@ -5799,9 +5799,11 @@ for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, se
 // test-ownpkg built again from each folder of test-ownpkg/, copied beside
 // the document: a package or class of the writer's named like a tex4ht
 // configuration file. Each case's text is in the page, set as in the PDF,
-// and the TeX log reads no .4ht for the writer's file. The guards: an
-// older copy of the tree's url.sty, made here from the tree's file, which
-// keeps url.4ht, and a writer's exam.cls.
+// and the TeX log reads no .4ht for the writer's file. The guards: older
+// copies of the tree's url.sty and IEEEtran.cls, made here from the tree's
+// files, which keep url.4ht and IEEEtran.4ht (IEEEtran.4ht patches no macro
+// with \pend:def), the tree's slides class, which keeps slides.4ht, and a
+// writer's exam.cls.
 const ownpkg = docs.find(d => d.name === 'test-ownpkg');
 const ownpkgDir = join(root, 'test/fixtures/test-ownpkg');
 const ownpkgBuilds = [];
@@ -5835,6 +5837,7 @@ if (ownpkg) {
     ['examhead', 'an exam.cls with the exam page style', 'examhead',
       [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./], ['exam.4ht'], []],
     ['urldated', 'a url.sty dated before the tree\'s', 'urldated', urlText, ['url.4ht'], []],
+    ['ieeeold', 'a guard: an older copy of the tree\'s IEEEtran.cls', 'ieeeold', [/Text of the paper\./], [], ['IEEEtran.4ht']],
     ['treecls', 'a guard: the tree\'s slides class', 'treecls', [/Text of the slide\./], [], ['slides.4ht']],
     ['exam', 'a guard: an exam.cls of the writer\'s', 'exam',
       [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./, /<span class='cmbx-10'>Question 2\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the second question\./], [], []],
@@ -5853,6 +5856,12 @@ if (ownpkg) {
         const old = sty.replace(/(\\ProvidesPackage\s*\{url\}\[)\d{4}\/\d\d\/\d\d \\space ver [\d.]+/, '$12005/06/27 \\space ver 3.2');
         if (old === sty) throw new Error('no \\ProvidesPackage line with a date and version in the tree\'s url.sty');
         writeFileSync(join(dir, 'url.sty'), old, 'latin1');
+      }
+      if (key === 'ieeeold') {
+        const cls = readFileSync(spawnSync('kpsewhich', ['IEEEtran.cls'], { encoding: 'utf8' }).stdout.trim(), 'latin1');
+        const old = cls.replace(/(\\ProvidesClass\{IEEEtran\}\[)\d{4}\/\d\d\/\d\d V[\d.]+[a-z]?/, '$12014/09/17 V1.8a');
+        if (old === cls) throw new Error('no \\ProvidesClass line with a date and version in the tree\'s IEEEtran.cls');
+        writeFileSync(join(dir, 'IEEEtran.cls'), old, 'latin1');
       }
       return { ...ownpkg, name: `test-ownpkg ${key}`, dir };
     },

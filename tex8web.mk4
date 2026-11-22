@@ -47,12 +47,17 @@ os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 -- tex4ht reads <name>.4ht after a package or class of that name. A .sty or
 -- .cls beside the document with such a name counts as a copy of the tree's
 -- file, which needs its .4ht, only if it names every macro or environment
--- that the .4ht patches with \pend:def or \append:def and the tree's file
--- names. A copy can be edited or older, so the files' texts are compared
--- only when the tree's file names none of them. Any other such file is the
--- writer's, such as a slides.sty that slides.4ht stops or a url.sty whose
--- \url url.4ht replaces. tex8web-hooks.sty reads these files' names from a
--- file that the step "ownpkgs" below writes, and skips their .4ht files.
+-- that the .4ht patches with \pend:def or \append:def (or \pend:defI,
+-- \pend:defII, and so on) and the tree's file names. A copy can be edited
+-- or older, so the files' texts are not compared. When the tree's file
+-- names none of them, as for IEEEtran.cls, whose .4ht patches none of its
+-- macros, the file counts as a copy if the tree has a file of that name,
+-- unless the tree's file defines no macro, as for slides.sty, which only
+-- loads the slides class: then it counts as a copy only if it defines
+-- none either. Any other such file is the writer's, such as a slides.sty
+-- that slides.4ht stops or a url.sty whose \url url.4ht replaces.
+-- tex8web-hooks.sty reads these files' names from a file that the step
+-- "ownpkgs" below writes, and skips their .4ht files.
 local ownpkgs = {}
 do
   local function read(path)
@@ -77,6 +82,15 @@ do
     local env = target:match("^end(.+)")
     return names(text, target) or env and (names(text, env) or text:find("{" .. env .. "}", 1, true)) or false
   end
+  -- (whether a file defines a macro or an environment)
+  local function defines(text)
+    for _, pattern in ipairs {"\\[gex]?def%s*\\", "\\let%s*\\", "\\newcommand", "\\renewcommand",
+      "\\providecommand", "\\DeclareRobustCommand", "\\newenvironment", "\\NewDocument",
+      "\\DeclareDocument", "\\cs_new", "\\cs_set", "\\cs_gset"} do
+      if text:find(pattern) then return true end
+    end
+    return false
+  end
   local function kpsewhich(args)
     local pipe = io.popen("kpsewhich " .. args)
     local out = pipe:read("a")
@@ -85,7 +99,9 @@ do
   end
   local files, bases = {}, {}
   for name in lfs.dir(".") do
-    local base = name:match("^([%w_-]+)%.sty$") or name:match("^([%w_-]+)%.cls$")
+    -- (a name that starts with a letter or digit, which kpsewhich does not
+    -- read as an option)
+    local base = name:match("^(%w[%w_-]*)%.sty$") or name:match("^(%w[%w_-]*)%.cls$")
     if base then
       files[#files + 1] = name
       bases[#bases + 1] = base .. ".4ht"
@@ -104,14 +120,14 @@ do
           if path ~= "./" .. file then tree = read(path) break end
         end
         local own, copy, targets = read(file), false, {}
-        for target in read(found[base]):gmatch("\\a?p?pend:defI?%s*\\([%a@:]+)") do
+        for target in read(found[base]):gmatch("\\a?p?pend:defI*%s*\\([%a@:]+)") do
           if target ~= "csname" and tree and named(tree, target) then targets[target] = true end
         end
         for target in pairs(targets) do
           copy = named(own, target)
           if not copy then break end
         end
-        if not next(targets) then copy = own == tree end
+        if not next(targets) then copy = tree ~= nil and (defines(tree) or not defines(own)) end
         if not copy then ownpkgs[#ownpkgs + 1] = file end
       end
     end
