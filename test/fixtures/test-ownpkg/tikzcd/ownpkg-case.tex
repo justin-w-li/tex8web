@@ -1,0 +1,5 @@
+% (run.mjs puts the tree's tikz-cd.sty beside the document, without its
+% \endinput line)
+\documentclass{article}
+\usepackage{tikz-cd}
+\def\ownpkgbody{\begin{tikzcd}[ampersand replacement=\&] A \arrow[r] \& B \end{tikzcd}}

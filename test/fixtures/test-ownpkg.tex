@@ -9,13 +9,13 @@
 % of the document: a .4ht configures the tree's file, not the writer's.
 % The cases with \maketitle and with exam.cls's page style show what
 % slides.4ht and exam.4ht change, and a writer's exam.cls with none of the
-% macros that exam.4ht tests loses exam.4ht too. The guards: older copies
-% of the tree's url.sty and IEEEtran.cls, which keep url.4ht and
-% IEEEtran.4ht, the tree's slides class, which keeps slides.4ht, a
-% writer's class with a .4ht of the writer's beside it, which keeps that
-% .4ht, and a publisher's aa.cls, which the tree lacks and which keeps
-% aa.4ht. The tree's slides.sty is left out: it loads the slides class, and
-% LaTeX stops with the error "Two \LoadClass commands" after article.
+% macros that exam.4ht tests loses exam.4ht too, as does a writer's
+% exam.sty. The guards keep their .4ht: older copies of the tree's url.sty
+% and IEEEtran.cls, an edited copy of the tree's tikz-cd.sty, the tree's
+% slides class, a writer's class with a .4ht of the writer's beside it,
+% and a publisher's aa.cls, which the tree lacks. The tree's slides.sty is
+% left out: it loads the slides class, and LaTeX stops with the error
+% "Two \LoadClass commands" after article.
 \InputIfFileExists{ownpkg-case.tex}{}{%
   \documentclass{article}
   \def\ownpkgbody{No package or class of the writer's.}}

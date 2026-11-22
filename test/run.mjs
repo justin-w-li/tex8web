@@ -5799,12 +5799,12 @@ for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, se
 // test-ownpkg built again from each folder of test-ownpkg/, copied beside
 // the document: a package or class of the writer's named like a tex4ht
 // configuration file. Each case's text is in the page, set as in the PDF,
-// and the TeX log reads no .4ht for the writer's file. The guards: older
-// copies of the tree's url.sty and IEEEtran.cls, made here from the tree's
-// files, which keep url.4ht and IEEEtran.4ht (IEEEtran.4ht patches no macro
-// with \pend:def), the tree's slides class, which keeps slides.4ht, a
-// writer's class with a .4ht of the writer's beside it, which is kept, and
-// a copy of a publisher's class that the tree lacks, which keeps its .4ht.
+// and the TeX log reads no .4ht for the writer's file. The guards keep
+// their .4ht: copies of the tree's url.sty and IEEEtran.cls, made here
+// with only their dates changed (IEEEtran.4ht patches no macro with
+// \pend:def), an edited copy of the tree's tikz-cd.sty, the tree's slides
+// class, a writer's class with a .4ht of the writer's beside it, and a
+// copy of a publisher's class that the tree lacks.
 const ownpkg = docs.find(d => d.name === 'test-ownpkg');
 const ownpkgDir = join(root, 'test/fixtures/test-ownpkg');
 const ownpkgBuilds = [];
@@ -5845,6 +5845,9 @@ if (ownpkg) {
       [/<span class='cmbx-10'>Theorem 1\.<\/span>/, /<span class='cmti-10'>Text of the theorem, about <\/span>/, /aria-label='trace of A'/], ['slides.4ht'], []],
     ['ownfourht', 'a guard: a class of the writer\'s with a .4ht of the writer\'s beside it', 'ownfourht',
       [/Text of the class.s configuration for tex4ht\./], [], ['myclass.4ht']],
+    ['examsty', 'an exam.sty, when the tree has exam.cls', 'examsty',
+      [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./], ['exam.4ht'], []],
+    ['tikzcd', 'a guard: an edited copy of the tree\'s tikz-cd.sty, which loads a library and defines no macro', 'tikzcd', [/<img /], [], ['tikz-cd.4ht']],
     ['aa', 'a guard: a publisher\'s class that TeX\'s tree lacks and tex4ht configures', 'aa', [/Text of the paper\./], [], ['aa.4ht']],
   ];
   for (const [key, label, folder, shows, unread, read] of cases) ownpkgBuilds.push({
@@ -5867,6 +5870,12 @@ if (ownpkg) {
         const old = cls.replace(/(\\ProvidesClass\{IEEEtran\}\[)\d{4}\/\d\d\/\d\d V[\d.]+[a-z]?/, '$12014/09/17 V1.8a');
         if (old === cls) throw new Error('no \\ProvidesClass line with a date and version in the tree\'s IEEEtran.cls');
         writeFileSync(join(dir, 'IEEEtran.cls'), old, 'latin1');
+      }
+      if (key === 'tikzcd') {
+        const sty = readFileSync(spawnSync('kpsewhich', ['tikz-cd.sty'], { encoding: 'utf8' }).stdout.trim(), 'latin1');
+        const edited = sty.replace(/^\\endinput\s*$/m, '');
+        if (edited === sty) throw new Error('no \\endinput line in the tree\'s tikz-cd.sty');
+        writeFileSync(join(dir, 'tikz-cd.sty'), edited, 'latin1');
       }
       return { ...ownpkg, name: `test-ownpkg ${key}`, dir };
     },
