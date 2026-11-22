@@ -1,0 +1,11 @@
+% test-marginnote's cases with hyperref, and sidenotes' \sidenote, which
+% uses \marginpar without an offset and \marginnote with one.
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{sidenotes}
+\input{test-marginnote-cases.ltx}
+
+\sidenote{\tiny\color{blue}Note sidenote.}\after{sidenote}
+
+\sidenote[][1em]{\tiny\color{blue}Note sideoffset.}\after{sideoffset}
+\end{document}

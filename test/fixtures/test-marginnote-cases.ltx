@@ -1,0 +1,67 @@
+% The cases of test-marginnote and test-marginnote-hyperref. A declaration
+% at the start of a \marginnote, such as a size, a color, a series, or a
+% shape, applies only to the note, as in the PDF, where the note is set in
+% a box. Each case's note reads "Note <case>.", and the text after the note
+% reads "After <case>." or "First <case>.", "Second <case>.", and "Item
+% <case>.", which run.mjs reads.
+\usepackage{xcolor}
+\usepackage{amsthm}
+\usepackage{marginnote}
+\newtheorem{theorem}{Theorem}
+% (the text after a note: the rest of its paragraph, a paragraph, and a
+% list)
+\newcommand\after[1]{First #1.\par Second #1.\begin{itemize}\item Item #1.\end{itemize}}
+\begin{document}
+
+\section{Margin notes}
+
+\marginnote{\tiny\color{blue}Note example.}\after{example}
+
+\subsection{Heading example}
+
+\marginnote[\small\color{red}Left sides.]{\large\color{red}Note sides.}\after{sides}
+
+\marginnote{\footnotesize\color{teal}Note offset.}[1em]\after{offset}
+
+\marginnote[\small\color{red}Left both.]{\large\color{red}Note both.}[1em]\after{both}
+
+\marginnote{\scriptsize Note size.}\after{size}
+
+\marginnote{\color{green}Note color.}\after{color}
+
+\marginnote{\bfseries Note bold.}\after{bold}
+
+\marginnote{\itshape Note italic.}\after{italic}
+
+\marginnote{\sffamily Note family.}\after{family}
+
+\marginnote{\tiny\color{blue}Note \textbf{nested} group.}\after{nested}
+
+\marginnote{Note ending.\tiny\color{blue}}\after{ending}
+
+Before mid.\marginnote{\tiny\color{blue}Note mid.} After mid.
+
+Second mid.
+
+\begin{itemize}
+\item Before item.\marginnote{\tiny\color{blue}Note item.} After item.
+\item Second item.
+\end{itemize}
+
+\textit{Before upshape.\marginnote{\upshape\tiny\color{blue}Note upshape.} After upshape.} Second upshape.
+
+\begin{theorem}
+Before theorem.\marginnote{\upshape\tiny\color{blue}Note theorem.} After theorem.
+
+Second theorem.
+\end{theorem}
+
+After the theorem.
+
+Before the footnote.\footnote{Before footnote.\marginnote{\tiny\color{blue}Note footnote.} After footnote.} After the footnote mark.
+
+\textsf{Before sans.\marginnote{\tiny\color{blue}Note sans.} After sans.} Second sans.
+
+\texttt{Before typewriter.\marginnote{\tiny\color{blue}Note typewriter.} After typewriter.} Second typewriter.
+
+\marginpar{\tiny\color{green}Note marginpar.}\after{marginpar}

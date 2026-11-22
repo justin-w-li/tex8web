@@ -3886,6 +3886,55 @@ function ligatureProblems(name, flat) {
   return problems;
 }
 
+// Text after a \marginnote in the font and color around the note, and the
+// note in its own: for each text, the class of the innermost font span
+// around it (null for the body font), the color of the innermost element
+// around it with one (null for none), and the class of an element around it.
+const marginnoteBody = ['example', 'sides', 'offset', 'both', 'size', 'color', 'bold', 'italic', 'family', 'nested',
+  'ending', 'marginpar'].flatMap(name => [`First ${name}.`, `Second ${name}.`, `Item ${name}.`]);
+const marginnotePlain = [...marginnoteBody, 'Heading example', 'After mid.', 'Second mid.', 'After item.', 'Second item.',
+  'Second upshape.', 'After the theorem.', 'After the footnote mark.', 'Second sans.', 'Second typewriter.'];
+const marginnoteCases = {
+  ...Object.fromEntries(marginnotePlain.map(text => [text, [null, null]])),
+  'After upshape.': ['cmti-10', null], 'After theorem.': ['cmti-10', null], 'Second theorem.': ['cmti-10', null],
+  'After footnote.': ['cmr-8', null], 'After sans.': ['cmss-10', null], 'After typewriter.': ['cmtt-10', null],
+  'Note example.': ['cmr-5', '#0000FF', 'marginnote'], 'Note sides.': ['cmr-12', '#FF0000', 'marginnote'],
+  'Note offset.': ['cmr-8', '#008080', 'marginnote'], 'Note size.': ['cmr-7', null, 'marginnote'],
+  'Note bold.': ['cmbx-10', null, 'marginnote'], 'Note italic.': ['cmti-10', null, 'marginnote'],
+  'Note marginpar.': ['cmr-5', '#00FF00', 'marginpar'],
+};
+const marginnotes = {
+  'test-marginnote': marginnoteCases,
+  'test-marginnote-hyperref': { ...marginnoteCases, ...Object.fromEntries(['sidenote', 'sideoffset']
+    .flatMap(name => [`First ${name}.`, `Second ${name}.`, `Item ${name}.`]).map(text => [text, [null, null]])),
+    'Note sidenote.': ['cmr-5', '#0000FF', 'marginpar'], 'Note sideoffset.': ['cmr-5', '#0000FF', 'marginnote'] },
+};
+// (the elements open at a place in the page's <main>, outermost first)
+const openAt = (html, at) => {
+  const open = [];
+  for (const [tag, close, name] of html.slice(html.indexOf('<main'), at).matchAll(/<(\/?)([A-Za-z][\w-]*)[^>]*>/g)) {
+    const last = close ? open.findLastIndex(el => el.name === name) : -1;
+    if (last >= 0) open.length = last;
+    else if (!close && !tag.endsWith('/>') && !/^(?:br|img|hr|meta|link|input|col|wbr)$/.test(name)) open.push({ name, tag });
+  }
+  return open;
+};
+function marginnoteProblems(name, flat) {
+  const problems = [];
+  for (const [text, [font, color, within]] of Object.entries(marginnotes[name] ?? {})) {
+    const at = flat.indexOf(text);
+    if (at < 0) { problems.push(`no '${text}'`); continue; }
+    const open = openAt(flat, at);
+    const classOf = el => el.tag.match(/class='([^']*)'/)?.[1] ?? '';
+    const shown = open.filter(el => el.name === 'span' && /-\d+(?:x-x-\d+)?$/.test(classOf(el))).map(classOf).at(-1) ?? null;
+    const colored = open.map(el => el.tag.match(/style='(?:[^']*[;\s])?color:\s*light-dark\((#[0-9A-Fa-f]{6})/)?.[1]).filter(Boolean).at(-1) ?? null;
+    if (shown !== font) problems.push(`'${text}' in the font ${shown}, not ${font}`);
+    if (colored !== color) problems.push(`'${text}' in the color ${colored}, not ${color}`);
+    if (within && !open.some(el => classOf(el).split(' ').includes(within))) problems.push(`'${text}' not in a ${within}`);
+  }
+  return problems;
+}
+
 // the fonts listed in data-fonts on the inline script
 const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["']/)?.[1] ?? '').split(/\s+/).filter(Boolean);
 
@@ -4710,6 +4759,7 @@ function check(doc, result, out, aux) {
     }
   }
   problems.push(...ligatureProblems(doc.name, flat));
+  problems.push(...marginnoteProblems(doc.name, flat));
   // (fancyvrb's saved text keeps both spaces, which flat joins)
   if (doc.name === 'test-useverb-fvextra' && !html.includes('uvx-star\u00A0a\u00A0\u00A0b')) problems.push('no uvx-star with two spaces');
   if (displayPictures[doc.name]) {
