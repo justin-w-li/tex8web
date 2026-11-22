@@ -1,0 +1,4 @@
+{\reset@font\ptcSfont\mtc@string\contentsline{section}{\noexpand \leavevmode \numberline {1}First}{\reset@font\ptcSfont 1}{}}
+{\reset@font\ptcSSfont\mtc@string\contentsline{subsection}{\noexpand \leavevmode \numberline {1.1}\textcolor {red}{Old subsection}}{\reset@font\ptcSSfont 1}{}}
+{\reset@font\ptcSfont\mtc@string\contentsline{section}{\noexpand \leavevmode \numberline {2}Second}{\reset@font\ptcSfont 1}{}}
+{\reset@font\ptcSSfont\mtc@string\contentsline{subsection}{\noexpand \leavevmode \numberline {2.1}\textcolor {red}{Old other subsection}}{\reset@font\ptcSSfont 1}{}}

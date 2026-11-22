@@ -1,0 +1,50 @@
+% An article with minitoc's shortext option, which names its numbered
+% files with one letter: S, H, and V for the tables of a section, and P
+% for that of a part. Beside them are the files of an earlier build that
+% loaded xcolor, in minitoc's own format: each entry has \textcolor, and
+% xcolor is not loaded here. Under tex4ht, the first section's tables
+% read the files of index 2, and \parttoc reads the file of index 0, so
+% the stale .P1 is a guard. The stale files stay as they are.
+\documentclass{article}
+\usepackage[shortext]{minitoc}
+\begin{document}
+\doparttoc
+\dosecttoc
+\dosectlof
+\dosectlot
+\tableofcontents
+\listoffigures
+\listoftables
+\part{First part}
+\parttoc
+\section{First}
+\secttoc
+\sectlof
+\sectlot
+Text of the first section.
+\subsection{New subsection}
+Text of the subsection.
+\begin{figure}[h]
+\centering A figure.
+\caption{New figure}
+\end{figure}
+\begin{table}[h]
+\centering A table.
+\caption{New table}
+\end{table}
+\section{Second}
+\secttoc
+\sectlof
+\sectlot
+Text of the second section.
+\subsection{Another new subsection}
+Text of the other subsection.
+\begin{figure}[h]
+\centering A figure.
+\caption{Another new figure}
+\end{figure}
+\begin{table}[h]
+\centering A table.
+\caption{Another new table}
+\end{table}
+\end{document}

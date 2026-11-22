@@ -1,0 +1,31 @@
+% A report with hyperref and minitoc's mini tables, beside the numbered
+% files of an earlier build that loaded xcolor and hyperref, in minitoc's
+% own format, each entry with \textcolor and an anchor. xcolor is not
+% loaded here, but \textcolor is defined in this build, so the old
+% entries give no error. The stale files stay as they are.
+\documentclass{report}
+\usepackage{minitoc}
+\usepackage{hyperref}
+\begin{document}
+\dominitoc
+\dominilof
+\dominilot
+\tableofcontents
+\listoffigures
+\listoftables
+\chapter{First}
+\minitoc
+\minilof
+\minilot
+Text of the first chapter.
+\section{New section}
+Text of the section.
+\begin{figure}[h]
+\centering A figure.
+\caption{New figure}
+\end{figure}
+\begin{table}[h]
+\centering A table.
+\caption{New table}
+\end{table}
+\end{document}
