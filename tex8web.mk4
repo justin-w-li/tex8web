@@ -229,18 +229,19 @@ else
         for included in text:gmatch("\\@input%s*{([^}]*)}") do scan(included) end
       end
       scan(prefix .. "aux")
-      -- (the second result is true for a file of minitoc's, one that the
-      -- rule of \mtc@string matched)
+      local function minitoc(name)
+        return numbered[name:sub(#prefix + 1):match("^(%a+)%d+$")]
+      end
+      -- (the second result is true when the rule of \mtc@string matched)
       local function list(name)
         local extension = name:sub(#prefix + 1)
         if source[extension] then return false end
         if named[extension] then return true end
-        local minitoc = numbered[extension:match("^(%a+)%d+$")]
         local file = io.open(name, "rb")
         if not file then return false end
         local written, lines = true, 0
         for line in file:lines() do
-          if minitoc and line:find("\\mtc@string") then
+          if minitoc(name) and line:find("\\mtc@string") then
             file:close()
             return true, true
           end
@@ -256,20 +257,26 @@ else
         file:close()
         return written and lines > 0
       end
-      -- (a file of minitoc's beside the document is named in the status
-      -- line also when the build directory has its empty file from an
-      -- earlier build, which LaTeX reads in its place)
-      local minitocs = {}
+      -- (when a file under a name of minitoc's holds \mtc@string, the
+      -- status line names each list under such a name, hidden by any of
+      -- the rules, also when the build directory has its empty file from
+      -- an earlier build, which LaTeX reads in its place. Other files are
+      -- read only when the build directory lacks them)
+      local minitocs, mtc = {}, false
       for name in lfs.dir(".") do
         local file = par.builddir .. "/" .. name
         if name:sub(1, #prefix) == prefix and name ~= par.tex_file and not name:find("%.tex$")
           and lfs.attributes(name, "mode") == "file" then
-          local hidden, mtc = list(name)
-          if hidden and not lfs.attributes(file) then io.open(file, "w"):close() end
-          if hidden and mtc then table.insert(minitocs, name) end
+          local missing = not lfs.attributes(file)
+          if missing or minitoc(name) then
+            local hidden, entries = list(name)
+            if hidden and missing then io.open(file, "w"):close() end
+            if hidden and minitoc(name) then table.insert(minitocs, name) end
+            mtc = mtc or entries
+          end
         end
       end
-      if #minitocs > 0 then
+      if mtc then
         table.sort(minitocs)
         log:status("minitoc's mini tables are empty: tex4ht gives minitoc no table of contents to split, "
           .. "and these files of an earlier build beside the document are not read: " .. table.concat(minitocs, ", "))

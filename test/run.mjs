@@ -2818,6 +2818,9 @@ const logs = {
 // does not read; a .F90 source of the document is read, and no such line
 // names it)
 logs['test-staleaux-mtc'].push(/^\[STATUS\] +tex8web: minitoc's mini tables are empty: .*test-staleaux-mtc\.mlf1, .*test-staleaux-mtc\.mtc1, .*test-staleaux-mtc\.ptc1$/m);
+// (the status line also names a file under a name of minitoc's that holds
+// only \addtocontents writes)
+logs['test-staleaux-mtc'].push(/^\[STATUS\] +tex8web: minitoc's mini tables are empty: .*test-staleaux-mtc\.mtc1, [^,]*test-staleaux-mtc\.mtc2, /m);
 logs['test-staleaux-ptc-own'].push(/^(?![^]*mini tables are empty)/);
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
