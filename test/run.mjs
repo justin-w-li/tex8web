@@ -5803,7 +5803,7 @@ for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, se
 // copies of the tree's url.sty and IEEEtran.cls, made here from the tree's
 // files, which keep url.4ht and IEEEtran.4ht (IEEEtran.4ht patches no macro
 // with \pend:def), the tree's slides class, which keeps slides.4ht, and a
-// writer's exam.cls.
+// writer's class with a .4ht of the writer's beside it, which is kept.
 const ownpkg = docs.find(d => d.name === 'test-ownpkg');
 const ownpkgDir = join(root, 'test/fixtures/test-ownpkg');
 const ownpkgBuilds = [];
@@ -5839,8 +5839,10 @@ if (ownpkg) {
     ['urldated', 'a url.sty dated before the tree\'s', 'urldated', urlText, ['url.4ht'], []],
     ['ieeeold', 'a guard: an older copy of the tree\'s IEEEtran.cls', 'ieeeold', [/Text of the paper\./], [], ['IEEEtran.4ht']],
     ['treecls', 'a guard: the tree\'s slides class', 'treecls', [/Text of the slide\./], [], ['slides.4ht']],
-    ['exam', 'a guard: an exam.cls of the writer\'s', 'exam',
-      [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./, /<span class='cmbx-10'>Question 2\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the second question\./], [], []],
+    ['exam', 'an exam.cls of the writer\'s with none of the macros that exam.4ht tests', 'exam',
+      [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./, /<span class='cmbx-10'>Question 2\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the second question\./], ['exam.4ht'], []],
+    ['ownfourht', 'a guard: a class of the writer\'s with a .4ht of the writer\'s beside it', 'ownfourht',
+      [/Text of the class.s configuration for tex4ht\./], [], ['myclass.4ht']],
   ];
   for (const [key, label, folder, shows, unread, read] of cases) ownpkgBuilds.push({
     key, label, shows, unread, read,

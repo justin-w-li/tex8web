@@ -55,7 +55,8 @@ os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 -- unless the tree's file defines no macro, as for slides.sty, which only
 -- loads the slides class: then it counts as a copy only if it defines
 -- none either. Any other such file is the writer's, such as a slides.sty
--- that slides.4ht stops or a url.sty whose \url url.4ht replaces.
+-- that slides.4ht stops or a url.sty whose \url url.4ht replaces. A .4ht
+-- of the document's, as for a class of the writer's, is not checked.
 -- tex8web-hooks.sty reads these files' names from a file that the step
 -- "ownpkgs" below writes, and skips their .4ht files.
 local ownpkgs = {}
@@ -108,9 +109,19 @@ do
     end
   end
   if #files > 0 then
+    -- (a .4ht beside the document, or in a folder of owndirs, is the
+    -- writer's configuration of the writer's file, and is kept)
+    local function own(path)
+      if path:sub(1, 1) ~= "/" then return true end
+      local dir = path:match("^(.*)/")
+      for _, owndir in ipairs(owndirs) do
+        if dir == owndir then return true end
+      end
+      return false
+    end
     local found = {}
     for path in kpsewhich(table.concat(bases, " ")):gmatch("[^\n]+") do
-      found[path:match("([^/]+)%.4ht$")] = path
+      if not own(path) then found[path:match("([^/]+)%.4ht$")] = path end
     end
     for _, file in ipairs(files) do
       local base = file:match("^(.+)%.%a+$")

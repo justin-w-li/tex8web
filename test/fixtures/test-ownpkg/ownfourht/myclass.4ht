@@ -1,0 +1,2 @@
+% The writer's configuration of myclass.cls for tex4ht.
+\gdef\fourhttext{Text of the class's configuration for tex4ht.}
