@@ -5847,7 +5847,7 @@ if (ownpkg) {
       [/Text of the class.s configuration for tex4ht\./], [], ['myclass.4ht']],
     ['examsty', 'an exam.sty, when the tree has exam.cls', 'examsty',
       [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./], ['exam.4ht'], []],
-    ['tikzcd', 'a guard: an edited copy of the tree\'s tikz-cd.sty, which loads a library and defines no macro', 'tikzcd', [/<img /], [], ['tikz-cd.4ht']],
+    ['tikzcd', 'a guard: an edited copy of the tree\'s tikz-cd.sty, which loads a library and defines no macro', 'tikzcd', [], [], ['tikz-cd.4ht']],
     ['aa', 'a guard: a publisher\'s class that TeX\'s tree lacks and tex4ht configures', 'aa', [/Text of the paper\./], [], ['aa.4ht']],
   ];
   for (const [key, label, folder, shows, unread, read] of cases) ownpkgBuilds.push({

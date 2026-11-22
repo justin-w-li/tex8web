@@ -49,7 +49,8 @@ os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
 -- rule that tells a writer's file from a copy of the tree's file, which
 -- needs its .4ht, is in CONTRIBUTING.md. A copy can be edited or older, so
 -- the files' texts are not compared. A file whose name the tree lacks
--- counts as a copy: tex4ht configures publishers' classes that TeX Live
+-- counts as a copy, unless the tree has a file of that name with the
+-- other extension: tex4ht configures publishers' classes that TeX Live
 -- lacks, such as aa.cls, and authors put them beside their documents.
 -- tex8web-hooks.sty reads the writer's files' names from a file that the
 -- step "ownpkgs" below writes, and skips their .4ht files.
