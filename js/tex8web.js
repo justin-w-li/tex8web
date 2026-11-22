@@ -523,7 +523,7 @@ function tex8web(config, tex) {
   // text's Latin Modern. Where version 4.1.3 differs from the PDF, it is
   // changed here, on the font's class before MathJax makes the font
   // (internal: the class, its addExtension, defaultChars, dynamicFiles, and
-  // and AddFontIds). The page checks are in test-mathfont.tex.
+  // defaultStyles, and AddFontIds). The page checks are in test-mathfont.tex.
   function matchModernFont() {
     if (MathJax.config.output.font !== 'mathjax-modern') return;
     const Font = MathJax._.output.fonts['mathjax-modern'].chtml_ts.MathJaxModernFont;
@@ -611,6 +611,30 @@ function tex8web(config, tex) {
     delete Font.dynamicFiles.calligraphic;
     Font.addExtension({name: 'tex8web-tex', fonts: ['MJX-TEX-C', 'MJX-TEX-CB'], fontURL: fontURL('tex'),
       chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic}}, 'TEX')});
+
+    // Dots: mathjax-modern's ellipses are as tight as in text. TeX's \ldots
+    // and \cdots are three dots a thin space apart, and \vdots and \ddots
+    // three dots 4pt and 3pt apart (latex.ltx). The MathML keeps the one
+    // character, for copying and speech, drawn from mathjax-modern's dot as
+    // other text (internal: a character's c). For … and ⋯, the dots are
+    // set apart by six-per-em spaces: as wide as TeX's outside scripts,
+    // where TeX drops the thin space. For ⋮ and ⋱, which go up, one dot is
+    // drawn with two text shadows, kept in forced colors.
+    Font.addExtension({name: 'tex8web-dots', chars: {normal: {
+      0x2026: [.106, 0, 1.168, {c: '.\u2006.\u2006.'}],
+      0x22EF: [.303, -.197, 1.168, {c: '\u22C5\u2006\u22C5\u2006\u22C5'}],
+      0x22EE: [1.506, 0, .278, {c: '.'}],
+      0x22F1: [1.506, 0, 1.167, {c: '.'}],
+    }}});
+    // (selectors other than those of the characters' own rules, which
+    // would replace these)
+    Object.assign(Font.defaultStyles, {
+      'mjx-container mjx-c.mjx-c22EE': {'text-shadow': '0 -.4em, 0 -.8em', 'forced-color-adjust': 'none'},
+      // (the top dot, 1mu in and 7pt up, then each 2mu and a dot's width
+      // further, and 3pt lower)
+      'mjx-container mjx-c.mjx-c22F1': {position: 'relative', left: '.056em', top: '-.7em',
+        'text-shadow': '.389em .3em, .778em .6em', 'forced-color-adjust': 'none'},
+    });
   }
 
   const ready = startup.ready;
