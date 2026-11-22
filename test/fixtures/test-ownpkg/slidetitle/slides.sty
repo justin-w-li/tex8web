@@ -1,0 +1,6 @@
+% A package of the writer's, named like the tree's slides.sty, with no
+% \ProvidesPackage line, that defines a slide environment and a title
+% slide from \@title, \@author, and \@date: every macro that slides.4ht
+% patches.
+\newenvironment{slide}[1]{\par\textbf{Slide: #1}\par}{\par\textit{End of the slide.}\par}
+\newcommand\titleslide{\par\textbf{Title slide: \@title}\par\textit{\@author, \@date}\par}

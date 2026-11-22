@@ -1690,7 +1690,10 @@ const contents = {
     /<h3 class='abstracttitle'><span class='cmbx-9'>Abstract<\/span><\/h3>\s*<p class='noindent'>\s*<span class='cmr-9'>The abstract of the document\.<\/span>/,
     /<div class='appendices'>\s*<h3 class='likesectionHead' id='appendices'>.*Appendices<\/h3>/,
   ],
-  // (files of the document that give a .4ht's name in \ProvidesFile: each
+  // (built as it is, with no package or class of the writer's beside it;
+  // run.mjs builds it again from each folder of test-ownpkg/)
+  'test-ownpkg': [/No package or class of the writer.s\./],
+  // (files
   // file's text and extra checks, nothing that glossary.4ht writes, such as
   // "refextract", and one page, where glossary.4ht's errors closed it twice)
   ...Object.fromEntries([
@@ -5791,6 +5794,78 @@ for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, se
   for (const name of unread) if (logText.includes(`/${name}`)) problems.push(`the TeX log reads ${name}`);
   for (const name of read) if (!logText.includes(`/${name}`)) problems.push(`the TeX log does not read ${name}`);
   report(`${fixture.name} (in a TeX tree: ${label})`, problems);
+});
+
+// test-ownpkg built again from each folder of test-ownpkg/, copied beside
+// the document: a package or class of the writer's named like a tex4ht
+// configuration file. Each case's text is in the page, set as in the PDF,
+// and the TeX log reads no .4ht for the writer's file. The guards: an
+// older copy of the tree's url.sty, made here from the tree's file, which
+// keeps url.4ht, and a writer's exam.cls.
+const ownpkg = docs.find(d => d.name === 'test-ownpkg');
+const ownpkgDir = join(root, 'test/fixtures/test-ownpkg');
+const ownpkgBuilds = [];
+if (ownpkg) {
+  const slidesText = [/<span class='cmbx-10'>Idea 1: First<\/span>/, /<span class='cmti-10'>Takeaway: Text of the writer.s slides package\.<\/span>/,
+    /<span class='cmbx-10'>Key point:<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the key point\./];
+  const urlText = [/Site: <span class='cmtt-10'>example\.org\/notes<\/span>\./, /Mail: <span class='cmtt-10'>writer@example\.org<\/span>\./];
+  const slideText = [/<span class='cmbx-10'>Slide: Opening<\/span>/, /Text of the slide\./, /<span class='cmti-10'>End of the slide\.<\/span>/];
+  // [key, label, folder of test-ownpkg/, texts, .4ht files the TeX log
+  // must not read, .4ht files it must read]
+  const cases = [
+    ['slides', 'a slides.sty with no \\ProvidesPackage line', 'slides', slidesText, ['slides.4ht'], []],
+    ['provides', 'a slides.sty with \\ProvidesPackage{slides}', 'provides', slidesText, ['slides.4ht'], []],
+    ['hyperref', 'a slides.sty with no \\ProvidesPackage line, and hyperref', 'hyperref', slidesText, ['slides.4ht'], []],
+    ['slideenv', 'a slides.sty that defines a slide environment', 'slideenv', slideText, ['slides.4ht'], []],
+    ['slidetitle', 'a slides.sty that defines a slide environment and a title slide', 'slidetitle',
+      [/<span class='cmbx-10'>Title slide: Lecture One<\/span>/, /<span class='cmti-10'>A\. Writer, Week One<\/span>/, ...slideText], ['slides.4ht'], []],
+    ['require', 'a slides.sty loaded by \\RequirePackage from a package of the writer\'s', 'require', slidesText, ['slides.4ht'], []],
+    ['url', 'a url.sty with \\ProvidesPackage{url}', 'url', urlText, ['url.4ht'], []],
+    ['urlbare', 'a url.sty with no \\ProvidesPackage line', 'urlbare', urlText, ['url.4ht'], []],
+    ['urlold', 'a guard: an older copy of the tree\'s url.sty', 'urlold',
+      [/Site: <a class='url' href='https:\/\/example\.org\/a_b'><span class='cmtt-10'>https:\/\/example\.<wbr \/>org\/<wbr \/>a_<wbr \/>b<\/span><\/a>\./,
+      /Path: <span class='path'><span class='cmtt-10'>dir\/<wbr \/>file<\/span><\/span>\./], [], ['url.4ht']],
+    ['exam', 'a guard: an exam.cls of the writer\'s', 'exam',
+      [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./, /<span class='cmbx-10'>Question 2\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the second question\./], [], []],
+  ];
+  for (const [key, label, folder, shows, unread, read] of cases) ownpkgBuilds.push({
+    key, label, shows, unread, read,
+    setup(top) {
+      // (a fresh copy beside the document, which the build's stamp then
+      // covers)
+      const dir = join(top, 'doc');
+      rmSync(dir, { recursive: true, force: true });
+      cpSync(join(ownpkgDir, folder), dir, { recursive: true });
+      writeFileSync(join(dir, 'test-ownpkg.tex'), readFileSync(join(ownpkg.dir, 'test-ownpkg.tex')));
+      if (key === 'urlold') {
+        const sty = readFileSync(spawnSync('kpsewhich', ['url.sty'], { encoding: 'utf8' }).stdout.trim(), 'latin1');
+        const old = sty.replace(/(\\ProvidesPackage\s*\{url\}\[)\d{4}\/\d\d\/\d\d \\space ver [\d.]+/, '$12005/06/27 \\space ver 3.2');
+        if (old === sty) throw new Error('no \\ProvidesPackage line with a date and version in the tree\'s url.sty');
+        writeFileSync(join(dir, 'url.sty'), old, 'latin1');
+      }
+      return { ...ownpkg, name: `test-ownpkg ${key}`, dir };
+    },
+  });
+}
+for (const { key, label, shows, unread, read, setup } of ownpkgBuilds) jobs.push(async () => {
+  const top = join(testDir(ownpkg), `own${key}`), out = join(top, 'html'), aux = join(top, 'aux');
+  const result = await build(setup(top), out, aux);
+  const problems = [];
+  if (result.code !== 0) {
+    problems.push(`make4ht exited with ${result.code}`, ...(result.log ?? '').split('\n').filter(line => /\[(ERROR|FATAL)\]|^! /.test(line)).slice(0, 3));
+  }
+  const file = join(out, 'test-ownpkg.html');
+  const flat = existsSync(file) ? readFileSync(file, 'utf8').replace(/[^\S ]+/g, ' ') : '';
+  if (!flat) problems.push('no page');
+  else {
+    for (const text of shows) if (!text.test(flat)) problems.push(`no ${text} in the page`);
+    if (/<\/html>[^]*<\/html>/.test(flat)) problems.push('two pages in one');
+  }
+  const texLog = join(aux, 'test-ownpkg.log'), logText = existsSync(texLog) ? readFileSync(texLog, 'latin1').replace(/\n/g, '') : '';
+  if (!logText) problems.push('no TeX log');
+  for (const name of unread) if (logText.includes(`/${name}`)) problems.push(`the TeX log reads ${name}`);
+  for (const name of read) if (!logText.includes(`/${name}`)) problems.push(`the TeX log does not read ${name}`);
+  report(`${ownpkg.name} (beside the document: ${label})`, problems);
 });
 
 // test-pdfpages-hint built again without shell escape

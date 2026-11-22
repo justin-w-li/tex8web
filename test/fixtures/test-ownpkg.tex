@@ -1,0 +1,16 @@
+% A package or a class of the writer's, beside the document, with the
+% name of a tex4ht configuration file: slides.sty, url.sty, or exam.cls.
+% Built as it is, the document reads no such file, and the page says so.
+% run.mjs builds it again from each folder of test-ownpkg/: the folder's
+% files are copied beside the document, and ownpkg-case.tex there loads
+% the class and packages and defines \ownpkgbody, the case's text. As in
+% the PDF, each case's text is in the page, as the writer's file sets it,
+% and tex4ht reads no .4ht for the writer's file. The guards: an older
+% copy of the tree's url.sty, which keeps url.4ht, and a writer's
+% exam.cls, which builds as exam.4ht's guards skip its patches.
+\InputIfFileExists{ownpkg-case.tex}{}{%
+  \documentclass{article}
+  \def\ownpkgbody{No package or class of the writer's.}}
+\begin{document}
+\ownpkgbody
+\end{document}

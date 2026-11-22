@@ -1,0 +1,6 @@
+% A package of the writer's for lecture notes, named like the tree's
+% slides.sty, with no \ProvidesPackage line.
+\newcounter{idea}
+\newcommand\idea[1]{\par\stepcounter{idea}\textbf{Idea \theidea: #1}\par}
+\newcommand\takeaway[1]{\par\textit{Takeaway: #1}\par}
+\newenvironment{keypoint}{\par\textbf{Key point:}\ }{\par}

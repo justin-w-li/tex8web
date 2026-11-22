@@ -1,0 +1,6 @@
+% The same package with a \ProvidesPackage line.
+\ProvidesPackage{slides}[2024/01/15 v1.0 lecture macros]
+\newcounter{idea}
+\newcommand\idea[1]{\par\stepcounter{idea}\textbf{Idea \theidea: #1}\par}
+\newcommand\takeaway[1]{\par\textit{Takeaway: #1}\par}
+\newenvironment{keypoint}{\par\textbf{Key point:}\ }{\par}
