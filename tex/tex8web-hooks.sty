@@ -1021,12 +1021,10 @@
                     {
                         {
                             \bool_lazy_and_p:nn
-                                {
-                                    \cs_if_exist_p:c { web@keepext@ #2 }
-                                    || \cs_if_exist_p:c { web@keep@ #1 }
-                                }
+                                { \cs_if_exist_p:c { web@keepext@ #2 } }
                                 { ! \cs_if_exist_p:c { web@ownpkg@ \CurrentFileUsed } }
                         }
+                        { \cs_if_exist_p:c { web@keep@ #1 } }
                         {
                             ! \bool_lazy_or_p:nn
                                 { \file_if_exist_p:n { ./ \CurrentFileUsed } }

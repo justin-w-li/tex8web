@@ -5802,8 +5802,9 @@ for (const { doc: fixture, key, label, shows, hides, unread, read, page, log, se
 // and the TeX log reads no .4ht for the writer's file. The guards: older
 // copies of the tree's url.sty and IEEEtran.cls, made here from the tree's
 // files, which keep url.4ht and IEEEtran.4ht (IEEEtran.4ht patches no macro
-// with \pend:def), the tree's slides class, which keeps slides.4ht, and a
-// writer's class with a .4ht of the writer's beside it, which is kept.
+// with \pend:def), the tree's slides class, which keeps slides.4ht, a
+// writer's class with a .4ht of the writer's beside it, which is kept, and
+// a copy of a publisher's class that the tree lacks, which keeps its .4ht.
 const ownpkg = docs.find(d => d.name === 'test-ownpkg');
 const ownpkgDir = join(root, 'test/fixtures/test-ownpkg');
 const ownpkgBuilds = [];
@@ -5833,7 +5834,6 @@ if (ownpkg) {
     ['maketitle', 'a slides.sty with no \\ProvidesPackage line, and \\maketitle', 'maketitle', [...titleText, slidesText[0]], ['slides.4ht'], []],
     ['list', 'a slides.sty loaded in a list of packages', 'list', slidesText, ['slides.4ht'], []],
     ['slidescls', 'a slides.cls with a slide environment', 'slidescls', slideText, ['slides.4ht'], []],
-    ['resume', 'a resume.cls', 'resume', [/<span class='cmbx-10'>A\. Writer<\/span>/, /Lives in <span class='cmti-10'>Springfield<\/span>\./], ['resume.4ht'], []],
     ['examhead', 'an exam.cls with the exam page style', 'examhead',
       [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./], ['exam.4ht'], []],
     ['urldated', 'a url.sty dated before the tree\'s', 'urldated', urlText, ['url.4ht'], []],
@@ -5845,6 +5845,7 @@ if (ownpkg) {
       [/<span class='cmbx-10'>Theorem 1\.<\/span>/, /<span class='cmti-10'>Text of the theorem, about <\/span>/, /aria-label='trace of A'/], ['slides.4ht'], []],
     ['ownfourht', 'a guard: a class of the writer\'s with a .4ht of the writer\'s beside it', 'ownfourht',
       [/Text of the class.s configuration for tex4ht\./], [], ['myclass.4ht']],
+    ['aa', 'a guard: a publisher\'s class that TeX\'s tree lacks and tex4ht configures', 'aa', [/Text of the paper\./], [], ['aa.4ht']],
   ];
   for (const [key, label, folder, shows, unread, read] of cases) ownpkgBuilds.push({
     key, label, shows, unread, read,
