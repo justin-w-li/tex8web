@@ -1620,17 +1620,16 @@ const contents = {
     /A Book Read from the Current File/, /Apple, <a href='#[^']+'>1<\/a>/, /the seed-bearing part of a plant/, /^(?![^]*Old note)/],
   // (minitoc's numbered files of an earlier build beside the document, in
   // minitoc's own format, each entry with \textcolor, which this build
-  // defines only with hyperref: this build's text and captions, and no old
-  // entry. The HTML build writes no numbered file of its own, so every
-  // LaTeX run reads the file beside the document)
+  // defines only with hyperref: this build's text, and no old entry. The
+  // HTML build writes no numbered file of its own, so every LaTeX run
+  // reads the file beside the document)
   ...Object.fromEntries(['-shortext', '-hyperref'].map(suffix => [`test-staleaux-mtc${suffix}`,
-    [/Text of the first chapter\./, /Text of the section\./, /New figure/, /New table/,
-      /^(?![^]*Old (?:section|figure|table|note))/]])),
+    [/Text of the first chapter\./, /Text of the section\./, /^(?![^]*Old (?:section|figure|table|note))/]])),
   'test-staleaux-mtc': [/Text of the first chapter\./, /Text of the second chapter\./, /Text of the other section\./,
-    /New figure/, /New table/, /^(?![^]*Old (?:section|figure|table|note))/],
+    /Text of the third chapter\./, /^(?![^]*Old (?:section|figure|table|note|coffee))/],
   ...Object.fromEntries(['', '-shortext'].map(suffix => [`test-staleaux-mtc-article${suffix}`,
-    [/Text of the first section\./, /Text of the second section\./, /Text of the other subsection\./, /New figure/, /New table/,
-      /^(?![^]*Old (?:other )?(?:subsection|figure|table))/]])),
+    [/Text of the first section\./, /Text of the second section\./, /Text of the other subsection\./,
+      /^(?![^]*Old (?:other |third )?(?:subsection|figure|table))/]])),
   // (files of the document named like tex4ht's .4ht files, read in the
   // preamble: each file's text in the page, with nothing from the .4ht
   // file of its name, such as background.4ht's empty div, and article's
@@ -2750,11 +2749,11 @@ const staleListFiles = {
   'test-staleaux-ptc-draft': { lists: ['.ptc'], read: ['.aux', '.bbl', '.ind', '.gls', '.bib'] },
   'test-staleaux-ptc-include': { lists: ['.ptc', '.lop'], read: ['.aux', '/chapter.aux'] },
   'test-staleaux-ptc-backref': { lists: ['.ptc'], read: ['.aux', '.brf'] },
-  'test-staleaux-mtc': { lists: ['.mtc1', '.mtc2', '.mlf1', '.mlt1', '.ptc1', '.plf1', '.plt1'] },
+  'test-staleaux-mtc': { lists: ['.mtc1', '.mtc2', '.mtc3', '.mlf1', '.mlt1', '.ptc1', '.plf1', '.plt1'] },
   'test-staleaux-mtc-shortext': { lists: ['.M1', '.F1', '.T1', '.P1', '.G1', '.U1'] },
   'test-staleaux-mtc-hyperref': { lists: ['.mtc1', '.mlf1', '.mlt1'] },
-  'test-staleaux-mtc-article': { lists: ['.stc1', '.stc2', '.slf1', '.slf2', '.slt1', '.slt2', '.ptc1'] },
-  'test-staleaux-mtc-article-shortext': { lists: ['.S1', '.S2', '.H1', '.H2', '.V1', '.V2', '.P1'] },
+  'test-staleaux-mtc-article': { lists: ['.stc1', '.stc2', '.stc3', '.slf1', '.slf2', '.slf3', '.slt1', '.slt2', '.slt3', '.ptc1'] },
+  'test-staleaux-mtc-article-shortext': { lists: ['.S1', '.S2', '.S3', '.H1', '.H2', '.H3', '.V1', '.V2', '.P1'] },
 };
 const staleListCases = Object.keys(staleListFiles);
 
@@ -6083,7 +6082,7 @@ for (const { doc, name } of staleDraftCases) jobs.push(async () => {
   };
   const [beside, alone] = await Promise.all([build('beside'), build('alone')]);
   if (!/Text of the first (?:section|chapter)\./.test(beside.html)) problems.push("the page does not have the first section's text");
-  if (/Old (?:example|remark|box|algorithm|section|figure|table|listing|program|theorem|note|words)|Alte[rn]? /.test(beside.html)) problems.push('the page has an old entry');
+  if (/Old (?:other |third )?(?:example|remark|box|algorithm|section|subsection|figure|table|listing|program|theorem|note|words|coffee)|Alte[rn]? /.test(beside.html)) problems.push('the page has an old entry');
   for (const pattern of staleListDraft[name] ?? []) if (!pattern.test(beside.html)) problems.push(`the page does not match ${pattern}`);
   if (name === 'hyperref' && !/See Example<span class='tex8web-nbsp'> <\/span>(?:<a [^>]*>)?1(?:<\/a>)?\./.test(beside.html)) {
     problems.push("the reference does not show the number from the .aux beside the document");

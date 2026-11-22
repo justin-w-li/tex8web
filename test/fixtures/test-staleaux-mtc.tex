@@ -4,7 +4,9 @@
 % minitoc writes these files in minitoc's own format, with no line that
 % starts with "\contentsline {", and no .aux names them. The .mtc2 of the
 % second chapter holds only an \addtocontents write of \oldmark, which
-% this document does not define. Under tex4ht, \parttoc, \partlof, and
+% this document does not define, and the .mtc3 of the third chapter holds
+% only a coffee line, which minitoc writes for \addcontentsline{toc}{coffee}
+% with no \contentsline. Under tex4ht, \parttoc, \partlof, and
 % \partlot read the files of index 0, so the stale .ptc1, .plf1, and
 % .plt1 are guards. The stale files stay as they are.
 \documentclass{report}
@@ -43,4 +45,7 @@ Text of the section.
 Text of the second chapter.
 \section{Another new section}
 Text of the other section.
+\chapter{Third}
+\minitoc
+Text of the third chapter.
 \end{document}

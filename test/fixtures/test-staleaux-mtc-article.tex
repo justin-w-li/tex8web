@@ -1,9 +1,10 @@
 % An article with minitoc's tables of a section and of a part, beside
 % the numbered files of an earlier build that loaded xcolor, in minitoc's
 % own format: each entry has \textcolor, and xcolor is not loaded here.
-% Under tex4ht, the first section's tables read the files of index 2, and
-% \parttoc reads the file of index 0, so the stale .ptc1 is a guard. The
-% stale files stay as they are.
+% Under tex4ht, the first section's tables read the files of index 2, the
+% second section's those of index 3, and \parttoc the file of index 0. The
+% stale files of index 1 and the .ptc1 are therefore guards. The stale
+% files stay as they are.
 \documentclass{article}
 \usepackage{minitoc}
 \begin{document}
