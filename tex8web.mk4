@@ -44,6 +44,79 @@ do
   end
 end
 os.setenv("TEXINPUTS", root .. "/tex:" .. (os.getenv("TEXINPUTS") or ""))
+-- tex4ht reads <name>.4ht after a package or class of that name. A .sty or
+-- .cls beside the document with such a name counts as a copy of the tree's
+-- file, which needs its .4ht, only if it names every macro or environment
+-- that the .4ht patches with \pend:def or \append:def and the tree's file
+-- names. A copy can be edited or older, so the files' texts are compared
+-- only when the tree's file names none of them. Any other such file is the
+-- writer's, such as a slides.sty that slides.4ht stops or a url.sty whose
+-- \url url.4ht replaces. tex8web-hooks.sty reads these files' names from a
+-- file that the step "ownpkgs" below writes, and skips their .4ht files.
+local ownpkgs = {}
+do
+  local function read(path)
+    local file = io.open(path, "rb")
+    if not file then return "" end
+    local text = file:read("a")
+    file:close()
+    return text
+  end
+  local function names(text, name)
+    local from = 1
+    while true do
+      local _, last = text:find("\\" .. name, from, true)
+      if not last then return false end
+      if not text:sub(last + 1, last + 1):find("[%a@]") then return true end
+      from = last + 1
+    end
+  end
+  -- (the target \end<env> of an environment's end: the file names the
+  -- environment as {<env>} in \newenvironment)
+  local function named(text, target)
+    local env = target:match("^end(.+)")
+    return names(text, target) or env and (names(text, env) or text:find("{" .. env .. "}", 1, true)) or false
+  end
+  local function kpsewhich(args)
+    local pipe = io.popen("kpsewhich " .. args)
+    local out = pipe:read("a")
+    pipe:close()
+    return out
+  end
+  local files, bases = {}, {}
+  for name in lfs.dir(".") do
+    local base = name:match("^([%w_-]+)%.sty$") or name:match("^([%w_-]+)%.cls$")
+    if base then
+      files[#files + 1] = name
+      bases[#bases + 1] = base .. ".4ht"
+    end
+  end
+  if #files > 0 then
+    local found = {}
+    for path in kpsewhich(table.concat(bases, " ")):gmatch("[^\n]+") do
+      found[path:match("([^/]+)%.4ht$")] = path
+    end
+    for _, file in ipairs(files) do
+      local base = file:match("^(.+)%.%a+$")
+      if found[base] then
+        local tree
+        for path in kpsewhich("-all " .. file):gmatch("[^\n]+") do
+          if path ~= "./" .. file then tree = read(path) break end
+        end
+        local own, copy, targets = read(file), false, {}
+        for target in read(found[base]):gmatch("\\a?p?pend:defI?%s*\\([%a@:]+)") do
+          if target ~= "csname" and tree and named(tree, target) then targets[target] = true end
+        end
+        for target in pairs(targets) do
+          copy = named(own, target)
+          if not copy then break end
+        end
+        if not next(targets) then copy = own == tree end
+        if not copy then ownpkgs[#ownpkgs + 1] = file end
+      end
+    end
+  end
+end
 
 local domfilter = require "make4ht-domfilter"
 
@@ -303,6 +376,20 @@ else
     return 0
   end)
   Make:texinputs {}
+  -- The writer's packages and classes above, in <document>.ownpkgs.
+  Make:add("ownpkgs", function(par)
+    if par.builddir == "" then return 0 end
+    local name = par.builddir .. "/" .. par.input .. ".ownpkgs"
+    if #ownpkgs == 0 then
+      os.remove(name)
+      return 0
+    end
+    local file = assert(io.open(name, "w"))
+    file:write(table.concat(ownpkgs, "\n"), "\n")
+    file:close()
+    return 0
+  end)
+  Make:ownpkgs {}
   if save then
     Make:add("latex_begin", function() mark("begin") return 0 end)
     Make:latex_begin {}

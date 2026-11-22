@@ -992,6 +992,15 @@
             { \seq_gput_right:Nn \g__web_owndirs_seq {#1} }
         \ior_close:N \g__web_owndirs_ior
     }
+% A package or class beside the document that tex8web.mk4 lists in
+% <jobname>.ownpkgs is the writer's, not a copy of the tree's file, and
+% is marked as the files above are.
+\ior_open:NnT \g__web_owndirs_ior { \c_sys_jobname_str .ownpkgs }
+    {
+        \ior_str_map_inline:Nn \g__web_owndirs_ior
+            { \cs_gset_eq:cN { web@ownpkg@ #1 } \c_empty_tl }
+        \ior_close:N \g__web_owndirs_ior
+    }
 \prg_new_conditional:Npnn \__web_if_owndir:n #1 { p }
     {
         \seq_map_tokens:Nn \g__web_owndirs_seq { \__web_owndir:nn {#1} }
@@ -1010,8 +1019,14 @@
             {
                 \bool_lazy_any:nTF
                     {
-                        { \cs_if_exist_p:c { web@keepext@ #2 } }
-                        { \cs_if_exist_p:c { web@keep@ #1 } }
+                        {
+                            \bool_lazy_and_p:nn
+                                {
+                                    \cs_if_exist_p:c { web@keepext@ #2 }
+                                    || \cs_if_exist_p:c { web@keep@ #1 }
+                                }
+                                { ! \cs_if_exist_p:c { web@ownpkg@ \CurrentFileUsed } }
+                        }
                         {
                             ! \bool_lazy_or_p:nn
                                 { \file_if_exist_p:n { ./ \CurrentFileUsed } }
