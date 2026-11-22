@@ -987,6 +987,23 @@ const index = {
   'test-staleaux-ind-cls': [/>Apple,<\/span>\s*<a href='#[^']+'><span class='cmr-8'>1<\/span><\/a>/, /^(?![^]*Old entry)/],
   // (the .ind beside the document, read as there is no \makeindex)
   'test-staleaux-ind-shipped': [/<div class='index-item'>Shipped apple, 1 <\/div>/],
+  // An \index after a minted listing in the same section links to the place
+  // of its \index, right after the listing, as the ids of the last LaTeX
+  // run name it. (delta and epsilon follow listings' and fancyvrb's
+  // listings, and kappa a listing in an earlier section's heading)
+  ...Object.fromEntries(Object.entries({
+    'test-idxminted': [['After the numbered listing', 'alpha'], ['After the plain listing', 'beta'],
+      ['After both listings', 'gamma'], ['After the lstlisting', 'delta'], ['After the Verbatim', 'epsilon'],
+      ['After it in italic', 'zeta'], ['in sans-serif', 'eta'], ['in typewriter', 'theta'],
+      ['After it in a theorem', 'iota'], ['After it in a heading', 'kappa']],
+    'test-idxminted-forms': [['After the input listing', 'one'], ['and after both', 'two'],
+      ['After the pythoncode listing', 'three'], ['After the pyfile listing', 'four'], ['In the footnote', 'five'],
+      ['After the box', 'six'], ['After the input box', 'seven'], ['After the float', 'eight']],
+    'test-idxminted-named': [['After the listing, Knuth', 'Knuth', 'Index of names'], ['wrote of the code', 'listing', 'Index', 'subitem'],
+      ['A term', 'term', 'Index of terms']],
+  // (a named index may be printed before its entries)
+  }).map(([name, entries]) => [name, entries.map(([text, entry, title, level = 'item']) => new RegExp(
+    `^(?=[^]*${text}(?:<\\/span>)?<a id='([^']+)'>)(?=[^]*${title ? `>${title}<\\/h3>(?:(?!<h3)[^])*` : ''}<div class='index-${level}'>${entry}, <a href='#\\1'>\\d+<\\/a> <\\/div>)`))])),
 };
 
 // The table of contents beside the text, under the document title (a link
@@ -2699,6 +2716,10 @@ const logs = {
   // first LaTeX run with no error, and the build takes no extra LaTeX run)
   ...Object.fromEntries(['test-staleaux-ind-current', 'test-staleaux-ind-shipped'].map(name =>
     [name, [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/, /^(?![^]*\[ERROR\])/]])),
+  // (an index whose .idx the second LaTeX run leaves as the first wrote
+  // it takes no LaTeX run past make4ht's three)
+  ...Object.fromEntries(['test-index', 'test-imakeidx'].map(name =>
+    [name, [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/]])),
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same

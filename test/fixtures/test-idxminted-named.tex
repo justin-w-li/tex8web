@@ -1,0 +1,36 @@
+% imakeidx with a second index, printed before its entries, and a third
+% sorted with xindy (tex8web sorts it with makeindex), after a minted
+% listing, with hyperref: an entry of each named index, a subentry, and a
+% "see" entry of the main index. Each number links to the place of its
+% \index, right after the listing.
+\documentclass{article}
+\usepackage{minted,imakeidx}
+\usepackage{hyperref}
+\makeindex
+\makeindex[name=names,title=Index of names]
+\makeindex[name=terms,title=Index of terms,program=xindy]
+\begin{document}
+\printindex[names]
+\section{Code}
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+\end{minted}
+After the listing, Knuth\index[names]{Knuth} wrote of the
+code\index{code!listing}.\index{program|see{code}} A term\index[terms]{term}.
+\printindex
+\printindex[terms]
+\end{document}

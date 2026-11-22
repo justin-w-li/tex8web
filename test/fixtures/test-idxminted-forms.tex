@@ -1,0 +1,127 @@
+% An \index after other forms of minted's listings, each in a section of
+% its own, with makeidx and without hyperref: \inputminted, \mint and
+% \mintinline, an environment from \newminted, a command from
+% \newmintedfile, a listing then a footnote, tcolorbox's tcblisting and
+% \tcbinputlisting with minted, and minted's listing float. Each number
+% links to the place of its \index, right after its listing.
+\documentclass{article}
+\usepackage{minted,makeidx,tcolorbox}
+\tcbuselibrary{minted}
+\newminted{python}{linenos}
+\newmintedfile[pyfile]{python}{linenos}
+\makeindex
+\begin{document}
+\section{Input}
+\inputminted[linenos]{python}{test-idxminted-code.py}
+After the input listing\index{one}.
+\section{Inline}
+\mint{python}|total = total + 1|
+Then \mintinline{python}{total = 2} inline, and after both\index{two}.
+\section{Environment}
+\begin{pythoncode}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+\end{pythoncode}
+After the pythoncode listing\index{three}.
+\section{File}
+\pyfile{test-idxminted-code.py}
+After the pyfile listing\index{four}.
+\section{Footnote}
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+\end{minted}
+Text with a note.\footnote{In the footnote\index{five}.}
+\section{Box}
+\begin{tcblisting}{listing engine=minted, minted language=python, listing only}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+\end{tcblisting}
+After the box\index{six}.
+\section{Input box}
+\tcbinputlisting{listing engine=minted, minted language=python, listing only,
+  listing file=test-idxminted-code.py}
+After the input box\index{seven}.
+\section{Float}
+\begin{listing}[h]
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+\end{minted}
+\caption{A listing in a float}
+\end{listing}
+After the float\index{eight}.
+\printindex
+\end{document}

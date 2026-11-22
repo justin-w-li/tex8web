@@ -1,0 +1,207 @@
+% An \index after a minted listing in the same section, with imakeidx
+% and hyperref. With no cache, minted writes no ids for its lines in the
+% first LaTeX run, so an index sorted after that run would link ids the page
+% does not have. Each number links to the place of its \index, right after
+% its listing: after a listing with line numbers and one without, after two
+% listings (the second with firstnumber), in italic, sans-serif, and
+% typewriter text, in a theorem, and in a subsection's heading. The entries
+% after listings' and fancyvrb's listings (delta and epsilon) are guards:
+% they linked before.
+\documentclass{article}
+\usepackage{amsthm,minted,listings,fancyvrb,imakeidx}
+\usepackage{hyperref}
+\newtheorem{theorem}{Theorem}
+\makeindex
+\begin{document}
+\section{Numbered}
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+total = total + 20
+total = total + 21
+total = total + 22
+total = total + 23
+total = total + 24
+\end{minted}
+After the numbered listing\index{alpha}.
+\section{Plain}
+\begin{minted}{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+total = total + 20
+total = total + 21
+total = total + 22
+total = total + 23
+total = total + 24
+\end{minted}
+After the plain listing\index{beta}.
+\section{Two}
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+\end{minted}
+Between the listings.
+\begin{minted}[linenos,firstnumber=40]{python}
+total = total + 40
+total = total + 41
+total = total + 42
+total = total + 43
+total = total + 44
+total = total + 45
+total = total + 46
+total = total + 47
+total = total + 48
+total = total + 49
+total = total + 50
+total = total + 51
+total = total + 52
+total = total + 53
+total = total + 54
+total = total + 55
+total = total + 56
+total = total + 57
+total = total + 58
+total = total + 59
+total = total + 60
+total = total + 61
+total = total + 62
+total = total + 63
+\end{minted}
+After both listings\index{gamma}.
+\section{Listings}
+\begin{lstlisting}[numbers=left]
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+total = total + 20
+total = total + 21
+total = total + 22
+total = total + 23
+total = total + 24
+\end{lstlisting}
+After the lstlisting\index{delta}.
+\section{Verbatim}
+\begin{Verbatim}[numbers=left]
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+total = total + 20
+total = total + 21
+total = total + 22
+total = total + 23
+total = total + 24
+\end{Verbatim}
+After the Verbatim\index{epsilon}.
+\section{Fonts}
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+\end{minted}
+\emph{After it in italic\index{zeta}}, \textsf{in sans-serif\index{eta}},
+and \texttt{in typewriter\index{theta}}.
+\section{Theorem}
+\begin{minted}{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+\end{minted}
+\begin{theorem}
+After it in a theorem\index{iota}.
+\end{theorem}
+\section{Heading}
+\begin{minted}{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+\end{minted}
+\subsection{After it in a heading\index{kappa}}
+Text of the subsection.
+\printindex
+\end{document}
