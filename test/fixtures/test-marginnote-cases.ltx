@@ -3,7 +3,9 @@
 % shape, applies only to the note, as in the PDF, where the note is set in
 % a box. Each case's note reads "Note <case>.", and the text after the note
 % reads "After <case>." or "First <case>.", "Second <case>.", and "Item
-% <case>.", which run.mjs reads.
+% <case>.", which run.mjs reads. Each case is set in a group of its own, so
+% a note that leaks shows in its own case's text and stops at the case's
+% end.
 \usepackage{xcolor}
 \usepackage{amsthm}
 \usepackage{marginnote}
@@ -15,38 +17,88 @@
 
 \section{Margin notes}
 
+\begingroup
 \marginnote{\tiny\color{blue}Note example.}\after{example}
 
 \subsection{Heading example}
+\endgroup
 
-\marginnote[\small\color{red}Left sides.]{\large\color{red}Note sides.}\after{sides}
+% (the left argument is not set on the page)
+\begingroup
+\marginnote[\bfseries Left sides.]{\large\color{red}Note sides.}\after{sides}
+\endgroup
 
+\begingroup
 \marginnote{\footnotesize\color{teal}Note offset.}[1em]\after{offset}
+\endgroup
 
-\marginnote[\small\color{red}Left both.]{\large\color{red}Note both.}[1em]\after{both}
+\begingroup
+\marginnote[\bfseries Left both.]{\large\color{red}Note both.}[1em]\after{both}
+\endgroup
 
+\begingroup
 \marginnote{\scriptsize Note size.}\after{size}
+\endgroup
 
+\begingroup
+\marginnote{\fontsize{6}{7}\selectfont\color{blue}Note fontsize.}\after{fontsize}
+\endgroup
+
+\begingroup
 \marginnote{\color{green}Note color.}\after{color}
+\endgroup
 
+\begingroup
 \marginnote{\bfseries Note bold.}\after{bold}
+\endgroup
 
+\begingroup
 \marginnote{\itshape Note italic.}\after{italic}
+\endgroup
 
+\begingroup
 \marginnote{\sffamily Note family.}\after{family}
+\endgroup
 
+\begingroup
 \marginnote{\tiny\color{blue}Note \textbf{nested} group.}\after{nested}
+\endgroup
 
+\begingroup
 \marginnote{Note ending.\tiny\color{blue}}\after{ending}
+\endgroup
 
+\begingroup
+\marginnote{\tiny\color{blue}Note line.\\ Note line two.}\after{line}
+\endgroup
+
+\begingroup
+\marginnote{\color{blue}Note math.}Before math $a+b$ and
+\[ x^2 \]
+After math.
+\endgroup
+
+\begingroup
 Before mid.\marginnote{\tiny\color{blue}Note mid.} After mid.
 
 Second mid.
+\endgroup
 
+\begingroup
 \begin{itemize}
 \item Before item.\marginnote{\tiny\color{blue}Note item.} After item.
 \item Second item.
 \end{itemize}
+\endgroup
+
+\begingroup
+\begin{tabular}{l}
+Before cell.\marginnote{\tiny\color{blue}Note cell.} After cell.\\
+Next row.
+\end{tabular}
+
+After the table.
+\endgroup
 
 \textit{Before upshape.\marginnote{\upshape\tiny\color{blue}Note upshape.} After upshape.} Second upshape.
 

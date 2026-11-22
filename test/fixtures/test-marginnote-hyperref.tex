@@ -5,7 +5,11 @@
 \usepackage{sidenotes}
 \input{test-marginnote-cases.ltx}
 
+\begingroup
 \sidenote{\tiny\color{blue}Note sidenote.}\after{sidenote}
+\endgroup
 
+\begingroup
 \sidenote[][1em]{\tiny\color{blue}Note sideoffset.}\after{sideoffset}
+\endgroup
 \end{document}

@@ -3890,10 +3890,12 @@ function ligatureProblems(name, flat) {
 // note in its own: for each text, the class of the innermost font span
 // around it (null for the body font), the color of the innermost element
 // around it with one (null for none), and the class of an element around it.
-const marginnoteBody = ['example', 'sides', 'offset', 'both', 'size', 'color', 'bold', 'italic', 'family', 'nested',
-  'ending', 'marginpar'].flatMap(name => [`First ${name}.`, `Second ${name}.`, `Item ${name}.`]);
-const marginnotePlain = [...marginnoteBody, 'Heading example', 'After mid.', 'Second mid.', 'After item.', 'Second item.',
-  'Second upshape.', 'After the theorem.', 'After the footnote mark.', 'Second sans.', 'Second typewriter.'];
+const marginnoteBody = ['example', 'sides', 'offset', 'both', 'size', 'fontsize', 'color', 'bold', 'italic', 'family',
+  'nested', 'ending', 'line', 'marginpar'].flatMap(name => [`First ${name}.`, `Second ${name}.`, `Item ${name}.`]);
+const marginnotePlain = [...marginnoteBody, 'Heading example', 'After math.', 'After mid.', 'Second mid.', 'After item.',
+  'Second item.', 'After cell.', 'Next row.', 'After the table.', 'Second upshape.', 'After the theorem.',
+  'After the footnote mark.', 'Second sans.', 'Second typewriter.'];
+const blueNote = ['cmr-5', '#0000FF', 'marginnote'];
 const marginnoteCases = {
   ...Object.fromEntries(marginnotePlain.map(text => [text, [null, null]])),
   'After upshape.': ['cmti-10', null], 'After theorem.': ['cmti-10', null], 'Second theorem.': ['cmti-10', null],
@@ -3901,7 +3903,12 @@ const marginnoteCases = {
   'Note example.': ['cmr-5', '#0000FF', 'marginnote'], 'Note sides.': ['cmr-12', '#FF0000', 'marginnote'],
   'Note offset.': ['cmr-8', '#008080', 'marginnote'], 'Note size.': ['cmr-7', null, 'marginnote'],
   'Note bold.': ['cmbx-10', null, 'marginnote'], 'Note italic.': ['cmti-10', null, 'marginnote'],
-  'Note marginpar.': ['cmr-5', '#00FF00', 'marginpar'],
+  'Note marginpar.': ['cmr-5', '#00FF00', 'marginpar'], 'Note fontsize.': ['cmr-6', '#0000FF', 'marginnote'],
+  'Note color.': [null, '#00FF00', 'marginnote'], 'Note family.': ['cmss-10', null, 'marginnote'],
+  'Note math.': [null, '#0000FF', 'marginnote'], 'Note sans.': ['cmss-8x-x-62', '#0000FF', 'marginnote'],
+  'Note typewriter.': ['cmtt-8x-x-62', '#0000FF', 'marginnote'],
+  ...Object.fromEntries(['group.', 'Note line.', 'Note mid.', 'Note item.', 'Note cell.', 'Note upshape.',
+    'Note theorem.', 'Note footnote.'].map(text => [text, blueNote])),
 };
 const marginnotes = {
   'test-marginnote': marginnoteCases,
@@ -3909,6 +3916,8 @@ const marginnotes = {
     .flatMap(name => [`First ${name}.`, `Second ${name}.`, `Item ${name}.`]).map(text => [text, [null, null]])),
     'Note sidenote.': ['cmr-5', '#0000FF', 'marginpar'], 'Note sideoffset.': ['cmr-5', '#0000FF', 'marginnote'] },
 };
+// (the color of the innermost element with one, of the elements open)
+const colorAt = open => open.map(el => el.tag.match(/style='(?:[^']*[;\s])?color:\s*light-dark\((#[0-9A-Fa-f]{6})/)?.[1]).filter(Boolean).at(-1) ?? null;
 // (the elements open at a place in the page's <main>, outermost first)
 const openAt = (html, at) => {
   const open = [];
@@ -3927,10 +3936,18 @@ function marginnoteProblems(name, flat) {
     const open = openAt(flat, at);
     const classOf = el => el.tag.match(/class='([^']*)'/)?.[1] ?? '';
     const shown = open.filter(el => el.name === 'span' && /-\d+(?:x-x-\d+)?$/.test(classOf(el))).map(classOf).at(-1) ?? null;
-    const colored = open.map(el => el.tag.match(/style='(?:[^']*[;\s])?color:\s*light-dark\((#[0-9A-Fa-f]{6})/)?.[1]).filter(Boolean).at(-1) ?? null;
     if (shown !== font) problems.push(`'${text}' in the font ${shown}, not ${font}`);
-    if (colored !== color) problems.push(`'${text}' in the color ${colored}, not ${color}`);
+    if (colorAt(open) !== color) problems.push(`'${text}' in the color ${colorAt(open)}, not ${color}`);
     if (within && !open.some(el => classOf(el).split(' ').includes(within))) problems.push(`'${text}' not in a ${within}`);
+  }
+  // (the inline and the display formula after a colored note)
+  if (!marginnotes[name]) return problems;
+  const from = flat.indexOf('Note math.');
+  const math = [...flat.slice(from, flat.indexOf('After math.')).matchAll(/<mjx-container/g)];
+  if (math.length !== 2) problems.push(`${math.length} formulas after 'Note math.', not 2`);
+  for (const { index } of math) {
+    const color = colorAt(openAt(flat, from + index));
+    if (color) problems.push(`a formula after 'Note math.' in the color ${color}`);
   }
   return problems;
 }
