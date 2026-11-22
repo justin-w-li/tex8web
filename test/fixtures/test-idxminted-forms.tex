@@ -2,8 +2,10 @@
 % its own, with makeidx and without hyperref: \inputminted, \mint and
 % \mintinline, an environment from \newminted, a command from
 % \newmintedfile, a listing then a footnote, tcolorbox's tcblisting and
-% \tcbinputlisting with minted, and minted's listing float. Each number
-% links to the place of its \index, right after its listing.
+% \tcbinputlisting with minted, minted's listing float, an \index escaped
+% inside a listing, tcblisting's text part, a range, an encapsulator, and
+% an entry with two numbers. Each number links to the place of its \index,
+% right after its listing.
 \documentclass{article}
 \usepackage{minted,makeidx,tcolorbox}
 \tcbuselibrary{minted}
@@ -123,5 +125,117 @@ total = total + 19
 \caption{A listing in a float}
 \end{listing}
 After the float\index{eight}.
+\section{Escaped}
+\begin{minted}[linenos,escapeinside=||]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+total = 1 |\index{nine}|
+\end{minted}
+\section{Box text}
+\begin{tcblisting}{listing engine=minted, minted language=latex}
+Line 0 of the box.
+Line 1 of the box.
+Line 2 of the box.
+Line 3 of the box.
+Line 4 of the box.
+Line 5 of the box.
+Line 6 of the box.
+Line 7 of the box.
+Line 8 of the box.
+Line 9 of the box.
+Line 10 of the box.
+Line 11 of the box.
+Inside the box text\index{ten} here.
+\end{tcblisting}
+After the box with text\index{eleven}.
+\section{Range}
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+\end{minted}
+Start of the range\index{range|(} and a bold one\index{bold|textbf}, then twice\index{twice}.
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+\end{minted}
+End of the range\index{range|)}.
+\section{Again}
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+total = total + 10
+total = total + 11
+total = total + 12
+total = total + 13
+total = total + 14
+total = total + 15
+total = total + 16
+total = total + 17
+total = total + 18
+total = total + 19
+\end{minted}
+Then twice again\index{twice}.
 \printindex
 \end{document}

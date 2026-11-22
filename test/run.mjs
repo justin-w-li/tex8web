@@ -992,18 +992,27 @@ const index = {
   // run name it. (delta and epsilon follow listings' and fancyvrb's
   // listings, and kappa a listing in an earlier section's heading)
   ...Object.fromEntries(Object.entries({
-    'test-idxminted': [['After the numbered listing', 'alpha'], ['After the plain listing', 'beta'],
+    'test-idxminted': [['Before the numbered listing', 'omega'], ['After the numbered listing', 'alpha'], ['After the plain listing', 'beta'],
       ['After both listings', 'gamma'], ['After the lstlisting', 'delta'], ['After the Verbatim', 'epsilon'],
       ['After it in italic', 'zeta'], ['in sans-serif', 'eta'], ['in typewriter', 'theta'],
       ['After it in a theorem', 'iota'], ['After it in a heading', 'kappa']],
     'test-idxminted-forms': [['After the input listing', 'one'], ['and after both', 'two'],
       ['After the pythoncode listing', 'three'], ['After the pyfile listing', 'four'], ['In the footnote', 'five'],
-      ['After the box', 'six'], ['After the input box', 'seven'], ['After the float', 'eight']],
+      ['After the box', 'six'], ['After the input box', 'seven'], ['After the float', 'eight'],
+      ['Inside the box text', 'ten'], ['After the box with text', 'eleven'],
+      // (an \index escaped inside a listing, which minted typesets only
+      // from the second LaTeX run; a range; an encapsulator; and an entry
+      // with two numbers)
+      /^(?=[^]*<div class='index-item'>nine, <a href='#([^']+)'>\d+<\/a> <\/div>)(?=[^]*<a id='\1'>)/,
+      /^(?=[^]*Start\s+of\s+the\s+range<a id='([^']+)'>)(?=[^]*End\s+of\s+the\s+range<a id='([^']+)'>)(?=[^]*<div class='index-item'>range, <a href='#\1'>\d+<\/a>–<a href='#\2'>\d+<\/a> <\/div>)/,
+      /^(?=[^]*a\s+bold\s+one<a id='([^']+)'>)(?=[^]*<div class='index-item'>bold, <a href='#\1'><span class='cmbx-10'>\d+<\/span><\/a> <\/div>)/,
+      /^(?=[^]*then\s+twice<a id='([^']+)'>)(?=[^]*Then\s+twice\s+again<a id='([^']+)'>)(?=[^]*<div class='index-item'>twice, <a href='#\1'>\d+<\/a>, <a href='#\2'>\d+<\/a> <\/div>)/],
     'test-idxminted-named': [['After the listing, Knuth', 'Knuth', 'Index of names'], ['wrote of the code', 'listing', 'Index', 'subitem'],
       ['A term', 'term', 'Index of terms']],
+    'test-idxminted-nocache': [['Before the listing', 'rho'], ['After the listing', 'pi']],
   // (a named index may be printed before its entries)
-  }).map(([name, entries]) => [name, entries.map(([text, entry, title, level = 'item']) => new RegExp(
-    `^(?=[^]*${text}(?:<\\/span>)?<a id='([^']+)'>)(?=[^]*${title ? `>${title}<\\/h3>(?:(?!<h3)[^])*` : ''}<div class='index-${level}'>${entry}, <a href='#\\1'>\\d+<\\/a> <\\/div>)`))])),
+  }).map(([name, entries]) => [name, entries.map(e => e instanceof RegExp ? e : (([text, entry, title, level = 'item']) => new RegExp(
+    `^(?=[^]*${text.replace(/ /g, '\\s+')}(?:<\\/span>)?<a id='([^']+)'>)(?=[^]*${title ? `>${title}<\\/h3>(?:(?!<h3)[^])*` : ''}<div class='index-${level}'>${entry}, <a href='#\\1'>\\d+<\\/a> <\\/div>)`))(e))])),
 };
 
 // The table of contents beside the text, under the document title (a link
@@ -2720,6 +2729,11 @@ const logs = {
   // it takes no LaTeX run past make4ht's three)
   ...Object.fromEntries(['test-index', 'test-imakeidx'].map(name =>
     [name, [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/]])),
+  // (an index after minted's listings is sorted again, with one more LaTeX
+  // run at most, and with minted's cache off, not at all)
+  ...Object.fromEntries(['test-idxminted', 'test-idxminted-forms', 'test-idxminted-named'].map(name =>
+    [name, [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/]])),
+  'test-idxminted-nocache': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/],
 };
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same

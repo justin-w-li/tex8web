@@ -6,7 +6,7 @@
 % listings (the second with firstnumber), in italic, sans-serif, and
 % typewriter text, in a theorem, and in a subsection's heading. The entries
 % after listings' and fancyvrb's listings (delta and epsilon) are guards:
-% they linked before.
+% they linked before, as did the entry before a listing (omega).
 \documentclass{article}
 \usepackage{amsthm,minted,listings,fancyvrb,imakeidx}
 \usepackage{hyperref}
@@ -14,6 +14,7 @@
 \makeindex
 \begin{document}
 \section{Numbered}
+Before the numbered listing\index{omega}.
 \begin{minted}[linenos]{python}
 total = total + 0
 total = total + 1

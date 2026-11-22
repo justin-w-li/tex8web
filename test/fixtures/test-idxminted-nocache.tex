@@ -1,0 +1,26 @@
+% Checks cases the fix must not break: with minted's cache off, minted
+% highlights each listing in the first LaTeX run, so its ids do not change
+% and the index takes no extra LaTeX run. An entry before the listing and
+% one after it link to the place of their \index.
+\documentclass{article}
+\usepackage[cache=false]{minted}
+\usepackage{makeidx}
+\makeindex
+\begin{document}
+\section{Code}
+Before the listing\index{rho}.
+\begin{minted}[linenos]{python}
+total = total + 0
+total = total + 1
+total = total + 2
+total = total + 3
+total = total + 4
+total = total + 5
+total = total + 6
+total = total + 7
+total = total + 8
+total = total + 9
+\end{minted}
+After the listing\index{pi}.
+\printindex
+\end{document}
