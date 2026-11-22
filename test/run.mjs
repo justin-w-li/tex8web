@@ -2813,6 +2813,12 @@ const logs = {
     [name, [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/]])),
   'test-idxminted-nocache': [/LaTeX call/, /^(?![^]*LaTeX call[^]*LaTeX call[^]*LaTeX call[^]*LaTeX call)/],
 };
+// (a status line says that minitoc's mini tables are empty, and names the
+// numbered files of an earlier build beside the document that the build
+// does not read; a .F90 source of the document is read, and no such line
+// names it)
+logs['test-staleaux-mtc'].push(/^\[STATUS\] +tex8web: minitoc's mini tables are empty: .*test-staleaux-mtc\.mlf1, .*test-staleaux-mtc\.mtc1, .*test-staleaux-mtc\.ptc1$/m);
+logs['test-staleaux-ptc-own'].push(/^(?![^]*mini tables are empty)/);
 // Files of an earlier build beside a document: the build reads none of
 // them, and leaves each as it was when this script started, with the same
 // text and time of change, and writes no file beside them

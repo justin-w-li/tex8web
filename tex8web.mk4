@@ -192,7 +192,10 @@ else
       --   or .M1, and a line of the file holds \mtc@string, which minitoc
       --   writes in each entry and coffee line. Such a line need not have
       --   \contentsline, and no .aux names these lists. The name alone
-      --   would also hide a file of the document such as a .F90 source;
+      --   would also hide a file of the document such as a .F90 source.
+      --   Under tex4ht, minitoc writes no numbered list of its own, as it
+      --   splits the .toc, and the .4ct holds the table of contents. So
+      --   minitoc's mini tables are empty, and a status line says so;
       -- - the file has a line that starts with "\contentsline {", which
       --   LaTeX's \addcontentsline writes with a space after the
       --   command. Any line counts, as biblatex writes other lines
@@ -247,12 +250,19 @@ else
         file:close()
         return written and lines > 0
       end
+      local minitocs = {}
       for name in lfs.dir(".") do
         local file = par.builddir .. "/" .. name
         if name:sub(1, #prefix) == prefix and name ~= par.tex_file and not name:find("%.tex$")
           and lfs.attributes(name, "mode") == "file" and not lfs.attributes(file) and list(name) then
           io.open(file, "w"):close()
+          if numbered[name:sub(#prefix + 1):match("^(%a+)%d+$")] then table.insert(minitocs, name) end
         end
+      end
+      if #minitocs > 0 then
+        table.sort(minitocs)
+        log:status("minitoc's mini tables are empty: tex4ht gives minitoc no table of contents to split, "
+          .. "and these files of an earlier build beside the document are not read: " .. table.concat(minitocs, ", "))
       end
     end
     return 0
