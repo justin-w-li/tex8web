@@ -1,6 +1,6 @@
 -- The indexes and glossaries, which make4ht does not build: after the first
--- LaTeX run, makeindex on each index, and makeglossaries, which runs again
--- after the last LaTeX run if the glossaries changed. Each number in an
+-- LaTeX run, makeindex on each index, and makeglossaries; then each again
+-- before one more LaTeX run while its input changes. Each number in an
 -- index counts \index commands and links back to its \index (see "Indexes"
 -- in CONTRIBUTING.md).
 local bibliography = require "tex8web.bibliography"
@@ -56,37 +56,63 @@ function M.prepare(idx)
   end)), map
 end
 
--- runs makeindex on each index with imakeidx's options. A style file is
--- found in the document's directory, where make4ht runs. makeindex runs in
--- the build directory because it does not write the .ind to a directory
--- above it (openout_any = p). -r: the numbers are not pages, so three
--- \index in a row are not a range. A failed run is a warning, as for the
--- bibliography.
-function M.run(par)
+-- the text of each index's .idx last given to makeindex, by the index's
+-- name
+local given = {}
+
+-- runs makeindex with imakeidx's options on each index, or with changed, on
+-- each index whose .idx changed since it was last sorted. Returns whether
+-- it ran. A style file is found in the document's directory, where make4ht
+-- runs. makeindex runs in the build directory because it does not write
+-- the .ind to a directory above it (openout_any = p). -r: the numbers are
+-- not pages, so three \index in a row are not a range. A failed run is a
+-- warning, as for the bibliography.
+local function sort(par, changed)
   local dir = (par.builddir ~= "" and par.builddir) or "."
   local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""
   local styles = lfs.currentdir() .. ":" .. (os.getenv("INDEXSTYLE") or "")
+  local ran = false
   for _, index in ipairs(M.indexes(aux, par.input, lfs.attributes(dir .. "/" .. par.input .. ".idx"))) do
-    local options = index.options:gsub("%S+", files.quote)
-    local command = "cd " .. files.quote(dir) .. " && INDEXSTYLE=" .. files.quote(styles)
-      .. " makeindex -q -r -i -t " .. files.quote(index.name .. ".ilg") .. " -o " .. files.quote(index.name .. ".ind")
-      .. " " .. options
-    log:info("index: " .. command)
-    indexing.load_enc()
-    local idx, map = M.prepare(files.read(dir .. "/" .. index.name .. ".idx") or "")
-    local makeindex = io.popen(command, "w")
-    makeindex:write(idx)
-    local ind = dir .. "/" .. index.name .. ".ind"
-    local text = makeindex:close() and files.read(ind)
-    if text then
-      local f = io.open(ind, "w")
-      f:write(M.link(text, map))
-      f:close()
-    else
-      log:warning("the index failed (" .. command .. ")")
+    local written = files.read(dir .. "/" .. index.name .. ".idx") or ""
+    if not changed or given[index.name] ~= written then
+      given[index.name], ran = written, true
+      local options = index.options:gsub("%S+", files.quote)
+      local command = "cd " .. files.quote(dir) .. " && INDEXSTYLE=" .. files.quote(styles)
+        .. " makeindex -q -r -i -t " .. files.quote(index.name .. ".ilg") .. " -o " .. files.quote(index.name .. ".ind")
+        .. " " .. options
+      log:info("index: " .. command)
+      indexing.load_enc()
+      local idx, map = M.prepare(written)
+      local makeindex = io.popen(command, "w")
+      makeindex:write(idx)
+      local ind = dir .. "/" .. index.name .. ".ind"
+      local text = makeindex:close() and files.read(ind)
+      if text then
+        local f = io.open(ind, "w")
+        f:write(M.link(text, map))
+        f:close()
+      else
+        log:warning("the index failed (" .. command .. ")")
+      end
     end
   end
+  return ran
+end
+
+-- makeindex on each index, after the first LaTeX run
+function M.run(par)
+  sort(par)
   return 0
+end
+
+-- makeindex on each index whose .idx changed since it was sorted. Returns
+-- whether it ran. (minted writes no ids for a listing's lines in the first
+-- LaTeX run when the listing is not in its cache, as its default
+-- highlightmode=fastfirst highlights the listing only after that run. So
+-- the ids of the \index commands after the listing change in the second
+-- run, and an \index escaped inside the listing is first written then.)
+function M.again(par)
+  return sort(par, true)
 end
 
 -- the text of the glossaries' input files (.glo, .acn, ...) last given to
@@ -142,8 +168,9 @@ function M.glossaries(par)
   return 0
 end
 
--- makeglossaries and LaTeX again, after LaTeX has settled, while the
--- glossaries' input files or LaTeX's cross-references change: an entry used
+-- makeglossaries, makeindex, and LaTeX again, after LaTeX has settled,
+-- while the glossaries' or indexes' input files or LaTeX's
+-- cross-references change: an entry used
 -- only in the description of another reaches the .glo only when the
 -- glossary is printed (the glossaries manual asks for a second
 -- makeglossaries run then), and a glossary that first has entries then
@@ -151,7 +178,8 @@ end
 function M.glossaries_again(par)
   local before = bibliography.checksum(par)
   for _ = 1, bibliography.runs do
-    if not makeglossaries(par) and bibliography.checksum(par) == before then return 0 end
+    local glossaries, indexes = makeglossaries(par), M.again(par)
+    if not (glossaries or indexes) and bibliography.checksum(par) == before then return 0 end
     before = bibliography.checksum(par)
     -- (required here, as it needs make4ht's Make, which the unit tests lack)
     local status = require("make4ht-htlatex").htlatex(par)

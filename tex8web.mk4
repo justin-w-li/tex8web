@@ -99,8 +99,9 @@ local log = logging.new("tex8web")
 -- fn-in option, which keeps footnotes on the page (text.lua moves them
 -- beside the text); then bibtex or biber, makeindex, and makeglossaries,
 -- which make4ht does not run, if the document needs them; then LaTeX until
--- the cross-references settle, and makeglossaries and LaTeX while the
--- glossaries change. (The parameters extend settings, because
+-- the cross-references and the indexes' input files settle, with makeindex
+-- again before each run while those change, and makeglossaries, makeindex,
+-- and LaTeX while the glossaries or indexes change. (The parameters extend settings, because
 -- Make.params is still empty here.)
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
@@ -453,7 +454,7 @@ else
     Make:unsorted {}
     -- (make4ht's autohtlatex checks only the document's .aux, and not the
     -- .aux of a file read by \include)
-    Make:add("settle", bibliography.settle, {correct_exit = 0})
+    Make:add("settle", function(par) return bibliography.settle(par, index.again) end, {correct_exit = 0})
     Make:settle(latex)
     Make:add("glossaries_again", index.glossaries_again, {correct_exit = 0})
     Make:glossaries_again(latex)

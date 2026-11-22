@@ -115,7 +115,7 @@ Each color is recorded in `tex8web-hooks.sty` as defined by xcolor. The values a
 
 #### Indexes (`index.lua`)
 
-In place of page numbers, makeindex is given a count of the `\index` commands. The counts start at 1000001, so that no number in an entry's text is mistaken for a count. Each count becomes a link back to its `\index` command, shown counted from 1. makeindex is run with `-r`, so consecutive counts are not joined into ranges. Under tex4ht, no command is run by imakeidx, so the makeindex command of imakeidx is recorded in the `.aux` by `tex8web-hooks.sty`.
+In place of page numbers, makeindex is given a count of the `\index` commands. The counts start at 1000001, so that no number in an entry's text is mistaken for a count. Each count becomes a link back to its `\index` command, shown counted from 1. makeindex is run with `-r`, so consecutive counts are not joined into ranges. Under tex4ht, no command is run by imakeidx, so the makeindex command of imakeidx is recorded in the `.aux` by `tex8web-hooks.sty`. The ids of the `\index` commands can change after the first LaTeX run. minted, for example, writes no ids for the lines of a listing that is not in its cache until the second run. So before each later LaTeX run, makeindex runs again on each index whose `.idx` changed since it was sorted, and LaTeX runs again while one did. An index whose `.idx` does not change costs no extra run.
 
 #### Other passes
 
