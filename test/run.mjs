@@ -3900,14 +3900,14 @@ const marginnoteCases = {
   ...Object.fromEntries(marginnotePlain.map(text => [text, [null, null]])),
   'After upshape.': ['cmti-10', null], 'After theorem.': ['cmti-10', null], 'Second theorem.': ['cmti-10', null],
   'After footnote.': ['cmr-8', null], 'After sans.': ['cmss-10', null], 'After typewriter.': ['cmtt-10', null],
-  'Note example.': ['cmr-5', '#0000FF', 'marginnote'], 'Note sides.': ['cmr-12', '#FF0000', 'marginnote'],
+  'Note sides.': ['cmr-12', '#FF0000', 'marginnote'],
   'Note offset.': ['cmr-8', '#008080', 'marginnote'], 'Note size.': ['cmr-7', null, 'marginnote'],
   'Note bold.': ['cmbx-10', null, 'marginnote'], 'Note italic.': ['cmti-10', null, 'marginnote'],
   'Note marginpar.': ['cmr-5', '#00FF00', 'marginpar'], 'Note fontsize.': ['cmr-6', '#0000FF', 'marginnote'],
   'Note color.': [null, '#00FF00', 'marginnote'], 'Note family.': ['cmss-10', null, 'marginnote'],
   'Note math.': [null, '#0000FF', 'marginnote'], 'Note sans.': ['cmss-8x-x-62', '#0000FF', 'marginnote'],
   'Note typewriter.': ['cmtt-8x-x-62', '#0000FF', 'marginnote'],
-  ...Object.fromEntries(['group.', 'Note line.', 'Note mid.', 'Note item.', 'Note cell.', 'Note upshape.',
+  ...Object.fromEntries(['Note example.', 'group.', 'Note line.', 'Note mid.', 'Note item.', 'Note cell.', 'Note upshape.',
     'Note theorem.', 'Note footnote.'].map(text => [text, blueNote])),
 };
 const marginnotes = {
@@ -3930,7 +3930,8 @@ const openAt = (html, at) => {
 };
 function marginnoteProblems(name, flat) {
   const problems = [];
-  for (const [text, [font, color, within]] of Object.entries(marginnotes[name] ?? {})) {
+  if (!marginnotes[name]) return problems;
+  for (const [text, [font, color, within]] of Object.entries(marginnotes[name])) {
     const at = flat.indexOf(text);
     if (at < 0) { problems.push(`no '${text}'`); continue; }
     const open = openAt(flat, at);
@@ -3941,7 +3942,6 @@ function marginnoteProblems(name, flat) {
     if (within && !open.some(el => classOf(el).split(' ').includes(within))) problems.push(`'${text}' not in a ${within}`);
   }
   // (the inline and the display formula after a colored note)
-  if (!marginnotes[name]) return problems;
   const from = flat.indexOf('Note math.');
   const math = [...flat.slice(from, flat.indexOf('After math.')).matchAll(/<mjx-container/g)];
   if (math.length !== 2) problems.push(`${math.length} formulas after 'Note math.', not 2`);
