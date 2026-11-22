@@ -518,47 +518,66 @@ function tex8web(config, tex) {
     Configuration.create('tex8web-hidewidth', {handler: {macro: ['tex8web-hidewidth']}});
   }
 
-  // mathjax-modern (Latin Modern Math) with the PDF's \mathbb, \mathcal, and
-  // accents. \mathbb takes New Computer Modern's double-struck capitals,
-  // drawn as AMS's msbm, and \mathcal the TeX font's calligraphic capitals,
-  // with cmsy10's widths. mathjax-modern 4.1.3 has wrong skews and
-  // combining offsets (dx), which place accents (a skew of 0.303em on the
-  // italic a, where TeX has 0.022em). Both come from New Computer Modern,
-  // whose data is in tex-chtml.js, for each character of the same width. The metrics are those of the 4.1.3 fonts.
-  // Added as font extensions, as MathJax's dsfont extension does, to the
-  // font class, before MathJax makes the font (internal: the class, its
-  // dynamic files, and AddFontIds).
+  // Latin Modern Math, MathJax's mathjax-modern, is the math font of a
+  // document in Computer Modern (tex8web-math.tex), as it matches the
+  // text's Latin Modern. Where version 4.1.3 differs from the PDF, it is
+  // changed here, on the font's class before MathJax makes the font
+  // (internal: the class, its addExtension, defaultChars, dynamicFiles, and
+  // and AddFontIds). The page checks are in test-mathfont.tex.
   function matchModernFont() {
-    const Font = MathJax._.output.fonts?.['mathjax-modern']?.chtml_ts.MathJaxModernFont;
-    if (!Font) return;
+    if (MathJax.config.output.font !== 'mathjax-modern') return;
+    const Font = MathJax._.output.fonts['mathjax-modern'].chtml_ts.MathJaxModernFont;
     const {AddFontIds} = MathJax._.output.chtml.DynamicFonts;
-    const {Package} = MathJax._.components.package;
+    // another MathJax font's files, from beside mathjax-modern's: on a CDN,
+    // the path holds MathJax's version
+    const path = MathJax.config.loader.paths['mathjax-modern'];
+    const fontURL = name => MathJax._.components.package.Package.resolvePath(
+      path.replace('modern', name) + '/chtml/woff2', false);
+
+    // Accents: mathjax-modern's skews and combining offsets (dx) are wrong
+    // and set an accent off center, as a skew of 0.303em on the italic a,
+    // where TeX has 0.022em. New Computer Modern, MathJax's default font,
+    // whose data comes with tex-chtml.js, has TeX's. They are taken for
+    // each character that is as wide in both fonts.
     const newcm = MathJax._.output.chtml.DefaultFont.DefaultFont.defaultChars;
-    const skewed = {};
+    const skews = {};
     for (const [variant, chars] of Object.entries(Font.defaultChars)) {
       for (const [n, char] of Object.entries(chars)) {
         const other = newcm[variant]?.[n];
         if (!Array.isArray(char) || !Array.isArray(other) || char[2] !== other[2]) continue;
         const {sk = 0, dx = 0} = other[3] || {};
         if ((char[3]?.sk || 0) === sk && (char[3]?.dx || 0) === dx) continue;
-        (skewed[variant] = skewed[variant] || {})[n] = [...char.slice(0, 3), {...char[3], sk, dx}];
+        (skews[variant] ||= {})[n] = [...char.slice(0, 3), {...char[3], sk, dx}];
       }
     }
-    // the path of the modern font with another name: on a CDN, it has
-    // MathJax's version
-    const url = name => Package.resolvePath(
-      MathJax.config.loader.paths['mathjax-modern'].replace('modern', name) + '/chtml/woff2', false);
+    Font.addExtension({name: 'tex8web-skews', chars: skews});
+
+    // \mathbb: New Computer Modern's double-struck capitals, which are AMS's
+    // msbm, where mathjax-modern's are of another design. The tables below
+    // are from MathJax's fonts 4.1.3, and test/unit/modern-font.test.mjs
+    // makes them again from node_modules.
     const doubleStruck = {
-      0x1D538: [.704, 0, .722, {sk: -.014}], 0x1D539: [.685, 0, .666], 0x2102: [.704, .019, .722, {sk: .036}],
-      0x1D53B: [.685, 0, .722, {sk: -.02}], 0x1D53C: [.685, 0, .666], 0x1D53D: [.685, 0, .611, {sk: .03}],
-      0x1D53E: [.704, .019, .777], 0x210D: [.685, 0, .777, {sk: .011}], 0x1D540: [.685, 0, .388],
-      0x1D541: [.685, .075, .5, {sk: .055}], 0x1D542: [.685, 0, .777, {sk: .015}], 0x1D543: [.685, 0, .666, {sk: -.148}],
-      0x1D544: [.685, 0, .944, {sk: .073}], 0x2115: [.685, .019, .722, {sk: .022}], 0x1D546: [.704, .019, .777],
-      0x2119: [.685, 0, .611, {sk: .028}], 0x211A: [.704, .179, .777], 0x211D: [.685, 0, .722],
-      0x1D54A: [.704, .012, .555, {sk: -.013}], 0x1D54B: [.685, 0, .666], 0x1D54C: [.685, .019, .722, {sk: .053}],
-      0x1D54D: [.685, .019, .722, {sk: .072}], 0x1D54E: [.685, .019, 1, {sk: .048}], 0x1D54F: [.685, 0, .722, {sk: .026}],
+      0x1D538: [.704, 0, .722, {sk: -.014}], 0x1D539: [.685, 0, .666],
+      0x2102: [.704, .019, .722, {sk: .036}], 0x1D53B: [.685, 0, .722, {sk: -.02}],
+      0x1D53C: [.685, 0, .666], 0x1D53D: [.685, 0, .611, {sk: .03}],
+      0x1D53E: [.704, .019, .777], 0x210D: [.685, 0, .777, {sk: .011}],
+      0x1D540: [.685, 0, .388], 0x1D541: [.685, .075, .5, {sk: .055}],
+      0x1D542: [.685, 0, .777, {sk: .015}], 0x1D543: [.685, 0, .666, {sk: -.148}],
+      0x1D544: [.685, 0, .944, {sk: .073}], 0x2115: [.685, .019, .722, {sk: .022}],
+      0x1D546: [.704, .019, .777], 0x2119: [.685, 0, .611, {sk: .028}],
+      0x211A: [.704, .179, .777], 0x211D: [.685, 0, .722],
+      0x1D54A: [.704, .012, .555, {sk: -.013}], 0x1D54B: [.685, 0, .666],
+      0x1D54C: [.685, .019, .722, {sk: .053}], 0x1D54D: [.685, .019, .722, {sk: .072}],
+      0x1D54E: [.685, .019, 1, {sk: .048}], 0x1D54F: [.685, 0, .722, {sk: .026}],
       0x1D550: [.685, 0, .722, {sk: .038}], 0x2124: [.685, 0, .666, {sk: .057}],
     };
+    Font.addExtension({name: 'tex8web-newcm', fonts: ['MJX-NCM-DS'], fontURL: fontURL('newcm'),
+      chars: AddFontIds({DS: {'double-struck': doubleStruck}}, 'NCM')});
+
+    // \mathcal: the TeX font's calligraphic capitals, which are cmsy's,
+    // where mathjax-modern's are of another design. mathjax-modern's
+    // dynamic file of calligraphic letters, loaded when one is first used,
+    // would set its letters over these.
     const calligraphic = {
       0x41: [.728, .05, .798, {ic: .021, sk: .274}], 0x42: [.705, .022, .657, {ic: .007, sk: .09}],
       0x43: [.705, .025, .527, {ic: .006, sk: .135}], 0x44: [.683, 0, .771, {sk: .06}],
@@ -589,13 +608,8 @@ function tex8web(config, tex) {
       0x57: [.686, .077, 1.169, {ic: .037, sk: .057}], 0x58: [.686, -.001, .817, {ic: .089, sk: .125}],
       0x59: [.686, .164, .759, {ic: .038, sk: .079}], 0x5A: [.686, 0, .818, {ic: .035, sk: .133}],
     };
-    Font.addExtension({name: 'tex8web-skews', chars: skewed});
-    Font.addExtension({name: 'tex8web-newcm', fonts: ['MJX-NCM-DS'], fontURL: url('newcm'),
-      chars: AddFontIds({DS: {'double-struck': doubleStruck}}, 'NCM')});
-    // the font's dynamic file of calligraphic letters would otherwise set
-    // its letters over these, when first used
     delete Font.dynamicFiles.calligraphic;
-    Font.addExtension({name: 'tex8web-tex', fonts: ['MJX-TEX-C', 'MJX-TEX-CB'], fontURL: url('tex'),
+    Font.addExtension({name: 'tex8web-tex', fonts: ['MJX-TEX-C', 'MJX-TEX-CB'], fontURL: fontURL('tex'),
       chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic}}, 'TEX')});
   }
 

@@ -40,7 +40,7 @@ if (!only.length) {
 // (test/lib/stubs.mjs), so they wait neither for the builds below nor for
 // other sessions. Their report is printed at the end.
 const tools = only.length ? null : new Promise(done => {
-  const files = ['unit/prerender', 'slots', 'builds', 'realbuild', 'regress', 'tools'].map(name => join(root, `test/${name}.test.mjs`));
+  const files = ['unit/prerender', 'unit/modern-font', 'slots', 'builds', 'realbuild', 'regress', 'tools'].map(name => join(root, `test/${name}.test.mjs`));
   const child = spawn(process.execPath, ['--test', ...files], { timeout: 300000 });
   let report = '';
   for (const stream of [child.stdout, child.stderr]) stream.on('data', data => { report += data; });
