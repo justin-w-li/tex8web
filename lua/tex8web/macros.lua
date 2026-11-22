@@ -26,8 +26,7 @@ local fallbacks = {
   -- (LaTeX's \rlap{$\displaystyle #1$}, in latex.ltx. MathJax's \rlap
   -- takes math in math, so the dollar signs would be drawn.)
   ["\\lefteqn"] = "\\newcommand{\\lefteqn}[1]{\\rlap{\\displaystyle #1}}",
-  -- (amsmath's page breaks, which a page does not have. tex8web.js gives
-  -- MathJax \hidewidth.)
+  -- (amsmath's page breaks, which a page does not have)
   ["\\displaybreak"] = "\\newcommand{\\displaybreak}[1][]{}",
   ["\\allowdisplaybreaks"] = "\\newcommand{\\allowdisplaybreaks}[1][]{}",
   -- LaTeX's text commands, which it also sets in math. MathJax expands these

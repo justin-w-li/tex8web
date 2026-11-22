@@ -17,9 +17,10 @@
 % the document; before \text in an align cell narrower than its column,
 % and in a group in a matrix cell. \allowdisplaybreaks[1] in the preamble
 % is only built. A cell narrower than its column goes to the side away
-% from \hidewidth, as in the PDF.
+% from \hidewidth, as in the PDF. Last, mathtools's \coloneqq and
+% \mathclap, whose MathJax extension must stay configured beside \hidewidth.
 \documentclass{article}
-\usepackage{amsmath,amsthm}
+\usepackage{amsmath,amsthm,mathtools}
 \usepackage{hyperref}
 \allowdisplaybreaks[1]
 \newtheorem{theorem}{Theorem}
@@ -135,4 +136,6 @@ a note.\footnote{A note $\begin{smallmatrix} qqq\hidewidth \\ r \end{smallmatrix
 \hidewidth wide\hidewidth \\
 s
 \end{tabular}
+
+$a \coloneqq b + \mathclap{x}$
 \end{document}

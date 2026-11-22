@@ -332,7 +332,8 @@ const typeset = {
   // no command name in red and no error, also for \hidewidth in a group;
   // a cell that starts with \hidewidth set at the right of its column, one
   // that ends with it at the left, and one with it on both sides centered,
-  // as in the PDF, also after the {} of an align's left column)
+  // as in the PDF, also after the {} of an align's left column; mathtools's
+  // \coloneqq and \mathclap, whose extension stays configured)
   'test-displaybreak': [/^(?![^]*mathcolor='light-dark\(red)/, /^(?![^]*<merror)/,
     /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>a<\/mi><\/mtd>/,
     /<mtd columnalign='left'>(?:<mspace[^>]*><\/mspace>)?<mi mathvariant='italic'>𝑐𝑐𝑐<\/mi><\/mtd>/,
@@ -340,7 +341,9 @@ const typeset = {
     /<mtd columnalign='right'>(?:<mspace[^>]*><\/mspace>)?<mi>x<\/mi><\/mtd><mtd>(?:<mspace[^>]*><\/mspace>)?<mi>x<\/mi><mo[^>]*>≥/,
     /<mtd columnalign='right'><mi>o<\/mi><\/mtd>/, /<mtd columnalign='left'><mi mathvariant='italic'>𝑞𝑞𝑞<\/mi><\/mtd>/,
     /<mtd columnalign='right'><mstyle[^>]*><mrow data-mjx-texclass='ORD'><\/mrow><mtext>\(2\)<\/mtext>/,
-    /<mtd(?: columnalign='center')?>(?:<mspace[^>]*><\/mspace>)?<mi>l<\/mi><\/mtd>/],
+    /<mtd(?: columnalign='center')?>(?:<mspace[^>]*><\/mspace>)?<mi>l<\/mi><\/mtd>/,
+    /<mi>a<\/mi><mrow data-mjx-texclass='REL'><mpadded[^>]*><mtext[^>]*>:<\/mtext><\/mpadded><mo[^>]*>=<\/mo><\/mrow><mi>b<\/mi>/,
+    /<mpadded lspace='-\.5width' width='0'><mi>x<\/mi><\/mpadded>/],
   // eqnarray's rows \jot apart, as an align's
   'test-eqnarray': [
     /<mtable [^>]*data-tex8web-env='eqnarray'[^>]*rowspacing='0.274em'/,

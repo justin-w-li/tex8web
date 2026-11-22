@@ -480,7 +480,8 @@ function tex8web(config, tex) {
   // an ArrayItem's hfill, read when the cell ends), but is an error outside
   // a table. An empty group before it, such as the {} that starts an
   // align's left column, has no width.
-  texOptions.packages = {'[+]': ['tex8web-hidewidth']};
+  const packages = texOptions.packages = texOptions.packages || {};
+  (packages['[+]'] = packages['[+]'] || []).push('tex8web-hidewidth');
   function addHidewidth() {
     const {Configuration} = MathJax._.input.tex.Configuration;
     const {CommandMap} = MathJax._.input.tex.TokenMap;
