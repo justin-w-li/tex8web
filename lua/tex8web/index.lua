@@ -56,8 +56,8 @@ function M.prepare(idx)
   end)), map
 end
 
--- the text of each index's .idx last given to makeindex, by the index's
--- name
+-- the text of each index's .idx last given to makeindex, without the file
+-- names, by the index's name
 local given = {}
 
 -- runs makeindex with imakeidx's options on each index, or with changed, on
@@ -74,8 +74,11 @@ local function sort(par, changed)
   local ran = false
   for _, index in ipairs(M.indexes(aux, par.input, lfs.attributes(dir .. "/" .. par.input .. ".idx"))) do
     local written = files.read(dir .. "/" .. index.name .. ".idx") or ""
-    if not changed or given[index.name] ~= written then
-      given[index.name], ran = written, true
+    -- (tex4ht writes the page's file name in \beforeentry only from the
+    -- second LaTeX run, and a link to the page's file is written #id)
+    local ids = written:gsub("\\beforeentry{[^}]*}", "")
+    if not changed or given[index.name] ~= ids then
+      given[index.name], ran = ids, true
       local options = index.options:gsub("%S+", files.quote)
       local command = "cd " .. files.quote(dir) .. " && INDEXSTYLE=" .. files.quote(styles)
         .. " makeindex -q -r -i -t " .. files.quote(index.name .. ".ilg") .. " -o " .. files.quote(index.name .. ".ind")
