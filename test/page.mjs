@@ -385,8 +385,9 @@ async function hiding(chrome, file) {
 // inside a paragraph that wraps again may move a little. The line is
 // marked by the first character of the text that starts below the top,
 // outside the controls, the table of contents, and the footnotes, which
-// move between the layouts.
-async function narrowing(chrome, file, doc, setup) {
+// move between the layouts. place, if given, is where the page is scrolled
+// first, in place of 40% down.
+async function narrowing(chrome, file, doc, setup, place) {
   return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 900, before: setup }, async page => {
     const mark = `(() => {
       const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode: text =>
@@ -417,7 +418,9 @@ async function narrowing(chrome, file, doc, setup) {
     const problems = [];
     // (instant: a smooth scroll still running at the resize would move the
     // page after the line is marked)
-    await page.evaluate(`scrollTo({ top: 0.4 * (document.documentElement.scrollHeight - innerHeight), behavior: 'instant' })`);
+    const top = await page.evaluate(place ?? '0.4 * (document.documentElement.scrollHeight - innerHeight)');
+    if (typeof top !== 'number') return [top];
+    await page.evaluate(`scrollTo({ top: ${top}, behavior: 'instant' })`);
     await page.frame();
     for (const [from, to, size] of [['wide', 'narrow', [400, 800]], ['narrow', 'wide', [1600, 900]]]) {
       // (without scroll anchoring, the line is read 150ms after the
@@ -444,6 +447,22 @@ const anchorless = `{
   sheet.replaceSync('html { overflow-anchor: none }');
   document.adoptedStyleSheets = [sheet];
 }`;
+
+// a place for narrowing where the window's top quarter, across the middle
+// of the text, is in the space above a display below 40% of the page,
+// outside any block but the one that holds the display. There the caret
+// is put in the display's math, which has an empty box.
+const gap = `(() => {
+  const below = 0.4 * (document.documentElement.scrollHeight - innerHeight) + innerHeight / 4;
+  const display = [...document.querySelectorAll('.mathjax-block mjx-container')]
+    .find(math => math.getBoundingClientRect().top + scrollY > below);
+  if (!display) return 'no display below 40% of the page';
+  const top = display.getBoundingClientRect().top + scrollY - innerHeight / 4 - 3;
+  scrollTo({ top, behavior: 'instant' });
+  const box = document.body.getBoundingClientRect();
+  const at = document.elementFromPoint((box.left + box.right) / 2, innerHeight / 4);
+  return at?.contains(display) ? top : \`no space above the display below 40% of the page (\${at?.tagName} there)\`;
+})()`;
 
 // A page scrolled partway down and reloaded three times, on a wide screen
 // and a phone's: the line of text at the window's top lands where it was
@@ -1818,7 +1837,9 @@ const checks = {
   touch: [['examples/basic'], each(touching)],
   bar: [['test'], each(async (...args) => [...await naming(...args), ...await hiding(...args), ...await landing(...args)])],
   narrow: [['test', 'examples/complex'], each(narrowing)],
-  anchorless: [['test', 'examples/complex'], each((chrome, file, doc) => narrowing(chrome, file, doc, anchorless))],
+  anchorless: [['test', 'examples/complex'], each(async (chrome, file, doc) => [
+    ...await narrowing(chrome, file, doc, anchorless),
+    ...(await narrowing(chrome, file, doc, anchorless, gap)).map(problem => `above a display: ${problem}`)])],
   reload: [['test', 'examples/complex'], each(reloading)],
   fade: [['test'], each(fading)],
   theme: [['test-generic'], each(themed)],

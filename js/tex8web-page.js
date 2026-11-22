@@ -285,12 +285,19 @@
   function anchor() {
     if (CSS.supports('overflow-anchor', 'auto')) return;
     let line, width = innerWidth, timer;
-    // A caret in math has an empty box: the element there instead. Between
-    // blocks, the caret is put in the nearest text, in Safari as in Chrome.
+    // Between blocks, the caret is put in the nearest text, in Safari as in
+    // Chrome. A caret in math has an empty box, so the element at the caret
+    // is read instead. The element at the point would be the block around
+    // both, as the page's main element when the next block is a display.
     const read = () => {
       const box = document.body.getBoundingClientRect(), x = (box.left + box.right) / 2, y = innerHeight / 4;
       const range = document.caretRangeFromPoint(x, y);
-      const at = range?.getBoundingClientRect().height ? range : document.elementFromPoint(x, y);
+      let at = range;
+      if (!range?.getBoundingClientRect().height) {
+        const node = range ? range.startContainer.childNodes[range.startOffset] ?? range.startContainer
+          : document.elementFromPoint(x, y);
+        at = node instanceof Element ? node : node?.parentElement;
+      }
       if (at) line = { at, top: at.getBoundingClientRect().top };
     };
     addEventListener('scroll', () => {
