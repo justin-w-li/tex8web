@@ -150,6 +150,15 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 
 A `\mathclap` or `\clap` around a whole display has its content's width in `js/tex8web.js`, so that a display wider than the column can be scrolled to its left end.
 
+Latin Modern Math, MathJax's `mathjax-modern`, is the math font of a document in Computer Modern. In version 4.1.3, it differs from the PDF in four ways, which `matchModernFont()` in `js/tex8web.js` changes before the font is made:
+
+- `\mathbb` has letters of another design. New Computer Modern's double-struck capitals are used, which are AMS's msbm.
+- `\mathcal` and its bold have letters of another design. The calligraphic capitals of MathJax's TeX font are used, which are cmsy's.
+- The skews and combining offsets set accents off center, as a skew of 0.303em on the italic a, where TeX has 0.022em. New Computer Modern's are used for each character that is as wide in both fonts.
+- The dots of `\ldots`, `\cdots`, `\vdots`, and `\ddots` are closer together than in TeX. Each stays one character in the MathML, for copying and speech, and is drawn as the font's dots with six-per-em spaces between them, or with text shadows for the dots that go up.
+
+The tables of the first two are checked against MathJax's fonts by `test/unit/modern-font.test.mjs`, which prints the new tables when they differ. The page is checked by `test-mathfont` in `npm test` and `npm run test:visual`.
+
 ### 4. Prerendering
 
 tex8web runs MathJax in Node with `js/prerender.mjs`, configured as in the browser, and saves the typeset math in the page. The prerendered page is also lighter.
@@ -222,7 +231,7 @@ The checks of each test script are listed in its header comment.
 ### Commands
 
 - **`npm test`**: the Lua unit tests in `test/unit/`, then `test/run.mjs`. Every document in `test/fixtures/` and `examples/` is built by `run.mjs` into `build/test/<document>/` and checked. Build one document with `node test/run.mjs <name>`. The build log is in `build/test/<document>/make4ht.log`.
-  - The tests of the test tools run beside the builds: `test/unit/prerender.test.mjs`, `slots.test.mjs`, `builds.test.mjs`, `realbuild.test.mjs`, `regress.test.mjs`, and `tools.test.mjs`. Most use stand-ins for make4ht and docker, set up in `test/lib/stubs.mjs`. The real make4ht is run in `realbuild.test.mjs`, and a real Chrome in `regress.test.mjs`.
+  - The tests of the test tools run beside the builds: `test/unit/prerender.test.mjs`, `modern-font.test.mjs`, `slots.test.mjs`, `builds.test.mjs`, `realbuild.test.mjs`, `regress.test.mjs`, and `tools.test.mjs`. Most use stand-ins for make4ht and docker, set up in `test/lib/stubs.mjs`. The real make4ht is run in `realbuild.test.mjs`, and a real Chrome in `regress.test.mjs`.
   - `test-mathescape.tex` holds the formulas where tex8web's escaping of formula source (`\alteqtoks`) could differ from tex4ht's. It is built a second time by `run.mjs` with `test-mathescape-stock.cfg`, in which tex4ht's escaping is restored, and the two pages must be the same.
 - **`npm run test:visual`**: `test/visual.mjs`, then `test/page.mjs`, with Chrome and the network. `test/chrome.test.mjs` and `test/shots.test.mjs` run beside them, so their output is mixed in.
   - `visual.mjs`: each page, prerendered and typeset by MathJax in the browser, compared screen by screen
@@ -292,6 +301,7 @@ Differences from the PDF too small for the [known limitations](DOCUMENTATION.md#
 
 - **Math in a page built with Node is laid out from estimates**, not browser measurements, for example text in math without MathJax glyphs. A box can be a pixel or so off.
 - **Delimiters and radicals** can differ slightly in size from the PDF, as they come from the MathJax font.
+- **Dots in a subscript or superscript**, as in `x_{1,\ldots,n}`, are as far apart as outside it. In the PDF, the thin spaces between them are dropped there, so the dots take 0.83em where the page has 1.17em.
 - **The space before inline math after a word in another font**, for example an algorithm2e keyword before its argument. It can be in the word's font without Node, and is in the text font with Node. The two pages can be a pixel apart, and neither always matches the PDF.
 - **An `\fbox` or `\colorbox` in a line** is a few points taller than in the PDF. Its text is as tall as a line of the font, where TeX's box is as tall as its letters.
 - **Text commands in math.** `\emph` in math is always italic, also in italic text such as a theorem, where the PDF sets it upright. `\textsc` in math is upright, without small capitals.
@@ -320,6 +330,7 @@ To make a new `.github/screenshot.png`:
 Move `mathjax` and every `@mathjax/*` package to the new version in one commit, and run:
 
 - the `typeset` checks of `npm test`, for the internals that `tex8web.js` depends on
+- `test/unit/modern-font.test.mjs`, for the tables of Latin Modern Math's letters in `tex8web.js`
 - `npm run test:visual`, for the comparison of MathJax in Node with MathJax in the browser
 - `npm run regress` on your documents, compared with their baselines
 
