@@ -5809,6 +5809,9 @@ if (ownpkg) {
   const slidesText = [/<span class='cmbx-10'>Idea 1: First<\/span>/, /<span class='cmti-10'>Takeaway: Text of the writer.s slides package\.<\/span>/,
     /<span class='cmbx-10'>Key point:<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the key point\./];
   const urlText = [/Site: <span class='cmtt-10'>example\.org\/notes<\/span>\./, /Mail: <span class='cmtt-10'>writer@example\.org<\/span>\./];
+  // (as article sets the title, which slides.4ht configures as a slide's)
+  const titleText = [/<h1 class='titleHead'>Lecture One<\/h1>/, /<div class='author'\s*><span class='cmr-12'>A\. Writer<\/span><\/div>/,
+    /<div class='date'\s*><span class='cmr-12'>Week One<\/span><\/div>/];
   const slideText = [/<span class='cmbx-10'>Slide: Opening<\/span>/, /Text of the slide\./, /<span class='cmti-10'>End of the slide\.<\/span>/];
   // [key, label, folder of test-ownpkg/, texts, .4ht files the TeX log
   // must not read, .4ht files it must read]
@@ -5825,6 +5828,14 @@ if (ownpkg) {
     ['urlold', 'a guard: an older copy of the tree\'s url.sty', 'urlold',
       [/Site: <a class='url' href='https:\/\/example\.org\/a_b'><span class='cmtt-10'>https:\/\/example\.<wbr \/>org\/<wbr \/>a_<wbr \/>b<\/span><\/a>\./,
       /Path: <span class='path'><span class='cmtt-10'>dir\/<wbr \/>file<\/span><\/span>\./], [], ['url.4ht']],
+    ['maketitle', 'a slides.sty with no \\ProvidesPackage line, and \\maketitle', 'maketitle', [...titleText, slidesText[0]], ['slides.4ht'], []],
+    ['list', 'a slides.sty loaded in a list of packages', 'list', slidesText, ['slides.4ht'], []],
+    ['slidescls', 'a slides.cls with a slide environment', 'slidescls', slideText, ['slides.4ht'], []],
+    ['resume', 'a resume.cls', 'resume', [/<span class='cmbx-10'>A\. Writer<\/span>/, /Lives in <span class='cmti-10'>Springfield<\/span>\./], ['resume.4ht'], []],
+    ['examhead', 'an exam.cls with the exam page style', 'examhead',
+      [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./], ['exam.4ht'], []],
+    ['urldated', 'a url.sty dated before the tree\'s', 'urldated', urlText, ['url.4ht'], []],
+    ['treecls', 'a guard: the tree\'s slides class', 'treecls', [/Text of the slide\./], [], ['slides.4ht']],
     ['exam', 'a guard: an exam.cls of the writer\'s', 'exam',
       [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./, /<span class='cmbx-10'>Question 2\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the second question\./], [], []],
   ];
