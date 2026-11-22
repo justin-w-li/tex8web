@@ -57,10 +57,10 @@ end
 -- the most LaTeX runs M.settle makes after its first (make4ht's default)
 M.runs = 5
 
--- LaTeX until the files of M.checksum stop changing and again(par), if
--- given, returns false, at most M.runs times after the first run, in place
--- of make4ht's autohtlatex. again runs before each LaTeX run after the
--- first. Returns LaTeX's status.
+-- LaTeX until the files of M.checksum stop changing and again(par) returns
+-- false, at most M.runs times after the first run, in place of make4ht's
+-- autohtlatex. again runs before each LaTeX run after the first. Returns
+-- LaTeX's status.
 function M.settle(par, again)
   -- (required here, as it needs make4ht's Make, which the unit tests lack)
   local htlatex = require("make4ht-htlatex").htlatex
@@ -69,7 +69,7 @@ function M.settle(par, again)
   for _ = 1, M.runs do
     if status ~= 0 then return status end
     local now = M.checksum(par)
-    local more = again ~= nil and again(par)
+    local more = again(par)
     if now == before and not more then return status end
     before = now
     status = htlatex(par)

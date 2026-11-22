@@ -60,6 +60,31 @@ end
 -- names, by the index's name
 local given = {}
 
+-- each index the document prints, as M.indexes gives it, with the text of
+-- its .idx (written) and that text without the file names (compared, as
+-- given holds it); and the build directory
+local function found(par)
+  local dir = (par.builddir ~= "" and par.builddir) or "."
+  local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""
+  local indexes = M.indexes(aux, par.input, lfs.attributes(dir .. "/" .. par.input .. ".idx"))
+  for _, index in ipairs(indexes) do
+    index.written = files.read(dir .. "/" .. index.name .. ".idx") or ""
+    -- (tex4ht writes the page's file name in \beforeentry only from the
+    -- second LaTeX run, and a link to the page's file is written #id)
+    index.compared = index.written:gsub("\\beforeentry{[^}]*}", "")
+  end
+  return indexes, dir
+end
+
+-- the names of the indexes whose .idx changed since it was last sorted
+function M.unsorted(par)
+  local names = {}
+  for _, index in ipairs((found(par))) do
+    if given[index.name] ~= index.compared then names[#names + 1] = index.name end
+  end
+  return names
+end
+
 -- runs makeindex with imakeidx's options on each index, or with changed, on
 -- each index whose .idx changed since it was last sorted. Returns whether
 -- it ran. A style file is found in the document's directory, where make4ht
@@ -68,24 +93,19 @@ local given = {}
 -- not pages, so three \index in a row are not a range. A failed run is a
 -- warning, as for the bibliography.
 local function sort(par, changed)
-  local dir = (par.builddir ~= "" and par.builddir) or "."
-  local aux = files.read(dir .. "/" .. par.input .. ".aux") or ""
   local styles = lfs.currentdir() .. ":" .. (os.getenv("INDEXSTYLE") or "")
   local ran = false
-  for _, index in ipairs(M.indexes(aux, par.input, lfs.attributes(dir .. "/" .. par.input .. ".idx"))) do
-    local written = files.read(dir .. "/" .. index.name .. ".idx") or ""
-    -- (tex4ht writes the page's file name in \beforeentry only from the
-    -- second LaTeX run, and a link to the page's file is written #id)
-    local ids = written:gsub("\\beforeentry{[^}]*}", "")
-    if not changed or given[index.name] ~= ids then
-      given[index.name], ran = ids, true
+  local indexes, dir = found(par)
+  for _, index in ipairs(indexes) do
+    if not changed or given[index.name] ~= index.compared then
+      given[index.name], ran = index.compared, true
       local options = index.options:gsub("%S+", files.quote)
       local command = "cd " .. files.quote(dir) .. " && INDEXSTYLE=" .. files.quote(styles)
         .. " makeindex -q -r -i -t " .. files.quote(index.name .. ".ilg") .. " -o " .. files.quote(index.name .. ".ind")
         .. " " .. options
       log:info("index: " .. command)
       indexing.load_enc()
-      local idx, map = M.prepare(written)
+      local idx, map = M.prepare(index.written)
       local makeindex = io.popen(command, "w")
       makeindex:write(idx)
       local ind = dir .. "/" .. index.name .. ".ind"
@@ -172,12 +192,11 @@ function M.glossaries(par)
 end
 
 -- makeglossaries, makeindex, and LaTeX again, after LaTeX has settled,
--- while the glossaries' or indexes' input files or LaTeX's
--- cross-references change: an entry used
--- only in the description of another reaches the .glo only when the
--- glossary is printed (the glossaries manual asks for a second
--- makeglossaries run then), and a glossary that first has entries then
--- adds a heading to the table of contents. Returns LaTeX's status.
+-- while the glossaries' or indexes' input files or LaTeX's cross-references
+-- change: an entry used only in the description of another reaches the .glo
+-- only when the glossary is printed (the glossaries manual asks for a second
+-- makeglossaries run then), and a glossary that first has entries then adds
+-- a heading to the table of contents. Returns LaTeX's status.
 function M.glossaries_again(par)
   local before = bibliography.checksum(par)
   for _ = 1, bibliography.runs do
@@ -188,9 +207,15 @@ function M.glossaries_again(par)
     local status = require("make4ht-htlatex").htlatex(par)
     if status ~= 0 then return status end
   end
+  -- (an index still unsorted links to ids the page may not have)
   local _, text = inputs(par)
-  if text ~= sorted or bibliography.checksum(par) ~= before then
-    log:warning("the glossaries did not settle after " .. bibliography.runs .. " more LaTeX runs")
+  local unsorted = M.unsorted(par)
+  local more = " did not settle after " .. bibliography.runs .. " more LaTeX runs"
+  if #unsorted > 0 then
+    log:warning("the index " .. table.concat(unsorted, ", ") .. more .. ", so its links may name missing places")
+  end
+  if text ~= sorted or (#unsorted == 0 and bibliography.checksum(par) ~= before) then
+    log:warning("the glossaries" .. more)
   end
   return 0
 end

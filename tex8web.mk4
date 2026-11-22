@@ -101,8 +101,8 @@ local log = logging.new("tex8web")
 -- which make4ht does not run, if the document needs them; then LaTeX until
 -- the cross-references and the indexes' input files settle, with makeindex
 -- again before each run while those change, and makeglossaries, makeindex,
--- and LaTeX while the glossaries or indexes change. (The parameters extend settings, because
--- Make.params is still empty here.)
+-- and LaTeX while the glossaries or indexes change. (The parameters extend
+-- settings, because Make.params is still empty here.)
 local latex = {packages = settings.packages .. "\\RequirePackage{tex8web-hooks}",
   tex4ht_sty_par = settings.tex4ht_sty_par .. ",fn-in"}
 -- The tests' builds (test/lib/build.mjs) copy LaTeX's build directory into
