@@ -1693,7 +1693,7 @@ const contents = {
   // (built as it is, with no package or class of the writer's beside it;
   // run.mjs builds it again from each folder of test-ownpkg/)
   'test-ownpkg': [/No package or class of the writer.s\./],
-  // (files
+  // (files of the document that give a .4ht's name in \ProvidesFile: each
   // file's text and extra checks, nothing that glossary.4ht writes, such as
   // "refextract", and one page, where glossary.4ht's errors closed it twice)
   ...Object.fromEntries([
@@ -5841,6 +5841,8 @@ if (ownpkg) {
     ['treecls', 'a guard: the tree\'s slides class', 'treecls', [/Text of the slide\./], [], ['slides.4ht']],
     ['exam', 'an exam.cls of the writer\'s with none of the macros that exam.4ht tests', 'exam',
       [/<span class='cmbx-10'>Question 1\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the first question\./, /<span class='cmbx-10'>Question 2\.<\/span>(?:<span class='tex8web-nbsp'> <\/span>|\s)*Text of the second question\./], ['exam.4ht'], []],
+    ['setuponly', 'a slides.sty that loads packages and declares a theorem and an operator, with no \\def', 'setuponly',
+      [/<span class='cmbx-10'>Theorem 1\.<\/span>/, /<span class='cmti-10'>Text of the theorem, about <\/span>/, /aria-label='trace of A'/], ['slides.4ht'], []],
     ['ownfourht', 'a guard: a class of the writer\'s with a .4ht of the writer\'s beside it', 'ownfourht',
       [/Text of the class.s configuration for tex4ht\./], [], ['myclass.4ht']],
   ];
