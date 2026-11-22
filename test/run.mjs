@@ -515,6 +515,12 @@ const speech = {
     /Row 1: (?:Column 1, )?e (?:Column 2, )?f Row 2: /, /Row 1: Column 1, k k k Column 2, l Row 2: Column 1, m /,
     /Case 1: x x is greater than or equal to 0 Case 2: /,
     /aria-label='2 lines Line 1: o Line 2: p p p'/, /aria-label='2 lines Line 1: q q q Line 2: r'/,
+    new RegExp(`aria-label='7 lines Line 1: a equals b Line 2: c equals d ${eqLabel(18)} Line 3: e equals f ${eqLabel('cap A')} ` +
+      `Line 4: g equals h ${eqLabel(19)} Line 5: i equals j ${eqLabel(20)} Line 6: k equals l ${eqLabel(21)} Line 7: o equals p ${eqLabel(22)}'`),
+    new RegExp(`aria-label='2 lines Line 1: x ${eqLabel(23)} Line 2: y ${eqLabel(24)}'`),
+    new RegExp(`aria-label='2 lines Line 1: x equals y ${eqLabel(25)} Line 2: z equals w ${eqLabel(26)}'`),
+    new RegExp(`aria-label='2 lines Line 1: a equals b plus c ${eqLabel(27)} Line 2: (?:blank )?open paren by open paren 1 close paren close paren ${eqLabel(28)}'`),
+    /aria-label='2 lines Line 1: x equals y y y Line 2: z equals w empty 2 lines Line 1: x Line 2: y y y'/,
     /^(?![^]*aria-label='[^']*backslash)/,
   ],
   // (\enskip as "empty", as MathJax reads \quad; the counter commands as
@@ -1171,10 +1177,12 @@ const contents = {
   'test-envmacro': [/first row is \(<a href='#[^']*'>3<!-- +tex4ht:ref: eq:g /],
   // (the \label on the row of a \bmatrix of the document's names its number)
   'test-envmacro-own': [/Rows \(<a href='#[^']*'>1<!-- +tex4ht:ref: own-a +--><\/a>\) and \(<a href='#[^']*'>2<!-- +tex4ht:ref: own-b /],
-  // (\eqref and \ref of rows with \displaybreak read their numbers; a
-  // text tabular's cell with \hidewidth on both sides holds its word)
-  'test-displaybreak': [/See \(<a href='#[^']*'>3<!-- +tex4ht:ref: eq:two +--><\/a>\) and <a href='#[^']*'>3<!-- +tex4ht:ref: eq:two /,
-    /Rows \(<a href='#[^']*'>12<!-- +tex4ht:ref: eq:arr +--><\/a>\) and \(<a href='#[^']*'>14<!-- +tex4ht:ref: eq:thm /,
+  // (\eqref and \ref of rows with \displaybreak read their numbers and
+  // link to their rows' anchors; a text tabular's cell with \hidewidth on
+  // both sides holds its word)
+  'test-displaybreak': [/id='(x1-\d+r3)'[^]*See \(<a href='#\1'>3<!-- +tex4ht:ref: eq:two +--><\/a>\) and <a href='#\1'>3<!-- +tex4ht:ref: eq:two /,
+    /id='(x1-\d+r12)'[^]*id='(x1-\d+r14)'[^]*Rows \(<a href='#\1'>12<!-- +tex4ht:ref: eq:arr +--><\/a>\) and \(<a href='#\2'>14<!-- +tex4ht:ref: eq:thm /,
+    /id='(x1-\d+r18)'[^]*Row \(<a href='#\1'>18<!-- +tex4ht:ref: eq:n /,
     /<td [^>]*>wide\s*<\/td><\/tr><tr [^>]*><td [^>]*>\s*s<\/td>/],
   'test-builddirspace': builddirspacePage('test-builddirspace'),
   'test-sectpart': sectpartParts, 'test-sectpart-hyperref': sectpartParts, 'test-sectpart-ulem': sectpartParts,
