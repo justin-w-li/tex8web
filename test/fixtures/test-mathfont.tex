@@ -3,8 +3,8 @@
 % and its bold in cmsy's design, accents over the italic letters where TeX
 % puts them, and dots spaced as TeX spaces them, also when \dots chooses
 % them. Then the dots in a subscript, where TeX drops their thin spaces,
-% and in a matrix, wide accents in two of TeX's sizes, and bars as tall as
-% TeX builds them.
+% and in a matrix, wide accents in two of TeX's sizes, parentheses in two
+% of cmex's sizes, and bars as tall as TeX builds them.
 \documentclass{article}
 \usepackage{amsmath,amssymb}
 \begin{document}
@@ -16,5 +16,6 @@ Dots: $1,2,\ldots,n$, $a+\cdots+b$, $1,\dots,n$, $a+\dots+b$, and
 $x_{1,\ldots,n}$.
 \[ \begin{pmatrix} 1 & \cdots & 0 \\ \vdots & \ddots & \vdots \\ 0 & \cdots & 1 \end{pmatrix} \]
 Wide accents: $\widehat{ab}$ and $\widetilde{xyz}$.
+Parentheses: $\left(\frac{a}{b}\right)$ and $\begin{pmatrix} a \\ b \end{pmatrix}$.
 Bars: $P(A \bigm| B)$ and $\left\| \frac{a}{b} \right\|$.
 \end{document}

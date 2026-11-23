@@ -631,15 +631,25 @@ function tex8web(config, tex) {
       delimiters: {0x5E: {...Font.defaultDelimiters[0x5E], c: 0x2C6, sizes},
         0x7E: {...Font.defaultDelimiters[0x7E], c: 0x2DC, sizes}}});
 
-    // Bars: cmex has no sizes of | and ‖, only a piece to repeat, so TeX
-    // builds them as tall as asked. mathjax-modern's sizes go past that, as
-    // 1.445em where \bigm| asks for 1.234em. The unsized bar is kept, and
-    // taller ones are built (internal: a delimiter's sizes).
-    const bars = {};
-    for (const n of [0x7C, 0x2016, 0x2223, 0x2225, 0x2758]) {
-      bars[n] = {...Font.defaultDelimiters[n], sizes: Font.defaultDelimiters[n].sizes.slice(0, 1)};
-    }
-    Font.addExtension({name: 'tex8web-bars', delimiters: bars});
+    // Delimiters: cmex has five sizes of ( [ { ⟨ ⌊ ⌈ and /, about 1, 1.2,
+    // 1.8, 2.4, and 3em, and of | and ‖ only a piece to repeat, so TeX
+    // builds them as tall as asked. mathjax-modern has eight sizes of each,
+    // so a delimiter could be shorter than in the PDF, as 1.095em around
+    // an inline fraction, where TeX has 1.2em, or a bar taller, as 1.445em
+    // where \bigm| asks for 1.234em. Only the sizes nearest cmex's are kept
+    // (internal: a delimiter's sizes, and its variants, the size variants
+    // of its sizes).
+    const delimiters = {};
+    const keep = (codes, variants) => {
+      for (const n of codes) {
+        const delimiter = Font.defaultDelimiters[n];
+        delimiters[n] = {...delimiter, sizes: variants.map(i => delimiter.sizes[i]), variants};
+      }
+    };
+    keep([0x28, 0x29, 0x5B, 0x5D, 0x7B, 0x7D, 0x27E8, 0x27E9, 0x230A, 0x230B, 0x2308, 0x2309], [0, 2, 4, 6, 7]);
+    keep([0x2F, 0x5C], [0, 1, 2, 3, 4]);
+    keep([0x7C, 0x2016, 0x2223, 0x2225, 0x2758], [0]);
+    Font.addExtension({name: 'tex8web-delimiters', delimiters});
 
     // Dots: mathjax-modern's ellipses are as tight as in text. TeX's \ldots
     // and \cdots are three dots a thin space apart, and \vdots and \ddots

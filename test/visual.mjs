@@ -530,8 +530,10 @@ const laps = { 'test-lefteqn': 18 };
 // base's left edge, in ems, as placed by MathJax with New Computer Modern's
 // skews; each inline formula given as wide as in the PDF (TeX's \wd of
 // its box, in ems); ⋮ and ⋱, each one dot drawn with two text shadows,
-// in a box as high as in the PDF; and the bars of the last two inline
-// formulas, each built from pieces, with its height in ems. Failures:
+// in a box as high as in the PDF; the ( of the two inline formulas
+// before the last two, as high as in the PDF; and the bars of the last
+// two inline formulas, each built from pieces, with its height in ems.
+// Failures:
 // [what, got, want]
 const modernFont = want => `(() => {
   const want = ${JSON.stringify(want)}, wrong = [], em = el => parseFloat(getComputedStyle(el).fontSize);
@@ -569,6 +571,11 @@ const modernFont = want => `(() => {
     if (!built) wrong.push([\`bar \${i + 1}\`, 'a sized glyph', 'built']);
     if (off(got, want.bars[i])) wrong.push([\`bar \${i + 1}\`, got.toFixed(3), want.bars[i]]);
   });
+  const parens = formulas.slice(-4, -2).map(m => m.querySelector('mjx-c.mjx-c28'));
+  parens.forEach((c, i) => {
+    const got = c && c.getBoundingClientRect().height / em(c);
+    if (!c || off(got, want.parens[i])) wrong.push([\`( \${i + 1}\`, got?.toFixed(3), want.parens[i]]);
+  });
   return wrong;
 })()`;
 const modernFonts = {
@@ -586,6 +593,9 @@ const modernFonts = {
     // (of \bigm| and of \| around a fraction, measured on the page: TeX
     // builds both 1.2em high)
     bars: [1.229, 1.205, 1.205],
+    // (of \left( around an inline fraction and of a two-row pmatrix: TeX's
+    // \ht plus \dp)
+    parens: [1.2, 2.4],
   },
 };
 

@@ -1,10 +1,12 @@
 // Unit test for the tables in js/tex8web.js that give mathjax-modern the
-// PDF's \mathbb, \mathcal, \widehat, and \widetilde, run by npm test:
+// PDF's \mathbb, \mathcal, \widehat, \widetilde, and delimiters, run by
+// npm test:
 //   node --test test/unit/modern-font.test.mjs
 // Each table is made again from MathJax's fonts in node_modules: New
-// Computer Modern's double-struck capitals, and the TeX font's calligraphic
-// and bold calligraphic capitals and wide accents. When MathJax's fonts
-// change, the test fails and prints the table to paste into tex8web.js.
+// Computer Modern's double-struck capitals, the TeX font's calligraphic and
+// bold calligraphic capitals and wide accents, and the delimiter sizes of
+// both fonts. When MathJax's fonts change, the test fails and prints the
+// table to paste into tex8web.js.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -65,4 +67,21 @@ test("\\widehat's and \\widetilde's sizes are the TeX font's", () => {
   const normal = literal(read('@mathjax/mathjax-modern-font/cjs/chtml/normal.js'), 'exports.normal =');
   assert.deepEqual([normal[0x2C6][2], normal[0x2DC][2]], [0.5, 0.5]);
   assert.match(sizes('0x5E'), /^\.5,/);
+});
+
+test("the delimiters' sizes are those nearest the TeX font's", () => {
+  // (as in the wide accents' test, the data is read as text)
+  const sizes = (font, code) => read(`@mathjax/mathjax-${font}-font/cjs/chtml/delimiters.js`)
+    .match(new RegExp(`0x${code.toString(16).toUpperCase()}: \\{[^}]*sizes: \\[([^\\]]*)\\]`))[1].split(', ').map(Number);
+  // each mathjax-modern size nearest one of the TeX font's, for the
+  // delimiters with codes in the order of tex8web.js
+  const groups = new Map();
+  for (const code of [0x28, 0x29, 0x5B, 0x5D, 0x7B, 0x7D, 0x27E8, 0x27E9, 0x230A, 0x230B, 0x2308, 0x2309, 0x2F, 0x5C,
+    0x7C, 0x2016, 0x2223, 0x2225, 0x2758]) {
+    const modern = sizes('modern', code);
+    const variants = sizes('tex', code).map(size => modern.reduce((best, h, i) =>
+      Math.abs(h - size) < Math.abs(modern[best] - size) ? i : best, 0)).join(', ');
+    groups.set(variants, [...groups.get(variants) ?? [], `0x${code.toString(16).toUpperCase()}`]);
+  }
+  for (const [variants, codes] of groups) check(`    keep([${codes.join(', ')}], [${variants}]);\n`);
 });
