@@ -4057,7 +4057,7 @@ const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["'
 // italic, \texttt, and \verb) and the MathJax fonts that the math uses.
 const preloads = {
   'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmroman10-bolditalic',
-    'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'mi', 'v', 'lo', 'so', 's', 's3', 's4', 's5', 's6', 's7',
+    'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'mi', 'v', 'lo', 'so', 's', 's3', 's4', 's6', 's7',
       'ss', 'brk', 'ds', 'em', 'f', 'lt', 'm', 'mm', 'rb'].map(font => `mathjax/mjx-mm-${font}`),
     // (\mathbb's and \mathcal's letters and the wide accents, as in the PDF: js/tex8web.js)
     'mathjax/mjx-ncm-ds', 'mathjax/mjx-tex-c', 'mathjax/mjx-tex-so', 'mathjax/mjx-tex-s3'],
@@ -4083,7 +4083,7 @@ const preloads = {
   'test-charter': ['XCharter-Roman', 'XCharter-Bold', 'XCharter-Italic', 'texgyretermes-regular',
     'mathjax/mjx-mm-zero', 'mathjax/mjx-mm-n'],
   // (none of Latin Modern Math's calligraphic letters: js/tex8web.js)
-  'test-mathfont': ['lmroman10-regular', ...['mm-zero', 'mm-n', 'mm-brk', 'ncm-ds', 'tex-c', 'tex-cb', 'tex-so', 'tex-s3']
+  'test-mathfont': ['lmroman10-regular', ...['mm-zero', 'mm-n', 'mm-brk', 'mm-s3', 'ncm-ds', 'tex-c', 'tex-cb', 'tex-so', 'tex-s3']
     .map(font => `mathjax/mjx-${font}`)],
   // (MathJax's Pagella and Schola, and the fonts of bbm, dsfont and
   // bboldx in Pagella)

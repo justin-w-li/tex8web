@@ -529,8 +529,10 @@ const laps = { 'test-lefteqn': 18 };
 // mathjax-modern's own calligraphic letters; each accent's center from its
 // base's left edge, in ems, as placed by MathJax with New Computer Modern's
 // skews; each inline formula given as wide as in the PDF (TeX's \wd of
-// its box, in ems); and ⋮ and ⋱, each one dot drawn with two text
-// shadows, in a box as high as in the PDF. Failures: [what, got, want]
+// its box, in ems); ⋮ and ⋱, each one dot drawn with two text shadows,
+// in a box as high as in the PDF; and the bars of the last two inline
+// formulas, each built from pieces, with its height in ems. Failures:
+// [what, got, want]
 const modernFont = want => `(() => {
   const want = ${JSON.stringify(want)}, wrong = [], em = el => parseFloat(getComputedStyle(el).fontSize);
   const off = (got, value) => Math.abs(got - value) > 0.01;
@@ -559,6 +561,14 @@ const modernFont = want => `(() => {
     const height = c.getBoundingClientRect().height / em(c);
     if (off(height, want.dots)) wrong.push([c.className + ' height', height.toFixed(3), want.dots]);
   }
+  const bars = formulas.slice(-2).flatMap(m => [...m.querySelectorAll('mjx-mo')]
+    .filter(mo => /^[|‖∣∥]+$/.test(mo.textContent.replace(/\\s/g, '')))
+    .map(mo => [mo.querySelector('mjx-stretchy-v'), mo.getBoundingClientRect().height / em(m)]));
+  if (bars.length !== want.bars.length) wrong.push(['bars', bars.length, want.bars.length]);
+  bars.forEach(([built, got], i) => {
+    if (!built) wrong.push([\`bar \${i + 1}\`, 'a sized glyph', 'built']);
+    if (off(got, want.bars[i])) wrong.push([\`bar \${i + 1}\`, got.toFixed(3), want.bars[i]]);
+  });
   return wrong;
 })()`;
 const modernFonts = {
@@ -573,6 +583,9 @@ const modernFonts = {
     widths: [[7, 4.267], [8, 4.569], [9, 3.322], [10, 4.569]],
     // (the height of \vdots's and \ddots's boxes, which have no depth)
     dots: 1.506,
+    // (of \bigm| and of \| around a fraction, measured on the page: TeX
+    // builds both 1.2em high)
+    bars: [1.229, 1.205, 1.205],
   },
 };
 

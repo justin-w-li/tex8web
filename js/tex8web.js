@@ -631,6 +631,16 @@ function tex8web(config, tex) {
       delimiters: {0x5E: {...Font.defaultDelimiters[0x5E], c: 0x2C6, sizes},
         0x7E: {...Font.defaultDelimiters[0x7E], c: 0x2DC, sizes}}});
 
+    // Bars: cmex has no sizes of | and ‖, only a piece to repeat, so TeX
+    // builds them as tall as asked. mathjax-modern's sizes go past that, as
+    // 1.445em where \bigm| asks for 1.234em. The unsized bar is kept, and
+    // taller ones are built (internal: a delimiter's sizes).
+    const bars = {};
+    for (const n of [0x7C, 0x2016, 0x2223, 0x2225, 0x2758]) {
+      bars[n] = {...Font.defaultDelimiters[n], sizes: Font.defaultDelimiters[n].sizes.slice(0, 1)};
+    }
+    Font.addExtension({name: 'tex8web-bars', delimiters: bars});
+
     // Dots: mathjax-modern's ellipses are as tight as in text. TeX's \ldots
     // and \cdots are three dots a thin space apart, and \vdots and \ddots
     // three dots 4pt and 3pt apart (latex.ltx). The MathML keeps the one
@@ -655,6 +665,11 @@ function tex8web(config, tex) {
       'mjx-container mjx-c.mjx-c22F1': {position: 'relative', left: '.056em', top: '-.7em',
         'text-shadow': '.389em .3em, .778em .6em', 'forced-color-adjust': 'none'},
     });
+
+    // √ in text, as \textsurd in \text: mathjax-modern's √ is the radical
+    // of \sqrt, which hangs below the baseline, as cmsy's \surd does. It
+    // is raised to stand on the baseline, as the text's √ does in the PDF.
+    Font.defaultStyles['mjx-mtext mjx-c.mjx-c221A'] = {position: 'relative', top: '-.76em'};
   }
 
   const ready = startup.ready;
