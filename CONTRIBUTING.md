@@ -150,17 +150,18 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 
 A `\mathclap` or `\clap` around a whole display has its content's width in `js/tex8web.js`, so that a display wider than the column can be scrolled to its left end.
 
-Latin Modern Math, MathJax's `mathjax-modern`, is the math font of a document in Computer Modern. In version 4.1.3, it differs from the PDF in seven ways, which `matchModernFont()` in `js/tex8web.js` changes before the font is made:
+Latin Modern Math, MathJax's `mathjax-modern`, is the math font of a document in Computer Modern. In version 4.1.3, it differs from the PDF in eight ways, which `matchModernFont()` in `js/tex8web.js` changes before the font is made:
 
 - `\mathbb` has capitals of another design. New Computer Modern's double-struck capitals are used, which are AMS's msbm. Other double-struck characters, such as `\Bbbk` and `\mathbb{1}`, keep Latin Modern Math's design.
 - `\mathcal` and its bold have capitals of another design. The calligraphic capitals of MathJax's TeX font are used, which are cmsy's.
 - The skews and combining offsets set accents off center, as a skew of 0.303em on the italic a, where TeX has 0.022em. New Computer Modern's are used for each character that is as wide in both fonts.
 - `\widehat` and `\widetilde` have seven sizes, where cmex has three, so a wide accent can be wider than in the PDF, as 0.919em over ab, where TeX has 0.556em. The wide accents of MathJax's TeX font are used, which are cmex's.
 - Delimiters have eight sizes, where cmex has five of `(`, `[`, `{`, `⟨`, `⌊`, `⌈`, and `/`, so a delimiter can be shorter than in the PDF, as 1.095em around an inline fraction, where TeX has 1.2em. Only the five sizes nearest cmex's are kept. Of `|` and `‖`, cmex has only a piece to repeat, so the bars are built to the height asked, from the pieces of MathJax's TeX font, which are cmex's: mathjax-modern's pieces of `‖` are 0.057em from its sides, where cmex's are 0.145em. Latin Modern Math's `‖` is 0.398em wide, so it is drawn as its `∥`, which is cmsy's `‖`, 0.5em wide.
+- `\overbrace` and `\underbrace` have braces thinner than cmex's. They are built from the pieces of MathJax's TeX font, which are cmex's, as TeX builds them.
 - `√` in `\text` hangs below the baseline, as the radical of `\sqrt` does. It is raised to the baseline.
 - The dots of `\ldots`, `\cdots`, `\vdots`, and `\ddots` are closer together than in TeX. Each stays one character in the MathML, for speech, and is drawn as the font's dots with six-per-em spaces between them, or with text shadows for the dots that go up. Text copied from a page without MathML has these dots and spaces, or one dot for `\vdots` and `\ddots`.
 
-The tables of the first two, the fourth, and the fifth are checked against MathJax's fonts by `test/unit/modern-font.test.mjs`, which prints the new tables when they differ. The page is checked by `test-mathfont` in `npm test` and `npm run test:visual`.
+The tables of the first two and the fourth to the sixth are checked against MathJax's fonts by `test/unit/modern-font.test.mjs`, which prints the new tables when they differ. The page is checked by `test-mathfont` in `npm test` and `npm run test:visual`.
 
 ### 4. Prerendering
 

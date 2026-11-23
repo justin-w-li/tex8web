@@ -304,13 +304,14 @@ const typeset = {
   ],
   // (Latin Modern Math with \mathbb in New Computer Modern's letters,
   // \mathcal and its bold and wide accents in the TeX font's, and \ldots
-  // and \cdots as three dots and two spaces, and parentheses in cmex's
-  // sizes: js/tex8web.js,
+  // and \cdots as three dots and two spaces, parentheses in cmex's sizes,
+  // and braces from cmex's pieces: js/tex8web.js,
   // matchModernFont)
   'test-mathfont': [/<mjx-c class='mjx-c211D NCM-DS'>/, /<mjx-c class='mjx-c41 TEX-C'>/, /<mjx-c class='mjx-c41 TEX-CB'>/,
     /<mjx-c class='mjx-c2026'>\. \. \.<\/mjx-c>/, /<mjx-c class='mjx-c22EF'>⋅ ⋅ ⋅<\/mjx-c>/,
     /<mjx-c class='mjx-c2C6 TEX-SO'>/, /<mjx-c class='mjx-c2DC TEX-S3'>/,
-    /<mjx-c class='mjx-c28 MM-LO'>/, /<mjx-c class='mjx-c28 MM-S6'>/],
+    /<mjx-c class='mjx-c28 MM-LO'>/, /<mjx-c class='mjx-c28 MM-S6'>/,
+    /<mjx-stretchy-h class='mjx-c23DE'[^>]*><mjx-beg class='TEX-S4'>/, /<mjx-stretchy-h class='mjx-c23DF'[^>]*><mjx-beg class='TEX-S4'>/],
   'test-mhchem': [/<\/a>The <mjx-container/, /forms acid: <span class='tex8web-nowrap'><mjx-container/],
   'test': [
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 MM-LO'>\(/,
@@ -4085,8 +4086,8 @@ const preloads = {
   'test-charter': ['XCharter-Roman', 'XCharter-Bold', 'XCharter-Italic', 'texgyretermes-regular',
     'mathjax/mjx-mm-zero', 'mathjax/mjx-mm-n'],
   // (none of Latin Modern Math's calligraphic letters: js/tex8web.js)
-  'test-mathfont': ['lmroman10-regular', ...['mm-zero', 'mm-n', 'mm-brk', 'mm-lo', 'mm-s6', 'ncm-ds', 'tex-c', 'tex-cb', 'tex-so', 'tex-s3']
-    .map(font => `mathjax/mjx-${font}`)],
+  'test-mathfont': ['lmroman10-regular', ...['mm-zero', 'mm-n', 'mm-brk', 'mm-lo', 'mm-s6', 'ncm-ds', 'tex-c', 'tex-cb',
+    'tex-so', 'tex-s3', 'tex-s4'].map(font => `mathjax/mjx-${font}`)],
   // (MathJax's Pagella and Schola, and the fonts of bbm, dsfont and
   // bboldx in Pagella)
   'test-pagella': ['texgyrepagella-regular', ...['gp-zero', 'gp-brk', 'gp-n', 'gp-so', 'gp-s3', 'gp-s5', 'mb-bn', 'mb-bb', 'md-dr']

@@ -526,9 +526,9 @@ const laps = { 'test-lefteqn': 18 };
 
 // Latin Modern Math as in the PDF (js/tex8web.js, matchModernFont): the
 // font of the first character of each formula given, and none of
-// mathjax-modern's own calligraphic letters; each accent's center from its
-// base's left edge, in ems, as placed by MathJax with New Computer Modern's
-// skews; each inline formula given as wide as in the PDF (TeX's \wd of
+// mathjax-modern's own calligraphic letters; the center of each accent
+// but those built from pieces, from its base's left edge, in ems, as
+// placed by MathJax with New Computer Modern's skews; each inline formula given as wide as in the PDF (TeX's \wd of
 // its box, in ems); ⋮ and ⋱, each one dot drawn with two text shadows,
 // in a box as high as in the PDF; the ( of the two inline formulas
 // before the last four, as high as in the PDF; and the bars of the last
@@ -545,7 +545,7 @@ const modernFont = want => `(() => {
   });
   const own = document.querySelectorAll('mjx-c.MM-C, mjx-c.MM-CB').length;
   if (own) wrong.push(["mathjax-modern's calligraphic letters", own, 0]);
-  const accents = [...document.querySelectorAll('mjx-mover')].map(m => {
+  const accents = [...document.querySelectorAll('mjx-mover')].filter(m => !m.querySelector('mjx-over mjx-stretchy-h')).map(m => {
     const base = m.querySelector('mjx-base').getBoundingClientRect(), accent = m.querySelector('mjx-over mjx-c').getBoundingClientRect();
     return [m.textContent, ((accent.left + accent.right) / 2 - base.left) / em(m)];
   });
@@ -590,9 +590,9 @@ const modernFonts = {
     // its bold)
     fonts: ['NCM-DS', 'TEX-C', 'TEX-CB'],
     // (as MathJax places \hat a, \hat x, \vec a, \hat A, \widehat{ab},
-    // \widetilde{xyz}, and \bar y, measured on the page: TeX's rule
-    // differs)
-    accents: [0.286, 0.328, 0.286, 0.55, 0.479, 0.764, 0.304],
+    // \widetilde{xyz}, \overrightarrow{AB}, \overleftarrow{AB}, and
+    // \bar y, measured on the page: TeX's rule differs)
+    accents: [0.286, 0.328, 0.286, 0.55, 0.479, 0.764, 0.754, 0.754, 0.304],
     // (the inline formulas from the eighth, each by its index)
     widths: [[7, 4.267], [8, 4.569], [9, 3.322], [10, 4.569]],
     // (the height of \vdots's and \ddots's boxes, which have no depth)

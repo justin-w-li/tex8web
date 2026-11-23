@@ -1,11 +1,11 @@
 // Unit test for the tables in js/tex8web.js that give mathjax-modern the
-// PDF's \mathbb, \mathcal, \widehat, \widetilde, and delimiters, run by
-// npm test:
+// PDF's \mathbb, \mathcal, \widehat, \widetilde, delimiters, and braces,
+// run by npm test:
 //   node --test test/unit/modern-font.test.mjs
 // Each table is made again from MathJax's fonts in node_modules: New
 // Computer Modern's double-struck capitals, the TeX font's calligraphic and
-// bold calligraphic capitals, wide accents, and bar pieces, and the
-// delimiter sizes of both fonts. When MathJax's fonts change, the test fails and prints the
+// bold calligraphic capitals, wide accents, and pieces of bars and braces,
+// and the delimiter sizes of both fonts. When MathJax's fonts change, the test fails and prints the
 // table to paste into tex8web.js.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -26,8 +26,11 @@ function literal(text, mark) {
 }
 
 const number = n => String(n).replace(/^(-?)0\./, '$1.');
+// (a string, as the characters a glyph is drawn with, in \u escapes)
+const value = n => typeof n === 'string'
+  ? `'${[...n].map(c => `\\u${c.codePointAt(0).toString(16).toUpperCase()}`).join('')}'` : number(n);
 const entry = (code, [h, d, w, options]) => `0x${code.toString(16).toUpperCase()}: [${[h, d, w].map(number).join(', ')}`
-  + (options ? `, {${Object.entries(options).map(([key, n]) => `${key}: ${number(n)}`).join(', ')}}` : '') + ']';
+  + (options ? `, {${Object.entries(options).map(([key, n]) => `${key}: ${value(n)}`).join(', ')}}` : '') + ']';
 // a table as tex8web.js declares it, two characters a line, or on one line
 // with the name when it has two
 function table(name, codes, chars) {
@@ -90,4 +93,16 @@ test("the bars are built from the TeX font's pieces, and ‖ is drawn as ∥", (
   check(table('barPieces', [0x2223, 0x2225], literal(read('@mathjax/mathjax-tex-font/cjs/chtml/smallop.js'), 'exports.smallop =')));
   const [h, d, w] = literal(read('@mathjax/mathjax-modern-font/cjs/chtml/normal.js'), 'exports.normal =')[0x2225];
   check(`0x2016: [${[h, d, w].map(number).join(', ')}, {c: '\\u2225'}]`);
+});
+
+test("the braces are the TeX font's", () => {
+  check(table('bracePieces', [0xE150, 0xE151, 0xE152, 0xE153, 0xE154, 0xE155, 0xE156],
+    literal(read('@mathjax/mathjax-tex-font/cjs/chtml/size4.js'), 'exports.size4 =')));
+  const delimiters = read('@mathjax/mathjax-tex-font/cjs/chtml/delimiters.js');
+  for (const code of ['0x23DE', '0x23DF']) {
+    const data = delimiters.slice(delimiters.indexOf(`${code}: {`)).match(/^[^}]*\}/)[0];
+    const list = key => data.match(new RegExp(`${key}: \\[([^\\]]*)\\]`))[1].split(', ').map(number).join(', ');
+    check(`delimiters[${code}] = {dir: Font.defaultDelimiters[${code}].dir, stretch: [${list('stretch')}],\n`
+      + `      stretchv: [2, 2, 2, 2], HDW: [${list('HDW')}], hd: [${list('hd')}]};`);
+  }
 });

@@ -623,13 +623,19 @@ function tex8web(config, tex) {
     const wideS3 = {0x2C6: [.772, -.564, 1.444, {ic: .003}], 0x2DC: [.749, -.61, 1.444]};
     const wideS4 = {0x2C6: [.845, -.561, 1.889, {ic: .013}], 0x2DC: [.823, -.583, 1.889]};
     const sizes = [.5, .556, 1, 1.444, 1.889];
-    // (the pieces of the bars below, cmex's)
+    // (the pieces of the bars and braces below, cmex's)
     const barPieces = {0x2223: [.627, .015, .333], 0x2225: [.627, .015, .556]};
+    const bracePieces = {
+      0xE150: [.12, .213, .45, {ic: .01}], 0xE151: [.12, .213, .45, {ic: .024}],
+      0xE152: [.333, 0, .45, {ic: .01}], 0xE153: [.333, 0, .45, {ic: .024}],
+      0xE154: [.12, 0, .4, {ic: .01}], 0xE155: [.333, 0, .9, {c: '\uE153\uE152'}],
+      0xE156: [.12, .213, .9, {c: '\uE151\uE150'}],
+    };
     delete Font.dynamicFiles.calligraphic;
     Font.addExtension({name: 'tex8web-tex', fontURL: fontURL('tex'),
       fonts: ['MJX-TEX-C', 'MJX-TEX-CB', 'MJX-TEX-SO', 'MJX-TEX-LO', 'MJX-TEX-S3', 'MJX-TEX-S4'],
       chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic},
-        SO: {'-smallop': wideSO, '-size3': barPieces}, LO: {'-largeop': wideLO}, S3: {'-size3': wideS3}, S4: {'-size4': wideS4}}, 'TEX'),
+        SO: {'-smallop': wideSO, '-size3': barPieces}, LO: {'-largeop': wideLO}, S3: {'-size3': wideS3}, S4: {'-size4': wideS4, '-size3': bracePieces}}, 'TEX'),
       delimiters: {0x5E: {...Font.defaultDelimiters[0x5E], c: 0x2C6, sizes},
         0x7E: {...Font.defaultDelimiters[0x7E], c: 0x2DC, sizes}}});
 
@@ -660,6 +666,13 @@ function tex8web(config, tex) {
       const [h, d] = delimiters[n].HDW;
       delimiters[n].HDW = [h, d, barPieces[delimiters[n].stretch[1]][2]];
     }
+    // \overbrace and \underbrace: mathjax-modern's braces are thinner
+    // than cmex's, which TeX builds from its pieces, as the TeX font does.
+    // Its delimiters, with mathjax-modern's stretch variant of the pieces.
+    delimiters[0x23DE] = {dir: Font.defaultDelimiters[0x23DE].dir, stretch: [0xE150, 0xE154, 0xE151, 0xE155],
+      stretchv: [2, 2, 2, 2], HDW: [.333, .213, 1.844], hd: [.12, 0]};
+    delimiters[0x23DF] = {dir: Font.defaultDelimiters[0x23DF].dir, stretch: [0xE152, 0xE154, 0xE153, 0xE156],
+      stretchv: [2, 2, 2, 2], HDW: [.333, .213, 1.844], hd: [.12, 0]};
     // mathjax-modern's ‖ is 0.398em wide with its bars 0.176em apart; it
     // is drawn as its ∥, which is cmsy's ‖, 0.5em wide with them 0.235em
     // apart, as in the PDF (internal: a character's c). Text copied from a
