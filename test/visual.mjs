@@ -597,12 +597,13 @@ const modernFonts = {
     // (of the first three inline formulas: \mathbb{R}, \mathcal{A}, and
     // its bold)
     fonts: ['NCM-DS', 'TEX-C', 'TEX-CB'],
-    // (as MathJax places \hat a, \hat x, \vec a, \hat A, \widehat{ab},
+    // (as MathJax places \hat a, \hat x, \vec a, \hat A, \hat over
+    // \mathsf A, \mathtt E, \mathfrak A, and \mathbb A, \widehat{ab},
     // \widetilde{xyz}, \overrightarrow{AB}, \overleftarrow{AB}, and
     // \bar y, measured on the page: TeX's rule differs)
-    accents: [0.286, 0.328, 0.286, 0.55, 0.479, 0.764, 0.754, 0.754, 0.304],
-    // (the inline formulas from the ninth, each by its index)
-    widths: [[8, 4.267], [9, 4.569], [10, 3.322], [11, 4.569]],
+    accents: [0.286, 0.328, 0.286, 0.55, 0.334, 0.263, 0.443, 0.347, 0.479, 0.764, 0.754, 0.754, 0.304],
+    // (the inline formulas from the thirteenth, each by its index)
+    widths: [[12, 4.267], [13, 4.569], [14, 3.322], [15, 4.569]],
     // (the height of \vdots's and \ddots's boxes, which have no depth)
     dots: 1.506,
     // (each bar's height and width: of \bigm|, \| around a fraction,

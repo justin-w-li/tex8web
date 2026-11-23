@@ -1,15 +1,17 @@
 // Unit test for the tables in js/tex8web.js that give mathjax-modern the
-// PDF's \mathbb, \mathcal, \widehat, \widetilde, delimiters, and braces,
-// run by npm test:
+// PDF's \mathbb, \mathcal, \widehat, \widetilde, delimiters, braces, and
+// accents over the letters of its dynamic files, run by npm test:
 //   node --test test/unit/modern-font.test.mjs
 // Each table is made again from MathJax's fonts in node_modules: New
 // Computer Modern's double-struck capitals, the TeX font's calligraphic and
 // bold calligraphic capitals, wide accents, and pieces of bars and braces,
-// and the delimiter sizes of both fonts. When MathJax's fonts change, the test fails and prints the
+// the delimiter sizes of both fonts, and the skews of both fonts' dynamic
+// files. When MathJax's fonts change, the test fails and prints the
 // table to paste into tex8web.js.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 
 const require = createRequire(import.meta.url);
@@ -105,4 +107,47 @@ test("the braces are the TeX font's", () => {
     check(`delimiters[${code}] = {dir: Font.defaultDelimiters[${code}].dir, stretch: [${list('stretch')}],\n`
       + `      stretchv: [2, 2, 2, 2], HDW: [${list('HDW')}], hd: [${list('hd')}]};`);
   }
+});
+
+// the characters of a font's dynamic files, by variant, but those of the
+// files skipped: each file calls the font's dynamicSetup with them
+function dynamicChars(font, skip = []) {
+  const dir = dirname(require.resolve(`@mathjax/mathjax-${font}-font/cjs/chtml/dynamic/double-struck.js`));
+  const chars = {}, add = variants => {
+    for (const [variant, some] of Object.entries(variants)) Object.assign(chars[variant] ??= {}, some);
+  };
+  const DynamicFonts = { AddFontIds: fonts => Object.values(fonts).reduce((all, variants) => add(variants) ?? all, chars) };
+  const module = new Proxy({}, { get: () => ({ dynamicSetup: () => {} }) });
+  for (const file of readdirSync(dir).filter(file => file.endsWith('.js') && !skip.includes(file)).sort()) {
+    Function('require', 'exports', readFileSync(join(dir, file), 'utf8'))(path => path.includes('DynamicFonts') ? DynamicFonts : module, {});
+  }
+  return chars;
+}
+
+test("the letters of mathjax-modern's dynamic files have New Computer Modern's skews", () => {
+  // (tex8web.js drops the file of calligraphic letters)
+  const modern = dynamicChars('modern', ['calligraphic.js']), newcm = dynamicChars('newcm');
+  const lines = [];
+  for (const [variant, chars] of Object.entries(modern)) {
+    const entries = [];
+    for (const [n, char] of Object.entries(chars)) {
+      const other = newcm[variant]?.[n];
+      if (!Array.isArray(char) || !Array.isArray(other) || char[2] !== other[2]) continue;
+      const { sk = 0, dx = 0 } = other[3] ?? {};
+      if ((char[3]?.sk ?? 0) === sk && (char[3]?.dx ?? 0) === dx) continue;
+      entries.push(`0x${Number(n).toString(16).toUpperCase()}: ${dx ? `[${number(sk)}, ${number(dx)}]` : number(sk)}`);
+    }
+    if (!entries.length) continue;
+    lines.push(`      ${/^[a-z]+$/.test(variant) ? variant : `'${variant}'`}: {`);
+    let line = '';
+    for (const text of entries) {
+      if (line && line.length + text.length > 108) {
+        lines.push(`        ${line},`);
+        line = '';
+      }
+      line += (line ? ', ' : '') + text;
+    }
+    lines.push(`        ${line},`, '      },');
+  }
+  check(`    const dynamicSkews = {\n${lines.join('\n')}\n    };\n`);
 });
