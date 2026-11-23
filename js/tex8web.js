@@ -537,7 +537,7 @@ function tex8web(config, tex) {
     // the path holds MathJax's version
     const path = MathJax.config.loader.paths['mathjax-modern'];
     const fontURL = name => MathJax._.components.package.Package.resolvePath(
-      path.replace('modern', name) + '/chtml/woff2', false);
+      path.replace('mathjax-modern-font', `mathjax-${name}-font`) + '/chtml/woff2', false);
 
     // Accents: mathjax-modern's skews and combining offsets (dx) are wrong
     // and set an accent off center, as a skew of 0.303em on the italic a,
@@ -734,8 +734,8 @@ function tex8web(config, tex) {
       0x59: [.686, .164, .759, {ic: .038, sk: .079}], 0x5A: [.686, 0, .818, {ic: .035, sk: .133}],
     };
     // \widehat and \widetilde: the TeX font's wide sizes, which are cmex's.
-    // mathjax-modern has seven, so a wide accent was wider than in the PDF,
-    // as 0.919em over ab, where TeX has 0.556em. The unsized accent is
+    // mathjax-modern has seven, which make a wide accent wider than in the
+    // PDF, as 0.919em over ab, where TeX has 0.556em. The unsized accent is
     // mathjax-modern's ˆ or ˜, as wide as the TeX font's (internal: a
     // delimiter's c and sizes, its glyphs in the size variants).
     const wideSO = {0x2C6: [.744, -.551, .556, {ic: .008}], 0x2DC: [.722, -.597, .556]};

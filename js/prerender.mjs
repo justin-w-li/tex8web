@@ -156,7 +156,8 @@ function flatten(node) {
 // The rule is narrowed to skip mjx-c below. If MathJax's rule has changed,
 // the math is left unchanged.
 const style = adaptor.tags(adaptor.head(document), 'style').find(s => adaptor.getAttribute(s, 'id') === 'MJX-CHTML-styles');
-// the font's class prefix: TEX in TEX-N, or GT in GT-N with Termes
+// the font's class prefix: MM in MM-N with Latin Modern Math, or GT in
+// GT-N with Termes
 const prefix = MathJax.startup.output.font.cssFontPrefix;
 const breakable = `mjx-container[jax="CHTML"] > mjx-math.${prefix}-N[breakable] > * {`;
 const mathjaxCss = adaptor.textContent(style);
