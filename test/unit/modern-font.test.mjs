@@ -74,21 +74,44 @@ test("\\widehat's and \\widetilde's sizes are the TeX font's", () => {
   assert.match(sizes('0x5E'), /^\.5,/);
 });
 
-test("the delimiters' sizes are those nearest the TeX font's", () => {
-  // (as in the wide accents' test, the data is read as text)
-  const sizes = (font, code) => read(`@mathjax/mathjax-${font}-font/cjs/chtml/delimiters.js`)
-    .match(new RegExp(`0x${code.toString(16).toUpperCase()}: \\{[^}]*sizes: \\[([^\\]]*)\\]`))[1].split(', ').map(Number);
-  // each mathjax-modern size nearest one of the TeX font's, for the
-  // delimiters with codes in the order of tex8web.js
+// a font's delimiters, whose data names a direction
+function delimiters(font) {
+  const text = read(`@mathjax/mathjax-${font}-font/cjs/chtml/delimiters.js`);
+  return Function('Direction_js_1', `return (${text.slice(text.indexOf('{', text.indexOf('exports.delimiters =')),
+    text.lastIndexOf('}') + 1)})`)({ V: 'V', H: 'H' });
+}
+// a call as tex8web.js writes it, wrapped at 112 characters
+function call(start, items, end) {
+  const lines = [];
+  let line = start;
+  items.forEach((item, i) => {
+    const text = item + (i < items.length - 1 ? ',' : end);
+    if (line.trim().length > start.trim().length && line.length + text.length + 1 > 112) {
+      lines.push(line.trimEnd());
+      line = '      ';
+    }
+    line += (line.endsWith('(') || line.endsWith('[') || line === '      ' ? '' : ' ') + text;
+  });
+  return [...lines, line].join('\n') + '\n';
+}
+
+test("each delimiter has the mathjax-modern sizes nearest the TeX font's", () => {
+  const tex = delimiters('tex'), modern = delimiters('modern');
+  // (the wide accents and braces, which tex8web.js takes from the TeX font)
+  const taken = [0x5E, 0x7E, 0x2C6, 0x2DC, 0x302, 0x303, 0x23DE, 0x23DF, 0xFE37, 0xFE38];
   const groups = new Map();
-  for (const code of [0x28, 0x29, 0x5B, 0x5D, 0x7B, 0x7D, 0x27E8, 0x27E9, 0x230A, 0x230B, 0x2308, 0x2309, 0x2F, 0x5C,
-    0x7C, 0x2016, 0x2223, 0x2225, 0x2758]) {
-    const modern = sizes('modern', code);
-    const variants = sizes('tex', code).map(size => modern.reduce((best, h, i) =>
-      Math.abs(h - size) < Math.abs(modern[best] - size) ? i : best, 0)).join(', ');
-    groups.set(variants, [...groups.get(variants) ?? [], `0x${code.toString(16).toUpperCase()}`]);
+  for (const [code, delimiter] of Object.entries(modern)) {
+    if (!delimiter.sizes || !tex[code]?.sizes || taken.includes(Number(code))) continue;
+    // each mathjax-modern size nearest one of the TeX font's
+    const nearest = [...new Set(tex[code].sizes.map(size => delimiter.sizes.reduce((best, h, i) =>
+      Math.abs(h - size) < Math.abs(delimiter.sizes[best] - size) ? i : best, 0)))];
+    if (nearest.length === delimiter.sizes.length) continue;
+    const key = nearest.join(', ');
+    groups.set(key, [...groups.get(key) ?? [], `0x${Number(code).toString(16).toUpperCase()}`]);
   }
-  for (const [variants, codes] of groups) check(`    keep([${codes.join(', ')}], [${variants}]);\n`);
+  check([...groups].map(([variants, codes]) => call('    keep([', codes, `], [${variants}]);`)).join(''));
+  check('delimiters: {...wide(0x2C6, [0x5E, 0x2C6, 0x302]), ...wide(0x2DC, [0x7E, 0x2DC, 0x303])}');
+  check('delimiters[0xFE37] = delimiters[0x23DE];\n    delimiters[0xFE38] = delimiters[0x23DF];');
 });
 
 test("the bars are built from the TeX font's pieces, and ‖ is drawn as ∥", () => {

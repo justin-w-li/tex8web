@@ -755,6 +755,7 @@ function tex8web(config, tex) {
     const wideS3 = {0x2C6: [.772, -.564, 1.444, {ic: .003}], 0x2DC: [.749, -.61, 1.444]};
     const wideS4 = {0x2C6: [.845, -.561, 1.889, {ic: .013}], 0x2DC: [.823, -.583, 1.889]};
     const sizes = [.5, .556, 1, 1.444, 1.889];
+    const wide = (c, codes) => Object.fromEntries(codes.map(n => [n, {...Font.defaultDelimiters[n], c, sizes}]));
     // (the pieces of the bars and braces below, cmex's)
     const barPieces = {0x2223: [.627, .015, .333], 0x2225: [.627, .015, .556]};
     const bracePieces = {
@@ -768,43 +769,55 @@ function tex8web(config, tex) {
       fonts: ['MJX-TEX-C', 'MJX-TEX-CB', 'MJX-TEX-SO', 'MJX-TEX-LO', 'MJX-TEX-S3', 'MJX-TEX-S4'],
       chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic},
         SO: {'-smallop': wideSO, '-size3': barPieces}, LO: {'-largeop': wideLO}, S3: {'-size3': wideS3}, S4: {'-size4': wideS4, '-size3': bracePieces}}, 'TEX'),
-      delimiters: {0x5E: {...Font.defaultDelimiters[0x5E], c: 0x2C6, sizes},
-        0x7E: {...Font.defaultDelimiters[0x7E], c: 0x2DC, sizes}}});
+      delimiters: {...wide(0x2C6, [0x5E, 0x2C6, 0x302]), ...wide(0x2DC, [0x7E, 0x2DC, 0x303])}});
 
     // Delimiters: cmex has five sizes of ( [ { ⟨ ⌊ ⌈ and /, about 1, 1.2,
-    // 1.8, 2.4, and 3em, and of | and ‖ only a piece to repeat, so TeX
-    // builds them as tall as asked. mathjax-modern has eight sizes of each,
-    // so a delimiter could be shorter than in the PDF, as 1.095em around
-    // an inline fraction, where TeX has 1.2em, or a bar taller, as 1.445em
-    // where \bigm| asks for 1.234em. Only the sizes nearest cmex's are kept
-    // (internal: a delimiter's sizes, and its variants, the size variants
+    // 1.8, 2.4, and 3em, and one of the bars, arrows, and \lgroup, which
+    // TeX builds from pieces when they are taller or wider. mathjax-modern
+    // has more sizes, eight of ( or two of an arrow, which make a
+    // delimiter shorter or longer than in the PDF, as 1.095em around an
+    // inline fraction, where TeX has 1.2em, or 1.349em for \big\uparrow,
+    // where TeX has 1.2em. Each delimiter keeps the sizes nearest the TeX
+    // font's, which are cmex's, and is built from pieces past them. The
+    // TeX font has one size of the horizontal ones, as ‾ and ⏜, nearest
+    // mathjax-modern's second (internal: a delimiter's sizes, its
+    // variants, the size variants of its sizes, and schar, the characters
     // of its sizes).
     const delimiters = {};
-    const keep = (codes, variants) => {
+    const keep = (codes, kept) => {
       for (const n of codes) {
-        const delimiter = Font.defaultDelimiters[n];
-        delimiters[n] = {...delimiter, sizes: variants.map(i => delimiter.sizes[i]), variants};
+        const {sizes, variants, schar} = Font.defaultDelimiters[n];
+        delimiters[n] = {...Font.defaultDelimiters[n], sizes: kept.map(i => sizes[i]),
+          variants: kept.map(i => variants?.[i] ?? i), ...schar && {schar: kept.map(i => schar[Math.min(i, schar.length - 1)])}};
       }
     };
-    keep([0x28, 0x29, 0x5B, 0x5D, 0x7B, 0x7D, 0x27E8, 0x27E9, 0x230A, 0x230B, 0x2308, 0x2309], [0, 2, 4, 6, 7]);
-    keep([0x2F, 0x5C], [0, 1, 2, 3, 4]);
-    keep([0x7C, 0x2016, 0x2223, 0x2225, 0x2758], [0]);
-    // The bars are built from cmex's pieces, from the TeX font above:
+    keep([0x28, 0x29, 0x5B, 0x5D, 0x7B, 0x7D, 0x2308, 0x2309, 0x230A, 0x230B, 0x2329, 0x232A, 0x27E8, 0x27E9,
+      0x3008, 0x3009], [0, 2, 4, 6, 7]);
+    keep([0x2F, 0x5C, 0x2215], [0, 1, 2, 3, 4]);
+    keep([0x7C, 0x2016, 0x2190, 0x2191, 0x2192, 0x2193, 0x2194, 0x2195, 0x219E, 0x21A0, 0x21A4, 0x21A6, 0x21BC,
+      0x21BD, 0x21BE, 0x21BF, 0x21C0, 0x21C1, 0x21C2, 0x21C3, 0x21D0, 0x21D1, 0x21D2, 0x21D3, 0x21D4, 0x21D5,
+      0x21DA, 0x21DB, 0x2223, 0x2225, 0x2758, 0x27EE, 0x27EF, 0x27F5, 0x27F6, 0x27F7, 0x27F8, 0x27F9, 0x27FA,
+      0x27FB, 0x27FC], [0]);
+    keep([0xAF, 0x2C9, 0x203E, 0x20D7, 0x2312, 0x2322, 0x2323, 0x23DC, 0x23DD], [1]);
+    // The bars are built from cmex's pieces, from the TeX font above.
     // mathjax-modern's pieces of ‖ are 0.057em from its sides, where
-    // cmex's are 0.145em, so a tall ‖ touched the letters beside it, and
-    // its | are 0.113em from them. The piece is the size variant's glyph
-    // (internal: a delimiter's stretch variants, and HDW its width).
+    // cmex's are 0.145em, and its pieces of | 0.113em. The piece is the
+    // size variant's glyph (internal: a delimiter's stretch variants, and
+    // HDW its width).
     for (const n of [0x7C, 0x2016, 0x2223, 0x2225, 0x2758]) {
       const [h, d] = delimiters[n].HDW;
       delimiters[n].HDW = [h, d, barPieces[delimiters[n].stretch[1]][2]];
     }
     // \overbrace and \underbrace: mathjax-modern's braces are thinner
-    // than cmex's, which TeX builds from its pieces, as the TeX font does.
-    // Its delimiters, with mathjax-modern's stretch variant of the pieces.
+    // than cmex's. They are built from cmex's pieces, from the TeX font
+    // above, with the TeX font's data for the delimiter, and with
+    // mathjax-modern's stretch variant that holds the pieces.
     delimiters[0x23DE] = {dir: Font.defaultDelimiters[0x23DE].dir, stretch: [0xE150, 0xE154, 0xE151, 0xE155],
       stretchv: [2, 2, 2, 2], HDW: [.333, .213, 1.844], hd: [.12, 0]};
     delimiters[0x23DF] = {dir: Font.defaultDelimiters[0x23DF].dir, stretch: [0xE152, 0xE154, 0xE153, 0xE156],
       stretchv: [2, 2, 2, 2], HDW: [.333, .213, 1.844], hd: [.12, 0]};
+    delimiters[0xFE37] = delimiters[0x23DE];
+    delimiters[0xFE38] = delimiters[0x23DF];
     // mathjax-modern's ‖ is 0.398em wide with its bars 0.176em apart; it
     // is drawn as its ∥, which is cmsy's ‖, 0.5em wide with them 0.235em
     // apart, as in the PDF (internal: a character's c). Text copied from a

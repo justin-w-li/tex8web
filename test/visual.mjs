@@ -526,18 +526,19 @@ const laps = { 'test-lefteqn': 18 };
 
 // Latin Modern Math as in the PDF (js/tex8web.js, matchModernFont): the
 // font of the first character of each formula given, and none of
-// mathjax-modern's own calligraphic letters; the center of each accent
-// but those built from pieces, from its base's left edge, in ems, as
-// placed by MathJax with New Computer Modern's skews; the paragraph of a
-// √ in text, one line, in px, as tall as a line of text, the gap below a
-// text √ over a fraction bar, at most as given, and the drop of a text √'s
-// subscript; each inline formula given as wide as in the PDF (TeX's \wd of
-// its box, in ems); ⋮ and ⋱, each one dot drawn with two text shadows,
-// in a box as high as in the PDF; the ( of the two inline formulas
-// before the last four, as high as in the PDF; and the bars of the last
-// four inline formulas, those taller than a glyph built from pieces, with
-// their heights and widths in ems. Failures:
-// [what, got, want]
+// mathjax-modern's own calligraphic letters; the center of each accent but
+// those built from pieces, from its base's left edge, in ems, as placed by
+// MathJax with New Computer Modern's skews; the paragraph of a √ in text,
+// one line, in px, as tall as a line of text, the gap below a text √ over a
+// fraction bar, at most as given, and the drop of a text √'s subscript;
+// each inline formula given as wide as in the PDF (TeX's \wd of its box, in
+// ems); ⋮ and ⋱, each one dot drawn with two text shadows, in a box as high
+// as in the PDF; the ( of the two inline formulas before the last four, as
+// high as in the PDF; the delimiters of the inline formula before those,
+// each built from pieces, with their heights in ems; and the bars of the
+// last four inline formulas, those taller than a glyph built from pieces,
+// with their heights and widths in ems.
+// Failures: [what, got, want]
 const modernFont = want => `(() => {
   const want = ${JSON.stringify(want)}, wrong = [], em = el => parseFloat(getComputedStyle(el).fontSize);
   const off = (got, value) => Math.abs(got - value) > 0.01;
@@ -607,6 +608,13 @@ const modernFont = want => `(() => {
     const got = c && c.getBoundingClientRect().height / em(c);
     if (!c || off(got, want.parens[i])) wrong.push([\`( \${i + 1}\`, got?.toFixed(3), want.parens[i]]);
   });
+  const built = formulas.at(-7)?.querySelectorAll('mjx-mo') ?? [];
+  if (built.length !== want.built.length) wrong.push(['delimiters built from pieces', built.length, want.built.length]);
+  [...built].forEach((mo, i) => {
+    const got = mo.getBoundingClientRect().height / em(mo);
+    if (!mo.querySelector('mjx-stretchy-v')) wrong.push([\`delimiter \${i + 1}\`, 'a glyph', 'built']);
+    if (off(got, want.built[i])) wrong.push([\`delimiter \${i + 1}'s height\`, got.toFixed(3), want.built[i]]);
+  });
   return wrong;
 })()`;
 const modernFonts = {
@@ -616,12 +624,12 @@ const modernFonts = {
     fonts: ['NCM-DS', 'TEX-C', 'TEX-CB'],
     // (as MathJax places \hat a, \hat x, \vec a, \hat A, \hat over
     // \mathsf A, \mathtt E, \mathfrak A, \mathbb A, and a bold sans-serif
-    // Σ, \widehat{ab}, \widetilde{xyz}, \overrightarrow{AB},
-    // \overleftarrow{AB}, and \bar y, measured on the page: TeX's rule
-    // differs)
-    accents: [0.286, 0.328, 0.286, 0.55, 0.334, 0.263, 0.443, 0.347, 0.396, 0.479, 0.764, 0.754, 0.754, 0.304],
-    // (the inline formulas from the sixteenth, each by its index)
-    widths: [[15, 4.267], [16, 4.569], [17, 3.322], [18, 4.569]],
+    // Σ, \widehat{ab}, \widetilde{xyz}, and \bar y, measured on the
+    // page: TeX's rule differs)
+    accents: [0.286, 0.328, 0.286, 0.55, 0.334, 0.263, 0.443, 0.347, 0.396, 0.479, 0.764, 0.304],
+    // (the four inline formulas of dots, and \overrightarrow{AB} and
+    // \overleftarrow{AB}, each by its index)
+    widths: [[15, 4.267], [16, 4.569], [17, 3.322], [18, 4.569], [24, 1.509], [25, 1.509]],
     // (below a text √: the most gap to a fraction bar, where TeX's is
     // 0.034 and the page's 0.06 to 0.084 by where the line falls on the
     // pixels, and the drop of its subscript, measured on the page, where
@@ -638,6 +646,9 @@ const modernFonts = {
     // (of \left( around an inline fraction and of a two-row pmatrix: TeX's
     // \ht plus \dp)
     parens: [1.2, 2.4],
+    // (of \big\uparrow, \Big\Downarrow, and \Big\lgroup, measured on
+    // the page, where TeX's are 1.2, 1.8, and 1.8)
+    built: [1.189, 1.789, 1.789],
   },
 };
 
