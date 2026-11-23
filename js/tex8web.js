@@ -329,10 +329,11 @@ function tex8web(config, tex) {
           // the first one at least as wide as its base, that width clamped
           // to minsize and maxsize, hence bounds a little above the font's
           // narrowest wide size and 1.444em. The narrowest is 0.556em in
-          // the TeX font and 0.644em in Latin Modern Math, and a bound below
-          // it gives a narrow base \hat's glyph (internal: the font's
-          // getDelimiter). Without bounds, MathJax aims wider than the
-          // base, among sizes from \hat's 0.5em to 1.889em.
+          // Latin Modern Math, which has the TeX font's sizes
+          // (matchModernFont), and about 0.6em in the TeX Gyre fonts. A
+          // bound below it gives a narrow base \hat's glyph (internal: the
+          // font's getDelimiter). Without bounds, MathJax aims wider than
+          // the base, among sizes from \hat's 0.5em to 1.889em.
           const narrowest = MathJax.startup.output.font.getDelimiter(node.getText().codePointAt(0)).sizes[1];
           node.attributes.set('minsize', (narrowest + 0.001).toFixed(3) + 'em');
           node.attributes.set('maxsize', '1.445em');
@@ -612,15 +613,30 @@ function tex8web(config, tex) {
       0x57: [.686, .077, 1.169, {ic: .037, sk: .057}], 0x58: [.686, -.001, .817, {ic: .089, sk: .125}],
       0x59: [.686, .164, .759, {ic: .038, sk: .079}], 0x5A: [.686, 0, .818, {ic: .035, sk: .133}],
     };
+    // \widehat and \widetilde: the TeX font's wide sizes, which are cmex's.
+    // mathjax-modern has seven, so a wide accent was wider than in the PDF,
+    // as 0.919em over ab, where TeX has 0.556em. The unsized accent is
+    // mathjax-modern's ˆ or ˜, as wide as the TeX font's (internal: a
+    // delimiter's c and sizes, its glyphs in the size variants).
+    const wideSO = {0x2C6: [.744, -.551, .556, {ic: .008}], 0x2DC: [.722, -.597, .556]};
+    const wideLO = {0x2C6: [.772, -.565, 1, {ic: .004}], 0x2DC: [.75, -.611, 1]};
+    const wideS3 = {0x2C6: [.772, -.564, 1.444, {ic: .003}], 0x2DC: [.749, -.61, 1.444]};
+    const wideS4 = {0x2C6: [.845, -.561, 1.889, {ic: .013}], 0x2DC: [.823, -.583, 1.889]};
+    const sizes = [.5, .556, 1, 1.444, 1.889];
     delete Font.dynamicFiles.calligraphic;
-    Font.addExtension({name: 'tex8web-tex', fonts: ['MJX-TEX-C', 'MJX-TEX-CB'], fontURL: fontURL('tex'),
-      chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic}}, 'TEX')});
+    Font.addExtension({name: 'tex8web-tex', fontURL: fontURL('tex'),
+      fonts: ['MJX-TEX-C', 'MJX-TEX-CB', 'MJX-TEX-SO', 'MJX-TEX-LO', 'MJX-TEX-S3', 'MJX-TEX-S4'],
+      chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic},
+        SO: {'-smallop': wideSO}, LO: {'-largeop': wideLO}, S3: {'-size3': wideS3}, S4: {'-size4': wideS4}}, 'TEX'),
+      delimiters: {0x5E: {...Font.defaultDelimiters[0x5E], c: 0x2C6, sizes},
+        0x7E: {...Font.defaultDelimiters[0x7E], c: 0x2DC, sizes}}});
 
     // Dots: mathjax-modern's ellipses are as tight as in text. TeX's \ldots
     // and \cdots are three dots a thin space apart, and \vdots and \ddots
     // three dots 4pt and 3pt apart (latex.ltx). The MathML keeps the one
-    // character, for copying and speech, drawn from mathjax-modern's dot as
-    // other text (internal: a character's c). For … and ⋯, the dots are
+    // character, for speech, drawn from mathjax-modern's dot as other text
+    // (internal: a character's c), which is what a reader copies from a
+    // page without MathML: ". . ." or one dot. For … and ⋯, the dots are
     // set apart by six-per-em spaces: as wide as TeX's outside scripts,
     // where TeX drops the thin space. For ⋮ and ⋱, which go up, one dot is
     // drawn with two text shadows, kept in forced colors.

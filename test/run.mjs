@@ -303,10 +303,12 @@ const typeset = {
     /id='mjx-eqn_eq_g'[^>]*><mjx-mtext><mjx-c class='mjx-c28'>\(<\/mjx-c><\/mjx-mtext><mjx-mtext><mjx-c class='mjx-c33'>3</,
   ],
   // (Latin Modern Math with \mathbb in New Computer Modern's letters,
-  // \mathcal and its bold in the TeX font's, and \ldots and \cdots as
-  // three dots and two spaces: js/tex8web.js, matchModernFont)
+  // \mathcal and its bold and wide accents in the TeX font's, and \ldots
+  // and \cdots as three dots and two spaces: js/tex8web.js,
+  // matchModernFont)
   'test-mathfont': [/<mjx-c class='mjx-c211D NCM-DS'>/, /<mjx-c class='mjx-c41 TEX-C'>/, /<mjx-c class='mjx-c41 TEX-CB'>/,
-    /<mjx-c class='mjx-c2026'>\. \. \.<\/mjx-c>/, /<mjx-c class='mjx-c22EF'>⋅ ⋅ ⋅<\/mjx-c>/],
+    /<mjx-c class='mjx-c2026'>\. \. \.<\/mjx-c>/, /<mjx-c class='mjx-c22EF'>⋅ ⋅ ⋅<\/mjx-c>/,
+    /<mjx-c class='mjx-c2C6 TEX-SO'>/, /<mjx-c class='mjx-c2DC TEX-S3'>/],
   'test-mhchem': [/<\/a>The <mjx-container/, /forms acid: <span class='tex8web-nowrap'><mjx-container/],
   'test': [
     /<mjx-mo style='font-size: 91.3%;'><mjx-c class='mjx-c28 MM-LO'>\(/,
@@ -4057,8 +4059,8 @@ const preloads = {
   'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmroman10-bolditalic',
     'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'mi', 'v', 'lo', 'so', 's', 's3', 's4', 's5', 's6', 's7',
       'ss', 'brk', 'ds', 'em', 'f', 'lt', 'm', 'mm', 'rb'].map(font => `mathjax/mjx-mm-${font}`),
-    // (\mathbb's and \mathcal's letters, as in the PDF: js/tex8web.js)
-    'mathjax/mjx-ncm-ds', 'mathjax/mjx-tex-c'],
+    // (\mathbb's and \mathcal's letters and the wide accents, as in the PDF: js/tex8web.js)
+    'mathjax/mjx-ncm-ds', 'mathjax/mjx-tex-c', 'mathjax/mjx-tex-so', 'mathjax/mjx-tex-s3'],
   // (the table of contents' sans-serif, bold and italic entries)
   'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
     'lmsans10-regular'],
@@ -4081,7 +4083,7 @@ const preloads = {
   'test-charter': ['XCharter-Roman', 'XCharter-Bold', 'XCharter-Italic', 'texgyretermes-regular',
     'mathjax/mjx-mm-zero', 'mathjax/mjx-mm-n'],
   // (none of Latin Modern Math's calligraphic letters: js/tex8web.js)
-  'test-mathfont': ['lmroman10-regular', ...['mm-zero', 'mm-n', 'mm-brk', 'ncm-ds', 'tex-c', 'tex-cb']
+  'test-mathfont': ['lmroman10-regular', ...['mm-zero', 'mm-n', 'mm-brk', 'ncm-ds', 'tex-c', 'tex-cb', 'tex-so', 'tex-s3']
     .map(font => `mathjax/mjx-${font}`)],
   // (MathJax's Pagella and Schola, and the fonts of bbm, dsfont and
   // bboldx in Pagella)

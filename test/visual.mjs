@@ -566,7 +566,9 @@ const modernFonts = {
     // (of the first three inline formulas: \mathbb{R}, \mathcal{A}, and
     // its bold)
     fonts: ['NCM-DS', 'TEX-C', 'TEX-CB'],
-    accents: [0.286, 0.328, 0.286, 0.55],
+    // (as MathJax places \hat a, \hat x, \vec a, \hat A, \widehat{ab},
+    // and \widetilde{xyz}, measured on the page: TeX's rule differs)
+    accents: [0.286, 0.328, 0.286, 0.55, 0.479, 0.764],
     // (the inline formulas from the eighth, each by its index)
     widths: [[7, 4.267], [8, 4.569], [9, 3.322], [10, 4.569]],
     // (the height of \vdots's and \ddots's boxes, which have no depth)
