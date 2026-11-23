@@ -150,18 +150,19 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 
 A `\mathclap` or `\clap` around a whole display has its content's width in `js/tex8web.js`, so that a display wider than the column can be scrolled to its left end.
 
-Latin Modern Math, MathJax's `mathjax-modern`, is the math font of a document in Computer Modern. In version 4.1.3, it differs from the PDF in eight ways, which `matchModernFont()` in `js/tex8web.js` changes before the font is made:
+Latin Modern Math, MathJax's `mathjax-modern`, is the math font of a document in Computer Modern. In version 4.1.3, it differs from the PDF in nine ways, which `matchModernFont()` in `js/tex8web.js` changes before the font is made:
 
 - `\mathbb` has capitals of another design. New Computer Modern's double-struck capitals are used, which are AMS's msbm. Other double-struck characters, such as `\Bbbk` and `\mathbb{1}`, keep Latin Modern Math's design.
 - `\mathcal` and its bold have capitals of another design. The calligraphic capitals of MathJax's TeX font are used, which are cmsy's.
 - The skews and combining offsets set accents off center, as a skew of 0.303em on the italic a, where TeX has 0.022em. New Computer Modern's are used for each character that is as wide in both fonts: those of its data in `tex-chtml.js` for the characters loaded with the font, and a table of those of its dynamic files for the characters of mathjax-modern's dynamic files, loaded when one is first used.
 - `\widehat` and `\widetilde` have seven sizes, where cmex has three, so a wide accent can be wider than in the PDF, as 0.919em over ab, where TeX has 0.556em. The wide accents of MathJax's TeX font are used, which are cmex's.
-- Delimiters have more sizes than in cmex: eight of `(`, where cmex has five of `(`, `[`, `{`, `⟨`, `⌊`, `⌈`, and `/`, and two of an arrow, where cmex has one of the arrows, the bars, and `\lgroup`. So a delimiter can be shorter or taller than in the PDF, as 1.095em around an inline fraction or 1.349em for `\big\uparrow`, where TeX has 1.2em. Each delimiter keeps the sizes nearest those of MathJax's TeX font, which are cmex's, and is built from pieces past them. An arrow or `\lgroup` is built from mathjax-modern's pieces, narrower than cmex's: 0.5em for `↑`, where TeX's is 0.667em. Of `|` and `‖`, cmex has only a piece to repeat, so the bars are built to the height asked, from the pieces of MathJax's TeX font, which are cmex's: mathjax-modern's pieces of `‖` are 0.057em from its sides, where cmex's are 0.145em. Latin Modern Math's `‖` is 0.398em wide, so it is drawn as its `∥`, which is cmsy's `‖`, 0.5em wide. Text copied from a page without MathML has `∥`.
+- The larger sizes of the delimiters and large operators are another design, wider than cmex's: 0.667em for a 3em `[`, where cmex's is 0.583em, and 0.999em for a display integral with its italic correction, where cmex's is 0.944em. The glyphs of MathJax's TeX font are used, which are cmex's, for the sizes above a delimiter's first, and for the text and display sizes of the large operators that cmex has, such as `∑`, `∫`, and `⋃`.
+- Delimiters have more sizes than in cmex: eight of `(`, where cmex has five of `(`, `[`, `{`, `⟨`, `⌊`, `⌈`, and `/`, and two of an arrow, where cmex has one of the arrows, the bars, and `\lgroup`. So a delimiter can be shorter or taller than in the PDF, as 1.095em around an inline fraction or 1.349em for `\big\uparrow`, where TeX has 1.2em. A delimiter with five sizes in cmex has those of MathJax's TeX font, which are cmex's, and another has its first size only. Each is built from pieces past its sizes. An arrow or `\lgroup` is built from mathjax-modern's pieces, narrower than cmex's: 0.5em for `↑`, where TeX's is 0.667em. Of `|` and `‖`, cmex has only a piece to repeat, so the bars are built to the height asked, from the pieces of MathJax's TeX font, which are cmex's: mathjax-modern's pieces of `‖` are 0.057em from its sides, where cmex's are 0.145em. Latin Modern Math's `‖` is 0.398em wide, so it is drawn as its `∥`, which is cmsy's `‖`, 0.5em wide. Text copied from a page without MathML has `∥`.
 - `\overbrace` and `\underbrace` have braces thinner than cmex's. They are built from the pieces of MathJax's TeX font, which are cmex's, as TeX builds them.
 - `√` in `\text` hangs below the baseline, as the radical of `\sqrt` does. It is raised to the baseline: its box in MathJax's layout, from which scripts are placed and rows sized, by `getVariantChar()` of MathJax's text node, and the glyph and its box on the page by a style. The font's data and style are shared with `\sqrt` and `\surd`, which hang.
 - The dots of `\ldots`, `\cdots`, `\vdots`, and `\ddots` are closer together than in TeX. Each stays one character in the MathML, for speech, and is drawn as the font's dots with six-per-em spaces between them, or with text shadows for the dots that go up. Text copied from a page without MathML has these dots and spaces, or one dot for `\vdots` and `\ddots`.
 
-The tables of the first six are checked against MathJax's fonts by `test/unit/modern-font.test.mjs`, which prints the new tables when they differ. The page is checked by `test-mathfont` in `npm test` and `npm run test:visual`.
+The tables of the first seven are checked against MathJax's fonts by `test/unit/modern-font.test.mjs`, which prints the new tables when they differ. The page is checked by `test-mathfont` in `npm test` and `npm run test:visual`.
 
 ### 4. Prerendering
 
@@ -334,7 +335,7 @@ To make a new `.github/screenshot.png`:
 Move `mathjax` and every `@mathjax/*` package to the new version in one commit, and run:
 
 - the `typeset` checks of `npm test`, for the internals that `tex8web.js` depends on
-- `test/unit/modern-font.test.mjs`, for the tables of Latin Modern Math's letters, skews, wide accents, delimiters, bars, and braces in `tex8web.js`
+- `test/unit/modern-font.test.mjs`, for the tables of Latin Modern Math's letters, skews, wide accents, delimiters, large operators, bars, and braces in `tex8web.js`
 - `npm run test:visual`, for the comparison of MathJax in Node with MathJax in the browser
 - `npm run regress` on your documents, compared with their baselines
 

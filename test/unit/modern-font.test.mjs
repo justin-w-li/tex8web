@@ -1,13 +1,15 @@
 // Unit test for the tables in js/tex8web.js that give mathjax-modern the
-// PDF's \mathbb, \mathcal, \widehat, \widetilde, delimiters, braces, and
-// accents over the letters of its dynamic files, run by npm test:
+// PDF's \mathbb, \mathcal, \widehat, \widetilde, delimiters, large
+// operators, bars, braces, and accents over the letters of its dynamic
+// files, run by npm test:
 //   node --test test/unit/modern-font.test.mjs
 // Each table is made again from MathJax's fonts in node_modules: New
-// Computer Modern's double-struck capitals, the TeX font's calligraphic and
-// bold calligraphic capitals, wide accents, and pieces of bars and braces,
-// the delimiter sizes of both fonts, and the skews of the letters New
-// Computer Modern has only in its dynamic files. When MathJax's fonts change, the test fails and prints the
-// table to paste into tex8web.js.
+// Computer Modern's double-struck capitals, the TeX font's calligraphic
+// and bold calligraphic capitals, the glyphs of its sizes of wide accents,
+// delimiters, and large operators, and its pieces of bars and braces, the
+// delimiters of both fonts, and the skews of the letters New Computer
+// Modern has only in its dynamic files. When MathJax's fonts change, the
+// test fails and prints the table to paste into tex8web.js.
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
