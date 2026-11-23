@@ -4060,10 +4060,11 @@ const fontsListed = html => (html.match(/<script [^>]*data-fonts=["']([^"']*)["'
 // italic, \texttt, and \verb) and the MathJax fonts that the math uses.
 const preloads = {
   'test': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmroman10-bolditalic',
-    'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'mi', 'v', 'lo', 'so', 's', 's3', 's4', 's6', 's7',
-      'ss', 'brk', 'ds', 'em', 'f', 'lt', 'm', 'mm', 'rb'].map(font => `mathjax/mjx-mm-${font}`),
-    // (\mathbb's and \mathcal's letters and the wide accents, as in the PDF: js/tex8web.js)
-    'mathjax/mjx-ncm-ds', 'mathjax/mjx-tex-c', 'mathjax/mjx-tex-so', 'mathjax/mjx-tex-s3'],
+    'lmmono10-regular', 'lmsans10-regular', ...['zero', 'n', 'i', 'mi', 'v', 'lo', 'so', 's', 's4', 's6', 's7',
+      'ss', 'brk', 'ds', 'em', 'f', 'm', 'mm', 'rb'].map(font => `mathjax/mjx-mm-${font}`),
+    // (\mathbb's and \mathcal's letters, the wide accents, and the bars' and
+    // braces' pieces, as in the PDF: js/tex8web.js)
+    'mathjax/mjx-ncm-ds', 'mathjax/mjx-tex-c', 'mathjax/mjx-tex-so', 'mathjax/mjx-tex-s3', 'mathjax/mjx-tex-s4'],
   // (the table of contents' sans-serif, bold and italic entries)
   'test-tocloft': ['lmroman10-regular', 'lmroman10-bold', 'lmroman10-italic', 'lmmono10-regular',
     'lmsans10-regular'],
@@ -6461,7 +6462,7 @@ if (pathspace) {
         /<h3 class='sectionHead' id='spaces'>/,
         /See section<span class='tex8web-nbsp'> <\/span><a href='#spaces'>1<!--/,
         /<a class='tex8web-eq-anchor' id='([^']+)'><\/a>[^]* and \(<a href='#\1'>1<!--/,
-        /<mjx-container[^>]*>(?:(?!<\/mjx-container>)[^])*<mjx-c class='mjx-c2016'>‖<\/mjx-c><mjx-c class='mjx-c1D465'>𝑥<\/mjx-c><mjx-c class='mjx-c2016'>‖<\/mjx-c>/,
+        /<mjx-container[^>]*>(?:(?!<\/mjx-container>)[^])*<mjx-c class='mjx-c2016'>∥<\/mjx-c><mjx-c class='mjx-c1D465'>𝑥<\/mjx-c><mjx-c class='mjx-c2016'>∥<\/mjx-c>/,
         ...noTerms ? [/^(?![^]*tex8web-term)/]
           : [/A <span class='tex8web-term' id='term-config-word'>[^]* and a <span class='tex8web-term' id='term-sibling-word'>/],
         ...shared ? [/Shared text of the document\./, /^(?![^]*Shared text of the config)/] : [],
