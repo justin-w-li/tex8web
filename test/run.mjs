@@ -4085,7 +4085,7 @@ const preloads = {
   'test-charter': ['XCharter-Roman', 'XCharter-Bold', 'XCharter-Italic', 'texgyretermes-regular',
     'mathjax/mjx-mm-zero', 'mathjax/mjx-mm-n'],
   // (none of Latin Modern Math's calligraphic letters: js/tex8web.js)
-  'test-mathfont': ['lmroman10-regular', ...['mm-zero', 'mm-n', 'mm-brk', 'mm-lo', 'mm-s3', 'mm-s6', 'ncm-ds', 'tex-c', 'tex-cb', 'tex-so', 'tex-s3']
+  'test-mathfont': ['lmroman10-regular', ...['mm-zero', 'mm-n', 'mm-brk', 'mm-lo', 'mm-s6', 'ncm-ds', 'tex-c', 'tex-cb', 'tex-so', 'tex-s3']
     .map(font => `mathjax/mjx-${font}`)],
   // (MathJax's Pagella and Schola, and the fonts of bbm, dsfont and
   // bboldx in Pagella)

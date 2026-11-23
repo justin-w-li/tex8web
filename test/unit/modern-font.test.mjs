@@ -4,8 +4,8 @@
 //   node --test test/unit/modern-font.test.mjs
 // Each table is made again from MathJax's fonts in node_modules: New
 // Computer Modern's double-struck capitals, the TeX font's calligraphic and
-// bold calligraphic capitals and wide accents, and the delimiter sizes of
-// both fonts. When MathJax's fonts change, the test fails and prints the
+// bold calligraphic capitals, wide accents, and bar pieces, and the
+// delimiter sizes of both fonts. When MathJax's fonts change, the test fails and prints the
 // table to paste into tex8web.js.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -84,4 +84,10 @@ test("the delimiters' sizes are those nearest the TeX font's", () => {
     groups.set(variants, [...groups.get(variants) ?? [], `0x${code.toString(16).toUpperCase()}`]);
   }
   for (const [variants, codes] of groups) check(`    keep([${codes.join(', ')}], [${variants}]);\n`);
+});
+
+test("the bars are built from the TeX font's pieces, and ‖ is drawn as ∥", () => {
+  check(table('barPieces', [0x2223, 0x2225], literal(read('@mathjax/mathjax-tex-font/cjs/chtml/smallop.js'), 'exports.smallop =')));
+  const [h, d, w] = literal(read('@mathjax/mathjax-modern-font/cjs/chtml/normal.js'), 'exports.normal =')[0x2225];
+  check(`0x2016: [${[h, d, w].map(number).join(', ')}, {c: '\\u2225'}]`);
 });

@@ -623,11 +623,13 @@ function tex8web(config, tex) {
     const wideS3 = {0x2C6: [.772, -.564, 1.444, {ic: .003}], 0x2DC: [.749, -.61, 1.444]};
     const wideS4 = {0x2C6: [.845, -.561, 1.889, {ic: .013}], 0x2DC: [.823, -.583, 1.889]};
     const sizes = [.5, .556, 1, 1.444, 1.889];
+    // (the pieces of the bars below, cmex's)
+    const barPieces = {0x2223: [.627, .015, .333], 0x2225: [.627, .015, .556]};
     delete Font.dynamicFiles.calligraphic;
     Font.addExtension({name: 'tex8web-tex', fontURL: fontURL('tex'),
       fonts: ['MJX-TEX-C', 'MJX-TEX-CB', 'MJX-TEX-SO', 'MJX-TEX-LO', 'MJX-TEX-S3', 'MJX-TEX-S4'],
       chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic},
-        SO: {'-smallop': wideSO}, LO: {'-largeop': wideLO}, S3: {'-size3': wideS3}, S4: {'-size4': wideS4}}, 'TEX'),
+        SO: {'-smallop': wideSO, '-size3': barPieces}, LO: {'-largeop': wideLO}, S3: {'-size3': wideS3}, S4: {'-size4': wideS4}}, 'TEX'),
       delimiters: {0x5E: {...Font.defaultDelimiters[0x5E], c: 0x2C6, sizes},
         0x7E: {...Font.defaultDelimiters[0x7E], c: 0x2DC, sizes}}});
 
@@ -649,7 +651,20 @@ function tex8web(config, tex) {
     keep([0x28, 0x29, 0x5B, 0x5D, 0x7B, 0x7D, 0x27E8, 0x27E9, 0x230A, 0x230B, 0x2308, 0x2309], [0, 2, 4, 6, 7]);
     keep([0x2F, 0x5C], [0, 1, 2, 3, 4]);
     keep([0x7C, 0x2016, 0x2223, 0x2225, 0x2758], [0]);
-    Font.addExtension({name: 'tex8web-delimiters', delimiters});
+    // The bars are built from cmex's pieces, from the TeX font above:
+    // mathjax-modern's pieces of ‖ are 0.057em from its sides, where
+    // cmex's are 0.145em, so a tall ‖ touched the letters beside it, and
+    // its | are 0.113em from them. The piece is the size variant's glyph
+    // (internal: a delimiter's stretch variants, and HDW its width).
+    for (const n of [0x7C, 0x2016, 0x2223, 0x2225, 0x2758]) {
+      const [h, d] = delimiters[n].HDW;
+      delimiters[n].HDW = [h, d, barPieces[delimiters[n].stretch[1]][2]];
+    }
+    // mathjax-modern's ‖ is 0.398em wide with its bars 0.176em apart; it
+    // is drawn as its ∥, which is cmsy's ‖, 0.5em wide with them 0.235em
+    // apart, as in the PDF (internal: a character's c). Text copied from a
+    // page without MathML has ∥.
+    Font.addExtension({name: 'tex8web-delimiters', delimiters, chars: {normal: {0x2016: [.75, .25, .5, {c: '\u2225'}]}}});
 
     // Dots: mathjax-modern's ellipses are as tight as in text. TeX's \ldots
     // and \cdots are three dots a thin space apart, and \vdots and \ddots

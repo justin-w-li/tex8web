@@ -531,9 +531,9 @@ const laps = { 'test-lefteqn': 18 };
 // skews; each inline formula given as wide as in the PDF (TeX's \wd of
 // its box, in ems); ⋮ and ⋱, each one dot drawn with two text shadows,
 // in a box as high as in the PDF; the ( of the two inline formulas
-// before the last two, as high as in the PDF; and the bars of the last
-// two inline formulas, each built from pieces, with its height in ems.
-// Failures:
+// before the last four, as high as in the PDF; and the bars of the last
+// four inline formulas, those taller than a glyph built from pieces, with
+// their heights and widths in ems. Failures:
 // [what, got, want]
 const modernFont = want => `(() => {
   const want = ${JSON.stringify(want)}, wrong = [], em = el => parseFloat(getComputedStyle(el).fontSize);
@@ -563,15 +563,21 @@ const modernFont = want => `(() => {
     const height = c.getBoundingClientRect().height / em(c);
     if (off(height, want.dots)) wrong.push([c.className + ' height', height.toFixed(3), want.dots]);
   }
-  const bars = formulas.slice(-2).flatMap(m => [...m.querySelectorAll('mjx-mo')]
-    .filter(mo => /^[|‖∣∥]+$/.test(mo.textContent.replace(/\\s/g, '')))
-    .map(mo => [mo.querySelector('mjx-stretchy-v'), mo.getBoundingClientRect().height / em(m)]));
+  // (a bar is an mjx-mo, or its mjx-c where prerendering left no mjx-mo)
+  const bars = formulas.slice(-4).flatMap(m => [...m.querySelectorAll('mjx-mo, mjx-c')]
+    .filter(el => /^[|‖∣∥]+$/.test(el.textContent.replace(/\\s/g, '')) && !el.parentElement.closest('mjx-mo'))
+    .map(el => {
+      const box = el.querySelector('mjx-stretchy-v') ?? (el.matches('mjx-mo') ? el.querySelector('mjx-c') : el);
+      return [box.matches('mjx-stretchy-v'), el.getBoundingClientRect().height / em(m), box.getBoundingClientRect().width / em(m)];
+    }));
   if (bars.length !== want.bars.length) wrong.push(['bars', bars.length, want.bars.length]);
-  bars.forEach(([built, got], i) => {
-    if (!built) wrong.push([\`bar \${i + 1}\`, 'a sized glyph', 'built']);
-    if (off(got, want.bars[i])) wrong.push([\`bar \${i + 1}\`, got.toFixed(3), want.bars[i]]);
+  bars.forEach(([built, height, width], i) => {
+    const [tall, wide] = want.bars[i];
+    if (built !== tall > 1.01) wrong.push([\`bar \${i + 1}\`, built ? 'built' : 'a glyph', built ? 'a glyph' : 'built']);
+    if (off(height, tall)) wrong.push([\`bar \${i + 1}'s height\`, height.toFixed(3), tall]);
+    if (off(width, wide)) wrong.push([\`bar \${i + 1}'s width\`, width.toFixed(3), wide]);
   });
-  const parens = formulas.slice(-4, -2).map(m => m.querySelector('mjx-c.mjx-c28'));
+  const parens = formulas.slice(-6, -4).map(m => m.querySelector('mjx-c.mjx-c28'));
   parens.forEach((c, i) => {
     const got = c && c.getBoundingClientRect().height / em(c);
     if (!c || off(got, want.parens[i])) wrong.push([\`( \${i + 1}\`, got?.toFixed(3), want.parens[i]]);
@@ -584,15 +590,18 @@ const modernFonts = {
     // its bold)
     fonts: ['NCM-DS', 'TEX-C', 'TEX-CB'],
     // (as MathJax places \hat a, \hat x, \vec a, \hat A, \widehat{ab},
-    // and \widetilde{xyz}, measured on the page: TeX's rule differs)
-    accents: [0.286, 0.328, 0.286, 0.55, 0.479, 0.764],
+    // \widetilde{xyz}, and \bar y, measured on the page: TeX's rule
+    // differs)
+    accents: [0.286, 0.328, 0.286, 0.55, 0.479, 0.764, 0.304],
     // (the inline formulas from the eighth, each by its index)
     widths: [[7, 4.267], [8, 4.569], [9, 3.322], [10, 4.569]],
     // (the height of \vdots's and \ddots's boxes, which have no depth)
     dots: 1.506,
-    // (of \bigm| and of \| around a fraction, measured on the page: TeX
-    // builds both 1.2em high)
-    bars: [1.229, 1.205, 1.205],
+    // (each bar's height and width: of \bigm|, \| around a fraction,
+    // \Bigl\| and \Bigr\|, and \lVert and \rVert. The heights are
+    // measured on the page, where TeX's are 1.2, 1.2, 1.8, and 1em; the
+    // widths are TeX's, cmex's built bars and cmsy's ‖)
+    bars: [[1.229, .333], [1.205, .556], [1.205, .556], [1.829, .556], [1.829, .556], [1, .5], [1, .5]],
     // (of \left( around an inline fraction and of a two-row pmatrix: TeX's
     // \ht plus \dp)
     parens: [1.2, 2.4],
