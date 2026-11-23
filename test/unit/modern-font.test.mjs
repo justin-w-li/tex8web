@@ -5,8 +5,8 @@
 // Each table is made again from MathJax's fonts in node_modules: New
 // Computer Modern's double-struck capitals, the TeX font's calligraphic and
 // bold calligraphic capitals, wide accents, and pieces of bars and braces,
-// the delimiter sizes of both fonts, and the skews of both fonts' dynamic
-// files. When MathJax's fonts change, the test fails and prints the
+// the delimiter sizes of both fonts, and the skews of the letters New
+// Computer Modern has only in its dynamic files. When MathJax's fonts change, the test fails and prints the
 // table to paste into tex8web.js.
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -124,14 +124,31 @@ function dynamicChars(font, skip = []) {
   return chars;
 }
 
-test("the letters of mathjax-modern's dynamic files have New Computer Modern's skews", () => {
-  // (tex8web.js drops the file of calligraphic letters)
-  const modern = dynamicChars('modern', ['calligraphic.js']), newcm = dynamicChars('newcm');
+// the characters of a font's data that comes with the font, by variant
+function staticChars(font) {
+  const text = read(`@mathjax/mathjax-${font}-font/cjs/chtml.js`);
+  const files = Object.fromEntries([...text.matchAll(/var (\w+) = require\("\.\/chtml\/([\w-]+)\.js"\)/g)].map(m => m.slice(1)));
+  const list = text.slice(text.indexOf('defaultChars = {'), text.indexOf('};', text.indexOf('defaultChars = {')));
+  return Object.fromEntries([...list.matchAll(/'([\w-]+)': (\w+)\.(\w+)/g)].map(([, variant, module, name]) =>
+    [variant, literal(read(`@mathjax/mathjax-${font}-font/cjs/chtml/${files[module]}.js`), `exports.${name} =`)]));
+}
+
+test("the letters New Computer Modern has only in its dynamic files have its skews", () => {
+  // mathjax-modern's letters, but the calligraphic ones, which tex8web.js
+  // replaces; those New Computer Modern's data that comes with tex-chtml.js
+  // has are set from it in the browser
+  const modern = staticChars('modern');
+  delete modern['-tex-calligraphic'];
+  delete modern['-tex-bold-calligraphic'];
+  for (const [variant, chars] of Object.entries(dynamicChars('modern', ['calligraphic.js']))) {
+    Object.assign(modern[variant] ??= {}, chars);
+  }
+  const loaded = staticChars('newcm'), newcm = dynamicChars('newcm');
   const lines = [];
   for (const [variant, chars] of Object.entries(modern)) {
     const entries = [];
     for (const [n, char] of Object.entries(chars)) {
-      const other = newcm[variant]?.[n];
+      const other = !loaded[variant]?.[n] && newcm[variant]?.[n];
       if (!Array.isArray(char) || !Array.isArray(other) || char[2] !== other[2]) continue;
       const { sk = 0, dx = 0 } = other[3] ?? {};
       if ((char[3]?.sk ?? 0) === sk && (char[3]?.dx ?? 0) === dx) continue;

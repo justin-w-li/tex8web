@@ -615,12 +615,13 @@ const modernFonts = {
     // its bold)
     fonts: ['NCM-DS', 'TEX-C', 'TEX-CB'],
     // (as MathJax places \hat a, \hat x, \vec a, \hat A, \hat over
-    // \mathsf A, \mathtt E, \mathfrak A, and \mathbb A, \widehat{ab},
-    // \widetilde{xyz}, \overrightarrow{AB}, \overleftarrow{AB}, and
-    // \bar y, measured on the page: TeX's rule differs)
-    accents: [0.286, 0.328, 0.286, 0.55, 0.334, 0.263, 0.443, 0.347, 0.479, 0.764, 0.754, 0.754, 0.304],
-    // (the inline formulas from the fifteenth, each by its index)
-    widths: [[14, 4.267], [15, 4.569], [16, 3.322], [17, 4.569]],
+    // \mathsf A, \mathtt E, \mathfrak A, \mathbb A, and a bold sans-serif
+    // Σ, \widehat{ab}, \widetilde{xyz}, \overrightarrow{AB},
+    // \overleftarrow{AB}, and \bar y, measured on the page: TeX's rule
+    // differs)
+    accents: [0.286, 0.328, 0.286, 0.55, 0.334, 0.263, 0.443, 0.347, 0.396, 0.479, 0.764, 0.754, 0.754, 0.304],
+    // (the inline formulas from the sixteenth, each by its index)
+    widths: [[15, 4.267], [16, 4.569], [17, 3.322], [18, 4.569]],
     // (below a text √: the most gap to a fraction bar, where TeX's is
     // 0.034 and the page's 0.06 to 0.084 by where the line falls on the
     // pixels, and the drop of its subscript, measured on the page, where

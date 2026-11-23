@@ -543,24 +543,13 @@ function tex8web(config, tex) {
     // and set an accent off center, as a skew of 0.303em on the italic a,
     // where TeX has 0.022em. New Computer Modern, MathJax's default font,
     // whose data comes with tex-chtml.js, has TeX's. They are taken for
-    // each character that is as wide in both fonts.
-    const newcm = MathJax._.output.chtml.DefaultFont.DefaultFont.defaultChars;
-    const skews = {};
-    for (const [variant, chars] of Object.entries(Font.defaultChars)) {
-      for (const [n, char] of Object.entries(chars)) {
-        const other = newcm[variant]?.[n];
-        if (!Array.isArray(char) || !Array.isArray(other) || char[2] !== other[2]) continue;
-        const {sk = 0, dx = 0} = other[3] || {};
-        if ((char[3]?.sk || 0) === sk && (char[3]?.dx || 0) === dx) continue;
-        (skews[variant] ||= {})[n] = [...char.slice(0, 3), {...char[3], sk, dx}];
-      }
-    }
-    Font.addExtension({name: 'tex8web-skews', chars: skews});
-    // The letters of mathjax-modern's dynamic files, loaded when one is
-    // first used, get New Computer Modern's skews and offsets from its own
-    // dynamic files, which do not come with tex-chtml.js, as the table
-    // below. A number is a skew with no offset (internal: the class's
-    // dynamicSetup, which each dynamic file calls with its characters).
+    // each character that is as wide in both fonts: from that data, or,
+    // for the letters it lacks, which are in New Computer Modern's dynamic
+    // files, from the table below, a number for a skew with no offset.
+    // They are set on mathjax-modern's characters as the font is made, and
+    // on those of its dynamic files, loaded when one is first used, as each
+    // file loads (internal: the class's dynamicSetup, which each dynamic
+    // file calls with its characters).
     const dynamicSkews = {
       normal: {
         0x309: [0, .264], 0x30B: [0, .24], 0x30F: [0, .287], 0x311: [0, .264], 0x323: [0, .265], 0x326: [0, .264],
@@ -621,11 +610,17 @@ function tex8web(config, tex) {
         0x1D688: 0, 0x1D689: 0, 0x1D68A: -.048, 0x1D68B: -.172, 0x1D68C: .043, 0x1D68D: .088, 0x1D68E: 0,
         0x1D68F: .077, 0x1D690: .07, 0x1D691: -.172, 0x1D692: 0, 0x1D693: .057, 0x1D694: -.169, 0x1D695: -.085,
         0x1D696: -.052, 0x1D697: -.071, 0x1D698: 0, 0x1D699: -.074, 0x1D69A: .044, 0x1D69B: -.018, 0x1D69C: .04,
-        0x1D69D: -.074, 0x1D69E: -.043, 0x1D69F: 0, 0x1D6A0: 0, 0x1D6A1: 0, 0x1D6A2: 0, 0x1D6A3: 0, 0x1D7D8: 0,
-        0x1D7D9: 0, 0x1D7DA: 0, 0x1D7DB: 0, 0x1D7DC: .117, 0x1D7DD: 0, 0x1D7DE: 0, 0x1D7DF: .031, 0x1D7E0: 0,
-        0x1D7E1: 0, 0x1D7E2: 0, 0x1D7E3: .01, 0x1D7E4: 0, 0x1D7E5: 0, 0x1D7E6: .073, 0x1D7E8: .084, 0x1D7E9: 0,
-        0x1D7EA: 0, 0x1D7EB: 0, 0x1D7EC: 0, 0x1D7ED: 0, 0x1D7EE: -.016, 0x1D7EF: 0, 0x1D7F0: .068, 0x1D7F1: 0,
-        0x1D7F2: .056, 0x1D7F3: 0, 0x1D7F4: 0, 0x1D7F5: -.016, 0x1D7F6: 0, 0x1D7F7: .015, 0x1D7F8: -.011,
+        0x1D69D: -.074, 0x1D69E: -.043, 0x1D69F: 0, 0x1D6A0: 0, 0x1D6A1: 0, 0x1D6A2: 0, 0x1D6A3: 0, 0x1D756: 0,
+        0x1D757: -.04, 0x1D75A: .015, 0x1D75B: 0, 0x1D75C: 0, 0x1D75E: 0, 0x1D75F: .012, 0x1D760: 0, 0x1D761: 0,
+        0x1D762: 0, 0x1D763: 0, 0x1D764: 0, 0x1D765: 0, 0x1D766: -.034, 0x1D767: 0, 0x1D768: 0, 0x1D769: 0, 0x1D76B: 0,
+        0x1D76C: -.015, 0x1D789: 0, 0x1D78B: .07, 0x1D78E: 0, 0x1D78F: .049, 0x1D790: .146, 0x1D791: .063,
+        0x1D794: .09, 0x1D795: .082, 0x1D796: .097, 0x1D798: .097, 0x1D799: .088, 0x1D79A: .138, 0x1D79B: .098,
+        0x1D79C: .097, 0x1D79D: .067, 0x1D79E: .111, 0x1D79F: .098, 0x1D7A0: .067, 0x1D7A1: .099, 0x1D7A2: .074,
+        0x1D7A3: .056, 0x1D7A5: .103, 0x1D7A8: .098, 0x1D7C3: .1, 0x1D7C5: .19, 0x1D7C8: .084, 0x1D7C9: .109,
+        0x1D7D8: 0, 0x1D7D9: 0, 0x1D7DA: 0, 0x1D7DB: 0, 0x1D7DC: .117, 0x1D7DD: 0, 0x1D7DE: 0, 0x1D7DF: .031,
+        0x1D7E0: 0, 0x1D7E1: 0, 0x1D7E2: 0, 0x1D7E3: .01, 0x1D7E4: 0, 0x1D7E5: 0, 0x1D7E6: .073, 0x1D7E8: .084,
+        0x1D7E9: 0, 0x1D7EA: 0, 0x1D7EB: 0, 0x1D7EC: 0, 0x1D7ED: 0, 0x1D7EE: -.016, 0x1D7EF: 0, 0x1D7F0: .068,
+        0x1D7F1: 0, 0x1D7F2: .056, 0x1D7F3: 0, 0x1D7F4: 0, 0x1D7F5: -.016, 0x1D7F6: 0, 0x1D7F7: .015, 0x1D7F8: -.011,
         0x1D7F9: -.015, 0x1D7FA: .06, 0x1D7FB: 0, 0x1D7FC: .054, 0x1D7FD: -.184, 0x1D7FE: 0, 0x1D7FF: 0,
       },
       bold: {
@@ -643,35 +638,52 @@ function tex8web(config, tex) {
       'bold-fraktur': {
         0x131: .301, 0x237: .476,
       },
-      monospace: {
-        0x131: .208, 0x237: .345, 0x30F: [0, .261],
+      'sans-serif': {
+        0x131: .277, 0x237: .157,
       },
       'bold-sans-serif': {
         0x131: .212, 0x237: .194, 0x300: [0, .203], 0x301: [0, .199], 0x302: [0, .261], 0x307: [0, .252],
         0x309: [0, .263], 0x30B: [0, .229], 0x30C: [0, .251], 0x30F: [0, .291], 0x323: [0, .262], 0x326: [0, .265],
+      },
+      'sans-serif-italic': {
+        0x131: .205, 0x237: .117, 0x302: [0, .129], 0x306: [0, .092], 0x309: [0, .1], 0x30C: [0, .091],
+        0x311: [0, .127], 0x326: [0, .278], 0x32E: [0, .255], 0x32F: [0, .29],
       },
       'sans-serif-bold-italic': {
         0x131: .313, 0x237: .195, 0x300: [0, .073], 0x301: [0, .069], 0x302: [0, .144], 0x307: [0, .12],
         0x309: [0, .117], 0x30B: [0, .101], 0x30C: [0, .103], 0x30F: [0, .164], 0x326: [0, .303], 0x32E: [0, .281],
         0x32F: [0, .296], 0x330: [0, .292],
       },
-      'sans-serif': {
-        0x131: .277, 0x237: .157,
-      },
-      'sans-serif-italic': {
-        0x131: .205, 0x237: .117, 0x302: [0, .129], 0x306: [0, .092], 0x309: [0, .1], 0x30C: [0, .091],
-        0x311: [0, .127], 0x326: [0, .278], 0x32E: [0, .255], 0x32F: [0, .29],
+      monospace: {
+        0x131: .208, 0x237: .345, 0x30F: [0, .261],
       },
       '-tex-variant': {
         0x2A: 0, 0x207F: .013,
       },
     };
+    const skewed = (char, skew) => {
+      const [sk, dx] = typeof skew === 'number' ? [skew, 0] : skew;
+      return [...char.slice(0, 3), {...char[3], sk, dx}];
+    };
+    const newcm = MathJax._.output.chtml.DefaultFont.DefaultFont.defaultChars;
+    const skews = {};
+    for (const [variant, chars] of Object.entries(Font.defaultChars)) {
+      for (const [n, char] of Object.entries(chars)) {
+        const other = newcm[variant]?.[n];
+        const skew = Array.isArray(other) && char[2] === other[2] ? [other[3]?.sk || 0, other[3]?.dx || 0]
+          : dynamicSkews[variant]?.[n];
+        if (!Array.isArray(char) || skew === undefined) continue;
+        const [sk, dx] = typeof skew === 'number' ? [skew, 0] : skew;
+        if ((char[3]?.sk || 0) === sk && (char[3]?.dx || 0) === dx) continue;
+        (skews[variant] ||= {})[n] = skewed(char, skew);
+      }
+    }
+    Font.addExtension({name: 'tex8web-skews', chars: skews});
     const dynamicSetup = Font.dynamicSetup;
     Font.dynamicSetup = function (extension, file, variants, ...rest) {
       for (const [variant, chars] of Object.entries(extension ? {} : variants)) {
         for (const [n, skew] of Object.entries(dynamicSkews[variant] ?? {})) {
-          const [sk, dx] = typeof skew === 'number' ? [skew, 0] : skew;
-          if (chars[n]) chars[n] = [...chars[n].slice(0, 3), {...chars[n][3], sk, dx}];
+          if (chars[n]) chars[n] = skewed(chars[n], skew);
         }
       }
       return dynamicSetup.call(this, extension, file, variants, ...rest);
