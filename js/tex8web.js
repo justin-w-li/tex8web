@@ -825,10 +825,22 @@ function tex8web(config, tex) {
     });
 
     // √ in text, as \textsurd in \text: mathjax-modern's √ is the radical
-    // of \sqrt, which hangs below the baseline, as cmsy's \surd does. It
-    // is raised to stand on the baseline, as the text's √ does in the PDF,
-    // and its line is no deeper than the others.
-    Font.defaultStyles['mjx-mtext mjx-c.mjx-c221A'] = {'vertical-align': '.76em'};
+    // of \sqrt, which hangs below the baseline, as cmsy's \surd does. In
+    // text it stands on the baseline, as the text's √ does in the PDF: its
+    // box, from which MathJax places scripts and sizes rows, is raised by
+    // MathJax's text node, and the glyph and its box on the page by the
+    // style, as the font's data and style are shared with \sqrt and \surd
+    // (internal: a text node's getVariantChar, which gives a character's
+    // data).
+    const raise = .76;
+    const TextNode = MathJax._.output.chtml.Wrappers.TextNode.ChtmlTextNode.prototype;
+    const getVariantChar = TextNode.getVariantChar;
+    TextNode.getVariantChar = function (variant, n) {
+      const char = getVariantChar.call(this, variant, n);
+      if (n !== 0x221A || variant !== 'normal' || !this.parent.node.isKind('mtext')) return char;
+      return [char[0] + raise, char[1] - raise, ...char.slice(2)];
+    };
+    Font.defaultStyles['mjx-mtext mjx-c.mjx-c221A'] = {'vertical-align': `${raise}em`};
   }
 
   const ready = startup.ready;

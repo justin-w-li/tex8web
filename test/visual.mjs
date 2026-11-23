@@ -529,7 +529,9 @@ const laps = { 'test-lefteqn': 18 };
 // mathjax-modern's own calligraphic letters; the center of each accent
 // but those built from pieces, from its base's left edge, in ems, as
 // placed by MathJax with New Computer Modern's skews; the paragraph of a
-// √ in text, one line, in px, as tall as a line of text; each inline formula given as wide as in the PDF (TeX's \wd of
+// √ in text, one line, in px, as tall as a line of text, the gap below a
+// text √ over a fraction bar, at most as given, and the drop of a text √'s
+// subscript; each inline formula given as wide as in the PDF (TeX's \wd of
 // its box, in ems); ⋮ and ⋱, each one dot drawn with two text shadows,
 // in a box as high as in the PDF; the ( of the two inline formulas
 // before the last four, as high as in the PDF; and the bars of the last
@@ -585,6 +587,21 @@ const modernFont = want => `(() => {
   }
   if (!surd || Math.abs(surd.offsetHeight - line.offsetHeight) > 0.5) wrong.push(["the text √'s line", surd?.offsetHeight, line?.offsetHeight]);
   line?.remove();
+  const surds = [...document.querySelectorAll('mjx-mtext mjx-c.mjx-c221A')];
+  const over = surds.find(c => c.closest('mjx-mfrac')), base = surds.find(c => c.closest('mjx-mtext').nextElementSibling);
+  if (over) {
+    const gap = (over.closest('mjx-mfrac').querySelector('mjx-line').getBoundingClientRect().top - over.getBoundingClientRect().bottom) / em(over);
+    if (gap < 0 || gap > want.surd[0]) wrong.push(['the gap below a text √ over a fraction bar', gap.toFixed(3), \`0 to \${want.surd[0]}\`]);
+  } else wrong.push(['a text √ over a fraction bar', 'none', 'one']);
+  if (base) {
+    const math = base.closest('mjx-math'), script = base.closest('mjx-mtext').nextElementSibling, mark = document.createElement('span');
+    mark.style.cssText = 'display: inline-block; width: 0; height: 0';
+    math.append(mark);
+    const drop = ((script.matches('mjx-c') ? script : script.querySelector('mjx-c')).getBoundingClientRect().bottom
+      - mark.getBoundingClientRect().bottom) / em(math);
+    mark.remove();
+    if (off(drop, want.surd[1])) wrong.push(["a text √'s subscript, below the baseline", drop.toFixed(3), want.surd[1]]);
+  } else wrong.push(['a text √ with a subscript', 'none', 'one']);
   const parens = formulas.slice(-6, -4).map(m => m.querySelector('mjx-c.mjx-c28'));
   parens.forEach((c, i) => {
     const got = c && c.getBoundingClientRect().height / em(c);
@@ -602,8 +619,14 @@ const modernFonts = {
     // \widetilde{xyz}, \overrightarrow{AB}, \overleftarrow{AB}, and
     // \bar y, measured on the page: TeX's rule differs)
     accents: [0.286, 0.328, 0.286, 0.55, 0.334, 0.263, 0.443, 0.347, 0.479, 0.764, 0.754, 0.754, 0.304],
-    // (the inline formulas from the thirteenth, each by its index)
-    widths: [[12, 4.267], [13, 4.569], [14, 3.322], [15, 4.569]],
+    // (the inline formulas from the fifteenth, each by its index)
+    widths: [[14, 4.267], [15, 4.569], [16, 3.322], [17, 4.569]],
+    // (below a text √: the most gap to a fraction bar, where TeX's is
+    // 0.034 and the page's 0.06 to 0.084 by where the line falls on the
+    // pixels, and the drop of its subscript, measured on the page, where
+    // TeX's is 0.26; with the √'s box hanging below the baseline, the drop
+    // was 0.995)
+    surd: [0.1, 0.234],
     // (the height of \vdots's and \ddots's boxes, which have no depth)
     dots: 1.506,
     // (each bar's height and width: of \bigm|, \| around a fraction,
