@@ -535,9 +535,11 @@ const laps = { 'test-lefteqn': 18 };
 // ems); ⋮ and ⋱, each one dot drawn with two text shadows, in a box as high
 // as in the PDF; the ( of the two inline formulas before the last four, as
 // high as in the PDF; the delimiters of the inline formula before those,
-// each built from pieces, with their heights in ems; and the bars of the
-// last four inline formulas, those taller than a glyph built from pieces,
-// with their heights and widths in ems.
+// each built from pieces, with their heights in ems; each glyph of a
+// delimiter or large operator from the TeX font's sizes, with its height
+// and width in ems; and the bars of the last four inline formulas, those
+// taller than a glyph built from pieces, with their heights and widths in
+// ems.
 // Failures: [what, got, want]
 const modernFont = want => `(() => {
   const want = ${JSON.stringify(want)}, wrong = [], em = el => parseFloat(getComputedStyle(el).fontSize);
@@ -608,6 +610,15 @@ const modernFont = want => `(() => {
     const got = c && c.getBoundingClientRect().height / em(c);
     if (!c || off(got, want.parens[i])) wrong.push([\`( \${i + 1}\`, got?.toFixed(3), want.parens[i]]);
   });
+  const sized = [...document.querySelectorAll('mjx-c.TEX-SO, mjx-c.TEX-LO, mjx-c.TEX-S3, mjx-c.TEX-S4')]
+    .filter(c => !c.closest('mjx-stretchy-h, mjx-stretchy-v') && !/[ˆ˜]/.test(c.textContent))
+    .map(c => [c.textContent, c.getBoundingClientRect().height / em(c), c.getBoundingClientRect().width / em(c)]);
+  if (sized.length !== want.cmex.length) wrong.push(["the TeX font's sizes", sized.length, want.cmex.length]);
+  sized.forEach(([text, tall, wide], i) => {
+    const [height, width] = want.cmex[i] ?? [];
+    if (off(tall, height)) wrong.push([\`\${text} \${i + 1}'s height\`, tall.toFixed(3), height]);
+    if (off(wide, width)) wrong.push([\`\${text} \${i + 1}'s width\`, wide.toFixed(3), width]);
+  });
   const built = formulas.at(-7)?.querySelectorAll('mjx-mo') ?? [];
   if (built.length !== want.built.length) wrong.push(['delimiters built from pieces', built.length, want.built.length]);
   [...built].forEach((mo, i) => {
@@ -629,7 +640,7 @@ const modernFonts = {
     accents: [0.286, 0.328, 0.286, 0.55, 0.334, 0.263, 0.443, 0.347, 0.396, 0.479, 0.764, 0.304],
     // (the four inline formulas of dots, and \overrightarrow{AB} and
     // \overleftarrow{AB}, each by its index)
-    widths: [[15, 4.267], [16, 4.569], [17, 3.322], [18, 4.569], [24, 1.509], [25, 1.509]],
+    widths: [[15, 4.267], [16, 4.569], [17, 3.322], [18, 4.569], [25, 1.509], [26, 1.509]],
     // (below a text √: the most gap to a fraction bar, where TeX's is
     // 0.034 and the page's 0.06 to 0.084 by where the line falls on the
     // pixels, and the drop of its subscript, measured on the page, where
@@ -649,6 +660,13 @@ const modernFonts = {
     // (of \big\uparrow, \Big\Downarrow, and \Big\lgroup, measured on
     // the page, where TeX's are 1.2, 1.8, and 1.8)
     built: [1.189, 1.789, 1.789],
+    // (each glyph of a delimiter or large operator from the TeX font's
+    // sizes, in the page's order: \Bigg[, \Bigl( and \Bigr), \Bigg], the
+    // display ∫, the cases' {, and ( and ) around an inline fraction and a
+    // two-row pmatrix; cmex's heights and widths, the ∫'s with its italic
+    // correction, which TeX's box has without a subscript)
+    cmex: [[2.999, .583], [1.799, .597], [1.799, .597], [2.999, .583], [2.222, .944], [2.999, .806],
+      [1.199, .458], [1.199, .458], [2.399, .736], [2.399, .736]],
   },
 };
 

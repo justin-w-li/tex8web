@@ -5,11 +5,12 @@
 % deeper than others, over a fraction bar, and with a subscript, and dots
 % spaced as TeX spaces them, also when \dots chooses them. Then the dots
 % in a subscript, where TeX drops their thin spaces, and in a matrix, wide
-% accents in two of TeX's sizes, braces built from cmex's pieces, arrows
-% over letters as wide as the letters, a \big arrow, a \Big double arrow,
-% and a \Big\lgroup built from pieces as TeX builds them, parentheses in
-% two of cmex's sizes, and bars as tall as TeX builds them, as wide as
-% cmex's and cmsy's.
+% accents in two of TeX's sizes, a \Bigg[, a display integral, and a cases
+% brace in cmex's sizes and glyphs, braces built from cmex's pieces,
+% arrows over letters as wide as the letters, a \big arrow, a \Big double
+% arrow, and a \Big\lgroup built from pieces as TeX builds them,
+% parentheses in two of cmex's sizes, and bars as tall as TeX builds them,
+% as wide as cmex's and cmsy's.
 \documentclass{article}
 \usepackage{amsmath,amssymb,textcomp}
 \begin{document}
@@ -26,6 +27,10 @@ Dots: $1,2,\ldots,n$, $a+\cdots+b$, $1,\dots,n$, $a+\dots+b$, and
 $x_{1,\ldots,n}$.
 \[ \begin{pmatrix} 1 & \cdots & 0 \\ \vdots & \ddots & \vdots \\ 0 & \cdots & 1 \end{pmatrix} \]
 Wide accents: $\widehat{ab}$ and $\widetilde{xyz}$.
+Large sizes: $E\Bigg[\min\Bigl(\frac{2|tX|^m}{m!},1\Bigr)\Bigg]$, an integral,
+\[ \int p(y_{n+1}\mid y_1,\dots,y_n)\,dy_{n+1}, \]
+and a brace:
+\[ f(x) = \begin{cases} \dfrac{a}{b}, & x > 0, \\ 0, & x \le 0. \end{cases} \]
 Braces and arrows: $\underbrace{a+b+c}_{n}$, $\overbrace{x+y+z}^{m}$,
 $\overrightarrow{AB}$, $\overleftarrow{AB}$, and $\big\uparrow\Big\Downarrow\Big\lgroup$.
 Parentheses: $\left(\frac{a}{b}\right)$ and $\begin{pmatrix} a \\ b \end{pmatrix}$.

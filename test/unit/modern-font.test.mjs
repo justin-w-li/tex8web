@@ -58,22 +58,6 @@ test("\\mathcal's capitals are the TeX font's", () => {
   check(table('boldCalligraphic', codes, literal(read('@mathjax/mathjax-tex-font/cjs/chtml/tex-calligraphic-bold.js'), 'exports.texCalligraphicBold =')));
 });
 
-test("\\widehat's and \\widetilde's sizes are the TeX font's", () => {
-  for (const [name, file, mark] of [['wideSO', 'smallop', 'smallop'], ['wideLO', 'largeop', 'largeop'],
-    ['wideS3', 'size3', 'size3'], ['wideS4', 'size4', 'size4']]) {
-    check(table(name, [0x2C6, 0x2DC], literal(read(`@mathjax/mathjax-tex-font/cjs/chtml/${file}.js`), `exports.${mark} =`)));
-  }
-  // (the delimiters' data names a direction, so is read as text)
-  const delimiters = read('@mathjax/mathjax-tex-font/cjs/chtml/delimiters.js');
-  const sizes = code => delimiters.match(new RegExp(`${code}: \\{[^}]*sizes: \\[([^\\]]*)\\]`))[1];
-  assert.equal(sizes('0x7E'), sizes('0x5E'));
-  check(`    const sizes = [${sizes('0x5E')}];\n`);
-  // the narrowest, mathjax-modern's own ˆ and ˜
-  const normal = literal(read('@mathjax/mathjax-modern-font/cjs/chtml/normal.js'), 'exports.normal =');
-  assert.deepEqual([normal[0x2C6][2], normal[0x2DC][2]], [0.5, 0.5]);
-  assert.match(sizes('0x5E'), /^\.5,/);
-});
-
 // a font's delimiters, whose data names a direction
 function delimiters(font) {
   const text = read(`@mathjax/mathjax-${font}-font/cjs/chtml/delimiters.js`);
@@ -95,21 +79,48 @@ function call(start, items, end) {
   return [...lines, line].join('\n') + '\n';
 }
 
-test("each delimiter has the mathjax-modern sizes nearest the TeX font's", () => {
+test("the sizes of the wide accents, delimiters, and large operators are the TeX font's", () => {
   const tex = delimiters('tex'), modern = delimiters('modern');
-  // (the wide accents and braces, which tex8web.js takes from the TeX font)
-  const taken = [0x5E, 0x7E, 0x2C6, 0x2DC, 0x302, 0x303, 0x23DE, 0x23DF, 0xFE37, 0xFE38];
-  const groups = new Map();
+  // (the braces, which tex8web.js builds from the TeX font's pieces, and
+  // √, whose bar is drawn from the font of its sign)
+  const skipped = [0x23DE, 0x23DF, 0xFE37, 0xFE38, 0x221A];
+  const wide = [0x5E, 0x7E, 0x2C6, 0x2DC, 0x302, 0x303];
+  const sized = [], first = [];
   for (const [code, delimiter] of Object.entries(modern)) {
-    if (!delimiter.sizes || !tex[code]?.sizes || taken.includes(Number(code))) continue;
-    // each mathjax-modern size nearest one of the TeX font's
-    const nearest = [...new Set(tex[code].sizes.map(size => delimiter.sizes.reduce((best, h, i) =>
-      Math.abs(h - size) < Math.abs(delimiter.sizes[best] - size) ? i : best, 0)))];
-    if (nearest.length === delimiter.sizes.length) continue;
-    const key = nearest.join(', ');
-    groups.set(key, [...groups.get(key) ?? [], `0x${Number(code).toString(16).toUpperCase()}`]);
+    const other = tex[code];
+    if (!delimiter.sizes || !other?.sizes || skipped.includes(Number(code)) || wide.includes(Number(code))) continue;
+    if (other.sizes.length > 1) {
+      // the five sizes of cmex, in the size variants both fonts name alike
+      assert.equal(other.sizes.length, 5);
+      assert.equal(other.variants, undefined);
+      // (and a glyph for the sizes, the last of schar's)
+      assert.ok(!delimiter.schar || delimiter.schar.length === 2);
+      sized.push(Number(code));
+    } else if (delimiter.sizes.length > 1) first.push(Number(code));
   }
-  check([...groups].map(([variants, codes]) => call('    keep([', codes, `], [${variants}]);`)).join(''));
+  const hex = code => `0x${code.toString(16).toUpperCase()}`;
+  check(call('    take([', sized.map(hex), ']);'));
+  check(call('    keep([', first.map(hex), ']);'));
+  // the large operators: the TeX font's large characters that are not its
+  // delimiters, but ⁄, which TeX does not make larger
+  const glyphs = sized.map(code => modern[code].schar?.at(-1) ?? modern[code].c ?? code);
+  const texChars = file => literal(read(`@mathjax/mathjax-tex-font/cjs/chtml/${file}.js`), `exports.${file} =`);
+  const delimiterCodes = new Set(Object.entries(tex).flatMap(([code, delimiter]) => [Number(code), delimiter.c]));
+  const operators = Object.keys(texChars('largeop')).map(Number).filter(code => !delimiterCodes.has(code) && code !== 0x2044);
+  const modernLarge = literal(read('@mathjax/mathjax-modern-font/cjs/chtml/largeop.js'), 'exports.largeop =');
+  for (const code of operators) assert.ok(modernLarge[code], `mathjax-modern has no large ${hex(code)}`);
+  for (const [name, file, codes] of [['cmexSO', 'smallop', [0x2C6, 0x2DC, ...glyphs, ...operators]],
+    ['cmexLO', 'largeop', [0x2C6, 0x2DC, ...glyphs, ...operators]], ['cmexS3', 'size3', [0x2C6, 0x2DC, ...glyphs]],
+    ['cmexS4', 'size4', [0x2C6, 0x2DC, ...glyphs]]]) {
+    check(table(name, [...new Set(codes)].sort((x, y) => x - y), texChars(file)));
+  }
+  // the wide accents' sizes; the narrowest, mathjax-modern's own ˆ and ˜
+  const sizes = code => tex[code].sizes.map(number).join(', ');
+  assert.equal(sizes(0x7E), sizes(0x5E));
+  check(`    const sizes = [${sizes(0x5E)}];\n`);
+  const normal = literal(read('@mathjax/mathjax-modern-font/cjs/chtml/normal.js'), 'exports.normal =');
+  assert.deepEqual([normal[0x2C6][2], normal[0x2DC][2]], [0.5, 0.5]);
+  assert.equal(tex[0x5E].sizes[0], 0.5);
   check('delimiters: {...wide(0x2C6, [0x5E, 0x2C6, 0x302]), ...wide(0x2DC, [0x7E, 0x2DC, 0x303])}');
   check('delimiters[0xFE37] = delimiters[0x23DE];\n    delimiters[0xFE38] = delimiters[0x23DF];');
 });

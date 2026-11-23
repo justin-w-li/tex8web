@@ -745,15 +745,74 @@ function tex8web(config, tex) {
       0x57: [.686, .077, 1.169, {ic: .037, sk: .057}], 0x58: [.686, -.001, .817, {ic: .089, sk: .125}],
       0x59: [.686, .164, .759, {ic: .038, sk: .079}], 0x5A: [.686, 0, .818, {ic: .035, sk: .133}],
     };
-    // \widehat and \widetilde: the TeX font's wide sizes, which are cmex's.
-    // mathjax-modern has seven, which make a wide accent wider than in the
-    // PDF, as 0.919em over ab, where TeX has 0.556em. The unsized accent is
-    // mathjax-modern's ˆ or ˜, as wide as the TeX font's (internal: a
-    // delimiter's c and sizes, its glyphs in the size variants).
-    const wideSO = {0x2C6: [.744, -.551, .556, {ic: .008}], 0x2DC: [.722, -.597, .556]};
-    const wideLO = {0x2C6: [.772, -.565, 1, {ic: .004}], 0x2DC: [.75, -.611, 1]};
-    const wideS3 = {0x2C6: [.772, -.564, 1.444, {ic: .003}], 0x2DC: [.749, -.61, 1.444]};
-    const wideS4 = {0x2C6: [.845, -.561, 1.889, {ic: .013}], 0x2DC: [.823, -.583, 1.889]};
+    // The sizes of \widehat, \widetilde, the delimiters, and the large
+    // operators: mathjax-modern's are another design, wider or taller than
+    // cmex's, as its \Bigg[ and its display integral. The TeX font's
+    // glyphs are used, which are cmex's, from its size variants of the
+    // same names as mathjax-modern's. \widehat and \widetilde have seven
+    // sizes, where cmex has three, which make a wide accent wider than in
+    // the PDF, as 0.919em over ab, where TeX has 0.556em; the TeX font's
+    // wide sizes are used, and the unsized accent is mathjax-modern's ˆ or
+    // ˜, as wide as the TeX font's (internal: a delimiter's c and sizes,
+    // its glyphs in the size variants).
+    const cmexSO = {
+      0x28: [.85, .349, .458], 0x29: [.85, .349, .458],
+      0x2F: [.85, .349, .578], 0x5B: [.85, .349, .417],
+      0x5C: [.85, .349, .578], 0x5D: [.85, .349, .417],
+      0x7B: [.85, .349, .583], 0x7D: [.85, .349, .583],
+      0x2C6: [.744, -.551, .556, {ic: .008}], 0x2DC: [.722, -.597, .556],
+      0x220F: [.75, .25, .944], 0x2210: [.75, .25, .944],
+      0x2211: [.75, .25, 1.056], 0x222B: [.805, .306, .472, {ic: .138}],
+      0x222C: [.805, .306, .819, {ic: .138}], 0x222D: [.805, .306, 1.166, {ic: .138}],
+      0x222E: [.805, .306, .472, {ic: .138}], 0x22C0: [.75, .249, .833],
+      0x22C1: [.75, .267, .833], 0x22C2: [.75, .249, .833],
+      0x22C3: [.75, .249, .833], 0x2308: [.85, .349, .472],
+      0x2309: [.85, .349, .472], 0x230A: [.85, .349, .472],
+      0x230B: [.85, .349, .472], 0x27E8: [.85, .35, .472],
+      0x27E9: [.85, .35, .472], 0x2A00: [.75, .25, 1.111],
+      0x2A01: [.75, .25, 1.111], 0x2A02: [.75, .25, 1.111],
+      0x2A04: [.75, .249, .833], 0x2A06: [.75, .249, .833],
+      0x2A0C: [.805, .306, 1.513, {ic: .138}],
+    };
+    const cmexLO = {
+      0x28: [1.15, .649, .597], 0x29: [1.15, .649, .597],
+      0x2F: [1.15, .649, .811], 0x5B: [1.15, .649, .472],
+      0x5C: [1.15, .649, .811], 0x5D: [1.15, .649, .472],
+      0x7B: [1.15, .649, .667], 0x7D: [1.15, .649, .667],
+      0x2C6: [.772, -.565, 1, {ic: .004}], 0x2DC: [.75, -.611, 1],
+      0x220F: [.95, .45, 1.278], 0x2210: [.95, .45, 1.278],
+      0x2211: [.95, .45, 1.444], 0x222B: [1.36, .862, .556, {ic: .388}],
+      0x222C: [1.36, .862, 1.084, {ic: .388}], 0x222D: [1.36, .862, 1.592, {ic: .388}],
+      0x222E: [1.36, .862, .556, {ic: .388}], 0x22C0: [.95, .45, 1.111],
+      0x22C1: [.95, .45, 1.111], 0x22C2: [.949, .45, 1.111],
+      0x22C3: [.95, .449, 1.111], 0x2308: [1.15, .649, .528],
+      0x2309: [1.15, .649, .528], 0x230A: [1.15, .649, .528],
+      0x230B: [1.15, .649, .528], 0x27E8: [1.15, .649, .611],
+      0x27E9: [1.15, .649, .611], 0x2A00: [.949, .449, 1.511],
+      0x2A01: [.949, .449, 1.511], 0x2A02: [.949, .449, 1.511],
+      0x2A04: [.95, .449, 1.111], 0x2A06: [.95, .45, 1.111],
+      0x2A0C: [1.36, .862, 2.168, {c: '\u222C\u222C', ic: .388}],
+    };
+    const cmexS3 = {
+      0x28: [1.45, .949, .736], 0x29: [1.45, .949, .736],
+      0x2F: [1.45, .949, 1.044], 0x5B: [1.45, .949, .528],
+      0x5C: [1.45, .949, 1.044], 0x5D: [1.45, .949, .528],
+      0x7B: [1.45, .949, .75], 0x7D: [1.45, .949, .75],
+      0x2C6: [.772, -.564, 1.444, {ic: .003}], 0x2DC: [.749, -.61, 1.444],
+      0x2308: [1.45, .949, .583], 0x2309: [1.45, .949, .583],
+      0x230A: [1.45, .949, .583], 0x230B: [1.45, .949, .583],
+      0x27E8: [1.45, .95, .75], 0x27E9: [1.45, .949, .75],
+    };
+    const cmexS4 = {
+      0x28: [1.75, 1.249, .792], 0x29: [1.75, 1.249, .792],
+      0x2F: [1.75, 1.249, 1.278], 0x5B: [1.75, 1.249, .583],
+      0x5C: [1.75, 1.249, 1.278], 0x5D: [1.75, 1.249, .583],
+      0x7B: [1.75, 1.249, .806], 0x7D: [1.75, 1.249, .806],
+      0x2C6: [.845, -.561, 1.889, {ic: .013}], 0x2DC: [.823, -.583, 1.889],
+      0x2308: [1.75, 1.249, .639], 0x2309: [1.75, 1.249, .639],
+      0x230A: [1.75, 1.249, .639], 0x230B: [1.75, 1.249, .639],
+      0x27E8: [1.75, 1.248, .806], 0x27E9: [1.75, 1.248, .806],
+    };
     const sizes = [.5, .556, 1, 1.444, 1.889];
     const wide = (c, codes) => Object.fromEntries(codes.map(n => [n, {...Font.defaultDelimiters[n], c, sizes}]));
     // (the pieces of the bars and braces below, cmex's)
@@ -768,7 +827,7 @@ function tex8web(config, tex) {
     Font.addExtension({name: 'tex8web-tex', fontURL: fontURL('tex'),
       fonts: ['MJX-TEX-C', 'MJX-TEX-CB', 'MJX-TEX-SO', 'MJX-TEX-LO', 'MJX-TEX-S3', 'MJX-TEX-S4'],
       chars: AddFontIds({C: {'-tex-calligraphic': calligraphic}, CB: {'-tex-bold-calligraphic': boldCalligraphic},
-        SO: {'-smallop': wideSO, '-size3': barPieces}, LO: {'-largeop': wideLO}, S3: {'-size3': wideS3}, S4: {'-size4': wideS4, '-size3': bracePieces}}, 'TEX'),
+        SO: {'-smallop': cmexSO, '-size3': barPieces}, LO: {'-largeop': cmexLO}, S3: {'-size3': cmexS3}, S4: {'-size4': cmexS4, '-size3': bracePieces}}, 'TEX'),
       delimiters: {...wide(0x2C6, [0x5E, 0x2C6, 0x302]), ...wide(0x2DC, [0x7E, 0x2DC, 0x303])}});
 
     // Delimiters: cmex has five sizes of ( [ { ⟨ ⌊ ⌈ and /, about 1, 1.2,
@@ -777,28 +836,33 @@ function tex8web(config, tex) {
     // has more sizes, eight of ( or two of an arrow, which make a
     // delimiter shorter or longer than in the PDF, as 1.095em around an
     // inline fraction, where TeX has 1.2em, or 1.349em for \big\uparrow,
-    // where TeX has 1.2em. Each delimiter keeps the sizes nearest the TeX
-    // font's, which are cmex's, and is built from pieces past them. The
-    // TeX font has one size of the horizontal ones, as ‾ and ⏜, nearest
-    // mathjax-modern's second (internal: a delimiter's sizes, its
-    // variants, the size variants of its sizes, and schar, the characters
-    // of its sizes).
+    // where TeX has 1.2em. A delimiter with five sizes in cmex has the TeX
+    // font's above its first, from the tables above, each as tall as its
+    // glyph, as TeX chooses them. Another has its first size only. Each is
+    // built from mathjax-modern's pieces past its sizes (internal: a
+    // delimiter's sizes, the size variants of its sizes, and schar, the
+    // characters of its sizes, whose last is that of the larger sizes).
     const delimiters = {};
-    const keep = (codes, kept) => {
+    const cmex = [cmexSO, cmexLO, cmexS3, cmexS4];
+    const take = codes => {
       for (const n of codes) {
-        const {sizes, variants, schar} = Font.defaultDelimiters[n];
-        delimiters[n] = {...Font.defaultDelimiters[n], sizes: kept.map(i => sizes[i]),
-          variants: kept.map(i => variants?.[i] ?? i), ...schar && {schar: kept.map(i => schar[Math.min(i, schar.length - 1)])}};
+        const delimiter = Font.defaultDelimiters[n], c = delimiter.schar?.at(-1) ?? delimiter.c ?? n;
+        delimiters[n] = {...delimiter, sizes: [delimiter.sizes[0], ...cmex.map(chars => chars[c][0] + chars[c][1])],
+          variants: [0, 1, 2, 3, 4]};
       }
     };
-    keep([0x28, 0x29, 0x5B, 0x5D, 0x7B, 0x7D, 0x2308, 0x2309, 0x230A, 0x230B, 0x2329, 0x232A, 0x27E8, 0x27E9,
-      0x3008, 0x3009], [0, 2, 4, 6, 7]);
-    keep([0x2F, 0x5C, 0x2215], [0, 1, 2, 3, 4]);
-    keep([0x7C, 0x2016, 0x2190, 0x2191, 0x2192, 0x2193, 0x2194, 0x2195, 0x219E, 0x21A0, 0x21A4, 0x21A6, 0x21BC,
-      0x21BD, 0x21BE, 0x21BF, 0x21C0, 0x21C1, 0x21C2, 0x21C3, 0x21D0, 0x21D1, 0x21D2, 0x21D3, 0x21D4, 0x21D5,
-      0x21DA, 0x21DB, 0x2223, 0x2225, 0x2758, 0x27EE, 0x27EF, 0x27F5, 0x27F6, 0x27F7, 0x27F8, 0x27F9, 0x27FA,
-      0x27FB, 0x27FC], [0]);
-    keep([0xAF, 0x2C9, 0x203E, 0x20D7, 0x2312, 0x2322, 0x2323, 0x23DC, 0x23DD], [1]);
+    const keep = codes => {
+      for (const n of codes) {
+        const delimiter = Font.defaultDelimiters[n];
+        delimiters[n] = {...delimiter, sizes: [delimiter.sizes[0]], variants: [0]};
+      }
+    };
+    take([0x28, 0x29, 0x2F, 0x5B, 0x5C, 0x5D, 0x7B, 0x7D, 0x2215, 0x2308, 0x2309, 0x230A, 0x230B, 0x2329,
+      0x232A, 0x27E8, 0x27E9, 0x3008, 0x3009]);
+    keep([0x7C, 0xAF, 0x2C9, 0x2016, 0x203E, 0x20D7, 0x2190, 0x2191, 0x2192, 0x2193, 0x2194, 0x2195, 0x219E,
+      0x21A0, 0x21A4, 0x21A6, 0x21BC, 0x21BD, 0x21BE, 0x21BF, 0x21C0, 0x21C1, 0x21C2, 0x21C3, 0x21D0, 0x21D1,
+      0x21D2, 0x21D3, 0x21D4, 0x21D5, 0x21DA, 0x21DB, 0x2223, 0x2225, 0x2312, 0x2322, 0x2323, 0x23DC, 0x23DD,
+      0x2758, 0x27EE, 0x27EF, 0x27F5, 0x27F6, 0x27F7, 0x27F8, 0x27F9, 0x27FA, 0x27FB, 0x27FC]);
     // The bars are built from cmex's pieces, from the TeX font above.
     // mathjax-modern's pieces of ‖ are 0.057em from its sides, where
     // cmex's are 0.145em, and its pieces of | 0.113em. The piece is the
