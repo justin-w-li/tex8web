@@ -640,12 +640,11 @@ const modernFonts = {
     accents: [0.286, 0.328, 0.286, 0.55, 0.334, 0.263, 0.443, 0.347, 0.396, 0.479, 0.764, 0.304],
     // (the four inline formulas of dots, and \overrightarrow{AB} and
     // \overleftarrow{AB}, each by its index)
-    widths: [[15, 4.267], [16, 4.569], [17, 3.322], [18, 4.569], [25, 1.509], [26, 1.509]],
+    widths: [[16, 4.267], [17, 4.569], [18, 3.322], [19, 4.569], [26, 1.509], [27, 1.509]],
     // (below a text √: the most gap to a fraction bar, where TeX's is
     // 0.034 and the page's 0.06 to 0.084 by where the line falls on the
     // pixels, and the drop of its subscript, measured on the page, where
-    // TeX's is 0.26; with the √'s box hanging below the baseline, the drop
-    // was 0.995)
+    // TeX's is 0.26)
     surd: [0.1, 0.234],
     // (the height of \vdots's and \ddots's boxes, which have no depth)
     dots: 1.506,

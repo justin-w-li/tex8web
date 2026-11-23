@@ -929,7 +929,7 @@ function tex8web(config, tex) {
       if (n !== 0x221A || variant !== 'normal' || !this.parent.node.isKind('mtext')) return char;
       return [char[0] + raise, char[1] - raise, ...char.slice(2)];
     };
-    Font.defaultStyles['mjx-mtext mjx-c.mjx-c221A'] = {'vertical-align': `${raise}em`};
+    Font.defaultStyles['mjx-mtext mjx-c[class=mjx-c221A]'] = {'vertical-align': `${raise}em`};
   }
 
   const ready = startup.ready;
