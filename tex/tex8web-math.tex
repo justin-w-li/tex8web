@@ -10,10 +10,11 @@
 % - no automatic equation numbers (see \__web_part:nn below)
 % - \colon as in amsmath (MathJax's is a plain punctuation colon), and
 %   \relax, which MathJax lacks and macros often end in
-% - MathJax's Computer Modern font: its default, New Computer Modern, is
-%   heavier than the PDF, and its Latin Modern misplaces accents on Greek
-%   letters. For math the PDF sets in Times, Palatino, or New Century
-%   Schoolbook, its TeX Gyre font (\web@mathfont)
+% - MathJax's Latin Modern Math, which matches the text's Latin Modern:
+%   MathJax's default, New Computer Modern, is heavier than the PDF.
+%   tex8web.js changes Latin Modern Math where it differs from the PDF
+%   (matchModernFont). For math the PDF sets in Times, Palatino, or New
+%   Century Schoolbook, MathJax's TeX Gyre font (\web@mathfont)
 % - display math that does not fit scrolls
 % - math at the text size, as in TeX. Matching x-heights makes it a bit
 %   small

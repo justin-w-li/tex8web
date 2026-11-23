@@ -23,9 +23,9 @@ https://ctan.org/pkg/xcharter
 
 MathJax's fonts (mathjax/mjx-*, except those named below), version
 4.1.3, from the npm packages @mathjax/mathjax-tex-font and its
-extensions for bbm, bboldx, dsfont and mhchem. Copyright MathJax, Inc. and the authors each font names.
-Released under the Apache License 2.0, below; the TeX fonts also under
-the SIL Open Font License 1.1, below. The complete fonts:
+extensions for bbm, bboldx, dsfont and mhchem. Copyright MathJax, Inc.
+and the authors each font names. Released under the Apache License 2.0,
+below; the TeX fonts also under the SIL Open Font License 1.1, below. The complete fonts:
 https://github.com/mathjax/MathJax-fonts
 
 MathJax's TeX Gyre math fonts (mathjax/mjx-gt-*, mjx-gp-*, mjx-gs-*),
