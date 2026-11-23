@@ -215,7 +215,7 @@ These fonts come from packages such as `mathptmx`, `txfonts`, `newtxtext`, `math
 
 A font chosen in the text, for example with `\fontfamily{bch}`, is shown the same way. Other fonts are shown in Latin Modern. If your document's text is in its sans-serif font, set with `\familydefault`, the page is in a sans-serif font too.
 
-The math is in MathJax's Latin Modern Math, which matches the Latin Modern text. Its `\mathbb` and `\mathcal` capitals, accents, delimiters, braces, and dots such as `\ldots` and `\vdots` are as in the PDF. With `mathptmx`, `newtxmath`, `txfonts`, `mathpazo`, `newpxmath`, `pxfonts`, or `fouriernc`, the math is in the matching MathJax TeX Gyre font: Termes for Times, Pagella for Palatino, or Schola for New Century Schoolbook. With a `newtxmath` option for another font, the math stays in Latin Modern Math, except with `nc`, which is New Century Schoolbook.
+The math is in MathJax's Latin Modern Math, which matches the Latin Modern text. Its `\mathbb` and `\mathcal` capitals, accents, braces, dots such as `\ldots` and `\vdots`, and the sizes of its delimiters are as in the PDF. An arrow or `\lgroup` taller than its glyph, as `\big\uparrow`, is built from Latin Modern Math's pieces, 0.13 to 0.23em narrower than in the PDF. With `mathptmx`, `newtxmath`, `txfonts`, `mathpazo`, `newpxmath`, `pxfonts`, or `fouriernc`, the math is in the matching MathJax TeX Gyre font: Termes for Times, Pagella for Palatino, or Schola for New Century Schoolbook. With a `newtxmath` option for another font, the math stays in Latin Modern Math, except with `nc`, which is New Century Schoolbook.
 
 ### Headings
 

@@ -156,7 +156,7 @@ Latin Modern Math, MathJax's `mathjax-modern`, is the math font of a document in
 - `\mathcal` and its bold have capitals of another design. The calligraphic capitals of MathJax's TeX font are used, which are cmsy's.
 - The skews and combining offsets set accents off center, as a skew of 0.303em on the italic a, where TeX has 0.022em. New Computer Modern's are used for each character that is as wide in both fonts: those of its data in `tex-chtml.js` for the characters loaded with the font, and a table of those of its dynamic files for the characters of mathjax-modern's dynamic files, loaded when one is first used.
 - `\widehat` and `\widetilde` have seven sizes, where cmex has three, so a wide accent can be wider than in the PDF, as 0.919em over ab, where TeX has 0.556em. The wide accents of MathJax's TeX font are used, which are cmex's.
-- Delimiters have eight sizes, where cmex has five of `(`, `[`, `{`, `⟨`, `⌊`, `⌈`, and `/`, so a delimiter can be shorter than in the PDF, as 1.095em around an inline fraction, where TeX has 1.2em. Only the five sizes nearest cmex's are kept. Of `|` and `‖`, cmex has only a piece to repeat, so the bars are built to the height asked, from the pieces of MathJax's TeX font, which are cmex's: mathjax-modern's pieces of `‖` are 0.057em from its sides, where cmex's are 0.145em. Latin Modern Math's `‖` is 0.398em wide, so it is drawn as its `∥`, which is cmsy's `‖`, 0.5em wide. Text copied from a page without MathML has `∥`.
+- Delimiters have more sizes than in cmex: eight of `(`, where cmex has five of `(`, `[`, `{`, `⟨`, `⌊`, `⌈`, and `/`, and two of an arrow, where cmex has one of the arrows, the bars, and `\lgroup`. So a delimiter can be shorter or taller than in the PDF, as 1.095em around an inline fraction or 1.349em for `\big\uparrow`, where TeX has 1.2em. Each delimiter keeps the sizes nearest those of MathJax's TeX font, which are cmex's, and is built from pieces past them. An arrow or `\lgroup` is built from mathjax-modern's pieces, narrower than cmex's: 0.5em for `↑`, where TeX's is 0.667em. Of `|` and `‖`, cmex has only a piece to repeat, so the bars are built to the height asked, from the pieces of MathJax's TeX font, which are cmex's: mathjax-modern's pieces of `‖` are 0.057em from its sides, where cmex's are 0.145em. Latin Modern Math's `‖` is 0.398em wide, so it is drawn as its `∥`, which is cmsy's `‖`, 0.5em wide. Text copied from a page without MathML has `∥`.
 - `\overbrace` and `\underbrace` have braces thinner than cmex's. They are built from the pieces of MathJax's TeX font, which are cmex's, as TeX builds them.
 - `√` in `\text` hangs below the baseline, as the radical of `\sqrt` does. It is raised to the baseline: its box in MathJax's layout, from which scripts are placed and rows sized, by `getVariantChar()` of MathJax's text node, and the glyph and its box on the page by a style. The font's data and style are shared with `\sqrt` and `\surd`, which hang.
 - The dots of `\ldots`, `\cdots`, `\vdots`, and `\ddots` are closer together than in TeX. Each stays one character in the MathML, for speech, and is drawn as the font's dots with six-per-em spaces between them, or with text shadows for the dots that go up. Text copied from a page without MathML has these dots and spaces, or one dot for `\vdots` and `\ddots`.
@@ -304,7 +304,7 @@ The problems a document is allowed to have are listed in `test/expected.json`, e
 Differences from the PDF too small for the [known limitations](DOCUMENTATION.md#known-limitations):
 
 - **Math in a page built with Node is laid out from estimates**, not browser measurements, for example text in math without MathJax glyphs. A box can be a pixel or so off.
-- **Delimiters and radicals** can differ slightly in size from the PDF, as they come from the MathJax font.
+- **Radicals, and delimiters in a math font other than Latin Modern Math,** can differ slightly in size from the PDF, as they come from the MathJax font.
 - **Dots in a subscript or superscript**, as in `x_{1,\ldots,n}`, are as far apart as outside it. In the PDF, the thin spaces between them are dropped there, so the dots take 0.83em where the page has 1.17em.
 - **The space before inline math after a word in another font**, for example an algorithm2e keyword before its argument. It can be in the word's font without Node, and is in the text font with Node. The two pages can be a pixel apart, and neither always matches the PDF.
 - **An `\fbox` or `\colorbox` in a line** is a few points taller than in the PDF. Its text is as tall as a line of the font, where TeX's box is as tall as its letters.
@@ -334,7 +334,7 @@ To make a new `.github/screenshot.png`:
 Move `mathjax` and every `@mathjax/*` package to the new version in one commit, and run:
 
 - the `typeset` checks of `npm test`, for the internals that `tex8web.js` depends on
-- `test/unit/modern-font.test.mjs`, for the tables of Latin Modern Math's letters and wide accents in `tex8web.js`
+- `test/unit/modern-font.test.mjs`, for the tables of Latin Modern Math's letters, skews, wide accents, delimiters, bars, and braces in `tex8web.js`
 - `npm run test:visual`, for the comparison of MathJax in Node with MathJax in the browser
 - `npm run regress` on your documents, compared with their baselines
 
