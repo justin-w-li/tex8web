@@ -706,8 +706,9 @@ function tex8web(config, tex) {
 
     // √ in text, as \textsurd in \text: mathjax-modern's √ is the radical
     // of \sqrt, which hangs below the baseline, as cmsy's \surd does. It
-    // is raised to stand on the baseline, as the text's √ does in the PDF.
-    Font.defaultStyles['mjx-mtext mjx-c.mjx-c221A'] = {position: 'relative', top: '-.76em'};
+    // is raised to stand on the baseline, as the text's √ does in the PDF,
+    // and its line is no deeper than the others.
+    Font.defaultStyles['mjx-mtext mjx-c.mjx-c221A'] = {'vertical-align': '.76em'};
   }
 
   const ready = startup.ready;

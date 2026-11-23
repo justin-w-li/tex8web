@@ -528,7 +528,8 @@ const laps = { 'test-lefteqn': 18 };
 // font of the first character of each formula given, and none of
 // mathjax-modern's own calligraphic letters; the center of each accent
 // but those built from pieces, from its base's left edge, in ems, as
-// placed by MathJax with New Computer Modern's skews; each inline formula given as wide as in the PDF (TeX's \wd of
+// placed by MathJax with New Computer Modern's skews; the paragraph of a
+// √ in text, one line, in px, as tall as a line of text; each inline formula given as wide as in the PDF (TeX's \wd of
 // its box, in ems); ⋮ and ⋱, each one dot drawn with two text shadows,
 // in a box as high as in the PDF; the ( of the two inline formulas
 // before the last four, as high as in the PDF; and the bars of the last
@@ -577,6 +578,13 @@ const modernFont = want => `(() => {
     if (off(height, tall)) wrong.push([\`bar \${i + 1}'s height\`, height.toFixed(3), tall]);
     if (off(width, wide)) wrong.push([\`bar \${i + 1}'s width\`, width.toFixed(3), wide]);
   });
+  const surd = document.querySelector('mjx-mtext mjx-c.mjx-c221A')?.closest('p'), line = surd?.cloneNode();
+  if (line) {
+    line.textContent = 'Text';
+    surd.after(line);
+  }
+  if (!surd || Math.abs(surd.offsetHeight - line.offsetHeight) > 0.5) wrong.push(["the text √'s line", surd?.offsetHeight, line?.offsetHeight]);
+  line?.remove();
   const parens = formulas.slice(-6, -4).map(m => m.querySelector('mjx-c.mjx-c28'));
   parens.forEach((c, i) => {
     const got = c && c.getBoundingClientRect().height / em(c);
@@ -593,8 +601,8 @@ const modernFonts = {
     // \widetilde{xyz}, \overrightarrow{AB}, \overleftarrow{AB}, and
     // \bar y, measured on the page: TeX's rule differs)
     accents: [0.286, 0.328, 0.286, 0.55, 0.479, 0.764, 0.754, 0.754, 0.304],
-    // (the inline formulas from the eighth, each by its index)
-    widths: [[7, 4.267], [8, 4.569], [9, 3.322], [10, 4.569]],
+    // (the inline formulas from the ninth, each by its index)
+    widths: [[8, 4.267], [9, 4.569], [10, 3.322], [11, 4.569]],
     // (the height of \vdots's and \ddots's boxes, which have no depth)
     dots: 1.506,
     // (each bar's height and width: of \bigm|, \| around a fraction,
