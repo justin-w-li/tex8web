@@ -105,10 +105,12 @@ end
 -- removes the empty paragraph html4.4ht opens between a heading and an
 -- enumerate or a description. Through that paragraph, the list's margin
 -- would still collapse with the heading's (css/tex8web.css sets that
--- margin as LaTeX does, with no \topsep under a heading). The paragraph
--- may hold anchors written before the first \item (tex8web-hooks.sty).
--- They go to the front of the first item, or of an <li>'s label, as the
--- <li> is a grid (css/tex8web.css).
+-- margin as LaTeX does, with no \topsep under a heading). A paragraph
+-- that holds only anchors goes too, and its anchors go to the end of the
+-- heading. Such anchors come from a \phantomsection or an
+-- \addcontentsline under a heading, or from anchors before the list's
+-- first \item (tex8web-hooks.sty). They go after the heading's own anchor,
+-- which page.lua reads as the first one.
 function M.heading_lists(document)
   -- (each parent's elements are listed once; the list goes stale, but a
   -- removed paragraph was before only the list it was found for)
@@ -129,11 +131,9 @@ function M.heading_lists(document)
     local anchors = heading and heading:get_element_name():match("^h[2-6]$") and p:get_element_name() == "p"
       and only_anchors(p)
     if anchors then
-      local item = dom.elements(list)[1]
-      local front = item and item:get_element_name() == "li" and dom.elements(item)[1] or item
-      for i = #anchors, 1, -1 do
-        anchors[i]:remove_node()
-        front:add_child_node(anchors[i], 1)
+      for _, a in ipairs(anchors) do
+        a:remove_node()
+        heading:add_child_node(a)
       end
       p:remove_node()
     end

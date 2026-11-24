@@ -2045,17 +2045,20 @@ const contents = {
     /^(?![^]*(?:\/span&gt;|(?<!&)#x0*[0-9A-F]{2,};))/,
   ],
   // (anchors before a list's first \item or \bibitem. Under a heading, a
-  // \phantomsection's anchors are at the front of the first item, and the
-  // heading is right before the list, which a \ref links. A \hypertarget
-  // after a paragraph ends that paragraph. The references' entry links to
-  // their heading, and the anchor is in the empty paragraph that tex4ht
-  // leaves open between the heading and the list. A \phantomsection right
-  // after the first \item has its anchor in the item, which a \ref links)
+  // \phantomsection's anchors end the heading, which is right before the
+  // list, and a \ref links them. A \hypertarget after a paragraph ends
+  // that paragraph. A \phantomsection and an \addcontentsline between a
+  // starred heading and a list end the heading, and the entry links the
+  // heading. The references' entry links to their heading, and the anchor
+  // is in the empty paragraph that tex4ht leaves open between the heading
+  // and the list. A \phantomsection right after the first \item has its
+  // anchor in the item, which a \ref links)
   'test-phantomsection': [
     /items <a href='#([^']+)'>[^]*<li>(?:(?!<\/li>)[^])*<a id='likesection\.1'><\/a><a id='\1'><\/a> First\./,
-    /and <a href='#([^']+)'>[^]*>Two<\/h4>\s*<ol [^>]*><li><span class='tex8web-label'><a id='likesection\.2'><\/a><a id='\1'><\/a>/,
+    /and <a href='#([^']+)'>[^]*>Two<a id='likesection\.2'><\/a><a id='\1'><\/a><\/h4>\s*<ol /,
+    /<a href='#problems'>Problems<\/a>[^]*<h3 class='likesectionHead' id='problems'>(?:(?!<\/h3>)[^])*Problems<a id='likesection\.3'><\/a>(?:<a id='[^']+'><\/a>)*<\/h3>\s*<ol /,
     /<a href='#t'>the target<\/a>[^]*Before the target\.<a id='t'><\/a>\s*<\/p><ol /,
-    /<a href='#([^']+)'>References<\/a>[^]*<h3 class='likesectionHead' id='\1'>(?:(?!<\/h3>)[^])*References<\/h3>\s*<p class='noindent'[^>]*><a id='likesection\.3'><\/a>(?:\s*<a id='[^']+'><\/a>)*\s*<\/p><section class='thebibliography'/,
+    /<a href='#([^']+)'>References<\/a>[^]*<h3 class='likesectionHead' id='\1'>(?:(?!<\/h3>)[^])*References<\/h3>\s*<p class='noindent'[^>]*><a id='likesection\.4'><\/a>(?:\s*<a id='[^']+'><\/a>)*\s*<\/p><section class='thebibliography'/,
   ],
 };
 

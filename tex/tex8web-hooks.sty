@@ -422,15 +422,18 @@
 % "missing \item" error (\if@newlist, latex.ltx). In the PDF, the anchor
 % stays in the vertical list. The anchor is written there, as latex.4ht's
 % \anc:lbl writes its own. Under a heading, text.lua's heading_lists moves
-% it into the list's first item. hyperref.4ht's \hypertarget calls \Link
-% without \hyper@anchorstart.
+% it into the heading. hyperref.4ht's \hypertarget calls \Link without
+% \hyper@anchorstart.
 \AddToHook{file/hyperref.4ht/after}{%
     \web@needs{hyper@anchorstart}%
     \let\web@anchorstart\hyper@anchorstart
     \let\web@anchorend\hyper@anchorend
-    \let\web@leavevmode\leavevmode
+    \let\web@anchor@mode\relax
     \def\hyper@anchorstart#1{%
-        \if@newlist \let\leavevmode\empty \fi
+        \if@newlist
+            \let\web@leavevmode\leavevmode \let\leavevmode\empty
+            \def\web@anchor@mode{\let\leavevmode\web@leavevmode}%
+        \fi
         \ifcsname web@anchor@#1\endcsname
             \global\let\web@anchor@end\relax
         \else
@@ -439,7 +442,7 @@
             \web@anchorstart{#1}%
         \fi}%
     \def\hyper@anchorend{\web@anchor@end
-        \if@newlist \let\leavevmode\web@leavevmode \fi}%
+        \web@anchor@mode \let\web@anchor@mode\relax}%
     \let\web@hypertarget\hypertarget
     \def\hypertarget#1#2{{\if@newlist \let\leavevmode\empty \fi
         \web@hypertarget{#1}{}}#2}%

@@ -807,12 +807,12 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
     equal(body(d), "<h3>A</h3>\n<ol><li>a</li></ol><h3>B</h3><ul><li>b</li></ul><p>x</p><ul><li>c</li></ul>")
   end,
 
-  ["text.heading_lists: the anchors of a paragraph between a heading and a list, at the front of its first item"] = function()
-    local d = parse([[<h3>A</h3><p><a id="p1"></a>]] .. "\n" .. [[<a id="x1"></a></p><ol><li><span>1.</span><div>a</div></li></ol>]]
+  ["text.heading_lists: the anchors of a paragraph between a heading and a list, at the end of the heading"] = function()
+    local d = parse([[<h3><a id="h1"></a>A</h3><p><a id="p1"></a>]] .. "\n" .. [[<a id="x1"></a></p><ol><li>a</li></ol>]]
       .. [[<h3>B</h3><p><a id="p2"></a></p><dl><dt>b</dt></dl><h3>C</h3><p><a id="p3"></a>c</p><ol><li>c</li></ol>]])
     text.heading_lists(d)
-    equal(body(d), [[<h3>A</h3><ol><li><span><a id='p1'></a><a id='x1'></a>1.</span><div>a</div></li></ol>]]
-      .. [[<h3>B</h3><dl><dt><a id='p2'></a>b</dt></dl><h3>C</h3><p><a id='p3'></a>c</p><ol><li>c</li></ol>]])
+    equal(body(d), [[<h3><a id='h1'></a>A<a id='p1'></a><a id='x1'></a></h3><ol><li>a</li></ol>]]
+      .. [[<h3>B<a id='p2'></a></h3><dl><dt>b</dt></dl><h3>C</h3><p><a id='p3'></a>c</p><ol><li>c</li></ol>]])
   end,
 
   ["text.sidenotes: many footnotes in time"] = function()

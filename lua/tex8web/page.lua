@@ -239,7 +239,8 @@ end
 -- order of the .4tc file, and suffixes a repeated title with a number. So
 -- an entry before its heading has the plain name, and its anchor is moved
 -- to the front of the heading, which then takes that name. An entry after
--- its heading links to the heading's anchor instead.
+-- its heading links to the heading's anchor instead, as does one whose
+-- paragraph text.lua's heading_lists has moved into the heading.
 local function unnumbered(el)
   return el and dom.class_matches(el, "like%a*Head") and el:get_element_name():match("^h[1-6]$") and el
 end
@@ -250,7 +251,9 @@ function M.toc_targets(document)
   for _, link in ipairs(document:query_selector("nav.tex8web-toc div.tableofcontents a")) do
     local target = anchors[(link:get_attribute("href") or ""):match("^#(.+)")]
     local paragraph = target and target:get_parent()
-    if paragraph and paragraph:get_element_name() == "p" and not paragraph:get_text():find("%S") then
+    if unnumbered(paragraph) then
+      link:set_attribute("href", "#" .. anchor(paragraph))
+    elseif paragraph and paragraph:get_element_name() == "p" and not paragraph:get_text():find("%S") then
       local siblings, before, after = dom.elements(paragraph:get_parent())
       for i, el in ipairs(siblings) do
         if el == paragraph then
