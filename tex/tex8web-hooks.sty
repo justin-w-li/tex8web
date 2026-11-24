@@ -422,8 +422,10 @@
 % "missing \item" error (\if@newlist, latex.ltx). In the PDF, the anchor
 % stays in the vertical list. The anchor is written there, as latex.4ht's
 % \anc:lbl writes its own. Under a heading, text.lua's heading_lists moves
-% it into the heading. hyperref.4ht's \hypertarget calls \Link without
-% \hyper@anchorstart.
+% it into the heading. \if@newlist also holds at the start of any trivlist
+% environment and after an \item until its text, where tex4ht has already
+% started a paragraph, so the anchor is unchanged there. hyperref.4ht's
+% \hypertarget calls \Link without \hyper@anchorstart.
 \AddToHook{file/hyperref.4ht/after}{%
     \web@needs{hyper@anchorstart}%
     \let\web@anchorstart\hyper@anchorstart
