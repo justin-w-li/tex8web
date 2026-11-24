@@ -1,18 +1,26 @@
-% hyperref's \phantomsection as the first thing in a list, before its
-% first \bibitem, with the references' line in the table of contents. In
-% the PDF, the line's link goes to the top of the list. On the page, the
-% line links the heading right above the list. A \phantomsection right
-% after an \item has its anchor in the item.
+% hyperref's anchors as the first thing in a list, before its first
+% \item or \bibitem: a \phantomsection under a heading, a \hypertarget,
+% and a \phantomsection with the references' line in the table of
+% contents. In the PDF, that line's link goes to the top of the list. On
+% the page, the line links the heading right above the list. A
+% \phantomsection right after an \item has its anchor in the item.
 \documentclass{article}
 \usepackage{hyperref}
 \begin{document}
 \tableofcontents
 \section{One}
-Text \cite{x}, and item \ref{a}.
+Text \cite{x}, items \ref{a} and \ref{q}, and \hyperlink{t}{the target}.
 \begin{enumerate}
-  \item First.
-  \item \phantomsection\label{a} Second.
+  \item \phantomsection\label{a} First.
+  \item Second.
 \end{enumerate}
+\subsection{Two}
+\begin{enumerate}
+  \phantomsection\label{q}
+  \item Third.
+\end{enumerate}
+Before the target.
+\begin{enumerate}\hypertarget{t}{}\item Fourth.\end{enumerate}
 \begin{thebibliography}{9}
   \phantomsection
   \addcontentsline{toc}{section}{\refname}

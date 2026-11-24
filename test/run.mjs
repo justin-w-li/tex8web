@@ -2044,13 +2044,18 @@ const contents = {
     /<a href='https:\/\/example\.com\/\?a=1&amp;b=2'>/, /<a href='https:\/\/example\.com\/it&(?:#39|#x0*27|apos);s\?c=3&amp;d=4'>/,
     /^(?![^]*(?:\/span&gt;|(?<!&)#x0*[0-9A-F]{2,};))/,
   ],
-  // (a \phantomsection before the first \bibitem: the references' entry
-  // links to their heading, and the anchor is in the empty paragraph that
-  // tex4ht leaves open between the heading and the list. One right after
-  // an \item has its anchor in the item, which a \ref links)
+  // (anchors before a list's first \item or \bibitem. Under a heading, a
+  // \phantomsection's anchors are at the front of the first item, and the
+  // heading is right before the list, which a \ref links. A \hypertarget
+  // after a paragraph ends that paragraph. The references' entry links to
+  // their heading, and the anchor is in the empty paragraph that tex4ht
+  // leaves open between the heading and the list. A \phantomsection right
+  // after the first \item has its anchor in the item, which a \ref links)
   'test-phantomsection': [
-    /and item <a href='#([^']+)'>[^]*<li>(?:(?!<\/li>)[^])*<a id='likesection\.1'><\/a><a id='\1'><\/a> Second\./,
-    /<a href='#([^']+)'>References<\/a>[^]*<h3 class='likesectionHead' id='\1'>(?:(?!<\/h3>)[^])*References<\/h3>\s*<p class='noindent'[^>]*><a id='likesection\.2'><\/a>(?:\s*<a id='[^']+'><\/a>)*\s*<\/p><section class='thebibliography'/,
+    /items <a href='#([^']+)'>[^]*<li>(?:(?!<\/li>)[^])*<a id='likesection\.1'><\/a><a id='\1'><\/a> First\./,
+    /and <a href='#([^']+)'>[^]*>Two<\/h4>\s*<ol [^>]*><li><span class='tex8web-label'><a id='likesection\.2'><\/a><a id='\1'><\/a>/,
+    /<a href='#t'>the target<\/a>[^]*Before the target\.<a id='t'><\/a>\s*<\/p><ol /,
+    /<a href='#([^']+)'>References<\/a>[^]*<h3 class='likesectionHead' id='\1'>(?:(?!<\/h3>)[^])*References<\/h3>\s*<p class='noindent'[^>]*><a id='likesection\.3'><\/a>(?:\s*<a id='[^']+'><\/a>)*\s*<\/p><section class='thebibliography'/,
   ],
 };
 

@@ -415,11 +415,22 @@
 % a repeated destination. hypcap's \capstart in a float without a caption
 % writes an anchor and steps the counter back, so the next float's anchor
 % has the same name.
+%
+% In a list before its first \item, as with a \phantomsection or a
+% \hypertarget there, hyperref.4ht writes the anchor with \HCode, whose
+% \leavevmode starts a paragraph. A paragraph there raises LaTeX's
+% "missing \item" error (\if@newlist, latex.ltx). In the PDF, the anchor
+% stays in the vertical list. The anchor is written there, as latex.4ht's
+% \anc:lbl writes its own. Under a heading, text.lua's heading_lists moves
+% it into the list's first item. hyperref.4ht's \hypertarget calls \Link
+% without \hyper@anchorstart.
 \AddToHook{file/hyperref.4ht/after}{%
     \web@needs{hyper@anchorstart}%
     \let\web@anchorstart\hyper@anchorstart
     \let\web@anchorend\hyper@anchorend
+    \let\web@leavevmode\leavevmode
     \def\hyper@anchorstart#1{%
+        \if@newlist \let\leavevmode\empty \fi
         \ifcsname web@anchor@#1\endcsname
             \global\let\web@anchor@end\relax
         \else
@@ -427,24 +438,11 @@
             \global\let\web@anchor@end\web@anchorend
             \web@anchorstart{#1}%
         \fi}%
-    \def\hyper@anchorend{\web@anchor@end}%
-}
-
-% hyperref's \phantomsection in a list before its first \item.
-% hyperref.4ht writes the anchor with \HCode, whose \leavevmode starts a
-% paragraph, and a paragraph there raises LaTeX's "missing \item" error
-% (\if@newlist, latex.ltx). In the PDF, \Hy@raisedlink leaves the anchor
-% in the vertical list. The anchor is written there, as latex.4ht's
-% \anc:lbl writes its own. Elsewhere, the anchor keeps the empty paragraph
-% that page.lua's toc_targets looks for beside an unnumbered heading.
-\AddToHook{file/hyperref.4ht/after}{%
-    \web@needs{phantomsection}%
-    \let\web@phantomsection\phantomsection
-    \def\phantomsection{%
-        \let\web@leavevmode\leavevmode
-        \if@newlist \let\leavevmode\empty \fi
-        \web@phantomsection
-        \let\leavevmode\web@leavevmode}%
+    \def\hyper@anchorend{\web@anchor@end
+        \if@newlist \let\leavevmode\web@leavevmode \fi}%
+    \let\web@hypertarget\hypertarget
+    \def\hypertarget#1#2{{\if@newlist \let\leavevmode\empty \fi
+        \web@hypertarget{#1}{}}#2}%
 }
 
 % \@title before any \title, which is the kernel's error. tex8web-text.tex

@@ -88,10 +88,27 @@ function M.box_theorems(document)
   end
 end
 
+-- the anchors in p, if p holds nothing else
+local function only_anchors(p)
+  local anchors = {}
+  for _, node in ipairs(p:get_children()) do
+    if node:is_element() then
+      if node:get_element_name() ~= "a" or not node:get_attribute("id") or not dom.is_blank(node) then return nil end
+      anchors[#anchors + 1] = node
+    elseif node:is_text() and node:get_text():find("%S") then
+      return nil
+    end
+  end
+  return anchors
+end
+
 -- removes the empty paragraph html4.4ht opens between a heading and an
 -- enumerate or a description. Through that paragraph, the list's margin
 -- would still collapse with the heading's (css/tex8web.css sets that
--- margin as LaTeX does, with no \topsep under a heading).
+-- margin as LaTeX does, with no \topsep under a heading). The paragraph
+-- may hold anchors written before the first \item (tex8web-hooks.sty).
+-- They go to the front of the first item, or of an <li>'s label, as the
+-- <li> is a grid (css/tex8web.css).
 function M.heading_lists(document)
   -- (each parent's elements are listed once; the list goes stale, but a
   -- removed paragraph was before only the list it was found for)
@@ -109,8 +126,15 @@ function M.heading_lists(document)
   for _, list in ipairs(document:query_selector("ol, ul, dl")) do
     local p = before(list)
     local heading = p and before(p)
-    if heading and heading:get_element_name():match("^h[2-6]$") and p:get_element_name() == "p"
-        and dom.is_blank(p) then
+    local anchors = heading and heading:get_element_name():match("^h[2-6]$") and p:get_element_name() == "p"
+      and only_anchors(p)
+    if anchors then
+      local item = dom.elements(list)[1]
+      local front = item and item:get_element_name() == "li" and dom.elements(item)[1] or item
+      for i = #anchors, 1, -1 do
+        anchors[i]:remove_node()
+        front:add_child_node(anchors[i], 1)
+      end
       p:remove_node()
     end
   end
