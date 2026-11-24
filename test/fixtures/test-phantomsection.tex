@@ -1,0 +1,21 @@
+% hyperref's \phantomsection as the first thing in a list, before its
+% first \bibitem, with the references' line in the table of contents. In
+% the PDF, the line's link goes to the top of the list. On the page, the
+% line links the heading right above the list. A \phantomsection right
+% after an \item has its anchor in the item.
+\documentclass{article}
+\usepackage{hyperref}
+\begin{document}
+\tableofcontents
+\section{One}
+Text \cite{x}, and item \ref{a}.
+\begin{enumerate}
+  \item First.
+  \item \phantomsection\label{a} Second.
+\end{enumerate}
+\begin{thebibliography}{9}
+  \phantomsection
+  \addcontentsline{toc}{section}{\refname}
+  \bibitem{x} A. Author. Title.
+\end{thebibliography}
+\end{document}

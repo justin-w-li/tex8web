@@ -2044,6 +2044,14 @@ const contents = {
     /<a href='https:\/\/example\.com\/\?a=1&amp;b=2'>/, /<a href='https:\/\/example\.com\/it&(?:#39|#x0*27|apos);s\?c=3&amp;d=4'>/,
     /^(?![^]*(?:\/span&gt;|(?<!&)#x0*[0-9A-F]{2,};))/,
   ],
+  // (a \phantomsection before the first \bibitem: the references' entry
+  // links to their heading, and the anchor is in the empty paragraph that
+  // tex4ht leaves open between the heading and the list. One right after
+  // an \item has its anchor in the item, which a \ref links)
+  'test-phantomsection': [
+    /and item <a href='#([^']+)'>[^]*<li>(?:(?!<\/li>)[^])*<a id='likesection\.1'><\/a><a id='\1'><\/a> Second\./,
+    /<a href='#([^']+)'>References<\/a>[^]*<h3 class='likesectionHead' id='\1'>(?:(?!<\/h3>)[^])*References<\/h3>\s*<p class='noindent'[^>]*><a id='likesection\.2'><\/a>(?:\s*<a id='[^']+'><\/a>)*\s*<\/p><section class='thebibliography'/,
+  ],
 };
 
 // Text back in its font after a font command that the PDF keeps in a

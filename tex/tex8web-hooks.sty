@@ -430,6 +430,23 @@
     \def\hyper@anchorend{\web@anchor@end}%
 }
 
+% hyperref's \phantomsection in a list before its first \item.
+% hyperref.4ht writes the anchor with \HCode, whose \leavevmode starts a
+% paragraph, and a paragraph there raises LaTeX's "missing \item" error
+% (\if@newlist, latex.ltx). In the PDF, \Hy@raisedlink leaves the anchor
+% in the vertical list. The anchor is written there, as latex.4ht's
+% \anc:lbl writes its own. Elsewhere, the anchor keeps the empty paragraph
+% that page.lua's toc_targets looks for beside an unnumbered heading.
+\AddToHook{file/hyperref.4ht/after}{%
+    \web@needs{phantomsection}%
+    \let\web@phantomsection\phantomsection
+    \def\phantomsection{%
+        \let\web@leavevmode\leavevmode
+        \if@newlist \let\leavevmode\empty \fi
+        \web@phantomsection
+        \let\leavevmode\web@leavevmode}%
+}
+
 % \@title before any \title, which is the kernel's error. tex8web-text.tex
 % compares \@title with it to tell whether the document has a title.
 \let\web@notitle\@title
