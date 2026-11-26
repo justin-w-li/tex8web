@@ -422,7 +422,10 @@
       }
       return rows;
     };
-    const show = (section, open, slide) => {
+    // A section's subsections shown or hidden at once. The function returned
+    // slides them from their former state, so that the layout at its end
+    // can be measured first.
+    const show = (section, open) => {
       const rows = under(section);
       section.querySelector('.tex8web-toc-more')?.setAttribute('aria-expanded', open);
       // the first entries, subsections before any section, are shown by the
@@ -430,14 +433,13 @@
       if (!isSection(section)) section.classList.toggle('tex8web-open', open);
       for (const row of rows) {
         row.getAnimations().forEach(animation => animation.cancel());
-        if (open) row.classList.add('tex8web-open');
+        row.classList.toggle('tex8web-open', open);
       }
-      if (!slide || !motion.matches) {
-        if (!open) rows.forEach(row => row.classList.remove('tex8web-open'));
-        return;
-      }
-      // each row clipped to its box as it grows, with clip-path, which
-      // animates
+      return () => slide(rows, open);
+    };
+    // each row clipped to its box as it grows, with clip-path, which animates
+    const slide = (rows, open) => {
+      rows.forEach(row => row.classList.add('tex8web-open'));
       for (const row of rows) {
         const top = getComputedStyle(row).paddingTop;
         const shut = { height: '0px', paddingTop: '0px', clipPath: 'inset(0)' };
@@ -464,22 +466,89 @@
     // followed: the entry a link led to, kept until the reader scrolls or
     // its heading, once seen, leaves the screen
     let current, opened, followed, seen;
-    // aimed: the target of a link followed, until the scrolling stops (aim());
+    // aimed: the target of a link followed, until the scrolling stops (aim()),
+    // or the root for a link to the page's top, such as the title's;
     // down: the page scrolls down to it
     let aimed, down;
     // the layout, read once and on each resize: layout() in update(), after
     // its changes, would restyle the whole page
     let wide = layout() === 'wide';
     addEventListener('resize', () => { wide = layout() === 'wide'; });
-    // the entry being read, or its section's while its subsections are
-    // hidden, scrolled a third of the way down the box if it is outside it.
-    // No scrolling while search results replace the entries (a.height is 0)
-    const reveal = () => {
-      const shown = current.a.getClientRects().length ? current.a : opened.querySelector('a');
-      const a = shown.getBoundingClientRect(), box = toc.getBoundingClientRect();
-      if (a.height && (a.top < box.top || a.bottom > box.bottom)) toc.scrollTop += a.top - box.top - box.height / 3;
+    // an entry's row, and its section's: for subsections before the first
+    // section, the first entry
+    const rowOf = a => a.closest('.tableofcontents > span');
+    const sectionOf = a => {
+      let section = rowOf(a);
+      while (section.previousElementSibling && !isSection(section)) section = section.previousElementSibling;
+      return section;
     };
-    const update = () => {
+    // clock: the motion of place(), whose progress the box's scrolling
+    // follows. again: place() is called again when it ends.
+    let clock, frame, again;
+    // The current entry's section is opened and the others closed, except
+    // those the reader opened or closed. While a link scrolls the page, the
+    // sections are the link's target's, so they change only once. The box
+    // is then scrolled as little as shows the section's entry, its open
+    // subsections, and the entry, or the entry alone if they do not fit.
+    // The scroll is measured with the sections as they end, and follows the
+    // rows' slides at their progress, so that the entries in view move with
+    // them. A change while one moves waits for its end.
+    const place = now => {
+      if (clock && !now) {
+        again = true;
+        return;
+      }
+      const entry = aimed === root ? entries[0] : aimed ? entries.find(entry => entry.heading === aimed) : current;
+      if (!entry) return;
+      const section = sectionOf(entry.a), from = toc.scrollTop, slides = [];
+      if (section !== opened) {
+        if (opened && !kept.has(opened)) slides.push(show(opened, false));
+        if (!kept.has(section)) slides.push(show(section, true));
+        opened = section;
+      }
+      // Nothing to scroll in the hidden column or the closed drawer, which
+      // are not drawn, or while search results replace the entries. Their
+      // entries' boxes would lay out the whole page.
+      if (wide ? root.classList.contains('tex8web-toc-hidden') : !toc.matches(':popover-open')) return;
+      if (!section.getClientRects().length) return;
+      cancelAnimationFrame(frame);
+      const edge = parseFloat(getComputedStyle(toc).scrollPaddingTop);
+      const origin = toc.getBoundingClientRect().top + toc.clientTop - toc.scrollTop;
+      const span = el => {
+        const box = el.getBoundingClientRect();
+        return [box.top - origin - edge, box.bottom - origin + edge - toc.clientHeight];
+      };
+      const shown = under(section).filter(row => row.getClientRects().length);
+      const [top] = span(section), [, bottom] = span(shown.at(-1) ?? section);
+      const row = rowOf(entry.a), [first, last] = span(row.getClientRects().length ? row : section);
+      // (the title, at the box's top, for a link to the page's top)
+      let to = aimed === root ? 0 : bottom <= top ? Math.min(top, Math.max(from, bottom)) : Math.min(first, Math.max(last, top));
+      to = Math.max(0, Math.min(to, toc.scrollHeight - toc.clientHeight));
+      const moving = !now && motion.matches && !toc.classList.contains('tex8web-toc-all');
+      if (moving) slides.forEach(slide => slide());
+      toc.scrollTop = moving ? from : to;
+      if (!moving || (!slides.length && Math.abs(to - from) < 1)) return;
+      clock = new Animation(new KeyframeEffect(null, null, { duration: faded() / 2, easing: 'ease', fill: 'forwards' }));
+      clock.play();
+      const step = () => {
+        toc.scrollTop = from + (to - from) * clock.effect.getComputedTiming().progress;
+        if (clock.playState !== 'finished') frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+      clock.finished.then(() => {
+        clock = null;
+        if (again) {
+          again = false;
+          place();
+        }
+      });
+    };
+    // the reader scrolling the box stops its motion
+    for (const type of ['wheel', 'touchstart']) {
+      toc.addEventListener(type, () => cancelAnimationFrame(frame), { passive: true });
+    }
+    // now: with no motion, as the page loads
+    const update = now => {
       // The line is a quarter down the screen, and moves to the bottom over
       // the last screen of scrolling, or over all of it if shorter, so that
       // each heading crosses it, the last at the end.
@@ -505,21 +574,9 @@
       current = reading;
       current.a.setAttribute('aria-current', 'location');
       if (where) where.replaceChildren(entryShown(current.a));
-      // for subsections before the first section, the first entry
-      let section = current.a.closest('.tableofcontents > span');
-      while (section?.previousElementSibling && !isSection(section)) section = section.previousElementSibling;
-      if (section !== opened) {
-        opened?.classList.remove('tex8web-reading');
-        if (opened && !kept.has(opened)) show(opened, false);
-        if (!kept.has(section)) show(section, true);
-        section.classList.add('tex8web-reading');
-        opened = section;
-      }
-      // Nothing to scroll in the hidden column or the closed drawer, which
-      // are not drawn. Their entries' boxes, read after the changes above,
-      // would lay out the whole page.
-      if (wide ? root.classList.contains('tex8web-toc-hidden') : !toc.matches(':popover-open')) return;
-      reveal();
+      toc.querySelector('.tex8web-reading')?.classList.remove('tex8web-reading');
+      sectionOf(current.a).classList.add('tex8web-reading');
+      place(now);
     };
     // A followed link: the entries track the page as it scrolls there, and
     // the link's entry is marked once the scrolling stops, as a heading on
@@ -530,6 +587,7 @@
       timer = setTimeout(() => {
         follow(aimed);
         aimed = null;
+        place();
       }, 150);
     };
     const aim = heading => {
@@ -537,6 +595,7 @@
       aimed = heading;
       down = heading?.getBoundingClientRect().top > 0;
       update();
+      place();
       wait();
     };
     addEventListener('scroll', () => {
@@ -555,7 +614,7 @@
     const hashed = () => {
       try { return target(location); } catch { return null; }
     };
-    update();
+    update(true);
     // A page loaded with a hash: its heading, if it is on screen once the
     // page is scrolled to it, or back to the reader's place on a reload
     // (bar())
@@ -565,18 +624,32 @@
     }));
     if (document.readyState === 'complete') loaded();
     else addEventListener('load', loaded);
-    addEventListener('hashchange', () => aim(hashed()));
+    // (not the empty hash a link to the page's top leaves)
+    addEventListener('hashchange', () => {
+      if (location.hash || aimed !== root) aim(hashed());
+    });
     // also a link to the heading already in the address, which changes no
-    // hash; not one a preview card's first tap kept from being followed
+    // hash; not one a preview card's first tap kept from being followed.
+    // A link in the table of contents or its search results replaces the
+    // page's entry in history, so that Back leaves the page after a search
+    // through it.
     document.addEventListener('click', event => {
       const a = event.target.closest?.('a[href*="#"]');
-      if (a && !event.defaultPrevented && here(a)) aim(here(a));
+      if (!a || event.defaultPrevented) return;
+      if (a.getAttribute('href') === '#') aim(root);
+      else if (here(a)) aim(here(a));
+      else return;
+      if (toc.contains(a) && !(event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) {
+        event.preventDefault();
+        location.replace(a.href);
+      }
     });
     scrolled(() => {
       if (!aimed && !followed) return;
       aimed = followed = null;
       clearTimeout(timer);
       update();
+      place();
     });
     // MathJax in the browser typesets an entry's math after the bar's copy
     // is made, and an entry in the closed drawer only when the drawer opens
@@ -589,7 +662,8 @@
       if (button) {
         const open = button.getAttribute('aria-expanded') !== 'true';
         kept[open ? 'add' : 'delete'](button.parentElement);
-        show(button.parentElement, open, true);
+        const slide = show(button.parentElement, open);
+        if (motion.matches) slide();
       }
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });
@@ -622,7 +696,7 @@
     let height = 0;
     new ResizeObserver(([entry]) => {
       fit();
-      if (!height && entry.contentRect.height) reveal();
+      if (!height && entry.contentRect.height) place(true);
       height = entry.contentRect.height;
     }).observe(toc);
     new MutationObserver(fit).observe(list, { childList: true, subtree: true });
@@ -653,7 +727,7 @@
     // A closing drawer is drawn until it has slid out (css/tex8web.css).
     // Safari on iPhone ignores a transition of display, which would keep it.
     toc.addEventListener('beforetoggle', event => {
-      if (event.newState === 'open') requestAnimationFrame(() => { fit(); reveal(); });
+      if (event.newState === 'open') requestAnimationFrame(() => { fit(); place(true); });
       else if (getComputedStyle(toc).transitionDuration !== '0s') toc.classList.add('tex8web-closing');
     });
     const closed = event => {

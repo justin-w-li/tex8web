@@ -960,8 +960,8 @@ async function opening(chrome, file) {
 // closed, from the page's load and as the page scrolls past each heading,
 // the entry is marked, but no entry of the drawer is measured, as the
 // measurement would lay out the whole page. Opened by the contents button,
-// the drawer is drawn from its first frame with the marked entry a third of
-// the way down. A section the reader opens there stays open as the drawer
+// the drawer is drawn from its first frame with the marked entry in it,
+// clear of its fades. A section the reader opens there stays open as the drawer
 // closes and opens again, and the drawer is not scrolled as it closes.
 // The column hidden with the contents button is not measured either, and
 // is scrolled to the marked entry when it is shown, as when the window
@@ -1056,7 +1056,7 @@ async function following(chrome, file) {
           const shown = a.getClientRects().length ? a : toc.querySelector('.tex8web-reading a');
           const box = toc.getBoundingClientRect(), at = shown.getBoundingClientRect();
           tex8webFrames.push({ scroll: toc.scrollTop, top: at.top - box.top, bottom: at.bottom - box.top,
-            height: box.height, end: toc.scrollHeight - toc.clientHeight });
+            height: box.height, end: toc.scrollHeight - toc.clientHeight, edge: parseFloat(getComputedStyle(toc).scrollPaddingTop) });
           if (tex8webFrames.length < 10) requestAnimationFrame(frame);
         };
         toc.addEventListener('beforetoggle', event => {
@@ -1074,10 +1074,8 @@ async function following(chrome, file) {
       const last = frames.at(-1), wrong = [];
       const moved = frames.find(f => f.scroll !== last.scroll || Math.abs(f.top - last.top) > 0.5);
       if (moved) wrong.push(`drawn scrolled to ${moved.scroll}px, the marked entry ${moved.top}px down, then to ${last.scroll}px and ${last.top}px`);
-      if (!(last.top > -1 && last.bottom < last.height + 1)) wrong.push(`the marked entry from ${last.top}px to ${last.bottom}px in a box ${last.height}px tall`);
-      else if (last.scroll > 0 && last.scroll < last.end && Math.abs(last.top - last.height / 3) > 1) {
-        wrong.push(`the marked entry ${last.top}px down a box ${last.height}px tall, not a third`);
-      }
+      const top = last.scroll > 0 ? last.edge : 0, bottom = last.height - (last.scroll < last.end ? last.edge : 0);
+      if (!(last.top > top - 1 && last.bottom < bottom + 1)) wrong.push(`the marked entry from ${last.top}px to ${last.bottom}px in a box ${last.height}px tall`);
       await finished(page);
       return [wrong, last.scroll];
     };
@@ -1121,6 +1119,93 @@ async function following(chrome, file) {
   return problems;
 }
 
+// The column follows the reading and the links followed: the marked
+// entry, its section's entry, and the section's last subsection shown end
+// in the column, clear of its fades. A link far down the page opens only
+// its target's section, not each section the page scrolls past. Then the
+// page is read up into the previous section's last subsection, and down
+// into the next section. The title's link scrolls the column to its top
+// and opens only the first section. The links change the address and add
+// no entry to the history.
+async function placing(chrome, file) {
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 400 }, async page => {
+    const problems = [];
+    const sections = `[...document.querySelectorAll('#tex8web-toc .tex8web-toc-more')].map(b => b.parentElement)`;
+    // the rows of section i: its entry and its subsections'
+    const rows = i => `(() => {
+      const section = ${sections}[${i}], rows = [section];
+      for (let el = section.nextElementSibling; el && !el.matches('.sectionToc, .likesectionToc'); el = el.nextElementSibling) {
+        if (el.matches('span')) rows.push(el);
+      }
+      return rows;
+    })()`;
+    // what of the marked entry's section is outside the column or under a
+    // fade, once the page and the column stop moving
+    const placed = async i => {
+      await finished(page);
+      return page.evaluate(`(async () => {
+        const toc = document.getElementById('tex8web-toc'), rows = ${rows(i)};
+        for (let y = -1, s = -1, same = 0; same < 10; same = scrollY === y && toc.scrollTop === s ? same + 1 : 0) {
+          [y, s] = [scrollY, toc.scrollTop];
+          await new Promise(requestAnimationFrame);
+        }
+        await new Promise(done => setTimeout(done, 300));
+        const a = toc.querySelector('[aria-current]'), edge = parseFloat(getComputedStyle(toc).scrollPaddingTop);
+        if (!rows.includes(a.parentElement)) return 'the entry marked: ' + a.textContent.trim();
+        const box = toc.getBoundingClientRect();
+        const top = toc.scrollTop > 0 ? box.top + edge : box.top;
+        const bottom = toc.scrollTop < toc.scrollHeight - toc.clientHeight - 1 ? box.bottom - edge : box.bottom;
+        const shown = rows.filter(row => row.checkVisibility()), [s, l] = [shown[0], shown.at(-1)].map(row => row.getBoundingClientRect());
+        if (l.bottom - s.top > box.height - 2 * edge) return 'the section taller than the column';
+        return [['its section\\'s entry', s.top < top - 1], ['the marked entry', !a.checkVisibility()],
+          ['the last subsection shown', l.bottom > bottom + 1]].filter(([, out]) => out).map(([what]) => what).join(', ');
+      })()`);
+    };
+    const count = await page.evaluate(`${sections}.length`);
+    if (count < 3) return [`${count} sections with subsections (3 at least wanted)`];
+    // the last section's last subsection, from the top
+    const last = count - 1;
+    const entries = await page.evaluate('history.length');
+    const link = await page.evaluate(`(() => {
+      const toc = document.getElementById('tex8web-toc');
+      window.tex8webOpened = new Set();
+      new MutationObserver(changes => changes.forEach(change => {
+        if (change.target.getAttribute('aria-expanded') === 'true') tex8webOpened.add(change.target.parentElement.textContent.trim());
+      })).observe(toc, { attributes: true, attributeFilter: ['aria-expanded'], subtree: true });
+      const a = ${rows(last)}.at(-1).querySelector('a');
+      a.click();
+      return a.hash;
+    })()`);
+    let out = await placed(last);
+    if (out) problems.push(`the link to the last subsection followed: outside the column, ${out}`);
+    const opened = await page.evaluate('tex8webOpened.size');
+    if (opened !== 1) problems.push(`the link to the last subsection followed: ${opened} sections opened`);
+    const address = await page.evaluate('location.hash');
+    if (address !== link) problems.push(`the link to the last subsection followed: the address's hash ${address}, not ${link}`);
+    // read up and down, a heading at the window's top
+    const read = (i, row) => page.evaluate(`(() => {
+      const a = ${rows(i)}.at(${row}).querySelector('a');
+      dispatchEvent(new WheelEvent('wheel'));
+      scrollTo({ top: scrollY + document.getElementById(decodeURIComponent(a.hash.slice(1))).getBoundingClientRect().top, behavior: 'instant' });
+    })()`);
+    await read(last - 1, -1);
+    out = await placed(last - 1);
+    if (out) problems.push(`read up into a section's last subsection: outside the column, ${out}`);
+    await read(last, 0);
+    out = await placed(last);
+    if (out) problems.push(`read down into a section: outside the column, ${out}`);
+    await page.evaluate(`tex8webOpened.clear(); document.querySelector('.tex8web-toc-doctitle').click()`);
+    out = await placed(0);
+    if (out) problems.push(`the title's link followed: outside the column, ${out}`);
+    const [scroll, first] = await page.evaluate(`[document.getElementById('tex8web-toc').scrollTop, [...tex8webOpened].join()]`);
+    if (scroll !== 0) problems.push(`the title's link followed: the column scrolled to ${scroll}px`);
+    if (first !== await page.evaluate(`${sections}[0].textContent.trim()`)) problems.push(`the title's link followed: opened ${first || 'none'}`);
+    const added = await page.evaluate('history.length') - entries;
+    if (added) problems.push(`the links followed: ${added} entries added to the history`);
+    return problems;
+  });
+}
+
 // On a wide touch screen, with a closed section's chevron, whose tap area
 // is larger than its line, last in a column that scrolls: the column
 // scrolls no further than the entry and the space after it. On a narrow screen, the open drawer,
@@ -1157,7 +1242,7 @@ async function reaching(chrome, file) {
 // The table of contents chevrons, by mouse. Each section with subsections
 // has one, at the column's inner edge. A section the reader opens slides
 // open, and stays open as the page scrolls to a third section. The third
-// opens without a slide, and the first, as the reader leaves it, closes.
+// slides open, and the first, as the reader leaves it, slides closed.
 // The section being read, once closed, stays closed while it is read, with
 // its entry marked. The opened section stays open when a link in the table
 // of contents leads back. The window is too short for all entries, which
@@ -1203,7 +1288,8 @@ async function browsing(chrome, file) {
     })()`);
     now = await until(() => page.evaluate(state), n => n[2] > 0);
     if (!now) problems.push('scrolled to the third section, its subsections not shown');
-    if (await page.evaluate("document.getElementById('tex8web-toc').getAnimations({ subtree: true }).length")) problems.push('the page scrolled, a slide in the contents');
+    if (!await page.evaluate("document.getElementById('tex8web-toc').getAnimations({ subtree: true }).length")) problems.push('the page scrolled, no slide in the contents');
+    await finished(page);
     now = await page.evaluate(state);
     if (!(now[0] === 0 && now[1] > 0)) problems.push(`scrolled to the third section, the first two show ${now.slice(0, 2)} subsections`);
     await click(2);
@@ -1233,6 +1319,7 @@ async function browsing(chrome, file) {
     await page.mouse('released', x, y);
     now = await until(() => page.evaluate(state), n => n[0] > 0);
     if (!now) problems.push('the first section\'s link followed, its subsections not shown');
+    await finished(page);
     now = await page.evaluate(state);
     if (!(now[1] > 0 && now[2] === 0)) problems.push(`the first section's link followed, the next two show ${now.slice(1, 3)} subsections`);
     return problems;
@@ -1855,6 +1942,7 @@ const checks = {
   lazy: [['test-tocsub'], lazily],
   contents: [['test-tocsub'], each(opening)],
   reach: [['test-tocsub'], each(reaching)],
+  placing: [['test'], each(placing)],
   browsing: [['test'], each(async (...args) => [...await browsing(...args), ...await following(...args)])],
   ending: [['examples/complex', 'examples/footnotes'], ending],
   jumps: [['examples/complex'], each(jumping)],
