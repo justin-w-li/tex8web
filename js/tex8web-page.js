@@ -464,6 +464,9 @@
     // followed: the entry a link led to, kept until the reader scrolls or
     // its heading, once seen, leaves the screen
     let current, opened, followed, seen;
+    // aimed: the target of a link followed, until the scrolling stops (aim());
+    // down: the page scrolls down to it
+    let aimed, down;
     // the layout, read once and on each resize: layout() in update(), after
     // its changes, would restyle the whole page
     let wide = layout() === 'wide';
@@ -491,6 +494,9 @@
       for (const entry of entries) {
         if (entry.heading.getBoundingClientRect().top > line) break;
         reading = entry;
+        // not past the entry the page scrolls down to, which it would
+        // otherwise leave for once the scrolling stops
+        if (down && entry.heading === aimed) break;
       }
       if (where) where.hidden = !followed && reading.heading.getBoundingClientRect().top > line;
       reading = followed || reading;
@@ -518,7 +524,7 @@
     // A followed link: the entries track the page as it scrolls there, and
     // the link's entry is marked once the scrolling stops, as a heading on
     // the last screen may never reach the line
-    let pending = false, aimed, timer;
+    let pending = false, timer;
     const wait = () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
@@ -529,6 +535,7 @@
     const aim = heading => {
       followed = null;
       aimed = heading;
+      down = heading?.getBoundingClientRect().top > 0;
       update();
       wait();
     };
