@@ -573,10 +573,9 @@
       if (a && !event.defaultPrevented && here(a)) aim(here(a));
     });
     scrolled(() => {
-      aimed = null;
+      if (!aimed && !followed) return;
+      aimed = followed = null;
       clearTimeout(timer);
-      if (!followed) return;
-      followed = null;
       update();
     });
     // MathJax in the browser typesets an entry's math after the bar's copy
