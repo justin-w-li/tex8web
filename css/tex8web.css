@@ -1022,15 +1022,30 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
    The width is at most 85vw, padding included. The height is auto,
    between the insets, so that the drawer, padding included, is as tall as
    the window (a popover is fit-content tall by default) */
-.tex8web-toc { --tex8web-toc-pad: 1.25rem; inset: 0 auto 0 0; font-size: 1rem;
+.tex8web-toc { --tex8web-toc-pad: 1.25rem; --tex8web-toc-top: 4rem; --tex8web-toc-end: 2rem;
+    inset: 0 auto 0 0; font-size: 1rem;
     width: min(var(--tex8web-margin), 85vw - 2 * var(--tex8web-toc-pad)); height: auto;
-    max-height: none; margin: 0; padding: 4rem var(--tex8web-toc-pad) 2rem; border: 0;
+    max-height: none; margin: 0; padding: var(--tex8web-toc-top) var(--tex8web-toc-pad) var(--tex8web-toc-end); border: 0;
     border-inline-end: 1px solid color-mix(in srgb, currentColor 15%, transparent);
     color: var(--tex8web-text); background-color: var(--tex8web-bg); overflow-y: auto;
     scrollbar-width: none; outline: 100vmax solid transparent; }
 /* (scrolls without a scroll bar: ::-webkit-scrollbar for Safari before
    18.2) */
 .tex8web-toc::-webkit-scrollbar { display: none; }
+/* the entries fade out at each end of the box with entries hidden past it,
+   over at most --tex8web-edge, shorter as the last hidden entry nears.
+   tex8web-page.js sets how much is hidden above and below. Overlays in
+   the background's color, as a mask would also hide the outline that
+   dims the page behind the drawer. A sticky box stops at the padding,
+   so its offsets are the padding's, negated, to reach the box's edges */
+.tex8web-toc::before, .tex8web-toc::after { content: ""; display: block; position: sticky;
+    z-index: 1; pointer-events: none; }
+.tex8web-toc::before { --h: min(var(--tex8web-hidden-top, 0px), var(--tex8web-edge));
+    top: calc(-1 * var(--tex8web-toc-top)); height: var(--h); margin-block-end: calc(-1 * var(--h));
+    background: linear-gradient(var(--tex8web-bg), transparent); }
+.tex8web-toc::after { --h: min(var(--tex8web-hidden-bottom, 0px), var(--tex8web-edge));
+    bottom: calc(-1 * var(--tex8web-toc-end)); height: var(--h); margin-block-start: calc(-1 * var(--h));
+    background: linear-gradient(transparent, var(--tex8web-bg)); }
 /* (the page dimmed by an outline in place of ::backdrop, which leaves
    with the closing drawer's top layer at once) */
 .tex8web-toc:popover-open { outline-color: rgb(0 0 0 / 0.3); }
@@ -1119,10 +1134,13 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
         border-radius: 0.5rem; }
     /* (the contents button needs tex8web-page.js on a wide screen) */
     :root:not(.tex8web-js) .tex8web-contents { display: none; }
-    /* (its text 1.25rem in, where the drawer's text and the icons are) */
+    /* (its text 1.25rem in, where the drawer's text and the icons are.
+       Scrolled to the end, its last entry ends near the text's last line
+       at the page's end, 4em above the window's bottom with body's margin,
+       which is 1rem below the column) */
     .tex8web-toc, .tex8web-toc:popover-open { display: block; position: fixed;
         inset: var(--tex8web-column-inset); width: var(--tex8web-margin);
-        --tex8web-toc-pad: 0.5rem; padding: 0 var(--tex8web-toc-pad); border: 0; background: none; translate: none; transition: none;
+        --tex8web-toc-pad: 0.5rem; --tex8web-toc-top: 0px; --tex8web-toc-end: 3rem; border: 0; background: none; translate: none; transition: none;
         outline: none; }
     .tex8web-toc-hidden .tex8web-toc { display: none; opacity: 0; }
     /* (only on a button press, not on page load or when the window

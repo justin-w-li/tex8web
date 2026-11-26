@@ -609,7 +609,8 @@
       if (filtering) [list.hidden, results.hidden] = [false, true];
       toc.classList.add('tex8web-toc-all');
       toc.style.marginBottom = 'calc(100dvh - 100svh)';
-      const fits = toc.scrollHeight <= toc.clientHeight;
+      // (the space after the last entry may be hidden)
+      const fits = toc.scrollHeight - parseFloat(getComputedStyle(toc).paddingBottom) <= toc.clientHeight;
       toc.style.marginBottom = '';
       if (filtering) [list.hidden, results.hidden] = [true, false];
       toc.classList.toggle('tex8web-toc-all', fits);
@@ -626,6 +627,23 @@
       height = entry.contentRect.height;
     }).observe(toc);
     new MutationObserver(fit).observe(list, { childList: true, subtree: true });
+    // the fades at the box's ends (css/tex8web.css): how much of the entries
+    // is hidden above and below the box, its padding aside. The padding is
+    // read when the box or the entries change size, not on each scroll.
+    let pad = [0, 0];
+    const ends = () => {
+      const below = toc.scrollHeight - toc.clientHeight - toc.scrollTop;
+      toc.style.setProperty('--tex8web-hidden-top', `${Math.max(0, toc.scrollTop - pad[0])}px`);
+      toc.style.setProperty('--tex8web-hidden-bottom', `${Math.max(0, below - pad[1])}px`);
+    };
+    toc.addEventListener('scroll', ends, { passive: true });
+    const sized = new ResizeObserver(() => {
+      const style = getComputedStyle(toc);
+      pad = [parseFloat(style.paddingTop), parseFloat(style.paddingBottom)];
+      ends();
+    });
+    // (the search results are made by filter(), which runs first)
+    for (const box of [toc, ...toc.querySelectorAll('.tableofcontents, .tex8web-toc-results')]) sized.observe(box);
     // The closed drawer is not scrolled (update()), so its entry is scrolled
     // to as it opens, in the frame before it is first drawn. A microtask
     // after beforetoggle runs while the drawer is still closed when the
@@ -1174,7 +1192,7 @@
   // each feature separately: tex8web-head.js has already marked the page as
   // scripted, so one failed feature would leave the other features'
   // controls dead and the table of contents collapsed
-  for (const feature of [up, theme, column, bar, restore, anchor, smooth, sidenotes, edges, contents, filter, previews, viewer]) {
+  for (const feature of [up, theme, column, bar, restore, anchor, smooth, sidenotes, edges, filter, contents, previews, viewer]) {
     try {
       feature();
     } catch (error) {
