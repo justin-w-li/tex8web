@@ -1066,8 +1066,11 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
 .tex8web-toc-doctitle + .tex8web-toc-title { margin-block-start: 2.25em; }
 .tex8web-toc .tableofcontents { font-size: 0.875em; line-height: 1.25; }
 .tex8web-toc .tableofcontents > span { padding-top: 0.3em; }
-/* (tex4ht hyphenates links) */
+/* (tex4ht hyphenates links. An entry's link fills its line to the
+   chevron, so that the highlight and the area to click are as wide for a
+   short entry as for one that wraps) */
 .tex8web-toc a { color: inherit; hyphens: manual; }
+.tex8web-toc .tableofcontents > span > a { flex: auto; }
 .tex8web-toc a[aria-current] { border-radius: 0.2em;
     background-color: var(--tex8web-highlight); }
 /* (hover tint, as on the controls) */
