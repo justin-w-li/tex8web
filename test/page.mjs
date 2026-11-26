@@ -1123,7 +1123,7 @@ async function following(chrome, file) {
 
 // On a wide touch screen, with a closed section's chevron, whose tap area
 // is larger than its line, last in a column that scrolls: the column
-// scrolls no further than the entry. On a narrow screen, the open drawer,
+// scrolls no further than the entry and the space after it. On a narrow screen, the open drawer,
 // which scrolls, ends at the window's bottom, and its last entry can be
 // scrolled into view
 async function reaching(chrome, file) {
@@ -1132,7 +1132,7 @@ async function reaching(chrome, file) {
       const toc = document.getElementById('tex8web-toc');
       const last = [...toc.querySelectorAll('.tableofcontents > span')].filter(entry => entry.checkVisibility()).at(-1);
       toc.scrollTop = toc.scrollHeight;
-      return [toc.getBoundingClientRect().bottom - last.getBoundingClientRect().bottom,
+      return [toc.getBoundingClientRect().bottom - parseFloat(getComputedStyle(toc).paddingBottom) - last.getBoundingClientRect().bottom,
         last.querySelector('.tex8web-toc-more')?.getAttribute('aria-expanded')];
     })()`);
     if (chevron !== 'false') return ['the last entry shown not a closed section'];
