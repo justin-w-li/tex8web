@@ -1033,7 +1033,7 @@ p:has(> a.tex8web-eq-anchor-end:target) + :is(.mathjax-env, .mathjax-block) > mj
 /* (scrolls without a scroll bar: ::-webkit-scrollbar for Safari before
    18.2). An entry scrolled to stops short of the fades below. tex8web-page.js
    scrolls the box as the rows above an entry open and close, which
-   Chrome's scroll anchoring would also do. */
+   scroll anchoring would also do. */
 .tex8web-toc::-webkit-scrollbar { display: none; }
 /* the entries fade out at each end of the box with entries hidden past it,
    over at most --tex8web-edge, shorter as the last hidden entry nears.

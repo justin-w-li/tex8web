@@ -483,11 +483,17 @@
       return section;
     };
     // clock: the motion of place(), whose progress the box's scrolling
-    // follows. again: place() is called again when it ends.
-    let clock, frame, again;
+    // follows. again: place() is called again when it ends. still: no
+    // motion before the reader's first input, as the page loads and is
+    // scrolled back to the reader's place.
+    let clock, frame, again, still = true;
+    for (const type of ['pointerdown', 'keydown', 'wheel', 'touchstart']) {
+      addEventListener(type, () => { still = false; }, { capture: true, passive: true, once: true });
+    }
     // The current entry's section is opened and the others closed, except
-    // those the reader opened or closed. While a link scrolls the page, the
-    // sections are the link's target's, so they change only once. The box
+    // those the reader opened. While a link scrolls the page, the sections
+    // are the link's target's, so they change only once: the section of the
+    // target's entry, or of the last entry before the target. The box
     // is then scrolled as little as shows the section's entry, its open
     // subsections, and the entry, or the entry alone if they do not fit.
     // The scroll is measured with the sections as they end, and follows the
@@ -498,8 +504,8 @@
         again = true;
         return;
       }
-      const entry = aimed === root ? entries[0] : aimed ? entries.find(entry => entry.heading === aimed) : current;
-      if (!entry) return;
+      const entry = !aimed ? current : entries.findLast(entry => entry.heading === aimed
+        || entry.heading.compareDocumentPosition(aimed) & Node.DOCUMENT_POSITION_FOLLOWING) ?? entries[0];
       const section = sectionOf(entry.a), from = toc.scrollTop, slides = [];
       if (section !== opened) {
         if (opened && !kept.has(opened)) slides.push(show(opened, false));
@@ -524,18 +530,20 @@
       // (the title, at the box's top, for a link to the page's top)
       let to = aimed === root ? 0 : bottom <= top ? Math.min(top, Math.max(from, bottom)) : Math.min(first, Math.max(last, top));
       to = Math.max(0, Math.min(to, toc.scrollHeight - toc.clientHeight));
-      const moving = !now && motion.matches && !toc.classList.contains('tex8web-toc-all');
+      const moving = !now && !still && motion.matches && !toc.classList.contains('tex8web-toc-all');
       if (moving) slides.forEach(slide => slide());
       toc.scrollTop = moving ? from : to;
       if (!moving || (!slides.length && Math.abs(to - from) < 1)) return;
-      clock = new Animation(new KeyframeEffect(null, null, { duration: faded() / 2, easing: 'ease', fill: 'forwards' }));
-      clock.play();
+      // (the motion's own clock in its frames: clock is cleared as it
+      // finishes, before the frame callbacks)
+      const tick = clock = new Animation(new KeyframeEffect(null, null, { duration: faded() / 2, easing: 'ease', fill: 'forwards' }));
+      tick.play();
       const step = () => {
-        toc.scrollTop = from + (to - from) * clock.effect.getComputedTiming().progress;
-        if (clock.playState !== 'finished') frame = requestAnimationFrame(step);
+        toc.scrollTop = from + (to - from) * tick.effect.getComputedTiming().progress;
+        if (tick.playState !== 'finished') frame = requestAnimationFrame(step);
       };
       frame = requestAnimationFrame(step);
-      clock.finished.then(() => {
+      tick.finished.then(() => {
         clock = null;
         if (again) {
           again = false;
@@ -543,12 +551,12 @@
         }
       });
     };
-    // the reader scrolling the box stops its motion
+    // the reader scrolling the box stops its scrolling; changes still wait
+    // for the slides' end
     for (const type of ['wheel', 'touchstart']) {
       toc.addEventListener(type, () => cancelAnimationFrame(frame), { passive: true });
     }
-    // now: with no motion, as the page loads
-    const update = now => {
+    const update = () => {
       // The line is a quarter down the screen, and moves to the bottom over
       // the last screen of scrolling, or over all of it if shorter, so that
       // each heading crosses it, the last at the end.
@@ -576,7 +584,7 @@
       if (where) where.replaceChildren(entryShown(current.a));
       toc.querySelector('.tex8web-reading')?.classList.remove('tex8web-reading');
       sectionOf(current.a).classList.add('tex8web-reading');
-      place(now);
+      place();
     };
     // A followed link: the entries track the page as it scrolls there, and
     // the link's entry is marked once the scrolling stops, as a heading on
@@ -614,7 +622,7 @@
     const hashed = () => {
       try { return target(location); } catch { return null; }
     };
-    update(true);
+    update();
     // A page loaded with a hash: its heading, if it is on screen once the
     // page is scrolled to it, or back to the reader's place on a reload
     // (bar())
@@ -635,11 +643,11 @@
     // through it.
     document.addEventListener('click', event => {
       const a = event.target.closest?.('a[href*="#"]');
-      if (!a || event.defaultPrevented) return;
+      if (!a || event.defaultPrevented || event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       if (a.getAttribute('href') === '#') aim(root);
       else if (here(a)) aim(here(a));
       else return;
-      if (toc.contains(a) && !(event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) {
+      if (toc.contains(a)) {
         event.preventDefault();
         location.replace(a.href);
       }
@@ -662,8 +670,8 @@
       if (button) {
         const open = button.getAttribute('aria-expanded') !== 'true';
         kept[open ? 'add' : 'delete'](button.parentElement);
-        const slide = show(button.parentElement, open);
-        if (motion.matches) slide();
+        const slides = show(button.parentElement, open);
+        if (motion.matches) slides();
       }
       if (event.target.closest('a') && toc.matches(':popover-open')) toc.hidePopover();
     });

@@ -1126,9 +1126,13 @@ async function following(chrome, file) {
 // page is read up into the previous section's last subsection, and down
 // into the next section. The title's link scrolls the column to its top
 // and opens only the first section. The links change the address and add
-// no entry to the history.
+// no entry to the history. The table of contents moves only after the
+// reader's first input, which a pointerdown stands for, and its motion
+// throws no error.
 async function placing(chrome, file) {
-  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 400 }, async page => {
+  const before = `window.tex8webErrors = [];
+    addEventListener('error', event => tex8webErrors.push(event.message));`;
+  return chrome.withPage(pathToFileURL(file).href, { width: 1600, height: 400, before }, async page => {
     const problems = [];
     const sections = `[...document.querySelectorAll('#tex8web-toc .tex8web-toc-more')].map(b => b.parentElement)`;
     // the rows of section i: its entry and its subsections'
@@ -1173,6 +1177,7 @@ async function placing(chrome, file) {
         if (change.target.getAttribute('aria-expanded') === 'true') tex8webOpened.add(change.target.parentElement.textContent.trim());
       })).observe(toc, { attributes: true, attributeFilter: ['aria-expanded'], subtree: true });
       const a = ${rows(last)}.at(-1).querySelector('a');
+      dispatchEvent(new PointerEvent('pointerdown'));
       a.click();
       return a.hash;
     })()`);
@@ -1202,6 +1207,7 @@ async function placing(chrome, file) {
     if (first !== await page.evaluate(`${sections}[0].textContent.trim()`)) problems.push(`the title's link followed: opened ${first || 'none'}`);
     const added = await page.evaluate('history.length') - entries;
     if (added) problems.push(`the links followed: ${added} entries added to the history`);
+    problems.push(...(await page.evaluate('tex8webErrors')).map(error => `an error: ${error}`));
     return problems;
   });
 }
