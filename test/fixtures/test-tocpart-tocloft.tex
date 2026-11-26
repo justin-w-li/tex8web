@@ -1,0 +1,15 @@
+% A part's entry in the table of contents with tocloft: the space above
+% it from \cftbeforepartskip, and below it only the next entry's space.
+\documentclass{article}
+\usepackage{tocloft}
+\setlength{\cftbeforepartskip}{1.5em}
+\begin{document}
+\tableofcontents
+\section{A section}
+Some text.
+\subsection{A subsection}
+Some text.
+\part{Beginnings}
+\section{After the part}
+Some text.
+\end{document}

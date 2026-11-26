@@ -283,6 +283,23 @@ h1:is(.partHead, .likepartHead) { text-align: var(--tex8web-part-align, center);
 :is(.sectionHead, .likesectionHead, .subsectionHead, .likesubsectionHead, .subsubsectionHead,
     .likesubsubsectionHead) + :is(div.newtheorem, .tex8web-list, dl.description,
     dl.thebibliography) { margin-top: 0 !important; }
+/* a heading right after a part in the text, a chapter, or a section:
+   only the first heading's space below, as LaTeX's \@startsection and
+   titlesec's \ttl@straight@ii add no space above while \if@nobreak
+   holds, which \@afterheading sets. A chapter keeps its space above,
+   which \@makechapterhead adds with \vspace*. Under titlesec's option
+   largestsep (tex8web-page.tex), titlesec adds the space with \addvspace,
+   and the margins collapse as for other blocks. The rule matches the
+   paragraph that a paragraph heading starts. Set on a line of its own,
+   that heading takes its margin from the custom property, inherited from
+   the paragraph */
+:root:not(.tex8web-largestsep) :is(.partHead, .likepartHead, .chapterHead, .likechapterHead,
+    .appendixHead, .sectionHead, .likesectionHead, .subsectionHead, .likesubsectionHead,
+    .subsubsectionHead, .likesubsubsectionHead) + :is(.sectionHead, .likesectionHead,
+    .subsectionHead, .likesubsectionHead, .subsubsectionHead, .likesubsubsectionHead,
+    p:has(> :is(.paragraphHead, .likeparagraphHead, .subparagraphHead, .likesubparagraphHead):first-child)) {
+    --tex8web-head-before: 0px; --tex8web-paragraph-before: 0px; --tex8web-subparagraph-before: 0px;
+    margin-top: 0; }
 /* (run into their paragraph, unless titlesec puts them on a separate line,
    by default with a paragraph's space below) */
 .paragraphHead, .likeparagraphHead { display: var(--tex8web-paragraph-display, inline);
@@ -670,15 +687,18 @@ td.td01 { padding-right: var(--tex8web-tabcolsep); }
    the PDF, so that titles line up for one-digit and two-digit numbers */
 .tableofcontents > span { display: flex; }
 .tableofcontents > br { display: none; }
-/* undone from html4.4ht: a chapter's double line height, for the space
-   above it; a part's size on both the entry and its link, which makes the
-   title larger than the number; and bold links, which keep a title bold
-   when tocloft's font is not. Lengths from TeX are in the text's ems, so
-   they are divided by the entry's size, a multiple of the text's */
+/* undone from html4.4ht: a part's and a chapter's double line height,
+   for the space above it; a part's size on both the entry and its link,
+   which makes the title larger than the number; and bold links, which
+   keep a title bold when tocloft's font is not. Lengths from TeX are in
+   the text's ems, so they are divided by the entry's size, a multiple of
+   the text's */
+.partToc, .likepartToc {
+    margin-top: calc(var(--tex8web-toc-part-skip) / 2 / var(--tex8web-toc-scale)); }
 .chapterToc, .likechapterToc, .appendixToc {
     margin-top: calc(var(--tex8web-toc-chapter-skip) / 2 / var(--tex8web-toc-scale)); }
-:is(.chapterToc, .likechapterToc, .appendixToc), :is(.chapterToc, .likechapterToc, .appendixToc) a {
-    line-height: inherit; }
+:is(.partToc, .likepartToc, .chapterToc, .likechapterToc, .appendixToc),
+    :is(.partToc, .likepartToc, .chapterToc, .likechapterToc, .appendixToc) a { line-height: inherit; }
 :is(.partToc, .likepartToc) a { font-size: inherit; }
 :is(.partToc, .likepartToc, .chapterToc, .likechapterToc, .appendixToc) a { font-weight: inherit; }
 .sectionToc, .likesectionToc { margin-top: calc(var(--tex8web-toc-section-skip) / 2 / var(--tex8web-toc-scale)); }

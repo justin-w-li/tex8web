@@ -3,11 +3,12 @@
 // JavaScript off. Both pages are checked for alignments that line up across
 // an \intertext, unclipped math characters, and footnotes in the text's
 // color. The prerendered page is also checked for a hidden theme button,
-// headings spaced as in LaTeX, tables in the text spaced as paragraphs,
-// the rest of each \hfill at the right, algorithm2e's numbers and
-// captions, list labels on their text's baseline, ties as wide as a
-// space and with no line break after them, the fonts of the table of
-// contents, blocks wider than the column scrolling inside it, printing,
+// headings spaced as in LaTeX, also right after another heading, tables
+// in the text spaced as paragraphs, the rest of each \hfill at the right,
+// algorithm2e's numbers and captions, list labels on their text's
+// baseline, ties as wide as a space and with no line break after them,
+// the fonts of the table of contents and the space of its part entries,
+// blocks wider than the column scrolling inside it, printing,
 // a width that fits a phone, and TikZ pictures that hold a graphic,
 // which dark mode leaves as they are.
 // The page for MathJax in the browser is built from the prerendered
@@ -212,6 +213,68 @@ const spaced = `(() => {
   });
   return { checked, wrong };
 })()`;
+
+// A heading right after another heading, spaced as in the PDF: the gap
+// between their boxes is the first heading's space below, as LaTeX's
+// \@startsection and titlesec add no space above a heading while
+// \if@nobreak holds, or under titlesec's option largestsep the larger of
+// the two spaces. A paragraph heading is measured from its paragraph's
+// box. An empty element between the two is a failure too: margins
+// collapse through it, so the gap alone does not show that the
+// stylesheet's rule applies.
+// headGaps has, by the second heading's id, the glue between the two
+// headings in the PDF, in ems of the text. Failures: [id, what is wrong]
+const headGap = gaps => `(() => {
+  const em = parseFloat(getComputedStyle(document.body).fontSize);
+  return Object.entries(${JSON.stringify(gaps)}).flatMap(([id, want]) => {
+    const h = document.getElementById(id), box = h.matches('p > *') ? h.parentElement : h;
+    let above = box.previousElementSibling, empty;
+    while (!above.getBoundingClientRect().height) [empty, above] = [above, above.previousElementSibling];
+    const gap = box.getBoundingClientRect().top - above.getBoundingClientRect().bottom;
+    return [...Math.abs(gap - want * em) > 0.5 ? [[id, \`\${(gap / em).toFixed(3)}em below the heading above it, not \${want}em\`]] : [],
+      ...empty ? [[id, \`an empty <\${empty.localName}> between it and the heading above it\`]] : []];
+  });
+})()`;
+const headGaps = {
+  // (article: the part's \vskip 3ex, 12.91663pt; \section's 2.3ex,
+  // 9.90276pt, and \subsection's 1.5ex, 6.45831pt, below; a run-in
+  // \paragraph adds nothing above)
+  'test-headspace': { 'after-the-part': 1.29166, 'after-the-section': 0.99028, 'after-the-label': 0.99028,
+    'after-the-starred-label': 0.99028, 'after-the-subsection': 0.64583, 'a-paragraph': 0.64583,
+    'after-the-unnumbered-part': 1.29166, 'after-the-index': 0.99028 },
+  // (the same, with an entry added to the table of contents in between)
+  'test-tocpart': { 'another-section': 1.29166, 'an-unnumbered-section': 0.99028 },
+  // (report: \@makechapterhead's \vskip 40pt below a chapter)
+  'test-headspace-report': { 'after-the-chapter': 4, 'after-the-label': 4 },
+  // (titlesec: the part's 3ex, and 2.5ex and 1.5ex below a section and a
+  // subsubsection)
+  'test-headspace-titlesec': { 'after-the-part': 1.29166, 'after-the-section': 1.07639,
+    'after-the-subsubsection': 0.64583 },
+  // (largestsep: the section's 6ex, 25.83325pt, larger than the part's 3ex)
+  'test-headspace-largestsep': { 'after-the-part': 2.58333 },
+};
+
+// A part's entry in the table of contents: half the PDF's space above it,
+// as for the other levels (css/tex8web.css), in ems of the table of
+// contents, and its line height, in ems of each entry, also on the
+// entry's link. tocParts has the PDF's space above a part's
+// entry, \cftbeforepartskip or the class's \l@part, in ems of the text,
+// and the number of part entries. Failures: [title, what is wrong]
+const partEntries = skip => `(() => {
+  const toc = document.querySelector('nav .tableofcontents');
+  const em = parseFloat(getComputedStyle(toc).fontSize);
+  const leading = el => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize);
+  const want = leading(toc);
+  const entries = [...toc.querySelectorAll(':scope > :is(.partToc, .likepartToc)')];
+  return { checked: entries.length, wrong: entries.flatMap(entry => {
+    const above = parseFloat(getComputedStyle(entry).marginTop) / em;
+    return [...Math.abs(above - ${skip} / 2) > 0.01 ? [[entry.textContent.trim(), \`\${above.toFixed(3)}em above it, not \${${skip} / 2}em\`]] : [],
+      ...[entry, entry.querySelector('a')].filter(el => Math.abs(leading(el) - want) > 0.01)
+        .map(el => [entry.textContent.trim(), \`line height \${leading(el).toFixed(3)} on its \${el.localName}, not \${want}\`])];
+  }) };
+})()`;
+const tocParts = { 'test-tocpart': [2.25, 2], 'test-tocpart-tocloft': [1.5, 1], 'test-tocpart-report': [2.25, 1],
+  'test-report': [2.25, 1], 'test-tocloft': [2.25, 1] };
 
 // Space above a tabular in the text, as above a paragraph in its place
 // (css/tex8web.css): after a paragraph, a table, or a footnote beside the
@@ -1976,6 +2039,15 @@ async function compare(chrome, doc, ok) {
           const under = await page.evaluate(spaced);
           ran.spaced += under.checked;
           for (const [id, gap, want] of under.wrong) problems.push(`${html}: #${id}: what follows it ${gap}px below, not ${want}px`);
+          if (doc.name in headGaps) {
+            for (const [id, what] of await page.evaluate(headGap(headGaps[doc.name]))) problems.push(`${html}: #${id}: ${what}`);
+          }
+          if (doc.name in tocParts) {
+            const [skip, count] = tocParts[doc.name];
+            const parts = await page.evaluate(partEntries(skip));
+            if (parts.checked !== count) problems.push(`${html}: ${parts.checked} part entries in the table of contents, not ${count}`);
+            for (const [title, what] of parts.wrong) problems.push(`${html}: the entry "${title}": ${what}`);
+          }
           const tables = await page.evaluate(tablesSpaced);
           ran.tablesSpaced += tables.checked;
           for (const [id, gap, want] of tables.wrong) problems.push(`${html}: #${id}: ${gap} above it, not ${want} as above a paragraph`);

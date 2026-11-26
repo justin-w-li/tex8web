@@ -58,9 +58,10 @@ const tools = only.length ? null : new Promise(done => {
 //   chapter's title and label
 // - the abstract's leading: \small's 12pt over the text's 13.6pt
 // - tocloft's font for each level of the table of contents
-// Classes on <html>: \WebLikePDF's justified, hyphenated text, and links not
-// underlined, colored with colorlinks or hidden with hidelinks. Every other
-// document has none: test-generic's links are boxed, so underlined.
+// Classes on <html>: \WebLikePDF's justified, hyphenated text, links not
+// underlined, colored with colorlinks or hidden with hidelinks, and
+// titlesec's option largestsep. Every other document has none:
+// test-generic's links are boxed, so underlined.
 const switched = {
   'test': 'tex8web-plain-links', 'test-hidelinks': 'tex8web-plain-links',
   'test-declared': 'tex8web-plain-links', 'examples/basic': 'tex8web-plain-links',
@@ -69,6 +70,7 @@ const switched = {
   'test-pdftex-sty': 'tex8web-plain-links',
   'test-pdfoutput': 'tex8web-plain-links', 'test-pdfoutput-sty': 'tex8web-plain-links',
   'test-pdfprim-hyperref': 'tex8web-plain-links',
+  'test-headspace-largestsep': 'tex8web-largestsep',
 };
 const sectpartSizes = { '--tex8web-part-size': '2.488em', '--tex8web-part-label-size': '0.8336em', '--tex8web-part-label-after': '0.96432em' };
 const measured = {
@@ -274,6 +276,11 @@ const measured = {
   'test-runintoc-skip': { '--tex8web-toc-section-weight': 'normal', '--tex8web-toc-section-skip': '1.2em' },
   'test-runintoc-koma': { '--tex8web-toc-chapter-skip': '1em', '--tex8web-toc-chapter-weight': 'bold',
     '--tex8web-toc-subsubsection-indent': '7.00002em', '--tex8web-toc-subsubsection-number': '4.10002em' },
+  // (the space above a part's entry: article's and report's \l@part, and
+  // tocloft's \cftbeforepartskip)
+  'test-tocpart': { '--tex8web-toc-part-skip': '2.25em' },
+  'test-tocpart-report': { '--tex8web-toc-part-skip': '2.25em' },
+  'test-tocpart-tocloft': { '--tex8web-toc-part-skip': '1.5em' },
 };
 
 // test.tex's math as tex8web.js typesets it through MathJax's internals,

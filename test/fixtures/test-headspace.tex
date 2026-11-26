@@ -1,0 +1,37 @@
+% A heading right after another heading has only the space below the
+% first, as LaTeX's \@startsection adds no space above a heading while
+% \if@nobreak holds: a section after a part, a subsection after a section,
+% the same with a \label between them, starred headings with a \label,
+% a subsubsection after a subsection, a run-in paragraph after a
+% subsubsection, a section after a starred part with a \label, and a
+% subsection after a section with an \index entry.
+\documentclass{article}
+\usepackage{makeidx}
+\makeindex
+\setcounter{secnumdepth}{4}
+\begin{document}
+Some text before the first part.
+\part{Beginnings}
+\section{After the part}
+Some text in the section.
+\section{A section}
+\subsection{After the section}
+Some text in the subsection.
+\section{A labeled section}\label{labeled}
+\subsection{After the label}
+Some text in the subsection.
+\section*{A starred section}\label{starred}
+\subsection*{After the starred label}
+Some text in the subsection.
+\subsection{A subsection}
+\subsubsection{After the subsection}
+Some text in the subsubsection.
+\subsubsection{A subsubsection}
+\paragraph{A paragraph} Some text run into the paragraph's heading.
+\part*{An unnumbered part}\label{unnumbered}
+\section{After the unnumbered part}
+Some text in the section.
+\section{An indexed section}\index{indexed}
+\subsection{After the index}
+Some text in the subsection.
+\end{document}

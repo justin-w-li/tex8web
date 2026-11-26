@@ -1,0 +1,24 @@
+% titlesec's default spacing (option aftersep): a heading right after
+% another heading has only the space below the first, as
+% \ttl@straight@ii adds no space above while \if@nobreak holds. A section
+% after a part, with the section's space from \titlespacing*, a subsection
+% after a section, and a paragraph on a line of its own after a
+% subsubsection.
+\documentclass{article}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{6ex plus 1ex minus .2ex}{2.5ex plus .2ex}
+\titleformat{\paragraph}[block]{\normalfont\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}{0pt}{3ex}{1ex}
+\setcounter{secnumdepth}{4}
+\begin{document}
+Some text before the first part.
+\part{Beginnings}
+\section{After the part}
+Some text in the section.
+\section{A section}
+\subsection{After the section}
+Some text in the subsection.
+\subsubsection{A subsubsection}
+\paragraph{After the subsubsection}
+Some text in the paragraph.
+\end{document}

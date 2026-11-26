@@ -1,0 +1,23 @@
+% A part's entry in the table of contents, in an article: the space above
+% it from article's \l@part (\addvspace{2.25em plus 1pt}), and below it
+% only the next entry's space. An entry added between two headings leaves
+% the second right under the first, as in the PDF.
+\documentclass{article}
+\begin{document}
+\tableofcontents
+\section{A section}
+Some text.
+\subsection{A subsection}
+Some text.
+\part{Beginnings}
+\section{After the part}
+Some text.
+\part*{An unnumbered part}
+\addcontentsline{toc}{part}{An unnumbered part}
+\section{Another section}
+Some text.
+\section{A numbered section}
+\addcontentsline{toc}{section}{An unnumbered section}
+\section*{An unnumbered section}
+Some text.
+\end{document}

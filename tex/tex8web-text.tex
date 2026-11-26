@@ -899,6 +899,9 @@
         \web@tocset{#1}{indent}{\the\csname cft#2indent\endcsname}%
         \web@tocset{#1}{number}{\the\csname cft#2numwidth\endcsname}%
         \web@tocset{#1}{skip}{\the\dimexpr\csname cftbefore#2skip\endcsname}}
+    % (tocloft defines a part's lengths only when the class has \part)
+    \web@tocset{part}{skip}{\the\dimexpr2.25em}%
+    \ifdefined\cftbeforepartskip\web@tocloft{part}{part}\fi
     \ifdefined\c@chapter\web@tocloft{chapter}{chap}\fi
     \web@tocloft{section}{sec}
     \web@tocloft{subsection}{subsec}
@@ -920,8 +923,15 @@
     \def\web@tocmeasure#1#2#3#4#5{%
         \web@tocset{#1}{indent}{\the\dimexpr#2}\web@tocset{#1}{number}{\the\dimexpr#3}%
         \web@tocset{#1}{skip}{\the\dimexpr#4}\web@tocset{#1}{weight}{#5}%
-        % the AMS classes' \@tocline sets the number in the line, without a box
-        \ifdefined\@tocline\else\ifcsname l@#1\endcsname\begingroup
+        % the AMS classes' \@tocline sets the number in the line, without a box.
+        % revtex's \l@part reads the page number's width, \tocleft@pagenum,
+        % that its \tableofcontents sets, and aip4-2.rtx's and aapm4-2.rtx's
+        % pass \set@tocdim@pagenum one argument of two: article's values stand,
+        % as does its space above, 2.25em
+        \edef\web@tocin{\noexpand\in@{\detokenize{\tocleft@pagenum}}%
+            {\ifcsname l@#1\endcsname\expandafter\meaning\csname l@#1\endcsname\fi}}%
+        \web@tocin
+        \ifin@\else\ifdefined\@tocline\else\ifcsname l@#1\endcsname\begingroup
             \c@tocdepth\@M \everypar{}\let\selectfont\relax
             % (the mw classes' \mw@tocskip compares the level with the entry
             % before's, which their \tableofcontents starts at -1000)
@@ -947,7 +957,8 @@
             % open until \contentsfinish, which closes it inside the box
             % and does nothing when no run-in entry is open
             \setbox\z@\vbox{\web@tocline\ifdefined\contentsfinish\contentsfinish\fi}%
-        \endgroup\fi\fi}
+        \endgroup\fi\fi\fi}
+    \web@tocmeasure{part}{0pt}{3em}{2.25em}{bold}
     \ifdefined\c@chapter\web@tocmeasure{chapter}{0pt}{1.5em}{1em}{bold}\fi
     \web@tocmeasure{section}{0pt}{1.5em}{1em}{bold}
     \web@tocmeasure{subsection}{1.5em}{2.3em}{0pt}{normal}
@@ -969,6 +980,7 @@
     --tex8web-toc-paragraph-number: \web@em{\web@tocget{paragraph}{number}};
     --tex8web-toc-subparagraph-indent: \web@tocindent{subparagraph};
     --tex8web-toc-subparagraph-number: \web@em{\web@tocget{subparagraph}{number}};
+    --tex8web-toc-part-skip: \web@em{\web@tocget{part}{skip}};
     --tex8web-toc-section-skip: \web@em{\web@tocget{section}{skip}};
     --tex8web-toc-subsection-skip: \web@em{\web@tocget{subsection}{skip}}; }}
 \ifdefined\c@chapter

@@ -737,6 +737,10 @@
 \fi
 \web@headdisplay{paragraph}
 \web@headdisplay{subparagraph}
+% titlesec's option largestsep, under which a heading adds its space above
+% with \addvspace also right after another heading: \ttl@titlespace is
+% \addvspace, not \@gobble (titlesec.sty, css/tex8web.css)
+\ifdefined\ttl@titlespace\ifx\ttl@titlespace\addvspace\web@htmlclass{tex8web-largestsep}\fi\fi
 % \paragraph and \subparagraph in their font from titlesec or the class
 % (css/tex8web.css), in place of the \bf that html4.4ht's article, report,
 % and book configs put in their heads (not in likeparagraph's). Other heads

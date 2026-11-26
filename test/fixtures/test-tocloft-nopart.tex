@@ -1,0 +1,12 @@
+% tocloft with a class that has no \part, as IEEEtran, for which tocloft
+% defines no part lengths.
+\documentclass{article}
+\makeatletter
+\let\part\undefined \let\@part\undefined \let\@spart\undefined
+\makeatother
+\usepackage{tocloft}
+\begin{document}
+\tableofcontents
+\section{A section}
+Some text.
+\end{document}

@@ -1,0 +1,12 @@
+% titlesec's option largestsep: a section right after a part has the
+% larger of the part's space below and its own space above, as titlesec
+% adds its space with \addvspace there.
+\documentclass{article}
+\usepackage[largestsep]{titlesec}
+\titlespacing*{\section}{0pt}{6ex plus 1ex minus .2ex}{2.5ex plus .2ex}
+\begin{document}
+Some text before the first part.
+\part{Beginnings}
+\section{After the part}
+Some text in the section.
+\end{document}

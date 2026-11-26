@@ -238,9 +238,11 @@ end
 -- the heading. make4ht's sectionid filter names ids from the titles in the
 -- order of the .4tc file, and suffixes a repeated title with a number. So
 -- an entry before its heading has the plain name, and its anchor is moved
--- to the front of the heading, which then takes that name. An entry after
--- its heading links to the heading's anchor instead, as does one whose
--- anchor text.lua's heading_lists has moved into the heading.
+-- to the front of the heading, which then takes that name. Its paragraph
+-- goes if nothing is left in it, so that css/tex8web.css sets the heading
+-- right under a heading before it. An entry after its heading links to
+-- the heading's anchor instead, as does one whose anchor text.lua's
+-- heading_lists has moved into the heading.
 local function unnumbered(el)
   return el and dom.class_matches(el, "like%a*Head") and el:get_element_name():match("^h[1-6]$") and el
 end
@@ -266,6 +268,7 @@ function M.toc_targets(document)
       elseif after then
         target:remove_node()
         after:add_child_node(target, 1)
+        if dom.is_blank(paragraph) then paragraph:remove_node() end
       end
     end
   end

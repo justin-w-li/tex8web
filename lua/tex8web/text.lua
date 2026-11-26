@@ -110,10 +110,16 @@ end
 -- heading. Such anchors come from a \phantomsection or an
 -- \addcontentsline under a heading, or from anchors before the list's
 -- first \item (tex8web-hooks.sty). They go after the heading's own anchor,
--- which page.lua reads as the first one.
+-- which page.lua reads as the first one. Anchors alone between two
+-- headings go to the end of the first too, so that css/tex8web.css sets
+-- the second right under it. Such anchors also come from a \label, as
+-- latex.4ht's \:currentlabel{doc} writes one under an unnumbered heading,
+-- or from an \index. Between a numbered heading and an unnumbered one
+-- they are left, as page.lua's toc_targets may move a contents entry's
+-- anchor to the heading below.
 function M.heading_lists(document)
   -- (each parent's elements are listed once; the list goes stale, but a
-  -- removed paragraph was before only the list it was found for)
+  -- removed paragraph was before only the element it was found for)
   local siblings = {}
   local function before(el)
     local parent = el:get_parent()
@@ -125,17 +131,31 @@ function M.heading_lists(document)
     local group = siblings[parent]
     return group.elements[group.at[el] - 1]
   end
-  for _, list in ipairs(document:query_selector("ol, ul, dl")) do
-    local p = before(list)
-    local heading = p and before(p)
-    local anchors = heading and heading:get_element_name():match("^h[2-6]$") and p:get_element_name() == "p"
-      and only_anchors(p)
-    if anchors then
+  for _, el in ipairs(document:query_selector("ol, ul, dl, h3, h4, h5")) do
+    local p = before(el)
+    local heading, anchors
+    if el:get_element_name():match("^h") then
+      -- (anchors between headings are loose here: make4ht's fixinlines
+      -- puts them in a paragraph later)
+      anchors = {}
+      while p and p:get_element_name() == "a" and p:get_attribute("id") and dom.is_blank(p) do
+        table.insert(anchors, 1, p)
+        p = before(p)
+      end
+      heading = #anchors > 0 and p and p:get_element_name():match("^h[1-6]$")
+        and (dom.class_matches(p, "like%a*Head") or not dom.class_matches(el, "like%a*Head")) and p
+      p = nil
+    else
+      heading = p and before(p)
+      anchors = heading and heading:get_element_name():match("^h[2-6]$") and p:get_element_name() == "p"
+        and only_anchors(p)
+    end
+    if heading and anchors then
       for _, a in ipairs(anchors) do
         a:remove_node()
         heading:add_child_node(a)
       end
-      p:remove_node()
+      if p then p:remove_node() end
     end
   end
 end

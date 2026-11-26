@@ -815,6 +815,20 @@ matières </script>]] .. [[<script type="text/x-tex8web-colors">ink 0.78432,0,0.
       .. [[<h3>B<a id='p2'></a></h3><dl><dt>b</dt></dl><h3>C</h3><p><a id='p3'></a>c</p><ol><li>c</li></ol>]])
   end,
 
+  ["text.heading_lists: the anchors between two headings, at the end of the first, unless only the second is unnumbered"] = function()
+    local d = parse([[<h3 class="likesectionHead">A</h3><a id="a1"></a>]] .. "\n" .. [[<a id="a2"></a><h4 class="subsectionHead">B</h4>]]
+      .. [[<h3 class="sectionHead">C</h3><a id="c1"></a><h4 class="likesubsectionHead">D</h4>]]
+      .. [[<h3 class="likesectionHead">E</h3><p><a id="e1"></a>e</p><h4 class="subsectionHead">F</h4>]]
+      .. [[<h1 class="likepartHead">G</h1><a id="g1"></a><h3 class="sectionHead">H</h3>]]
+      .. [[<h4 class="subsectionHead">I</h4><a id="i1"></a><h5 class="subsubsectionHead">J</h5>]])
+    text.heading_lists(d)
+    equal(body(d), [[<h3 class='likesectionHead'>A<a id='a1'></a><a id='a2'></a></h3>]] .. "\n" .. [[<h4 class='subsectionHead'>B</h4>]]
+      .. [[<h3 class='sectionHead'>C</h3><a id='c1'></a><h4 class='likesubsectionHead'>D</h4>]]
+      .. [[<h3 class='likesectionHead'>E</h3><p><a id='e1'></a>e</p><h4 class='subsectionHead'>F</h4>]]
+      .. [[<h1 class='likepartHead'>G<a id='g1'></a></h1><h3 class='sectionHead'>H</h3>]]
+      .. [[<h4 class='subsectionHead'>I<a id='i1'></a></h4><h5 class='subsubsectionHead'>J</h5>]])
+  end,
+
   ["text.sidenotes: many footnotes in time"] = function()
     local marks, notes = {}, {}
     for n = 1, 300 do

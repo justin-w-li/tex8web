@@ -1,0 +1,12 @@
+% A section right after a chapter has only the chapter's space below it,
+% as LaTeX's \@startsection adds no space above a heading while
+% \if@nobreak holds, also with a \label between them.
+\documentclass{report}
+\begin{document}
+\chapter{First}
+\section{After the chapter}
+Some text in the section.
+\chapter*{Unnumbered}\label{unnumbered}
+\section*{After the label}
+Some text in the section.
+\end{document}
