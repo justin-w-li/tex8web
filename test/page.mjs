@@ -1244,10 +1244,11 @@ async function browsing(chrome, file) {
 // reached. Scrolled to the end, the last entry is marked, and named in the
 // bar on a narrow screen. Through the last screen, the marked entry moves
 // forward only, to each entry in turn. Where two headings stay below the
-// line, a link followed to the second-to-last marks its entry, also once
-// the smooth scroll ends and after a tap, until the reader turns the mouse
-// wheel. A page loaded with that hash marks its entry, but not when it is
-// reloaded at the top. Fails unless a heading stays below the line on each
+// line, a link followed down to the second-to-last marks the entries in
+// turn, never one past its entry, then its entry once the smooth scroll
+// ends and after a tap, until the reader turns the mouse wheel. A page
+// loaded with that hash marks its entry, but not when it is reloaded at
+// the top. Fails unless a heading stays below the line on each
 // page at one size, and two do on one page. A size where every heading
 // reaches the line is skipped.
 async function ending(chrome, docs) {
@@ -1331,7 +1332,11 @@ async function ending(chrome, docs) {
         return there;
       });
       if (!done) return say('the followed link not scrolled to the end');
-      if (moved.some(n => n !== entry)) say(`following entry ${entry}, entries ${[...new Set(moved)]} marked or named`);
+      if (moved.some((n, i) => typeof n !== 'number' || n > entry || n < moved[i - 1])) {
+        say(`following entry ${entry}, entries ${[...new Set(moved)]} marked or named`);
+      }
+      // (the address alone scrolls without the smooth scroll)
+      if (at && !moved.some(n => n < entry)) say(`following entry ${entry} by a click, no entry before it marked during the scroll`);
       await page.evaluate(`(async () => { ${setup} await frames(); })()`);
       if (await page.evaluate(`(() => { ${setup} return marked(); })()`) !== entry) say(`the scroll ended, entry ${entry} not marked`);
       if (how === 'narrow') {
