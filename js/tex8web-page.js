@@ -515,8 +515,25 @@
       if (wide ? root.classList.contains('tex8web-toc-hidden') : !toc.matches(':popover-open')) return;
       reveal();
     };
-    let pending = false;
+    // A followed link: the entries track the page as it scrolls there, and
+    // the link's entry is marked once the scrolling stops, as a heading on
+    // the last screen may never reach the line
+    let pending = false, aimed, timer;
+    const wait = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        follow(aimed);
+        aimed = null;
+      }, 150);
+    };
+    const aim = heading => {
+      followed = null;
+      aimed = heading;
+      update();
+      wait();
+    };
     addEventListener('scroll', () => {
+      if (aimed) wait();
       if (pending) return;
       pending = true;
       requestAnimationFrame(() => { pending = false; update(); });
@@ -541,14 +558,16 @@
     }));
     if (document.readyState === 'complete') loaded();
     else addEventListener('load', loaded);
-    addEventListener('hashchange', () => follow(hashed()));
+    addEventListener('hashchange', () => aim(hashed()));
     // also a link to the heading already in the address, which changes no
     // hash; not one a preview card's first tap kept from being followed
     document.addEventListener('click', event => {
       const a = event.target.closest?.('a[href*="#"]');
-      if (a && !event.defaultPrevented && here(a)) follow(here(a));
+      if (a && !event.defaultPrevented && here(a)) aim(here(a));
     });
     scrolled(() => {
+      aimed = null;
+      clearTimeout(timer);
       if (!followed) return;
       followed = null;
       update();
