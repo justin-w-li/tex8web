@@ -121,12 +121,13 @@ readers.ProvideDocumentCommand = readers.NewDocumentCommand
 
 -- (as \mathop rather than MathJax's \operatorname, which leaves out the
 -- space between a number and the operator: 2\Var X. The starred form's
--- limits go under it in display math only)
+-- limits go under it in display math only. tex8web.js's \webmcodes sets
+-- . and : as punctuation, as amsopn does in an operator)
 function readers.DeclareMathOperator(s, i, star)
   local name, body
   name, i = argument(s, i)
   body, i = argument(s, i)
-  local def = "\\newcommand{" .. trim(name) .. "}{\\mathop{\\mathrm{" .. body .. "}}"
+  local def = "\\newcommand{" .. trim(name) .. "}{\\mathop{\\mathrm{\\webmcodes " .. body .. "}}"
     .. (star == "*" and "" or "\\nolimits") .. "}"
   return trim(name), def, body, i
 end

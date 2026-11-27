@@ -34,9 +34,9 @@ return {
 
   ["DeclareMathOperator: \\mathop, limits only for the starred form"] = function()
     equal(def("\\DeclareMathOperator{\\Var}{Var}", "\\Var").def,
-      "\\newcommand{\\Var}{\\mathop{\\mathrm{Var}}\\nolimits}")
+      "\\newcommand{\\Var}{\\mathop{\\mathrm{\\webmcodes Var}}\\nolimits}")
     equal(def("\\DeclareMathOperator*{\\argmax}{arg\\,max}", "\\argmax").def,
-      "\\newcommand{\\argmax}{\\mathop{\\mathrm{arg\\,max}}}")
+      "\\newcommand{\\argmax}{\\mathop{\\mathrm{\\webmcodes arg\\,max}}}")
   end,
 
   ["DeclarePairedDelimiter and DeclarePairedDelimiterX"] = function()

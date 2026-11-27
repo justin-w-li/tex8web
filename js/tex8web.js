@@ -490,7 +490,7 @@ function tex8web(config, tex) {
   // when nothing follows it in them: each item notes, when it closes,
   // whether \hidewidth ends it, for the item below.
   const packages = texOptions.packages = texOptions.packages || {};
-  (packages['[+]'] = packages['[+]'] || []).push('tex8web-hidewidth');
+  (packages['[+]'] = packages['[+]'] || []).push('tex8web-hidewidth', 'tex8web-amsopn');
   function addHidewidth() {
     const {Configuration} = MathJax._.input.tex.Configuration;
     const {CommandMap} = MathJax._.input.tex.TokenMap;
@@ -524,7 +524,7 @@ function tex8web(config, tex) {
   }
 
   // tex8web-math.tex lists tex8web-amsmath for a document that loads
-  // amsmath.
+  // amsmath. tex8web-amsopn is always listed.
   //
   // tex8web-amsmath: amsmath's thin space after \cdots, \dotsb, \dotsm,
   // \dotso, and \dotsc, and after \dots where it is \dotso. It is added
@@ -537,9 +537,17 @@ function tex8web(config, tex) {
   // stack's global isInner, false only in a whole formula, and the base
   // maps). In the PDF, only a $ ends the formula for this, not \), which
   // the page cannot tell apart.
+  //
+  // tex8web-amsopn: in an operator name, amsopn makes . and : punctuation
+  // (amsopn.sty, \newmcodes@), where MathJax sets . as an ordinary
+  // character and : as a relation. \webmcodes, which preamble.lua puts in
+  // the operators of \DeclareMathOperator, sets them as in \operatorname,
+  // with - and * as letters (internal: the env of \operatorname's parser,
+  // and MathJax's operatorLetter). \operatorname and \DeclareMathOperator
+  // need amsopn in LaTeX.
   function addAmsPackages() {
     const {Configuration} = MathJax._.input.tex.Configuration;
-    const {CommandMap} = MathJax._.input.tex.TokenMap;
+    const {CommandMap, CharacterMap} = MathJax._.input.tex.TokenMap;
     const {MapHandler} = MathJax._.input.tex.MapHandler;
     const rightDelimiter = /^(?:[)\]]|\\(?:\}|(?:rbrack|rbrace|rangle|rceil|rfloor|rgroup|rmoustache|right|bigr|Bigr|biggr|Biggr)(?![a-zA-Z])))/;
     // (the punctuation each takes the space before)
@@ -558,6 +566,13 @@ function tex8web(config, tex) {
     }
     new CommandMap('tex8web-amsmath', methods);
     Configuration.create('tex8web-amsmath', {handler: {macro: ['tex8web-amsmath']}});
+
+    new CharacterMap('tex8web-amsopn', (parser, char) => {
+      if (!parser.stack.env.operatorLetters) return false;
+      parser.Push(parser.create('token', 'mo', {texClass: TEXCLASS.PUNCT}, char.char));
+    }, {'.': '.', ':': ':'});
+    new CommandMap('tex8web-amsopn-macros', {webmcodes(parser) { parser.stack.env.operatorLetters = true; }});
+    Configuration.create('tex8web-amsopn', {handler: {character: ['tex8web-amsopn'], macro: ['tex8web-amsopn-macros']}});
   }
 
   // Latin Modern Math, MathJax's mathjax-modern, is the math font of a

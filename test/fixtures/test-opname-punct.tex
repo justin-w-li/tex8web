@@ -1,0 +1,8 @@
+% a period and a colon in an operator name, punctuation with a thin space
+% after them as in the PDF, and a period cancelled by \!
+\documentclass{article}
+\usepackage{amsmath}
+\DeclareMathOperator{\se}{s.\!e.}
+\begin{document}
+$\operatorname{a.s.}$, $\operatorname{a.b}$, $\operatorname{a:b}$, $\se(x)$, $a.b$, $a:b$.
+\end{document}
