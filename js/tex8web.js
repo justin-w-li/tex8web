@@ -523,6 +523,43 @@ function tex8web(config, tex) {
     Configuration.create('tex8web-hidewidth', {handler: {macro: ['tex8web-hidewidth']}});
   }
 
+  // tex8web-math.tex lists tex8web-amsmath for a document that loads
+  // amsmath.
+  //
+  // tex8web-amsmath: amsmath's thin space after \cdots, \dotsb, \dotsm,
+  // \dotso, and \dotsc, and after \dots where it is \dotso. It is added
+  // before a right delimiter of amsmath's list, or the end of an inline
+  // formula, and also before a comma, a semicolon, or a period, but
+  // only a semicolon or period for \dotsc (amsmath.sty, \extrap@, \extra@,
+  // \mdots@@, \dotsc). \dots before a comma is \dotsc, and before a binary
+  // operator or a relation is \dotsb, so it is spaced only before the
+  // delimiters, as \ldots (internal: a parser's string and position, its
+  // stack's global isInner, false only in a whole formula, and the base
+  // maps). In the PDF, only a $ ends the formula for this, not \), which
+  // the page cannot tell apart.
+  function addAmsPackages() {
+    const {Configuration} = MathJax._.input.tex.Configuration;
+    const {CommandMap} = MathJax._.input.tex.TokenMap;
+    const {MapHandler} = MathJax._.input.tex.MapHandler;
+    const rightDelimiter = /^(?:[)\]]|\\(?:\}|(?:rbrack|rbrace|rangle|rceil|rfloor|rgroup|rmoustache|right|bigr|Bigr|biggr|Biggr)(?![a-zA-Z])))/;
+    // (the punctuation each takes the space before)
+    const dots = {cdots: ',;.', dotsb: ',;.', dotsm: ',;.', dotso: ',;.', dotsc: ';.', dots: ''};
+    const methods = {};
+    for (const [name, punct] of Object.entries(dots)) {
+      methods[name] = parser => {
+        MapHandler.getMap(name === 'dots' ? 'macros' : 'mathchar0mo').parse([parser, name]);
+        const next = parser.GetNext(), rest = parser.string.slice(parser.i);
+        const end = !next && !parser.stack.global.isInner && !parser.stack.env.display;
+        if (rightDelimiter.test(rest) || end || (next && punct.includes(next))) {
+          parser.string = '\\,' + rest;
+          parser.i = 0;
+        }
+      };
+    }
+    new CommandMap('tex8web-amsmath', methods);
+    Configuration.create('tex8web-amsmath', {handler: {macro: ['tex8web-amsmath']}});
+  }
+
   // Latin Modern Math, MathJax's mathjax-modern, is the math font of a
   // document in Computer Modern (tex8web-math.tex), as it matches the
   // text's Latin Modern. Where version 4.1.3 differs from the PDF, it is
@@ -936,6 +973,7 @@ function tex8web(config, tex) {
   startup.ready = function () {
     addTextInText();
     addHidewidth();
+    addAmsPackages();
     sizeBigDelimiters();
     fixRowHeights();
     clearNumbers();

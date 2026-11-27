@@ -1,8 +1,9 @@
 // npm run test:visual: each test document and example, prerendered and
 // typeset by MathJax in the browser, compared screen by screen with
 // JavaScript off. Both pages are checked for alignments that line up across
-// an \intertext, unclipped math characters, and footnotes in the text's
-// color. The prerendered page is also checked for a hidden theme button,
+// an \intertext, unclipped math characters, footnotes in the text's
+// color, and the space after characters in some inline formulas. The
+// prerendered page is also checked for a hidden theme button,
 // headings spaced as in LaTeX, also right after another heading, tables
 // in the text spaced as paragraphs, the rest of each \hfill at the right,
 // algorithm2e's numbers and captions, list labels on their text's
@@ -730,6 +731,37 @@ const modernFonts = {
     cmex: [[2.999, .583], [1.799, .597], [1.799, .597], [2.999, .583], [2.222, .944], [2.999, .806],
       [1.199, .458], [1.199, .458], [2.399, .736], [2.399, .736]],
   },
+};
+
+// The space after a character in inline formulas, in ems of the formula,
+// as TeX sets it: each [formula, character, space], for the formula's
+// first such character, measured to the next character's box, or to the
+// formula's right edge after its last. Function application (U+2061), of
+// no width, is skipped. Failures: [what, got, want]
+const mathGap = want => `(() => {
+  const wrong = [], formulas = [...document.querySelectorAll('mjx-container:not([display])')];
+  const glyphs = math => [...math.querySelectorAll('mjx-c')]
+    .filter(c => !c.closest('mjx-assistive-mml') && !c.parentElement.closest('mjx-c'))
+    .map(c => [String.fromCodePoint(parseInt([...c.classList].find(n => /^mjx-c[0-9A-F]+$/.test(n)).slice(5), 16)), c])
+    .filter(([char]) => char !== '\\u2061');
+  for (const [i, char, space] of ${JSON.stringify(want)}) {
+    const math = formulas[i], found = math ? glyphs(math) : [], k = found.findIndex(([c]) => c === char);
+    if (k < 0) { wrong.push([\`formula \${i + 1}\`, 'no ' + char, char]); continue; }
+    const right = found[k][1].getBoundingClientRect().right;
+    const next = found[k + 1] ? found[k + 1][1].getBoundingClientRect().left : math.getBoundingClientRect().right;
+    const got = (next - right) / parseFloat(getComputedStyle(math).fontSize);
+    if (Math.abs(got - space) > 0.01) wrong.push([\`formula \${i + 1}: the space after \${char}\`, got.toFixed(3), space]);
+  }
+  return wrong;
+})()`;
+// (TeX's spaces: a thin space 0.167, a medium 0.222, and a thick 0.278)
+const mathGaps = {
+  // (amsmath's thin space after the dots, and after it TeX's space between
+  // an inner atom and what follows)
+  'test-amsdots': [[0, '⋯', 0.167], [1, '…', 0.167], [2, '…', 0], [3, '⋯', 0.333], [4, '…', 0.167],
+    [5, '⋯', 0.167], [6, '…', 0.167], [7, '⋯', 0.167], [8, '…', 0.333], [9, '…', 0.333], [10, '⋯', 0.167],
+    [11, '⋯', 0.222], [12, '…', 0.167], [13, '…', 0.167], [14, '⋯', 0], [15, '⋯', 0.167]],
+  'test-amsdots-plain': [[0, '⋯', 0], [1, '…', 0], [2, '⋯', 0.167]],
 };
 
 // dcolumn's D columns: in each column of a table, the numbers line up on
@@ -2031,6 +2063,11 @@ async function compare(chrome, doc, ok) {
             problems.push(`${name}: ${what}: ${got}, not ${want}`);
           }
         }
+        if (doc.name in mathGaps) {
+          for (const [what, got, want] of await page.evaluate(mathGap(mathGaps[doc.name]))) {
+            problems.push(`${name}: ${what}: ${got}, not ${want}`);
+          }
+        }
         if (file !== typeset) {
           // the theme button needs tex8web-page.js, which is not running
           if (await page.evaluate(`document.querySelector('.tex8web-theme').checkVisibility()`)) {
@@ -2348,6 +2385,7 @@ const never = only.length || shards ? [] : unchecked(ran);
 const stray = strayKeys(tocFonts).map(name => `no document ${name} for its contents' fonts`);
 stray.push(...strayKeys(laps).map(name => `no document ${name} for its \\lefteqn boxes`));
 stray.push(...strayKeys(modernFonts).map(name => `no document ${name} for its math font`));
+stray.push(...strayKeys(mathGaps).map(name => `no document ${name} for its spaces in math`));
 stray.push(...strayKeys(hangs).map(name => `no document ${name} for its lowered pictures`));
 stray.push(...strayKeys(darkPictures).map(name => `no document ${name} for its pictures in dark mode`));
 stray.push(...strayKeys(graphicsInside).map(name => `no document ${name} for its graphics in pictures`));

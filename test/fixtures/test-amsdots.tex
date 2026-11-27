@@ -1,0 +1,26 @@
+% amsmath's thin space after dots: after \cdots and \dots before a right
+% delimiter, after \cdots, \dotsb, \dotso, and \dotsc before a semicolon or
+% period, after \cdots also before a comma, and at the end of an inline
+% formula. None after \ldots, after \dots before a comma, a period, or a
+% binary operator, after \cdots before a letter, or at the end of an
+% argument.
+\documentclass{article}
+\usepackage{amsmath}
+\begin{document}
+$(a+\cdots)$,
+$(x_1,\dots)$,
+$(\ldots)$,
+$a+\cdots, b$,
+$x_1,\dots, x_n$,
+$\left(a+\cdots\right)$,
+$\{a,\dotsc\}$,
+$\langle a,\dotsb\rangle$,
+$a,\dotsc;$,
+$a,\dotso.$,
+$a\cdots b$,
+$a + \dots + b$,
+$a,\dots.$,
+$\bigl(a,\dots\bigr)$,
+$\mathrm{a\cdots}b$,
+$a+\cdots$.
+\end{document}

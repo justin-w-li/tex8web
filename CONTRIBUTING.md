@@ -148,6 +148,7 @@ These sizes differ between TeX and MathJax's TeX input, and are set as in TeX in
 - the space between the columns of arrays and matrices, and at the edges of an array, from `\arraycolsep` at the start of the document
 - line breaks in inline math, after relations and never at a space
 - the columns of an alignment split at `\intertext`
+- amsmath's thin space after `\cdots` and `\dots` before a closing delimiter or at the end of an inline formula, and after `\cdots` before a comma, a semicolon, or a period, which MathJax's TeX input leaves out
 
 A `\mathclap` or `\clap` around a whole display has its content's width in `js/tex8web.js`, so that a display wider than the column can be scrolled to its left end.
 
