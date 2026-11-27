@@ -1,0 +1,21 @@
+% mleftright's \left and \right, which set an empty open atom and a close
+% atom: no space between two matrices, after a matrix before a comma, or
+% around \left( \right) after a letter or an operator; a relation's and a
+% binary operator's space kept; a script on the close atom; a fraction's
+% denominator and a root's index that are one delimited formula
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{mleftright}
+\mleftright
+\begin{document}
+$\begin{pmatrix} 1 \\ 0 \end{pmatrix}\begin{pmatrix} 0 \\ 1 \end{pmatrix}$,
+$\begin{bmatrix} 1 \\ 0 \end{bmatrix},$
+$\left(\frac{a}{b}\right),$
+$x\left(a\right)y$,
+$\log\left(x\right)$,
+$a=\left(b\right)^2+c$,
+$a+\left[b\right]$,
+$\Bigl(a\Bigr),$
+$\frac{b}{\left(a\right)}$,
+$\sqrt[\left(n\right)]{x}$
+\end{document}

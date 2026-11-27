@@ -523,8 +523,8 @@ function tex8web(config, tex) {
     Configuration.create('tex8web-hidewidth', {handler: {macro: ['tex8web-hidewidth']}});
   }
 
-  // tex8web-math.tex lists tex8web-amsmath for a document that loads
-  // amsmath. tex8web-amsopn is always listed.
+  // tex8web-math.tex lists two of these packages for a document that
+  // loads amsmath or that calls \mleftright. The other is always listed.
   //
   // tex8web-amsmath: amsmath's thin space after \cdots, \dotsb, \dotsm,
   // \dotso, and \dotsc, and after \dots where it is \dotso. It is added
@@ -545,6 +545,14 @@ function tex8web(config, tex) {
   // with - and * as letters (internal: the env of \operatorname's parser,
   // and MathJax's operatorLetter). \operatorname and \DeclareMathOperator
   // need amsopn in LaTeX.
+  //
+  // tex8web-mleftright: mleftright's \left and \right make an empty open
+  // atom and a close atom of the delimited formula (mleftright.sty,
+  // \mleft), where MathJax's \left and \right and matrices make an inner
+  // atom (internal: ParseUtil.fenced's mrow). The empty atom goes before
+  // the scripts of the close atom, as in TeX, and is left out where
+  // nothing can precede it: in an argument of a fraction, a root, or an
+  // accent, whose node has a fixed number of children.
   function addAmsPackages() {
     const {Configuration} = MathJax._.input.tex.Configuration;
     const {CommandMap, CharacterMap} = MathJax._.input.tex.TokenMap;
@@ -573,6 +581,29 @@ function tex8web(config, tex) {
     }, {'.': '.', ':': ':'});
     new CommandMap('tex8web-amsopn-macros', {webmcodes(parser) { parser.stack.env.operatorLetters = true; }});
     Configuration.create('tex8web-amsopn', {handler: {character: ['tex8web-amsopn'], macro: ['tex8web-amsopn-macros']}});
+
+    const scripts = ['msub', 'msup', 'msubsup'];
+    function mleftright({data}) {
+      const fenced = [];
+      data.root.walkTree(node => {
+        if (node.isKind('mrow') && node.texClass === TEXCLASS.INNER
+            && (node.getProperty('open') != null || node.getProperty('close') != null)) fenced.push(node);
+      });
+      const factory = data.nodeFactory;
+      for (const mrow of fenced) {
+        const close = factory.create('node', 'TeXAtom', [], {texClass: TEXCLASS.CLOSE});
+        mrow.parent.replaceChild(close, mrow);
+        close.childNodes[0].appendChild(mrow);
+        let atom = close;
+        while (scripts.some(kind => atom.parent.isKind(kind)) && atom.parent.childNodes[0] === atom) atom = atom.parent;
+        const parent = atom.parent;
+        if (parent.arity !== Infinity) continue;
+        const open = factory.create('node', 'TeXAtom', [], {texClass: TEXCLASS.OPEN});
+        parent.childNodes.splice(parent.childNodes.indexOf(atom), 0, open);
+        open.parent = parent;
+      }
+    }
+    Configuration.create('tex8web-mleftright', {postprocessors: [mleftright]});
   }
 
   // Latin Modern Math, MathJax's mathjax-modern, is the math font of a

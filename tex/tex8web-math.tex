@@ -42,8 +42,11 @@
 \let\web@units\empty
 \@for\web@package:=units,nicefrac,xfrac\do{\@ifpackageloaded\web@package{\def\web@units{, "units"}}{}}
 \edef\web@extensions{\web@extensions\web@units}
-% tex8web.js's spacing of amsmath's dots (addAmsPackages)
+% tex8web.js's spacing of amsmath's dots and of mleftright's \left and
+% \right (addAmsPackages). tex4ht's \left calls the \left of the
+% preamble, \o:left:
 \@ifpackageloaded{amsmath}{\edef\web@extensions{\web@extensions, "tex8web-amsmath"}}{}
+\expandafter\ifx\csname o:left:\endcsname\mleft\edef\web@extensions{\web@extensions, "tex8web-mleftright"}\fi
 \edef\web@load{\web@load\ifx\web@units\empty\else, "[tex]/units"\fi}
 % (newtxmath's options for other fonts turn \iftx@ntxmath off; nc is New
 % Century Schoolbook)
